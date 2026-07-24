@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-VibeChat.Worker-d48e61ec-e010-4e64-9ea1-0a39171fc7cf</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\VibeChat.Infrastructure\VibeChat.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\Messaging\VibeChat.Messaging.csproj" />
+    <ProjectReference Include="..\..\modules\Realtime\VibeChat.Realtime.csproj" />
+    <ProjectReference Include="..\..\modules\BuildingBlocks\VibeChat.BuildingBlocks.csproj" />
+  </ItemGroup>
+</Project>
