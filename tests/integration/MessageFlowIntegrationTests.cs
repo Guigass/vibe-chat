@@ -136,8 +136,11 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             .OrderByDescending(x => x.OccurredAt)
             .Take(20)
             .ToListAsync();
-        outbox.Should().Contain(x => x.Payload.Contains(messageId.ToString(), StringComparison.OrdinalIgnoreCase)
-            && x.Payload.Contains("👍", StringComparison.Ordinal));
+        outbox.Should().Contain(x =>
+            x.Payload.Contains(messageId.ToString(), StringComparison.OrdinalIgnoreCase)
+            && x.Payload.Contains("\"added\":true", StringComparison.Ordinal)
+            && (x.Payload.Contains("👍", StringComparison.Ordinal)
+                || x.Payload.Contains("\\uD83D\\uDC4D", StringComparison.Ordinal)));
         (await db.Reactions.IgnoreQueryFilters().CountAsync(x => x.MessageId == new MessageId(messageId)))
             .Should().Be(0);
     }
