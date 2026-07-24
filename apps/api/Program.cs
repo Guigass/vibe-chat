@@ -792,30 +792,37 @@ v1.MapGet("/search/messages", async (
         scopedChannel = channel.Id;
     }
 
-    var page = await search.SearchMessagesAsync(
-        new SearchMessagesQuery(
-            workspace.TenantId,
-            profile.Id,
-            workspace.Id,
-            q ?? string.Empty,
-            scopedChannel,
-            SearchPolicies.NormalizeLimit(limit)),
-        ct);
+    try
+    {
+        var page = await search.SearchMessagesAsync(
+            new SearchMessagesQuery(
+                workspace.TenantId,
+                profile.Id,
+                workspace.Id,
+                q ?? string.Empty,
+                scopedChannel,
+                SearchPolicies.NormalizeLimit(limit)),
+            ct);
 
-    return Results.Ok(new SearchMessagesResponse(
-        page.Query,
-        page.Limit,
-        page.Items.Select(x => new SearchMessageHitResponse(
-            x.MessageId,
-            x.ChannelId,
-            x.ChannelName,
-            x.ChannelType,
-            x.Sequence,
-            x.AuthorUserId,
-            x.AuthorDisplayName,
-            x.BodyPreview,
-            x.CreatedAt,
-            x.Rank)).ToArray()));
+        return Results.Ok(new SearchMessagesResponse(
+            page.Query,
+            page.Limit,
+            page.Items.Select(x => new SearchMessageHitResponse(
+                x.MessageId,
+                x.ChannelId,
+                x.ChannelName,
+                x.ChannelType,
+                x.Sequence,
+                x.AuthorUserId,
+                x.AuthorDisplayName,
+                x.BodyPreview,
+                x.CreatedAt,
+                x.Rank)).ToArray()));
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(detail: ex.GetBaseException().Message, statusCode: StatusCodes.Status500InternalServerError);
+    }
 }).RequireAuthorization();
 
 v1.MapGet("/channels/{channelId:guid}/unread-count", async (Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>

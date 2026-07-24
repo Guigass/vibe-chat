@@ -174,8 +174,13 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
             new SendMessageRequest(messageId, $"sec-search-dm-{messageId:N}", $"privado {token}", null, null));
         create.StatusCode.Should().Be(HttpStatusCode.Accepted);
 
-        var aliceHits = await alice.GetFromJsonAsync<SearchMessagesDto>(
+        var aliceSearch = await alice.GetAsync(
             $"/api/v1/search/messages?workspaceId={SeedData.DemoWorkspaceId.Value}&q={token}");
+        var aliceBody = await aliceSearch.Content.ReadAsStringAsync();
+        aliceSearch.IsSuccessStatusCode.Should().BeTrue($"search failed: {(int)aliceSearch.StatusCode} {aliceBody}");
+        var aliceHits = System.Text.Json.JsonSerializer.Deserialize<SearchMessagesDto>(
+            aliceBody,
+            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         aliceHits.Should().NotBeNull();
         aliceHits!.Items.Should().Contain(x => x.MessageId == messageId);
 

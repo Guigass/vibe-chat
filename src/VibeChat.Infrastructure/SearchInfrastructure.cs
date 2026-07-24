@@ -45,20 +45,19 @@ public sealed class PostgresSearchQuery(VibeChatDbContext dbContext) : ISearchQu
             return new SearchResultPage(term, [], limit);
         }
 
-        var tsQuery = EF.Functions.PlainToTsQuery(SearchPolicies.TextConfig, term);
         var channelFilter = query.ChannelId;
+        const string config = SearchPolicies.TextConfig;
 
-        var rows = await (
+        var candidateQuery =
             from message in dbContext.Messages.AsNoTracking()
             join channel in dbContext.Channels.AsNoTracking() on message.ConversationId equals channel.Id
-            join author in dbContext.UserProfiles.AsNoTracking() on message.AuthorId equals author.Id into authors
-            from author in authors.DefaultIfEmpty()
             where message.TenantId == query.TenantId
                 && channel.TenantId == query.TenantId
                 && channel.WorkspaceId == query.WorkspaceId
                 && message.DeletedAt == null
                 && (channelFilter == null || message.ConversationId == channelFilter)
-                && EF.Functions.ToTsVector(SearchPolicies.TextConfig, message.Body).Matches(tsQuery)
+                && EF.Functions.ToTsVector(config, message.Body)
+                    .Matches(EF.Functions.PlainToTsQuery(config, term))
                 && (
                     (
                         (channel.Type == ChannelType.Public || channel.Type == ChannelType.Announcement)
@@ -76,27 +75,42 @@ public sealed class PostgresSearchQuery(VibeChatDbContext dbContext) : ISearchQu
                             && cm.UserId == query.UserId)
                     )
                 )
-            orderby EF.Functions.ToTsVector(SearchPolicies.TextConfig, message.Body).Rank(tsQuery) descending, message.CreatedAt descending
             select new
             {
-                Message = message,
-                Channel = channel,
-                AuthorName = author != null ? author.DisplayName : message.AuthorId.Value.ToString(),
-                Rank = EF.Functions.ToTsVector(SearchPolicies.TextConfig, message.Body).Rank(tsQuery)
-            })
+                message.Id,
+                ChannelId = channel.Id,
+                ChannelName = channel.Name,
+                ChannelType = channel.Type,
+                message.Sequence,
+                message.AuthorId,
+                message.Body,
+                message.CreatedAt,
+                Rank = EF.Functions.ToTsVector(config, message.Body)
+                    .Rank(EF.Functions.PlainToTsQuery(config, term))
+            };
+
+        var rows = await candidateQuery
+            .OrderByDescending(x => x.Rank)
+            .ThenByDescending(x => x.CreatedAt)
             .Take(limit)
             .ToListAsync(cancellationToken);
 
+        var authorIds = rows.Select(x => x.AuthorId).Distinct().ToArray();
+        var authors = await dbContext.UserProfiles.AsNoTracking()
+            .Where(x => authorIds.Contains(x.Id))
+            .Select(x => new { x.Id, x.DisplayName })
+            .ToDictionaryAsync(x => x.Id, x => x.DisplayName, cancellationToken);
+
         var items = rows.Select(row => new SearchMessageHit(
-            row.Message.Id.Value,
-            row.Channel.Id.Value,
-            FormatChannelName(row.Channel.Name, row.Channel.Type.ToString()),
-            row.Channel.Type.ToString(),
-            row.Message.Sequence,
-            row.Message.AuthorId.Value,
-            row.AuthorName,
-            SearchPolicies.BuildPreview(row.Message.Body),
-            row.Message.CreatedAt,
+            row.Id.Value,
+            row.ChannelId.Value,
+            FormatChannelName(row.ChannelName, row.ChannelType.ToString()),
+            row.ChannelType.ToString(),
+            row.Sequence,
+            row.AuthorId.Value,
+            authors.TryGetValue(row.AuthorId, out var name) ? name : row.AuthorId.Value.ToString("D"),
+            SearchPolicies.BuildPreview(row.Body),
+            row.CreatedAt,
             row.Rank)).ToArray();
 
         return new SearchResultPage(term, items, limit);
