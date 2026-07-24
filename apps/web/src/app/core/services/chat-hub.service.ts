@@ -16,6 +16,9 @@ interface MessageCreatedPayload {
   messageId?: string;
   id?: string;
   channelId: string;
+  conversationId?: string;
+  threadId?: string | null;
+  replyToMessageId?: string | null;
   sequence?: number;
   authorId?: string;
   authorName?: string;
@@ -66,6 +69,7 @@ export class ChatHubService {
   private readonly auth = inject(AuthService);
   private readonly tenant = inject(TenantContext);
   private connection: HubConnection | null = null;
+  private joinedChannelId: string | null = null;
 
   private readonly statusSignal = signal<ConnectionStatus>('disconnected');
   private readonly typingSignal = signal<TypingState[]>([]);
@@ -98,7 +102,16 @@ export class ChatHubService {
       .build();
 
     this.connection.onreconnecting(() => this.statusSignal.set('reconnecting'));
-    this.connection.onreconnected(() => this.statusSignal.set('connected'));
+    this.connection.onreconnected(async () => {
+      this.statusSignal.set('connected');
+      if (this.joinedChannelId) {
+        try {
+          await this.joinChannel(this.joinedChannelId);
+        } catch {
+          // banner already reflects connection; next user action can retry join
+        }
+      }
+    });
     this.connection.onclose(() => this.statusSignal.set('disconnected'));
 
     this.connection.on('MessageCreated', (payload: MessageCreatedPayload) => {
@@ -179,6 +192,7 @@ export class ChatHubService {
   }
 
   async joinChannel(channelId: string): Promise<void> {
+    this.joinedChannelId = channelId;
     if (!this.connection || this.connection.state !== HubConnectionState.Connected) return;
     const tenantId = this.tenant.snapshot().tenantId;
     if (!tenantId) return;
@@ -186,6 +200,9 @@ export class ChatHubService {
   }
 
   async leaveChannel(channelId: string): Promise<void> {
+    if (this.joinedChannelId === channelId) {
+      this.joinedChannelId = null;
+    }
     if (!this.connection || this.connection.state !== HubConnectionState.Connected) return;
     const tenantId = this.tenant.snapshot().tenantId;
     if (!tenantId) return;
@@ -219,9 +236,10 @@ export class ChatHubService {
     const id = payload.messageId ?? payload.id;
     if (!id || !payload.channelId) return null;
     const me = this.auth.profile()?.id;
+    const conversationId = payload.conversationId || payload.channelId;
     return {
       id,
-      conversationId: payload.channelId,
+      conversationId,
       channelId: payload.channelId,
       authorUserId: String(payload.authorId ?? ''),
       authorName: payload.authorName || String(payload.authorId ?? ''),
@@ -230,6 +248,8 @@ export class ChatHubService {
       seq: payload.sequence,
       status: 'persisted',
       mine: !!me && me === String(payload.authorId ?? ''),
+      threadId: payload.threadId ?? null,
+      replyToMessageId: payload.replyToMessageId ?? null,
       attachments: (payload.attachments ?? []).map((a) => ({
         id: a.id,
         fileName: a.fileName,

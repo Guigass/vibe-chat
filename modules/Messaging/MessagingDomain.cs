@@ -23,6 +23,19 @@ public sealed class Message : AggregateRoot
     public bool IsDeleted => DeletedAt is not null;
 }
 
+/// <summary>
+/// Sub-conversation anchored on a parent channel message. Replies use ConversationId = Thread.Id for seq.
+/// </summary>
+public sealed class MessageThread : AggregateRoot
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public ChannelId ChannelId { get; set; }
+    public MessageId ParentMessageId { get; set; }
+    public UserId CreatedBy { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
 public sealed class Reaction
 {
     public Guid Id { get; set; }

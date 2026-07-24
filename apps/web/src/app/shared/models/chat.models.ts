@@ -56,6 +56,19 @@ export interface ChatMessage {
   status: MessageStatus;
   mine: boolean;
   attachments?: MessageAttachment[];
+  threadId?: string | null;
+  replyToMessageId?: string | null;
+  replyCount?: number;
+}
+
+export interface ChatThread {
+  id: string;
+  channelId: string;
+  parentMessageId: string;
+  createdBy: string;
+  createdAt: string;
+  replyCount: number;
+  parentMessage?: ChatMessage | null;
 }
 
 export interface TypingState {

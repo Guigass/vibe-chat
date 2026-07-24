@@ -23,11 +23,11 @@ Prioridade: **P0** (fatia vertical) → **P1** (MVP usável) → **P2** (diferen
 |----|------|-------|
 | B-020 | Spaces na UI + criar channel | |
 | B-021 | DMs 1:1 | **Done (Wave 4)** — Directory members + get-or-create DM + UI |
-| B-022 | Threads | |
+| B-022 | Threads | **Done (Wave 4)** — API get-or-create + replies com seq próprio, authZ membership, outbox/hub `threadId`, UI painel + testes |
 | B-023 | Editar / soft-delete mensagem | **Done (Wave 4)** — API authZ + hub + UI + testes |
 | B-024 | Reações | |
 | B-025 | Anexos MinIO | **Done (Wave 4)** — presign upload/download, authZ, UI composer + bubble, testes |
-| B-026 | Presence + typing | parcial (typing existe; polish pendente) |
+| B-026 | Presence + typing | parcial (typing + reconnect rejoin canal; polish presence pendente) |
 | B-027 | Busca FTS | **Done (Wave 4)** — tsvector/GIN, API Search, membership ACL, UI shell, testes |
 | B-028 | Rate-limit | **Done (Wave 4)** — Redis INCR send/hub |
 | B-029 | PWA | |
@@ -63,7 +63,7 @@ Prioridade: **P0** (fatia vertical) → **P1** (MVP usável) → **P2** (diferen
 
 ## Ordem de consumo sugerida
 
-Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup. (busca, rate-limit, dashboards e backup scripts já Done na Wave 4.)
+Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup. (threads, busca, rate-limit, dashboards e backup scripts já Done na Wave 4.)
 
 ## Itens explicitamente rejeitados na fase 1
 

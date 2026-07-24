@@ -332,12 +332,23 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
             m.CreatedAt,
             m.EditedAt,
             m.DeletedAt,
+            m.ThreadId,
+            m.ReplyToMessageId,
             AuthorName = u != null ? u.DisplayName : m.AuthorId.Value.ToString()
         })
         .Take(take)
         .ToArrayAsync(ct);
 
     var messageIds = rows.Select(x => x.Id).ToArray();
+    var threadIds = rows.Where(x => x.ThreadId is not null).Select(x => x.ThreadId!.Value).Distinct().ToArray();
+    var replyCounts = threadIds.Length == 0
+        ? new Dictionary<Guid, int>()
+        : await db.Messages.AsNoTracking()
+            .Where(m => m.ThreadId != null && threadIds.Contains(m.ThreadId.Value) && m.ConversationId != channel.Id)
+            .GroupBy(m => m.ThreadId!.Value)
+            .Select(g => new { ThreadId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.ThreadId, x => x.Count, ct);
+
     var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, channel.Id, messageIds, ct);
     var messages = rows.Select(x => new MessageResponse(
         x.Id.Value,
@@ -349,7 +360,11 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
         x.EditedAt,
         x.DeletedAt,
         x.AuthorName,
-        x.DeletedAt == null && attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [])).ToArray();
+        x.DeletedAt == null && attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [],
+        x.ThreadId,
+        x.ReplyToMessageId?.Value,
+        x.ThreadId is Guid tid && replyCounts.TryGetValue(tid, out var count) ? count : 0,
+        x.ChannelId.Value)).ToArray();
     return Results.Ok(messages);
 });
 
@@ -410,7 +425,21 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
 
         return Results.Accepted(
             $"/api/v1/channels/{channel.Id.Value}/messages?after={result.Sequence - 1}",
-            new MessageResponse(result.MessageId.Value, channel.Id.Value, result.Sequence, profile.Id.Value, request.Body?.Trim() ?? string.Empty, result.CreatedAt, null, null, profile.DisplayName, attachments));
+            new MessageResponse(
+                result.MessageId.Value,
+                channel.Id.Value,
+                result.Sequence,
+                profile.Id.Value,
+                request.Body?.Trim() ?? string.Empty,
+                result.CreatedAt,
+                null,
+                null,
+                profile.DisplayName,
+                attachments,
+                request.ThreadId,
+                request.ReplyToMessageId,
+                0,
+                channel.Id.Value));
     }
     catch (ArgumentException ex)
     {
@@ -419,6 +448,306 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
     catch (InvalidOperationException ex)
     {
         return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
+    }
+});
+
+v1.MapPost("/channels/{channelId:guid}/messages/{messageId:guid}/threads", async (
+    Guid channelId,
+    Guid messageId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var parent = await db.Messages.FirstOrDefaultAsync(
+        x => x.Id == new MessageId(messageId) && x.ConversationId == channel.Id,
+        ct);
+    if (parent is null || parent.DeletedAt is not null)
+    {
+        return Results.NotFound();
+    }
+
+    MessageThread thread;
+    if (parent.ThreadId is Guid existingThreadId)
+    {
+        thread = await db.MessageThreads.FirstAsync(x => x.Id == existingThreadId, ct);
+    }
+    else
+    {
+        var existing = await db.MessageThreads.FirstOrDefaultAsync(
+            x => x.TenantId == channel.TenantId && x.ParentMessageId == parent.Id,
+            ct);
+        if (existing is not null)
+        {
+            thread = existing;
+            parent.ThreadId = thread.Id;
+        }
+        else
+        {
+            thread = new MessageThread
+            {
+                Id = Guid.NewGuid(),
+                TenantId = channel.TenantId,
+                ChannelId = channel.Id,
+                ParentMessageId = parent.Id,
+                CreatedBy = profile.Id,
+                CreatedAt = clock.UtcNow
+            };
+            db.MessageThreads.Add(thread);
+            parent.ThreadId = thread.Id;
+        }
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    var replyCount = await db.Messages.CountAsync(
+        x => x.ThreadId == thread.Id && x.ConversationId == new ChannelId(thread.Id),
+        ct);
+    return Results.Ok(new ThreadResponse(
+        thread.Id,
+        thread.ChannelId.Value,
+        thread.ParentMessageId.Value,
+        thread.CreatedBy.Value,
+        thread.CreatedAt,
+        replyCount));
+});
+
+v1.MapGet("/threads/{threadId:guid}", async (
+    Guid threadId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var thread = await db.MessageThreads.AsNoTracking().FirstOrDefaultAsync(x => x.Id == threadId, ct);
+    if (thread is null)
+    {
+        return Results.NotFound();
+    }
+
+    var channel = await ResolveChannelAsync(thread.ChannelId, profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var parent = await (
+        from m in db.Messages.AsNoTracking()
+        where m.Id == thread.ParentMessageId
+        join u in db.UserProfiles on m.AuthorId equals u.Id into authors
+        from u in authors.DefaultIfEmpty()
+        select new
+        {
+            Message = m,
+            AuthorName = u != null ? u.DisplayName : m.AuthorId.Value.ToString()
+        }).FirstOrDefaultAsync(ct);
+
+    var replyCount = await db.Messages.CountAsync(
+        x => x.ThreadId == thread.Id && x.ConversationId == new ChannelId(thread.Id),
+        ct);
+
+    MessageResponse? parentResponse = null;
+    if (parent is not null)
+    {
+        var attachments = await LoadAttachmentsByMessageAsync(db, channel.Id, [parent.Message.Id], ct);
+        parentResponse = new MessageResponse(
+            parent.Message.Id.Value,
+            channel.Id.Value,
+            parent.Message.Sequence,
+            parent.Message.AuthorId.Value,
+            parent.Message.DeletedAt == null ? parent.Message.Body : string.Empty,
+            parent.Message.CreatedAt,
+            parent.Message.EditedAt,
+            parent.Message.DeletedAt,
+            parent.AuthorName,
+            parent.Message.DeletedAt == null && attachments.TryGetValue(parent.Message.Id.Value, out var atts) ? atts : [],
+            thread.Id,
+            parent.Message.ReplyToMessageId?.Value,
+            replyCount,
+            channel.Id.Value);
+    }
+
+    return Results.Ok(new ThreadResponse(
+        thread.Id,
+        thread.ChannelId.Value,
+        thread.ParentMessageId.Value,
+        thread.CreatedBy.Value,
+        thread.CreatedAt,
+        replyCount,
+        parentResponse));
+});
+
+v1.MapGet("/threads/{threadId:guid}/messages", async (
+    Guid threadId,
+    long? after,
+    int? limit,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var thread = await db.MessageThreads.AsNoTracking().FirstOrDefaultAsync(x => x.Id == threadId, ct);
+    if (thread is null)
+    {
+        return Results.NotFound();
+    }
+
+    var channel = await ResolveChannelAsync(thread.ChannelId, profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var conversationId = new ChannelId(thread.Id);
+    var take = Math.Clamp(limit ?? 50, 1, 100);
+    var rows = await (
+        from m in db.Messages
+        where m.ConversationId == conversationId && m.Sequence > (after ?? 0)
+        join u in db.UserProfiles on m.AuthorId equals u.Id into authors
+        from u in authors.DefaultIfEmpty()
+        orderby m.Sequence
+        select new
+        {
+            Id = m.Id,
+            m.Sequence,
+            m.AuthorId,
+            m.Body,
+            m.CreatedAt,
+            m.EditedAt,
+            m.DeletedAt,
+            m.ThreadId,
+            m.ReplyToMessageId,
+            AuthorName = u != null ? u.DisplayName : m.AuthorId.Value.ToString()
+        })
+        .Take(take)
+        .ToArrayAsync(ct);
+
+    var messageIds = rows.Select(x => x.Id).ToArray();
+    var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, channel.Id, messageIds, ct);
+    var messages = rows.Select(x => new MessageResponse(
+        x.Id.Value,
+        channel.Id.Value,
+        x.Sequence,
+        x.AuthorId.Value,
+        x.DeletedAt == null ? x.Body : string.Empty,
+        x.CreatedAt,
+        x.EditedAt,
+        x.DeletedAt,
+        x.AuthorName,
+        x.DeletedAt == null && attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [],
+        x.ThreadId ?? thread.Id,
+        x.ReplyToMessageId?.Value,
+        0,
+        thread.Id)).ToArray();
+    return Results.Ok(messages);
+});
+
+v1.MapPost("/threads/{threadId:guid}/messages", async (
+    Guid threadId,
+    SendMessageRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IMessageWriter writer,
+    IRateLimiter rateLimiter,
+    IConfiguration config,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var thread = await db.MessageThreads.AsNoTracking().FirstOrDefaultAsync(x => x.Id == threadId, ct);
+    if (thread is null)
+    {
+        return Results.NotFound();
+    }
+
+    var channel = await ResolveChannelAsync(thread.ChannelId, profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var sendLimit = config.GetValue("RateLimit:SendPerMinute", RateLimitPolicies.DefaultSendPerMinute);
+    var allowed = await rateLimiter.TryAcquireAsync(
+        RateLimitKeys.SendMessage(channel.TenantId, profile.Id),
+        sendLimit,
+        TimeSpan.FromMinutes(1),
+        ct);
+    if (!allowed)
+    {
+        return Results.StatusCode(StatusCodes.Status429TooManyRequests);
+    }
+
+    var hasAttachments = request.AttachmentIds is { Length: > 0 };
+    if (request.MessageId == Guid.Empty || string.IsNullOrWhiteSpace(request.IdempotencyKey) || (string.IsNullOrWhiteSpace(request.Body) && !hasAttachments))
+    {
+        return Results.BadRequest(new { error = "messageId, idempotencyKey and body or attachments are required." });
+    }
+
+    try
+    {
+        var result = await writer.SendAsync(new SendMessageCommand(
+            channel.TenantId,
+            profile.Id,
+            channel.Id,
+            new MessageId(request.MessageId),
+            request.IdempotencyKey,
+            request.Body ?? string.Empty,
+            request.ReplyToMessageId is null ? new MessageId(thread.ParentMessageId.Value) : new MessageId(request.ReplyToMessageId.Value),
+            thread.Id,
+            request.AttachmentIds), ct);
+
+        var attachments = await db.Attachments.AsNoTracking()
+            .Where(x => x.MessageId == result.MessageId)
+            .OrderBy(x => x.CreatedAt)
+            .Select(x => new AttachmentResponse(x.Id, x.FileName, x.ContentType, x.SizeBytes, x.Status.ToString()))
+            .ToArrayAsync(ct);
+
+        return Results.Accepted(
+            $"/api/v1/threads/{thread.Id}/messages?after={result.Sequence - 1}",
+            new MessageResponse(
+                result.MessageId.Value,
+                channel.Id.Value,
+                result.Sequence,
+                profile.Id.Value,
+                request.Body?.Trim() ?? string.Empty,
+                result.CreatedAt,
+                null,
+                null,
+                profile.DisplayName,
+                attachments,
+                thread.Id,
+                request.ReplyToMessageId ?? thread.ParentMessageId.Value,
+                0,
+                thread.Id));
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
     }
 });
 
@@ -645,7 +974,7 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid ch
         return Results.BadRequest(new { error = "body is required." });
     }
 
-    var message = await db.Messages.FirstOrDefaultAsync(x => x.ConversationId == channel.Id && x.Id == new MessageId(messageId), ct);
+    var message = await FindMessageInChannelAsync(db, channel.Id, new MessageId(messageId), ct);
     if (message is null || message.DeletedAt is not null)
     {
         return Results.NotFound();
@@ -668,6 +997,8 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid ch
         {
             tenantId = channel.TenantId.Value,
             channelId,
+            conversationId = message.ConversationId.Value,
+            threadId = message.ThreadId,
             messageId,
             sequence = message.Sequence,
             body = message.Body,
@@ -680,7 +1011,21 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid ch
         .OrderBy(x => x.CreatedAt)
         .Select(x => new AttachmentResponse(x.Id, x.FileName, x.ContentType, x.SizeBytes, x.Status.ToString()))
         .ToArrayAsync(ct);
-    return Results.Ok(new MessageResponse(message.Id.Value, message.ConversationId.Value, message.Sequence, message.AuthorId.Value, message.Body, message.CreatedAt, message.EditedAt, message.DeletedAt, profile.DisplayName, attachments));
+    return Results.Ok(new MessageResponse(
+        message.Id.Value,
+        channel.Id.Value,
+        message.Sequence,
+        message.AuthorId.Value,
+        message.Body,
+        message.CreatedAt,
+        message.EditedAt,
+        message.DeletedAt,
+        profile.DisplayName,
+        attachments,
+        message.ThreadId,
+        message.ReplyToMessageId?.Value,
+        0,
+        message.ConversationId.Value));
 });
 
 v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IAuditWriter audit, IClock clock, CancellationToken ct) =>
@@ -692,7 +1037,7 @@ v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid
         return Results.Forbid();
     }
 
-    var message = await db.Messages.FirstOrDefaultAsync(x => x.ConversationId == channel.Id && x.Id == new MessageId(messageId), ct);
+    var message = await FindMessageInChannelAsync(db, channel.Id, new MessageId(messageId), ct);
     if (message is null)
     {
         return Results.NotFound();
@@ -721,12 +1066,14 @@ v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid
         {
             tenantId = channel.TenantId.Value,
             channelId,
+            conversationId = message.ConversationId.Value,
+            threadId = message.ThreadId,
             messageId,
             sequence = message.Sequence,
             deletedAt = message.DeletedAt
         })
     });
-    audit.Add(new AuditEvent { TenantId = channel.TenantId, ActorUserId = profile.Id, Action = AuditActions.MessageDelete, EntityType = "Message", EntityId = message.Id.ToString(), MetadataJson = JsonSerializer.Serialize(new { channelId, message.Sequence }) });
+    audit.Add(new AuditEvent { TenantId = channel.TenantId, ActorUserId = profile.Id, Action = AuditActions.MessageDelete, EntityType = "Message", EntityId = message.Id.ToString(), MetadataJson = JsonSerializer.Serialize(new { channelId, threadId = message.ThreadId, message.Sequence }) });
     await db.SaveChangesAsync(ct);
     return Results.NoContent();
 });
@@ -1036,6 +1383,34 @@ static async Task<Dictionary<ChannelId, DirectPeerInfo>> ResolveDirectPeersAsync
     return result;
 }
 
+static async Task<Message?> FindMessageInChannelAsync(
+    VibeChatDbContext db,
+    ChannelId channelId,
+    MessageId messageId,
+    CancellationToken ct)
+{
+    var message = await db.Messages.FirstOrDefaultAsync(x => x.Id == messageId, ct);
+    if (message is null)
+    {
+        return null;
+    }
+
+    if (message.ConversationId == channelId)
+    {
+        return message;
+    }
+
+    if (message.ThreadId is not Guid threadId)
+    {
+        return null;
+    }
+
+    var belongs = await db.MessageThreads.AnyAsync(
+        x => x.Id == threadId && x.ChannelId == channelId,
+        ct);
+    return belongs ? message : null;
+}
+
 static async Task<Dictionary<Guid, AttachmentResponse[]>> LoadAttachmentsByMessageAsync(
     VibeChatDbContext db,
     ChannelId channelId,
@@ -1136,7 +1511,19 @@ public sealed record MessageResponse(
     DateTimeOffset? EditedAt,
     DateTimeOffset? DeletedAt,
     string AuthorName = "",
-    AttachmentResponse[]? Attachments = null);
+    AttachmentResponse[]? Attachments = null,
+    Guid? ThreadId = null,
+    Guid? ReplyToMessageId = null,
+    int ReplyCount = 0,
+    Guid? ConversationId = null);
+public sealed record ThreadResponse(
+    Guid Id,
+    Guid ChannelId,
+    Guid ParentMessageId,
+    Guid CreatedBy,
+    DateTimeOffset CreatedAt,
+    int ReplyCount,
+    MessageResponse? ParentMessage = null);
 public sealed record UpsertReadCursorRequest(long LastReadSequence);
 public sealed record ReadCursorResponse(Guid ChannelId, Guid UserId, long LastReadSequence, DateTimeOffset UpdatedAt);
 public sealed record SearchMessageHitResponse(

@@ -2,6 +2,7 @@ import { Component, effect, inject, ElementRef, viewChild } from '@angular/core'
 import { MessageStore } from '../../../core/services/message.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { ThreadStore } from '../../../core/services/thread.store';
 import { EmptyState, MessageBubble, Skeleton, TypingIndicator } from '../../../shared/ui';
 
 @Component({
@@ -26,8 +27,10 @@ import { EmptyState, MessageBubble, Skeleton, TypingIndicator } from '../../../s
           @for (message of messages.forActiveChannel(); track message.id) {
             <vc-message-bubble
               [message]="message"
+              [showThreadAction]="true"
               (edit)="onEdit(message.id, $event)"
               (delete)="onDelete(message.id)"
+              (openThread)="onOpenThread(message.id)"
             />
           }
         </div>
@@ -61,6 +64,7 @@ import { EmptyState, MessageBubble, Skeleton, TypingIndicator } from '../../../s
 export class Timeline {
   readonly messages = inject(MessageStore);
   readonly channels = inject(ChannelStore);
+  private readonly threads = inject(ThreadStore);
   private readonly hub = inject(ChatHubService);
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
 
@@ -86,5 +90,15 @@ export class Timeline {
 
   async onDelete(messageId: string): Promise<void> {
     await this.messages.remove(messageId);
+  }
+
+  async onOpenThread(messageId: string): Promise<void> {
+    const channelId = this.channels.activeChannel()?.id;
+    if (!channelId) return;
+    await this.threads.openFromMessage(channelId, messageId);
+    const thread = this.threads.active();
+    if (thread) {
+      this.messages.markThreadOpened(messageId, thread.id);
+    }
   }
 }

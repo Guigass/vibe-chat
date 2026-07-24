@@ -146,6 +146,79 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Thread_create_reply_uses_separate_sequence_and_outbox()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var parentId = Guid.NewGuid();
+        var parentCreate = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(parentId, $"idem-thread-parent-{parentId:N}", $"parent-{parentId:N}", null, null));
+        parentCreate.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var parent = await parentCreate.Content.ReadFromJsonAsync<MessageDto>(JsonOptions);
+        parent.Should().NotBeNull();
+
+        var open1 = await client.PostAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages/{parentId}/threads",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+        open1.StatusCode.Should().Be(HttpStatusCode.OK);
+        var thread1 = await open1.Content.ReadFromJsonAsync<ThreadDto>(JsonOptions);
+        thread1.Should().NotBeNull();
+        thread1!.ParentMessageId.Should().Be(parentId);
+        thread1.ChannelId.Should().Be(DemoChannelId);
+
+        var open2 = await client.PostAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages/{parentId}/threads",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+        open2.StatusCode.Should().Be(HttpStatusCode.OK);
+        var thread2 = await open2.Content.ReadFromJsonAsync<ThreadDto>(JsonOptions);
+        thread2!.Id.Should().Be(thread1.Id);
+
+        var replyId = Guid.NewGuid();
+        var replyBody = $"thread-reply-{replyId:N}";
+        var reply = await client.PostAsJsonAsync(
+            $"/api/v1/threads/{thread1.Id}/messages",
+            new SendMessageRequest(replyId, $"idem-thread-reply-{replyId:N}", replyBody, parentId, thread1.Id));
+        reply.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var replyDto = await reply.Content.ReadFromJsonAsync<MessageDto>(JsonOptions);
+        replyDto.Should().NotBeNull();
+        replyDto!.ThreadId.Should().Be(thread1.Id);
+        replyDto.ChannelId.Should().Be(DemoChannelId);
+        replyDto.ConversationId.Should().Be(thread1.Id);
+        replyDto.Sequence.Should().Be(1);
+
+        var channelMessages = await client.GetFromJsonAsync<MessageDto[]>(
+            $"/api/v1/channels/{DemoChannelId}/messages?after={parent!.Sequence - 1}",
+            JsonOptions);
+        channelMessages.Should().NotBeNull();
+        channelMessages!.Should().Contain(m => m.Id == parentId && m.ThreadId == thread1.Id && m.ReplyCount >= 1);
+        channelMessages.Should().NotContain(m => m.Id == replyId);
+
+        var threadMessages = await client.GetFromJsonAsync<MessageDto[]>(
+            $"/api/v1/threads/{thread1.Id}/messages",
+            JsonOptions);
+        threadMessages.Should().Contain(m => m.Id == replyId && m.Body == replyBody && m.Sequence == 1);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        var persisted = await db.Messages.IgnoreQueryFilters()
+            .SingleAsync(x => x.Id == new MessageId(replyId));
+        persisted.ConversationId.Value.Should().Be(thread1.Id);
+        persisted.ThreadId.Should().Be(thread1.Id);
+
+        var outbox = await db.OutboxMessages.IgnoreQueryFilters()
+            .Where(x => x.Type == nameof(MessageCreatedEvent))
+            .OrderByDescending(x => x.OccurredAt)
+            .Take(20)
+            .ToListAsync();
+        outbox.Should().Contain(x =>
+            x.Payload.Contains(replyId.ToString(), StringComparison.OrdinalIgnoreCase)
+            && x.Payload.Contains(thread1.Id.ToString(), StringComparison.OrdinalIgnoreCase)
+            && x.Payload.Contains(DemoChannelId.ToString(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task Direct_message_is_idempotent_and_private_to_members()
     {
         using var alice = factory.CreateClient();
@@ -415,7 +488,20 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         DateTimeOffset CreatedAt,
         DateTimeOffset? EditedAt,
         DateTimeOffset? DeletedAt,
-        AttachmentDto[]? Attachments = null);
+        AttachmentDto[]? Attachments = null,
+        Guid? ThreadId = null,
+        Guid? ReplyToMessageId = null,
+        int ReplyCount = 0,
+        Guid? ConversationId = null);
+
+    private sealed record ThreadDto(
+        Guid Id,
+        Guid ChannelId,
+        Guid ParentMessageId,
+        Guid CreatedBy,
+        DateTimeOffset CreatedAt,
+        int ReplyCount,
+        MessageDto? ParentMessage = null);
 
     private sealed record AttachmentDto(Guid Id, string FileName, string ContentType, long SizeBytes, string Status);
     private sealed record AttachmentUploadDto(Guid AttachmentId, string UploadUrl, DateTimeOffset ExpiresAt, string FileName, string ContentType);

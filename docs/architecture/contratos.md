@@ -63,12 +63,16 @@ public interface IMembershipQuery
 | Id | Guid |
 | TenantId | Guid |
 | ConversationId | Guid |
+| ChannelId | Guid | Canal pai (mesmo para replies de thread) |
 | Seq | long |
 | AuthorUserId | Guid |
 | Body | string |
 | CreatedAt | DateTimeOffset |
 | EditedAt | DateTimeOffset? |
 | DeletedAt | DateTimeOffset? |
+| ThreadId | Guid? | Presente em pai (após abrir thread) e replies |
+| ReplyToMessageId | Guid? | |
+| ReplyCount | int | Contagem de replies (timeline do canal) |
 | Attachments | AttachmentDto[] | Metadados prontos (sem URL) |
 
 ### EditMessage
@@ -82,6 +86,18 @@ public interface IMembershipQuery
 - `DELETE /api/v1/channels/{channelId}/messages/{messageId}`
 - Autor com `message.delete.own` **ou** papel com `message.delete.any`
 - Soft-delete (`DeletedAt`); body oculto nas leituras (ADR-018)
+- Também cobre replies de thread do canal (authZ por membership do canal pai)
+
+### Threads
+
+| Endpoint | Notas |
+|----------|-------|
+| `POST /api/v1/channels/{channelId}/messages/{messageId}/threads` | Get-or-create thread ancorada na mensagem pai; membership do canal |
+| `GET /api/v1/threads/{threadId}` | Metadados + parent + `replyCount` |
+| `GET /api/v1/threads/{threadId}/messages` | Histórico da conversa da thread (`seq` próprio) |
+| `POST /api/v1/threads/{threadId}/messages` | Reply; idempotência + seq + outbox; `threadId` no evento hub |
+
+Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out SignalR continua no grupo do **canal pai**, com `threadId` / `conversationId` no payload.
 
 ### Directory — members & DMs
 

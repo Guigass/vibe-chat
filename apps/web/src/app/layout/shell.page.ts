@@ -5,9 +5,11 @@ import { ApiService } from '../core/api/api.service';
 import { ChannelStore } from '../core/services/channel.store';
 import { ChatHubService } from '../core/services/chat-hub.service';
 import { MessageStore } from '../core/services/message.store';
+import { ThreadStore } from '../core/services/thread.store';
 import { ChannelList } from '../features/chat/channel-list/channel-list';
 import { Composer } from '../features/chat/composer/composer';
 import { Timeline } from '../features/chat/timeline/timeline';
+import { ThreadPanel } from '../features/chat/thread-panel/thread-panel';
 import { SummarizeButton } from '../features/ai/summarize-button';
 import { SearchMessageHit } from '../shared/models/chat.models';
 import {
@@ -27,6 +29,7 @@ import {
     ChannelList,
     Timeline,
     Composer,
+    ThreadPanel,
     SummarizeButton,
     ConnectionBanner,
     ThemeToggle,
@@ -41,6 +44,7 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly auth = inject(AuthService);
   readonly channels = inject(ChannelStore);
   readonly messages = inject(MessageStore);
+  readonly threads = inject(ThreadStore);
   readonly hub = inject(ChatHubService);
   private readonly api = inject(ApiService);
 
@@ -55,8 +59,17 @@ export class ShellPage implements OnInit, OnDestroy {
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private searchSeq = 0;
+  private lastChannelId: string | null = null;
 
   constructor() {
+    effect(() => {
+      const channelId = this.channels.activeChannel()?.id ?? null;
+      if (this.lastChannelId !== null && this.lastChannelId !== channelId) {
+        this.threads.close();
+      }
+      this.lastChannelId = channelId;
+    });
+
     effect(() => {
       const term = this.search().trim();
       const workspaceId = this.channels.activeWorkspace()?.id;
@@ -109,6 +122,10 @@ export class ShellPage implements OnInit, OnDestroy {
     }
 
     if (event.key === 'Escape') {
+      if (this.threads.open()) {
+        this.threads.close();
+        return;
+      }
       this.contextOpen.set(false);
       this.searchFocused.set(false);
       this.searchOpen.set(false);

@@ -6,7 +6,8 @@
   background: var(--vc-bg-atmosphere);
 }
 
-.shell--context-open {
+.shell--context-open,
+.shell--thread-open {
   grid-template-columns: var(--vc-sidebar-width) 1fr var(--vc-context-width);
 }
 
@@ -14,7 +15,8 @@
   grid-template-columns: 1fr;
 }
 
-.shell--sidebar-collapsed.shell--context-open {
+.shell--sidebar-collapsed.shell--context-open,
+.shell--sidebar-collapsed.shell--thread-open {
   grid-template-columns: 1fr var(--vc-context-width);
 }
 
