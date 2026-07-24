@@ -1652,14 +1652,13 @@ static async Task<Dictionary<Guid, ReactionSummaryResponse[]>> LoadReactionSumma
         return new Dictionary<Guid, ReactionSummaryResponse[]>();
     }
 
-    var wanted = messageIds.Select(x => x.Value).ToArray();
+    var wanted = messageIds.ToHashSet();
     var rows = await db.Reactions.AsNoTracking()
-        .Where(x => wanted.Contains(x.MessageId.Value))
-        .Select(x => new { MessageId = x.MessageId.Value, x.Emoji, UserId = x.UserId.Value })
+        .Where(x => wanted.Contains(x.MessageId))
         .ToListAsync(ct);
 
     return rows
-        .GroupBy(x => x.MessageId)
+        .GroupBy(x => x.MessageId.Value)
         .ToDictionary(
             g => g.Key,
             g => g.GroupBy(x => x.Emoji)
@@ -1667,7 +1666,7 @@ static async Task<Dictionary<Guid, ReactionSummaryResponse[]>> LoadReactionSumma
                 .Select(emojiGroup => new ReactionSummaryResponse(
                     emojiGroup.Key,
                     emojiGroup.Count(),
-                    emojiGroup.Any(x => x.UserId == currentUserId.Value)))
+                    emojiGroup.Any(x => x.UserId == currentUserId)))
                 .ToArray());
 }
 
@@ -1681,18 +1680,23 @@ static async Task<ReactionSnapshot[]> BuildReactionSnapshotAsync(
 {
     var rows = await db.Reactions.AsNoTracking()
         .Where(x => x.MessageId == messageId)
-        .Select(x => new { x.Emoji, UserId = x.UserId.Value })
         .ToListAsync(ct);
 
     // Reflect in-memory toggle before SaveChanges for the response/outbox payload.
     if (added)
     {
-        rows.Add(new { Emoji = toggledEmoji, UserId = currentUserId.Value });
+        rows.Add(new Reaction
+        {
+            Id = Guid.NewGuid(),
+            MessageId = messageId,
+            UserId = currentUserId,
+            Emoji = toggledEmoji
+        });
     }
     else
     {
         rows = rows
-            .Where(x => !(x.Emoji == toggledEmoji && x.UserId == currentUserId.Value))
+            .Where(x => !(x.Emoji == toggledEmoji && x.UserId == currentUserId))
             .ToList();
     }
 
@@ -1702,7 +1706,7 @@ static async Task<ReactionSnapshot[]> BuildReactionSnapshotAsync(
         .Select(g => new ReactionSnapshot(
             g.Key,
             g.Count(),
-            g.Select(x => x.UserId).Distinct().ToArray()))
+            g.Select(x => x.UserId.Value).Distinct().ToArray()))
         .ToArray();
 }
 
