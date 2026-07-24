@@ -61,7 +61,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 | B-067 | Auditoria completa de conversas (ADMIN) | **Done (Wave 6)** — `GET /admin/conversations*` + threads; body soft-delete visível; authZ `admin.dashboard`; distinto de `audit_events` (B-042) |
 | B-068 | Cadastro de usuário + diretivas (clareza + fluxo) | **Done (Wave 6)** — invite admin + claim pending no login; glossário Cadastro/Diretiva; sem self-signup |
 | B-069 | Configurações sensíveis só admin | **Done (Wave 6)** — `GET/PUT /admin/settings` mascarado; exige `workspace.admin` (não Auditor); secrets só env; webhooks delivery = B-048 |
-| B-073 | UI polish com PrimeNG | Adotar PrimeNG (tema alinhado aos tokens VibeChat); tabelas/dialogs/forms admin e shell; **exige emenda ADR-002** + design-system; não clonar Slack/Discord |
+| B-073 | UI polish com PrimeNG | **Done (Wave 6)** — emenda ADR-002 Accepted; PrimeNG 22 + `VibeChatPreset` (Aura/tokens) no `/admin` (Table/Select/Tag); shell chat permanece composição própria; polish forms/dialogs restante é iterativo |
 | B-074 | API + Web (+ Worker) no Compose | Deploy oficial self-host: `api` e `web` (e `worker`) como containers no `compose.yaml` — não só data plane. Hoje existem no profile `apps` (opcional); Wave 6 eleva a caminho documentado/validado: healthchecks, `.env.example`, docs ops, `task`/`docker compose --profile apps up`. Dev local com hot reload (`task dev`) permanece; produção/demo Compose sobe o stack completo |
 
 ## P3 — Escala / futuro
@@ -80,7 +80,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 
 Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup → spaces → presence → reações → PWA. (B-020…B-031 já Done na Wave 4.)
 
-Pós-MVP: **P1.5** (B-070…B-072) e admin Wave 6 (B-068/B-069/B-067) Done. Em paralelo de infra: **B-074** (API/Web no Compose). Próximo: B-048 (webhooks) → B-073 (PrimeNG, com ADR) / W6-7 → W6-8.
+Pós-MVP: **P1.5** (B-070…B-072) e Wave 6 admin/UX (B-068/B-069/B-067/B-073) Done. Próximo: **B-074** / W6-8 (API/Web no Compose) e B-048 (webhooks outbound).
 
 ## Itens explicitamente rejeitados na fase 1
 
