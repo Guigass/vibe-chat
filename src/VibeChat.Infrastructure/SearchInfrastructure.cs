@@ -50,12 +50,16 @@ public sealed class PostgresSearchQuery(VibeChatDbContext dbContext) : ISearchQu
 
         var candidateQuery =
             from message in dbContext.Messages.AsNoTracking()
-            join channel in dbContext.Channels.AsNoTracking() on message.ConversationId equals channel.Id
+            from thread in dbContext.MessageThreads.AsNoTracking()
+                .Where(t => message.ThreadId != null && t.Id == message.ThreadId.Value)
+                .DefaultIfEmpty()
+            join channel in dbContext.Channels.AsNoTracking()
+                on (thread != null ? thread.ChannelId : message.ConversationId) equals channel.Id
             where message.TenantId == query.TenantId
                 && channel.TenantId == query.TenantId
                 && channel.WorkspaceId == query.WorkspaceId
                 && message.DeletedAt == null
-                && (channelFilter == null || message.ConversationId == channelFilter)
+                && (channelFilter == null || channel.Id == channelFilter)
                 && EF.Functions.ToTsVector(config, message.Body)
                     .Matches(EF.Functions.PlainToTsQuery(config, term))
                 && (
