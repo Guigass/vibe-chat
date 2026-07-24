@@ -9,7 +9,6 @@ using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
 using VibeChat.Infrastructure;
 using VibeChat.Messaging;
-using VibeChat.Notifications;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
 using VibeChat.TestHost;
