@@ -957,17 +957,22 @@ public static class DependencyInjection
         services.AddHostedService<OutboxDispatcher>();
         services.AddScoped<SeedData>();
 
-        var minioEndpoint = configuration["Minio:Endpoint"] ?? "localhost:9000";
-        var minioParts = minioEndpoint.Replace("http://", string.Empty, StringComparison.OrdinalIgnoreCase)
-            .Replace("https://", string.Empty, StringComparison.OrdinalIgnoreCase)
-            .Split(':', 2);
-        var minioHost = minioParts[0];
-        var minioPort = minioParts.Length > 1 && int.TryParse(minioParts[1], out var parsedMinioPort) ? parsedMinioPort : 9000;
-        services.AddMinio(configureClient => configureClient
-            .WithEndpoint(minioHost, minioPort)
-            .WithCredentials(configuration["Minio:AccessKey"] ?? "minioadmin", configuration["Minio:SecretKey"] ?? "minioadmin_dev_password_change_me")
-            .WithSSL(bool.TryParse(configuration["Minio:UseSsl"], out var ssl) && ssl)
-            .Build());
+        // Resolve MinIO from IConfiguration at runtime so WebApplicationFactory overrides apply.
+        services.AddSingleton<IMinioClient>(sp =>
+        {
+            var cfg = sp.GetRequiredService<IConfiguration>();
+            var endpoint = cfg["Minio:Endpoint"] ?? "localhost:9000";
+            var parts = endpoint.Replace("http://", string.Empty, StringComparison.OrdinalIgnoreCase)
+                .Replace("https://", string.Empty, StringComparison.OrdinalIgnoreCase)
+                .Split(':', 2);
+            var host = parts[0];
+            var port = parts.Length > 1 && int.TryParse(parts[1], out var parsedPort) ? parsedPort : 9000;
+            return new MinioClient()
+                .WithEndpoint(host, port)
+                .WithCredentials(cfg["Minio:AccessKey"] ?? "minioadmin", cfg["Minio:SecretKey"] ?? "minioadmin_dev_password_change_me")
+                .WithSSL(bool.TryParse(cfg["Minio:UseSsl"], out var ssl) && ssl)
+                .Build();
+        });
         services.AddScoped<IObjectStorage, MinioObjectStorage>();
 
         services.AddHttpClient<OpenRouterAiProvider>((sp, client) =>

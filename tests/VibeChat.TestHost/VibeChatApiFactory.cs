@@ -100,23 +100,17 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
-        builder.ConfigureAppConfiguration((_, config) =>
-        {
-            config.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:Database"] = _database,
-                ["ConnectionStrings:Redis"] = _redisConnection,
-                ["Minio:Endpoint"] = _minioEndpoint,
-                ["Minio:AccessKey"] = MinioUser,
-                ["Minio:SecretKey"] = MinioPassword,
-                ["Minio:Bucket"] = MinioBucket,
-                ["Minio:UseSsl"] = "false",
-                ["Seed:Enabled"] = "true",
-                ["Ai:Enabled"] = "true",
-                ["Ai:Provider"] = "Mock",
-                ["Authentication:RequireHttpsMetadata"] = "false"
-            });
-        });
+        builder.UseSetting("ConnectionStrings:Database", _database);
+        builder.UseSetting("ConnectionStrings:Redis", _redisConnection);
+        builder.UseSetting("Minio:Endpoint", _minioEndpoint);
+        builder.UseSetting("Minio:AccessKey", MinioUser);
+        builder.UseSetting("Minio:SecretKey", MinioPassword);
+        builder.UseSetting("Minio:Bucket", MinioBucket);
+        builder.UseSetting("Minio:UseSsl", "false");
+        builder.UseSetting("Seed:Enabled", "true");
+        builder.UseSetting("Ai:Enabled", "true");
+        builder.UseSetting("Ai:Provider", "Mock");
+        builder.UseSetting("Authentication:RequireHttpsMetadata", "false");
     }
 
     private static async Task EnsureLocalTestDatabaseAsync()
