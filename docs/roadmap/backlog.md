@@ -36,13 +36,13 @@ Prioridade: **P0** (fatia vertical) → **P1** (MVP usável) → **P2** (diferen
 
 ## P1.5 — Polish pós-MVP (bugs / UX reportados)
 
-Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime → typing self → scroll → UI.
+Bloco entregue (PRs #13–#15). Próximo polish de UI: B-073 (PrimeNG, com emenda ADR-002).
 
 | ID | Item | Notas |
 |----|------|-------|
 | B-070 | Realtime: mensagens/eventos ao vivo | **Done (Wave 6)** — ingest hub `MessageCreated`/edit/delete/`ReactionChanged` (payload JsonNode) + gap-fill por `seq` no reconnect/overlap; E2E dois usuários |
-| B-071 | Typing: ocultar indicador do próprio usuário | Hub ou cliente: não exibir “digitando…” para o autor; preferir `Clients.OthersInGroup` (ou filtro por `userId` no client) |
-| B-072 | Scroll só no bloco da conversa | Shell sem scroll da página; timeline/`overflow` interno + composer fixo; validar mobile |
+| B-071 | Typing: ocultar indicador do próprio usuário | **Done (Wave 6)** — hub `Clients.OthersInGroup` + filtro client por `userId` local |
+| B-072 | Scroll só no bloco da conversa | **Done (Wave 6)** — shell `100dvh` + `overflow: hidden`; scroll só na timeline; composer fixo; E2E `shell-scroll` |
 
 ## P2 — Diferenciação e admin
 
@@ -59,7 +59,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 | B-048 | Webhooks outbound | Só admin (`workspace.admin` / `admin.dashboard`); secrets nunca na UI de membro; ver B-069 |
 | B-049 | Temas light/dark polish | **Done (Wave 5)** — `color-scheme`, segue OS até pin do usuário, transição sutil |
 | B-067 | Auditoria completa de conversas (ADMIN) | Viewer admin por canal/DM/thread: histórico, edições, soft-deletes, autores, anexos; authZ `admin.dashboard` (+ RLS); distinto do feed de `audit_events` (B-042) |
-| B-068 | Cadastro de usuário + diretivas (clareza + fluxo) | Documentar e implementar provisionamento: OIDC/Keycloak → perfil → **membership** (invite/admin); glossário “Cadastro” / “Diretiva”; UI admin para convidar/atribuir papel; sem self-signup aberto na fase 1 |
+| B-068 | Cadastro de usuário + diretivas (clareza + fluxo) | **Done (Wave 6)** — `POST .../members` invite + papel; stub `pending:{email}` claim no SSO; audit `member.invite`; UI admin + glossário/contratos/ops; sem self-signup |
 | B-069 | Configurações sensíveis só admin | Tokens, webhooks, AI keys, SMTP e afins: leitura/edição restrita a admin; membros não veem secrets; preferir env/secrets manager + UI admin mascarada; atualizar `contratos.md` + testes security |
 | B-073 | UI polish com PrimeNG | Adotar PrimeNG (tema alinhado aos tokens VibeChat); tabelas/dialogs/forms admin e shell; **exige emenda ADR-002** + design-system; não clonar Slack/Discord |
 | B-074 | API + Web (+ Worker) no Compose | Deploy oficial self-host: `api` e `web` (e `worker`) como containers no `compose.yaml` — não só data plane. Hoje existem no profile `apps` (opcional); Wave 6 eleva a caminho documentado/validado: healthchecks, `.env.example`, docs ops, `task`/`docker compose --profile apps up`. Dev local com hot reload (`task dev`) permanece; produção/demo Compose sobe o stack completo |
@@ -80,7 +80,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 
 Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup → spaces → presence → reações → PWA. (B-020…B-031 já Done na Wave 4.)
 
-Pós-MVP: **P1.5** (B-070 → B-071 → B-072) antes de P2 novo. Em paralelo de infra: **B-074** (API/Web no Compose). Em P2 admin: B-068 (cadastro/diretivas) → B-069 (secrets admin) → B-067 (auditoria de conversa) → B-048 (webhooks) → B-073 (PrimeNG, com ADR).
+Pós-MVP: **P1.5** (B-070…B-072) e **B-068** Done. Em paralelo de infra: **B-074** (API/Web no Compose). Próximo admin: B-069 (secrets admin) → B-067 (auditoria de conversa) → B-048 (webhooks) → B-073 (PrimeNG, com ADR).
 
 ## Itens explicitamente rejeitados na fase 1
 

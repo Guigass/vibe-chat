@@ -94,16 +94,16 @@ Dependências: itens só começam quando deps = done.
 | P2-1 | B/D | Papéis granulares (B-041) | Wave 5, D-07 | **Done** — `PUT .../members/{userId}/role` + UI admin + authZ `workspace.admin` |
 | P2-2 | A/B | Notificações email SMTP (B-043) | D-10, P2-1 | **Done** — Null/SMTP; off default; e-mail role-change via outbox |
 
-## Wave 6 — Refinamento UX + Admin (próximo)
+## Wave 6 — Refinamento UX + Admin
 
-Prioridade: corrigir tempo real / typing / scroll; depois clareza de cadastro e admin sensível.
+P1.5 (realtime / typing / scroll) e cadastro/diretivas (B-068) entregues. Próximo: secrets admin, auditoria de conversa, PrimeNG (ADR), Compose apps.
 
 | ID | Trilha | Tarefa | Deps | Status |
 |----|--------|--------|------|--------|
-| W6-1 | C/D | Realtime estável: MessageCreated/edit/delete/reações + gap-fill reconnect (B-070) | Wave 5 | **Done** |
-| W6-2 | C/D | Typing: não mostrar indicador para o próprio usuário (B-071) | W6-1 ou paralelo | Planned |
-| W6-3 | D | Layout: scroll só no container da conversa (B-072) | — | Planned |
-| W6-4 | B/D/G | Cadastro de usuário + diretivas documentados e fluxo admin (B-068) | P2-1 | Planned |
+| W6-1 | C/D | Realtime estável: MessageCreated/edit/delete/reações + gap-fill reconnect (B-070) | Wave 5 | **Done** — outbox→hub JsonNode; gap-fill por `seq`; E2E dois usuários |
+| W6-2 | C/D | Typing: não mostrar indicador para o próprio usuário (B-071) | W6-1 ou paralelo | **Done** — hub `OthersInGroup` + filtro client por `userId` |
+| W6-3 | D | Layout: scroll só no container da conversa (B-072) | — | **Done** — shell `100dvh` + overflow hidden; scroll só na timeline; E2E |
+| W6-4 | B/D/G | Cadastro de usuário + diretivas documentados e fluxo admin (B-068) | P2-1 | **Done** — `POST .../members` invite + stub `pending:{email}` + UI admin + docs |
 | W6-5 | B/D/E | Settings sensíveis (tokens, webhooks, AI/SMTP) só admin (B-069, B-048) | W6-4 | Planned |
 | W6-6 | B/D/E | Auditoria completa de conversas no ADMIN (B-067) | W4-6, W6-4 | Planned |
 | W6-7 | D/G | UI polish com PrimeNG + tema tokens (B-073; emenda ADR-002) | W6-3 | Planned |
