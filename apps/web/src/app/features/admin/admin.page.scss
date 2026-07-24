@@ -137,6 +137,7 @@
   margin: 0 0 1rem;
 }
 
+.roles,
 .audit {
   margin-top: 1.5rem;
   border: 1px solid var(--vc-border);
@@ -144,6 +145,83 @@
   background: var(--vc-surface-elevated);
   padding: 1.1rem 1.2rem;
   animation: vc-fade-in-up var(--vc-dur-med) var(--vc-ease-out) both;
+}
+
+.roles h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.roles__lead {
+  margin: 0.35rem 0 0.9rem;
+  color: var(--vc-ink-muted);
+  font-size: 0.9rem;
+}
+
+.roles__feedback {
+  margin: 0 0 0.85rem;
+  color: var(--vc-success);
+  font-size: 0.9rem;
+}
+
+.roles__empty {
+  margin: 0;
+  color: var(--vc-ink-muted);
+}
+
+.roles__table-wrap {
+  overflow-x: auto;
+}
+
+.roles__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.roles__table th,
+.roles__table td {
+  text-align: left;
+  padding: 0.55rem 0.45rem;
+  border-bottom: 1px solid var(--vc-border);
+  vertical-align: middle;
+}
+
+.roles__table th {
+  color: var(--vc-ink-muted);
+  font-weight: 600;
+}
+
+.roles__select {
+  min-width: 9rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-sm);
+  background: var(--vc-surface);
+  color: var(--vc-ink);
+  font: inherit;
+}
+
+.roles__select:disabled {
+  opacity: 0.6;
+}
+
+.roles__badge {
+  font-family: var(--vc-font-mono);
+  font-size: 0.82rem;
+  color: var(--vc-ink-muted);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .audit h2 {

@@ -213,6 +213,33 @@ export class ApiService {
     }));
   }
 
+  async getAssignableRoles(workspaceId: string): Promise<string[]> {
+    const result = await this.request<{ assignableRoles: string[] }>(
+      `/api/v1/workspaces/${workspaceId}/roles`,
+    );
+    return result.assignableRoles ?? [];
+  }
+
+  async updateMemberRole(
+    workspaceId: string,
+    userId: string,
+    role: string,
+  ): Promise<WorkspaceMember> {
+    const dto = await this.request<MemberDto>(
+      `/api/v1/workspaces/${workspaceId}/members/${userId}/role`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ role }),
+      },
+    );
+    return {
+      userId: dto.userId,
+      displayName: dto.displayName,
+      email: dto.email,
+      role: dto.role,
+    };
+  }
+
   async getPresence(workspaceId: string): Promise<Record<string, PresenceStatus>> {
     const rows = await this.request<PresenceDto[]>(`/api/v1/workspaces/${workspaceId}/presence`);
     const map: Record<string, PresenceStatus> = {};

@@ -22,6 +22,7 @@ public static class AuditActions
     public const string MessageSend = "message.send";
     public const string MessageDelete = "message.delete";
     public const string AttachmentUpload = "attachment.upload";
+    public const string MemberRoleChange = "member.role.change";
 }
 
 public interface IAuditWriter

@@ -87,6 +87,13 @@ Dependências: itens só começam quando deps = done.
 | W5-3 | E | Load smoke k6 | W3-5 | **Done** — `tests/load/smoke.js` + `task load:smoke` |
 | W5-4 | G | Runbooks finais ops | W5-1 | **Done** — `docs/operations/runbooks/` (incidentes, backup/restore, TLS/proxy, upgrade) |
 
+## P2 — Admin / diferenciação
+
+| ID | Trilha | Tarefa | Deps | Status |
+|----|--------|--------|------|--------|
+| P2-1 | B/D | Papéis granulares (B-041) | Wave 5, D-07 | **Done** — `PUT .../members/{userId}/role` + UI admin + authZ `workspace.admin` |
+| P2-2 | A/B | Notificações email SMTP (B-043) | D-10, P2-1 | **Done** — Null/SMTP; off default; e-mail role-change via outbox |
+
 ---
 
 ## Parallelismo sugerido por time de agentes

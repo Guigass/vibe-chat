@@ -59,6 +59,69 @@
       </article>
     </div>
 
+    <section class="roles" aria-labelledby="roles-heading">
+      <h2 id="roles-heading">Papéis do workspace</h2>
+      <p class="roles__lead">
+        Membership obrigatória — owner/admin alteram papéis granulares
+        @if (workspace(); as ws) {
+          em <strong>{{ ws.name }}</strong>
+        }.
+      </p>
+
+      @if (roleFeedback(); as feedback) {
+        <p class="roles__feedback" role="status">{{ feedback }}</p>
+      }
+
+      @if (membersForbidden()) {
+        <p class="admin__hint" role="status">Sem permissão para gerenciar papéis neste workspace.</p>
+      } @else if (membersError()) {
+        <p class="admin__hint" role="status">Não foi possível carregar os membros.</p>
+      } @else if (members().length === 0) {
+        <p class="roles__empty">Nenhum membro listado.</p>
+      } @else {
+        <div class="roles__table-wrap">
+          <table class="roles__table">
+            <thead>
+              <tr>
+                <th scope="col">Membro</th>
+                <th scope="col">E-mail</th>
+                <th scope="col">Papel</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (member of members(); track member.userId) {
+                <tr>
+                  <td>{{ member.displayName }}</td>
+                  <td class="mono">{{ member.email }}</td>
+                  <td>
+                    @if (canEditRole(member)) {
+                      <label class="sr-only" [attr.for]="'role-' + member.userId">Papel de {{ member.displayName }}</label>
+                      <select
+                        class="roles__select"
+                        [id]="'role-' + member.userId"
+                        [value]="member.role"
+                        [disabled]="roleBusyUserId() === member.userId"
+                        (change)="onRoleChange(member, $event)"
+                      >
+                        @for (role of assignableRoles(); track role) {
+                          <option [value]="role" [selected]="role === member.role">{{ role }}</option>
+                        }
+                        @if (!assignableRoles().includes(member.role)) {
+                          <option [value]="member.role" selected>{{ member.role }}</option>
+                        }
+                      </select>
+                    } @else {
+                      <span class="roles__badge">{{ member.role }}</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
     <section class="audit" aria-labelledby="audit-heading">
       <h2 id="audit-heading">Audit log</h2>
       <p class="audit__lead">Ações sensíveis do tenant (exige <code>admin.dashboard</code>).</p>

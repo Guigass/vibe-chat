@@ -4,10 +4,12 @@ using System.Text.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
 using VibeChat.Infrastructure;
 using VibeChat.Messaging;
+using VibeChat.Notifications;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
 using VibeChat.TestHost;
@@ -382,6 +384,52 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Owner_can_change_member_role_and_reject_guest()
+    {
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+        var roles = await demo.GetFromJsonAsync<WorkspaceRolesDto>(
+            $"/api/v1/workspaces/{workspaceId}/roles",
+            JsonOptions);
+        roles.Should().NotBeNull();
+        roles!.AssignableRoles.Should().Contain(["Member", "Moderator", "Auditor", "Admin"]);
+        roles.AssignableRoles.Should().NotContain("Guest");
+
+        var promote = await demo.PutAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/members/{SeedData.BobUserId.Value}/role",
+            new UpdateMemberRoleRequestDto("Moderator"));
+        promote.StatusCode.Should().Be(HttpStatusCode.OK);
+        var promoted = await promote.Content.ReadFromJsonAsync<WorkspaceMemberDto>(JsonOptions);
+        promoted.Should().NotBeNull();
+        promoted!.Role.Should().Be("Moderator");
+
+        var guest = await demo.PutAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/members/{SeedData.BobUserId.Value}/role",
+            new UpdateMemberRoleRequestDto("Guest"));
+        guest.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        var membership = await db.WorkspaceMembers.IgnoreQueryFilters()
+            .SingleAsync(x => x.WorkspaceId == SeedData.DemoWorkspaceId && x.UserId == SeedData.BobUserId);
+        membership.Role.Should().Be(Role.Moderator);
+
+        var audit = await db.AuditEvents.IgnoreQueryFilters()
+            .Where(x => x.TenantId == SeedData.DemoTenantId && x.Action == AuditActions.MemberRoleChange)
+            .OrderByDescending(x => x.OccurredAt)
+            .FirstOrDefaultAsync();
+        audit.Should().NotBeNull();
+
+        // Restore Bob to Member so other tests keep the seed assumption.
+        var restore = await demo.PutAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/members/{SeedData.BobUserId.Value}/role",
+            new UpdateMemberRoleRequestDto("Member"));
+        restore.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task Health_checks_return_summary()
     {
         using var client = factory.CreateClient();
@@ -659,6 +707,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     private sealed record PresenceDto(Guid UserId, string Status);
 
     private sealed record WorkspaceMemberDto(Guid UserId, string DisplayName, string Email, string Role);
+    private sealed record WorkspaceRolesDto(string[] AssignableRoles);
+    private sealed record UpdateMemberRoleRequestDto(string Role);
 
     private sealed record HealthSummaryDto(string Status, Dictionary<string, string> Checks);
 

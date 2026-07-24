@@ -3,6 +3,7 @@ using VibeChat.AI;
 using VibeChat.BuildingBlocks;
 using VibeChat.Files;
 using VibeChat.Messaging;
+using VibeChat.Notifications;
 using VibeChat.Search;
 using VibeChat.SharedKernel;
 
@@ -114,6 +115,33 @@ public sealed class BackendUnitTests
     {
         RolePermissionCatalog.For(Role.Guest).Should().NotContain(Permissions.Channel.Create);
         RolePermissionCatalog.For(Role.Member).Should().Contain(Permissions.Channel.Create);
+    }
+
+    [Fact]
+    public void Workspace_role_policies_block_self_elevation_and_guest()
+    {
+        WorkspaceRolePolicies.CanManageRoles(Role.WorkspaceOwner).Should().BeTrue();
+        WorkspaceRolePolicies.CanManageRoles(Role.Admin).Should().BeTrue();
+        WorkspaceRolePolicies.CanManageRoles(Role.Member).Should().BeFalse();
+
+        WorkspaceRolePolicies.CanChangeMemberRole(Role.WorkspaceOwner, Role.Member, Role.Admin, isSelf: false)
+            .Should().BeTrue();
+        WorkspaceRolePolicies.CanChangeMemberRole(Role.Member, Role.Member, Role.Admin, isSelf: true)
+            .Should().BeFalse();
+        WorkspaceRolePolicies.CanChangeMemberRole(Role.WorkspaceOwner, Role.Member, Role.Guest, isSelf: false)
+            .Should().BeFalse();
+        WorkspaceRolePolicies.CanChangeMemberRole(Role.Admin, Role.WorkspaceOwner, Role.Member, isSelf: false)
+            .Should().BeFalse();
+        WorkspaceRolePolicies.IsAssignable(Role.Moderator).Should().BeTrue();
+        WorkspaceRolePolicies.IsAssignable(Role.Guest).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Null_email_sender_is_disabled_by_default()
+    {
+        var sender = new NullEmailSender();
+        sender.IsEnabled.Should().BeFalse();
+        await sender.SendAsync(new EmailMessage("a@b.c", "subj", "body"), CancellationToken.None);
     }
 
     [Fact]
