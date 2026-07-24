@@ -111,6 +111,10 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Seed:Enabled", "true");
         builder.UseSetting("Ai:Enabled", "true");
         builder.UseSetting("Ai:Provider", "Mock");
+        // Fake secrets for B-069 mask assertions — never real credentials.
+        builder.UseSetting("Ai:OpenRouter:ApiKey", "sk-test-secret-key99");
+        builder.UseSetting("Email:Enabled", "false");
+        builder.UseSetting("Email:Smtp:Password", "smtp-test-password42");
         builder.UseSetting("Authentication:RequireHttpsMetadata", "false");
     }
 

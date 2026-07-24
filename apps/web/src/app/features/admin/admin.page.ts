@@ -4,7 +4,13 @@ import { RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { AdminStats, AuditEventItem, Workspace, WorkspaceMember } from '../../shared/models/chat.models';
+import {
+  AdminStats,
+  AuditEventItem,
+  SensitiveSettings,
+  Workspace,
+  WorkspaceMember,
+} from '../../shared/models/chat.models';
 import { Skeleton, ThemeToggle } from '../../shared/ui';
 
 const MANAGER_ROLES = new Set(['PlatformOwner', 'WorkspaceOwner', 'Admin']);
@@ -39,6 +45,13 @@ export class AdminPage implements OnInit {
   readonly inviteFeedback = signal<string | null>(null);
   readonly inviteError = signal<string | null>(null);
   readonly currentUserId = signal<string | null>(null);
+
+  readonly settings = signal<SensitiveSettings | null>(null);
+  readonly settingsForbidden = signal(false);
+  readonly settingsError = signal(false);
+  readonly settingsBusy = signal(false);
+  readonly settingsFeedback = signal<string | null>(null);
+  readonly settingsErrorMessage = signal<string | null>(null);
 
   canInvite(): boolean {
     const role = this.workspace()?.role;
@@ -85,7 +98,61 @@ export class AdminPage implements OnInit {
     }
 
     await this.loadMembersSection();
+    await this.loadSettingsSection();
     this.loading.set(false);
+  }
+
+  canManageSettings(): boolean {
+    return !!this.settings() && !this.settingsForbidden();
+  }
+
+  async onSettingsSubmit(event: Event): Promise<void> {
+    event.preventDefault();
+    const current = this.settings();
+    const workspaceId = this.workspace()?.id ?? current?.workspaceId;
+    if (!workspaceId || !this.canManageSettings() || !current) {
+      return;
+    }
+
+    const form = event.target as HTMLFormElement;
+    const data = new FormData(form);
+    const workspaceEnabled = data.get('aiWorkspaceEnabled') === 'on';
+    const provider = String(data.get('aiProvider') ?? current.ai.provider).trim();
+    const emailEnabled = data.get('emailEnabled') === 'on';
+    const smtpHost = String(data.get('smtpHost') ?? '').trim();
+    const smtpPort = Number(data.get('smtpPort') ?? current.email.smtpPort);
+    const smtpUsername = String(data.get('smtpUsername') ?? '').trim();
+    const smtpFrom = String(data.get('smtpFrom') ?? '').trim();
+    const useStartTls = data.get('useStartTls') === 'on';
+
+    this.settingsBusy.set(true);
+    this.settingsFeedback.set(null);
+    this.settingsErrorMessage.set(null);
+    try {
+      const updated = await this.api.updateAdminSensitiveSettings({
+        workspaceId,
+        ai: { workspaceEnabled, provider },
+        email: {
+          enabled: emailEnabled,
+          smtpHost,
+          smtpPort: Number.isFinite(smtpPort) ? smtpPort : current.email.smtpPort,
+          smtpUsername,
+          smtpFrom,
+          useStartTls,
+        },
+      });
+      this.settings.set(updated);
+      this.settingsFeedback.set('Configurações atualizadas (secrets continuam só via env).');
+    } catch (err) {
+      const status = (err as { status?: number } | null)?.status;
+      this.settingsErrorMessage.set(
+        status === 403
+          ? 'Sem permissão para alterar settings sensíveis.'
+          : 'Não foi possível salvar as configurações.',
+      );
+    } finally {
+      this.settingsBusy.set(false);
+    }
   }
 
   canEditRole(member: WorkspaceMember): boolean {
@@ -210,6 +277,21 @@ export class AdminPage implements OnInit {
       this.membersForbidden.set(status === 403);
       this.membersError.set(status !== 403);
       this.members.set([]);
+    }
+  }
+
+  private async loadSettingsSection(): Promise<void> {
+    const workspaceId = this.workspace()?.id;
+    try {
+      const settings = await this.api.getAdminSensitiveSettings(workspaceId);
+      this.settings.set(settings);
+      this.settingsForbidden.set(false);
+      this.settingsError.set(false);
+    } catch (err) {
+      const status = (err as { status?: number } | null)?.status;
+      this.settingsForbidden.set(status === 403);
+      this.settingsError.set(status !== 403);
+      this.settings.set(null);
     }
   }
 }

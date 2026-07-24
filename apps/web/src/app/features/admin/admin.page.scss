@@ -138,6 +138,7 @@
 }
 
 .roles,
+.settings,
 .audit {
   margin-top: 1.5rem;
   border: 1px solid var(--vc-border);
@@ -145,6 +146,101 @@
   background: var(--vc-surface-elevated);
   padding: 1.1rem 1.2rem;
   animation: vc-fade-in-up var(--vc-dur-med) var(--vc-ease-out) both;
+}
+
+.settings h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.settings__lead {
+  margin: 0.35rem 0 0.9rem;
+  color: var(--vc-ink-muted);
+  font-size: 0.9rem;
+  max-width: 62ch;
+}
+
+.settings__form {
+  display: grid;
+  gap: 1rem;
+}
+
+.settings__block {
+  margin: 0;
+  padding: 0.75rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--vc-border);
+  display: grid;
+  gap: 0.65rem;
+}
+
+.settings__block legend {
+  padding: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.settings__meta {
+  margin: 0;
+  color: var(--vc-ink-muted);
+  font-size: 0.85rem;
+}
+
+.settings__check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.settings__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.settings__field {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 11rem;
+  flex: 1 1 11rem;
+}
+
+.settings__field--narrow {
+  flex: 0 1 7rem;
+  min-width: 6rem;
+}
+
+.settings__field span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--vc-ink-muted);
+}
+
+.settings__field input,
+.settings__field select {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-sm);
+  background: var(--vc-surface);
+  color: var(--vc-ink);
+  font: inherit;
+}
+
+.settings__submit {
+  justify-self: start;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--vc-brand);
+  border-radius: var(--vc-radius-sm);
+  background: var(--vc-brand);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .roles h2 {

@@ -60,7 +60,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 |-------|-----------|
 | **Audit log (ações)** | Trilha de eventos sensíveis (`audit.audit_events`: login admin, role change, message.send/delete, etc.). Feed em `/admin` — B-042. |
 | **Auditoria de conversa** | Visão ADMIN do histórico de um canal/DM/thread (conteúdo, edições, soft-delete, autores, anexos) para compliance — B-067; distinta do audit log de ações. |
-| **Configuração sensível** | Tokens, webhooks, chaves de AI/SMTP e secrets de integração. Só administradores leem/alteram (B-069); membros nunca veem o valor em claro. |
+| **Configuração sensível** | Tokens, webhooks, chaves de AI/SMTP e secrets de integração. Só administradores leem/alteram via `/admin` + `GET/PUT /api/v1/admin/settings` (`workspace.admin` ou `admin.dashboard`); membros → 403; resposta só com máscara/`configured` (B-069). Secrets permanecem em env/secret store. |
 
 ## Plataforma e infra
 

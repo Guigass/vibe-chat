@@ -429,6 +429,65 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Admin_can_read_masked_settings_and_update_flag_with_audit()
+    {
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+        var get = await demo.GetAsync($"/api/v1/admin/settings?workspaceId={workspaceId}");
+        get.StatusCode.Should().Be(HttpStatusCode.OK);
+        var settings = await get.Content.ReadFromJsonAsync<SensitiveSettingsDto>(JsonOptions);
+        settings.Should().NotBeNull();
+        settings!.WorkspaceId.Should().Be(workspaceId);
+        settings.Ai.ApiKeyConfigured.Should().BeTrue();
+        settings.Ai.ApiKeyMask.Should().Be("••••ey99");
+        settings.Ai.ApiKeyMask.Should().NotContain("sk-test");
+        settings.Email.SmtpPasswordConfigured.Should().BeTrue();
+        settings.Email.SmtpPasswordMask.Should().Be("••••rd42");
+        settings.Email.Enabled.Should().BeFalse();
+        settings.Webhooks.Status.Should().Be("planned");
+
+        var originalEnabled = settings.Ai.WorkspaceEnabled;
+        var put = await demo.PutAsJsonAsync(
+            "/api/v1/admin/settings",
+            new
+            {
+                workspaceId,
+                ai = new { workspaceEnabled = !originalEnabled, provider = "Mock" }
+            });
+        put.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await put.Content.ReadFromJsonAsync<SensitiveSettingsDto>(JsonOptions);
+        updated.Should().NotBeNull();
+        updated!.Ai.WorkspaceEnabled.Should().Be(!originalEnabled);
+        updated.Ai.ApiKeyMask.Should().Be("••••ey99");
+
+        var secretPut = await demo.PutAsJsonAsync(
+            "/api/v1/admin/settings",
+            new { workspaceId, ai = new { apiKey = "should-never-store" } });
+        secretPut.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+            var audit = await db.AuditEvents.IgnoreQueryFilters()
+                .Where(x => x.TenantId == SeedData.DemoTenantId && x.Action == AuditActions.SettingsChange)
+                .OrderByDescending(x => x.OccurredAt)
+                .FirstOrDefaultAsync();
+            audit.Should().NotBeNull();
+            audit!.MetadataJson.Should().Contain("ai.workspaceEnabled");
+            audit.MetadataJson.Should().NotContain("should-never-store");
+            audit.MetadataJson.Should().NotContain("sk-test-secret-key99");
+        }
+
+        // Restore seed assumption for other tests.
+        var restore = await demo.PutAsJsonAsync(
+            "/api/v1/admin/settings",
+            new { workspaceId, ai = new { workspaceEnabled = originalEnabled, provider = "Mock" } });
+        restore.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task Owner_can_invite_member_and_claim_pending_on_login()
     {
         using var demo = factory.CreateClient();
@@ -777,6 +836,32 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     private sealed record InviteMemberRequestDto(string Email, string? DisplayName = null, string? Role = null);
     private sealed record MeDto(Guid UserId, string Subject, string Email, string DisplayName, string[] Roles);
     private sealed record WorkspaceDto(Guid Id, string Name, string Slug, string Role);
+    private sealed record SensitiveSettingsDto(
+        Guid WorkspaceId,
+        AiSensitiveSettingsDto Ai,
+        EmailSensitiveSettingsDto Email,
+        WebhooksSensitiveSettingsDto Webhooks);
+    private sealed record AiSensitiveSettingsDto(
+        bool ProcessEnabled,
+        string ProcessSource,
+        bool WorkspaceEnabled,
+        string Provider,
+        bool ApiKeyConfigured,
+        string? ApiKeyMask,
+        bool SecretsWritable);
+    private sealed record EmailSensitiveSettingsDto(
+        bool Enabled,
+        string Source,
+        string SmtpHost,
+        int SmtpPort,
+        string SmtpUsername,
+        bool SmtpUsernameConfigured,
+        bool SmtpPasswordConfigured,
+        string? SmtpPasswordMask,
+        string SmtpFrom,
+        bool UseStartTls,
+        bool SecretsWritable);
+    private sealed record WebhooksSensitiveSettingsDto(string Status, string Message);
 
     private sealed record HealthSummaryDto(string Status, Dictionary<string, string> Checks);
 

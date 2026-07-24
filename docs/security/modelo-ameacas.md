@@ -46,11 +46,12 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 6. **Redis** — sem AUTH em rede exposta; flush
 7. **AI provider** — exfiltração de contexto de prompts
 8. **Supply chain** — deps npm/nuget
+9. **Admin settings / integrações** — leitura de secrets por membro; escrita de tokens via API (R-17)
 
 ## Controles mínimos obrigatórios (fase 1)
 
 - [x] TLS em trânsito (terminação no proxy ou HTTPS direto) — referência Compose profile `proxy` (W5-2)
-- [ ] Secrets só via env/secret store
+- [x] Secrets de AI/SMTP só via env/secret store; API admin devolve máscara (`••••last4` / `configured`) — B-069
 - [ ] `TenantContext` + RLS
 - [ ] AuthZ em **toda** entrada de hub e API
 - [ ] Idempotency + limites de tamanho de body
@@ -59,12 +60,24 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 - [ ] Dependabot/renovate ou equivalente
 - [ ] Testes em `tests/security` para cross-tenant
 
+### R-17 — Secrets/webhooks expostos a membros
+
+| Item | Controle |
+|------|----------|
+| Leitura | `GET /admin/settings` exige `workspace.admin` ou `admin.dashboard`; membro → 403 |
+| Escrita | `PUT /admin/settings` mesma authZ; rejeita `apiKey` / `smtpPassword` no body |
+| Resposta | Nunca retorna secret em claro; só máscara / `*Configured` |
+| SoT | Env / secret store para chaves; DB só flags e SMTP não-secreto |
+| Audit | `settings.change` em `audit.audit_events` |
+| Webhooks | Placeholder `planned` (B-048); sem delivery neste turno |
+
 ## Ameaças priorizadas para a fatia vertical
 
 1. Leitura/escrita cross-tenant
 2. Join SignalR em conversation sem membership
 3. Replay/duplicação abusiva sem rate-limit
 4. Token leak no frontend (storage inseguro / logs)
+5. Exposição de AI/SMTP secrets a membros (R-17 / B-069)
 
 ## O que está fora (por ora)
 
