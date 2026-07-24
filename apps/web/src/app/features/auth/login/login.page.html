@@ -1,0 +1,23 @@
+<section class="login-hero" aria-labelledby="brand-title">
+  <div class="login-hero__atmosphere" aria-hidden="true"></div>
+  <div class="login-hero__pattern" aria-hidden="true"></div>
+
+  <header class="login-hero__top">
+    <vc-theme-toggle />
+  </header>
+
+  <div class="login-hero__content vc-anim-fade-in">
+    <p class="login-hero__brand" id="brand-title">VibeChat</p>
+    <h1>Conversas com profundidade, sem ruído.</h1>
+    <p class="login-hero__lead">
+      Espaços calmos para times que precisam de tempo real confiável e presença sem distração.
+    </p>
+    <div class="login-hero__cta">
+      <vc-button variant="primary" [loading]="loading" (click)="login()">Entrar com Keycloak</vc-button>
+      <vc-button variant="ghost" (click)="enterDemo()">Explorar demo local</vc-button>
+    </div>
+    @if (error()) {
+      <p class="login-hero__error" role="alert">{{ error() }}</p>
+    }
+  </div>
+</section>

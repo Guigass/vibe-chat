@@ -1,0 +1,109 @@
+.login-hero {
+  position: relative;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.login-hero__atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(1200px 700px at 15% 10%, rgba(45, 212, 191, 0.28), transparent 55%),
+    radial-gradient(900px 600px at 85% 20%, rgba(13, 148, 136, 0.22), transparent 50%),
+    radial-gradient(1000px 800px at 50% 100%, rgba(15, 23, 42, 0.55), transparent 60%),
+    linear-gradient(165deg, #071018 0%, #0f2430 42%, #102a2a 100%);
+  animation: vc-atmosphere-drift 18s ease-in-out infinite alternate;
+}
+
+.login-hero__pattern {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.22;
+  background-image:
+    linear-gradient(rgba(232, 238, 244, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 238, 244, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at 40% 40%, black 20%, transparent 75%);
+}
+
+.login-hero__top {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.login-hero__content {
+  width: min(36rem, calc(100% - 2.5rem));
+  color: #e8eef4;
+  text-align: left;
+}
+
+.login-hero__brand {
+  margin: 0 0 1rem;
+  font-family: var(--vc-font-display);
+  font-size: clamp(2.8rem, 8vw, 4.4rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  color: #5eead4;
+  animation: vc-brand-rise 700ms var(--vc-ease-out) both;
+}
+
+h1 {
+  margin: 0 0 0.85rem;
+  font-size: clamp(1.35rem, 3.4vw, 1.85rem);
+  font-weight: 500;
+  line-height: 1.25;
+  color: #e8eef4;
+  max-width: 18ch;
+}
+
+.login-hero__lead {
+  margin: 0 0 1.75rem;
+  max-width: 34ch;
+  color: #8b9cb3;
+  line-height: 1.55;
+  font-size: 1.05rem;
+}
+
+.login-hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.login-hero__error {
+  margin-top: 1rem;
+  color: #fecaca;
+}
+
+@keyframes vc-atmosphere-drift {
+  from {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.04) translate3d(-1.5%, 1%, 0);
+  }
+}
+
+@keyframes vc-brand-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .login-hero__content {
+    text-align: left;
+  }
+}
