@@ -326,21 +326,29 @@ Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send
 | `ai.workspaceEnabled` / `provider` | `ai.settings` do workspace — gravável |
 | `ai.apiKeyConfigured` / `apiKeyMask` | Máscara `••••last4` ou `configured: false`; **nunca** valor em claro |
 | `email.*` | Enabled/host/port/user/from/startTls (override tenant em `notifications.email_settings` ou env); senha só `smtpPasswordConfigured` + `smtpPasswordMask` |
-| `webhooks.status` | Placeholder B-048: `planned` (sem delivery outbound) |
+| `webhooks.status` | `unconfigured` \| `disabled` \| `active` (B-048) |
+| `webhooks.enabled` / `url` / `urlConfigured` | Endpoint HTTP do tenant; URL gravável |
+| `webhooks.secretConfigured` / `secretMask` | HMAC secret mascarado (`••••last4`); **nunca** em claro |
+| `webhooks.secretsWritable` | `true` — secret pode ser rotacionado via PUT (omitir/vazio = manter) |
+| `webhooks.message` | Texto de status para UI admin |
 
 Regras:
 
-- Secrets (OpenRouter API key, SMTP password) **só** via env / secret store (ADR-012)
+- Secrets de OpenRouter / SMTP password **só** via env / secret store (ADR-012)
+- Secret de webhook é a exceção (B-048): gravável via admin API; resposta só máscara
 - Membro comum e Auditor (sem `workspace.admin`) → `403` em GET/PUT
 - Tenant do actor; nunca aceitar `tenantId` do body
 
-### Auditoria de conversa (B-067)
+### Webhooks outbound (B-048)
 
-Distinta do feed `audit_events` (B-042). Viewer compliance: admin/Auditor com `admin.dashboard` lê histórico completo **dentro do tenant**, inclusive DMs onde não é membro e corpos soft-deleted (ADR-018). Membro comum → 403. Canal/thread de outro tenant → 403. Histórico normal (`GET /channels/.../messages`) continua redigindo body deletado e exigindo membership.
-
-Planejado (Wave 6 — restante):
-
-- **B-048** — webhooks outbound completos (fan-out); superfície admin reservada em `webhooks.status=planned`
+- Tabela `integrations.webhook_endpoints` (1 endpoint por tenant): `Enabled`, `Url`, `Secret`
+- Delivery best-effort no `OutboxProcessor` **após** realtime, apenas `MessageCreated`
+- `POST` do payload JSON do outbox; headers:
+  - `X-VibeChat-Event: MessageCreated`
+  - `X-VibeChat-Delivery-Id: <outboxId>`
+  - `X-VibeChat-Signature: sha256=<hmac-hex>` (HMAC-SHA256 do body com o secret)
+- URL: `https` (ou `http://localhost` / `127.0.0.1` em lab); timeout ~5s; falha não reprocessa outbox
+- RLS + query filter por `TenantId`
 
 Provisionamento (B-068): no primeiro login OIDC, `EnsureProfile` vincula stub `pending:{email}` ao `sub` real — a membership já provisionada pelo admin passa a valer sem self-signup.
 

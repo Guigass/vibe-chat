@@ -68,9 +68,9 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Leitura | `GET /admin/settings` exige `workspace.admin`; membro/Auditor → 403 |
 | Escrita | `PUT /admin/settings` mesma authZ; rejeita `apiKey` / `smtpPassword` no body |
 | Resposta | Nunca retorna secret em claro; só máscara / `*Configured` |
-| SoT | Env / secret store para chaves; DB só flags e SMTP não-secreto |
-| Audit | `settings.change` em `audit.audit_events` |
-| Webhooks | Placeholder `planned` (B-048); sem delivery neste turno |
+| SoT | Env / secret store para AI/SMTP; webhook HMAC secret no DB (admin-writable, B-048) |
+| Audit | `settings.change` em `audit.audit_events` (inclui `webhooks.*` sem valor do secret) |
+| Webhooks | Delivery `MessageCreated` via outbox + HMAC; URL/secret só admin; mask no GET |
 
 ### R-18 — Auditoria de conversa (break-glass de leitura)
 

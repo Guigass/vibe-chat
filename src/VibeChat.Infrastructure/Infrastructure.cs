@@ -21,6 +21,7 @@ using VibeChat.Conversations;
 using VibeChat.Directory;
 using VibeChat.Files;
 using VibeChat.Identity;
+using VibeChat.Integrations;
 using VibeChat.Messaging;
 using VibeChat.Notifications;
 using VibeChat.Realtime;
@@ -69,6 +70,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<AiSettings> AiSettings => Set<AiSettings>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
     public DbSet<TenantEmailSettings> TenantEmailSettings => Set<TenantEmailSettings>();
+    public DbSet<OutboundWebhookEndpoint> OutboundWebhookEndpoints => Set<OutboundWebhookEndpoint>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -295,6 +297,16 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Host).HasMaxLength(256);
             entity.Property(x => x.Username).HasMaxLength(256);
             entity.Property(x => x.From).HasMaxLength(320);
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<OutboundWebhookEndpoint>(entity =>
+        {
+            entity.ToTable("webhook_endpoints", "integrations");
+            entity.HasKey(x => x.TenantId);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.Url).HasMaxLength(2048);
+            entity.Property(x => x.Secret).HasMaxLength(512);
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
     }
@@ -1055,6 +1067,7 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
         var publisher = scope.ServiceProvider.GetRequiredService<IChatPublisher>();
         var searchIndexer = scope.ServiceProvider.GetRequiredService<ISearchIndexer>();
         var emailSender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
+        var webhooks = scope.ServiceProvider.GetRequiredService<IOutboundWebhookDispatcher>();
         var now = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow;
 
         var messages = await dbContext.OutboxMessages.IgnoreQueryFilters()
@@ -1141,6 +1154,12 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                             "Search reindex failed for outbox {OutboxMessageId}; realtime already published",
                             outbox.Id);
                     }
+                }
+
+                // B-048: best-effort outbound webhook after realtime (MessageCreated only in this slice).
+                if (outbox.Type == nameof(MessageCreatedEvent))
+                {
+                    await webhooks.TryDispatchAsync(tenantId, eventName, outbox.Id, outbox.Payload, cancellationToken);
                 }
 
                 outbox.ProcessedAt = now;
@@ -1277,6 +1296,66 @@ public sealed class SmtpEmailSender(
         {
             logger.LogWarning(ex, "SMTP send failed via {Host}:{Port}", smtp.Host, smtp.Port);
             throw;
+        }
+    }
+}
+
+/// <summary>HTTP POST outbound webhooks with HMAC-SHA256 (B-048). Failures are logged, never thrown.</summary>
+public sealed class OutboundWebhookDispatcher(
+    VibeChatDbContext dbContext,
+    IHttpClientFactory httpClientFactory,
+    ILogger<OutboundWebhookDispatcher> logger) : IOutboundWebhookDispatcher
+{
+    public const string HttpClientName = "OutboundWebhooks";
+
+    public async Task TryDispatchAsync(
+        TenantId tenantId,
+        string eventName,
+        Guid deliveryId,
+        string payloadJson,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var endpoint = await dbContext.OutboundWebhookEndpoints.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.TenantId == tenantId, cancellationToken);
+            if (endpoint is null
+                || !endpoint.Enabled
+                || !SecretMasking.IsConfigured(endpoint.Url)
+                || !SecretMasking.IsConfigured(endpoint.Secret)
+                || !WebhookDelivery.IsValidHttpsUrl(endpoint.Url))
+            {
+                return;
+            }
+
+            var client = httpClientFactory.CreateClient(HttpClientName);
+            using var request = new HttpRequestMessage(HttpMethod.Post, endpoint.Url.Trim())
+            {
+                Content = new StringContent(payloadJson, Encoding.UTF8, "application/json")
+            };
+            request.Headers.TryAddWithoutValidation(WebhookDelivery.EventHeader, eventName);
+            request.Headers.TryAddWithoutValidation(WebhookDelivery.DeliveryIdHeader, deliveryId.ToString("D"));
+            request.Headers.TryAddWithoutValidation(
+                WebhookDelivery.SignatureHeader,
+                WebhookDelivery.ComputeSignature(endpoint.Secret.Trim(), payloadJson));
+
+            using var response = await client.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning(
+                    "Outbound webhook delivery {DeliveryId} for tenant {TenantId} returned {StatusCode}",
+                    deliveryId,
+                    tenantId.Value,
+                    (int)response.StatusCode);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Outbound webhook delivery {DeliveryId} for tenant {TenantId} failed",
+                deliveryId,
+                tenantId.Value);
         }
     }
 }
@@ -1679,6 +1758,13 @@ public static class DependencyInjection
         // Always register SmtpEmailSender — it no-ops when effectively disabled (env or tenant).
         services.AddScoped<EmailSettingsResolver>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+        // B-048: outbound webhooks — tenant URL+HMAC secret; best-effort after MessageCreated outbox.
+        services.AddHttpClient(OutboundWebhookDispatcher.HttpClientName, client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(5);
+        });
+        services.AddScoped<IOutboundWebhookDispatcher, OutboundWebhookDispatcher>();
 
         services.AddHealthChecks()
             .AddCheck<DatabaseHealthCheck>("postgres")

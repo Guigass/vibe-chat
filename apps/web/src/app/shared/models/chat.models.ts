@@ -209,6 +209,12 @@ export interface SensitiveSettings {
   };
   webhooks: {
     status: string;
+    enabled: boolean;
+    url: string;
+    urlConfigured: boolean;
+    secretConfigured: boolean;
+    secretMask: string | null;
+    secretsWritable: boolean;
     message: string;
   };
 }
@@ -226,6 +232,11 @@ export interface UpdateSensitiveSettingsInput {
     smtpUsername?: string;
     smtpFrom?: string;
     useStartTls?: boolean;
+  };
+  webhooks?: {
+    enabled?: boolean;
+    url?: string;
+    secret?: string;
   };
 }
 

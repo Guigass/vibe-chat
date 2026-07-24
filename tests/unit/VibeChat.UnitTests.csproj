@@ -28,6 +28,8 @@
     <ProjectReference Include="..\..\modules\Conversations\VibeChat.Conversations.csproj" />
     <ProjectReference Include="..\..\modules\AI\VibeChat.AI.csproj" />
     <ProjectReference Include="..\..\modules\Notifications\VibeChat.Notifications.csproj" />
+    <ProjectReference Include="..\..\modules\Integrations\VibeChat.Integrations.csproj" />
+    <ProjectReference Include="..\..\modules\Administration\VibeChat.Administration.csproj" />
   </ItemGroup>
 
 </Project>

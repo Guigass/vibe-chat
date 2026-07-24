@@ -234,11 +234,41 @@
             </label>
           </fieldset>
 
-          <fieldset class="settings__block" disabled>
+          <fieldset class="settings__block" [disabled]="settingsBusy() || !canManageSettings()">
             <legend>Webhooks</legend>
             <p class="settings__meta">
               <code>{{ s.webhooks.status }}</code> — {{ s.webhooks.message }}
+              · secret
+              {{
+                s.webhooks.secretConfigured
+                  ? (s.webhooks.secretMask ?? 'configurado')
+                  : 'não configurado'
+              }}
             </p>
+            <label class="settings__check">
+              <input type="checkbox" name="webhookEnabled" [checked]="s.webhooks.enabled" />
+              <span>Delivery habilitado (MessageCreated)</span>
+            </label>
+            <label class="settings__field">
+              <span>URL</span>
+              <input
+                name="webhookUrl"
+                type="url"
+                [value]="s.webhooks.url"
+                placeholder="https://example.com/hooks/vibechat"
+                autocomplete="off"
+              />
+            </label>
+            <label class="settings__field">
+              <span>Signing secret (deixe vazio para manter)</span>
+              <input
+                name="webhookSecret"
+                type="password"
+                value=""
+                placeholder="••••••••"
+                autocomplete="new-password"
+              />
+            </label>
           </fieldset>
 
           @if (canManageSettings()) {

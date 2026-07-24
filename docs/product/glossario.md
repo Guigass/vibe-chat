@@ -60,7 +60,8 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 |-------|-----------|
 | **Audit log (ações)** | Trilha de eventos sensíveis (`audit.audit_events`: login admin, role change, message.send/delete, etc.). Feed em `/admin` — B-042. |
 | **Auditoria de conversa** | Visão ADMIN do histórico de um canal/DM/thread (conteúdo, edições, soft-delete, autores, anexos) para compliance — B-067; distinta do audit log de ações. |
-| **Configuração sensível** | Tokens, webhooks, chaves de AI/SMTP e secrets de integração. Só administradores leem/alteram via `/admin` + `GET/PUT /api/v1/admin/settings` (`workspace.admin` ou `admin.dashboard`); membros → 403; resposta só com máscara/`configured` (B-069). Secrets permanecem em env/secret store. |
+| **Configuração sensível** | Tokens, webhooks, chaves de AI/SMTP e secrets de integração. Só administradores leem/alteram via `/admin` + `GET/PUT /api/v1/admin/settings` (`workspace.admin`); membros/Auditor → 403; resposta só com máscara/`configured` (B-069). AI/SMTP secrets ficam em env/secret store; secret HMAC de webhook é gravável no admin e nunca retornado em claro (B-048). |
+| **Webhook outbound** | Endpoint HTTP do tenant que recebe fan-out de eventos (inicialmente `MessageCreated`) assinado com HMAC-SHA256 (`X-VibeChat-Signature`). Configurado só por admin; delivery best-effort via outbox/worker path (B-048). |
 
 ## Plataforma e infra
 
