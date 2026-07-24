@@ -47,6 +47,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 7. **AI provider** — exfiltração de contexto de prompts
 8. **Supply chain** — deps npm/nuget
 9. **Admin settings / integrações** — leitura de secrets por membro; escrita de tokens via API (R-17)
+10. **Auditoria de conversa** — leitura privilegiada de DMs/soft-deletes por quem não é membro do canal (R-18)
 
 ## Controles mínimos obrigatórios (fase 1)
 
@@ -71,6 +72,16 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Audit | `settings.change` em `audit.audit_events` |
 | Webhooks | Placeholder `planned` (B-048); sem delivery neste turno |
 
+### R-18 — Auditoria de conversa (break-glass de leitura)
+
+| Item | Controle |
+|------|----------|
+| AuthZ | `GET /admin/conversations*` e `/admin/threads/*/messages` exigem `admin.dashboard` |
+| Escopo | Só canais/threads do `tenant_id` do actor; cross-tenant → 403 |
+| Membership | Bypass de `channel_members` **apenas** nesses endpoints admin |
+| Membro | Sem `admin.dashboard` → 403 (não vê body soft-deleted nem DMs alheias) |
+| Histórico normal | Continua redigindo body deletado + ACL de canal |
+
 ## Ameaças priorizadas para a fatia vertical
 
 1. Leitura/escrita cross-tenant
@@ -78,6 +89,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 3. Replay/duplicação abusiva sem rate-limit
 4. Token leak no frontend (storage inseguro / logs)
 5. Exposição de AI/SMTP secrets a membros (R-17 / B-069)
+6. Abuso de auditoria de conversa fora do tenant / por membro (R-18 / B-067)
 
 ## O que está fora (por ora)
 

@@ -63,6 +63,9 @@
 | T4 | Body com tenant_id de B + token de A | Persiste sob A (ou rejeita); nunca sob B |
 | T5 | Presigned URL de anexo do tenant B | 403 / objeto inacessível |
 | T6 | Search query não retorna hits de outro tenant | Garantido |
+| T7 | Membro sem `admin.dashboard` lê `/admin/conversations/*/messages` | 403 |
+| T8 | Admin lê DM onde não é `channel_member` (mesmo tenant) | 200 (B-067) |
+| T9 | Admin lê canal de outro tenant | 403 |
 
 ## Operação multi-tenant vs single-tenant
 

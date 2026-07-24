@@ -1737,6 +1737,232 @@ v1.MapGet("/admin/audit-events", async (
     return Results.Ok(new AuditEventsResponse(items));
 });
 
+// B-067: conversation audit viewer — admin.dashboard; bypass channel membership within tenant.
+v1.MapGet("/admin/conversations", async (
+    Guid? workspaceId,
+    int? limit,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var access = await ResolveAdminDashboardAccessAsync(http, db, tenant, permissions, clock, ct);
+    if (access is null)
+    {
+        return Results.Forbid();
+    }
+
+    var (profile, tenantId) = access.Value;
+    var take = Math.Clamp(limit ?? 100, 1, 200);
+    var query = db.Channels.IgnoreQueryFilters().AsNoTracking()
+        .Where(x => x.TenantId == tenantId);
+    if (workspaceId is { } wsId && wsId != Guid.Empty)
+    {
+        var workspaceKey = new WorkspaceId(wsId);
+        var workspaceOk = await db.Workspaces.IgnoreQueryFilters()
+            .AnyAsync(x => x.Id == workspaceKey && x.TenantId == tenantId, ct);
+        if (!workspaceOk)
+        {
+            return Results.Forbid();
+        }
+
+        query = query.Where(x => x.WorkspaceId == workspaceKey);
+    }
+
+    var channels = await query
+        .OrderBy(x => x.Type == ChannelType.Direct ? 1 : 0)
+        .ThenBy(x => x.Name)
+        .Take(take)
+        .ToListAsync(ct);
+
+    var peerByChannel = await ResolveDirectPeersAsync(channels, profile.Id, db, ct);
+    var items = channels.Select(x =>
+    {
+        peerByChannel.TryGetValue(x.Id, out var peer);
+        var displayName = x.Type == ChannelType.Direct && peer is not null ? peer.DisplayName : x.Name;
+        return new AdminConversationResponse(
+            x.Id.Value,
+            x.WorkspaceId.Value,
+            displayName,
+            x.Type.ToString(),
+            x.SpaceId,
+            peer?.UserId.Value,
+            peer?.DisplayName);
+    }).ToArray();
+
+    return Results.Ok(new AdminConversationsResponse(items));
+});
+
+v1.MapGet("/admin/conversations/{channelId:guid}/messages", async (
+    Guid channelId,
+    long? after,
+    int? limit,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var access = await ResolveAdminDashboardAccessAsync(http, db, tenant, permissions, clock, ct);
+    if (access is null)
+    {
+        return Results.Forbid();
+    }
+
+    var (_, tenantId) = access.Value;
+    var channelKey = new ChannelId(channelId);
+    var channel = await db.Channels.IgnoreQueryFilters().AsNoTracking()
+        .FirstOrDefaultAsync(x => x.Id == channelKey && x.TenantId == tenantId, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var take = Math.Clamp(limit ?? 50, 1, 200);
+    var rows = await (
+        from m in db.Messages.IgnoreQueryFilters().AsNoTracking()
+        where m.TenantId == tenantId && m.ConversationId == channel.Id && m.Sequence > (after ?? 0)
+        join u in db.UserProfiles.IgnoreQueryFilters().AsNoTracking() on m.AuthorId equals u.Id into authors
+        from u in authors.DefaultIfEmpty()
+        join d in db.UserProfiles.IgnoreQueryFilters().AsNoTracking() on m.DeletedBy equals d.Id into deleters
+        from d in deleters.DefaultIfEmpty()
+        orderby m.Sequence
+        select new
+        {
+            m.Id,
+            ChannelId = channel.Id,
+            ConversationId = m.ConversationId,
+            m.Sequence,
+            m.AuthorId,
+            m.Body,
+            m.CreatedAt,
+            m.EditedAt,
+            m.DeletedAt,
+            m.DeletedBy,
+            m.ThreadId,
+            m.ReplyToMessageId,
+            AuthorName = u != null ? u.DisplayName : m.AuthorId.Value.ToString(),
+            DeletedByName = d != null ? d.DisplayName : null
+        })
+        .Take(take)
+        .ToArrayAsync(ct);
+
+    var messageIds = rows.Select(x => x.Id).ToArray();
+    var threadIds = rows.Where(x => x.ThreadId is not null).Select(x => x.ThreadId!.Value).Distinct().ToArray();
+    var replyCounts = threadIds.Length == 0
+        ? new Dictionary<Guid, int>()
+        : await db.Messages.IgnoreQueryFilters().AsNoTracking()
+            .Where(m => m.TenantId == tenantId
+                && m.ThreadId != null
+                && threadIds.Contains(m.ThreadId.Value)
+                && m.ConversationId != channel.Id)
+            .GroupBy(m => m.ThreadId!.Value)
+            .Select(g => new { ThreadId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.ThreadId, x => x.Count, ct);
+
+    var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, channel.Id, messageIds, ct);
+    var items = rows.Select(x => new AdminConversationMessageResponse(
+        x.Id.Value,
+        x.ChannelId.Value,
+        x.ConversationId.Value,
+        x.Sequence,
+        x.AuthorId.Value,
+        x.AuthorName,
+        x.Body,
+        x.CreatedAt,
+        x.EditedAt,
+        x.DeletedAt,
+        x.DeletedBy?.Value,
+        x.DeletedByName,
+        x.ThreadId,
+        x.ReplyToMessageId?.Value,
+        x.ThreadId is Guid tid && replyCounts.TryGetValue(tid, out var count) ? count : 0,
+        attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [])).ToArray();
+
+    return Results.Ok(new AdminConversationMessagesResponse(items));
+});
+
+v1.MapGet("/admin/threads/{threadId:guid}/messages", async (
+    Guid threadId,
+    long? after,
+    int? limit,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var access = await ResolveAdminDashboardAccessAsync(http, db, tenant, permissions, clock, ct);
+    if (access is null)
+    {
+        return Results.Forbid();
+    }
+
+    var (_, tenantId) = access.Value;
+    var thread = await db.MessageThreads.IgnoreQueryFilters().AsNoTracking()
+        .FirstOrDefaultAsync(x => x.Id == threadId && x.TenantId == tenantId, ct);
+    if (thread is null)
+    {
+        return Results.Forbid();
+    }
+
+    var conversationId = new ChannelId(thread.Id);
+    var take = Math.Clamp(limit ?? 50, 1, 200);
+    var rows = await (
+        from m in db.Messages.IgnoreQueryFilters().AsNoTracking()
+        where m.TenantId == tenantId && m.ConversationId == conversationId && m.Sequence > (after ?? 0)
+        join u in db.UserProfiles.IgnoreQueryFilters().AsNoTracking() on m.AuthorId equals u.Id into authors
+        from u in authors.DefaultIfEmpty()
+        join d in db.UserProfiles.IgnoreQueryFilters().AsNoTracking() on m.DeletedBy equals d.Id into deleters
+        from d in deleters.DefaultIfEmpty()
+        orderby m.Sequence
+        select new
+        {
+            m.Id,
+            ChannelId = thread.ChannelId,
+            ConversationId = m.ConversationId,
+            m.Sequence,
+            m.AuthorId,
+            m.Body,
+            m.CreatedAt,
+            m.EditedAt,
+            m.DeletedAt,
+            m.DeletedBy,
+            m.ThreadId,
+            m.ReplyToMessageId,
+            AuthorName = u != null ? u.DisplayName : m.AuthorId.Value.ToString(),
+            DeletedByName = d != null ? d.DisplayName : null
+        })
+        .Take(take)
+        .ToArrayAsync(ct);
+
+    var messageIds = rows.Select(x => x.Id).ToArray();
+    var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, thread.ChannelId, messageIds, ct);
+    var items = rows.Select(x => new AdminConversationMessageResponse(
+        x.Id.Value,
+        x.ChannelId.Value,
+        x.ConversationId.Value,
+        x.Sequence,
+        x.AuthorId.Value,
+        x.AuthorName,
+        x.Body,
+        x.CreatedAt,
+        x.EditedAt,
+        x.DeletedAt,
+        x.DeletedBy?.Value,
+        x.DeletedByName,
+        x.ThreadId ?? thread.Id,
+        x.ReplyToMessageId?.Value,
+        0,
+        attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [])).ToArray();
+
+    return Results.Ok(new AdminConversationMessagesResponse(items));
+});
+
 // B-069: sensitive integration settings — admin-only, secrets always masked.
 v1.MapGet("/admin/settings", async (
     Guid? workspaceId,
@@ -2006,6 +2232,30 @@ app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => fa
 app.MapHealthChecks("/health/ready");
 
 app.Run();
+
+static async Task<(UserProfile Profile, TenantId TenantId)?> ResolveAdminDashboardAccessAsync(
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IClock clock,
+    CancellationToken ct)
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var membership = await db.WorkspaceMembers.IgnoreQueryFilters()
+        .AsNoTracking()
+        .Where(x => x.UserId == profile.Id)
+        .OrderBy(x => x.JoinedAt)
+        .FirstOrDefaultAsync(ct);
+    if (membership is null
+        || !await permissions.HasPermissionAsync(membership.TenantId, profile.Id, Permissions.Admin.Dashboard, ct))
+    {
+        return null;
+    }
+
+    tenant.SetTenant(membership.TenantId);
+    return (profile, membership.TenantId);
+}
 
 static async Task<(UserProfile Profile, Workspace Workspace)?> ResolveSensitiveSettingsAccessAsync(
     HttpContext http,
@@ -2538,6 +2788,33 @@ public sealed record AuditEventResponse(
     DateTimeOffset OccurredAt,
     string MetadataJson);
 public sealed record AuditEventsResponse(AuditEventResponse[] Items);
+public sealed record AdminConversationResponse(
+    Guid Id,
+    Guid WorkspaceId,
+    string Name,
+    string Type,
+    Guid? SpaceId,
+    Guid? PeerUserId,
+    string? PeerDisplayName);
+public sealed record AdminConversationsResponse(AdminConversationResponse[] Items);
+public sealed record AdminConversationMessageResponse(
+    Guid Id,
+    Guid ChannelId,
+    Guid ConversationId,
+    long Sequence,
+    Guid AuthorId,
+    string AuthorName,
+    string Body,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? EditedAt,
+    DateTimeOffset? DeletedAt,
+    Guid? DeletedBy,
+    string? DeletedByName,
+    Guid? ThreadId,
+    Guid? ReplyToMessageId,
+    int ReplyCount,
+    AttachmentResponse[] Attachments);
+public sealed record AdminConversationMessagesResponse(AdminConversationMessageResponse[] Items);
 public sealed record AdminHealthResponse(string Postgres, string Redis, string Storage);
 public sealed record AdminDashboardResponse(
     int Users,

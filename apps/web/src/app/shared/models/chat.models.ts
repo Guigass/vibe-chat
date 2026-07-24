@@ -148,6 +148,41 @@ export interface AuditEventItem {
   metadataJson: string;
 }
 
+export interface AdminConversationItem {
+  id: string;
+  workspaceId: string;
+  name: string;
+  type: string;
+  spaceId?: string | null;
+  peerUserId?: string | null;
+  peerDisplayName?: string | null;
+}
+
+export interface AdminConversationMessageItem {
+  id: string;
+  channelId: string;
+  conversationId: string;
+  sequence: number;
+  authorId: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+  editedAt?: string | null;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
+  deletedByName?: string | null;
+  threadId?: string | null;
+  replyToMessageId?: string | null;
+  replyCount: number;
+  attachments: Array<{
+    id: string;
+    fileName: string;
+    contentType: string;
+    sizeBytes: number;
+    status: string;
+  }>;
+}
+
 export interface SensitiveSettings {
   workspaceId: string;
   ai: {

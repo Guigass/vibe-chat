@@ -41,8 +41,8 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 | ID | Item | Notas |
 |----|------|-------|
 | B-070 | Realtime: mensagens/eventos ao vivo | **Done (Wave 6)** — ingest hub `MessageCreated`/edit/delete/`ReactionChanged` (payload JsonNode) + gap-fill por `seq` no reconnect/overlap; E2E dois usuários |
-| B-071 | Typing: ocultar indicador do próprio usuário | Hub ou cliente: não exibir “digitando…” para o autor; preferir `Clients.OthersInGroup` (ou filtro por `userId` no client) |
-| B-072 | Scroll só no bloco da conversa | Shell sem scroll da página; timeline/`overflow` interno + composer fixo; validar mobile |
+| B-071 | Typing: ocultar indicador do próprio usuário | **Done (Wave 6)** — filtro no client + E2E; autor não vê o próprio “digitando…” |
+| B-072 | Scroll só no bloco da conversa | **Done (Wave 6)** — shell sem scroll da página; timeline com overflow interno + composer fixo |
 
 ## P2 — Diferenciação e admin
 
@@ -59,8 +59,8 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 | B-048 | Webhooks outbound | Só admin (`workspace.admin` / `admin.dashboard`); secrets nunca na UI de membro; ver B-069 |
 | B-049 | Temas light/dark polish | **Done (Wave 5)** — `color-scheme`, segue OS até pin do usuário, transição sutil |
 | B-067 | Auditoria completa de conversas (ADMIN) | Viewer admin por canal/DM/thread: histórico, edições, soft-deletes, autores, anexos; authZ `admin.dashboard` (+ RLS); distinto do feed de `audit_events` (B-042) |
-| B-068 | Cadastro de usuário + diretivas (clareza + fluxo) | Documentar e implementar provisionamento: OIDC/Keycloak → perfil → **membership** (invite/admin); glossário “Cadastro” / “Diretiva”; UI admin para convidar/atribuir papel; sem self-signup aberto na fase 1 |
-| B-069 | Configurações sensíveis só admin | Tokens, webhooks, AI keys, SMTP e afins: leitura/edição restrita a admin; membros não veem secrets; preferir env/secrets manager + UI admin mascarada; atualizar `contratos.md` + testes security |
+| B-068 | Cadastro de usuário + diretivas (clareza + fluxo) | **Done (Wave 6)** — invite admin + claim pending no login; glossário Cadastro/Diretiva; sem self-signup |
+| B-069 | Configurações sensíveis só admin | **Done (Wave 6)** — `GET/PUT /admin/settings` mascarado; secrets só env; membro → 403; webhooks delivery = B-048 |
 | B-073 | UI polish com PrimeNG | Adotar PrimeNG (tema alinhado aos tokens VibeChat); tabelas/dialogs/forms admin e shell; **exige emenda ADR-002** + design-system; não clonar Slack/Discord |
 | B-074 | API + Web (+ Worker) no Compose | Deploy oficial self-host: `api` e `web` (e `worker`) como containers no `compose.yaml` — não só data plane. Hoje existem no profile `apps` (opcional); Wave 6 eleva a caminho documentado/validado: healthchecks, `.env.example`, docs ops, `task`/`docker compose --profile apps up`. Dev local com hot reload (`task dev`) permanece; produção/demo Compose sobe o stack completo |
 

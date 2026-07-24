@@ -5,6 +5,8 @@ import { environment } from '../../../environments/environment';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import {
+  AdminConversationItem,
+  AdminConversationMessageItem,
   AdminStats,
   AuditEventItem,
   SensitiveSettings,
@@ -53,6 +55,17 @@ export class AdminPage implements OnInit {
   readonly settingsFeedback = signal<string | null>(null);
   readonly settingsErrorMessage = signal<string | null>(null);
 
+  readonly conversations = signal<AdminConversationItem[]>([]);
+  readonly conversationsForbidden = signal(false);
+  readonly conversationsError = signal(false);
+  readonly selectedConversationId = signal<string | null>(null);
+  readonly conversationMessages = signal<AdminConversationMessageItem[]>([]);
+  readonly conversationMessagesBusy = signal(false);
+  readonly conversationMessagesError = signal(false);
+  readonly activeThreadId = signal<string | null>(null);
+  readonly threadMessages = signal<AdminConversationMessageItem[]>([]);
+  readonly threadBusy = signal(false);
+
   canInvite(): boolean {
     const role = this.workspace()?.role;
     return !!role && MANAGER_ROLES.has(role);
@@ -99,7 +112,59 @@ export class AdminPage implements OnInit {
 
     await this.loadMembersSection();
     await this.loadSettingsSection();
+    await this.loadConversationsSection();
     this.loading.set(false);
+  }
+
+  conversationLabel(row: AdminConversationItem): string {
+    const prefix =
+      row.type === 'Direct' ? 'DM' : row.type === 'Private' ? 'Private' : row.type === 'Group' ? 'Group' : '#';
+    return `${prefix} ${row.name}`;
+  }
+
+  async onConversationChange(event: Event): Promise<void> {
+    const select = event.target as HTMLSelectElement;
+    const channelId = select.value || null;
+    this.selectedConversationId.set(channelId);
+    this.activeThreadId.set(null);
+    this.threadMessages.set([]);
+    this.conversationMessages.set([]);
+    this.conversationMessagesError.set(false);
+    if (!channelId) {
+      return;
+    }
+
+    this.conversationMessagesBusy.set(true);
+    try {
+      const rows = await this.api.getAdminConversationMessages(channelId, { limit: 80 });
+      this.conversationMessages.set(rows);
+    } catch {
+      this.conversationMessagesError.set(true);
+      this.conversationMessages.set([]);
+    } finally {
+      this.conversationMessagesBusy.set(false);
+    }
+  }
+
+  async openThread(threadId: string): Promise<void> {
+    if (!threadId) {
+      return;
+    }
+    this.activeThreadId.set(threadId);
+    this.threadBusy.set(true);
+    try {
+      const rows = await this.api.getAdminThreadMessages(threadId, { limit: 80 });
+      this.threadMessages.set(rows);
+    } catch {
+      this.threadMessages.set([]);
+    } finally {
+      this.threadBusy.set(false);
+    }
+  }
+
+  closeThread(): void {
+    this.activeThreadId.set(null);
+    this.threadMessages.set([]);
   }
 
   canManageSettings(): boolean {
@@ -292,6 +357,23 @@ export class AdminPage implements OnInit {
       this.settingsForbidden.set(status === 403);
       this.settingsError.set(status !== 403);
       this.settings.set(null);
+    }
+  }
+
+  private async loadConversationsSection(): Promise<void> {
+    try {
+      const rows = await this.api.getAdminConversations({
+        workspaceId: this.workspace()?.id,
+        limit: 100,
+      });
+      this.conversations.set(rows);
+      this.conversationsForbidden.set(false);
+      this.conversationsError.set(false);
+    } catch (err) {
+      const status = (err as { status?: number } | null)?.status;
+      this.conversationsForbidden.set(status === 403);
+      this.conversationsError.set(status !== 403);
+      this.conversations.set([]);
     }
   }
 }
