@@ -36,6 +36,14 @@ public static class VibeChatMetrics
     public static readonly Counter<long> MessagesSent = Meter.CreateCounter<long>("vibechat.messages.sent");
     public static readonly Counter<long> MessagesRejected = Meter.CreateCounter<long>("vibechat.messages.rejected");
     public static readonly UpDownCounter<long> RealtimeConnections = Meter.CreateUpDownCounter<long>("vibechat.realtime.connections");
+    private static long _realtimeConnectionsGauge;
+    public static long RealtimeConnectionsGauge => Interlocked.Read(ref _realtimeConnectionsGauge);
+
+    public static void AdjustRealtimeConnections(long delta)
+    {
+        RealtimeConnections.Add(delta);
+        Interlocked.Add(ref _realtimeConnectionsGauge, delta);
+    }
 }
 
 public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> options, ITenantContext tenantContext) : DbContext(options)
@@ -416,6 +424,11 @@ public sealed class MessageWriter(
         dbContext.Messages.Add(message);
         var result = new MessageSendResult(message.Id, message.Sequence, message.CreatedAt, false);
 
+        var authorName = await dbContext.UserProfiles.AsNoTracking()
+            .Where(x => x.Id == command.UserId)
+            .Select(x => x.DisplayName)
+            .FirstOrDefaultAsync(cancellationToken) ?? command.UserId.Value.ToString();
+
         outbox.Add(new OutboxMessage
         {
             TenantId = command.TenantId,
@@ -426,6 +439,7 @@ public sealed class MessageWriter(
                 channelId = command.ChannelId.Value,
                 messageId = command.MessageId.Value,
                 authorId = command.UserId.Value,
+                authorName,
                 sequence,
                 body = command.Body,
                 createdAt = now
@@ -592,6 +606,7 @@ public sealed class PresenceService(RedisConnection redis) : IPresenceService
         if (db is not null)
         {
             await db.SetAddAsync($"presence:{tenantId}:{userId}", connectionId);
+            await db.SetAddAsync($"presence-users:{tenantId}", userId.Value.ToString());
         }
     }
 
@@ -601,7 +616,23 @@ public sealed class PresenceService(RedisConnection redis) : IPresenceService
         if (db is not null)
         {
             await db.SetRemoveAsync($"presence:{tenantId}:{userId}", connectionId);
+            var remaining = await db.SetLengthAsync($"presence:{tenantId}:{userId}");
+            if (remaining == 0)
+            {
+                await db.SetRemoveAsync($"presence-users:{tenantId}", userId.Value.ToString());
+            }
         }
+    }
+
+    public async Task<int> CountOnlineAsync(TenantId tenantId, CancellationToken cancellationToken)
+    {
+        var db = await redis.GetDatabaseAsync();
+        if (db is null)
+        {
+            return 0;
+        }
+
+        return (int)await db.SetLengthAsync($"presence-users:{tenantId}");
     }
 }
 
@@ -749,13 +780,13 @@ public sealed class ChatHub(ITypingService typing, IPresenceService presence, IC
 
     public override async Task OnConnectedAsync()
     {
-        VibeChatMetrics.RealtimeConnections.Add(1);
+        VibeChatMetrics.AdjustRealtimeConnections(1);
         await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        VibeChatMetrics.RealtimeConnections.Add(-1);
+        VibeChatMetrics.AdjustRealtimeConnections(-1);
         await base.OnDisconnectedAsync(exception);
     }
 
@@ -922,13 +953,13 @@ public static class DependencyInjection
         {
             services.AddScoped<IChatPublisher, RedisChannelChatPublisher>();
         }
-        services.AddScoped<OutboxProcessor>();
+        services.AddSingleton<OutboxProcessor>();
         services.AddHostedService<OutboxDispatcher>();
         services.AddScoped<SeedData>();
 
         services.AddMinio(configureClient => configureClient
             .WithEndpoint(configuration["Minio:Endpoint"] ?? "localhost:9000")
-            .WithCredentials(configuration["Minio:AccessKey"] ?? "vibechat", configuration["Minio:SecretKey"] ?? "vibechat_dev_secret")
+            .WithCredentials(configuration["Minio:AccessKey"] ?? "minioadmin", configuration["Minio:SecretKey"] ?? "minioadmin_dev_password_change_me")
             .WithSSL(bool.TryParse(configuration["Minio:UseSsl"], out var ssl) && ssl)
             .Build());
         services.AddScoped<IObjectStorage, MinioObjectStorage>();

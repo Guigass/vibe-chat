@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from '../../../core/auth/auth.service';
+import { AuthService, DevUserName } from '../../../core/auth/auth.service';
 import { Button, ThemeToggle } from '../../../shared/ui';
 
 @Component({
@@ -36,8 +36,13 @@ export class LoginPage implements OnInit {
     }
   }
 
-  async enterDemo(): Promise<void> {
-    this.auth.enterDemoMode();
+  async enterDev(name: DevUserName): Promise<void> {
+    this.auth.enterDevUser(name);
+    await this.router.navigateByUrl('/app');
+  }
+
+  async enterOfflineDemo(): Promise<void> {
+    this.auth.enterOfflineDemo();
     await this.router.navigateByUrl('/app');
   }
 }

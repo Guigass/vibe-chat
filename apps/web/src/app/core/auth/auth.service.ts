@@ -11,7 +11,34 @@ export interface AuthProfile {
   tenantId?: string;
 }
 
+export type DevUserName = 'demo' | 'alice' | 'bob';
+
+const DEV_KEY = 'vc.dev-auth';
 const DEMO_KEY = 'vc.demo-auth';
+
+const DEV_PROFILES: Record<DevUserName, AuthProfile> = {
+  demo: {
+    id: '33333333-3333-3333-3333-333333333333',
+    name: 'Demo',
+    email: 'demo@vibechat.local',
+    roles: ['WorkspaceOwner'],
+    tenantId: '11111111-1111-1111-1111-111111111111',
+  },
+  alice: {
+    id: '44444444-4444-4444-4444-444444444444',
+    name: 'Alice',
+    email: 'alice@vibechat.local',
+    roles: ['Member'],
+    tenantId: '11111111-1111-1111-1111-111111111111',
+  },
+  bob: {
+    id: '55555555-5555-5555-5555-555555555555',
+    name: 'Bob',
+    email: 'bob@vibechat.local',
+    roles: ['Member'],
+    tenantId: '11111111-1111-1111-1111-111111111111',
+  },
+};
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -29,28 +56,40 @@ export class AuthService {
   });
 
   private readonly userSignal = signal<User | null>(null);
-  private readonly demoProfile = signal<AuthProfile | null>(null);
+  private readonly devProfile = signal<AuthProfile | null>(null);
+  private readonly devUserSignal = signal<DevUserName | null>(null);
+  private readonly offlineDemo = signal(false);
   private readonly readySignal = signal(false);
   private readonly errorSignal = signal<string | null>(null);
 
   readonly user = this.userSignal.asReadonly();
   readonly ready = this.readySignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
+  readonly devUser = this.devUserSignal.asReadonly();
+  readonly isOfflineDemo = this.offlineDemo.asReadonly();
   readonly isAuthenticated = computed(
-    () => !!this.userSignal()?.access_token || !!this.demoProfile(),
+    () => !!this.userSignal()?.access_token || !!this.devProfile() || this.offlineDemo(),
   );
   readonly accessToken = computed(() => this.userSignal()?.access_token ?? null);
   readonly profile = computed<AuthProfile | null>(() => {
-    if (this.demoProfile()) return this.demoProfile();
+    if (this.devProfile()) return this.devProfile();
+    if (this.offlineDemo()) {
+      return {
+        id: 'offline-demo',
+        name: 'Alice Mendes',
+        email: 'alice@vibechat.local',
+        roles: ['user', 'admin'],
+        tenantId: 'tenant-demo',
+      };
+    }
     const u = this.userSignal();
     if (!u?.profile) return null;
     const p = u.profile as Record<string, unknown>;
-    const roles = this.extractRoles(p);
     return {
       id: String(p['sub'] ?? ''),
       name: String(p['name'] ?? p['preferred_username'] ?? 'Usuário'),
       email: p['email'] ? String(p['email']) : undefined,
-      roles,
+      roles: this.extractRoles(p),
       tenantId: p['tenant_id'] ? String(p['tenant_id']) : undefined,
     };
   });
@@ -66,10 +105,15 @@ export class AuthService {
 
   async init(): Promise<void> {
     try {
+      const devRaw = localStorage.getItem(DEV_KEY);
+      if (devRaw && (devRaw === 'demo' || devRaw === 'alice' || devRaw === 'bob')) {
+        this.enterDevUser(devRaw);
+        return;
+      }
       const demoRaw = localStorage.getItem(DEMO_KEY);
       if (demoRaw) {
-        const demo = JSON.parse(demoRaw) as AuthProfile;
-        this.applyDemo(demo);
+        this.offlineDemo.set(true);
+        this.applyOfflineDemo();
         return;
       }
       const user = await this.userManager.getUser();
@@ -84,24 +128,52 @@ export class AuthService {
 
   async login(): Promise<void> {
     this.errorSignal.set(null);
+    localStorage.removeItem(DEV_KEY);
+    localStorage.removeItem(DEMO_KEY);
+    this.devProfile.set(null);
+    this.devUserSignal.set(null);
+    this.offlineDemo.set(false);
     await this.userManager.signinRedirect();
   }
 
+  enterDevUser(name: DevUserName): void {
+    localStorage.removeItem(DEMO_KEY);
+    localStorage.setItem(DEV_KEY, name);
+    const profile = DEV_PROFILES[name];
+    this.offlineDemo.set(false);
+    this.devUserSignal.set(name);
+    this.devProfile.set(profile);
+    this.userSignal.set(null);
+    this.tenant.setContext({
+      tenantId: profile.tenantId ?? null,
+      userId: profile.id,
+      roles: profile.roles,
+      displayName: profile.name,
+    });
+    this.readySignal.set(true);
+  }
+
+  /** Fallback visual sem API — não envia X-Dev-User. */
+  enterOfflineDemo(): void {
+    localStorage.removeItem(DEV_KEY);
+    localStorage.setItem(DEMO_KEY, '1');
+    this.devUserSignal.set(null);
+    this.devProfile.set(null);
+    this.offlineDemo.set(true);
+    this.applyOfflineDemo();
+  }
+
+  /** @deprecated use enterDevUser */
   enterDemoMode(): void {
-    const demo: AuthProfile = {
-      id: 'demo-user',
-      name: 'Alice Mendes',
-      email: 'alice@vibechat.local',
-      roles: ['user', 'admin'],
-      tenantId: 'tenant-demo',
-    };
-    localStorage.setItem(DEMO_KEY, JSON.stringify(demo));
-    this.applyDemo(demo);
+    this.enterDevUser('alice');
   }
 
   async completeLogin(): Promise<User> {
+    localStorage.removeItem(DEV_KEY);
     localStorage.removeItem(DEMO_KEY);
-    this.demoProfile.set(null);
+    this.devProfile.set(null);
+    this.devUserSignal.set(null);
+    this.offlineDemo.set(false);
     const user = await this.userManager.signinRedirectCallback();
     this.applyUser(user);
     return user;
@@ -112,9 +184,12 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
-    if (this.demoProfile()) {
+    if (this.devProfile() || this.offlineDemo()) {
+      localStorage.removeItem(DEV_KEY);
       localStorage.removeItem(DEMO_KEY);
-      this.demoProfile.set(null);
+      this.devProfile.set(null);
+      this.devUserSignal.set(null);
+      this.offlineDemo.set(false);
       this.tenant.clear();
       window.location.href = '/login';
       return;
@@ -123,7 +198,7 @@ export class AuthService {
   }
 
   async getAccessToken(): Promise<string | null> {
-    if (this.demoProfile()) return 'demo-token';
+    if (this.devProfile() || this.offlineDemo()) return null;
     const user = await this.userManager.getUser();
     if (!user || user.expired) {
       try {
@@ -139,14 +214,12 @@ export class AuthService {
     return user.access_token;
   }
 
-  private applyDemo(demo: AuthProfile): void {
-    this.demoProfile.set(demo);
-    this.userSignal.set(null);
+  private applyOfflineDemo(): void {
     this.tenant.setContext({
-      tenantId: demo.tenantId ?? null,
-      userId: demo.id,
-      roles: demo.roles,
-      displayName: demo.name,
+      tenantId: 'tenant-demo',
+      userId: 'offline-demo',
+      roles: ['user', 'admin'],
+      displayName: 'Alice Mendes',
     });
     this.readySignal.set(true);
   }

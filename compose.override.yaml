@@ -1,38 +1,67 @@
-# Local development overrides (auto-loaded by Docker Compose alongside compose.yaml).
-# Safe defaults for host-machine `task dev` / `dotnet watch` / `ng serve`.
+# Local development overrides for constrained Cloud Agent / host-dev environments
+# where Docker bridge routing is unreliable. Uses host networking.
+# Normal developer machines can delete or empty this file if bridge networking works.
 # Do not put production secrets here.
 
 services:
   postgres:
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+    network_mode: host
+    networks: !reset []
 
   redis:
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-
-  keycloak:
-    # Keep hostname loose for browser redirects from localhost:4200
-    environment:
-      KC_HOSTNAME_STRICT: "false"
-      KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_PROXY_HEADERS: xforwarded
+    network_mode: host
+    networks: !reset []
+    command: ["redis-server", "--appendonly", "yes", "--bind", "0.0.0.0"]
 
   minio:
-    ports:
-      - "${MINIO_API_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    network_mode: host
+    networks: !reset []
+    command: ["server", "/data", "--address", ":9000", "--console-address", ":9001"]
 
-  # When using profile observability, expose collector for host apps
+  createbucket:
+    network_mode: host
+    networks: !reset []
+    depends_on: !reset {}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        until mc alias set local http://127.0.0.1:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD}; do
+          echo 'waiting for minio...';
+          sleep 2
+        done
+        mc mb --ignore-existing local/$${MINIO_BUCKET:-vibechat}
+        echo 'MinIO bucket ready: $${MINIO_BUCKET:-vibechat}'
+
+  keycloak:
+    network_mode: host
+    networks: !reset []
+    depends_on: !reset {}
+    command: ["start-dev", "--import-realm", "--http-port=8080"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://127.0.0.1:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak_dev_password_change_me
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: "8080"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_MANAGEMENT_PORT: "9002"
+      KC_PROXY_HEADERS: xforwarded
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin_dev_password_change_me
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
   otel-collector:
     profiles: ["observability"]
     ports:
       - "4317:4317"
       - "4318:4318"
-
-  # Optional: bind-mount source for hot iteration when using profile apps
-  # Uncomment if you prefer containerized API with live mount (advanced):
-  # api:
-  #   profiles: ["apps"]
-  #   volumes:
-  #     - ./apps/api:/src/apps/api:ro

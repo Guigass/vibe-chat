@@ -144,7 +144,7 @@ services:
       start_period: 10s
 
   createbucket:
-    image: ${MINIO_MC_IMAGE:-minio/mc:RELEASE.2024-11-17T19-35-49Z}
+    image: ${MINIO_MC_IMAGE:-minio/mc:RELEASE.2025-08-13T08-35-41Z}
     container_name: vibechat-createbucket
     depends_on:
       minio:

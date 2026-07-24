@@ -1,10 +1,12 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../api/api.service';
+import { AuthService } from '../auth/auth.service';
 import { Channel, Workspace } from '../../shared/models/chat.models';
 
 @Injectable({ providedIn: 'root' })
 export class ChannelStore {
   private readonly api = inject(ApiService);
+  private readonly auth = inject(AuthService);
 
   private readonly workspacesSignal = signal<Workspace[]>([]);
   private readonly channelsSignal = signal<Channel[]>([]);
@@ -29,6 +31,13 @@ export class ChannelStore {
   async load(): Promise<void> {
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
+    if (this.auth.isOfflineDemo()) {
+      this.seedDemo();
+      this.usingDemo.set(true);
+      this.loadingSignal.set(false);
+      return;
+    }
+
     try {
       const workspaces = await this.api.getWorkspaces();
       this.workspacesSignal.set(workspaces);
@@ -37,6 +46,7 @@ export class ChannelStore {
       if (first) {
         await this.selectWorkspace(first.id);
       }
+      await this.refreshUnreads();
     } catch {
       this.seedDemo();
       this.usingDemo.set(true);
@@ -44,6 +54,22 @@ export class ChannelStore {
     } finally {
       this.loadingSignal.set(false);
     }
+  }
+
+  async refreshUnreads(): Promise<void> {
+    if (this.usingDemo()) return;
+    const channels = this.channelsSignal();
+    const updated = await Promise.all(
+      channels.map(async (channel) => {
+        try {
+          const unreadCount = await this.api.getUnreadCount(channel.id);
+          return { ...channel, unreadCount };
+        } catch {
+          return channel;
+        }
+      }),
+    );
+    this.channelsSignal.set(updated);
   }
 
   async selectWorkspace(workspaceId: string): Promise<void> {

@@ -107,3 +107,34 @@ h1 {
     text-align: left;
   }
 }
+
+.login-hero__dev {
+  margin-top: 1.75rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.login-hero__dev > p {
+  margin: 0;
+  color: var(--vc-ink-muted, #8b9cb3);
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.login-hero__dev-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.login-hero__offline {
+  justify-self: start;
+  border: 0;
+  background: transparent;
+  color: var(--vc-ink-muted, #8b9cb3);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0;
+}

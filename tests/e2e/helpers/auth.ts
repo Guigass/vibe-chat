@@ -3,35 +3,38 @@ import type { Browser, BrowserContext, Page } from '@playwright/test';
 export type AuthMode = 'demo' | 'devauth' | 'oidc';
 export type DemoUser = 'alice' | 'bob' | 'demo';
 
-export const AUTH_MODE = (process.env.E2E_AUTH_MODE ?? 'demo') as AuthMode;
+export const AUTH_MODE = (process.env.E2E_AUTH_MODE ?? 'devauth') as AuthMode;
 export const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:5080';
 export const WEB_BASE_URL = process.env.WEB_BASE_URL ?? 'http://localhost:4200';
 
-const DEMO_PROFILES: Record<DemoUser, { id: string; name: string; email: string; roles: string[]; tenantId: string }> = {
+const DEMO_PROFILES: Record<
+  DemoUser,
+  { id: string; name: string; email: string; roles: string[]; tenantId: string }
+> = {
   alice: {
     id: '44444444-4444-4444-4444-444444444444',
     name: 'Alice',
     email: 'alice@vibechat.local',
-    roles: ['user'],
+    roles: ['Member'],
     tenantId: '11111111-1111-1111-1111-111111111111',
   },
   bob: {
     id: '55555555-5555-5555-5555-555555555555',
     name: 'Bob',
     email: 'bob@vibechat.local',
-    roles: ['user'],
+    roles: ['Member'],
     tenantId: '11111111-1111-1111-1111-111111111111',
   },
   demo: {
     id: '33333333-3333-3333-3333-333333333333',
     name: 'Demo',
     email: 'demo@vibechat.local',
-    roles: ['user', 'admin'],
+    roles: ['WorkspaceOwner'],
     tenantId: '11111111-1111-1111-1111-111111111111',
   },
 };
 
-/** Rewrite /api/X → /api/v1/X and attach DevAuth header for API + hub calls. */
+/** Attach DevAuth header for direct API/hub calls (and rewrite legacy /api paths). */
 export async function attachDevAuth(context: BrowserContext, user: DemoUser): Promise<void> {
   await context.route('**/*', async (route) => {
     const request = route.request();
@@ -63,22 +66,23 @@ export async function loginAs(
 ): Promise<void> {
   if (mode === 'demo') {
     await page.goto('/login');
-    await page.getByRole('button', { name: /Explorar demo local/i }).click();
+    await page.getByRole('button', { name: /Explorar UI offline/i }).click();
     await page.waitForURL(/\/app/);
     return;
   }
 
   if (mode === 'devauth') {
-    const profile = DEMO_PROFILES[user];
-    await page.addInitScript((p) => {
-      localStorage.setItem('vc.demo-auth', JSON.stringify(p));
-    }, profile);
+    await page.addInitScript((name) => {
+      localStorage.setItem('vc.dev-auth', name);
+      localStorage.removeItem('vc.demo-auth');
+    }, user);
     await page.goto('/app');
     await page.waitForURL(/\/app/);
+    // Canal geral / shell devem carregar com API DevAuth
+    await page.waitForLoadState('networkidle').catch(() => undefined);
     return;
   }
 
-  // oidc — Keycloak account forms vary by theme; use demo emails from realm export
   await page.goto('/login');
   await page.getByRole('button', { name: /Entrar com Keycloak/i }).click();
   await page.waitForURL(/realms\/vibechat|login/i, { timeout: 30_000 });

@@ -55,9 +55,18 @@ var auth = builder.Services.AddAuthentication(options =>
 auth.AddPolicyScheme("smart", "JWT or DevAuth", options =>
 {
     options.ForwardDefaultSelector = context =>
-        context.Request.Headers.ContainsKey("X-Dev-User") && builder.Environment.IsDevelopment()
+    {
+        if (!builder.Environment.IsDevelopment())
+        {
+            return JwtBearerDefaults.AuthenticationScheme;
+        }
+
+        var hasDevHeader = context.Request.Headers.ContainsKey("X-Dev-User");
+        var hasDevQuery = context.Request.Query.ContainsKey("devUser");
+        return hasDevHeader || hasDevQuery
             ? DevAuthHandler.SchemeName
             : JwtBearerDefaults.AuthenticationScheme;
+    };
 });
 
 auth.AddJwtBearer(options =>
@@ -65,6 +74,20 @@ auth.AddJwtBearer(options =>
     options.Authority = builder.Configuration["Authentication:Authority"];
     options.Audience = builder.Configuration["Authentication:Audience"];
     options.RequireHttpsMetadata = builder.Configuration.GetValue("Authentication:RequireHttpsMetadata", true);
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
+    };
 });
 auth.AddScheme<AuthenticationSchemeOptions, DevAuthHandler>(DevAuthHandler.SchemeName, _ => { });
 
@@ -203,11 +226,24 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
     }
 
     var take = Math.Clamp(limit ?? 50, 1, 100);
-    var messages = await db.Messages
-        .Where(x => x.ConversationId == channel.Id && x.Sequence > (after ?? 0))
-        .OrderBy(x => x.Sequence)
+    var messages = await (
+        from m in db.Messages
+        where m.ConversationId == channel.Id && m.Sequence > (after ?? 0)
+        join u in db.UserProfiles on m.AuthorId equals u.Id into authors
+        from u in authors.DefaultIfEmpty()
+        orderby m.Sequence
+        select new MessageResponse(
+            m.Id.Value,
+            m.ConversationId.Value,
+            m.Sequence,
+            m.AuthorId.Value,
+            m.DeletedAt == null ? m.Body : string.Empty,
+            m.CreatedAt,
+            m.EditedAt,
+            m.DeletedAt,
+            u != null ? u.DisplayName : m.AuthorId.Value.ToString())
+        )
         .Take(take)
-        .Select(x => new MessageResponse(x.Id.Value, x.ConversationId.Value, x.Sequence, x.AuthorId.Value, x.DeletedAt == null ? x.Body : string.Empty, x.CreatedAt, x.EditedAt, x.DeletedAt))
         .ToArrayAsync(ct);
     return Results.Ok(messages);
 });
@@ -227,7 +263,9 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (Guid channelId, SendMes
     }
 
     var result = await writer.SendAsync(new SendMessageCommand(channel.TenantId, profile.Id, channel.Id, new MessageId(request.MessageId), request.IdempotencyKey, request.Body, request.ReplyToMessageId is null ? null : new MessageId(request.ReplyToMessageId.Value), request.ThreadId), ct);
-    return Results.Accepted($"/api/v1/channels/{channel.Id.Value}/messages?after={result.Sequence - 1}", result);
+    return Results.Accepted(
+        $"/api/v1/channels/{channel.Id.Value}/messages?after={result.Sequence - 1}",
+        new MessageResponse(result.MessageId.Value, channel.Id.Value, result.Sequence, profile.Id.Value, request.Body, result.CreatedAt, null, null, profile.DisplayName));
 });
 
 v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, EditMessageRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IOutboxWriter outbox, IClock clock, CancellationToken ct) =>
@@ -322,10 +360,34 @@ v1.MapGet("/channels/{channelId:guid}/unread-count", async (Guid channelId, Http
     return Results.Ok(new { channelId, unreadCount = count });
 });
 
-v1.MapGet("/admin/dashboard", async (HttpContext http, VibeChatDbContext db, IDashboardQuery dashboard, IClock clock, CancellationToken ct) =>
+v1.MapGet("/admin/dashboard", async (HttpContext http, VibeChatDbContext db, IDashboardQuery dashboard, IPresenceService presence, HealthCheckService health, IConfiguration config, IClock clock, CancellationToken ct) =>
 {
     await EnsureProfileAsync(http.User, db, clock, ct);
-    return Results.Ok(await dashboard.GetStatsAsync(ct));
+    var stats = await dashboard.GetStatsAsync(ct);
+    var online = await presence.CountOnlineAsync(SeedData.DemoTenantId, ct);
+    var failures = await db.OutboxMessages.IgnoreQueryFilters().CountAsync(x => x.ProcessedAt == null && x.Attempts > 0, ct);
+    var report = await health.CheckHealthAsync(ct);
+    string MapHealth(string name) => report.Entries.TryGetValue(name, out var entry)
+        ? entry.Status switch
+        {
+            HealthStatus.Healthy => "up",
+            HealthStatus.Degraded => "degraded",
+            _ => "down"
+        }
+        : "down";
+
+    return Results.Ok(new AdminDashboardResponse(
+        stats.UserCount,
+        online,
+        stats.WorkspaceCount,
+        stats.ChannelCount,
+        stats.MessageCount,
+        (int)Math.Max(0, VibeChatMetrics.RealtimeConnectionsGauge),
+        stats.PendingOutboxCount,
+        failures,
+        new AdminHealthResponse(MapHealth("postgres"), MapHealth("redis"), MapHealth("minio")),
+        typeof(Program).Assembly.GetName().Version?.ToString() ?? "0.1.0",
+        config["Observability:GrafanaUrl"] ?? "http://localhost:3000"));
 });
 
 v1.MapGet("/admin/health-summary", async (HealthCheckService health, CancellationToken ct) =>
@@ -334,7 +396,7 @@ v1.MapGet("/admin/health-summary", async (HealthCheckService health, Cancellatio
     return Results.Ok(new { status = report.Status.ToString(), checks = report.Entries.ToDictionary(x => x.Key, x => x.Value.Status.ToString()) });
 });
 
-v1.MapGet("/admin/version", () => Results.Ok(new { name = "VibeChat.Api", version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "dev" }));
+v1.MapGet("/admin/version", () => Results.Ok(new { name = "VibeChat.Api", version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "0.1.0" }));
 
 v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/summarize", async (Guid workspaceId, Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, ISummarizeChannelFeature summarize, IClock clock, CancellationToken ct) =>
 {
@@ -449,7 +511,16 @@ public sealed class DevAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> 
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var name = Request.Headers.TryGetValue("X-Dev-User", out var values) ? values.ToString() : "demo";
+        var name = "demo";
+        if (Request.Headers.TryGetValue("X-Dev-User", out var headerValues) && !string.IsNullOrWhiteSpace(headerValues))
+        {
+            name = headerValues.ToString();
+        }
+        else if (Request.Query.TryGetValue("devUser", out var queryValues) && !string.IsNullOrWhiteSpace(queryValues))
+        {
+            name = queryValues.ToString();
+        }
+
         var (id, email, display) = name.ToLowerInvariant() switch
         {
             "alice" => (SeedData.AliceUserId, "alice@vibechat.local", "Alice"),
@@ -478,9 +549,22 @@ public sealed record ChannelResponse(Guid Id, Guid WorkspaceId, string Name, str
 public sealed record CreateChannelRequest(string Name, string Type);
 public sealed record SendMessageRequest(Guid MessageId, string IdempotencyKey, string Body, Guid? ReplyToMessageId, Guid? ThreadId);
 public sealed record EditMessageRequest(string Body);
-public sealed record MessageResponse(Guid Id, Guid ChannelId, long Sequence, Guid AuthorId, string Body, DateTimeOffset CreatedAt, DateTimeOffset? EditedAt, DateTimeOffset? DeletedAt);
+public sealed record MessageResponse(Guid Id, Guid ChannelId, long Sequence, Guid AuthorId, string Body, DateTimeOffset CreatedAt, DateTimeOffset? EditedAt, DateTimeOffset? DeletedAt, string AuthorName = "");
 public sealed record UpsertReadCursorRequest(long LastReadSequence);
 public sealed record ReadCursorResponse(Guid ChannelId, Guid UserId, long LastReadSequence, DateTimeOffset UpdatedAt);
 public sealed record AiSummaryResponse(string Summary);
+public sealed record AdminHealthResponse(string Postgres, string Redis, string Storage);
+public sealed record AdminDashboardResponse(
+    int Users,
+    int OnlineUsers,
+    int Workspaces,
+    int Channels,
+    int Messages,
+    int RealtimeConnections,
+    int OutboxPending,
+    int ProcessingFailures,
+    AdminHealthResponse Health,
+    string AppVersion,
+    string GrafanaUrl);
 
 public partial class Program;

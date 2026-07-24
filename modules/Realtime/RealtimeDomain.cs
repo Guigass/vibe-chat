@@ -25,4 +25,5 @@ public interface IPresenceService
 {
     Task SetOnlineAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken cancellationToken);
     Task SetOfflineAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken cancellationToken);
+    Task<int> CountOnlineAsync(TenantId tenantId, CancellationToken cancellationToken);
 }

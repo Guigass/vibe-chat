@@ -87,12 +87,17 @@ export class SummarizeButton {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const result = await this.api.summarizeChannel(channel.id);
+      const workspace = this.channels.activeWorkspace();
+      if (!workspace) {
+        throw new Error('Workspace não selecionado');
+      }
+      const result = await this.api.summarizeChannel(workspace.id, channel.id);
       this.summary.set(result.summary);
-    } catch {
-      // Demo fallback when AI endpoint is unavailable
-      this.summary.set(
-        `Resumo local de #${channel.name}: foco em estabilidade do tempo real, outbox saudável e UI otimista com status honestos (enviando → enviada/salva).`,
+    } catch (err) {
+      this.error.set(
+        err instanceof Error
+          ? err.message
+          : 'IA indisponível ou desabilitada para este workspace.',
       );
     } finally {
       this.loading.set(false);

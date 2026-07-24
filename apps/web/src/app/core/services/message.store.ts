@@ -79,13 +79,13 @@ export class MessageStore {
     this.sendingSignal.set(true);
 
     try {
-      if (this.channels.isDemo()) {
+      if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
         await new Promise((r) => setTimeout(r, 450));
         this.patchByClientId(clientMessageId, {
           status: 'sent',
           id: crypto.randomUUID(),
         });
-        // Demo: "sent" means accepted by client path; not claiming server persistence.
+        // Offline demo: não afirma persistência no servidor.
         return;
       }
 
