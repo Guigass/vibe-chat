@@ -323,25 +323,32 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
         orderby m.Sequence
         select new
         {
-            Message = m,
+            Id = m.Id,
+            ChannelId = m.ConversationId,
+            m.Sequence,
+            m.AuthorId,
+            m.Body,
+            m.CreatedAt,
+            m.EditedAt,
+            m.DeletedAt,
             AuthorName = u != null ? u.DisplayName : m.AuthorId.Value.ToString()
         })
         .Take(take)
         .ToArrayAsync(ct);
 
-    var messageIds = rows.Select(x => x.Message.Id).ToArray();
-    var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, messageIds, ct);
+    var messageIds = rows.Select(x => x.Id).ToArray();
+    var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, channel.Id, messageIds, ct);
     var messages = rows.Select(x => new MessageResponse(
-        x.Message.Id.Value,
-        x.Message.ConversationId.Value,
-        x.Message.Sequence,
-        x.Message.AuthorId.Value,
-        x.Message.DeletedAt == null ? x.Message.Body : string.Empty,
-        x.Message.CreatedAt,
-        x.Message.EditedAt,
-        x.Message.DeletedAt,
+        x.Id.Value,
+        x.ChannelId.Value,
+        x.Sequence,
+        x.AuthorId.Value,
+        x.DeletedAt == null ? x.Body : string.Empty,
+        x.CreatedAt,
+        x.EditedAt,
+        x.DeletedAt,
         x.AuthorName,
-        x.Message.DeletedAt == null && attachmentsByMessage.TryGetValue(x.Message.Id.Value, out var atts) ? atts : [])).ToArray();
+        x.DeletedAt == null && attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [])).ToArray();
     return Results.Ok(messages);
 });
 
@@ -938,6 +945,7 @@ static async Task<Dictionary<ChannelId, DirectPeerInfo>> ResolveDirectPeersAsync
 
 static async Task<Dictionary<Guid, AttachmentResponse[]>> LoadAttachmentsByMessageAsync(
     VibeChatDbContext db,
+    ChannelId channelId,
     IReadOnlyCollection<MessageId> messageIds,
     CancellationToken ct)
 {
@@ -946,19 +954,18 @@ static async Task<Dictionary<Guid, AttachmentResponse[]>> LoadAttachmentsByMessa
         return new Dictionary<Guid, AttachmentResponse[]>();
     }
 
+    var wanted = messageIds.Select(x => x.Value).ToHashSet();
     var rows = await db.Attachments.AsNoTracking()
-        .Where(x => x.MessageId != null && messageIds.Contains(x.MessageId.Value) && x.Status == AttachmentStatus.Ready)
+        .Where(x => x.ChannelId == channelId && x.MessageId != null && x.Status == AttachmentStatus.Ready)
         .OrderBy(x => x.CreatedAt)
-        .Select(x => new
-        {
-            MessageId = x.MessageId!.Value.Value,
-            Attachment = new AttachmentResponse(x.Id, x.FileName, x.ContentType, x.SizeBytes, x.Status.ToString())
-        })
         .ToListAsync(ct);
 
     return rows
-        .GroupBy(x => x.MessageId)
-        .ToDictionary(g => g.Key, g => g.Select(x => x.Attachment).ToArray());
+        .Where(x => x.MessageId is not null && wanted.Contains(x.MessageId.Value.Value))
+        .GroupBy(x => x.MessageId!.Value.Value)
+        .ToDictionary(
+            g => g.Key,
+            g => g.Select(x => new AttachmentResponse(x.Id, x.FileName, x.ContentType, x.SizeBytes, x.Status.ToString())).ToArray());
 }
 
 internal sealed record DirectPeerInfo(UserId UserId, string DisplayName);
