@@ -19,6 +19,9 @@
 | R-13 | Postgres como search esgota | B | Médio | ADR-016 gatilhos | Backend |
 | R-14 | MinIO disco cheio | M | Alto | Alertas disco; retenção anexos | Ops |
 | R-15 | Design genérico (clone Slack) | M | Médio | design-system.md enforce em review | Frontend |
+| R-16 | Realtime degradado (só typing) | A | Alto | B-070 gap-fill + E2E dois usuários; métricas SignalR/outbox | Backend / Frontend |
+| R-17 | Secrets/webhooks expostos a membros | M | Crítico | B-069 authZ admin-only; nunca logar tokens | Security |
+| R-18 | PrimeNG sem tema VibeChat | M | Médio | Emenda ADR-002 + tokens; review visual | Frontend |
 
 ## Riscos técnicos detalhados
 

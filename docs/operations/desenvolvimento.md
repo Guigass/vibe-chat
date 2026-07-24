@@ -67,10 +67,11 @@ Compose:
 docker compose up -d                              # data plane
 docker compose --profile tools up -d              # + mailpit
 docker compose --profile observability up -d      # + otel stack
-docker compose --profile apps up -d               # api/web/worker containerizados (opcional)
+docker compose --profile apps up -d               # api + web + worker em containers
 ```
 
-No dia a dia, preferir `task dev` (hot reload) em vez do profile `apps`.
+- **Self-host / demo / CI de stack completo:** profile `apps` (B-074) — API e front também sobem no Compose.
+- **Dia a dia com hot reload:** `task dev` (API/Web no host) + data plane no Compose.
 
 ## Seed mínimo
 

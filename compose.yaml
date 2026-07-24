@@ -3,7 +3,7 @@
 #   docker compose up -d                          # default: postgres, redis, keycloak, minio
 #   docker compose --profile tools up -d          # + mailpit
 #   docker compose --profile observability up -d  # + otel/prometheus/grafana/loki/tempo
-#   docker compose --profile apps up -d           # + api/web/worker (optional container builds)
+#   docker compose --profile apps up -d           # + api/web/worker (official self-host path — B-074)
 #   docker compose --profile apps --profile proxy up -d  # + nginx TLS edge (W5-2)
 #
 # Redis is used for presence / SignalR backplane / cache only.
@@ -326,7 +326,8 @@ services:
       start_period: 15s
 
   # ---------------------------------------------------------------------------
-  # Optional app services (profile: apps) — prefer `task dev` for day-to-day
+  # App services (profile: apps) — official self-host/demo path (B-074).
+  # Day-to-day DX with hot reload: prefer `task dev` against the data plane.
   # ---------------------------------------------------------------------------
   api:
     profiles: ["apps"]

@@ -305,6 +305,12 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 
 Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`.
 
+Planejado (Wave 6 — não implementado ainda; atualizar esta seção quando existir):
+
+- **B-067** — API/UI de auditoria de conversa (histórico admin por canal/DM/thread), authZ `admin.dashboard`
+- **B-068** — invite/provisionamento de membership + documentação de cadastro/diretivas
+- **B-069** / **B-048** — leitura/edição de tokens, webhooks e settings sensíveis restrita a admin (sem expor secret em claro)
+
 ## Notifications / Email (B-043)
 
 ```csharp

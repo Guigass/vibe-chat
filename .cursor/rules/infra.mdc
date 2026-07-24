@@ -17,6 +17,6 @@ globs:
 - `task setup` / `task dev` / `task reset` são o contrato de DX.
 - `.env.example` completo com placeholders; nunca secrets reais.
 - Realm Keycloak versionado em `infra/keycloak/`.
-- Profiles: default (data plane), `tools`, `observability`, `apps`.
+- Profiles: default (data plane), `tools`, `observability`, `apps` (api/web/worker — caminho oficial self-host, B-074).
 - Sem K8s/Helm como requisito da fase 1.
 - Pin de imagens em releases; evitar `latest` em artefatos estáveis.

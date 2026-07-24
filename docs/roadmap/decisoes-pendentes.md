@@ -67,6 +67,7 @@ Escolha: Deploy oficial fase 1 = Docker Compose; K8s sob ADR-017
 Data: 2026-07-24
 Owner: Platform owner
 Impacto em código/docs: docs/operations e ADR-017; sem Helm obrigatório
+Nota (Wave 6 / B-074): o caminho oficial inclui containers de **api** e **web** (e worker) no Compose — não apenas o data plane; profile `apps` é o veículo atual.
 ```
 
 ### D-06

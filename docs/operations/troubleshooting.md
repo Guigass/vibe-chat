@@ -38,6 +38,17 @@
 4. Redis backplane configurado se multi-API?
 5. Cliente precisa gap-fill via history (`seq`)
 
+### Sintoma: só o typing atualiza ao vivo (mensagens não)
+
+- Typing é efêmero (Redis/hub); mensagens passam por **outbox → worker → hub**
+- Confirmar handler `MessageCreated` no cliente e ingest na store (`seq` / dedupe)
+- Após reconnect: re-`JoinChannel` **e** gap-fill por history (B-070)
+- Se edit/delete/reação falham mas send às vezes funciona: checar eventos de hub correspondentes
+
+### Sintoma: vejo meu próprio “digitando…”
+
+- Esperado até B-071: filtrar self no client ou usar `OthersInGroup` no hub
+
 ### Sintoma: mensagens duplicadas
 
 - Cliente gerando nova Idempotency-Key a cada retry
