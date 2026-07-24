@@ -259,9 +259,18 @@ export class ApiService {
     return this.mapChannel(dto);
   }
 
-  async getMessages(channelId: string, take = 50): Promise<ChatMessage[]> {
+  async getMessages(
+    channelId: string,
+    options: { take?: number; after?: number } | number = 50,
+  ): Promise<ChatMessage[]> {
+    const take = typeof options === 'number' ? options : (options.take ?? 50);
+    const after = typeof options === 'number' ? 0 : (options.after ?? 0);
+    const params = new URLSearchParams({
+      limit: String(take),
+      after: String(after),
+    });
     const rows = await this.request<MessageDto[]>(
-      `/api/v1/channels/${channelId}/messages?limit=${take}`,
+      `/api/v1/channels/${channelId}/messages?${params.toString()}`,
     );
     const me = this.auth.profile()?.id;
     return rows.map((m) => this.mapMessage(m, me));

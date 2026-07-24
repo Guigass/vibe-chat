@@ -100,7 +100,7 @@ Prioridade: corrigir tempo real / typing / scroll; depois clareza de cadastro e 
 
 | ID | Trilha | Tarefa | Deps | Status |
 |----|--------|--------|------|--------|
-| W6-1 | C/D | Realtime estável: MessageCreated/edit/delete/reações + gap-fill reconnect (B-070) | Wave 5 | Planned |
+| W6-1 | C/D | Realtime estável: MessageCreated/edit/delete/reações + gap-fill reconnect (B-070) | Wave 5 | **Done** |
 | W6-2 | C/D | Typing: não mostrar indicador para o próprio usuário (B-071) | W6-1 ou paralelo | Planned |
 | W6-3 | D | Layout: scroll só no container da conversa (B-072) | — | Planned |
 | W6-4 | B/D/G | Cadastro de usuário + diretivas documentados e fluxo admin (B-068) | P2-1 | Planned |

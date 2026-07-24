@@ -109,6 +109,7 @@ export class ChatHubService {
   private readonly deletedHandlers = new Set<(event: MessageDeleteEvent) => void>();
   private readonly reactionHandlers = new Set<(event: ReactionChangedEvent) => void>();
   private readonly presenceHandlers = new Set<(event: PresenceChangedEvent) => void>();
+  private readonly reconnectedHandlers = new Set<() => void | Promise<void>>();
 
   readonly status = this.statusSignal.asReadonly();
   readonly typingUsers = this.typingSignal.asReadonly();
@@ -142,13 +143,16 @@ export class ChatHubService {
         if (this.joinedChannelId) {
           await this.joinChannel(this.joinedChannelId);
         }
+        await this.notifyReconnected();
       } catch {
         // banner already reflects connection; next user action can retry join
       }
     });
     this.connection.onclose(() => this.statusSignal.set('disconnected'));
 
-    this.connection.on('MessageCreated', (payload: MessageCreatedPayload) => {
+    this.connection.on('MessageCreated', (raw: MessageCreatedPayload | string) => {
+      const payload = this.coercePayload<MessageCreatedPayload>(raw);
+      if (!payload) return;
       const message = this.mapPayload(payload);
       if (!message) return;
       for (const handler of this.messageHandlers) {
@@ -156,12 +160,14 @@ export class ChatHubService {
       }
     });
 
-    this.connection.on('MessageEdited', (payload: MessageEditedPayload) => {
+    this.connection.on('MessageEdited', (raw: MessageEditedPayload | string) => {
+      const payload = this.coercePayload<MessageEditedPayload>(raw);
+      if (!payload) return;
       const id = payload.messageId ?? payload.id;
       if (!id || !payload.channelId || !payload.body) return;
       const event: MessageEditEvent = {
-        id,
-        channelId: payload.channelId,
+        id: String(id),
+        channelId: String(payload.channelId),
         body: payload.body,
         editedAt: payload.editedAt ?? new Date().toISOString(),
         seq: payload.sequence,
@@ -171,12 +177,14 @@ export class ChatHubService {
       }
     });
 
-    this.connection.on('MessageDeleted', (payload: MessageDeletedPayload) => {
+    this.connection.on('MessageDeleted', (raw: MessageDeletedPayload | string) => {
+      const payload = this.coercePayload<MessageDeletedPayload>(raw);
+      if (!payload) return;
       const id = payload.messageId ?? payload.id;
       if (!id || !payload.channelId) return;
       const event: MessageDeleteEvent = {
-        id,
-        channelId: payload.channelId,
+        id: String(id),
+        channelId: String(payload.channelId),
         deletedAt: payload.deletedAt ?? new Date().toISOString(),
         seq: payload.sequence,
       };
@@ -185,12 +193,13 @@ export class ChatHubService {
       }
     });
 
-    this.connection.on('ReactionChanged', (payload: ReactionChangedPayload) => {
-      if (!payload.messageId || !payload.channelId || !payload.emoji) return;
+    this.connection.on('ReactionChanged', (raw: ReactionChangedPayload | string) => {
+      const payload = this.coercePayload<ReactionChangedPayload>(raw);
+      if (!payload?.messageId || !payload.channelId || !payload.emoji) return;
       const me = this.auth.profile()?.id;
       const event: ReactionChangedEvent = {
-        messageId: payload.messageId,
-        channelId: payload.channelId,
+        messageId: String(payload.messageId),
+        channelId: String(payload.channelId),
         emoji: payload.emoji,
         userId: String(payload.userId ?? ''),
         added: !!payload.added,
@@ -208,13 +217,19 @@ export class ChatHubService {
       }
     });
 
-    this.connection.on('Typing', (payload: {
+    this.connection.on('Typing', (raw: {
       channelId: string;
       userId: string;
       displayName: string;
-    }) => {
+    } | string) => {
+      const payload = this.coercePayload<{
+        channelId: string;
+        userId: string;
+        displayName: string;
+      }>(raw);
+      if (!payload?.channelId) return;
       const typing: TypingState = {
-        channelId: payload.channelId,
+        channelId: String(payload.channelId),
         userId: String(payload.userId),
         displayName: payload.displayName,
       };
@@ -233,11 +248,17 @@ export class ChatHubService {
       }, 3000);
     });
 
-    this.connection.on('PresenceChanged', (payload: {
+    this.connection.on('PresenceChanged', (raw: {
       tenantId?: string;
       userId: string;
       status: string;
-    }) => {
+    } | string) => {
+      const payload = this.coercePayload<{
+        tenantId?: string;
+        userId: string;
+        status: string;
+      }>(raw);
+      if (!payload?.userId) return;
       const status = (payload.status || 'offline').toLowerCase();
       const event: PresenceChangedEvent = {
         userId: String(payload.userId),
@@ -253,6 +274,9 @@ export class ChatHubService {
       await this.connection.start();
       this.statusSignal.set('connected');
       await this.heartbeat();
+      if (this.joinedChannelId) {
+        await this.joinChannel(this.joinedChannelId);
+      }
       this.startPresenceLoop();
     } catch {
       this.statusSignal.set('disconnected');
@@ -344,6 +368,34 @@ export class ChatHubService {
     return () => this.presenceHandlers.delete(handler);
   }
 
+  /** Fired after automatic reconnect + re-JoinChannel (B-070 gap-fill hook). */
+  onReconnected(handler: () => void | Promise<void>): () => void {
+    this.reconnectedHandlers.add(handler);
+    return () => this.reconnectedHandlers.delete(handler);
+  }
+
+  private async notifyReconnected(): Promise<void> {
+    for (const handler of this.reconnectedHandlers) {
+      try {
+        await handler();
+      } catch {
+        // individual stores handle their own errors
+      }
+    }
+  }
+
+  private coercePayload<T extends object>(payload: T | string | null | undefined): T | null {
+    if (payload == null) return null;
+    if (typeof payload === 'string') {
+      try {
+        return JSON.parse(payload) as T;
+      } catch {
+        return null;
+      }
+    }
+    return payload;
+  }
+
   private startPresenceLoop(): void {
     this.stopPresenceLoop();
     this.heartbeatTimer = setInterval(() => {
@@ -377,11 +429,12 @@ export class ChatHubService {
     const id = payload.messageId ?? payload.id;
     if (!id || !payload.channelId) return null;
     const me = this.auth.profile()?.id;
-    const conversationId = payload.conversationId || payload.channelId;
+    const conversationId = String(payload.conversationId || payload.channelId);
+    const channelId = String(payload.channelId);
     return {
-      id,
+      id: String(id),
       conversationId,
-      channelId: payload.channelId,
+      channelId,
       authorUserId: String(payload.authorId ?? ''),
       authorName: payload.authorName || String(payload.authorId ?? ''),
       body: payload.body ?? '',
@@ -389,10 +442,10 @@ export class ChatHubService {
       seq: payload.sequence,
       status: 'persisted',
       mine: !!me && me === String(payload.authorId ?? ''),
-      threadId: payload.threadId ?? null,
-      replyToMessageId: payload.replyToMessageId ?? null,
+      threadId: payload.threadId ? String(payload.threadId) : null,
+      replyToMessageId: payload.replyToMessageId ? String(payload.replyToMessageId) : null,
       attachments: (payload.attachments ?? []).map((a) => ({
-        id: a.id,
+        id: String(a.id),
         fileName: a.fileName,
         contentType: a.contentType,
         sizeBytes: a.sizeBytes,

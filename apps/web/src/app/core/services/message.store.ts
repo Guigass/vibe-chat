@@ -5,6 +5,12 @@ import { AuthService } from '../auth/auth.service';
 import { ChannelStore } from './channel.store';
 import { ThreadStore } from './thread.store';
 import { ChatMessage } from '../../shared/models/chat.models';
+import {
+  gapFillAfterSeq,
+  hasSeqGap,
+  maxSeqForChannel,
+  mergeMessagesById,
+} from './message-sync';
 
 @Injectable({ providedIn: 'root' })
 export class MessageStore {
@@ -17,10 +23,12 @@ export class MessageStore {
   private readonly messagesSignal = signal<ChatMessage[]>([]);
   private readonly loadingSignal = signal(false);
   private readonly sendingSignal = signal(false);
+  private gapFillInFlight = new Set<string>();
   private unsubCreated: (() => void) | null = null;
   private unsubEdited: (() => void) | null = null;
   private unsubDeleted: (() => void) | null = null;
   private unsubReactions: (() => void) | null = null;
+  private unsubReconnected: (() => void) | null = null;
 
   readonly messages = this.messagesSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
@@ -41,7 +49,10 @@ export class MessageStore {
     this.unsubCreated = this.hub.onMessage((message) => this.ingestRemote(message));
     this.unsubEdited = this.hub.onMessageEdited((patch) => this.applyEdit(patch));
     this.unsubDeleted = this.hub.onMessageDeleted((patch) => this.applyDelete(patch));
-    this.unsubReactions = this.hub.onReactionChanged((event) => this.applyReactions(event.messageId, event.reactions));
+    this.unsubReactions = this.hub.onReactionChanged((event) =>
+      this.applyReactions(event.messageId, event.reactions),
+    );
+    this.unsubReconnected = this.hub.onReconnected(() => this.gapFillActiveChannel());
   }
 
   async loadChannel(channelId: string): Promise<void> {
@@ -64,6 +75,36 @@ export class MessageStore {
       });
     } finally {
       this.loadingSignal.set(false);
+    }
+  }
+
+  /** History reconcile after SignalR reconnect or detected seq gap (B-070). */
+  async gapFillChannel(channelId: string): Promise<void> {
+    if (!channelId || this.channels.isDemo() || this.auth.isOfflineDemo()) return;
+    if (this.gapFillInFlight.has(channelId)) return;
+    this.gapFillInFlight.add(channelId);
+    try {
+      const localMax = maxSeqForChannel(this.messagesSignal(), channelId);
+      const after = gapFillAfterSeq(localMax);
+      const messages = await this.api.getMessages(channelId, { after, take: 100 });
+      if (!messages.length) return;
+      this.messagesSignal.update((current) =>
+        mergeMessagesById(
+          current,
+          messages.map((m) => this.normalize(m)),
+        ),
+      );
+    } catch {
+      // best-effort; live events or next reconnect can retry
+    } finally {
+      this.gapFillInFlight.delete(channelId);
+    }
+  }
+
+  private async gapFillActiveChannel(): Promise<void> {
+    const channelId = this.channels.activeChannel()?.id;
+    if (channelId) {
+      await this.gapFillChannel(channelId);
     }
   }
 
@@ -251,6 +292,10 @@ export class MessageStore {
       return;
     }
 
+    if (hasSeqGap(this.messagesSignal(), normalized.channelId, normalized.seq)) {
+      void this.gapFillChannel(normalized.channelId);
+    }
+
     const mine = normalized.authorUserId === this.auth.profile()?.id;
     if (mine && normalized.clientMessageId) {
       const existing = this.messagesSignal().find(
@@ -266,8 +311,11 @@ export class MessageStore {
       }
     }
 
+    // Dedup by id (HTTP response may land before hub fan-out).
     this.messagesSignal.update((list) => {
-      if (list.some((m) => m.id === normalized.id)) return list;
+      if (list.some((m) => m.id === normalized.id)) {
+        return mergeMessagesById(list, [{ ...normalized, mine }]);
+      }
       return [...list, { ...normalized, mine }];
     });
 
