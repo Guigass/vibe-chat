@@ -290,6 +290,17 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 
 ---
 
+## Administration / Audit
+
+| Endpoint | Notas |
+|----------|-------|
+| `GET /api/v1/admin/dashboard` | Métricas operacionais (auth obrigatória) |
+| `GET /api/v1/admin/audit-events?limit=&action=` | Lista eventos de `audit.audit_events` do tenant do actor; exige `admin.dashboard`; `limit` 1–200 (default 50); nunca retorna eventos de outro tenant |
+
+`AuditEventResponse`: `id`, `action`, `entityType`, `entityId`, `actorUserId`, `occurredAt`, `metadataJson`.
+
+Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`.
+
 ## AI
 
 ```csharp
@@ -301,6 +312,7 @@ public interface IAiAssistant
 
 - Implementações: `NoOpAiAssistant`, `OpenRouterAiAssistant`
 - Request deve carregar `TenantId` e evidência de autorização do contexto
+- Provider externo **off by default** (D-06); nunca no hot path de `SendMessage`
 
 ---
 

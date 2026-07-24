@@ -108,3 +108,12 @@ infra/grafana/data/
 # Playwright
 playwright-report/
 test-results/
+
+# k6 smoke artifacts (W5-3)
+tests/load/last-smoke-summary.txt
+tests/load/last-smoke-summary.json
+
+# Local TLS certs generated for Compose proxy (W5-2)
+infra/proxy/certs/*.pem
+infra/proxy/certs/*.crt
+infra/proxy/certs/*.key

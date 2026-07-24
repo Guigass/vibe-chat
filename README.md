@@ -67,6 +67,8 @@ Seed cria workspace demo, canal `#geral` e memberships para alice/bob.
 | `task test:architecture` | Fronteiras de módulo |
 | `task test:security` | Isolamento multi-tenant |
 | `task verify` | lint + todos os testes relevantes |
+| `task proxy:certs` | Certs self-signed para profile `proxy` (W5-2) |
+| `task load:smoke` | k6 smoke DevAuth (W5-3) |
 | `task migrate` | EF Core `database update` |
 | `task seed` | `POST /api/v1/dev/seed` |
 | `task logs` | Tail dos logs Compose |

@@ -30,6 +30,32 @@ Operação de uma instância self-hosted em fase 1 (**Docker Compose** oficial �
 
 Sticky sessions: preferir backplane Redis em vez de sticky-only.
 
+## TLS / proxy de referência (W5-2)
+
+Compose profile `proxy` (nginx) termina TLS e encaminha `/`, `/api/`, `/hubs/`:
+
+```bash
+./infra/proxy/generate-dev-certs.sh   # ou: task proxy:certs
+docker compose --profile apps --profile proxy up -d
+# HTTPS em https://localhost:8443  (HTTP :8088 redireciona)
+```
+
+- Config: `infra/proxy/nginx.conf`
+- Certs locais em `infra/proxy/certs/` (gitignore; self-signed só para lab)
+- Produção: montar `fullchain.pem` + `privkey.pem` reais; placeholders `TLS_*` / `CHANGE_ME` no `.env.example`
+- API honra `X-Forwarded-*` (`UseForwardedHeaders`)
+- Não expor Postgres/Redis/MinIO publicamente
+
+## Load smoke k6 (W5-3)
+
+```bash
+# API Development + seed; caminho DevAuth (X-Dev-User)
+task load:smoke
+# ou: k6 run -e API_BASE=http://localhost:5080 tests/load/smoke.js
+```
+
+Cobre `GET /health`, `GET /me`, history e `POST .../messages` no canal demo.
+
 ## Configuração
 
 - Tudo via variáveis de ambiente

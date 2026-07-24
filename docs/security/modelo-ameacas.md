@@ -49,7 +49,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 
 ## Controles mínimos obrigatórios (fase 1)
 
-- [ ] TLS em trânsito (terminação no proxy ou HTTPS direto)
+- [x] TLS em trânsito (terminação no proxy ou HTTPS direto) — referência Compose profile `proxy` (W5-2)
 - [ ] Secrets só via env/secret store
 - [ ] `TenantContext` + RLS
 - [ ] AuthZ em **toda** entrada de hub e API

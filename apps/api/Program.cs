@@ -5,6 +5,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
@@ -40,13 +41,23 @@ builder.Services.AddApiVersioning(options =>
     options.ReportApiVersions = true;
 });
 
+var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
+    ?? ["http://localhost:4200", "https://localhost:4200", "https://localhost:8443"];
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("localhost", policy => policy
-        .WithOrigins("http://localhost:4200", "https://localhost:4200")
+        .WithOrigins(corsOrigins)
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials());
+});
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+    // Reference proxy may sit on Docker bridge / host network; clear known nets for self-host.
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
 });
 
 var auth = builder.Services.AddAuthentication(options =>
@@ -132,6 +143,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseExceptionHandler();
+app.UseForwardedHeaders();
 app.UseCors("localhost");
 app.UseAuthentication();
 app.UseAuthorization();
@@ -1421,6 +1433,53 @@ v1.MapGet("/admin/dashboard", async (HttpContext http, VibeChatDbContext db, IDa
         config["Observability:GrafanaUrl"] ?? "http://localhost:3000"));
 });
 
+v1.MapGet("/admin/audit-events", async (
+    int? limit,
+    string? action,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var membership = await db.WorkspaceMembers.IgnoreQueryFilters()
+        .AsNoTracking()
+        .Where(x => x.UserId == profile.Id)
+        .OrderBy(x => x.JoinedAt)
+        .FirstOrDefaultAsync(ct);
+    if (membership is null
+        || !await permissions.HasPermissionAsync(membership.TenantId, profile.Id, Permissions.Admin.Dashboard, ct))
+    {
+        return Results.Forbid();
+    }
+
+    tenant.SetTenant(membership.TenantId);
+    var take = Math.Clamp(limit ?? 50, 1, 200);
+    var query = db.AuditEvents.AsNoTracking().Where(x => x.TenantId == membership.TenantId);
+    if (!string.IsNullOrWhiteSpace(action))
+    {
+        query = query.Where(x => x.Action == action);
+    }
+
+    var rows = await query
+        .OrderByDescending(x => x.OccurredAt)
+        .Take(take)
+        .ToListAsync(ct);
+
+    var items = rows.Select(x => new AuditEventResponse(
+        x.Id,
+        x.Action,
+        x.EntityType,
+        x.EntityId,
+        x.ActorUserId?.Value,
+        x.OccurredAt,
+        x.MetadataJson)).ToArray();
+
+    return Results.Ok(new AuditEventsResponse(items));
+});
+
 v1.MapGet("/admin/health-summary", async (HealthCheckService health, CancellationToken ct) =>
 {
     var report = await health.CheckHealthAsync(ct);
@@ -1827,6 +1886,15 @@ public sealed record SearchMessageHitResponse(
     double Rank);
 public sealed record SearchMessagesResponse(string Query, int Limit, SearchMessageHitResponse[] Items);
 public sealed record AiSummaryResponse(string Summary);
+public sealed record AuditEventResponse(
+    Guid Id,
+    string Action,
+    string EntityType,
+    string? EntityId,
+    Guid? ActorUserId,
+    DateTimeOffset OccurredAt,
+    string MetadataJson);
+public sealed record AuditEventsResponse(AuditEventResponse[] Items);
 public sealed record AdminHealthResponse(string Postgres, string Redis, string Storage);
 public sealed record AdminDashboardResponse(
     int Users,

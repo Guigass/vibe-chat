@@ -138,6 +138,16 @@ export interface AdminStats {
   grafanaUrl: string;
 }
 
+export interface AuditEventItem {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId?: string | null;
+  actorUserId?: string | null;
+  occurredAt: string;
+  metadataJson: string;
+}
+
 export interface AiSummaryResult {
   channelId: string;
   summary: string;

@@ -112,6 +112,41 @@ tasks:
     cmds:
       - dotnet test tests/security/VibeChat.SecurityTests.csproj --verbosity minimal
 
+  proxy:certs:
+    desc: Generate local self-signed TLS certs for Compose profile proxy (W5-2)
+    cmds:
+      - ./infra/proxy/generate-dev-certs.sh
+
+  load:smoke:
+    desc: k6 smoke (login/me + history + send via DevAuth) — W5-3
+    cmds:
+      - |
+        set -euo pipefail
+        set -a
+        [[ -f .env ]] && source .env
+        set +a
+        API_BASE="${LOAD_API_BASE:-${API_BASE_URL:-http://localhost:5080}}"
+        DEV_USER="${LOAD_DEV_USER:-alice}"
+        CHANNEL_ID="${LOAD_CHANNEL_ID:-22222222-2222-2222-2222-222222222222}"
+        K6_IMAGE="${K6_IMAGE:-grafana/k6:0.54.0}"
+        mkdir -p tests/load
+        if command -v k6 >/dev/null 2>&1; then
+          k6 run -e "API_BASE=${API_BASE}" -e "DEV_USER=${DEV_USER}" -e "CHANNEL_ID=${CHANNEL_ID}" tests/load/smoke.js
+        elif command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+          docker run --rm --network host \
+            -v "$PWD/tests/load:/scripts:ro" \
+            -v "$PWD/tests/load:/out" \
+            -e API_BASE="${API_BASE}" \
+            -e DEV_USER="${DEV_USER}" \
+            -e CHANNEL_ID="${CHANNEL_ID}" \
+            "${K6_IMAGE}" run --summary-export=/out/last-smoke-summary.json \
+            -e "API_BASE=${API_BASE}" -e "DEV_USER=${DEV_USER}" -e "CHANNEL_ID=${CHANNEL_ID}" \
+            /scripts/smoke.js
+        else
+          echo "k6 not found and Docker unavailable. Install k6 or start Docker." >&2
+          exit 1
+        fi
+
   verify:
     desc: Lint + unit + architecture + security (+ integration if Docker available)
     cmds:

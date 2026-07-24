@@ -73,19 +73,19 @@ Dependências: itens só começam quando deps = done.
 | W4-3 | C/D | Presence + typing polidos | W3-5 | **Done** |
 | W4-3b | B/D | Spaces UI + criar channel (B-020) | W3-5 | **Done** |
 | W4-4 | C | Search FTS Postgres | W3-5 | **Done** |
-| W4-5 | C | AI NoOp + OpenRouter adapter + flag | W3-5 | parcial (mock) |
-| W4-6 | B | Audit log admin | W3-5 | parcial |
+| W4-5 | C | AI NoOp + OpenRouter adapter + flag | W3-5 | parcial (mock; provider externo off default — D-06) |
+| W4-6 | B | Audit log admin | W3-5 | **Done** — `GET /admin/audit-events` + UI admin + authZ `admin.dashboard` |
 | W4-7 | D | PWA installability + offline shell (B-029) | W3-5 | **Done** |
 | W4-8 | C/D | Reações (B-024) | W3-5 | **Done** |
 
 ## Wave 5 — Produção self-host
 
-| ID | Trilha | Tarefa | Deps |
-|----|--------|--------|------|
-| W5-1 | A | Backup automatizado + drill doc validado (**Done** — scripts + doc) | W3-5 |
-| W5-2 | A | TLS / proxy reference config | W3-5 |
-| W5-3 | E | Load smoke k6 | W3-5 |
-| W5-4 | G | Runbooks finais ops | W5-1 |
+| ID | Trilha | Tarefa | Deps | Status |
+|----|--------|--------|------|--------|
+| W5-1 | A | Backup automatizado + drill doc validado | W3-5 | **Done** — scripts + doc |
+| W5-2 | A | TLS / proxy reference config | W3-5 | **Done** — nginx Compose profile `proxy` + certs script |
+| W5-3 | E | Load smoke k6 | W3-5 | **Done** — `tests/load/smoke.js` + `task load:smoke` |
+| W5-4 | G | Runbooks finais ops | W5-1 | |
 
 ---
 

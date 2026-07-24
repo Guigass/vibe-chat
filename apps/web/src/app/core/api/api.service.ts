@@ -3,6 +3,7 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 import {
   AdminStats,
+  AuditEventItem,
   AiSummaryResult,
   Channel,
   ChatMessage,
@@ -137,6 +138,16 @@ interface AdminDashboardDto {
   };
   appVersion: string;
   grafanaUrl: string;
+}
+
+interface AuditEventDto {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId?: string | null;
+  actorUserId?: string | null;
+  occurredAt: string;
+  metadataJson?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -420,6 +431,21 @@ export class ApiService {
     return this.request<AdminDashboardDto>('/api/v1/admin/dashboard');
   }
 
+  async getAdminAuditEvents(limit = 40): Promise<AuditEventItem[]> {
+    const result = await this.request<{ items: AuditEventDto[] }>(
+      `/api/v1/admin/audit-events?limit=${limit}`,
+    );
+    return (result.items ?? []).map((row) => ({
+      id: row.id,
+      action: row.action,
+      entityType: row.entityType,
+      entityId: row.entityId ?? null,
+      actorUserId: row.actorUserId ?? null,
+      occurredAt: row.occurredAt,
+      metadataJson: row.metadataJson ?? '{}',
+    }));
+  }
+
   async summarizeChannel(workspaceId: string, channelId: string): Promise<AiSummaryResult> {
     const result = await this.request<{ summary: string }>(
       `/api/v1/workspaces/${workspaceId}/channels/${channelId}/ai/summarize`,
@@ -526,7 +552,9 @@ export class ApiService {
 
     if (!response.ok) {
       const text = await response.text().catch(() => '');
-      throw new Error(text || `HTTP ${response.status}`);
+      const error = new Error(text || `HTTP ${response.status}`) as Error & { status: number };
+      error.status = response.status;
+      throw error;
     }
 
     if (response.status === 204) {

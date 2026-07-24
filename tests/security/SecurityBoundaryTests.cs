@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using VibeChat.Audit;
 using VibeChat.Conversations;
 using VibeChat.Infrastructure;
 using VibeChat.Messaging;
@@ -73,6 +74,37 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
             $"/api/v1/channels/{foreignChannelId}/messages/{Guid.NewGuid()}/reactions",
             new { emoji = "👍" });
         react.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Member_cannot_read_admin_audit_events()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var response = await alice.GetAsync("/api/v1/admin/audit-events?limit=10");
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Admin_audit_events_are_tenant_scoped()
+    {
+        var foreignAction = $"foreign.audit.{Guid.NewGuid():N}";
+        await SeedForeignTenantAuditEventAsync(foreignAction);
+
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        // Ensure at least one local audit event exists (admin login path on /me).
+        (await demo.GetAsync("/api/v1/me")).EnsureSuccessStatusCode();
+
+        var response = await demo.GetAsync("/api/v1/admin/audit-events?limit=100");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var payload = await response.Content.ReadFromJsonAsync<AuditEventsDto>();
+        payload.Should().NotBeNull();
+        payload!.Items.Should().NotBeEmpty();
+        payload.Items.Should().NotContain(x => x.Action == foreignAction);
+        payload.Items.Should().OnlyContain(x => !string.IsNullOrWhiteSpace(x.Action));
     }
 
     [Fact]
@@ -279,6 +311,8 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     private sealed record AttachmentUploadDto(Guid AttachmentId, string UploadUrl);
     private sealed record SearchMessageHitDto(Guid MessageId, Guid ChannelId, string BodyPreview);
     private sealed record SearchMessagesDto(string Query, int Limit, SearchMessageHitDto[] Items);
+    private sealed record AuditEventItemDto(Guid Id, string Action, string EntityType, string? EntityId, Guid? ActorUserId, DateTimeOffset OccurredAt, string MetadataJson);
+    private sealed record AuditEventsDto(AuditEventItemDto[] Items);
 
     private async Task<(Guid WorkspaceId, Guid ChannelId)> SeedCrossTenantWorkspaceWithMessageAsync()
     {
@@ -332,6 +366,37 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
 
         await db.SaveChangesAsync();
         return (workspaceId.Value, channelId.Value);
+    }
+
+    private async Task SeedForeignTenantAuditEventAsync(string action)
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        var workspaceId = WorkspaceId.New();
+        var tenantId = new TenantId(workspaceId.Value);
+        var now = DateTimeOffset.UtcNow;
+
+        db.Workspaces.Add(new Workspace
+        {
+            Id = workspaceId,
+            TenantId = tenantId,
+            Name = $"Audit Tenant {workspaceId.Value:N}"[..Math.Min(160, $"Audit Tenant {workspaceId.Value:N}".Length)],
+            Slug = $"audit-tenant-{workspaceId.Value:N}"[..Math.Min(120, $"audit-tenant-{workspaceId.Value:N}".Length)],
+            AiEnabled = false,
+            CreatedAt = now
+        });
+        db.AuditEvents.Add(new AuditEvent
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            ActorUserId = SeedData.DemoUserId,
+            Action = action,
+            EntityType = "Workspace",
+            EntityId = workspaceId.Value.ToString(),
+            MetadataJson = "{}",
+            OccurredAt = now
+        });
+        await db.SaveChangesAsync();
     }
 
     private async Task<Guid> SeedCrossTenantChannelAsync()

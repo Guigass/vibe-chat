@@ -58,5 +58,41 @@
         <a [href]="s.grafanaUrl" target="_blank" rel="noopener noreferrer">Abrir Grafana ↗</a>
       </article>
     </div>
+
+    <section class="audit" aria-labelledby="audit-heading">
+      <h2 id="audit-heading">Audit log</h2>
+      <p class="audit__lead">Ações sensíveis do tenant (exige <code>admin.dashboard</code>).</p>
+
+      @if (auditForbidden()) {
+        <p class="admin__hint" role="status">Sem permissão para ler o audit log.</p>
+      } @else if (auditError()) {
+        <p class="admin__hint" role="status">Não foi possível carregar o audit log.</p>
+      } @else if (auditEvents().length === 0) {
+        <p class="audit__empty">Nenhum evento recente.</p>
+      } @else {
+        <div class="audit__table-wrap">
+          <table class="audit__table">
+            <thead>
+              <tr>
+                <th scope="col">Quando</th>
+                <th scope="col">Ação</th>
+                <th scope="col">Entidade</th>
+                <th scope="col">Ator</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ev of auditEvents(); track ev.id) {
+                <tr>
+                  <td>{{ ev.occurredAt | date: 'short' }}</td>
+                  <td><code>{{ ev.action }}</code></td>
+                  <td>{{ ev.entityType }}@if (ev.entityId) { <span class="mono">#{{ ev.entityId.slice(0, 8) }}</span> }</td>
+                  <td class="mono">{{ ev.actorUserId ? ev.actorUserId.slice(0, 8) : '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
   }
 </section>

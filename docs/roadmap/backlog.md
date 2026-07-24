@@ -40,7 +40,7 @@ Prioridade: **P0** (fatia vertical) → **P1** (MVP usável) → **P2** (diferen
 |----|------|-------|
 | B-040 | Guest users / link de canal | fora do MVP P1 (D-07) |
 | B-041 | Papéis granulares | |
-| B-042 | Audit log | parcial (eventos básicos) |
+| B-042 | Audit log | **Done (Wave 5)** — eventos + `GET /admin/audit-events` + UI admin (`admin.dashboard`) |
 | B-043 | Notificações email (opcional) | SMTP genérico (D-10) |
 | B-044 | AI: resumo de thread (flag) | mock existe; provider externo off default (D-06) |
 | B-045 | AI: sugerir resposta | |

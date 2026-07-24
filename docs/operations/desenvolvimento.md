@@ -37,6 +37,8 @@ task test:integration     # Testcontainers
 task test:architecture
 task test:security
 task test:e2e             # Playwright
+task proxy:certs          # TLS self-signed (Compose profile proxy)
+task load:smoke           # k6 smoke (API Development + DevAuth)
 task verify               # lint + testes relevantes
 task build
 task migrate
