@@ -10,6 +10,7 @@ using VibeChat.Infrastructure;
 using VibeChat.Messaging;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
+using VibeChat.TestHost;
 
 namespace VibeChat.IntegrationTests;
 
@@ -124,9 +125,10 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         client.DefaultRequestHeaders.Add("X-Dev-User", "demo");
         var summary = await client.GetFromJsonAsync<HealthSummaryDto>("/api/v1/admin/health-summary", JsonOptions);
         summary.Should().NotBeNull();
-        summary!.Status.Should().Be("Healthy");
-        summary.Checks.Should().ContainKey("postgres").WhoseValue.Should().Be("Healthy");
+        summary!.Checks.Should().ContainKey("postgres").WhoseValue.Should().Be("Healthy");
         summary.Checks.Should().ContainKey("redis").WhoseValue.Should().Be("Healthy");
+        summary.Checks.Should().ContainKey("minio").WhoseValue.Should().Be("Healthy");
+        summary.Status.Should().Be("Healthy");
     }
 
     [Fact]

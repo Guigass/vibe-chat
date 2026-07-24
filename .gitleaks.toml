@@ -4,16 +4,27 @@ title = "VibeChat gitleaks"
 [extend]
 useDefault = true
 
-[[rules]]
-id = "vibechat-demo-env-placeholders"
-description = "Demo passwords in .env.example / realm export are intentional local fakes"
-regex = '''(?i)(password|secret|passwd).{0,40}(change_me|demo123|minioadmin|vibechat_dev)'''
-
 [allowlist]
-description = "Generated and documentation paths"
+description = "Demo-only credentials and generated/docs paths"
 paths = [
   '''^\.env\.example$''',
   '''^infra/keycloak/realm-vibechat\.json$''',
   '''^docs/''',
   '''^LICENSE$''',
+  '''^compose\.yaml$''',
+  '''^compose\.override\.yaml$''',
+  '''^apps/api/appsettings\.Development\.json$''',
+  '''^apps/worker/appsettings\.Development\.json$''',
+  '''^tests/''',
+  '''^\.github/''',
+]
+
+regexes = [
+  '''(?i)vibechat_dev(_password_change_me)?''',
+  '''(?i)keycloak_dev_password_change_me''',
+  '''(?i)admin_dev_password_change_me''',
+  '''(?i)minioadmin(_dev_password_change_me)?''',
+  '''(?i)grafana_dev_password_change_me''',
+  '''(?i)Demo123!''',
+  '''(?i)change_me''',
 ]

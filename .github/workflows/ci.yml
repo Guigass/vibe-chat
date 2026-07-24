@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, "cursor/**"]
   pull_request:
-    branches: [main, "cursor/**"]
+    branches: [main]
 
 env:
   DOTNET_NOLOGO: "1"
@@ -49,18 +49,11 @@ jobs:
       - name: Architecture tests
         run: dotnet test tests/architecture/VibeChat.ArchitectureTests.csproj -c Release --no-build --verbosity minimal
 
-      - name: Security tests
+      - name: Security tests (Testcontainers)
         run: dotnet test tests/security/VibeChat.SecurityTests.csproj -c Release --no-build --verbosity minimal
 
-      - name: Integration tests (Docker / Testcontainers)
-        if: success()
-        run: |
-          if docker info >/dev/null 2>&1; then
-            dotnet test tests/integration/VibeChat.IntegrationTests.csproj -c Release --verbosity minimal
-          else
-            echo "Docker unavailable on runner — failing because integration tests require Testcontainers"
-            exit 1
-          fi
+      - name: Integration tests (Testcontainers)
+        run: dotnet test tests/integration/VibeChat.IntegrationTests.csproj -c Release --no-build --verbosity minimal
 
       - name: Web install & typecheck
         working-directory: apps/web
@@ -79,7 +72,6 @@ jobs:
           dotnet list VibeChat.slnx package --include-transitive > artifacts/sbom/dotnet-packages.txt
           (cd apps/web && npm ls --all --omit=dev > ../../artifacts/sbom/npm-packages.txt) || true
           echo "Package inventory written to artifacts/sbom/"
-          echo "Note: prefer 'dotnet list package --vulnerable' / npm audit in a dedicated security job when feeds allow."
 
       - name: Upload SBOM-lite artifact
         uses: actions/upload-artifact@v4
@@ -93,16 +85,22 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Prefer CLI scan to avoid gitleaks-action PR API permission issues on forks/restricted tokens.
+      - name: Install gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+
+      - name: Gitleaks scan
+        run: gitleaks detect --source . --config .gitleaks.toml --verbose --redact
 
   dependency-audit:
     name: Dependency audit notes

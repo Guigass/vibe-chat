@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\apps\api\VibeChat.Api.csproj" />
     <ProjectReference Include="..\..\src\VibeChat.Infrastructure\VibeChat.Infrastructure.csproj" />
+    <ProjectReference Include="..\VibeChat.TestHost\VibeChat.TestHost.csproj" />
   </ItemGroup>
 
 </Project>

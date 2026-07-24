@@ -6,6 +6,7 @@ using VibeChat.Conversations;
 using VibeChat.Infrastructure;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
+using VibeChat.TestHost;
 
 namespace VibeChat.SecurityTests;
 
