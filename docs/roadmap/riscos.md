@@ -21,7 +21,8 @@
 | R-15 | Design genérico (clone Slack) | M | Médio | design-system.md enforce em review | Frontend |
 | R-16 | Realtime degradado (só typing) | A | Alto | B-070 gap-fill + E2E dois usuários; métricas SignalR/outbox | Backend / Frontend |
 | R-17 | Secrets/webhooks expostos a membros | M | Crítico | B-069 authZ admin-only; nunca logar tokens | Security |
-| R-18 | PrimeNG sem tema VibeChat | M | Médio | Emenda ADR-002 + tokens; review visual | Frontend |
+| R-18 | Abuso de auditoria de conversa (break-glass) | M | Alto | B-067: `admin.dashboard` + tenant-scoped; testes T7–T9 | Security |
+| R-19 | PrimeNG sem tema VibeChat | M | Médio | Emenda ADR-002 + tokens; review visual | Frontend |
 
 ## Riscos técnicos detalhados
 

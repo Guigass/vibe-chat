@@ -58,7 +58,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 | B-047 | Políticas de retenção configuráveis | ADR-018; purge/flag depois |
 | B-048 | Webhooks outbound | Só admin (`workspace.admin` / `admin.dashboard`); secrets nunca na UI de membro; ver B-069 |
 | B-049 | Temas light/dark polish | **Done (Wave 5)** — `color-scheme`, segue OS até pin do usuário, transição sutil |
-| B-067 | Auditoria completa de conversas (ADMIN) | Viewer admin por canal/DM/thread: histórico, edições, soft-deletes, autores, anexos; authZ `admin.dashboard` (+ RLS); distinto do feed de `audit_events` (B-042) |
+| B-067 | Auditoria completa de conversas (ADMIN) | **Done (Wave 6)** — `GET /admin/conversations*` + `/admin/threads/*/messages`; body soft-delete visível; bypass membership só nesses endpoints; UI `/admin`; distinto de B-042 |
 | B-068 | Cadastro de usuário + diretivas (clareza + fluxo) | **Done (Wave 6)** — invite admin + claim pending no login; glossário Cadastro/Diretiva; sem self-signup |
 | B-069 | Configurações sensíveis só admin | **Done (Wave 6)** — `GET/PUT /admin/settings` mascarado; secrets só env; membro → 403; webhooks delivery = B-048 |
 | B-073 | UI polish com PrimeNG | Adotar PrimeNG (tema alinhado aos tokens VibeChat); tabelas/dialogs/forms admin e shell; **exige emenda ADR-002** + design-system; não clonar Slack/Discord |
@@ -80,7 +80,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 
 Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup → spaces → presence → reações → PWA. (B-020…B-031 já Done na Wave 4.)
 
-Pós-MVP: **P1.5** (B-070 → B-071 → B-072) antes de P2 novo. Em paralelo de infra: **B-074** (API/Web no Compose). Em P2 admin: B-068 (cadastro/diretivas) → B-069 (secrets admin) → B-067 (auditoria de conversa) → B-048 (webhooks) → B-073 (PrimeNG, com ADR).
+Pós-MVP: **P1.5** (B-070 → B-071 → B-072) antes de P2 novo. Em paralelo de infra: **B-074** (API/Web no Compose). Em P2 admin: B-068 / B-069 / B-067 (**Done**) → B-048 (webhooks) → B-073 (PrimeNG, com ADR).
 
 ## Itens explicitamente rejeitados na fase 1
 

@@ -105,7 +105,7 @@ Prioridade: corrigir tempo real / typing / scroll; depois clareza de cadastro e 
 | W6-3 | D | Layout: scroll só no container da conversa (B-072) | — | **Done** — shell sem scroll de página |
 | W6-4 | B/D/G | Cadastro de usuário + diretivas documentados e fluxo admin (B-068) | P2-1 | **Done** — invite admin + glossário |
 | W6-5 | B/D/E | Settings sensíveis (tokens, webhooks, AI/SMTP) só admin (B-069, B-048) | W6-4 | **Done** — B-069 settings mascarados; B-048 webhooks ainda `planned` |
-| W6-6 | B/D/E | Auditoria completa de conversas no ADMIN (B-067) | W4-6, W6-4 | Planned |
+| W6-6 | B/D/E | Auditoria completa de conversas no ADMIN (B-067) | W4-6, W6-4 | **Done** — viewer admin canal/DM/thread; body soft-delete visível; R-18 |
 | W6-7 | D/G | UI polish com PrimeNG + tema tokens (B-073; emenda ADR-002) | W6-3 | Planned |
 | W6-8 | A/G | API + Web (+ Worker) containerizados no Compose como caminho oficial (B-074) | W5-2 | Planned |
 
