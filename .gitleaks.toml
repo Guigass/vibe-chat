@@ -1,0 +1,19 @@
+# Allow documented local-demo placeholders only. Never real production secrets.
+title = "VibeChat gitleaks"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "vibechat-demo-env-placeholders"
+description = "Demo passwords in .env.example / realm export are intentional local fakes"
+regex = '''(?i)(password|secret|passwd).{0,40}(change_me|demo123|minioadmin|vibechat_dev)'''
+
+[allowlist]
+description = "Generated and documentation paths"
+paths = [
+  '''^\.env\.example$''',
+  '''^infra/keycloak/realm-vibechat\.json$''',
+  '''^docs/''',
+  '''^LICENSE$''',
+]

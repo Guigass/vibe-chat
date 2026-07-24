@@ -4,59 +4,97 @@
 
 - Docker + Docker Compose v2
 - .NET 10 SDK
-- Node.js LTS (para Angular 22) + npm/pnpm conforme repo
-- `make` ou scripts em `infra/scripts` (quando disponíveis)
+- Node.js 22+ (Angular 22)
+- [Task](https://taskfile.dev/) (`go-task`)
 - Acesso à rede para puxar imagens (Keycloak, Postgres, etc.)
+
+Instalação assistida (agentes / máquina limpa):
+
+```bash
+bash infra/scripts/agent-setup.sh
+```
 
 ## Subir o ambiente local
 
 ```bash
 # Na raiz do repositório
-cd /workspace
+cd /workspace   # ou clone local
 
-# Subir dependências + apps (quando compose estiver pronto)
-docker compose -f infra/compose/docker-compose.yml up -d
-
-# API (dev)
-# cd apps/api && dotnet watch run
-
-# Web (dev)
-# cd apps/web && npm start
+task setup      # .env + docker compose up -d + wait healthy + migrate
+task dev        # API (http://localhost:5080) + Web (http://localhost:4200)
+task seed       # POST /api/v1/dev/seed — tenant demo, #geral, alice/bob
 ```
 
-> Enquanto o Compose ainda está sendo montado pela fundação, siga os READMEs em `infra/compose` assim que existirem. Este guia define o **contrato de DX** esperado.
+Outros comandos úteis:
 
-## Serviços locais esperados
+```bash
+task stop                 # docker compose stop
+task reset                # down -v + setup
+task logs                 # tail compose
+task lint                 # dotnet format --verify + tsc/ng lint
+task test                 # unit
+task test:integration     # Testcontainers
+task test:architecture
+task test:security
+task test:e2e             # Playwright
+task verify               # lint + testes relevantes
+task build
+task migrate
+```
+
+## Serviços locais
 
 | Serviço | Porta típica | Uso |
 |---------|--------------|-----|
 | Web | 4200 | Angular dev server |
-| API | 5080 / 7080 | HTTP + SignalR |
+| API | 5080 | HTTP + SignalR |
 | Postgres | 5432 | SoT |
 | Redis | 6379 | Presence/backplane |
 | Keycloak | 8080 | OIDC |
 | MinIO | 9000 / 9001 | S3 + console |
-| Grafana | 3000 | Dashboards |
+| Grafana | 3000 | Dashboards (`--profile observability`) |
 | Prometheus | 9090 | Métricas |
 
-Credenciais de **dev** devem viver em `.env.example` (nunca secrets de produção).
+Credenciais de **dev** vivem em `.env.example` (nunca secrets de produção).
+
+Compose:
+
+```bash
+docker compose up -d                              # data plane
+docker compose --profile tools up -d              # + mailpit
+docker compose --profile observability up -d      # + otel stack
+docker compose --profile apps up -d               # api/web/worker containerizados (opcional)
+```
+
+No dia a dia, preferir `task dev` (hot reload) em vez do profile `apps`.
 
 ## Seed mínimo
 
-1. Realm Keycloak `vibechat-dev` com 2 usuários (`alice`, `bob`)
-2. Um tenant `acme`
-3. Workspace `Acme HQ`
-4. Channel `#geral`
-5. Memberships para alice e bob
+1. Realm Keycloak `vibechat` com usuários `alice@` / `bob@` / `demo@` (`Demo123!`)
+2. Workspace demo + canal `#geral`
+3. Memberships para alice e bob
 
-Script alvo: `infra/scripts/seed-dev.sh`
+```bash
+task seed
+# ou: ./infra/scripts/seed.sh
+```
+
+Endpoint (Development): `POST /api/v1/dev/seed`
+
+### Auth em desenvolvimento
+
+| Modo | Como |
+|------|------|
+| Keycloak OIDC | “Entrar com Keycloak” |
+| Demo UI | “Explorar demo local” |
+| DevAuth API | Header `X-Dev-User: alice\|bob\|demo` (somente Development) |
 
 ## Fluxo de trabalho do desenvolvedor
 
-1. Criar branch a partir de `cursor/vibechat-foundation-*` / main conforme processo
+1. Criar branch a partir da branch de fundação / `main`
 2. Implementar no módulo correto + contratos se necessário
 3. Testes unit/integration locais
-4. Verificar lint/arch tests
+4. Verificar lint/arch tests (`task verify`)
 5. Atualizar docs se decisão mudar (preferir ADR)
 
 ## Estrutura mental do código
@@ -67,6 +105,7 @@ apps/worker       → outbox/jobs
 apps/web          → Angular
 modules/*         → domínio
 docs/*            → verdade de produto/arquitetura
+tests/e2e         → Playwright (duas sessões)
 ```
 
 ## Debugging útil
@@ -82,17 +121,17 @@ docs/*            → verdade de produto/arquitetura
 - Sem microserviços novos sem ADR
 - Não commitar binários, `node_modules`, secrets
 
-## Testes rápidos
+## Testes
 
 ```bash
-# Exemplo — ajustar quando soluções existirem
-dotnet test tests/unit
-dotnet test tests/integration
-dotnet test tests/architecture
-dotnet test tests/security
+task test
+task test:integration
+task test:architecture
+task test:security
+task test:e2e
 ```
 
-E2E: ver `tests/e2e` (Playwright).
+E2E: ver `tests/e2e/README.md` (modos `demo`, `devauth`, `oidc`).
 
 ## Leitura obrigatória antes de codar
 
@@ -100,4 +139,4 @@ E2E: ver `tests/e2e` (Playwright).
 - `docs/architecture/contratos.md`
 - `docs/adrs/ADR-001` … `ADR-010`
 - `docs/security/multi-tenant.md`
-- `docs/agents/orientacoes.md`
+- `AGENTS.md` e `docs/agents/orientacoes.md`

@@ -1,0 +1,22 @@
+---
+description: Regras de segurança e multi-tenancy
+globs:
+  - docs/security/**
+  - tests/security/**
+  - apps/api/**
+  - infra/keycloak/**
+  - modules/Identity/**
+  - modules/Tenancy/**
+  - modules/Audit/**
+---
+
+# Security
+
+- Isolamento multi-tenant é não-negociável — ver `docs/security/multi-tenant.md`.
+- Nunca confiar em `tenantId` do body; derivar do contexto autenticado.
+- Não bypassar RLS “temporariamente” em main.
+- Sem secrets em git, logs ou traces (mascarar tokens/PII).
+- Uploads, hubs SignalR e endpoints admin exigem authZ explícita.
+- Features de IA que possam enviar PII precisam de flag + documentação.
+- Rodar `task test:security` quando tocar auth, tenancy ou RLS.
+- Manter modelo de ameaças atualizado quando a superfície mudar.

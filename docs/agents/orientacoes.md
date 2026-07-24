@@ -2,9 +2,12 @@
 
 Este documento guia agentes de código (backend, frontend, infra, QA, security, review) para manter consistência com a fundação.
 
+> Contrato operacional principal: **`AGENTS.md`** (raiz) + regras em **`.cursor/rules/`**.  
+> DX: **`task setup` / `task dev` / `task verify`** — ver `Taskfile.yml` e `docs/operations/desenvolvimento.md`.
+
 ## Regras universais
 
-1. **Ler antes de codar:** glossário, ADRs relevantes, contratos, design system (se UI)
+1. **Ler antes de codar:** glossário, ADRs relevantes, contratos, design system (se UI), `AGENTS.md`
 2. **PT-BR** em docs voltadas a humanos; **inglês** em código (tipos, APIs)
 3. **Não criar microserviços**, Kafka, OpenSearch ou K8s “por precaução”
 4. **Não commitar secrets** nem credenciais de produção

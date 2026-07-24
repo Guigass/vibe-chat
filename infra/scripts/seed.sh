@@ -11,7 +11,7 @@ if [[ -f .env ]]; then
   set -a && source .env && set +a
 fi
 
-SEED_API_URL="${SEED_API_URL:-http://localhost:5080/api/dev/seed}"
+SEED_API_URL="${SEED_API_URL:-http://localhost:5080/api/v1/dev/seed}"
 WAIT_FIRST="${SEED_WAIT_FOR_HEALTHY:-1}"
 
 if [[ "$WAIT_FIRST" == "1" ]]; then
@@ -37,7 +37,7 @@ if [[ "$HTTP_CODE" =~ ^2 ]]; then
 fi
 
 echo "Seed endpoint not ready or failed (HTTP ${HTTP_CODE:-none})." >&2
-echo "This is expected until the API implements POST /api/dev/seed." >&2
+echo "Ensure the API is running in Development (task dev) — endpoint: POST /api/v1/dev/seed" >&2
 if [[ -f /tmp/vibechat-seed-response.json ]]; then
   cat /tmp/vibechat-seed-response.json >&2 || true
   echo >&2

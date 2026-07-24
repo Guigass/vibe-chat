@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "cursor/**"]
+  pull_request:
+    branches: [main, "cursor/**"]
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+
+jobs:
+  build-test:
+    name: Build & test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Restore
+        run: dotnet restore VibeChat.slnx
+
+      - name: Format check
+        run: dotnet format VibeChat.slnx --verify-no-changes --verbosity minimal
+
+      - name: Build
+        run: dotnet build VibeChat.slnx -c Release --no-restore
+
+      - name: Unit tests
+        run: dotnet test tests/unit/VibeChat.UnitTests.csproj -c Release --no-build --verbosity minimal
+
+      - name: Architecture tests
+        run: dotnet test tests/architecture/VibeChat.ArchitectureTests.csproj -c Release --no-build --verbosity minimal
+
+      - name: Security tests
+        run: dotnet test tests/security/VibeChat.SecurityTests.csproj -c Release --no-build --verbosity minimal
+
+      - name: Integration tests (Docker / Testcontainers)
+        if: success()
+        run: |
+          if docker info >/dev/null 2>&1; then
+            dotnet test tests/integration/VibeChat.IntegrationTests.csproj -c Release --verbosity minimal
+          else
+            echo "Docker unavailable on runner — failing because integration tests require Testcontainers"
+            exit 1
+          fi
+
+      - name: Web install & typecheck
+        working-directory: apps/web
+        run: |
+          npm ci
+          if node -e "const j=require('./angular.json'); process.exit(j.projects?.web?.architect?.lint ? 0 : 1)"; then
+            npm run lint
+          else
+            echo "ng lint not configured; running tsc --noEmit"
+            npx tsc -p tsconfig.app.json --noEmit
+          fi
+
+      - name: Dependency inventory (SBOM-lite)
+        run: |
+          mkdir -p artifacts/sbom
+          dotnet list VibeChat.slnx package --include-transitive > artifacts/sbom/dotnet-packages.txt
+          (cd apps/web && npm ls --all --omit=dev > ../../artifacts/sbom/npm-packages.txt) || true
+          echo "Package inventory written to artifacts/sbom/"
+          echo "Note: prefer 'dotnet list package --vulnerable' / npm audit in a dedicated security job when feeds allow."
+
+      - name: Upload SBOM-lite artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-lite
+          path: artifacts/sbom/
+          if-no-files-found: warn
+
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-audit:
+    name: Dependency audit notes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Restore & audit
+        run: |
+          dotnet restore VibeChat.slnx
+          echo "::notice::Running vulnerable package scan (may be empty without vulnerability data feeds)"
+          dotnet list VibeChat.slnx package --vulnerable --include-transitive || true
+          npm ci --prefix apps/web
+          npm audit --prefix apps/web --omit=dev || true
+          echo "Audit commands are informational until vulnerability advisories are enforced as hard gates."

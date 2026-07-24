@@ -1,0 +1,18 @@
+---
+description: Princípios centrais do VibeChat para qualquer agente
+alwaysApply: true
+---
+
+# Core — VibeChat
+
+- Ler `docs/architecture/` e ADRs relevantes antes de editar.
+- Identificar módulos afetados; planejar mudanças grandes.
+- Não alterar contratos compartilhados em silêncio.
+- Não mudar arquitetura sem ADR.
+- Rodar testes relevantes; adicionar testes em correções.
+- Preservar isolamento multi-tenant (`tenant_id`, authZ, RLS).
+- Sem dependências proprietárias; sem secrets em logs/commits.
+- Atualizar docs; PRs pequenos; apresentar evidência de funcionamento.
+- PT-BR em docs humanas; inglês em código (tipos, APIs, ids).
+- Fatia vertical (login → canal → mensagem em tempo real) tem prioridade sobre P2/P3.
+- Respeitar `docs/roadmap/decisoes-pendentes.md` e `AGENTS.md`.

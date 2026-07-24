@@ -104,3 +104,7 @@ infra/grafana/data/
 *.tfstate.*
 .terraform/
 .terraform.lock.hcl
+
+# Playwright
+playwright-report/
+test-results/

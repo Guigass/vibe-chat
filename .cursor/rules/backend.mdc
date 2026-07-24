@@ -1,0 +1,23 @@
+---
+description: Regras para mudanças backend .NET / módulos
+globs:
+  - apps/api/**
+  - apps/worker/**
+  - modules/**
+  - src/**
+  - tests/unit/**
+  - tests/integration/**
+  - tests/architecture/**
+---
+
+# Backend
+
+- Fronteiras de módulo claras; contratos via interfaces compartilhadas.
+- Composition root apenas em `apps/api` e `apps/worker`.
+- Toda unit of work: `TenantContext` / `app.tenant_id`.
+- Messaging: idempotência + sequence + outbox.
+- Não publicar SignalR direto para eventos de domínio duráveis.
+- IA atrás de interface; nunca no hot path síncrono de envio.
+- Migrations + RLS quando o schema mudar.
+- Preferir Testcontainers em integração de persistência.
+- Validar com `task test`, `task test:architecture` e, se aplicável, `task test:integration`.
