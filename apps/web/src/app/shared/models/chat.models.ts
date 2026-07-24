@@ -64,6 +64,25 @@ export interface TypingState {
   displayName: string;
 }
 
+export interface SearchMessageHit {
+  messageId: string;
+  channelId: string;
+  channelName: string;
+  channelType: string;
+  sequence: number;
+  authorUserId: string;
+  authorDisplayName: string;
+  bodyPreview: string;
+  createdAt: string;
+  rank: number;
+}
+
+export interface SearchMessagesResult {
+  query: string;
+  limit: number;
+  items: SearchMessageHit[];
+}
+
 export interface AdminStats {
   users: number;
   onlineUsers: number;

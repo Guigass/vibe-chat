@@ -212,6 +212,7 @@ Regras: keys prefixadas por tenant (`tenants/{tenantId}/…`); MIME/tamanho via 
 public interface ISearchIndexer
 {
     Task IndexMessageAsync(MessageIndexed doc, CancellationToken ct);
+    Task RemoveMessageAsync(TenantId tenantId, MessageId messageId, CancellationToken ct);
 }
 
 public interface ISearchQuery
@@ -221,6 +222,16 @@ public interface ISearchQuery
 ```
 
 Fase 1: implementação PostgreSQL FTS (ADR-011).
+
+### Endpoints (API)
+
+| Endpoint | Notas |
+|----------|-------|
+| `GET /api/v1/search/messages?workspaceId=&q=&channelId=&limit=` | FTS em mensagens (`tsvector`/`GIN`); exige membership no workspace + `search.messages` + `message.read`; filtra por ACL de canal (público via workspace, privado/DM via `channel_members`); nunca retorna mensagens soft-deleted nem fora da membership |
+
+`SearchMessageHit`: `messageId`, `channelId`, `channelName`, `channelType`, `sequence`, `authorUserId`, `authorDisplayName`, `bodyPreview`, `createdAt`, `rank`.
+
+Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via outbox `MessageCreated`/`Edited`/`Deleted`).
 
 ---
 
@@ -247,6 +258,19 @@ public interface IPresenceService
     Task SetTypingAsync(Guid tenantId, Guid conversationId, Guid userId, CancellationToken ct);
 }
 ```
+
+---
+
+## Rate limit (Platform)
+
+```csharp
+public interface IRateLimiter
+{
+    Task<bool> TryAcquireAsync(string key, int limit, TimeSpan window, CancellationToken ct);
+}
+```
+
+Fase 1: Redis fixed-window (`INCR` + `EXPIRE`). Aplicado em `POST .../messages` (429) e hub `JoinChannel`/`SendTyping` (`HubException`). Config: `RateLimit:SendPerMinute`, `RateLimit:HubPerMinute`. Sem Redis configurado: fail-open.
 
 ---
 

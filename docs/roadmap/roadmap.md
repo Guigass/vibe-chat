@@ -58,8 +58,8 @@ Dependências: itens só começam quando deps = done.
 |----|--------|--------|------|
 | W3-1 | B | RLS policies em tabelas de negócio | W2-1, W1-2 |
 | W3-2 | E | Suíte tests/security cross-tenant (API+hub) | W3-1, W2-3 |
-| W3-3 | C | Rate-limit Redis em send/hub | W2-3 |
-| W3-4 | F | Dashboards: requests, outbox lag, SignalR | W0-6, W2-2 |
+| W3-3 | C | Rate-limit Redis em send/hub (**Done**) | W2-3 |
+| W3-4 | F | Dashboards: requests, outbox lag, SignalR (**Done**) | W0-6, W2-2 |
 | W3-5 | E | Critérios de aceite fatia — sign-off | W2-7, W3-2 |
 
 ## Wave 4 — Extensões pós-fatia (paralelizável)
@@ -71,7 +71,7 @@ Dependências: itens só começam quando deps = done.
 | W4-1 | C/D | Threads | W3-5 | |
 | W4-2 | C/D | Anexos MinIO | W3-5, W0-1 | **Done** |
 | W4-3 | C/D | Presence + typing polidos | W3-5 | |
-| W4-4 | C | Search FTS Postgres | W3-5 | |
+| W4-4 | C | Search FTS Postgres | W3-5 | **Done** |
 | W4-5 | C | AI NoOp + OpenRouter adapter + flag | W3-5 | parcial (mock) |
 | W4-6 | B | Audit log admin | W3-5 | parcial |
 | W4-7 | D | PWA installability + offline shell | W3-5 | |
@@ -80,7 +80,7 @@ Dependências: itens só começam quando deps = done.
 
 | ID | Trilha | Tarefa | Deps |
 |----|--------|--------|------|
-| W5-1 | A | Backup automatizado + drill doc validado | W3-5 |
+| W5-1 | A | Backup automatizado + drill doc validado (**Done** — scripts + doc) | W3-5 |
 | W5-2 | A | TLS / proxy reference config | W3-5 |
 | W5-3 | E | Load smoke k6 | W3-5 |
 | W5-4 | G | Runbooks finais ops | W5-1 |

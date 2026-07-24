@@ -28,11 +28,11 @@ Prioridade: **P0** (fatia vertical) → **P1** (MVP usável) → **P2** (diferen
 | B-024 | Reações | |
 | B-025 | Anexos MinIO | **Done (Wave 4)** — presign upload/download, authZ, UI composer + bubble, testes |
 | B-026 | Presence + typing | parcial (typing existe; polish pendente) |
-| B-027 | Busca FTS | |
-| B-028 | Rate-limit | |
+| B-027 | Busca FTS | **Done (Wave 4)** — tsvector/GIN, API Search, membership ACL, UI shell, testes |
+| B-028 | Rate-limit | **Done (Wave 4)** — Redis INCR send/hub |
 | B-029 | PWA | |
-| B-030 | Dashboards Grafana | |
-| B-031 | Backup scripts | doc base existe; scripts/drill a reforçar |
+| B-030 | Dashboards Grafana | **Done** — overview (requests, outbox, SignalR) provisionado |
+| B-031 | Backup scripts | **Done (Wave 4)** — `backup.sh` + `restore-drill.sh` + doc drill |
 
 ## P2 — Diferenciação e admin
 
@@ -63,7 +63,7 @@ Prioridade: **P0** (fatia vertical) → **P1** (MVP usável) → **P2** (diferen
 
 ## Ordem de consumo sugerida
 
-Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup.
+Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup. (busca, rate-limit, dashboards e backup scripts já Done na Wave 4.)
 
 ## Itens explicitamente rejeitados na fase 1
 

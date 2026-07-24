@@ -23,6 +23,7 @@ using VibeChat.Identity;
 using VibeChat.Messaging;
 using VibeChat.Notifications;
 using VibeChat.Realtime;
+using VibeChat.Search;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
 using Role = VibeChat.SharedKernel.Role;
@@ -856,6 +857,7 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
         using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
         var publisher = scope.ServiceProvider.GetRequiredService<IChatPublisher>();
+        var searchIndexer = scope.ServiceProvider.GetRequiredService<ISearchIndexer>();
         var now = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow;
 
         var messages = await dbContext.OutboxMessages.IgnoreQueryFilters()
@@ -879,6 +881,17 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     nameof(MessageDeletedEvent) => "MessageDeleted",
                     _ => outbox.Type
                 };
+
+                if (outbox.Type is nameof(MessageCreatedEvent) or nameof(MessageEditedEvent) or nameof(MessageDeletedEvent)
+                    && root.TryGetProperty("messageId", out var messageIdProperty))
+                {
+                    var messageId = new MessageId(messageIdProperty.GetGuid());
+                    var body = root.TryGetProperty("body", out var bodyProperty) ? bodyProperty.GetString() ?? string.Empty : string.Empty;
+                    var isDeleted = outbox.Type == nameof(MessageDeletedEvent);
+                    await searchIndexer.IndexMessageAsync(
+                        new MessageIndexed(messageId, tenantId, channelId, body, isDeleted, now),
+                        cancellationToken);
+                }
 
                 await publisher.PublishAsync(new RealtimeMessage(eventName, tenantId, channelId, JsonSerializer.Deserialize<object>(outbox.Payload)!), cancellationToken);
                 outbox.ProcessedAt = now;
@@ -917,7 +930,12 @@ public sealed class OutboxDispatcher(OutboxProcessor processor, ILogger<OutboxDi
     }
 }
 
-public sealed class ChatHub(ITypingService typing, IPresenceService presence, IChannelMembershipReader channels) : Hub
+public sealed class ChatHub(
+    ITypingService typing,
+    IPresenceService presence,
+    IChannelMembershipReader channels,
+    IRateLimiter rateLimiter,
+    IConfiguration configuration) : Hub
 {
     public static string ChannelGroup(ChannelId channelId) => $"channel:{channelId.Value}";
 
@@ -938,6 +956,7 @@ public sealed class ChatHub(ITypingService typing, IPresenceService presence, IC
         var userId = CurrentUserId();
         var tenant = new TenantId(tenantId);
         var channel = new ChannelId(channelId);
+        await EnsureHubRateLimitAsync(tenant, userId);
         if (!await channels.CanAccessAsync(tenant, channel, userId, Context.ConnectionAborted))
         {
             throw new HubException("Not authorized for channel.");
@@ -959,8 +978,23 @@ public sealed class ChatHub(ITypingService typing, IPresenceService presence, IC
         var tenant = new TenantId(tenantId);
         var channel = new ChannelId(channelId);
         var userId = CurrentUserId();
+        await EnsureHubRateLimitAsync(tenant, userId);
         await typing.SetTypingAsync(tenant, channel, userId, displayName, Context.ConnectionAborted);
         await Clients.Group(ChannelGroup(channel)).SendAsync("Typing", new { tenantId, channelId, userId = userId.Value, displayName }, Context.ConnectionAborted);
+    }
+
+    private async Task EnsureHubRateLimitAsync(TenantId tenantId, UserId userId)
+    {
+        var limit = configuration.GetValue("RateLimit:HubPerMinute", RateLimitPolicies.DefaultHubPerMinute);
+        var allowed = await rateLimiter.TryAcquireAsync(
+            RateLimitKeys.Hub(tenantId, userId),
+            limit,
+            TimeSpan.FromMinutes(1),
+            Context.ConnectionAborted);
+        if (!allowed)
+        {
+            throw new HubException("Rate limit exceeded.");
+        }
     }
 
     private UserId CurrentUserId()
@@ -1078,6 +1112,9 @@ public static class DependencyInjection
         services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
         services.AddScoped<IConversationSequenceStore, ConversationSequenceStore>();
         services.AddScoped<IMessageWriter, MessageWriter>();
+        services.AddScoped<ISearchIndexer, PostgresSearchIndexer>();
+        services.AddScoped<ISearchQuery, PostgresSearchQuery>();
+        services.AddSingleton<IRateLimiter, RedisRateLimiter>();
         services.AddScoped<PermissionChecker>();
         services.AddScoped<IPermissionChecker>(sp => sp.GetRequiredService<PermissionChecker>());
         services.AddScoped<IWorkspaceMembershipReader>(sp => sp.GetRequiredService<PermissionChecker>());

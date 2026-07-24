@@ -7,6 +7,7 @@ import {
   Channel,
   ChatMessage,
   MessageAttachment,
+  SearchMessagesResult,
   Workspace,
   WorkspaceMember,
 } from '../../shared/models/chat.models';
@@ -233,6 +234,25 @@ export class ApiService {
       `/api/v1/channels/${channelId}/unread-count`,
     );
     return result.unreadCount;
+  }
+
+  async searchMessages(input: {
+    workspaceId: string;
+    q: string;
+    channelId?: string;
+    limit?: number;
+  }): Promise<SearchMessagesResult> {
+    const params = new URLSearchParams({
+      workspaceId: input.workspaceId,
+      q: input.q,
+    });
+    if (input.channelId) {
+      params.set('channelId', input.channelId);
+    }
+    if (input.limit) {
+      params.set('limit', String(input.limit));
+    }
+    return this.request<SearchMessagesResult>(`/api/v1/search/messages?${params.toString()}`);
   }
 
   async getAdminStats(): Promise<AdminStats> {

@@ -10,6 +10,7 @@
     <ProjectReference Include="..\..\modules\Messaging\VibeChat.Messaging.csproj" />
     <ProjectReference Include="..\..\modules\Realtime\VibeChat.Realtime.csproj" />
     <ProjectReference Include="..\..\modules\Files\VibeChat.Files.csproj" />
+    <ProjectReference Include="..\..\modules\Search\VibeChat.Search.csproj" />
     <ProjectReference Include="..\..\modules\Audit\VibeChat.Audit.csproj" />
     <ProjectReference Include="..\..\modules\Administration\VibeChat.Administration.csproj" />
     <ProjectReference Include="..\..\modules\AI\VibeChat.AI.csproj" />

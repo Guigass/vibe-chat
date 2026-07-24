@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using VibeChat.Conversations;
 using VibeChat.Infrastructure;
+using VibeChat.Messaging;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
 using VibeChat.TestHost;
@@ -139,6 +140,52 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Cross_tenant_search_is_denied_for_foreign_workspace()
+    {
+        var (foreignWorkspaceId, _) = await SeedCrossTenantWorkspaceWithMessageAsync();
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var response = await client.GetAsync(
+            $"/api/v1/search/messages?workspaceId={foreignWorkspaceId}&q=secret");
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Non_member_cannot_find_direct_message_via_search()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var open = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/dms",
+            new OpenDirectMessageRequest(SeedData.BobUserId.Value));
+        open.EnsureSuccessStatusCode();
+        var dm = await open.Content.ReadFromJsonAsync<ChannelDto>();
+        dm.Should().NotBeNull();
+
+        var messageId = Guid.NewGuid();
+        var token = $"dmsearch{messageId:N}";
+        var create = await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{dm!.Id}/messages",
+            new SendMessageRequest(messageId, $"sec-search-dm-{messageId:N}", $"privado {token}", null, null));
+        create.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var aliceHits = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={SeedData.DemoWorkspaceId.Value}&q={token}");
+        aliceHits.Should().NotBeNull();
+        aliceHits!.Items.Should().Contain(x => x.MessageId == messageId);
+
+        var demoHits = await demo.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={SeedData.DemoWorkspaceId.Value}&q={token}");
+        demoHits.Should().NotBeNull();
+        demoHits!.Items.Should().NotContain(x => x.MessageId == messageId);
+    }
+
+    [Fact]
     public async Task Direct_message_is_hidden_from_non_members()
     {
         using var alice = factory.CreateClient();
@@ -164,6 +211,62 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
 
     private sealed record ChannelDto(Guid Id, Guid WorkspaceId, string Name, string Type);
     private sealed record AttachmentUploadDto(Guid AttachmentId, string UploadUrl);
+    private sealed record SearchMessageHitDto(Guid MessageId, Guid ChannelId, string BodyPreview);
+    private sealed record SearchMessagesDto(string Query, int Limit, SearchMessageHitDto[] Items);
+
+    private async Task<(Guid WorkspaceId, Guid ChannelId)> SeedCrossTenantWorkspaceWithMessageAsync()
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        var now = DateTimeOffset.UtcNow;
+
+        var workspaceId = WorkspaceId.New();
+        var tenantId = new TenantId(workspaceId.Value);
+        var channelId = ChannelId.New();
+        var messageId = MessageId.New();
+
+        db.Workspaces.Add(new Workspace
+        {
+            Id = workspaceId,
+            TenantId = tenantId,
+            Name = $"Sec Search Tenant {workspaceId.Value:N}"[..Math.Min(160, $"Sec Search Tenant {workspaceId.Value:N}".Length)],
+            Slug = $"sec-search-{workspaceId.Value:N}"[..Math.Min(120, $"sec-search-{workspaceId.Value:N}".Length)],
+            AiEnabled = false,
+            CreatedAt = now
+        });
+        db.Channels.Add(new Channel
+        {
+            Id = channelId,
+            TenantId = tenantId,
+            WorkspaceId = workspaceId,
+            Name = "isolated-search",
+            Type = ChannelType.Public,
+            CreatedAt = now,
+            CreatedBy = SeedData.DemoUserId
+        });
+        db.WorkspaceMembers.Add(new WorkspaceMember
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            WorkspaceId = workspaceId,
+            UserId = SeedData.DemoUserId,
+            Role = Role.WorkspaceOwner,
+            JoinedAt = now
+        });
+        db.Messages.Add(new Message
+        {
+            Id = messageId,
+            TenantId = tenantId,
+            ConversationId = channelId,
+            AuthorId = SeedData.DemoUserId,
+            Sequence = 1,
+            Body = "secret cross tenant payload",
+            CreatedAt = now
+        });
+
+        await db.SaveChangesAsync();
+        return (workspaceId.Value, channelId.Value);
+    }
 
     private async Task<Guid> SeedCrossTenantChannelAsync()
     {

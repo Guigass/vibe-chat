@@ -3,6 +3,7 @@ using VibeChat.AI;
 using VibeChat.BuildingBlocks;
 using VibeChat.Files;
 using VibeChat.Messaging;
+using VibeChat.Search;
 using VibeChat.SharedKernel;
 
 namespace VibeChat.UnitTests;
@@ -57,6 +58,34 @@ public sealed class BackendUnitTests
     {
         RolePermissionCatalog.For(Role.Member).Should().Contain(Permissions.Files.Upload);
         RolePermissionCatalog.For(Role.Guest).Should().NotContain(Permissions.Files.Upload);
+    }
+
+    [Fact]
+    public void Permission_catalog_allows_member_to_search_messages()
+    {
+        RolePermissionCatalog.For(Role.Member).Should().Contain(Permissions.Search.Messages);
+        RolePermissionCatalog.For(Role.Guest).Should().NotContain(Permissions.Search.Messages);
+    }
+
+    [Fact]
+    public void Search_policies_normalize_term_limit_and_preview()
+    {
+        SearchPolicies.NormalizeTerm("  hello  ").Should().Be("hello");
+        SearchPolicies.NormalizeLimit(null).Should().Be(SearchPolicies.DefaultLimit);
+        SearchPolicies.NormalizeLimit(0).Should().Be(1);
+        SearchPolicies.NormalizeLimit(999).Should().Be(SearchPolicies.MaxLimit);
+        SearchPolicies.BuildPreview(new string('a', 200)).Should().EndWith("…").And.HaveLength(SearchPolicies.PreviewLength + 1);
+    }
+
+    [Fact]
+    public void Rate_limit_keys_are_tenant_and_user_scoped()
+    {
+        var tenant = new TenantId(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        var user = new UserId(Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
+
+        RateLimitKeys.SendMessage(tenant, user).Should().Contain("rl:send:");
+        RateLimitKeys.Hub(tenant, user).Should().Contain("rl:hub:");
+        RateLimitKeys.SendMessage(tenant, user).Should().NotBe(RateLimitKeys.Hub(tenant, user));
     }
 
     [Fact]
