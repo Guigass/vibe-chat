@@ -30,7 +30,7 @@ import { Button, EmptyState, IconButton, MessageBubble, Skeleton, Textarea } fro
         } @else if (threads.active(); as active) {
           @if (active.parentMessage; as parent) {
             <div class="thread__parent">
-              <vc-message-bubble [message]="parent" />
+              <vc-message-bubble [message]="parent" (react)="onReact(parent.id, $event)" />
             </div>
           }
 
@@ -42,7 +42,7 @@ import { Button, EmptyState, IconButton, MessageBubble, Skeleton, Textarea } fro
           } @else {
             <div class="thread__list">
               @for (message of threads.sortedMessages(); track message.id) {
-                <vc-message-bubble [message]="message" />
+                <vc-message-bubble [message]="message" (react)="onReact(message.id, $event)" />
               }
             </div>
           }
@@ -147,6 +147,10 @@ export class ThreadPanel {
     if (!body) return;
     this.draft.set('');
     await this.threads.send(body);
+  }
+
+  async onReact(messageId: string, emoji: string): Promise<void> {
+    await this.threads.toggleReaction(messageId, emoji);
   }
 
   onKeydown(event: KeyboardEvent): void {

@@ -74,6 +74,7 @@ public interface IMembershipQuery
 | ReplyToMessageId | Guid? | |
 | ReplyCount | int | Contagem de replies (timeline do canal) |
 | Attachments | AttachmentDto[] | Metadados prontos (sem URL) |
+| Reactions | ReactionSummaryDto[] | `{ emoji, count, me }` agregado |
 
 ### EditMessage
 
@@ -87,6 +88,14 @@ public interface IMembershipQuery
 - Autor com `message.delete.own` **ou** papel com `message.delete.any`
 - Soft-delete (`DeletedAt`); body oculto nas leituras (ADR-018)
 - Também cobre replies de thread do canal (authZ por membership do canal pai)
+
+### Reactions
+
+| Endpoint | Notas |
+|----------|-------|
+| `PUT /api/v1/channels/{channelId}/messages/{messageId}/reactions` | Toggle (`{ emoji }`); membership + `message.react`; allowlist `👍 ❤️ 😂 🎉 👀 ✅`; unique `(tenant, message, user, emoji)` |
+
+`MessageDto.reactions`: `{ emoji, count, me }[]` (agregado no history/thread). Outbox `ReactionChangedEvent` → hub `ReactionChanged` no grupo do canal pai (`messageId`, `emoji`, `userId`, `added`, `reactions`).
 
 ### Threads
 
@@ -168,6 +177,23 @@ Envelope comum:
 }
 ```
 
+### `messaging.reaction.changed` (`ReactionChangedEvent`)
+
+```json
+{
+  "messageId": "…",
+  "conversationId": "…",
+  "channelId": "…",
+  "threadId": null,
+  "userId": "…",
+  "emoji": "👍",
+  "added": true,
+  "reactions": [{ "emoji": "👍", "count": 1, "userIds": ["…"] }]
+}
+```
+
+Clientes derivam `me` a partir de `userIds` (o campo `me` só existe nas respostas HTTP).
+
 ### `directory.membership.changed`
 
 Usado por Presence/Realtime/Search para invalidar caches e grupos.
@@ -199,6 +225,7 @@ Nomes de eventos hub (cliente):
 | `message.created` | Nova mensagem |
 | `message.edited` | Edição |
 | `message.deleted` | Soft delete |
+| `ReactionChanged` | Toggle de reação (payload com resumo agregado) |
 | `Typing` | Typing (TTL curto Redis) |
 | `PresenceChanged` | Presence `online`/`away`/`offline` (hub group `tenant:{tenantId}`) |
 

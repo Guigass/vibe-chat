@@ -25,12 +25,12 @@ Prioridade: **P0** (fatia vertical) → **P1** (MVP usável) → **P2** (diferen
 | B-021 | DMs 1:1 | **Done (Wave 4)** — Directory members + get-or-create DM + UI |
 | B-022 | Threads | **Done (Wave 4)** — API get-or-create + replies com seq próprio, authZ membership, outbox/hub `threadId`, UI painel + testes |
 | B-023 | Editar / soft-delete mensagem | **Done (Wave 4)** — API authZ + hub + UI + testes |
-| B-024 | Reações | |
+| B-024 | Reações | **Done (Wave 4)** — toggle API + outbox/hub `ReactionChanged`, UI na bubble, authZ `message.react`, testes |
 | B-025 | Anexos MinIO | **Done (Wave 4)** — presign upload/download, authZ, UI composer + bubble, testes |
 | B-026 | Presence + typing | **Done (Wave 4)** — typing + reconnect rejoin; presence online/away Redis TTL + hub Heartbeat/SetAway + UI indicadores |
 | B-027 | Busca FTS | **Done (Wave 4)** — tsvector/GIN, API Search, membership ACL, UI shell, testes |
 | B-028 | Rate-limit | **Done (Wave 4)** — Redis INCR send/hub |
-| B-029 | PWA | |
+| B-029 | PWA | **Done (Wave 4)** — manifest/icons + SW (ngsw) installability + offline shell/banner |
 | B-030 | Dashboards Grafana | **Done** — overview (requests, outbox, SignalR) provisionado |
 | B-031 | Backup scripts | **Done (Wave 4)** — `backup.sh` + `restore-drill.sh` + doc drill |
 
@@ -63,7 +63,7 @@ Prioridade: **P0** (fatia vertical) → **P1** (MVP usável) → **P2** (diferen
 
 ## Ordem de consumo sugerida
 
-Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup → spaces → presence. (B-020…B-023, B-025…B-028, B-030, B-031 já Done na Wave 4.)
+Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup → spaces → presence → reações → PWA. (B-020…B-031 já Done na Wave 4.)
 
 ## Itens explicitamente rejeitados na fase 1
 

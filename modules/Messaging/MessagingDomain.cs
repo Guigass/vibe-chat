@@ -46,6 +46,17 @@ public sealed class Reaction
     public DateTimeOffset CreatedAt { get; set; }
 }
 
+public static class ReactionEmojis
+{
+    public static readonly IReadOnlySet<string> Allowed = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "👍", "❤️", "😂", "🎉", "👀", "✅"
+    };
+
+    public static bool IsAllowed(string? emoji) =>
+        !string.IsNullOrWhiteSpace(emoji) && Allowed.Contains(emoji.Trim());
+}
+
 public sealed class ReadCursor
 {
     public Guid Id { get; set; }
@@ -94,6 +105,14 @@ public sealed record MessageDeletedEvent(
     MessageId MessageId,
     long Sequence,
     DateTimeOffset DeletedAt) : IntegrationEvent(TenantId);
+
+public sealed record ReactionChangedEvent(
+    TenantId TenantId,
+    ChannelId ChannelId,
+    MessageId MessageId,
+    UserId UserId,
+    string Emoji,
+    bool Added) : IntegrationEvent(TenantId);
 
 public interface IConversationSequenceStore
 {

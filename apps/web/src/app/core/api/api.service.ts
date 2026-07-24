@@ -9,6 +9,7 @@ import {
   ChatThread,
   MessageAttachment,
   PresenceStatus,
+  ReactionSummary,
   SearchMessagesResult,
   Space,
   Workspace,
@@ -59,6 +60,12 @@ interface AttachmentDto {
   status?: string;
 }
 
+interface ReactionSummaryDto {
+  emoji: string;
+  count: number;
+  me: boolean;
+}
+
 interface MessageDto {
   id: string;
   channelId: string;
@@ -74,6 +81,15 @@ interface MessageDto {
   threadId?: string | null;
   replyToMessageId?: string | null;
   replyCount?: number;
+  reactions?: ReactionSummaryDto[] | null;
+}
+
+interface ToggleReactionDto {
+  messageId: string;
+  channelId: string;
+  emoji: string;
+  added: boolean;
+  reactions: ReactionSummaryDto[];
 }
 
 interface ThreadDto {
@@ -342,6 +358,31 @@ export class ApiService {
     });
   }
 
+  async toggleReaction(
+    channelId: string,
+    messageId: string,
+    emoji: string,
+  ): Promise<{ messageId: string; channelId: string; emoji: string; added: boolean; reactions: ReactionSummary[] }> {
+    const dto = await this.request<ToggleReactionDto>(
+      `/api/v1/channels/${channelId}/messages/${messageId}/reactions`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ emoji }),
+      },
+    );
+    return {
+      messageId: dto.messageId,
+      channelId: dto.channelId,
+      emoji: dto.emoji,
+      added: dto.added,
+      reactions: (dto.reactions ?? []).map((r) => ({
+        emoji: r.emoji,
+        count: r.count,
+        me: !!r.me,
+      })),
+    };
+  }
+
   async upsertReadCursor(channelId: string, lastReadSequence: number): Promise<void> {
     await this.request(`/api/v1/channels/${channelId}/read-cursor`, {
       method: 'PUT',
@@ -443,6 +484,11 @@ export class ApiService {
       threadId: m.threadId ?? null,
       replyToMessageId: m.replyToMessageId ?? null,
       replyCount: m.replyCount ?? 0,
+      reactions: (m.reactions ?? []).map((r) => ({
+        emoji: r.emoji,
+        count: r.count,
+        me: !!r.me,
+      })),
     };
   }
 

@@ -459,6 +459,7 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
             .ToDictionaryAsync(x => x.ThreadId, x => x.Count, ct);
 
     var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, channel.Id, messageIds, ct);
+    var reactionsByMessage = await LoadReactionSummariesByMessageAsync(db, messageIds, profile.Id, ct);
     var messages = rows.Select(x => new MessageResponse(
         x.Id.Value,
         x.ChannelId.Value,
@@ -473,7 +474,8 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
         x.ThreadId,
         x.ReplyToMessageId?.Value,
         x.ThreadId is Guid tid && replyCounts.TryGetValue(tid, out var count) ? count : 0,
-        x.ChannelId.Value)).ToArray();
+        x.ChannelId.Value,
+        x.DeletedAt == null && reactionsByMessage.TryGetValue(x.Id.Value, out var rx) ? rx : [])).ToArray();
     return Results.Ok(messages);
 });
 
@@ -673,6 +675,7 @@ v1.MapGet("/threads/{threadId:guid}", async (
     if (parent is not null)
     {
         var attachments = await LoadAttachmentsByMessageAsync(db, channel.Id, [parent.Message.Id], ct);
+        var reactions = await LoadReactionSummariesByMessageAsync(db, [parent.Message.Id], profile.Id, ct);
         parentResponse = new MessageResponse(
             parent.Message.Id.Value,
             channel.Id.Value,
@@ -687,7 +690,8 @@ v1.MapGet("/threads/{threadId:guid}", async (
             thread.Id,
             parent.Message.ReplyToMessageId?.Value,
             replyCount,
-            channel.Id.Value);
+            channel.Id.Value,
+            parent.Message.DeletedAt == null && reactions.TryGetValue(parent.Message.Id.Value, out var rx) ? rx : []);
     }
 
     return Results.Ok(new ThreadResponse(
@@ -749,6 +753,7 @@ v1.MapGet("/threads/{threadId:guid}/messages", async (
 
     var messageIds = rows.Select(x => x.Id).ToArray();
     var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, channel.Id, messageIds, ct);
+    var reactionsByMessage = await LoadReactionSummariesByMessageAsync(db, messageIds, profile.Id, ct);
     var messages = rows.Select(x => new MessageResponse(
         x.Id.Value,
         channel.Id.Value,
@@ -763,7 +768,8 @@ v1.MapGet("/threads/{threadId:guid}/messages", async (
         x.ThreadId ?? thread.Id,
         x.ReplyToMessageId?.Value,
         0,
-        thread.Id)).ToArray();
+        thread.Id,
+        x.DeletedAt == null && reactionsByMessage.TryGetValue(x.Id.Value, out var rx) ? rx : [])).ToArray();
     return Results.Ok(messages);
 });
 
@@ -1135,6 +1141,96 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid ch
         message.ReplyToMessageId?.Value,
         0,
         message.ConversationId.Value));
+});
+
+v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}/reactions", async (
+    Guid channelId,
+    Guid messageId,
+    ToggleReactionRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IOutboxWriter outbox,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.React, ct))
+    {
+        return Results.Forbid();
+    }
+
+    var emoji = request.Emoji?.Trim() ?? string.Empty;
+    if (!ReactionEmojis.IsAllowed(emoji))
+    {
+        return Results.BadRequest(new { error = "emoji is not allowed." });
+    }
+
+    var message = await FindMessageInChannelAsync(db, channel.Id, new MessageId(messageId), ct);
+    if (message is null || message.DeletedAt is not null)
+    {
+        return Results.NotFound();
+    }
+
+    var existing = await db.Reactions.FirstOrDefaultAsync(
+        x => x.MessageId == message.Id && x.UserId == profile.Id && x.Emoji == emoji,
+        ct);
+
+    var added = existing is null;
+    if (existing is null)
+    {
+        db.Reactions.Add(new Reaction
+        {
+            Id = Guid.NewGuid(),
+            TenantId = channel.TenantId,
+            MessageId = message.Id,
+            UserId = profile.Id,
+            Emoji = emoji,
+            CreatedAt = clock.UtcNow
+        });
+    }
+    else
+    {
+        db.Reactions.Remove(existing);
+    }
+
+    var snapshot = await BuildReactionSnapshotAsync(db, message.Id, profile.Id, emoji, added, ct);
+    outbox.Add(new OutboxMessage
+    {
+        TenantId = channel.TenantId,
+        Type = nameof(ReactionChangedEvent),
+        Payload = JsonSerializer.Serialize(new
+        {
+            tenantId = channel.TenantId.Value,
+            channelId,
+            conversationId = message.ConversationId.Value,
+            threadId = message.ThreadId,
+            messageId,
+            userId = profile.Id.Value,
+            emoji,
+            added,
+            occurredAt = clock.UtcNow,
+            reactions = snapshot.Select(x => new
+            {
+                emoji = x.Emoji,
+                count = x.Count,
+                userIds = x.UserIds
+            })
+        })
+    });
+    await db.SaveChangesAsync(ct);
+
+    var summaries = snapshot
+        .Select(x => new ReactionSummaryResponse(x.Emoji, x.Count, x.UserIds.Contains(profile.Id.Value)))
+        .ToArray();
+    return Results.Ok(new ToggleReactionResponse(messageId, channelId, emoji, added, summaries));
 });
 
 v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IAuditWriter audit, IClock clock, CancellationToken ct) =>
@@ -1545,6 +1641,73 @@ static async Task<Dictionary<Guid, AttachmentResponse[]>> LoadAttachmentsByMessa
             g => g.Select(x => new AttachmentResponse(x.Id, x.FileName, x.ContentType, x.SizeBytes, x.Status.ToString())).ToArray());
 }
 
+static async Task<Dictionary<Guid, ReactionSummaryResponse[]>> LoadReactionSummariesByMessageAsync(
+    VibeChatDbContext db,
+    IReadOnlyCollection<MessageId> messageIds,
+    UserId currentUserId,
+    CancellationToken ct)
+{
+    if (messageIds.Count == 0)
+    {
+        return new Dictionary<Guid, ReactionSummaryResponse[]>();
+    }
+
+    var wanted = messageIds.Select(x => x.Value).ToArray();
+    var rows = await db.Reactions.AsNoTracking()
+        .Where(x => wanted.Contains(x.MessageId.Value))
+        .Select(x => new { MessageId = x.MessageId.Value, x.Emoji, UserId = x.UserId.Value })
+        .ToListAsync(ct);
+
+    return rows
+        .GroupBy(x => x.MessageId)
+        .ToDictionary(
+            g => g.Key,
+            g => g.GroupBy(x => x.Emoji)
+                .OrderBy(x => x.Key, StringComparer.Ordinal)
+                .Select(emojiGroup => new ReactionSummaryResponse(
+                    emojiGroup.Key,
+                    emojiGroup.Count(),
+                    emojiGroup.Any(x => x.UserId == currentUserId.Value)))
+                .ToArray());
+}
+
+static async Task<ReactionSnapshot[]> BuildReactionSnapshotAsync(
+    VibeChatDbContext db,
+    MessageId messageId,
+    UserId currentUserId,
+    string toggledEmoji,
+    bool added,
+    CancellationToken ct)
+{
+    var rows = await db.Reactions.AsNoTracking()
+        .Where(x => x.MessageId == messageId)
+        .Select(x => new { x.Emoji, UserId = x.UserId.Value })
+        .ToListAsync(ct);
+
+    // Reflect in-memory toggle before SaveChanges for the response/outbox payload.
+    if (added)
+    {
+        rows.Add(new { Emoji = toggledEmoji, UserId = currentUserId.Value });
+    }
+    else
+    {
+        rows = rows
+            .Where(x => !(x.Emoji == toggledEmoji && x.UserId == currentUserId.Value))
+            .ToList();
+    }
+
+    return rows
+        .GroupBy(x => x.Emoji)
+        .OrderBy(x => x.Key, StringComparer.Ordinal)
+        .Select(g => new ReactionSnapshot(
+            g.Key,
+            g.Count(),
+            g.Select(x => x.UserId).Distinct().ToArray()))
+        .ToArray();
+}
+
+internal sealed record ReactionSnapshot(string Emoji, int Count, Guid[] UserIds);
+
 internal sealed record DirectPeerInfo(UserId UserId, string DisplayName);
 
 public sealed class DevAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
@@ -1613,6 +1776,14 @@ public sealed record AttachmentDownloadResponse(
     string FileName,
     string ContentType,
     long SizeBytes);
+public sealed record ReactionSummaryResponse(string Emoji, int Count, bool Me);
+public sealed record ToggleReactionRequest(string Emoji);
+public sealed record ToggleReactionResponse(
+    Guid MessageId,
+    Guid ChannelId,
+    string Emoji,
+    bool Added,
+    ReactionSummaryResponse[] Reactions);
 public sealed record MessageResponse(
     Guid Id,
     Guid ChannelId,
@@ -1627,7 +1798,8 @@ public sealed record MessageResponse(
     Guid? ThreadId = null,
     Guid? ReplyToMessageId = null,
     int ReplyCount = 0,
-    Guid? ConversationId = null);
+    Guid? ConversationId = null,
+    ReactionSummaryResponse[]? Reactions = null);
 public sealed record ThreadResponse(
     Guid Id,
     Guid ChannelId,

@@ -75,7 +75,8 @@ Dependências: itens só começam quando deps = done.
 | W4-4 | C | Search FTS Postgres | W3-5 | **Done** |
 | W4-5 | C | AI NoOp + OpenRouter adapter + flag | W3-5 | parcial (mock) |
 | W4-6 | B | Audit log admin | W3-5 | parcial |
-| W4-7 | D | PWA installability + offline shell | W3-5 | |
+| W4-7 | D | PWA installability + offline shell (B-029) | W3-5 | **Done** |
+| W4-8 | C/D | Reações (B-024) | W3-5 | **Done** |
 
 ## Wave 5 — Produção self-host
 

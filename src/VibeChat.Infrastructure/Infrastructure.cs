@@ -200,6 +200,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.MessageId).HasConversion(v => v.Value, v => new MessageId(v));
             entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
             entity.Property(x => x.Emoji).HasMaxLength(32);
+            entity.HasIndex(x => new { x.TenantId, x.MessageId, x.UserId, x.Emoji }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -1018,6 +1019,7 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     nameof(MessageCreatedEvent) => "MessageCreated",
                     nameof(MessageEditedEvent) => "MessageEdited",
                     nameof(MessageDeletedEvent) => "MessageDeleted",
+                    nameof(ReactionChangedEvent) => "ReactionChanged",
                     _ => outbox.Type
                 };
 

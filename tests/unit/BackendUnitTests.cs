@@ -94,8 +94,19 @@ public sealed class BackendUnitTests
         var permissions = RolePermissionCatalog.For(Role.Member);
 
         permissions.Should().Contain(Permissions.Message.Send);
+        permissions.Should().Contain(Permissions.Message.React);
         permissions.Should().Contain(Permissions.Channel.Create);
         permissions.Should().NotContain(Permissions.Admin.Dashboard);
+    }
+
+    [Fact]
+    public void Reaction_emoji_allowlist_accepts_mvp_set()
+    {
+        ReactionEmojis.IsAllowed("👍").Should().BeTrue();
+        ReactionEmojis.IsAllowed("❤️").Should().BeTrue();
+        ReactionEmojis.IsAllowed("🚀").Should().BeFalse();
+        ReactionEmojis.IsAllowed(" ").Should().BeFalse();
+        RolePermissionCatalog.For(Role.Guest).Should().NotContain(Permissions.Message.React);
     }
 
     [Fact]

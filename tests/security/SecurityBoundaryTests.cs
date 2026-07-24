@@ -62,6 +62,20 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Cross_tenant_cannot_toggle_reactions()
+    {
+        var foreignChannelId = await SeedCrossTenantChannelAsync();
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var react = await client.PutAsJsonAsync(
+            $"/api/v1/channels/{foreignChannelId}/messages/{Guid.NewGuid()}/reactions",
+            new { emoji = "👍" });
+        react.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Non_author_cannot_edit_or_delete_message()
     {
         using var alice = factory.CreateClient();

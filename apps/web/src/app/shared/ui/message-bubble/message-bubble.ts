@@ -1,6 +1,10 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, input, output, signal } from '@angular/core';
-import { ChatMessage, MessageAttachment } from '../../models/chat.models';
+import {
+  ChatMessage,
+  MessageAttachment,
+  REACTION_EMOJI_OPTIONS,
+} from '../../models/chat.models';
 import { Avatar } from '../avatar/avatar';
 import { ApiService } from '../../../core/api/api.service';
 
@@ -67,10 +71,35 @@ import { ApiService } from '../../../core/api/api.service';
               }
             </ul>
           }
+          @if (message().reactions?.length) {
+            <ul class="vc-msg__reactions" aria-label="Reações">
+              @for (reaction of message().reactions; track reaction.emoji) {
+                <li>
+                  <button
+                    type="button"
+                    [class.active]="reaction.me"
+                    [attr.aria-pressed]="reaction.me"
+                    [attr.aria-label]="'Reação ' + reaction.emoji"
+                    (click)="react.emit(reaction.emoji)"
+                  >
+                    <span aria-hidden="true">{{ reaction.emoji }}</span>
+                    <span>{{ reaction.count }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
         }
 
-        @if (!message().deletedAt && !editing()) {
+        @if (!message().deletedAt && !editing() && message().status === 'persisted') {
           <div class="vc-msg__actions">
+            <div class="vc-msg__react-picker" role="group" aria-label="Adicionar reação">
+              @for (emoji of emojiOptions; track emoji) {
+                <button type="button" [attr.aria-label]="'Reagir com ' + emoji" (click)="react.emit(emoji)">
+                  {{ emoji }}
+                </button>
+              }
+            </div>
             @if (showThreadAction()) {
               <button type="button" (click)="openThread.emit()">
                 @if (message().replyCount) {
@@ -80,7 +109,7 @@ import { ApiService } from '../../../core/api/api.service';
                 }
               </button>
             }
-            @if (message().mine && message().status === 'persisted') {
+            @if (message().mine) {
               <button type="button" (click)="startEdit()">Editar</button>
               <button type="button" class="danger" (click)="delete.emit()">Apagar</button>
             }
@@ -166,11 +195,56 @@ import { ApiService } from '../../../core/api/api.service';
       color: var(--vc-ink-subtle);
       font-size: 0.72rem;
     }
+    .vc-msg__reactions {
+      list-style: none;
+      margin: 0.5rem 0 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .vc-msg__reactions button {
+      border: 1px solid var(--vc-border);
+      background: color-mix(in srgb, var(--vc-surface) 88%, var(--vc-brand));
+      color: var(--vc-ink);
+      border-radius: var(--vc-radius-sm);
+      font: inherit;
+      font-size: 0.78rem;
+      padding: 0.12rem 0.4rem;
+      cursor: pointer;
+      display: inline-flex;
+      gap: 0.28rem;
+      align-items: center;
+    }
+    .vc-msg__reactions button.active {
+      border-color: color-mix(in srgb, var(--vc-brand) 45%, var(--vc-border));
+      background: color-mix(in srgb, var(--vc-brand) 16%, var(--vc-surface));
+    }
     .vc-msg__actions,
     .vc-msg__edit-actions {
       display: flex;
+      flex-wrap: wrap;
       gap: 0.5rem;
+      align-items: center;
       margin-top: 0.45rem;
+    }
+    .vc-msg__react-picker {
+      display: inline-flex;
+      gap: 0.15rem;
+      margin-right: 0.25rem;
+    }
+    .vc-msg__react-picker button {
+      border: 0;
+      background: transparent;
+      font-size: 0.9rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0.1rem;
+      opacity: 0.55;
+    }
+    .vc-msg__react-picker button:hover,
+    .vc-msg__react-picker button:focus-visible {
+      opacity: 1;
     }
     .vc-msg__actions button,
     .vc-msg__edit-actions button {
@@ -181,7 +255,7 @@ import { ApiService } from '../../../core/api/api.service';
       cursor: pointer;
       padding: 0;
     }
-    .vc-msg__actions button:hover,
+    .vc-msg__actions > button:hover,
     .vc-msg__edit-actions button:hover {
       color: var(--vc-ink);
     }
@@ -209,9 +283,11 @@ export class MessageBubble {
   readonly edit = output<string>();
   readonly delete = output<void>();
   readonly openThread = output<void>();
+  readonly react = output<string>();
 
   readonly editing = signal(false);
   readonly draft = signal('');
+  readonly emojiOptions = REACTION_EMOJI_OPTIONS;
 
   startEdit(): void {
     this.draft.set(this.message().body);
