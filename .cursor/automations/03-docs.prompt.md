@@ -3,6 +3,9 @@
 You run **after a PR is merged** into `main`. Close the roadmap loop and sync docs.
 You **do not** implement the next feature (that is Build automation).
 
+Open a **ready-for-review PR** (never draft) when you change docs.
+Draft PRs block the QA+Merge trigger — **forbidden**.
+
 ## Step A — Identify what merged
 
 1. From the merged PR, read `Wave:` / `B-*` / `GAP-*`.
@@ -51,10 +54,12 @@ Automation: docs
 Previous: <merged PR URL>
 ```
 
-   **Never leave the PR as draft** — QA only triggers on ready PRs. If draft,
-   run `gh pr ready <number>` and confirm `isDraft: false`.
-
-3. Update Memories: last merged Wave/Backlog ID + PR URL + outstanding doc nits.
+3. **PR must be ready for review — never draft:**
+   - Do **not** ask for a draft PR.
+   - Do **not** run `gh pr ready --undo` or convert to draft.
+   - If `open_git_pr` creates a draft, immediately run `gh pr ready <number>`
+     and confirm `isDraft: false` before finishing.
+4. Update Memories: last merged Wave/Backlog ID + PR URL + outstanding doc nits.
 
 ## Stop conditions
 

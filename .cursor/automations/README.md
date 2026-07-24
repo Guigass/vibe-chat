@@ -23,6 +23,7 @@ para [cursor.com/automations](https://cursor.com/automations) (a API só lê met
 
 > **Draft = pipeline parado.** Build e Docs devem abrir PR **ready for review**.
 > Se `open_git_pr` criar draft, o agente roda `gh pr ready <n>` antes de encerrar.
+> **Proibido** `gh pr ready --undo` / converter para draft.
 
 ## Configuração no dashboard
 
@@ -39,9 +40,13 @@ IDs atuais (referência):
 
 | Nome atual | ID | Ação |
 |------------|-----|------|
-| VibeChat — Implement | `b70c8134-8795-11f1-b532-320a589b8025` | Desabilitada — reutilizar como **Build** ou criar nova |
-| VibeChat — QA / Review | `294fd0db-8796-11f1-b532-320a589b8025` | Atualizar prompt → **QA + Merge** |
-| VibeChat — Next on Merge | `75495d53-8796-11f1-b532-320a589b8025` | Atualizar prompt → **Docs / Close** (sem implementar) |
+| VibeChat — 1) Build / Melhorias | (dashboard) | Prompt = `01-build.prompt.md`; PR **ready** (nunca draft) |
+| VibeChat — QA / Review | `294fd0db-8796-11f1-b532-320a589b8025` | Prompt = `02-qa-merge.prompt.md` |
+| VibeChat — 3) Docs / Close | `7de10419-87a9-11f1-b532-320a589b8025` | Prompt = `03-docs.prompt.md`; PR **ready** (nunca draft) |
+
+**Obrigatório após editar `.prompt.md`:** colar de novo o texto no dashboard
+[cursor.com/automations](https://cursor.com/automations) — a API **não** sincroniza o
+prompt sozinha. Prompt antigo no dashboard = comportamento antigo (ex.: draft).
 
 ## Limite anti-overengineering
 
