@@ -96,3 +96,44 @@ Comentários úteis apontam arquivo + regra, sugerem teste que falharia e difere
 - Sem secrets
 - Escopo limitado à tarefa
 - Evidência de verificação anexada ou citada no PR
+
+## Cursor Cloud specific instructions
+
+Contexto para agentes rodando em VMs do Cursor Cloud. O update script já
+instala/atualiza dependências (restore .NET + npm). Aqui ficam apenas caveats
+não óbvios de execução. Comandos padrão estão no `README.md` e `Taskfile.yml`.
+
+- **Docker não sobe sozinho** (não há systemd). Antes de `docker compose`,
+  Testcontainers ou qualquer serviço, inicie o daemon uma vez:
+  `sudo dockerd > /tmp/dockerd.log 2>&1 &` (ou em uma sessão tmux). O storage
+  driver é `fuse-overlayfs` com `containerd-snapshotter` desabilitado
+  (necessário no Docker 29) — já configurado em `/etc/docker/daemon.json`.
+- **Data plane**: `docker compose up -d postgres redis keycloak minio createbucket`.
+  O `compose.override.yaml` usa `network_mode: host`, então tudo escuta em
+  `localhost` (5432/6379/8080/9000). Keycloak leva ~40s para ficar healthy.
+- **Node/Angular**: o Angular 22 exige Node ≥ 22.22.3, mas o `node` do sistema
+  (`/exec-daemon/node`) é mais antigo. O `~/.bashrc` já prioriza o Node 22.22.3
+  do nvm em shells de login. Para invocações que não passam pelo `~/.bashrc`,
+  prefixe: `export PATH="$HOME/.nvm/versions/node/v22.22.3/bin:$PATH"`.
+  `npm ci` funciona com o Node do sistema; só `ng serve`/`ng build` exigem 22.22.3.
+- **`task dev` NÃO funciona** neste ambiente: o interpretador do go-task (gosh)
+  não suporta `trap ... INT/TERM` nem o builtin `kill 0` da recipe. Rode API e
+  Web diretamente (dois processos, ex.: em tmux):
+  - API: `cd apps/api && dotnet run --no-launch-profile` com
+    `ASPNETCORE_ENVIRONMENT=Development`, `ASPNETCORE_URLS=http://localhost:5080`
+    e `ConnectionStrings__Database` = valor de `DATABASE_URL` do `.env`
+    (`set -a; source .env; set +a`). Escuta em `:5080`, `/health` deve dar `Healthy`.
+  - Web: `cd apps/web && npm start` (ng serve em `:4200`).
+- **Seed automático**: com `Seed:Enabled=true` (Development, já em
+  `appsettings.Development.json`) a API aplica migrations e cria o tenant demo +
+  `#geral` + alice/bob no startup. `task seed` só é necessário para re-seedar.
+- **Login rápido sem Keycloak**: na tela de login use os botões DevAuth
+  (Alice/Bob/Demo) ou o header `X-Dev-User: alice|bob|demo`. É o caminho mais
+  simples para exercitar envio de mensagem ponta a ponta (persiste em
+  `messaging.messages`).
+- **Redis**: a app espera `localhost:6379` (formato StackExchange.Redis), não
+  `redis://...`. Falha de Redis é não-fatal (degrada presença/typing).
+- **CRLF / `.env`**: scripts shell de infra e `DATABASE_URL` precisam de LF e de
+  aspas, respectivamente (corrigido nesta branch). Se o Keycloak entrar em
+  crash-loop com `role "keycloak" does not exist`, ou o migrate falhar com
+  `role "ubuntu" does not exist`, é regressão de CRLF/aspas — ver os `fix(infra)`.

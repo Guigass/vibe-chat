@@ -74,7 +74,7 @@ tasks:
           npm run lint --prefix apps/web
         else
           echo "ng lint not configured; running TypeScript check"
-          npm exec --prefix apps/web -- tsc -p tsconfig.app.json --noEmit
+          npm exec --prefix apps/web -- tsc -p apps/web/tsconfig.app.json --noEmit
         fi
 
   test:
