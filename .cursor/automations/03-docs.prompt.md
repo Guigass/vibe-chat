@@ -41,7 +41,7 @@ Re-read and update **only** files that the merge actually affects:
 
 1. Stay on the Cloud Agent **designated branch** for this run (do not create a
    separate `cursor/docs-…` branch — `open_git_pr` only accepts the designated one).
-2. Commit; push; call **`open_git_pr`** (draft) to `main` with:
+2. Commit; push; call **`open_git_pr`** to `main` with:
 
 ```text
 Wave: docs-<merged ID>
@@ -50,6 +50,9 @@ Deps satisfeitas: <merged ID>
 Automation: docs
 Previous: <merged PR URL>
 ```
+
+   **Never leave the PR as draft** — QA only triggers on ready PRs. If draft,
+   run `gh pr ready <number>` and confirm `isDraft: false`.
 
 3. Update Memories: last merged Wave/Backlog ID + PR URL + outstanding doc nits.
 
