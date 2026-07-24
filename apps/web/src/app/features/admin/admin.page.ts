@@ -1,14 +1,15 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { ApiService } from '../../core/api/api.service';
-import { AdminStats } from '../../shared/models/chat.models';
+import { AdminStats, AuditEventItem } from '../../shared/models/chat.models';
 import { Skeleton, ThemeToggle } from '../../shared/ui';
 
 @Component({
   selector: 'vc-admin-page',
   standalone: true,
-  imports: [RouterLink, Skeleton, ThemeToggle],
+  imports: [RouterLink, Skeleton, ThemeToggle, DatePipe],
   templateUrl: './admin.page.html',
   styleUrl: './admin.page.scss',
 })
@@ -18,6 +19,9 @@ export class AdminPage implements OnInit {
   readonly loading = signal(true);
   readonly stats = signal<AdminStats | null>(null);
   readonly usingDemo = signal(false);
+  readonly auditEvents = signal<AuditEventItem[]>([]);
+  readonly auditForbidden = signal(false);
+  readonly auditError = signal(false);
 
   async ngOnInit(): Promise<void> {
     try {
@@ -42,6 +46,18 @@ export class AdminPage implements OnInit {
         appVersion: environment.appVersion,
         grafanaUrl: environment.grafanaUrl,
       });
+    }
+
+    try {
+      const events = await this.api.getAdminAuditEvents(40);
+      this.auditEvents.set(events);
+      this.auditForbidden.set(false);
+      this.auditError.set(false);
+    } catch (err) {
+      const status = (err as { status?: number } | null)?.status;
+      this.auditForbidden.set(status === 403);
+      this.auditError.set(status !== 403);
+      this.auditEvents.set([]);
     } finally {
       this.loading.set(false);
     }

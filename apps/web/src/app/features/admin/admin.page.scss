@@ -137,6 +137,60 @@
   margin: 0 0 1rem;
 }
 
+.audit {
+  margin-top: 1.5rem;
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-md);
+  background: var(--vc-surface-elevated);
+  padding: 1.1rem 1.2rem;
+  animation: vc-fade-in-up var(--vc-dur-med) var(--vc-ease-out) both;
+}
+
+.audit h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.audit__lead {
+  margin: 0.35rem 0 0.9rem;
+  color: var(--vc-ink-muted);
+  font-size: 0.9rem;
+}
+
+.audit__empty {
+  margin: 0;
+  color: var(--vc-ink-muted);
+}
+
+.audit__table-wrap {
+  overflow-x: auto;
+}
+
+.audit__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.audit__table th,
+.audit__table td {
+  text-align: left;
+  padding: 0.55rem 0.45rem;
+  border-bottom: 1px solid var(--vc-border);
+  vertical-align: top;
+}
+
+.audit__table th {
+  color: var(--vc-ink-muted);
+  font-weight: 600;
+}
+
+.audit__table code,
+.mono {
+  font-family: var(--vc-font-mono);
+  font-size: 0.82rem;
+}
+
 @media (max-width: 720px) {
   .admin__header {
     flex-direction: column;

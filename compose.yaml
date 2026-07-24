@@ -4,6 +4,7 @@
 #   docker compose --profile tools up -d          # + mailpit
 #   docker compose --profile observability up -d  # + otel/prometheus/grafana/loki/tempo
 #   docker compose --profile apps up -d           # + api/web/worker (optional container builds)
+#   docker compose --profile apps --profile proxy up -d  # + nginx TLS edge (W5-2)
 #
 # Redis is used for presence / SignalR backplane / cache only.
 # It is NOT a durable source of truth — Postgres is.
@@ -35,6 +36,8 @@ volumes:
     name: vibechat_loki_data
   tempo_data:
     name: vibechat_tempo_data
+  proxy_certbot_www:
+    name: vibechat_proxy_certbot_www
 
 services:
   # ---------------------------------------------------------------------------
@@ -407,3 +410,34 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # TLS edge proxy (profile: proxy) — reference config (W5-2 / D-05)
+  # Generate local certs first: ./infra/proxy/generate-dev-certs.sh
+  # Production: mount real fullchain.pem + privkey.pem (never commit secrets).
+  # ---------------------------------------------------------------------------
+  proxy:
+    profiles: ["proxy"]
+    image: ${NGINX_IMAGE:-nginx:1.27.3-alpine}
+    container_name: vibechat-proxy
+    restart: unless-stopped
+    ports:
+      - "${PROXY_HTTP_PORT:-8088}:80"
+      - "${PROXY_HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./infra/proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/proxy/certs:/etc/nginx/certs:ro
+      - proxy_certbot_www:/var/www/certbot:ro
+    networks:
+      - vibechat-net
+    depends_on:
+      api:
+        condition: service_started
+      web:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1/proxy-healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
