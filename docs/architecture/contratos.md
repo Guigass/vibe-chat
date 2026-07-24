@@ -116,11 +116,15 @@ Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out Signal
 | `POST /api/v1/workspaces/{workspaceId}/spaces` | Body `{ name, order? }`; exige `channel.create` |
 | `GET /api/v1/workspaces/{workspaceId}/channels` | Channels do workspace; `spaceId` opcional no response |
 | `POST /api/v1/workspaces/{workspaceId}/channels` | Body `{ name, type, spaceId? }`; exige `channel.create`; `spaceId` deve pertencer ao workspace |
-| `GET /api/v1/workspaces/{workspaceId}/members` | Membros do workspace (membership obrigatória — D-07) |
+| `GET /api/v1/workspaces/{workspaceId}/members` | Membros do workspace (membership obrigatória — D-07); inclui `role` |
+| `GET /api/v1/workspaces/{workspaceId}/roles` | Papéis atribuíveis (`Member`, `Moderator`, `Auditor`, `Admin`); exige `workspace.admin` no workspace |
+| `PUT /api/v1/workspaces/{workspaceId}/members/{userId}/role` | Body `{ role }`; owner/admin (`workspace.admin`); não permite auto-elevação; rejeita `Guest`/`Bot`/`WorkspaceOwner`/`PlatformOwner` (D-07); audit `member.role.change`; e-mail opcional via outbox se `Email:Enabled` |
 | `GET /api/v1/workspaces/{workspaceId}/presence` | Status `online`/`away`/`offline` dos membros (Redis TTL) |
 | `POST /api/v1/workspaces/{workspaceId}/dms` | Body `{ userId }`; get-or-create DM 1:1 (`ChannelType.Direct`) |
 
 `ChannelResponse` inclui `spaceId?` e, para DMs, `peerUserId` / `peerDisplayName`. Channels `Private`/`Direct`/`Group` só aparecem na listagem para membros do canal. Spaces agrupam channels na UI; DMs ficam fora de spaces.
+
+Papéis reutilizam `Role` + `RolePermissionCatalog` + `IPermissionChecker`. Guest permanece no enum/catálogo, mas **fora do fluxo de membership** (D-07).
 
 ---
 
@@ -299,7 +303,22 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 
 `AuditEventResponse`: `id`, `action`, `entityType`, `entityId`, `actorUserId`, `occurredAt`, `metadataJson`.
 
-Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`.
+Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`.
+
+## Notifications / Email (B-043)
+
+```csharp
+public interface IEmailSender
+{
+    string Name { get; }
+    bool IsEnabled { get; }
+    Task SendAsync(EmailMessage message, CancellationToken ct);
+}
+```
+
+- Implementações: `NullEmailSender` (default quando `Email:Enabled=false`), `SmtpEmailSender` (SMTP genérico; Mailpit em dev — D-10)
+- Off by default; secrets só via env (`EMAIL__*` / `SMTP_*`); sem vendor lock
+- Caso inicial: e-mail ao alterar papel de membro (`MemberRoleChangedEmailEvent` no outbox — fora do hot path de `SendMessage`)
 
 ## AI
 

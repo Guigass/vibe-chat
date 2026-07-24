@@ -87,6 +87,35 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Member_cannot_self_elevate_role()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var response = await alice.PutAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/members/{SeedData.AliceUserId.Value}/role",
+            new { role = "Admin" });
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var roles = await alice.GetAsync($"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/roles");
+        roles.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Cross_tenant_cannot_change_member_role()
+    {
+        var foreignWorkspaceId = await SeedCrossTenantWorkspaceAsync();
+
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var response = await alice.PutAsJsonAsync(
+            $"/api/v1/workspaces/{foreignWorkspaceId}/members/{SeedData.DemoUserId.Value}/role",
+            new { role = "Moderator" });
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Admin_audit_events_are_tenant_scoped()
     {
         var foreignAction = $"foreign.audit.{Guid.NewGuid():N}";
@@ -411,6 +440,38 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
             OccurredAt = now
         });
         await db.SaveChangesAsync();
+    }
+
+    private async Task<Guid> SeedCrossTenantWorkspaceAsync()
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        var now = DateTimeOffset.UtcNow;
+
+        var workspaceId = WorkspaceId.New();
+        var tenantId = new TenantId(workspaceId.Value);
+
+        db.Workspaces.Add(new Workspace
+        {
+            Id = workspaceId,
+            TenantId = tenantId,
+            Name = $"Sec Role Tenant {workspaceId.Value:N}"[..Math.Min(160, $"Sec Role Tenant {workspaceId.Value:N}".Length)],
+            Slug = $"sec-role-{workspaceId.Value:N}"[..Math.Min(120, $"sec-role-{workspaceId.Value:N}".Length)],
+            AiEnabled = false,
+            CreatedAt = now
+        });
+        db.WorkspaceMembers.Add(new WorkspaceMember
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            WorkspaceId = workspaceId,
+            UserId = SeedData.DemoUserId,
+            Role = Role.WorkspaceOwner,
+            JoinedAt = now
+        });
+
+        await db.SaveChangesAsync();
+        return workspaceId.Value;
     }
 
     private async Task<Guid> SeedCrossTenantChannelAsync()

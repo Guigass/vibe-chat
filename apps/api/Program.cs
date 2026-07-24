@@ -22,6 +22,7 @@ using VibeChat.Files;
 using VibeChat.Identity;
 using VibeChat.Infrastructure;
 using VibeChat.Messaging;
+using VibeChat.Notifications;
 using VibeChat.Realtime;
 using VibeChat.Search;
 using VibeChat.SharedKernel;
@@ -294,6 +295,124 @@ v1.MapGet("/workspaces/{workspaceId:guid}/members", async (Guid workspaceId, Htt
     ).ToArrayAsync(ct);
 
     return Results.Ok(members);
+});
+
+v1.MapGet("/workspaces/{workspaceId:guid}/roles", async (Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    var actorMembership = await db.WorkspaceMembers.AsNoTracking()
+        .FirstOrDefaultAsync(x => x.WorkspaceId == workspace.Id && x.UserId == profile.Id, ct);
+    if (actorMembership is null || !WorkspaceRolePolicies.CanManageRoles(actorMembership.Role))
+    {
+        return Results.Forbid();
+    }
+
+    return Results.Ok(new WorkspaceRolesResponse(
+        WorkspaceRolePolicies.AssignableRoles.Select(r => r.ToString()).ToArray()));
+});
+
+v1.MapPut("/workspaces/{workspaceId:guid}/members/{userId:guid}/role", async (
+    Guid workspaceId,
+    Guid userId,
+    UpdateMemberRoleRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IOutboxWriter outbox,
+    IAuditWriter audit,
+    IEmailSender email,
+    IConfiguration config,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    var actorMembership = await db.WorkspaceMembers
+        .FirstOrDefaultAsync(x => x.WorkspaceId == workspace.Id && x.UserId == profile.Id, ct);
+    if (actorMembership is null || !WorkspaceRolePolicies.CanManageRoles(actorMembership.Role))
+    {
+        return Results.Forbid();
+    }
+
+    if (!WorkspaceRolePolicies.TryParseRole(request.Role, out var newRole))
+    {
+        return Results.BadRequest(new { error = "InvalidRole" });
+    }
+
+    var targetUserId = new UserId(userId);
+    var targetMembership = await db.WorkspaceMembers
+        .FirstOrDefaultAsync(x => x.WorkspaceId == workspace.Id && x.UserId == targetUserId, ct);
+    if (targetMembership is null)
+    {
+        return Results.NotFound();
+    }
+
+    var isSelf = targetMembership.UserId == profile.Id;
+    if (!WorkspaceRolePolicies.CanChangeMemberRole(actorMembership.Role, targetMembership.Role, newRole, isSelf))
+    {
+        return Results.Forbid();
+    }
+
+    if (targetMembership.Role == newRole)
+    {
+        var unchanged = await db.UserProfiles.AsNoTracking().FirstAsync(x => x.Id == targetUserId, ct);
+        return Results.Ok(new WorkspaceMemberResponse(unchanged.Id.Value, unchanged.DisplayName, unchanged.Email, targetMembership.Role.ToString()));
+    }
+
+    var previousRole = targetMembership.Role;
+    targetMembership.Role = newRole;
+
+    var targetProfile = await db.UserProfiles.AsNoTracking().FirstAsync(x => x.Id == targetUserId, ct);
+    audit.Add(new AuditEvent
+    {
+        TenantId = workspace.TenantId,
+        ActorUserId = profile.Id,
+        Action = AuditActions.MemberRoleChange,
+        EntityType = "WorkspaceMember",
+        EntityId = targetMembership.Id.ToString(),
+        MetadataJson = JsonSerializer.Serialize(new
+        {
+            workspaceId = workspace.Id.Value,
+            userId = targetUserId.Value,
+            from = previousRole.ToString(),
+            to = newRole.ToString()
+        })
+    });
+
+    // B-043: optional email via outbox (never on SendMessage hot path). Off by default (D-10).
+    if (email.IsEnabled
+        && config.GetValue("Email:Enabled", false)
+        && !string.IsNullOrWhiteSpace(targetProfile.Email))
+    {
+        var subject = $"VibeChat: seu papel em {workspace.Name} foi atualizado";
+        var body = $"Olá {targetProfile.DisplayName},\n\nSeu papel no workspace \"{workspace.Name}\" mudou de {previousRole} para {newRole}.\n";
+        outbox.Add(new OutboxMessage
+        {
+            TenantId = workspace.TenantId,
+            Type = nameof(MemberRoleChangedEmailEvent),
+            Payload = JsonSerializer.Serialize(new MemberRoleChangedEmailEvent(
+                workspace.TenantId.Value,
+                workspace.Id.Value,
+                targetUserId.Value,
+                targetProfile.Email,
+                subject,
+                body))
+        });
+    }
+
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new WorkspaceMemberResponse(targetProfile.Id.Value, targetProfile.DisplayName, targetProfile.Email, targetMembership.Role.ToString()));
 });
 
 v1.MapGet("/workspaces/{workspaceId:guid}/presence", async (Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPresenceService presence, IClock clock, CancellationToken ct) =>
@@ -1826,6 +1945,8 @@ public sealed record WorkspaceResponse(Guid Id, string Name, string Slug, string
 public sealed record SpaceResponse(Guid Id, Guid WorkspaceId, string Name, int Order);
 public sealed record ChannelResponse(Guid Id, Guid WorkspaceId, string Name, string Type, Guid? PeerUserId = null, string? PeerDisplayName = null, Guid? SpaceId = null);
 public sealed record WorkspaceMemberResponse(Guid UserId, string DisplayName, string Email, string Role);
+public sealed record WorkspaceRolesResponse(string[] AssignableRoles);
+public sealed record UpdateMemberRoleRequest(string Role);
 public sealed record PresenceResponse(Guid UserId, string Status);
 public sealed record OpenDirectMessageRequest(Guid UserId);
 public sealed record CreateSpaceRequest(string Name, int? Order = null);

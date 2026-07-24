@@ -1016,6 +1016,7 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
         var dbContext = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
         var publisher = scope.ServiceProvider.GetRequiredService<IChatPublisher>();
         var searchIndexer = scope.ServiceProvider.GetRequiredService<ISearchIndexer>();
+        var emailSender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
         var now = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow;
 
         var messages = await dbContext.OutboxMessages.IgnoreQueryFilters()
@@ -1028,6 +1029,22 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
         {
             try
             {
+                if (outbox.Type == nameof(MemberRoleChangedEmailEvent))
+                {
+                    var emailEvent = JsonSerializer.Deserialize<MemberRoleChangedEmailEvent>(outbox.Payload)
+                        ?? throw new InvalidOperationException("Invalid MemberRoleChangedEmailEvent payload");
+                    if (emailSender.IsEnabled)
+                    {
+                        await emailSender.SendAsync(
+                            new EmailMessage(emailEvent.To, emailEvent.Subject, emailEvent.BodyText),
+                            cancellationToken);
+                    }
+
+                    outbox.ProcessedAt = now;
+                    outbox.Error = null;
+                    continue;
+                }
+
                 var doc = JsonDocument.Parse(outbox.Payload);
                 var root = doc.RootElement;
                 var tenantId = new TenantId(root.GetProperty("tenantId").GetGuid());
@@ -1066,6 +1083,59 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return messages.Length;
+    }
+}
+
+public sealed class SmtpEmailSender(IConfiguration configuration, ILogger<SmtpEmailSender> logger) : IEmailSender
+{
+    public string Name => "Smtp";
+    public bool IsEnabled => configuration.GetValue("Email:Enabled", false);
+
+    public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
+    {
+        if (!IsEnabled)
+        {
+            return;
+        }
+
+        var host = configuration["Email:Smtp:Host"]
+            ?? configuration["SMTP_HOST"]
+            ?? "localhost";
+        var port = configuration.GetValue("Email:Smtp:Port", configuration.GetValue("SMTP_PORT", 1025));
+        var from = configuration["Email:Smtp:From"]
+            ?? configuration["SMTP_FROM"]
+            ?? "noreply@localhost";
+        var username = configuration["Email:Smtp:Username"] ?? configuration["SMTP_USERNAME"];
+        var password = configuration["Email:Smtp:Password"] ?? configuration["SMTP_PASSWORD"];
+        var useStartTls = configuration.GetValue("Email:Smtp:UseStartTls", configuration.GetValue("SMTP_USE_STARTTLS", false));
+
+        using var client = new System.Net.Mail.SmtpClient(host, port)
+        {
+            EnableSsl = useStartTls,
+            DeliveryMethod = System.Net.Mail.SmtpDeliveryMethod.Network
+        };
+
+        if (!string.IsNullOrWhiteSpace(username)
+            && !string.Equals(username, "CHANGE_ME", StringComparison.Ordinal))
+        {
+            client.Credentials = new System.Net.NetworkCredential(username, password);
+        }
+
+        using var mail = new System.Net.Mail.MailMessage(from, message.To, message.Subject, message.BodyText)
+        {
+            BodyEncoding = Encoding.UTF8,
+            SubjectEncoding = Encoding.UTF8
+        };
+
+        try
+        {
+            await client.SendMailAsync(mail, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "SMTP send failed via {Host}:{Port}", host, port);
+            throw;
+        }
     }
 }
 
@@ -1457,6 +1527,18 @@ public static class DependencyInjection
             }
 
             return new MockAiProvider();
+        });
+
+        // D-10 / B-043: email off by default; generic SMTP (Mailpit in dev).
+        services.AddSingleton<IEmailSender>(sp =>
+        {
+            var cfg = sp.GetRequiredService<IConfiguration>();
+            if (!cfg.GetValue("Email:Enabled", false))
+            {
+                return new NullEmailSender();
+            }
+
+            return ActivatorUtilities.CreateInstance<SmtpEmailSender>(sp);
         });
 
         services.AddHealthChecks()
