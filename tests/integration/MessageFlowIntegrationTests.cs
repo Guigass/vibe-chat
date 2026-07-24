@@ -116,19 +116,32 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     public async Task Health_checks_return_summary()
     {
         using var client = factory.CreateClient();
-
-        var anonymousHealth = await client.GetAsync("/health");
-        anonymousHealth.StatusCode.Should().Be(HttpStatusCode.OK);
-        var healthText = await anonymousHealth.Content.ReadAsStringAsync();
-        healthText.Should().Contain("Healthy");
-
         client.DefaultRequestHeaders.Add("X-Dev-User", "demo");
-        var summary = await client.GetFromJsonAsync<HealthSummaryDto>("/api/v1/admin/health-summary", JsonOptions);
+
+        HealthSummaryDto? summary = null;
+        for (var attempt = 1; attempt <= 8; attempt++)
+        {
+            summary = await client.GetFromJsonAsync<HealthSummaryDto>("/api/v1/admin/health-summary", JsonOptions);
+            if (summary?.Checks.GetValueOrDefault("postgres") == "Healthy"
+                && summary.Checks.GetValueOrDefault("redis") == "Healthy"
+                && summary.Checks.GetValueOrDefault("minio") == "Healthy")
+            {
+                break;
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(500 * attempt));
+        }
+
         summary.Should().NotBeNull();
         summary!.Checks.Should().ContainKey("postgres").WhoseValue.Should().Be("Healthy");
         summary.Checks.Should().ContainKey("redis").WhoseValue.Should().Be("Healthy");
         summary.Checks.Should().ContainKey("minio").WhoseValue.Should().Be("Healthy");
         summary.Status.Should().Be("Healthy");
+
+        var anonymousHealth = await client.GetAsync("/health");
+        anonymousHealth.StatusCode.Should().Be(HttpStatusCode.OK);
+        var healthText = await anonymousHealth.Content.ReadAsStringAsync();
+        healthText.Should().Be("Healthy");
     }
 
     [Fact]

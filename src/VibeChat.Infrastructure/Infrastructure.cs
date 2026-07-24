@@ -957,11 +957,20 @@ public static class DependencyInjection
         services.AddHostedService<OutboxDispatcher>();
         services.AddScoped<SeedData>();
 
-        services.AddMinio(configureClient => configureClient
-            .WithEndpoint(configuration["Minio:Endpoint"] ?? "localhost:9000")
-            .WithCredentials(configuration["Minio:AccessKey"] ?? "minioadmin", configuration["Minio:SecretKey"] ?? "minioadmin_dev_password_change_me")
-            .WithSSL(bool.TryParse(configuration["Minio:UseSsl"], out var ssl) && ssl)
-            .Build());
+        services.AddMinio(configureClient =>
+        {
+            var endpoint = configuration["Minio:Endpoint"] ?? "localhost:9000";
+            var parts = endpoint.Replace("http://", string.Empty, StringComparison.OrdinalIgnoreCase)
+                .Replace("https://", string.Empty, StringComparison.OrdinalIgnoreCase)
+                .Split(':', 2);
+            var host = parts[0];
+            var port = parts.Length > 1 && int.TryParse(parts[1], out var parsedPort) ? parsedPort : 9000;
+            return configureClient
+                .WithEndpoint(host, port)
+                .WithCredentials(configuration["Minio:AccessKey"] ?? "minioadmin", configuration["Minio:SecretKey"] ?? "minioadmin_dev_password_change_me")
+                .WithSSL(bool.TryParse(configuration["Minio:UseSsl"], out var ssl) && ssl)
+                .Build();
+        });
         services.AddScoped<IObjectStorage, MinioObjectStorage>();
 
         services.AddHttpClient<OpenRouterAiProvider>((sp, client) =>

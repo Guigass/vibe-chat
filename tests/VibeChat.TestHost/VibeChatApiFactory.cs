@@ -68,7 +68,8 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
 
         _database = _postgres.GetConnectionString();
         _redisConnection = _redis.GetConnectionString();
-        _minioEndpoint = $"{_minio.Hostname}:{_minio.GetMappedPublicPort(9000)}";
+        // Prefer loopback — Hostname can be unreachable depending on Docker networking.
+        _minioEndpoint = $"127.0.0.1:{_minio.GetMappedPublicPort(9000)}";
         await EnsureBucketAsync(_minioEndpoint);
     }
 
@@ -134,17 +135,42 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
 
     private static async Task EnsureBucketAsync(string endpoint)
     {
-        var client = new MinioClient()
-            .WithEndpoint(endpoint)
-            .WithCredentials(MinioUser, MinioPassword)
-            .WithSSL(false)
-            .Build();
+        var parts = endpoint.Split(':', 2);
+        var host = parts[0];
+        var port = parts.Length > 1 && int.TryParse(parts[1], out var parsed) ? parsed : 9000;
 
-        var exists = await client.BucketExistsAsync(new BucketExistsArgs().WithBucket(MinioBucket));
-        if (!exists)
+        Exception? last = null;
+        for (var attempt = 1; attempt <= 10; attempt++)
         {
-            await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(MinioBucket));
+            try
+            {
+                var client = new MinioClient()
+                    .WithEndpoint(host, port)
+                    .WithCredentials(MinioUser, MinioPassword)
+                    .WithSSL(false)
+                    .Build();
+
+                var exists = await client.BucketExistsAsync(new BucketExistsArgs().WithBucket(MinioBucket));
+                if (!exists)
+                {
+                    await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(MinioBucket));
+                }
+
+                // Confirm again — health check uses BucketExists.
+                if (await client.BucketExistsAsync(new BucketExistsArgs().WithBucket(MinioBucket)))
+                {
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                last = ex;
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(400 * attempt));
         }
+
+        throw new InvalidOperationException($"Unable to ensure MinIO bucket '{MinioBucket}' at {endpoint}", last);
     }
 
     private static async Task<bool> IsPortOpenAsync(string host, int port)
