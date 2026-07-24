@@ -96,7 +96,7 @@ Dependências: itens só começam quando deps = done.
 
 ## Wave 6 — Refinamento UX + Admin
 
-Wave 6 entregue (B-068/B-069/B-067/B-073/B-074). Próximo backlog: B-048 webhooks outbound.
+Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks outbound. Próximo backlog: P2 restante (ex.: B-045).
 
 | ID | Trilha | Tarefa | Deps | Status |
 |----|--------|--------|------|--------|
@@ -104,7 +104,7 @@ Wave 6 entregue (B-068/B-069/B-067/B-073/B-074). Próximo backlog: B-048 webhook
 | W6-2 | C/D | Typing: não mostrar indicador para o próprio usuário (B-071) | W6-1 ou paralelo | **Done** — filtro client + E2E |
 | W6-3 | D | Layout: scroll só no container da conversa (B-072) | — | **Done** — shell sem scroll de página |
 | W6-4 | B/D/G | Cadastro de usuário + diretivas documentados e fluxo admin (B-068) | P2-1 | **Done** — invite admin + glossário |
-| W6-5 | B/D/E | Settings sensíveis (tokens, webhooks, AI/SMTP) só admin (B-069, B-048) | W6-4 | **Done** — B-069 settings mascarados; B-048 webhooks ainda `planned` |
+| W6-5 | B/D/E | Settings sensíveis (tokens, webhooks, AI/SMTP) só admin (B-069, B-048) | W6-4 | **Done** — B-069 settings mascarados; B-048 webhooks `MessageCreated` + HMAC |
 | W6-6 | B/D/E | Auditoria completa de conversas no ADMIN (B-067) | W4-6, W6-4 | **Done** — viewer admin canal/DM/thread + body soft-delete; authZ `admin.dashboard` |
 | W6-7 | D/G | UI polish com PrimeNG + tema tokens (B-073; emenda ADR-002) | W6-3 | **Done** — ADR-002 Accepted; PrimeNG 22 + `VibeChatPreset` no `/admin` (Table/Select/Tag); shell próprio |
 | W6-8 | A/G | API + Web (+ Worker) containerizados no Compose como caminho oficial (B-074) | W5-2 | **Done** — `task apps` + healthchecks; OIDC Authority/MetadataAddress; ops/README |

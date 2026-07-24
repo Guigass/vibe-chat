@@ -67,6 +67,7 @@
 | T8 | Admin lê DM onde não é `channel_member` (mesmo tenant) | 200 (B-067) |
 | T9 | Admin lê canal de outro tenant | 403 |
 | T10 | Auditor (`admin.dashboard` sem `workspace.admin`) lê `/admin/settings` | 403 (B-069) |
+| T11 | Admin `GET /admin/settings` com webhook ativo | `webhooks.secretMask` só; secret nunca em claro (B-048) |
 
 ## Operação multi-tenant vs single-tenant
 
