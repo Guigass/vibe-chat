@@ -1087,20 +1087,32 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     _ => outbox.Type
                 };
 
+                // Fan-out realtime first — search reindex must not block MessageCreated/edit/delete (B-070).
+                // Publish JsonNode so SignalR emits a JSON object the JS client can ingest.
+                await publisher.PublishAsync(new RealtimeMessage(eventName, tenantId, channelId, payloadNode), cancellationToken);
+
                 if (outbox.Type is nameof(MessageCreatedEvent) or nameof(MessageEditedEvent) or nameof(MessageDeletedEvent)
                     && root["messageId"] is JsonNode messageIdNode)
                 {
-                    var messageId = new MessageId(messageIdNode.GetValue<Guid>());
-                    var body = root["body"]?.GetValue<string>() ?? string.Empty;
-                    var isDeleted = outbox.Type == nameof(MessageDeletedEvent);
-                    await searchIndexer.IndexMessageAsync(
-                        new MessageIndexed(messageId, tenantId, channelId, body, isDeleted, now),
-                        cancellationToken);
+                    try
+                    {
+                        var messageId = new MessageId(messageIdNode.GetValue<Guid>());
+                        var body = root["body"]?.GetValue<string>() ?? string.Empty;
+                        var isDeleted = outbox.Type == nameof(MessageDeletedEvent);
+                        await searchIndexer.IndexMessageAsync(
+                            new MessageIndexed(messageId, tenantId, channelId, body, isDeleted, now),
+                            cancellationToken);
+                    }
+                    catch (Exception indexEx)
+                    {
+                        // Trigger on messaging.messages already maintains search_vector; log and continue.
+                        logger.LogWarning(
+                            indexEx,
+                            "Search reindex failed for outbox {OutboxMessageId}; realtime already published",
+                            outbox.Id);
+                    }
                 }
 
-                // Publish JsonNode (not Deserialize<object>/JsonElement) so SignalR emits a JSON object
-                // the JS client can ingest — avoids stringified payloads that break MessageCreated handlers.
-                await publisher.PublishAsync(new RealtimeMessage(eventName, tenantId, channelId, payloadNode), cancellationToken);
                 outbox.ProcessedAt = now;
                 outbox.Error = null;
             }

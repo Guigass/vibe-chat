@@ -15,12 +15,18 @@ public sealed class PostgresSearchIndexer(VibeChatDbContext dbContext) : ISearch
             return;
         }
 
-        await dbContext.Database.ExecuteSqlInterpolatedAsync(
-            $"""
+        // TextConfig must be a SQL literal (regconfig). Parameterizing it as text makes
+        // Postgres look for to_tsvector(text, varchar), which does not exist.
+        var config = SearchPolicies.TextConfig;
+        var sql =
+            $$"""
             UPDATE messaging.messages
-            SET search_vector = to_tsvector({SearchPolicies.TextConfig}, coalesce("Body", ''))
-            WHERE "Id" = {doc.MessageId.Value} AND "TenantId" = {doc.TenantId.Value} AND "DeletedAt" IS NULL
-            """,
+            SET search_vector = to_tsvector('{{config}}'::regconfig, coalesce("Body", ''))
+            WHERE "Id" = {0} AND "TenantId" = {1} AND "DeletedAt" IS NULL
+            """;
+        await dbContext.Database.ExecuteSqlRawAsync(
+            sql,
+            new object[] { doc.MessageId.Value, doc.TenantId.Value },
             cancellationToken);
     }
 

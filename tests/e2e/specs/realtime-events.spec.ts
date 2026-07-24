@@ -30,16 +30,21 @@ test.describe(`realtime events (${AUTH_MODE})`, () => {
     await expect(alice.page.getByText(body)).toBeVisible({ timeout: 15_000 });
     await expect(bob.page.getByText(body)).toBeVisible({ timeout: 30_000 });
 
-    const aliceBubble = alice.page.locator('article.vc-msg', { hasText: body }).first();
+    const aliceBubble = alice.page.locator('article.vc-msg', { hasText: body }).last();
     await aliceBubble.getByRole('button', { name: /^Editar$/i }).click();
-    await aliceBubble.getByLabel(/Editar mensagem/i).fill(edited);
-    await aliceBubble.getByRole('button', { name: /^Salvar$/i }).click();
+    // Edit mode replaces the <p> body; locate the textarea on the page (not via hasText).
+    const editBox = alice.page.getByRole('textbox', { name: /Editar mensagem/i });
+    await expect(editBox).toBeVisible({ timeout: 5_000 });
+    await editBox.fill(edited);
+    await alice.page.getByRole('button', { name: /^Salvar$/i }).click();
 
     await expect(alice.page.getByText(edited)).toBeVisible({ timeout: 15_000 });
     await expect(bob.page.getByText(edited)).toBeVisible({ timeout: 30_000 });
-    await expect(bob.page.getByText(/editada/i).first()).toBeVisible({ timeout: 15_000 });
+    await expect(
+      bob.page.locator('article.vc-msg', { hasText: edited }).getByText(/editada/i),
+    ).toBeVisible({ timeout: 15_000 });
 
-    const bobBubble = bob.page.locator('article.vc-msg', { hasText: edited }).first();
+    const bobBubble = bob.page.locator('article.vc-msg', { hasText: edited }).last();
     await bobBubble.getByRole('button', { name: /Reagir com 👍/i }).click();
 
     await expect(
@@ -51,14 +56,15 @@ test.describe(`realtime events (${AUTH_MODE})`, () => {
 
     await alice.page
       .locator('article.vc-msg', { hasText: edited })
+      .last()
       .getByRole('button', { name: /^Apagar$/i })
       .click();
 
     await expect(
-      alice.page.locator('article.vc-msg', { hasText: /Mensagem removida/i }).first(),
+      alice.page.locator('article.vc-msg', { hasText: /Mensagem removida/i }).last(),
     ).toBeVisible({ timeout: 15_000 });
     await expect(
-      bob.page.locator('article.vc-msg', { hasText: /Mensagem removida/i }).first(),
+      bob.page.locator('article.vc-msg', { hasText: /Mensagem removida/i }).last(),
     ).toBeVisible({ timeout: 30_000 });
 
     await alice.context.close();
