@@ -55,6 +55,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<Channel> Channels => Set<Channel>();
     public DbSet<ChannelMember> ChannelMembers => Set<ChannelMember>();
     public DbSet<Message> Messages => Set<Message>();
+    public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Reaction> Reactions => Set<Reaction>();
     public DbSet<ReadCursor> ReadCursors => Set<ReadCursor>();
     public DbSet<ConversationSequence> ConversationSequences => Set<ConversationSequence>();
@@ -152,6 +153,24 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.ReplyToMessageId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new MessageId(v.Value) : null);
             entity.Property(x => x.Body).HasMaxLength(8000);
             entity.HasIndex(x => new { x.ConversationId, x.Sequence }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<Attachment>(entity =>
+        {
+            entity.ToTable("attachments", "files");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.MessageId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new MessageId(v.Value) : null);
+            entity.Property(x => x.UploadedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.FileName).HasMaxLength(AttachmentPolicies.MaxFileNameLength);
+            entity.Property(x => x.ContentType).HasMaxLength(160);
+            entity.Property(x => x.StorageKey).HasMaxLength(512);
+            entity.Property(x => x.ChecksumSha256).HasMaxLength(96);
+            entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
+            entity.HasIndex(x => x.StorageKey).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.ChannelId, x.MessageId });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -396,7 +415,17 @@ public sealed class MessageWriter(
             throw new UnauthorizedAccessException("User cannot send messages to this channel.");
         }
 
-        var hash = MessageIdempotency.ComputeRequestHash(command);
+        var attachmentIds = (command.AttachmentIds ?? [])
+            .Where(x => x != Guid.Empty)
+            .Distinct()
+            .ToArray();
+        var body = command.Body?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(body) && attachmentIds.Length == 0)
+        {
+            throw new ArgumentException("Message body or attachments are required.");
+        }
+
+        var hash = MessageIdempotency.ComputeRequestHash(command with { Body = body, AttachmentIds = attachmentIds });
         var existing = await idempotencyStore.FindAsync(command.TenantId, command.IdempotencyKey, cancellationToken);
         if (existing is not null)
         {
@@ -405,6 +434,25 @@ public sealed class MessageWriter(
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        Attachment[] attachments = [];
+        if (attachmentIds.Length > 0)
+        {
+            attachments = await dbContext.Attachments
+                .Where(x => attachmentIds.Contains(x.Id)
+                    && x.TenantId == command.TenantId
+                    && x.ChannelId == command.ChannelId
+                    && x.UploadedBy == command.UserId
+                    && x.Status == AttachmentStatus.Ready
+                    && x.MessageId == null)
+                .ToArrayAsync(cancellationToken);
+
+            if (attachments.Length != attachmentIds.Length)
+            {
+                throw new InvalidOperationException("One or more attachments are invalid or not ready.");
+            }
+        }
+
         var sequence = await sequences.NextAsync(command.TenantId, command.ChannelId, cancellationToken);
         var now = clock.UtcNow;
 
@@ -415,13 +463,18 @@ public sealed class MessageWriter(
             ConversationId = command.ChannelId,
             Sequence = sequence,
             AuthorId = command.UserId,
-            Body = command.Body,
+            Body = body,
             ReplyToMessageId = command.ReplyToMessageId,
             ThreadId = command.ThreadId,
             CreatedAt = now
         };
 
         dbContext.Messages.Add(message);
+        foreach (var attachment in attachments)
+        {
+            attachment.MessageId = message.Id;
+        }
+
         var result = new MessageSendResult(message.Id, message.Sequence, message.CreatedAt, false);
 
         var authorName = await dbContext.UserProfiles.AsNoTracking()
@@ -441,8 +494,15 @@ public sealed class MessageWriter(
                 authorId = command.UserId.Value,
                 authorName,
                 sequence,
-                body = command.Body,
-                createdAt = now
+                body,
+                createdAt = now,
+                attachments = attachments.Select(x => new
+                {
+                    id = x.Id,
+                    fileName = x.FileName,
+                    contentType = x.ContentType,
+                    sizeBytes = x.SizeBytes
+                })
             })
         });
 
@@ -453,7 +513,13 @@ public sealed class MessageWriter(
             Action = AuditActions.MessageSend,
             EntityType = "Message",
             EntityId = command.MessageId.ToString(),
-            MetadataJson = JsonSerializer.Serialize(new { channelId = command.ChannelId.Value, sequence, bodyHash = ComputeHash(command.Body) })
+            MetadataJson = JsonSerializer.Serialize(new
+            {
+                channelId = command.ChannelId.Value,
+                sequence,
+                bodyHash = ComputeHash(body),
+                attachmentIds
+            })
         });
 
         await idempotencyStore.StoreAsync(new IdempotencyRecord(command.TenantId, command.IdempotencyKey, hash, JsonSerializer.Serialize(result), now), cancellationToken);
@@ -640,7 +706,7 @@ public sealed class MinioObjectStorage(IMinioClient minioClient, IConfiguration 
 {
     public async Task<bool> IsHealthyAsync(CancellationToken cancellationToken)
     {
-        var bucket = configuration["Minio:Bucket"] ?? "vibechat";
+        var bucket = Bucket();
         try
         {
             return await minioClient.BucketExistsAsync(new Minio.DataModel.Args.BucketExistsArgs().WithBucket(bucket), cancellationToken);
@@ -649,6 +715,83 @@ public sealed class MinioObjectStorage(IMinioClient minioClient, IConfiguration 
         {
             return false;
         }
+    }
+
+    public async Task<PresignedUpload> CreateUploadUrlAsync(string storageKey, string contentType, TimeSpan ttl, CancellationToken cancellationToken)
+    {
+        _ = contentType;
+        var expiry = Math.Clamp((int)ttl.TotalSeconds, 60, 3600);
+        var url = await minioClient.PresignedPutObjectAsync(new Minio.DataModel.Args.PresignedPutObjectArgs()
+            .WithBucket(Bucket())
+            .WithObject(storageKey)
+            .WithExpiry(expiry));
+        // Keep required headers empty — signed PUT URLs reject unsigned Content-Type headers.
+        return new PresignedUpload(
+            new Uri(RewritePublicUrl(url)),
+            DateTimeOffset.UtcNow.AddSeconds(expiry),
+            new Dictionary<string, string>());
+    }
+
+    public async Task<PresignedDownload> CreateDownloadUrlAsync(string storageKey, string fileName, TimeSpan ttl, CancellationToken cancellationToken)
+    {
+        _ = fileName;
+        var expiry = Math.Clamp((int)ttl.TotalSeconds, 60, 3600);
+        var url = await minioClient.PresignedGetObjectAsync(new Minio.DataModel.Args.PresignedGetObjectArgs()
+            .WithBucket(Bucket())
+            .WithObject(storageKey)
+            .WithExpiry(expiry));
+        return new PresignedDownload(new Uri(RewritePublicUrl(url)), DateTimeOffset.UtcNow.AddSeconds(expiry));
+    }
+
+    public async Task<ObjectStat?> StatObjectAsync(string storageKey, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var stat = await minioClient.StatObjectAsync(new Minio.DataModel.Args.StatObjectArgs()
+                .WithBucket(Bucket())
+                .WithObject(storageKey), cancellationToken);
+            return new ObjectStat(stat.Size, stat.ContentType ?? "application/octet-stream", stat.ETag);
+        }
+        catch (Minio.Exceptions.ObjectNotFoundException)
+        {
+            return null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private string Bucket() => configuration["Minio:Bucket"] ?? "vibechat";
+
+    private string RewritePublicUrl(string url)
+    {
+        var publicEndpoint = configuration["Minio:PublicEndpoint"];
+        if (string.IsNullOrWhiteSpace(publicEndpoint))
+        {
+            return url;
+        }
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var original))
+        {
+            return url;
+        }
+
+        var publicBase = publicEndpoint.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            ? publicEndpoint
+            : $"http://{publicEndpoint}";
+        if (!Uri.TryCreate(publicBase, UriKind.Absolute, out var publicUri))
+        {
+            return url;
+        }
+
+        var builder = new UriBuilder(original)
+        {
+            Scheme = publicUri.Scheme,
+            Host = publicUri.Host,
+            Port = publicUri.IsDefaultPort ? -1 : publicUri.Port
+        };
+        return builder.Uri.ToString();
     }
 }
 

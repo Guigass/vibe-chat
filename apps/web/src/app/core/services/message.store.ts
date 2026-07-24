@@ -59,10 +59,11 @@ export class MessageStore {
     }
   }
 
-  async send(body: string): Promise<void> {
+  async send(body: string, file?: File): Promise<void> {
     const channel = this.channels.activeChannel();
     const profile = this.auth.profile();
-    if (!channel || !body.trim()) return;
+    const text = body.trim();
+    if (!channel || (!text && !file)) return;
 
     const clientMessageId = crypto.randomUUID();
     const idempotencyKey = crypto.randomUUID();
@@ -73,10 +74,21 @@ export class MessageStore {
       channelId: channel.id,
       authorUserId: profile?.id ?? 'me',
       authorName: profile?.name ?? 'Você',
-      body: body.trim(),
+      body: text,
       createdAt: new Date().toISOString(),
       status: 'sending',
       mine: true,
+      attachments: file
+        ? [
+            {
+              id: clientMessageId,
+              fileName: file.name,
+              contentType: file.type || 'application/octet-stream',
+              sizeBytes: file.size,
+              status: 'PendingUpload',
+            },
+          ]
+        : [],
     };
 
     this.messagesSignal.update((list) => [...list, optimistic]);
@@ -88,8 +100,36 @@ export class MessageStore {
         this.patchByClientId(clientMessageId, {
           status: 'sent',
           id: crypto.randomUUID(),
+          attachments: file
+            ? [
+                {
+                  id: crypto.randomUUID(),
+                  fileName: file.name,
+                  contentType: file.type || 'application/octet-stream',
+                  sizeBytes: file.size,
+                  status: 'Ready',
+                },
+              ]
+            : [],
         });
         return;
+      }
+
+      const attachmentIds: string[] = [];
+      if (file) {
+        const initiated = await this.api.initiateAttachmentUpload({
+          channelId: channel.id,
+          fileName: file.name,
+          contentType: file.type || 'application/octet-stream',
+          sizeBytes: file.size,
+        });
+        await this.api.uploadFileToPresignedUrl(
+          initiated.uploadUrl,
+          file,
+          initiated.requiredHeaders ?? {},
+        );
+        const ready = await this.api.completeAttachmentUpload(channel.id, initiated.attachmentId);
+        attachmentIds.push(ready.id);
       }
 
       const persisted = await this.api.sendMessage({
@@ -97,6 +137,7 @@ export class MessageStore {
         body: optimistic.body,
         clientMessageId,
         idempotencyKey,
+        attachmentIds,
       });
 
       this.patchByClientId(clientMessageId, {

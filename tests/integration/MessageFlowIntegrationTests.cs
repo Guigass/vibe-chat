@@ -236,6 +236,68 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Attachment_upload_links_to_message_and_allows_download()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var content = "vibechat-attachment-integration"u8.ToArray();
+        var initiate = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments",
+            new CreateAttachmentUploadRequest("notes.txt", "text/plain", content.Length));
+        initiate.StatusCode.Should().Be(HttpStatusCode.OK);
+        var upload = await initiate.Content.ReadFromJsonAsync<AttachmentUploadDto>(JsonOptions);
+        upload.Should().NotBeNull();
+        upload!.UploadUrl.Should().NotBeNullOrWhiteSpace();
+
+        using var putRequest = new HttpRequestMessage(HttpMethod.Put, upload.UploadUrl)
+        {
+            Content = new ByteArrayContent(content)
+        };
+        using var putClient = new HttpClient();
+        var put = await putClient.SendAsync(putRequest);
+        put.IsSuccessStatusCode.Should().BeTrue($"presigned PUT failed: {(int)put.StatusCode}");
+
+        var complete = await client.PostAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments/{upload.AttachmentId}/complete",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+        complete.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var messageId = Guid.NewGuid();
+        var send = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-att-{messageId:N}", "com anexo", null, null, [upload.AttachmentId]));
+        send.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var accepted = await send.Content.ReadFromJsonAsync<MessageDto>(JsonOptions);
+        accepted.Should().NotBeNull();
+        accepted!.Attachments.Should().NotBeNull();
+        accepted.Attachments!.Should().ContainSingle(a => a.Id == upload.AttachmentId && a.FileName == "notes.txt");
+
+        var download = await client.GetFromJsonAsync<AttachmentDownloadDto>(
+            $"/api/v1/channels/{DemoChannelId}/attachments/{upload.AttachmentId}/download",
+            JsonOptions);
+        download.Should().NotBeNull();
+        download!.DownloadUrl.Should().NotBeNullOrWhiteSpace();
+
+        var getObject = await putClient.GetAsync(download.DownloadUrl);
+        getObject.IsSuccessStatusCode.Should().BeTrue();
+        var bytes = await getObject.Content.ReadAsByteArrayAsync();
+        bytes.Should().Equal(content);
+    }
+
+    [Fact]
+    public async Task Attachment_rejects_disallowed_content_type()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var initiate = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments",
+            new CreateAttachmentUploadRequest("malware.exe", "application/x-msdownload", 128));
+        initiate.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Tenant_isolation_attempt_is_denied()
     {
         var foreignChannelId = await SeedForeignTenantChannelAsync();
@@ -306,7 +368,12 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         string Body,
         DateTimeOffset CreatedAt,
         DateTimeOffset? EditedAt,
-        DateTimeOffset? DeletedAt);
+        DateTimeOffset? DeletedAt,
+        AttachmentDto[]? Attachments = null);
+
+    private sealed record AttachmentDto(Guid Id, string FileName, string ContentType, long SizeBytes, string Status);
+    private sealed record AttachmentUploadDto(Guid AttachmentId, string UploadUrl, DateTimeOffset ExpiresAt, string FileName, string ContentType);
+    private sealed record AttachmentDownloadDto(Guid AttachmentId, string DownloadUrl, DateTimeOffset ExpiresAt, string FileName, string ContentType, long SizeBytes);
 
     private sealed record ChannelDto(
         Guid Id,

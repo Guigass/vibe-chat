@@ -1,7 +1,8 @@
 import { DatePipe } from '@angular/common';
-import { Component, input, output, signal } from '@angular/core';
-import { ChatMessage } from '../../models/chat.models';
+import { Component, inject, input, output, signal } from '@angular/core';
+import { ChatMessage, MessageAttachment } from '../../models/chat.models';
 import { Avatar } from '../avatar/avatar';
+import { ApiService } from '../../../core/api/api.service';
 
 @Component({
   selector: 'vc-message-bubble',
@@ -51,7 +52,21 @@ import { Avatar } from '../avatar/avatar';
             </div>
           </div>
         } @else {
-          <p>{{ message().body }}</p>
+          @if (message().body) {
+            <p>{{ message().body }}</p>
+          }
+          @if (message().attachments?.length) {
+            <ul class="vc-msg__attachments">
+              @for (attachment of message().attachments; track attachment.id) {
+                <li>
+                  <button type="button" (click)="download(attachment)">
+                    {{ attachment.fileName }}
+                    <span>{{ formatSize(attachment.sizeBytes) }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
         }
 
         @if (message().mine && !message().deletedAt && message().status === 'persisted' && !editing()) {
@@ -117,6 +132,29 @@ import { Avatar } from '../avatar/avatar';
       font-style: italic;
       color: var(--vc-ink-subtle);
     }
+    .vc-msg__attachments {
+      list-style: none;
+      margin: 0.45rem 0 0;
+      padding: 0;
+      display: grid;
+      gap: 0.3rem;
+    }
+    .vc-msg__attachments button {
+      border: 0;
+      background: transparent;
+      color: var(--vc-brand);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.84rem;
+      padding: 0;
+      display: inline-flex;
+      gap: 0.45rem;
+      align-items: baseline;
+    }
+    .vc-msg__attachments span {
+      color: var(--vc-ink-subtle);
+      font-size: 0.72rem;
+    }
     .vc-msg__actions,
     .vc-msg__edit-actions {
       display: flex;
@@ -153,6 +191,8 @@ import { Avatar } from '../avatar/avatar';
   `,
 })
 export class MessageBubble {
+  private readonly api = inject(ApiService);
+
   readonly message = input.required<ChatMessage>();
   readonly edit = output<string>();
   readonly delete = output<void>();
@@ -175,5 +215,22 @@ export class MessageBubble {
     if (!value) return;
     this.edit.emit(value);
     this.editing.set(false);
+  }
+
+  async download(attachment: MessageAttachment): Promise<void> {
+    const channelId = this.message().channelId;
+    if (!channelId) return;
+    try {
+      const result = await this.api.getAttachmentDownload(channelId, attachment.id);
+      window.open(result.downloadUrl, '_blank', 'noopener,noreferrer');
+    } catch {
+      // keep UI quiet; connection banner / toast stack not present in MVP shell
+    }
+  }
+
+  formatSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 }

@@ -16,6 +16,7 @@ using VibeChat.AI;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
+using VibeChat.Files;
 using VibeChat.Identity;
 using VibeChat.Infrastructure;
 using VibeChat.Messaging;
@@ -314,25 +315,40 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
     }
 
     var take = Math.Clamp(limit ?? 50, 1, 100);
-    var messages = await (
+    var rows = await (
         from m in db.Messages
         where m.ConversationId == channel.Id && m.Sequence > (after ?? 0)
         join u in db.UserProfiles on m.AuthorId equals u.Id into authors
         from u in authors.DefaultIfEmpty()
         orderby m.Sequence
-        select new MessageResponse(
-            m.Id.Value,
-            m.ConversationId.Value,
+        select new
+        {
+            Id = m.Id,
+            ChannelId = m.ConversationId,
             m.Sequence,
-            m.AuthorId.Value,
-            m.DeletedAt == null ? m.Body : string.Empty,
+            m.AuthorId,
+            m.Body,
             m.CreatedAt,
             m.EditedAt,
             m.DeletedAt,
-            u != null ? u.DisplayName : m.AuthorId.Value.ToString())
-        )
+            AuthorName = u != null ? u.DisplayName : m.AuthorId.Value.ToString()
+        })
         .Take(take)
         .ToArrayAsync(ct);
+
+    var messageIds = rows.Select(x => x.Id).ToArray();
+    var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, channel.Id, messageIds, ct);
+    var messages = rows.Select(x => new MessageResponse(
+        x.Id.Value,
+        x.ChannelId.Value,
+        x.Sequence,
+        x.AuthorId.Value,
+        x.DeletedAt == null ? x.Body : string.Empty,
+        x.CreatedAt,
+        x.EditedAt,
+        x.DeletedAt,
+        x.AuthorName,
+        x.DeletedAt == null && attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [])).ToArray();
     return Results.Ok(messages);
 });
 
@@ -345,15 +361,252 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (Guid channelId, SendMes
         return Results.Forbid();
     }
 
-    if (request.MessageId == Guid.Empty || string.IsNullOrWhiteSpace(request.IdempotencyKey) || string.IsNullOrWhiteSpace(request.Body))
+    var hasAttachments = request.AttachmentIds is { Length: > 0 };
+    if (request.MessageId == Guid.Empty || string.IsNullOrWhiteSpace(request.IdempotencyKey) || (string.IsNullOrWhiteSpace(request.Body) && !hasAttachments))
     {
-        return Results.BadRequest(new { error = "messageId, idempotencyKey and body are required." });
+        return Results.BadRequest(new { error = "messageId, idempotencyKey and body or attachments are required." });
     }
 
-    var result = await writer.SendAsync(new SendMessageCommand(channel.TenantId, profile.Id, channel.Id, new MessageId(request.MessageId), request.IdempotencyKey, request.Body, request.ReplyToMessageId is null ? null : new MessageId(request.ReplyToMessageId.Value), request.ThreadId), ct);
-    return Results.Accepted(
-        $"/api/v1/channels/{channel.Id.Value}/messages?after={result.Sequence - 1}",
-        new MessageResponse(result.MessageId.Value, channel.Id.Value, result.Sequence, profile.Id.Value, request.Body, result.CreatedAt, null, null, profile.DisplayName));
+    try
+    {
+        var result = await writer.SendAsync(new SendMessageCommand(
+            channel.TenantId,
+            profile.Id,
+            channel.Id,
+            new MessageId(request.MessageId),
+            request.IdempotencyKey,
+            request.Body ?? string.Empty,
+            request.ReplyToMessageId is null ? null : new MessageId(request.ReplyToMessageId.Value),
+            request.ThreadId,
+            request.AttachmentIds), ct);
+
+        var attachments = await db.Attachments.AsNoTracking()
+            .Where(x => x.MessageId == result.MessageId)
+            .OrderBy(x => x.CreatedAt)
+            .Select(x => new AttachmentResponse(x.Id, x.FileName, x.ContentType, x.SizeBytes, x.Status.ToString()))
+            .ToArrayAsync(ct);
+
+        return Results.Accepted(
+            $"/api/v1/channels/{channel.Id.Value}/messages?after={result.Sequence - 1}",
+            new MessageResponse(result.MessageId.Value, channel.Id.Value, result.Sequence, profile.Id.Value, request.Body?.Trim() ?? string.Empty, result.CreatedAt, null, null, profile.DisplayName, attachments));
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+});
+
+v1.MapPost("/channels/{channelId:guid}/attachments", async (
+    Guid channelId,
+    CreateAttachmentUploadRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IObjectStorage storage,
+    IConfiguration config,
+    IAuditWriter audit,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Files.Upload, ct)
+        || !await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Send, ct))
+    {
+        return Results.Forbid();
+    }
+
+    var maxSize = config.GetValue("Files:MaxSizeBytes", AttachmentPolicies.DefaultMaxSizeBytes);
+    var allowed = config.GetSection("Files:AllowedContentTypes").Get<string[]>() ?? AttachmentPolicies.DefaultAllowedContentTypes.ToArray();
+    var uploadTtl = TimeSpan.FromSeconds(config.GetValue("Files:PresignUploadTtlSeconds", AttachmentPolicies.DefaultUploadTtlSeconds));
+
+    if (string.IsNullOrWhiteSpace(request.FileName) || string.IsNullOrWhiteSpace(request.ContentType) || request.SizeBytes <= 0)
+    {
+        return Results.BadRequest(new { error = "fileName, contentType and sizeBytes are required." });
+    }
+
+    if (request.SizeBytes > maxSize)
+    {
+        return Results.BadRequest(new { error = $"File exceeds max size of {maxSize} bytes." });
+    }
+
+    if (!AttachmentPolicies.IsAllowedContentType(request.ContentType, allowed))
+    {
+        return Results.BadRequest(new { error = "Content type is not allowed." });
+    }
+
+    var attachmentId = Guid.NewGuid();
+    var safeName = AttachmentPolicies.SanitizeFileName(request.FileName);
+    var storageKey = AttachmentPolicies.BuildStorageKey(channel.TenantId, channel.Id, attachmentId, safeName);
+    var now = clock.UtcNow;
+    var attachment = new Attachment
+    {
+        Id = attachmentId,
+        TenantId = channel.TenantId,
+        ChannelId = channel.Id,
+        UploadedBy = profile.Id,
+        FileName = safeName,
+        ContentType = request.ContentType.Trim(),
+        SizeBytes = request.SizeBytes,
+        StorageKey = storageKey,
+        Status = AttachmentStatus.PendingUpload,
+        CreatedAt = now
+    };
+    db.Attachments.Add(attachment);
+    audit.Add(new AuditEvent
+    {
+        TenantId = channel.TenantId,
+        ActorUserId = profile.Id,
+        Action = AuditActions.AttachmentUpload,
+        EntityType = "Attachment",
+        EntityId = attachmentId.ToString(),
+        MetadataJson = JsonSerializer.Serialize(new { channelId, safeName, request.ContentType, request.SizeBytes, stage = "initiate" })
+    });
+    await db.SaveChangesAsync(ct);
+
+    var upload = await storage.CreateUploadUrlAsync(storageKey, attachment.ContentType, uploadTtl, ct);
+    return Results.Ok(new AttachmentUploadResponse(
+        attachment.Id,
+        upload.Url.ToString(),
+        upload.ExpiresAt,
+        upload.RequiredHeaders,
+        maxSize,
+        attachment.FileName,
+        attachment.ContentType));
+});
+
+v1.MapPost("/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete", async (
+    Guid channelId,
+    Guid attachmentId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IObjectStorage storage,
+    IConfiguration config,
+    IOutboxWriter outbox,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Files.Upload, ct))
+    {
+        return Results.Forbid();
+    }
+
+    var attachment = await db.Attachments.FirstOrDefaultAsync(x => x.Id == attachmentId && x.ChannelId == channel.Id, ct);
+    if (attachment is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (attachment.UploadedBy != profile.Id)
+    {
+        return Results.Forbid();
+    }
+
+    if (attachment.Status == AttachmentStatus.Ready)
+    {
+        return Results.Ok(new AttachmentResponse(attachment.Id, attachment.FileName, attachment.ContentType, attachment.SizeBytes, attachment.Status.ToString()));
+    }
+
+    var stat = await storage.StatObjectAsync(attachment.StorageKey, ct);
+    if (stat is null || stat.SizeBytes <= 0)
+    {
+        attachment.Status = AttachmentStatus.Failed;
+        await db.SaveChangesAsync(ct);
+        return Results.BadRequest(new { error = "Uploaded object was not found in storage." });
+    }
+
+    var maxSize = config.GetValue("Files:MaxSizeBytes", AttachmentPolicies.DefaultMaxSizeBytes);
+    if (stat.SizeBytes > maxSize || stat.SizeBytes > attachment.SizeBytes)
+    {
+        attachment.Status = AttachmentStatus.Failed;
+        await db.SaveChangesAsync(ct);
+        return Results.BadRequest(new { error = "Uploaded object exceeds declared or allowed size." });
+    }
+
+    attachment.SizeBytes = stat.SizeBytes;
+    attachment.Status = AttachmentStatus.Ready;
+    attachment.ReadyAt = clock.UtcNow;
+    attachment.ChecksumSha256 = string.IsNullOrWhiteSpace(stat.ETag) ? null : stat.ETag.Trim('"');
+
+    outbox.Add(new OutboxMessage
+    {
+        TenantId = channel.TenantId,
+        Type = "files.attachment.ready",
+        Payload = JsonSerializer.Serialize(new
+        {
+            tenantId = channel.TenantId.Value,
+            channelId,
+            attachmentId = attachment.Id,
+            fileName = attachment.FileName,
+            contentType = attachment.ContentType,
+            sizeBytes = attachment.SizeBytes,
+            readyAt = attachment.ReadyAt
+        })
+    });
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new AttachmentResponse(attachment.Id, attachment.FileName, attachment.ContentType, attachment.SizeBytes, attachment.Status.ToString()));
+});
+
+v1.MapGet("/channels/{channelId:guid}/attachments/{attachmentId:guid}/download", async (
+    Guid channelId,
+    Guid attachmentId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IObjectStorage storage,
+    IConfiguration config,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Files.Download, ct)
+        || !await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Read, ct))
+    {
+        return Results.Forbid();
+    }
+
+    var attachment = await db.Attachments.AsNoTracking()
+        .FirstOrDefaultAsync(x => x.Id == attachmentId && x.ChannelId == channel.Id, ct);
+    if (attachment is null || attachment.Status != AttachmentStatus.Ready)
+    {
+        return Results.NotFound();
+    }
+
+    var downloadTtl = TimeSpan.FromSeconds(config.GetValue("Files:PresignDownloadTtlSeconds", AttachmentPolicies.DefaultDownloadTtlSeconds));
+    var download = await storage.CreateDownloadUrlAsync(attachment.StorageKey, attachment.FileName, downloadTtl, ct);
+    return Results.Ok(new AttachmentDownloadResponse(
+        attachment.Id,
+        download.Url.ToString(),
+        download.ExpiresAt,
+        attachment.FileName,
+        attachment.ContentType,
+        attachment.SizeBytes));
 });
 
 v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, EditMessageRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IClock clock, CancellationToken ct) =>
@@ -400,7 +653,12 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid ch
         })
     });
     await db.SaveChangesAsync(ct);
-    return Results.Ok(new MessageResponse(message.Id.Value, message.ConversationId.Value, message.Sequence, message.AuthorId.Value, message.Body, message.CreatedAt, message.EditedAt, message.DeletedAt, profile.DisplayName));
+    var attachments = await db.Attachments.AsNoTracking()
+        .Where(x => x.MessageId == message.Id)
+        .OrderBy(x => x.CreatedAt)
+        .Select(x => new AttachmentResponse(x.Id, x.FileName, x.ContentType, x.SizeBytes, x.Status.ToString()))
+        .ToArrayAsync(ct);
+    return Results.Ok(new MessageResponse(message.Id.Value, message.ConversationId.Value, message.Sequence, message.AuthorId.Value, message.Body, message.CreatedAt, message.EditedAt, message.DeletedAt, profile.DisplayName, attachments));
 });
 
 v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IAuditWriter audit, IClock clock, CancellationToken ct) =>
@@ -685,6 +943,31 @@ static async Task<Dictionary<ChannelId, DirectPeerInfo>> ResolveDirectPeersAsync
     return result;
 }
 
+static async Task<Dictionary<Guid, AttachmentResponse[]>> LoadAttachmentsByMessageAsync(
+    VibeChatDbContext db,
+    ChannelId channelId,
+    IReadOnlyCollection<MessageId> messageIds,
+    CancellationToken ct)
+{
+    if (messageIds.Count == 0)
+    {
+        return new Dictionary<Guid, AttachmentResponse[]>();
+    }
+
+    var wanted = messageIds.Select(x => x.Value).ToHashSet();
+    var rows = await db.Attachments.AsNoTracking()
+        .Where(x => x.ChannelId == channelId && x.MessageId != null && x.Status == AttachmentStatus.Ready)
+        .OrderBy(x => x.CreatedAt)
+        .ToListAsync(ct);
+
+    return rows
+        .Where(x => x.MessageId is not null && wanted.Contains(x.MessageId.Value.Value))
+        .GroupBy(x => x.MessageId!.Value.Value)
+        .ToDictionary(
+            g => g.Key,
+            g => g.Select(x => new AttachmentResponse(x.Id, x.FileName, x.ContentType, x.SizeBytes, x.Status.ToString())).ToArray());
+}
+
 internal sealed record DirectPeerInfo(UserId UserId, string DisplayName);
 
 public sealed class DevAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
@@ -731,9 +1014,36 @@ public sealed record ChannelResponse(Guid Id, Guid WorkspaceId, string Name, str
 public sealed record WorkspaceMemberResponse(Guid UserId, string DisplayName, string Email, string Role);
 public sealed record OpenDirectMessageRequest(Guid UserId);
 public sealed record CreateChannelRequest(string Name, string Type);
-public sealed record SendMessageRequest(Guid MessageId, string IdempotencyKey, string Body, Guid? ReplyToMessageId, Guid? ThreadId);
+public sealed record SendMessageRequest(Guid MessageId, string IdempotencyKey, string Body, Guid? ReplyToMessageId, Guid? ThreadId, Guid[]? AttachmentIds = null);
 public sealed record EditMessageRequest(string Body);
-public sealed record MessageResponse(Guid Id, Guid ChannelId, long Sequence, Guid AuthorId, string Body, DateTimeOffset CreatedAt, DateTimeOffset? EditedAt, DateTimeOffset? DeletedAt, string AuthorName = "");
+public sealed record CreateAttachmentUploadRequest(string FileName, string ContentType, long SizeBytes);
+public sealed record AttachmentResponse(Guid Id, string FileName, string ContentType, long SizeBytes, string Status);
+public sealed record AttachmentUploadResponse(
+    Guid AttachmentId,
+    string UploadUrl,
+    DateTimeOffset ExpiresAt,
+    IReadOnlyDictionary<string, string> RequiredHeaders,
+    long MaxSizeBytes,
+    string FileName,
+    string ContentType);
+public sealed record AttachmentDownloadResponse(
+    Guid AttachmentId,
+    string DownloadUrl,
+    DateTimeOffset ExpiresAt,
+    string FileName,
+    string ContentType,
+    long SizeBytes);
+public sealed record MessageResponse(
+    Guid Id,
+    Guid ChannelId,
+    long Sequence,
+    Guid AuthorId,
+    string Body,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? EditedAt,
+    DateTimeOffset? DeletedAt,
+    string AuthorName = "",
+    AttachmentResponse[]? Attachments = null);
 public sealed record UpsertReadCursorRequest(long LastReadSequence);
 public sealed record ReadCursorResponse(Guid ChannelId, Guid UserId, long LastReadSequence, DateTimeOffset UpdatedAt);
 public sealed record AiSummaryResponse(string Summary);

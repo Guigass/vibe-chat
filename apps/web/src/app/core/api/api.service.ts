@@ -6,6 +6,7 @@ import {
   AiSummaryResult,
   Channel,
   ChatMessage,
+  MessageAttachment,
   Workspace,
   WorkspaceMember,
 } from '../../shared/models/chat.models';
@@ -33,6 +34,14 @@ interface MemberDto {
   role: string;
 }
 
+interface AttachmentDto {
+  id: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  status?: string;
+}
+
 interface MessageDto {
   id: string;
   channelId: string;
@@ -43,6 +52,26 @@ interface MessageDto {
   createdAt: string;
   editedAt?: string | null;
   deletedAt?: string | null;
+  attachments?: AttachmentDto[] | null;
+}
+
+interface AttachmentUploadDto {
+  attachmentId: string;
+  uploadUrl: string;
+  expiresAt: string;
+  requiredHeaders: Record<string, string>;
+  maxSizeBytes: number;
+  fileName: string;
+  contentType: string;
+}
+
+interface AttachmentDownloadDto {
+  attachmentId: string;
+  downloadUrl: string;
+  expiresAt: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
 }
 
 interface AdminDashboardDto {
@@ -109,6 +138,7 @@ export class ApiService {
     body: string;
     clientMessageId: string;
     idempotencyKey: string;
+    attachmentIds?: string[];
   }): Promise<ChatMessage> {
     const dto = await this.request<MessageDto>(`/api/v1/channels/${input.channelId}/messages`, {
       method: 'POST',
@@ -116,9 +146,62 @@ export class ApiService {
         messageId: input.clientMessageId,
         idempotencyKey: input.idempotencyKey,
         body: input.body,
+        attachmentIds: input.attachmentIds ?? [],
       }),
     });
     return this.mapMessage(dto, this.auth.profile()?.id);
+  }
+
+  async initiateAttachmentUpload(input: {
+    channelId: string;
+    fileName: string;
+    contentType: string;
+    sizeBytes: number;
+  }): Promise<AttachmentUploadDto> {
+    return this.request<AttachmentUploadDto>(`/api/v1/channels/${input.channelId}/attachments`, {
+      method: 'POST',
+      body: JSON.stringify({
+        fileName: input.fileName,
+        contentType: input.contentType,
+        sizeBytes: input.sizeBytes,
+      }),
+    });
+  }
+
+  async completeAttachmentUpload(channelId: string, attachmentId: string): Promise<MessageAttachment> {
+    const dto = await this.request<AttachmentDto>(
+      `/api/v1/channels/${channelId}/attachments/${attachmentId}/complete`,
+      { method: 'POST', body: '{}' },
+    );
+    return this.mapAttachment(dto);
+  }
+
+  async getAttachmentDownload(
+    channelId: string,
+    attachmentId: string,
+  ): Promise<AttachmentDownloadDto> {
+    return this.request<AttachmentDownloadDto>(
+      `/api/v1/channels/${channelId}/attachments/${attachmentId}/download`,
+    );
+  }
+
+  async uploadFileToPresignedUrl(
+    uploadUrl: string,
+    file: File,
+    requiredHeaders: Record<string, string>,
+  ): Promise<void> {
+    const headers = new Headers();
+    for (const [key, value] of Object.entries(requiredHeaders ?? {})) {
+      headers.set(key, value);
+    }
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers,
+      body: file,
+    });
+    if (!response.ok) {
+      throw new Error(`Upload failed (${response.status})`);
+    }
   }
 
   async editMessage(channelId: string, messageId: string, body: string): Promise<ChatMessage> {
@@ -201,6 +284,17 @@ export class ApiService {
       seq: m.sequence,
       status: 'persisted',
       mine: !!me && me === m.authorId,
+      attachments: (m.attachments ?? []).map((a) => this.mapAttachment(a)),
+    };
+  }
+
+  private mapAttachment(a: AttachmentDto): MessageAttachment {
+    return {
+      id: a.id,
+      fileName: a.fileName,
+      contentType: a.contentType,
+      sizeBytes: a.sizeBytes,
+      status: a.status,
     };
   }
 

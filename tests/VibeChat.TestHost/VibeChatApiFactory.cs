@@ -102,10 +102,12 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("ConnectionStrings:Database", _database);
         builder.UseSetting("ConnectionStrings:Redis", _redisConnection);
         builder.UseSetting("Minio:Endpoint", _minioEndpoint);
+        builder.UseSetting("Minio:PublicEndpoint", $"http://{_minioEndpoint}");
         builder.UseSetting("Minio:AccessKey", MinioUser);
         builder.UseSetting("Minio:SecretKey", MinioPassword);
         builder.UseSetting("Minio:Bucket", MinioBucket);
         builder.UseSetting("Minio:UseSsl", "false");
+        builder.UseSetting("Files:MaxSizeBytes", "10485760");
         builder.UseSetting("Seed:Enabled", "true");
         builder.UseSetting("Ai:Enabled", "true");
         builder.UseSetting("Ai:Provider", "Mock");

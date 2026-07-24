@@ -1,6 +1,7 @@
 using FluentAssertions;
 using VibeChat.AI;
 using VibeChat.BuildingBlocks;
+using VibeChat.Files;
 using VibeChat.Messaging;
 using VibeChat.SharedKernel;
 
@@ -31,6 +32,31 @@ public sealed class BackendUnitTests
         var changed = command with { Body = "hello again" };
 
         MessageIdempotency.ComputeRequestHash(command).Should().NotBe(MessageIdempotency.ComputeRequestHash(changed));
+    }
+
+    [Fact]
+    public void Message_idempotency_hash_changes_when_attachments_change()
+    {
+        var baseCommand = new SendMessageCommand(TenantId.New(), UserId.New(), ChannelId.New(), MessageId.New(), "idem-1", "hello", null, null, [Guid.NewGuid()]);
+        var changed = baseCommand with { AttachmentIds = [Guid.NewGuid()] };
+
+        MessageIdempotency.ComputeRequestHash(baseCommand).Should().NotBe(MessageIdempotency.ComputeRequestHash(changed));
+    }
+
+    [Fact]
+    public void Attachment_policies_sanitize_file_name_and_validate_content_type()
+    {
+        AttachmentPolicies.SanitizeFileName(@"..\evil/report.pdf").Should().Be("report.pdf");
+        AttachmentPolicies.SanitizeFileName("foto 1 (final).PNG").Should().Be("foto_1__final_.PNG");
+        AttachmentPolicies.IsAllowedContentType("image/png", null).Should().BeTrue();
+        AttachmentPolicies.IsAllowedContentType("application/x-msdownload", null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Permission_catalog_allows_member_to_upload_files()
+    {
+        RolePermissionCatalog.For(Role.Member).Should().Contain(Permissions.Files.Upload);
+        RolePermissionCatalog.For(Role.Guest).Should().NotContain(Permissions.Files.Upload);
     }
 
     [Fact]

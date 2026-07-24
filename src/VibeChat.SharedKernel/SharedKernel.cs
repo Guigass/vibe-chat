@@ -120,6 +120,12 @@ public static class Permissions
         public const string DeleteAny = "message.delete.any";
     }
 
+    public static class Files
+    {
+        public const string Upload = "file.upload";
+        public const string Download = "file.download";
+    }
+
     public static class Admin
     {
         public const string Dashboard = "admin.dashboard";

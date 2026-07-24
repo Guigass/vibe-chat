@@ -21,6 +21,12 @@ interface MessageCreatedPayload {
   authorName?: string;
   body?: string;
   createdAt?: string;
+  attachments?: Array<{
+    id: string;
+    fileName: string;
+    contentType: string;
+    sizeBytes: number;
+  }>;
 }
 
 interface MessageEditedPayload {
@@ -224,6 +230,13 @@ export class ChatHubService {
       seq: payload.sequence,
       status: 'persisted',
       mine: !!me && me === String(payload.authorId ?? ''),
+      attachments: (payload.attachments ?? []).map((a) => ({
+        id: a.id,
+        fileName: a.fileName,
+        contentType: a.contentType,
+        sizeBytes: a.sizeBytes,
+        status: 'Ready',
+      })),
     };
   }
 }
