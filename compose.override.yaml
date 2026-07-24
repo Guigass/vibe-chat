@@ -1,0 +1,38 @@
+# Local development overrides (auto-loaded by Docker Compose alongside compose.yaml).
+# Safe defaults for host-machine `task dev` / `dotnet watch` / `ng serve`.
+# Do not put production secrets here.
+
+services:
+  postgres:
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  redis:
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+  keycloak:
+    # Keep hostname loose for browser redirects from localhost:4200
+    environment:
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_PROXY_HEADERS: xforwarded
+
+  minio:
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+
+  # When using profile observability, expose collector for host apps
+  otel-collector:
+    profiles: ["observability"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+
+  # Optional: bind-mount source for hot iteration when using profile apps
+  # Uncomment if you prefer containerized API with live mount (advanced):
+  # api:
+  #   profiles: ["apps"]
+  #   volumes:
+  #     - ./apps/api:/src/apps/api:ro

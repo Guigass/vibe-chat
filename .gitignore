@@ -1,0 +1,106 @@
+# =============================================================================
+# VibeChat .gitignore — .NET / Angular / Docker / env
+# =============================================================================
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~
+
+# --- Editors / IDEs ---
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.swp
+*.swo
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+**/appsettings.*.local.json
+**/secrets.json
+
+# --- .NET ---
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+[Ll]ogs/
+*.dll
+*.exe
+*.pdb
+*.cache
+*.log
+project.lock.json
+project.fragment.lock.json
+artifacts/
+TestResults/
+coverage/
+coverage*.json
+coverage*.xml
+*.nupkg
+*.snupkg
+**/packages/
+!**/packages/build/
+*.DotSettings.user
+.nuget/
+**/Properties/launchSettings.json.user
+
+# --- Node / Angular ---
+node_modules/
+dist/
+.tmp/
+.angular/
+.sass-cache/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.nx/cache/
+.eslintcache
+.vite/
+
+# --- Docker ---
+docker-compose.override.local.yml
+compose.override.local.yaml
+*.tar
+*.img
+
+# --- Observability local data (if bind-mounted) ---
+infra/observability/data/
+infra/grafana/data/
+
+# --- Misc ---
+*.tmp
+*.temp
+*.bak
+*.orig
+.history/
+.local/
+.cursor/plans/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Terraform / IaC state (future) ---
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
