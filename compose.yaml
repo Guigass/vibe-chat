@@ -389,6 +389,8 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:22.22.3-alpine}
+        NGINX_IMAGE: ${NGINX_IMAGE:-nginx:1.27.3-alpine}
         API_BASE_URL: ${API_BASE_URL:-http://localhost:5080}
         KEYCLOAK_URL: http://localhost:${KEYCLOAK_HTTP_PORT:-8080}
         KEYCLOAK_REALM: ${KEYCLOAK_REALM:-vibechat}

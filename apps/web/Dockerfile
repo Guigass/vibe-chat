@@ -4,7 +4,7 @@
 # Expects an Angular app under apps/web with `npm run build` producing
 # dist/ in browser output (Angular application builder) or dist/<project>/browser.
 
-ARG NODE_IMAGE=node:22.12-alpine
+ARG NODE_IMAGE=node:22.22.3-alpine
 ARG NGINX_IMAGE=nginx:1.27.3-alpine
 
 FROM ${NODE_IMAGE} AS build
