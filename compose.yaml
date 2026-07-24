@@ -342,8 +342,11 @@ services:
       ASPNETCORE_URLS: http://+:5080
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-vibechat};Username=${POSTGRES_USER:-vibechat};Password=${POSTGRES_PASSWORD:-vibechat_dev_password_change_me}
       ConnectionStrings__Redis: redis:6379
-      Authentication__Authority: http://keycloak:8080/realms/${KEYCLOAK_REALM:-vibechat}
+      # Public issuer must match browser token `iss`; discovery uses in-network MetadataAddress.
+      Authentication__Authority: ${KEYCLOAK_ISSUER_URL:-http://localhost:8080/realms/vibechat}
+      Authentication__MetadataAddress: http://keycloak:8080/realms/${KEYCLOAK_REALM:-vibechat}/.well-known/openid-configuration
       Authentication__Audience: ${OIDC_API_AUDIENCE:-vibechat-api}
+      Authentication__RequireHttpsMetadata: "false"
       Minio__Endpoint: minio:9000
       Minio__PublicEndpoint: ${MINIO_ENDPOINT:-http://localhost:9000}
       Minio__AccessKey: ${MINIO_ROOT_USER:-minioadmin}
@@ -355,6 +358,7 @@ services:
       Ai__Provider: ${AI__Provider:-Mock}
       Ai__OpenRouter__ApiKey: ${OPENROUTER_API_KEY:-}
       Ai__OpenRouter__BaseUrl: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      Seed__Enabled: ${SEED_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     ports:
       - "${API_PORT:-5080}:5080"
@@ -372,6 +376,12 @@ services:
         condition: service_healthy
       createbucket:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:5080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
 
   web:
     profiles: ["apps"]
@@ -392,7 +402,13 @@ services:
       - vibechat-net
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 10s
 
   worker:
     profiles: ["apps"]
@@ -415,6 +431,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
 
   # ---------------------------------------------------------------------------
   # TLS edge proxy (profile: proxy) — reference config (W5-2 / D-05)

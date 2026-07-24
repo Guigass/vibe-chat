@@ -54,6 +54,19 @@ tasks:
         (cd apps/web && npm start) &
         wait
 
+  apps:
+    desc: Official self-host/demo stack — build/up api+web+worker (profile apps, B-074/W6-8)
+    cmds:
+      - |
+        set -euo pipefail
+        if [[ ! -f .env ]]; then cp .env.example .env; fi
+        # Use compose.yaml only (skip host-network override) — official bridge path.
+        docker compose -f compose.yaml --profile apps up -d --build
+        ./infra/scripts/wait-for-healthy.sh postgres redis keycloak minio api web worker
+        set -a && source .env && set +a
+        echo "Apps healthy. Web http://localhost:${WEB_PORT:-4200}  API http://localhost:${API_PORT:-5080}"
+        echo "DX hot-reload (host): task setup && task dev"
+
   stop:
     desc: Stop Compose services
     cmds:

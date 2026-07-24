@@ -27,13 +27,20 @@ Arquitetura: [`docs/architecture/visao-geral.md`](docs/architecture/visao-geral.
 
 ### Subir o ambiente
 
-```bash
-# Na raiz do repositório
-cp .env.example .env   # se ainda não existir
+**Self-host / demo (caminho oficial — B-074):** API + Web + Worker em containers:
 
-task setup             # Compose (postgres/redis/keycloak/minio) + migrate
+```bash
+cp .env.example .env   # se ainda não existir
+task apps              # docker compose -f compose.yaml --profile apps up -d --build
+# Web :4200 · API :5080 · seed automático em Development (Seed:Enabled)
+```
+
+**DX com hot reload** (API/Web no host; data plane no Compose):
+
+```bash
+task setup             # postgres/redis/keycloak/minio + migrate
 task dev               # API (:5080) + Web (:4200) em paralelo
-task seed              # tenant demo + #geral + alice/bob (API precisa estar no ar)
+task seed              # tenant demo + #geral + alice/bob (se a API ainda não seedou)
 ```
 
 Abra http://localhost:4200
@@ -57,7 +64,8 @@ Seed cria workspace demo, canal `#geral` e memberships para alice/bob.
 | Comando | Descrição |
 |---------|-----------|
 | `task setup` | `.env`, Compose up, health, migrate |
-| `task dev` | API + Web em paralelo |
+| `task apps` | Self-host oficial: build/up api+web+worker (`profile apps`, B-074) |
+| `task dev` | API + Web em paralelo (hot reload) |
 | `task stop` | `docker compose stop` |
 | `task reset` | `down -v` + setup |
 | `task lint` | `dotnet format --verify` + lint/tsc web |

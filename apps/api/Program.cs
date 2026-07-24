@@ -89,6 +89,13 @@ auth.AddJwtBearer(options =>
     options.Authority = builder.Configuration["Authentication:Authority"];
     options.Audience = builder.Configuration["Authentication:Audience"];
     options.RequireHttpsMetadata = builder.Configuration.GetValue("Authentication:RequireHttpsMetadata", true);
+    // Compose apps (B-074): Authority = public issuer (browser iss); MetadataAddress = in-network discovery.
+    var metadataAddress = builder.Configuration["Authentication:MetadataAddress"];
+    if (!string.IsNullOrWhiteSpace(metadataAddress))
+    {
+        options.MetadataAddress = metadataAddress;
+    }
+
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
@@ -2230,6 +2237,7 @@ app.MapHub<ChatHub>("/hubs/chat").RequireAuthorization();
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
 app.MapHealthChecks("/health/ready");
+app.MapHealthChecks("/ready"); // ops alias (runbooks / Compose)
 
 app.Run();
 

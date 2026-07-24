@@ -35,4 +35,8 @@ RUN useradd --create-home --uid 10001 --shell /usr/sbin/nologin appuser
 COPY --from=build /app/publish .
 USER appuser
 
+# No HTTP surface — process liveness (PID 1) for Compose profile apps (B-074).
+HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=6 \
+  CMD kill -0 1 || exit 1
+
 ENTRYPOINT ["dotnet", "VibeChat.Worker.dll"]
