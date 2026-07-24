@@ -7,12 +7,27 @@ ARG DOTNET_RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0
 FROM ${DOTNET_SDK_IMAGE} AS restore
 WORKDIR /src
 
+# Infrastructure pulls the modular graph — restore must include the same csproj set as API.
+COPY VibeChat.slnx ./
 COPY apps/worker/VibeChat.Worker.csproj apps/worker/
+COPY apps/api/VibeChat.Api.csproj apps/api/
 COPY src/VibeChat.SharedKernel/VibeChat.SharedKernel.csproj src/VibeChat.SharedKernel/
 COPY src/VibeChat.Infrastructure/VibeChat.Infrastructure.csproj src/VibeChat.Infrastructure/
 COPY modules/BuildingBlocks/VibeChat.BuildingBlocks.csproj modules/BuildingBlocks/
+COPY modules/Identity/VibeChat.Identity.csproj modules/Identity/
+COPY modules/Tenancy/VibeChat.Tenancy.csproj modules/Tenancy/
+COPY modules/Directory/VibeChat.Directory.csproj modules/Directory/
+COPY modules/Conversations/VibeChat.Conversations.csproj modules/Conversations/
 COPY modules/Messaging/VibeChat.Messaging.csproj modules/Messaging/
 COPY modules/Realtime/VibeChat.Realtime.csproj modules/Realtime/
+COPY modules/Files/VibeChat.Files.csproj modules/Files/
+COPY modules/Search/VibeChat.Search.csproj modules/Search/
+COPY modules/Notifications/VibeChat.Notifications.csproj modules/Notifications/
+COPY modules/Administration/VibeChat.Administration.csproj modules/Administration/
+COPY modules/Audit/VibeChat.Audit.csproj modules/Audit/
+COPY modules/Moderation/VibeChat.Moderation.csproj modules/Moderation/
+COPY modules/Integrations/VibeChat.Integrations.csproj modules/Integrations/
+COPY modules/AI/VibeChat.AI.csproj modules/AI/
 
 RUN dotnet restore apps/worker/VibeChat.Worker.csproj
 
