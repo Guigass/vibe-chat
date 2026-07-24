@@ -48,6 +48,10 @@ import { ChannelStore } from '../../../core/services/channel.store';
     </form>
   `,
   styles: `
+    :host {
+      display: block;
+      flex: 0 0 auto;
+    }
     .composer {
       display: grid;
       grid-template-columns: 1fr auto;

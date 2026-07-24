@@ -32,9 +32,16 @@ import { SidebarNav, Skeleton } from '../../../shared/ui';
     </div>
   `,
   styles: `
+    :host {
+      display: block;
+      min-height: 0;
+      overflow: hidden;
+    }
     .channel-list {
+      height: 100%;
       min-height: 0;
       overflow: auto;
+      overscroll-behavior: contain;
     }
     .channel-list__loading {
       display: grid;

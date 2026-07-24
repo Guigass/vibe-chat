@@ -9,6 +9,7 @@ import { ThemeService } from './core/services/theme.service';
   styles: `
     :host {
       display: block;
+      height: 100%;
       min-height: 100%;
     }
   `,

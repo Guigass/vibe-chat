@@ -42,10 +42,18 @@ import { EmptyState, MessageBubble, Skeleton, TypingIndicator } from '../../../s
     </section>
   `,
   styles: `
+    :host {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
     .timeline {
-      flex: 1;
+      flex: 1 1 auto;
       min-height: 0;
       overflow: auto;
+      overscroll-behavior: contain;
       padding: var(--vc-space-4);
       display: flex;
       flex-direction: column;

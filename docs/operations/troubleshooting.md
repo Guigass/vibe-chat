@@ -52,6 +52,12 @@
 - Cliente também ignora `userId` == perfil local (defesa em profundidade)
 - Se ainda aparece: conferir se o payload `userId` bate com `profile.id` (DevAuth/OIDC `sub`)
 
+### Sintoma: a página inteira rola (composer some / scrollbar no document)
+
+- Esperado após B-072: shell em `100dvh` + `overflow: hidden`; scroll só em `.timeline` (e listas laterais)
+- Conferir hosts Angular (`vc-timeline` / `vc-composer`) participando do flex com `min-height: 0`
+- Evitar `min-height: 100dvh` em colunas que precisam encolher dentro do viewport
+
 ### Sintoma: mensagens duplicadas
 
 - Cliente gerando nova Idempotency-Key a cada retry
