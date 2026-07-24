@@ -13,6 +13,17 @@ export interface Channel {
   description?: string;
   unreadCount: number;
   isPrivate?: boolean;
+  isDirect?: boolean;
+  type?: string;
+  peerUserId?: string;
+  peerDisplayName?: string;
+}
+
+export interface WorkspaceMember {
+  userId: string;
+  displayName: string;
+  email: string;
+  role: string;
 }
 
 export interface ChatUser {
@@ -31,6 +42,8 @@ export interface ChatMessage {
   authorName: string;
   body: string;
   createdAt: string;
+  editedAt?: string | null;
+  deletedAt?: string | null;
   seq?: number;
   status: MessageStatus;
   mine: boolean;

@@ -2,7 +2,7 @@
 
 ## Escopo
 
-Operação de uma instância self-hosted em fase 1 (Docker Compose / VMs). Kubernetes não é obrigatório (ADR-017).
+Operação de uma instância self-hosted em fase 1 (**Docker Compose** oficial — D-05). Kubernetes não é obrigatório (ADR-017). Sem SLA comercial; RPO/RTO best effort com backup diário Postgres (D-08).
 
 ## Componentes críticos
 

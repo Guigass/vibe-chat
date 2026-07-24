@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, input } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { ChatMessage } from '../../models/chat.models';
 import { Avatar } from '../avatar/avatar';
 
@@ -11,6 +11,7 @@ import { Avatar } from '../avatar/avatar';
     <article
       class="vc-msg vc-anim-fade-in"
       [class.vc-msg--mine]="message().mine"
+      [class.vc-msg--deleted]="!!message().deletedAt"
       [attr.data-status]="message().status"
     >
       @if (!message().mine) {
@@ -20,17 +21,45 @@ import { Avatar } from '../avatar/avatar';
         <header>
           <strong>{{ message().authorName }}</strong>
           <time [attr.datetime]="message().createdAt">{{ message().createdAt | date: 'shortTime' }}</time>
+          @if (message().editedAt && !message().deletedAt) {
+            <span class="vc-msg__status">editada</span>
+          }
           @if (message().status === 'sending') {
             <span class="vc-msg__status">enviando…</span>
           } @else if (message().status === 'sent') {
             <span class="vc-msg__status">enviada</span>
           } @else if (message().status === 'failed') {
             <span class="vc-msg__status vc-msg__status--fail">falhou</span>
-          } @else if (message().status === 'persisted') {
+          } @else if (message().status === 'persisted' && !message().editedAt && !message().deletedAt) {
             <span class="vc-msg__status">salva</span>
           }
         </header>
-        <p>{{ message().body }}</p>
+
+        @if (message().deletedAt) {
+          <p class="vc-msg__deleted">Mensagem removida</p>
+        } @else if (editing()) {
+          <div class="vc-msg__edit">
+            <textarea
+              [value]="draft()"
+              (input)="draft.set(($any($event.target).value))"
+              rows="3"
+              aria-label="Editar mensagem"
+            ></textarea>
+            <div class="vc-msg__edit-actions">
+              <button type="button" (click)="saveEdit()">Salvar</button>
+              <button type="button" class="ghost" (click)="cancelEdit()">Cancelar</button>
+            </div>
+          </div>
+        } @else {
+          <p>{{ message().body }}</p>
+        }
+
+        @if (message().mine && !message().deletedAt && message().status === 'persisted' && !editing()) {
+          <div class="vc-msg__actions">
+            <button type="button" (click)="startEdit()">Editar</button>
+            <button type="button" class="danger" (click)="delete.emit()">Apagar</button>
+          </div>
+        }
       </div>
     </article>
   `,
@@ -50,10 +79,14 @@ import { Avatar } from '../avatar/avatar';
       border-radius: var(--vc-radius-md);
       background: var(--vc-msg-theirs);
       border: 1px solid var(--vc-border);
+      min-width: 12rem;
     }
     .vc-msg--mine .vc-msg__body {
       background: var(--vc-msg-mine);
       border-color: color-mix(in srgb, var(--vc-brand) 28%, var(--vc-border));
+    }
+    .vc-msg--deleted .vc-msg__body {
+      opacity: 0.72;
     }
     header {
       display: flex;
@@ -80,8 +113,67 @@ import { Avatar } from '../avatar/avatar';
       line-height: 1.45;
       word-break: break-word;
     }
+    .vc-msg__deleted {
+      font-style: italic;
+      color: var(--vc-ink-subtle);
+    }
+    .vc-msg__actions,
+    .vc-msg__edit-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.45rem;
+    }
+    .vc-msg__actions button,
+    .vc-msg__edit-actions button {
+      border: 0;
+      background: transparent;
+      color: var(--vc-ink-muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+      padding: 0;
+    }
+    .vc-msg__actions button:hover,
+    .vc-msg__edit-actions button:hover {
+      color: var(--vc-ink);
+    }
+    .vc-msg__actions .danger {
+      color: var(--vc-danger);
+    }
+    .vc-msg__edit textarea {
+      width: 100%;
+      resize: vertical;
+      min-height: 4rem;
+      border-radius: var(--vc-radius-sm);
+      border: 1px solid var(--vc-border);
+      background: var(--vc-surface);
+      color: var(--vc-ink);
+      font: inherit;
+      padding: 0.5rem 0.65rem;
+    }
   `,
 })
 export class MessageBubble {
   readonly message = input.required<ChatMessage>();
+  readonly edit = output<string>();
+  readonly delete = output<void>();
+
+  readonly editing = signal(false);
+  readonly draft = signal('');
+
+  startEdit(): void {
+    this.draft.set(this.message().body);
+    this.editing.set(true);
+  }
+
+  cancelEdit(): void {
+    this.editing.set(false);
+    this.draft.set('');
+  }
+
+  saveEdit(): void {
+    const value = this.draft().trim();
+    if (!value) return;
+    this.edit.emit(value);
+    this.editing.set(false);
+  }
 }

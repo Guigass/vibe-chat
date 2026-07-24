@@ -21,40 +21,40 @@ Demonstrar o caminho feliz completo:
 
 ### A1 — Autenticação
 
-- [ ] Fluxo OIDC Authorization Code + PKCE funciona no web (Angular)
-- [ ] Token inválido/expirado resulta em 401 na API e reconexão SignalR falha de forma controlada
-- [ ] Claims de tenant/usuário estão disponíveis no backend após validação do JWT
+- [x] Fluxo OIDC Authorization Code + PKCE funciona no web (Angular)
+- [x] Token inválido/expirado resulta em 401 na API e reconexão SignalR falha de forma controlada
+- [x] Claims de tenant/usuário estão disponíveis no backend após validação do JWT
 
 ### A2 — Workspace e Channel
 
-- [ ] Após login, usuário enxerga apenas workspaces do seu tenant
-- [ ] Usuário consegue listar channels do workspace onde tem membership
-- [ ] Usuário sem membership não lista nem entra no channel (403/404 conforme política)
+- [x] Após login, usuário enxerga apenas workspaces do seu tenant
+- [x] Usuário consegue listar channels do workspace onde tem membership
+- [x] Usuário sem membership não lista nem entra no channel (403/404 conforme política)
 
 ### A3 — Envio de mensagem
 
-- [ ] `POST` (ou RPC equivalente) cria mensagem com conteúdo, autor, timestamps
-- [ ] Mensagem recebe `seq` monotônico por conversation
-- [ ] Mesma `Idempotency-Key` retorna a mesma mensagem (sem duplicar)
-- [ ] Evento de outbox é gravado na **mesma transação** da mensagem
+- [x] `POST` (ou RPC equivalente) cria mensagem com conteúdo, autor, timestamps
+- [x] Mensagem recebe `seq` monotônico por conversation
+- [x] Mesma `Idempotency-Key` retorna a mesma mensagem (sem duplicar)
+- [x] Evento de outbox é gravado na **mesma transação** da mensagem
 
 ### A4 — Tempo real
 
-- [ ] Cliente assinante do channel recebe evento `message.created` via SignalR
-- [ ] Ordem observada respeita `seq` (ou cliente detecta gap e reconcilia)
-- [ ] Com duas instâncias de API (opcional no aceite mínimo: uma instância), backplane Redis está configurável
+- [x] Cliente assinante do channel recebe evento `message.created` via SignalR
+- [x] Ordem observada respeita `seq` (ou cliente detecta gap e reconcilia)
+- [x] Com duas instâncias de API (opcional no aceite mínimo: uma instância), backplane Redis está configurável
 
 ### A5 — Persistência e multi-tenant
 
-- [ ] Mensagem aparece em leitura posterior (reload / history API)
-- [ ] Query com `tenant_id` de outro tenant não retorna dados (RLS + testes)
-- [ ] Tentativa de forjar `tenant_id` no body é ignorada; tenant vem do token/contexto
+- [x] Mensagem aparece em leitura posterior (reload / history API)
+- [x] Query com `tenant_id` de outro tenant não retorna dados (RLS + testes)
+- [x] Tentativa de forjar `tenant_id` no body é ignorada; tenant vem do token/contexto
 
 ### A6 — Operação local
 
-- [ ] `docker compose up` sobe dependências essenciais
-- [ ] Seed mínimo: realm Keycloak, tenant, workspace, channel, 2 usuários de teste
-- [ ] Documentação em `docs/operations/desenvolvimento.md` permite reproduzir em máquina limpa
+- [x] `docker compose up` sobe dependências essenciais
+- [x] Seed mínimo: realm Keycloak, tenant, workspace, channel, 2 usuários de teste
+- [x] Documentação em `docs/operations/desenvolvimento.md` permite reproduzir em máquina limpa
 
 ## Critérios não-funcionais mínimos
 

@@ -23,6 +23,38 @@ interface MessageCreatedPayload {
   createdAt?: string;
 }
 
+interface MessageEditedPayload {
+  messageId?: string;
+  id?: string;
+  channelId: string;
+  sequence?: number;
+  body?: string;
+  editedAt?: string;
+}
+
+interface MessageDeletedPayload {
+  messageId?: string;
+  id?: string;
+  channelId: string;
+  sequence?: number;
+  deletedAt?: string;
+}
+
+export interface MessageEditEvent {
+  id: string;
+  channelId: string;
+  body: string;
+  editedAt: string;
+  seq?: number;
+}
+
+export interface MessageDeleteEvent {
+  id: string;
+  channelId: string;
+  deletedAt: string;
+  seq?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ChatHubService {
   private readonly auth = inject(AuthService);
@@ -32,6 +64,8 @@ export class ChatHubService {
   private readonly statusSignal = signal<ConnectionStatus>('disconnected');
   private readonly typingSignal = signal<TypingState[]>([]);
   private readonly messageHandlers = new Set<(message: ChatMessage) => void>();
+  private readonly editedHandlers = new Set<(event: MessageEditEvent) => void>();
+  private readonly deletedHandlers = new Set<(event: MessageDeleteEvent) => void>();
 
   readonly status = this.statusSignal.asReadonly();
   readonly typingUsers = this.typingSignal.asReadonly();
@@ -66,6 +100,35 @@ export class ChatHubService {
       if (!message) return;
       for (const handler of this.messageHandlers) {
         handler(message);
+      }
+    });
+
+    this.connection.on('MessageEdited', (payload: MessageEditedPayload) => {
+      const id = payload.messageId ?? payload.id;
+      if (!id || !payload.channelId || !payload.body) return;
+      const event: MessageEditEvent = {
+        id,
+        channelId: payload.channelId,
+        body: payload.body,
+        editedAt: payload.editedAt ?? new Date().toISOString(),
+        seq: payload.sequence,
+      };
+      for (const handler of this.editedHandlers) {
+        handler(event);
+      }
+    });
+
+    this.connection.on('MessageDeleted', (payload: MessageDeletedPayload) => {
+      const id = payload.messageId ?? payload.id;
+      if (!id || !payload.channelId) return;
+      const event: MessageDeleteEvent = {
+        id,
+        channelId: payload.channelId,
+        deletedAt: payload.deletedAt ?? new Date().toISOString(),
+        seq: payload.sequence,
+      };
+      for (const handler of this.deletedHandlers) {
+        handler(event);
       }
     });
 
@@ -134,6 +197,16 @@ export class ChatHubService {
   onMessage(handler: (message: ChatMessage) => void): () => void {
     this.messageHandlers.add(handler);
     return () => this.messageHandlers.delete(handler);
+  }
+
+  onMessageEdited(handler: (event: MessageEditEvent) => void): () => void {
+    this.editedHandlers.add(handler);
+    return () => this.editedHandlers.delete(handler);
+  }
+
+  onMessageDeleted(handler: (event: MessageDeleteEvent) => void): () => void {
+    this.deletedHandlers.add(handler);
+    return () => this.deletedHandlers.delete(handler);
   }
 
   private mapPayload(payload: MessageCreatedPayload): ChatMessage | null {

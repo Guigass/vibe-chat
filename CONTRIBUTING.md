@@ -6,7 +6,7 @@ Obrigado por contribuir. Este guia resume o fluxo esperado para humanos e agente
 
 1. Leia `docs/product/visao.md`, `docs/product/glossario.md` e `AGENTS.md`.
 2. Consulte ADRs em `docs/adrs/` e contratos em `docs/architecture/contratos.md`.
-3. Verifique `docs/roadmap/decisoes-pendentes.md` — itens D-* não devem ser decididos unilateralmente.
+3. Consulte `docs/roadmap/decisoes-pendentes.md` (D-01…D-10 fechadas em 2026-07-24). Novas decisões humanas abertas continuam bloqueando escopo legal/marca.
 
 ## Ambiente local
 

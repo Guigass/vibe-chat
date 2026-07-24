@@ -15,8 +15,8 @@
 
 1. Backup **automatizado** e testado (restore drill)
 2. Criptografia em repouso dos artefatos de backup
-3. Retenção alinhada à política legal (ver decisões pendentes)
-4. RPO/RTO definidos pelo operador (sugerido fase 1: RPO ≤ 24h, RTO ≤ 4h)
+3. Retenção alinhada à política legal (D-03 / ADR-018: soft-delete default; purge configurável depois)
+4. **Sem SLA comercial** em self-host (D-08). RPO/RTO são **best effort**; alvo operacional sugerido: backup diário Postgres → RPO ≤ 24h, RTO ≤ 4h
 
 ## PostgreSQL
 

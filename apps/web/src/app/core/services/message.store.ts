@@ -15,7 +15,9 @@ export class MessageStore {
   private readonly messagesSignal = signal<ChatMessage[]>([]);
   private readonly loadingSignal = signal(false);
   private readonly sendingSignal = signal(false);
-  private unsub: (() => void) | null = null;
+  private unsubCreated: (() => void) | null = null;
+  private unsubEdited: (() => void) | null = null;
+  private unsubDeleted: (() => void) | null = null;
 
   readonly messages = this.messagesSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
@@ -25,11 +27,13 @@ export class MessageStore {
     if (!channelId) return [];
     return this.messagesSignal()
       .filter((m) => m.channelId === channelId)
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      .sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0) || a.createdAt.localeCompare(b.createdAt));
   });
 
   constructor() {
-    this.unsub = this.hub.onMessage((message) => this.ingestRemote(message));
+    this.unsubCreated = this.hub.onMessage((message) => this.ingestRemote(message));
+    this.unsubEdited = this.hub.onMessageEdited((patch) => this.applyEdit(patch));
+    this.unsubDeleted = this.hub.onMessageDeleted((patch) => this.applyDelete(patch));
   }
 
   async loadChannel(channelId: string): Promise<void> {
@@ -85,7 +89,6 @@ export class MessageStore {
           status: 'sent',
           id: crypto.randomUUID(),
         });
-        // Offline demo: não afirma persistência no servidor.
         return;
       }
 
@@ -107,6 +110,52 @@ export class MessageStore {
     } finally {
       this.sendingSignal.set(false);
     }
+  }
+
+  async edit(messageId: string, body: string): Promise<void> {
+    const channel = this.channels.activeChannel();
+    if (!channel || !body.trim()) return;
+
+    if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
+      this.messagesSignal.update((list) =>
+        list.map((m) =>
+          m.id === messageId
+            ? { ...m, body: body.trim(), editedAt: new Date().toISOString() }
+            : m,
+        ),
+      );
+      return;
+    }
+
+    const updated = await this.api.editMessage(channel.id, messageId, body.trim());
+    this.applyEdit({
+      id: updated.id,
+      channelId: updated.channelId,
+      body: updated.body,
+      editedAt: updated.editedAt ?? new Date().toISOString(),
+      seq: updated.seq,
+    });
+  }
+
+  async remove(messageId: string): Promise<void> {
+    const channel = this.channels.activeChannel();
+    if (!channel) return;
+
+    if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
+      this.applyDelete({
+        id: messageId,
+        channelId: channel.id,
+        deletedAt: new Date().toISOString(),
+      });
+      return;
+    }
+
+    await this.api.deleteMessage(channel.id, messageId);
+    this.applyDelete({
+      id: messageId,
+      channelId: channel.id,
+      deletedAt: new Date().toISOString(),
+    });
   }
 
   private ingestRemote(message: ChatMessage): void {
@@ -136,6 +185,43 @@ export class MessageStore {
     }
   }
 
+  private applyEdit(patch: {
+    id: string;
+    channelId: string;
+    body: string;
+    editedAt: string;
+    seq?: number;
+  }): void {
+    this.messagesSignal.update((list) =>
+      list.map((m) =>
+        m.id === patch.id
+          ? {
+              ...m,
+              body: patch.body,
+              editedAt: patch.editedAt,
+              seq: patch.seq ?? m.seq,
+              deletedAt: null,
+            }
+          : m,
+      ),
+    );
+  }
+
+  private applyDelete(patch: { id: string; channelId: string; deletedAt: string; seq?: number }): void {
+    this.messagesSignal.update((list) =>
+      list.map((m) =>
+        m.id === patch.id
+          ? {
+              ...m,
+              body: '',
+              deletedAt: patch.deletedAt,
+              seq: patch.seq ?? m.seq,
+            }
+          : m,
+      ),
+    );
+  }
+
   private patchByClientId(clientMessageId: string, patch: Partial<ChatMessage>): void {
     this.messagesSignal.update((list) =>
       list.map((m) => (m.clientMessageId === clientMessageId ? { ...m, ...patch } : m)),
@@ -149,6 +235,7 @@ export class MessageStore {
       status: message.status ?? 'persisted',
       mine: message.mine ?? message.authorUserId === this.auth.profile()?.id,
       authorName: message.authorName || 'Membro',
+      body: message.deletedAt ? '' : message.body,
     };
   }
 

@@ -80,8 +80,12 @@ tasks:
   test:
     desc: Unit tests
     cmds:
-      - dotnet test tests/unit/VibeChat.UnitTests.csproj --no-restore --verbosity minimal || \
-        (dotnet restore {{.SOLUTION}} && dotnet test tests/unit/VibeChat.UnitTests.csproj --verbosity minimal)
+      - |
+        set -euo pipefail
+        if ! dotnet test tests/unit/VibeChat.UnitTests.csproj --no-restore --verbosity minimal; then
+          dotnet restore {{.SOLUTION}}
+          dotnet test tests/unit/VibeChat.UnitTests.csproj --verbosity minimal
+        fi
 
   test:integration:
     desc: Integration tests (Testcontainers — Docker required)

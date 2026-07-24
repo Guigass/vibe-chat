@@ -1,6 +1,6 @@
 # Código de Conduta — VibeChat
 
-Este projeto adota o [Contributor Covenant](https://www.contributor-covenant.org/) versão 2.1, de forma provisória até a decisão formal de governança (D-09 em `docs/roadmap/decisoes-pendentes.md`).
+Este projeto adota o [Contributor Covenant](https://www.contributor-covenant.org/) versão 2.1 (D-09).
 
 ## Nosso compromisso
 

@@ -7,6 +7,7 @@ import {
   Channel,
   ChatMessage,
   Workspace,
+  WorkspaceMember,
 } from '../../shared/models/chat.models';
 
 interface WorkspaceDto {
@@ -21,6 +22,15 @@ interface ChannelDto {
   workspaceId: string;
   name: string;
   type?: string;
+  peerUserId?: string | null;
+  peerDisplayName?: string | null;
+}
+
+interface MemberDto {
+  userId: string;
+  displayName: string;
+  email: string;
+  role: string;
 }
 
 interface MessageDto {
@@ -65,13 +75,25 @@ export class ApiService {
 
   async getChannels(workspaceId: string): Promise<Channel[]> {
     const rows = await this.request<ChannelDto[]>(`/api/v1/workspaces/${workspaceId}/channels`);
-    return rows.map((c) => ({
-      id: c.id,
-      workspaceId: c.workspaceId,
-      name: c.name,
-      unreadCount: 0,
-      isPrivate: (c.type ?? '').toLowerCase() === 'private',
+    return rows.map((c) => this.mapChannel(c));
+  }
+
+  async getMembers(workspaceId: string): Promise<WorkspaceMember[]> {
+    const rows = await this.request<MemberDto[]>(`/api/v1/workspaces/${workspaceId}/members`);
+    return rows.map((m) => ({
+      userId: m.userId,
+      displayName: m.displayName,
+      email: m.email,
+      role: m.role,
     }));
+  }
+
+  async openDirectMessage(workspaceId: string, userId: string): Promise<Channel> {
+    const dto = await this.request<ChannelDto>(`/api/v1/workspaces/${workspaceId}/dms`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    });
+    return this.mapChannel(dto);
   }
 
   async getMessages(channelId: string, take = 50): Promise<ChatMessage[]> {
@@ -97,6 +119,23 @@ export class ApiService {
       }),
     });
     return this.mapMessage(dto, this.auth.profile()?.id);
+  }
+
+  async editMessage(channelId: string, messageId: string, body: string): Promise<ChatMessage> {
+    const dto = await this.request<MessageDto>(
+      `/api/v1/channels/${channelId}/messages/${messageId}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ body }),
+      },
+    );
+    return this.mapMessage(dto, this.auth.profile()?.id);
+  }
+
+  async deleteMessage(channelId: string, messageId: string): Promise<void> {
+    await this.request(`/api/v1/channels/${channelId}/messages/${messageId}`, {
+      method: 'DELETE',
+    });
   }
 
   async upsertReadCursor(channelId: string, lastReadSequence: number): Promise<void> {
@@ -133,6 +172,21 @@ export class ApiService {
     };
   }
 
+  private mapChannel(c: ChannelDto): Channel {
+    const type = (c.type ?? 'Public').toLowerCase();
+    return {
+      id: c.id,
+      workspaceId: c.workspaceId,
+      name: c.name,
+      unreadCount: 0,
+      type,
+      isPrivate: type === 'private',
+      isDirect: type === 'direct',
+      peerUserId: c.peerUserId ?? undefined,
+      peerDisplayName: c.peerDisplayName ?? undefined,
+    };
+  }
+
   private mapMessage(m: MessageDto, me?: string): ChatMessage {
     return {
       id: m.id,
@@ -140,8 +194,10 @@ export class ApiService {
       channelId: m.channelId,
       authorUserId: m.authorId,
       authorName: m.authorName || m.authorId,
-      body: m.body,
+      body: m.deletedAt ? '' : m.body,
       createdAt: m.createdAt,
+      editedAt: m.editedAt,
+      deletedAt: m.deletedAt,
       seq: m.sequence,
       status: 'persisted',
       mine: !!me && me === m.authorId,
