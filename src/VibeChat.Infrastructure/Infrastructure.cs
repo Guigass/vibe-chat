@@ -2,6 +2,7 @@ using System.Diagnostics.Metrics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
@@ -957,7 +958,23 @@ public sealed class MinioObjectStorage(IMinioClient minioClient, IConfiguration 
 public sealed class SignalRChatPublisher(IHubContext<ChatHub> hubContext) : IChatPublisher
 {
     public Task PublishAsync(RealtimeMessage message, CancellationToken cancellationToken) =>
-        hubContext.Clients.Group(ChatHub.ChannelGroup(message.ChannelId)).SendAsync(message.EventName, message.Payload, cancellationToken);
+        hubContext.Clients.Group(ChatHub.ChannelGroup(message.ChannelId))
+            .SendAsync(
+                message.EventName,
+                RealtimePayloadNormalization.Normalize(message.Payload),
+                cancellationToken);
+}
+
+internal static class RealtimePayloadNormalization
+{
+    public static object Normalize(object? payload) => payload switch
+    {
+        null => new JsonObject(),
+        JsonNode node => node,
+        JsonElement element => JsonNode.Parse(element.GetRawText()) ?? new JsonObject(),
+        string json when !string.IsNullOrWhiteSpace(json) => JsonNode.Parse(json) ?? new JsonObject(),
+        _ => payload
+    };
 }
 
 public sealed class RedisChannelChatPublisher(RedisConnection redis) : IChatPublisher
@@ -972,7 +989,13 @@ public sealed class RedisChannelChatPublisher(RedisConnection redis) : IChatPubl
             return;
         }
 
-        await subscriber.PublishAsync(RedisChannel.Literal(ChannelName), JsonSerializer.Serialize(new RedisRealtimeEnvelope(message.EventName, message.TenantId.Value, message.ChannelId.Value, message.Payload)));
+        await subscriber.PublishAsync(
+            RedisChannel.Literal(ChannelName),
+            JsonSerializer.Serialize(new RedisRealtimeEnvelope(
+                message.EventName,
+                message.TenantId.Value,
+                message.ChannelId.Value,
+                RealtimePayloadNormalization.Normalize(message.Payload))));
     }
 }
 
@@ -998,7 +1021,10 @@ public sealed class RedisSignalRBridge(RedisConnection redis, IHubContext<ChatHu
                     return;
                 }
 
-                await hubContext.Clients.Group(ChatHub.ChannelGroup(new ChannelId(envelope.ChannelId))).SendAsync(envelope.EventName, envelope.Payload, stoppingToken);
+                // Normalize payload to JsonNode so the JS client receives an object, not a string.
+                var payload = RealtimePayloadNormalization.Normalize(envelope.Payload);
+                await hubContext.Clients.Group(ChatHub.ChannelGroup(new ChannelId(envelope.ChannelId)))
+                    .SendAsync(envelope.EventName, payload, stoppingToken);
             }
             catch (Exception ex)
             {
@@ -1045,10 +1071,13 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     continue;
                 }
 
-                var doc = JsonDocument.Parse(outbox.Payload);
-                var root = doc.RootElement;
-                var tenantId = new TenantId(root.GetProperty("tenantId").GetGuid());
-                var channelId = new ChannelId(root.GetProperty("channelId").GetGuid());
+                var payloadNode = JsonNode.Parse(outbox.Payload)
+                    ?? throw new InvalidOperationException("Invalid outbox payload JSON");
+                var root = payloadNode.AsObject();
+                var tenantId = new TenantId(root["tenantId"]?.GetValue<Guid>()
+                    ?? throw new InvalidOperationException("Outbox payload missing tenantId"));
+                var channelId = new ChannelId(root["channelId"]?.GetValue<Guid>()
+                    ?? throw new InvalidOperationException("Outbox payload missing channelId"));
                 var eventName = outbox.Type switch
                 {
                     nameof(MessageCreatedEvent) => "MessageCreated",
@@ -1058,18 +1087,32 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     _ => outbox.Type
                 };
 
+                // Fan-out realtime first — search reindex must not block MessageCreated/edit/delete (B-070).
+                // Publish JsonNode so SignalR emits a JSON object the JS client can ingest.
+                await publisher.PublishAsync(new RealtimeMessage(eventName, tenantId, channelId, payloadNode), cancellationToken);
+
                 if (outbox.Type is nameof(MessageCreatedEvent) or nameof(MessageEditedEvent) or nameof(MessageDeletedEvent)
-                    && root.TryGetProperty("messageId", out var messageIdProperty))
+                    && root["messageId"] is JsonNode messageIdNode)
                 {
-                    var messageId = new MessageId(messageIdProperty.GetGuid());
-                    var body = root.TryGetProperty("body", out var bodyProperty) ? bodyProperty.GetString() ?? string.Empty : string.Empty;
-                    var isDeleted = outbox.Type == nameof(MessageDeletedEvent);
-                    await searchIndexer.IndexMessageAsync(
-                        new MessageIndexed(messageId, tenantId, channelId, body, isDeleted, now),
-                        cancellationToken);
+                    try
+                    {
+                        var messageId = new MessageId(messageIdNode.GetValue<Guid>());
+                        var body = root["body"]?.GetValue<string>() ?? string.Empty;
+                        var isDeleted = outbox.Type == nameof(MessageDeletedEvent);
+                        await searchIndexer.IndexMessageAsync(
+                            new MessageIndexed(messageId, tenantId, channelId, body, isDeleted, now),
+                            cancellationToken);
+                    }
+                    catch (Exception indexEx)
+                    {
+                        // Trigger on messaging.messages already maintains search_vector; log and continue.
+                        logger.LogWarning(
+                            indexEx,
+                            "Search reindex failed for outbox {OutboxMessageId}; realtime already published",
+                            outbox.Id);
+                    }
                 }
 
-                await publisher.PublishAsync(new RealtimeMessage(eventName, tenantId, channelId, JsonSerializer.Deserialize<object>(outbox.Payload)!), cancellationToken);
                 outbox.ProcessedAt = now;
                 outbox.Error = null;
             }

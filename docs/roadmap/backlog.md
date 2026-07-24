@@ -40,7 +40,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 
 | ID | Item | Notas |
 |----|------|-------|
-| B-070 | Realtime: mensagens/eventos ao vivo | Hoje typing chega; `MessageCreated` / edit / delete / reações nem sempre atualizam a timeline sem reload. Garantir ingest no hub client + **gap-fill por `seq` no reconnect**; testes E2E dois usuários |
+| B-070 | Realtime: mensagens/eventos ao vivo | **Done (Wave 6)** — ingest hub `MessageCreated`/edit/delete/`ReactionChanged` (payload JsonNode) + gap-fill por `seq` no reconnect/overlap; E2E dois usuários |
 | B-071 | Typing: ocultar indicador do próprio usuário | Hub ou cliente: não exibir “digitando…” para o autor; preferir `Clients.OthersInGroup` (ou filtro por `userId` no client) |
 | B-072 | Scroll só no bloco da conversa | Shell sem scroll da página; timeline/`overflow` interno + composer fixo; validar mobile |
 

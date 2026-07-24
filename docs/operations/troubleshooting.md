@@ -40,7 +40,8 @@
 
 ### Sintoma: só o typing atualiza ao vivo (mensagens não)
 
-- Typing é efêmero (Redis/hub); mensagens passam por **outbox → worker → hub**
+- Typing é efêmero (Redis/hub); mensagens passam por **outbox → hub** (dispatcher na API)
+- Conferir `building_blocks.outbox_messages`: `ProcessedAt` nulo + `Error` (ex.: FTS `to_tsvector` / reindex) — fan-out realtime não deve depender do search
 - Confirmar handler `MessageCreated` no cliente e ingest na store (`seq` / dedupe)
 - Após reconnect: re-`JoinChannel` **e** gap-fill por history (B-070)
 - Se edit/delete/reação falham mas send às vezes funciona: checar eventos de hub correspondentes
