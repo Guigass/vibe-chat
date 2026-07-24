@@ -1,6 +1,10 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { TableModule } from 'primeng/table';
+import { SelectModule } from 'primeng/select';
+import { TagModule } from 'primeng/tag';
 import { environment } from '../../../environments/environment';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -18,10 +22,24 @@ import { Skeleton, ThemeToggle } from '../../shared/ui';
 const MANAGER_ROLES = new Set(['PlatformOwner', 'WorkspaceOwner', 'Admin']);
 const PROTECTED_ROLES = new Set(['PlatformOwner', 'WorkspaceOwner', 'Guest', 'Bot']);
 
+interface ConversationOption {
+  id: string;
+  label: string;
+}
+
 @Component({
   selector: 'vc-admin-page',
   standalone: true,
-  imports: [RouterLink, Skeleton, ThemeToggle, DatePipe],
+  imports: [
+    RouterLink,
+    FormsModule,
+    Skeleton,
+    ThemeToggle,
+    DatePipe,
+    TableModule,
+    SelectModule,
+    TagModule,
+  ],
   templateUrl: './admin.page.html',
   styleUrl: './admin.page.scss',
 })
@@ -66,9 +84,35 @@ export class AdminPage implements OnInit {
   readonly threadMessages = signal<AdminConversationMessageItem[]>([]);
   readonly threadBusy = signal(false);
 
+  readonly conversationOptions = computed<ConversationOption[]>(() =>
+    this.conversations().map((c) => ({ id: c.id, label: this.conversationLabel(c) })),
+  );
+
   canInvite(): boolean {
     const role = this.workspace()?.role;
     return !!role && MANAGER_ROLES.has(role);
+  }
+
+  messageStatusSeverity(
+    m: AdminConversationMessageItem,
+  ): 'success' | 'warn' | 'danger' | 'secondary' {
+    if (m.deletedAt) {
+      return 'danger';
+    }
+    if (m.editedAt) {
+      return 'warn';
+    }
+    return 'success';
+  }
+
+  messageStatusLabel(m: AdminConversationMessageItem): string {
+    if (m.deletedAt) {
+      return m.deletedByName ? `soft-delete · ${m.deletedByName}` : 'soft-delete';
+    }
+    if (m.editedAt) {
+      return 'editado';
+    }
+    return 'ok';
   }
 
   async ngOnInit(): Promise<void> {
@@ -122,9 +166,7 @@ export class AdminPage implements OnInit {
     return `${prefix} ${row.name}`;
   }
 
-  async onConversationChange(event: Event): Promise<void> {
-    const select = event.target as HTMLSelectElement;
-    const channelId = select.value || null;
+  async onConversationSelected(channelId: string | null): Promise<void> {
     this.selectedConversationId.set(channelId);
     this.activeThreadId.set(null);
     this.threadMessages.set([]);

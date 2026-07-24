@@ -9,7 +9,7 @@ globs:
 
 - Angular 22 standalone + Signals + CDK + PWA.
 - Design system: Sora + IBM Plex Sans; teal/charcoal (`docs/architecture/design-system.md`).
-- PrimeNG só após emenda ADR-002 (B-073), com tema nos tokens `--vc-*`.
+- PrimeNG (B-073 / ADR-002): preset VibeChat nos tokens `--vc-*`; preferir em admin/forms densos; chat shell permanece composição própria + CDK.
 - OIDC PKCE; demo local só para DX — não confundir com auth de produção.
 - Mensagens ordenadas por `seq`; gap-fill via history; Idempotency-Key por tentativa.
 - Não exibir typing do próprio usuário; scroll só na timeline (B-071 / B-072).

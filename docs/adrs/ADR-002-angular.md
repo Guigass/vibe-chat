@@ -31,7 +31,7 @@ Usar **Angular 22** com:
 - **−** Curva de aprendizado para quem só conhece React
 - **−** Bundle precisa de atenção (lazy routes por workspace/área)
 
-## Emenda proposta (Wave 6 / B-073) — Pendente
+## Emenda (Wave 6 / B-073) — Accepted
 
 Adotar **PrimeNG** como biblioteca de componentes (tabelas, dialogs, forms, menus) **desde que**:
 
@@ -40,4 +40,9 @@ Adotar **PrimeNG** como biblioteca de componentes (tabelas, dialogs, forms, menu
 3. Bundle: import modular / lazy por área (admin vs chat)
 4. Identidade visual própria preservada (não clonar Slack/Discord)
 
-Até a emenda ser aceita em PR dedicado, o código permanece CDK + UI própria.
+### Implementação de referência
+
+- Preset: `apps/web/src/app/core/theme/vibechat.preset.ts` (Aura + teal/charcoal)
+- Provider: `providePrimeNG` em `app.config.ts` com `darkModeSelector: '[data-theme="dark"]'`
+- Primeira superfície: página `/admin` (DataTable / Select / Tag)
+- Chat shell permanece composição própria + CDK
