@@ -107,6 +107,7 @@ Prioridade: corrigir tempo real / typing / scroll; depois clareza de cadastro e 
 | W6-5 | B/D/E | Settings sensíveis (tokens, webhooks, AI/SMTP) só admin (B-069, B-048) | W6-4 | Planned |
 | W6-6 | B/D/E | Auditoria completa de conversas no ADMIN (B-067) | W4-6, W6-4 | Planned |
 | W6-7 | D/G | UI polish com PrimeNG + tema tokens (B-073; emenda ADR-002) | W6-3 | Planned |
+| W6-8 | A/G | API + Web (+ Worker) containerizados no Compose como caminho oficial (B-074) | W5-2 | Planned |
 
 ### Critérios de aceite Wave 6 (resumo)
 
@@ -117,16 +118,17 @@ Prioridade: corrigir tempo real / typing / scroll; depois clareza de cadastro e 
 - Tokens/webhooks/keys inacessíveis a não-admin
 - Admin consegue auditar conversa (não só `audit_events`)
 - PrimeNG só após emenda ADR-002; identidade visual VibeChat preservada
+- `docker compose --profile apps up -d` sobe **api** + **web** (+ worker) healthy; caminho self-host documentado (dev hot-reload continua via `task dev`)
 
 ---
 
 ## Parallelismo sugerido por time de agentes
 
 ```text
-Agent-Infra     → W0-1, W0-2, W0-6, W5-*
+Agent-Infra     → W0-1, W0-2, W0-6, W5-*, W6-8
 Agent-Backend   → W0-3, W1-*, W2-1..W2-4, W3-1, W3-3, W4-*, W6-1, W6-2, W6-4..W6-6
 Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7, W6-1..W6-3, W6-7
-Agent-QA        → W0-7, W1-5, W2-6, W2-7, W3-2, W3-5, W5-3, W6-1 E2E
+Agent-QA        → W0-7, W1-5, W2-6, W2-7, W3-2, W3-5, W5-3, W6-1 E2E, W6-8 smoke
 Agent-Security  → W3-1/W3-2 review, W6-5/W6-6 authZ + threat model
 Agent-Obs       → W0-6, W3-4
 ```

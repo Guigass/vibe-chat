@@ -66,6 +66,7 @@ Prioridade sobre P2 novo de diferenciação. Detalhe em `docs/roadmap/roadmap.md
 | Secrets / integrações | Tokens, webhooks, AI/SMTP só para administradores (B-069, B-048) |
 | Auditoria de conversas | Viewer ADMIN completo por canal/DM/thread, além do audit log de ações (B-067) |
 | UI | Polish com PrimeNG alinhado aos tokens; emenda ADR-002 (B-073) |
+| Compose apps | API + Web (+ Worker) em containers no Compose como deploy oficial self-host (B-074); `task dev` só para DX com hot reload |
 
 ## Riscos principais
 

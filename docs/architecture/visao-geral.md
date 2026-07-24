@@ -79,9 +79,10 @@ Detalhes: `fluxo-envio-mensagem.md`, `modelo-dominio.md`, `contratos.md`.
 
 ## Fronteiras de deploy (fase 1)
 
-- Um `api`, um `worker`, um `web` (nginx/static)
-- Dependências em Compose
+- Um `api`, um `worker`, um `web` (nginx/static) — **todos como serviços Compose** (profile `apps`; B-074 / Wave 6 eleva a caminho oficial documentado)
+- Dependências (Postgres, Redis, Keycloak, MinIO) no mesmo Compose
 - Escala horizontal da API possível via Redis backplane; schema e outbox preparados
+- Dev local pode rodar API/Web no host (`task dev`); self-host/demo usa containers
 
 ## O que deliberadamente não temos (ainda)
 
