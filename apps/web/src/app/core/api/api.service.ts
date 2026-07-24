@@ -713,7 +713,7 @@ export class ApiService {
         fileName: a.fileName,
         contentType: a.contentType,
         sizeBytes: a.sizeBytes,
-        status: a.status,
+        status: a.status ?? 'Ready',
       })),
     };
   }
