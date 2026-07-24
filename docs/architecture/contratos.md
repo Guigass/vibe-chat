@@ -304,15 +304,23 @@ Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send
 ## AI
 
 ```csharp
-public interface IAiAssistant
+public interface IAiCompletionProvider
 {
-    Task<AiResult> CompleteAsync(AiRequest request, CancellationToken ct);
+    string Name { get; }
+    Task<AiCompletionResponse> CompleteAsync(AiCompletionRequest request, CancellationToken ct);
 }
 ```
 
-- Implementações: `NoOpAiAssistant`, `OpenRouterAiAssistant`
+- Implementações: `NullAiProvider` (default quando `Ai:Enabled=false`), `MockAiProvider`, `OpenRouterAiProvider` (opt-in + API key)
 - Request deve carregar `TenantId` e evidência de autorização do contexto
 - Provider externo **off by default** (D-06); nunca no hot path de `SendMessage`
+
+| Endpoint | AuthZ | Notas |
+|----------|-------|-------|
+| `POST /api/v1/workspaces/{workspaceId}/channels/{channelId}/ai/summarize` | membership + `ai.summarize` | Resumo das últimas ~20 msgs do canal; exige `Ai:Enabled` + `AiSettings` do workspace; `503` + `{ error: AiDisabled }` se off; `502` + `ProviderError` se provider externo falhar; nunca envia PII a terceiros sem flag+key |
+
+`AiSummaryResponse`: `{ summary }`  
+`AiSummaryErrorResponse`: `{ error, message }`
 
 ---
 

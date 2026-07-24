@@ -67,7 +67,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 
 | Termo | Definição |
 |-------|-----------|
-| **AI Provider** | Implementação atrás de `IAiAssistant` (ex.: OpenRouter). |
+| **AI Provider** | Implementação atrás de `IAiCompletionProvider` (Null / Mock / OpenRouter). |
 | **AI Feature** | Capacidade opcional (resumo, sugestão, busca semântica futura) desligada por padrão. |
 | **Prompt Context** | Contexto permitido (mensagens/canais com ACL) enviado ao provedor — nunca cruzar tenants. |
 

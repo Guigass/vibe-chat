@@ -11,8 +11,9 @@ Recursos de IA (resumo de thread, sugestão de resposta, etc.) são desejáveis,
 Integrar IA de forma **opcional e atrás de interface**:
 
 ```text
-IAiAssistant → NoOpAiAssistant (default)
-            → OpenRouterAiAssistant (opt-in)
+IAiCompletionProvider → NullAiProvider (default, Ai:Enabled=false)
+                      → MockAiProvider (lab / seed)
+                      → OpenRouterAiProvider (opt-in + API key)
 ```
 
 - Feature flags por tenant

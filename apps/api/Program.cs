@@ -1503,7 +1503,17 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/summariz
         return Results.Forbid();
     }
 
-    return Results.Ok(new AiSummaryResponse(await summarize.SummarizeAsync(workspace.TenantId, workspace.Id, channel.Id, ct)));
+    // Never on SendMessage hot path — opt-in summarize only (D-06 / ADR-012).
+    var result = await summarize.SummarizeAsync(workspace.TenantId, workspace.Id, channel.Id, ct);
+    if (!result.Ok)
+    {
+        var status = string.Equals(result.Error, "AiDisabled", StringComparison.Ordinal)
+            ? StatusCodes.Status503ServiceUnavailable
+            : StatusCodes.Status502BadGateway;
+        return Results.Json(new AiSummaryErrorResponse(result.Error ?? "AiError", result.Summary), statusCode: status);
+    }
+
+    return Results.Ok(new AiSummaryResponse(result.Summary));
 });
 
 if (app.Environment.IsDevelopment())
@@ -1886,6 +1896,7 @@ public sealed record SearchMessageHitResponse(
     double Rank);
 public sealed record SearchMessagesResponse(string Query, int Limit, SearchMessageHitResponse[] Items);
 public sealed record AiSummaryResponse(string Summary);
+public sealed record AiSummaryErrorResponse(string Error, string Message);
 public sealed record AuditEventResponse(
     Guid Id,
     string Action,
