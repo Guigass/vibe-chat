@@ -1,8 +1,10 @@
 import { Component, effect, inject, ElementRef, viewChild } from '@angular/core';
+import { AuthService } from '../../../core/auth/auth.service';
 import { MessageStore } from '../../../core/services/message.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { ThreadStore } from '../../../core/services/thread.store';
+import { withoutSelfTyping } from '../../../core/services/typing-filter';
 import { EmptyState, MessageBubble, Skeleton, TypingIndicator } from '../../../shared/ui';
 
 @Component({
@@ -67,6 +69,7 @@ export class Timeline {
   readonly channels = inject(ChannelStore);
   private readonly threads = inject(ThreadStore);
   private readonly hub = inject(ChatHubService);
+  private readonly auth = inject(AuthService);
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
 
   constructor() {
@@ -82,7 +85,8 @@ export class Timeline {
   typingForChannel() {
     const channelId = this.channels.activeChannel()?.id;
     if (!channelId) return [];
-    return this.hub.typingUsers().filter((t) => t.channelId === channelId);
+    const forChannel = this.hub.typingUsers().filter((t) => t.channelId === channelId);
+    return withoutSelfTyping(forChannel, this.auth.profile()?.id);
   }
 
   async onEdit(messageId: string, body: string): Promise<void> {

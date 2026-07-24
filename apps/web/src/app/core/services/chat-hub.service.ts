@@ -14,6 +14,7 @@ import {
   ReactionSummary,
   TypingState,
 } from '../../shared/models/chat.models';
+import { withoutSelfTyping } from './typing-filter';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
@@ -233,11 +234,14 @@ export class ChatHubService {
         userId: String(payload.userId),
         displayName: payload.displayName,
       };
+      // Hub uses OthersInGroup; still ignore self if echo arrives (B-071).
+      const me = this.auth.profile()?.id;
+      if (me && typing.userId === me) return;
       this.typingSignal.update((list) => {
         const filtered = list.filter(
           (t) => !(t.channelId === typing.channelId && t.userId === typing.userId),
         );
-        return [...filtered, typing];
+        return withoutSelfTyping([...filtered, typing], me);
       });
       window.setTimeout(() => {
         this.typingSignal.update((list) =>

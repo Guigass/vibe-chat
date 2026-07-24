@@ -230,7 +230,7 @@ Nomes de eventos hub (cliente):
 | `message.edited` | Edição |
 | `message.deleted` | Soft delete |
 | `ReactionChanged` | Toggle de reação (payload com resumo agregado) |
-| `Typing` | Typing (TTL curto Redis) |
+| `Typing` | Typing (TTL curto Redis); hub publica com `Clients.OthersInGroup` (B-071) — autor não recebe o próprio evento |
 | `PresenceChanged` | Presence `online`/`away`/`offline` (hub group `tenant:{tenantId}`) |
 
 Hub (além de `JoinChannel` / `LeaveChannel` / `SendTyping`):
