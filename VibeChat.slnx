@@ -1,0 +1,74 @@
+<Solution>
+  <Folder Name="/apps/" />
+  <Folder Name="/apps/api/">
+    <Project Path="apps/api/VibeChat.Api.csproj" />
+  </Folder>
+  <Folder Name="/apps/worker/">
+    <Project Path="apps/worker/VibeChat.Worker.csproj" />
+  </Folder>
+  <Folder Name="/modules/" />
+  <Folder Name="/modules/Administration/">
+    <Project Path="modules/Administration/VibeChat.Administration.csproj" />
+  </Folder>
+  <Folder Name="/modules/AI/">
+    <Project Path="modules/AI/VibeChat.AI.csproj" />
+  </Folder>
+  <Folder Name="/modules/Audit/">
+    <Project Path="modules/Audit/VibeChat.Audit.csproj" />
+  </Folder>
+  <Folder Name="/modules/BuildingBlocks/">
+    <Project Path="modules/BuildingBlocks/VibeChat.BuildingBlocks.csproj" />
+  </Folder>
+  <Folder Name="/modules/Conversations/">
+    <Project Path="modules/Conversations/VibeChat.Conversations.csproj" />
+  </Folder>
+  <Folder Name="/modules/Directory/">
+    <Project Path="modules/Directory/VibeChat.Directory.csproj" />
+  </Folder>
+  <Folder Name="/modules/Files/">
+    <Project Path="modules/Files/VibeChat.Files.csproj" />
+  </Folder>
+  <Folder Name="/modules/Identity/">
+    <Project Path="modules/Identity/VibeChat.Identity.csproj" />
+  </Folder>
+  <Folder Name="/modules/Integrations/">
+    <Project Path="modules/Integrations/VibeChat.Integrations.csproj" />
+  </Folder>
+  <Folder Name="/modules/Messaging/">
+    <Project Path="modules/Messaging/VibeChat.Messaging.csproj" />
+  </Folder>
+  <Folder Name="/modules/Moderation/">
+    <Project Path="modules/Moderation/VibeChat.Moderation.csproj" />
+  </Folder>
+  <Folder Name="/modules/Notifications/">
+    <Project Path="modules/Notifications/VibeChat.Notifications.csproj" />
+  </Folder>
+  <Folder Name="/modules/Realtime/">
+    <Project Path="modules/Realtime/VibeChat.Realtime.csproj" />
+  </Folder>
+  <Folder Name="/modules/Search/">
+    <Project Path="modules/Search/VibeChat.Search.csproj" />
+  </Folder>
+  <Folder Name="/modules/Tenancy/">
+    <Project Path="modules/Tenancy/VibeChat.Tenancy.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/VibeChat.Infrastructure/VibeChat.Infrastructure.csproj" />
+    <Project Path="src/VibeChat.SharedKernel/VibeChat.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VibeChat.TestHost/VibeChat.TestHost.csproj" />
+  </Folder>
+  <Folder Name="/tests/architecture/">
+    <Project Path="tests/architecture/VibeChat.ArchitectureTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/integration/">
+    <Project Path="tests/integration/VibeChat.IntegrationTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/security/">
+    <Project Path="tests/security/VibeChat.SecurityTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/unit/">
+    <Project Path="tests/unit/VibeChat.UnitTests.csproj" />
+  </Folder>
+</Solution>

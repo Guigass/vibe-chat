@@ -1,0 +1,45 @@
+# VibeChat Web
+
+Angular 22 SPA (standalone + Signals + CDK + PWA) for the VibeChat vertical slice.
+
+## Stack
+
+- Angular 22, Signals, standalone components
+- SCSS design tokens (`teal/ocean + charcoal`)
+- OIDC via `oidc-client-ts` (Keycloak)
+- Realtime via `@microsoft/signalr`
+- PWA service worker (production builds)
+
+## Develop
+
+```bash
+export PATH=$HOME/.local/node/bin:$PATH
+npm install
+npm start
+```
+
+App: `http://localhost:4200`
+
+## Environment
+
+| Key | Default |
+|-----|---------|
+| API | `http://localhost:5080` |
+| Hub | `http://localhost:5080/hubs/chat` |
+| Keycloak | `http://localhost:8080/realms/vibechat` |
+
+## Structure
+
+```
+src/app/
+  core/       auth, api, tenant, stores, theme, hub
+  shared/ui/  design system components
+  features/   auth, chat, admin, ai
+  layout/     authenticated shell
+```
+
+## Keyboard
+
+- `Ctrl/Cmd+K` — focus search
+- `Escape` — close context panel / blur
+- `Enter` — send message (`Shift+Enter` newline)

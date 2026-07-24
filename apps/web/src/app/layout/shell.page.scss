@@ -1,0 +1,207 @@
+.shell {
+  --shell-gap: 0;
+  display: grid;
+  grid-template-columns: var(--vc-sidebar-width) 1fr;
+  min-height: 100dvh;
+  background: var(--vc-bg-atmosphere);
+}
+
+.shell--context-open {
+  grid-template-columns: var(--vc-sidebar-width) 1fr var(--vc-context-width);
+}
+
+.shell--sidebar-collapsed {
+  grid-template-columns: 1fr;
+}
+
+.shell--sidebar-collapsed.shell--context-open {
+  grid-template-columns: 1fr var(--vc-context-width);
+}
+
+.shell__sidebar {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: var(--vc-space-4);
+  padding: var(--vc-space-4) 0;
+  border-right: 1px solid var(--vc-border);
+  background: color-mix(in srgb, var(--vc-surface-elevated) 92%, transparent);
+  min-height: 100dvh;
+}
+
+.shell--sidebar-collapsed .shell__sidebar {
+  display: none;
+}
+
+.shell__brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--vc-space-4);
+}
+
+.shell__wordmark {
+  font-family: var(--vc-font-display);
+  font-weight: 700;
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+  color: var(--vc-brand);
+}
+
+.shell__workspace {
+  display: block;
+  padding: 0 var(--vc-space-4);
+}
+
+.shell__workspace select {
+  width: 100%;
+  min-height: 2.5rem;
+  border-radius: var(--vc-radius-md);
+  border: 1px solid var(--vc-border);
+  background: var(--vc-surface);
+  color: var(--vc-ink);
+  padding: 0 0.75rem;
+  font-weight: 600;
+}
+
+.shell__sidebar-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: var(--vc-space-3) var(--vc-space-4) 0;
+  border-top: 1px solid var(--vc-border);
+}
+
+.shell__sidebar-footer a,
+.shell__sidebar-footer button {
+  border: 0;
+  background: transparent;
+  color: var(--vc-ink-muted);
+  cursor: pointer;
+  font-weight: 500;
+  padding: 0.35rem 0;
+}
+
+.shell__sidebar-footer a.is-active,
+.shell__sidebar-footer a:hover,
+.shell__sidebar-footer button:hover {
+  color: var(--vc-brand);
+}
+
+.shell__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100dvh;
+  background: color-mix(in srgb, var(--vc-surface) 88%, transparent);
+}
+
+.shell__header {
+  display: flex;
+  align-items: center;
+  gap: var(--vc-space-3);
+  padding: var(--vc-space-3) var(--vc-space-4);
+  border-bottom: 1px solid var(--vc-border);
+  min-height: 4.25rem;
+}
+
+.shell__title {
+  min-width: 0;
+  flex: 1;
+}
+
+.shell__title h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shell__title p {
+  margin: 0.15rem 0 0;
+  color: var(--vc-ink-muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shell__search {
+  width: min(16rem, 30vw);
+}
+
+.shell__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.shell__hint {
+  margin: 0;
+  padding: 0.45rem var(--vc-space-4);
+  font-size: 0.82rem;
+  color: var(--vc-warning);
+  border-bottom: 1px solid var(--vc-border);
+}
+
+.shell__context {
+  border-left: 1px solid var(--vc-border);
+  background: var(--vc-surface-elevated);
+  padding: var(--vc-space-4);
+  min-height: 100dvh;
+}
+
+.shell__context header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--vc-space-4);
+}
+
+.shell__context h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.shell__context p {
+  margin: 0 0 0.75rem;
+  line-height: 1.45;
+}
+
+.shell__context .muted {
+  color: var(--vc-ink-muted);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 960px) {
+  .shell,
+  .shell--context-open,
+  .shell--sidebar-collapsed,
+  .shell--sidebar-collapsed.shell--context-open {
+    grid-template-columns: 1fr;
+  }
+
+  .shell__sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(86vw, var(--vc-sidebar-width));
+    z-index: 20;
+    box-shadow: var(--vc-shadow-soft);
+  }
+
+  .shell--sidebar-collapsed .shell__sidebar {
+    display: none;
+  }
+
+  .shell__context {
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: min(86vw, var(--vc-context-width));
+    z-index: 21;
+    box-shadow: var(--vc-shadow-soft);
+  }
+
+  .shell__search {
+    display: none;
+  }
+}

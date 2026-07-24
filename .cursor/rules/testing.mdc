@@ -1,0 +1,17 @@
+---
+description: Estratégia e comandos de teste
+globs:
+  - tests/**
+  - "**/*Tests*.cs"
+  - "**/*.spec.ts"
+---
+
+# Testing
+
+- Pirâmide: unit → architecture → integration (Testcontainers) → security → e2e.
+- ADR-014 define a estratégia; critérios em `docs/product/criterios-aceite-fatia-vertical.md`.
+- Comandos: `task test`, `task test:integration`, `task test:architecture`, `task test:security`, `task test:e2e`, `task verify`.
+- Correções de bug devem incluir regressão automatizada.
+- E2E Playwright: duas sessões (alice/bob); Demo UI ou DevAuth (`X-Dev-User`) em Development.
+- Não skippar testes flaky sem issue rastreável.
+- Evidência: logs de CI, IDs de trace, artefatos Playwright.

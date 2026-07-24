@@ -1,0 +1,62 @@
+<section class="admin">
+  <header class="admin__header">
+    <div>
+      <p class="admin__brand">VibeChat</p>
+      <h1>Operações</h1>
+      <p class="admin__lead">Pulso do sistema — métricas essenciais e saúde das dependências.</p>
+    </div>
+    <div class="admin__header-actions">
+      <a routerLink="/app">← Voltar ao chat</a>
+      <vc-theme-toggle />
+    </div>
+  </header>
+
+  @if (usingDemo()) {
+    <p class="admin__hint" role="status">API admin indisponível — exibindo snapshot de demonstração.</p>
+  }
+
+  @if (loading()) {
+    <div class="admin__grid">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+        <vc-skeleton height="7rem" />
+      }
+    </div>
+  } @else if (stats(); as s) {
+    <div class="admin__grid">
+      <article class="stat"><span>Usuários</span><strong>{{ s.users }}</strong></article>
+      <article class="stat"><span>Online</span><strong>{{ s.onlineUsers }}</strong></article>
+      <article class="stat"><span>Workspaces</span><strong>{{ s.workspaces }}</strong></article>
+      <article class="stat"><span>Channels</span><strong>{{ s.channels }}</strong></article>
+      <article class="stat"><span>Mensagens</span><strong>{{ s.messages }}</strong></article>
+      <article class="stat"><span>Conexões realtime</span><strong>{{ s.realtimeConnections }}</strong></article>
+      <article class="stat"><span>Outbox pendente</span><strong>{{ s.outboxPending }}</strong></article>
+      <article class="stat"><span>Falhas de processamento</span><strong>{{ s.processingFailures }}</strong></article>
+    </div>
+
+    <div class="admin__lower">
+      <article class="health">
+        <h2>Saúde</h2>
+        <ul>
+          <li>
+            <span>PostgreSQL</span>
+            <em [attr.data-state]="s.health.postgres">{{ s.health.postgres }}</em>
+          </li>
+          <li>
+            <span>Redis</span>
+            <em [attr.data-state]="s.health.redis">{{ s.health.redis }}</em>
+          </li>
+          <li>
+            <span>Storage</span>
+            <em [attr.data-state]="s.health.storage">{{ s.health.storage }}</em>
+          </li>
+        </ul>
+      </article>
+
+      <article class="meta">
+        <h2>Versão</h2>
+        <p class="mono">{{ s.appVersion }}</p>
+        <a [href]="s.grafanaUrl" target="_blank" rel="noopener noreferrer">Abrir Grafana ↗</a>
+      </article>
+    </div>
+  }
+</section>

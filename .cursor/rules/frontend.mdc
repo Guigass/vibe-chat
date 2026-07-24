@@ -1,0 +1,17 @@
+---
+description: Regras para Angular / UI VibeChat
+globs:
+  - apps/web/**
+  - tests/e2e/**
+---
+
+# Frontend
+
+- Angular 22 standalone + Signals + CDK + PWA.
+- Design system: Sora + IBM Plex Sans; teal/charcoal (`docs/architecture/design-system.md`).
+- OIDC PKCE; demo local só para DX — não confundir com auth de produção.
+- Mensagens ordenadas por `seq`; gap-fill via history; Idempotency-Key por tentativa.
+- Theme via `data-theme`; motion sutil (2–3), sem ruído.
+- Evitar visual Slack/Discord/WhatsApp; sem cards desnecessários.
+- Tratar reconnect SignalR, empty/error states e a11y (foco, contraste).
+- E2E em `tests/e2e` (Playwright); documentar caminhos Demo e DevAuth.

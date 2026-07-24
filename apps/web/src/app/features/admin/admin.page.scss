@@ -1,0 +1,148 @@
+.admin {
+  min-height: 100dvh;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+  background: var(--vc-bg-atmosphere);
+}
+
+.admin__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.admin__brand {
+  margin: 0 0 0.35rem;
+  font-family: var(--vc-font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--vc-brand);
+  letter-spacing: -0.03em;
+}
+
+.admin__header h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+}
+
+.admin__lead {
+  margin: 0.4rem 0 0;
+  color: var(--vc-ink-muted);
+  max-width: 40ch;
+}
+
+.admin__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin__header-actions a {
+  color: var(--vc-ink-muted);
+  font-weight: 500;
+}
+
+.admin__hint {
+  margin: 0 0 1rem;
+  color: var(--vc-warning);
+  font-size: 0.9rem;
+}
+
+.admin__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.stat {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-md);
+  background: var(--vc-surface-elevated);
+  display: grid;
+  gap: 0.45rem;
+  animation: vc-fade-in-up var(--vc-dur-med) var(--vc-ease-out) both;
+}
+
+.stat span {
+  color: var(--vc-ink-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.stat strong {
+  font-family: var(--vc-font-display);
+  font-size: 1.65rem;
+  letter-spacing: -0.03em;
+}
+
+.admin__lower {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 0.85rem;
+}
+
+.health,
+.meta {
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-md);
+  background: var(--vc-surface-elevated);
+  padding: 1.1rem 1.2rem;
+}
+
+.health h2,
+.meta h2 {
+  margin: 0 0 0.85rem;
+  font-size: 1rem;
+}
+
+.health ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.health li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.health em {
+  font-style: normal;
+  font-family: var(--vc-font-mono);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.health em[data-state='up'] {
+  color: var(--vc-success);
+}
+
+.health em[data-state='degraded'] {
+  color: var(--vc-warning);
+}
+
+.health em[data-state='down'] {
+  color: var(--vc-danger);
+}
+
+.meta .mono {
+  font-family: var(--vc-font-mono);
+  margin: 0 0 1rem;
+}
+
+@media (max-width: 720px) {
+  .admin__header {
+    flex-direction: column;
+  }
+
+  .admin__lower {
+    grid-template-columns: 1fr;
+  }
+}

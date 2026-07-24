@@ -1,0 +1,58 @@
+# Git / VCS
+.git
+.gitignore
+.gitattributes
+
+# Docs & agent config (not needed in image builds)
+docs
+.cursor
+*.md
+!README.md
+
+# Environment / secrets
+.env
+.env.*
+!**/.env.example
+**/*.pem
+**/*.key
+secrets
+
+# IDE / OS
+.idea
+.vscode
+.vs
+**/.DS_Store
+**/Thumbs.db
+
+# .NET build artifacts
+**/bin
+**/obj
+**/TestResults
+**/artifacts
+**/*.user
+**/*.suo
+
+# Node / Angular
+**/node_modules
+**/dist
+**/.angular
+**/.nx
+**/coverage
+**/.sass-cache
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Tests (exclude from runtime images; unit tests run in CI)
+tests
+
+# Local compose / observability data
+infra/observability/data
+infra/grafana/data
+docker-compose.override.local.yml
+compose.override.local.yaml
+
+# Misc
+**/*.log
+**/*.tmp
+**/.history

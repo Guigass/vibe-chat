@@ -1,1 +1,107 @@
-# vibe-chat
+# VibeChat
+
+Plataforma de **chat corporativo open-source e self-hosted**. Organizações instalam, operam e controlam a própria infraestrutura — canais, mensagens em tempo real, arquivos e integrações, sem lock-in de SaaS.
+
+> Licença provisória: **Apache-2.0** (decisão final do owner pendente — ver `docs/roadmap/decisoes-pendentes.md` D-01).
+
+## O que é
+
+- Monólito modular (.NET 10 API + Worker, Angular 22)
+- Identidade OIDC via Keycloak
+- PostgreSQL como source of truth (RLS multi-tenant)
+- Redis para presença / backplane SignalR (não é SoT)
+- MinIO para anexos (S3-compatible)
+- Observabilidade opcional (OTel, Prometheus, Grafana, Loki, Tempo)
+
+Visão de produto: [`docs/product/visao.md`](docs/product/visao.md)  
+Arquitetura: [`docs/architecture/visao-geral.md`](docs/architecture/visao-geral.md)
+
+## Quick start
+
+### Pré-requisitos
+
+- Docker + Docker Compose v2
+- .NET 10 SDK
+- Node.js 22+
+- [Task](https://taskfile.dev/) (`go-task`)
+
+### Subir o ambiente
+
+```bash
+# Na raiz do repositório
+cp .env.example .env   # se ainda não existir
+
+task setup             # Compose (postgres/redis/keycloak/minio) + migrate
+task dev               # API (:5080) + Web (:4200) em paralelo
+task seed              # tenant demo + #geral + alice/bob (API precisa estar no ar)
+```
+
+Abra http://localhost:4200
+
+### Usuários demo
+
+| Usuário | E-mail | Senha (Keycloak) |
+|---------|--------|------------------|
+| Alice | `alice@vibechat.local` | `Demo123!` |
+| Bob | `bob@vibechat.local` | `Demo123!` |
+| Demo | `demo@vibechat.local` | `Demo123!` |
+
+- **Keycloak admin:** `admin` / valor de `KEYCLOAK_ADMIN_PASSWORD` no `.env`
+- **Modo demo local (UI):** botão “Explorar demo local” na tela de login (sem Keycloak)
+- **DevAuth (API Development):** header `X-Dev-User: alice|bob|demo`
+
+Seed cria workspace demo, canal `#geral` e memberships para alice/bob.
+
+## Comandos Task
+
+| Comando | Descrição |
+|---------|-----------|
+| `task setup` | `.env`, Compose up, health, migrate |
+| `task dev` | API + Web em paralelo |
+| `task stop` | `docker compose stop` |
+| `task reset` | `down -v` + setup |
+| `task lint` | `dotnet format --verify` + lint/tsc web |
+| `task test` | Testes unitários |
+| `task test:integration` | Integração (Testcontainers) |
+| `task test:e2e` | Playwright (duas sessões) |
+| `task test:architecture` | Fronteiras de módulo |
+| `task test:security` | Isolamento multi-tenant |
+| `task verify` | lint + todos os testes relevantes |
+| `task migrate` | EF Core `database update` |
+| `task seed` | `POST /api/v1/dev/seed` |
+| `task logs` | Tail dos logs Compose |
+| `task build` | Build Release .NET + Angular |
+
+## Estrutura
+
+```text
+apps/api          HTTP + SignalR (composition root)
+apps/worker       Outbox / jobs
+apps/web          Angular 22
+modules/*         Domínio modular
+src/*             SharedKernel + Infrastructure
+infra/            Compose helpers, Keycloak, observability
+docs/             Produto, arquitetura, ADRs, ops
+tests/            unit, integration, architecture, security, e2e
+```
+
+## Documentação
+
+| Área | Caminho |
+|------|---------|
+| Desenvolvimento | `docs/operations/desenvolvimento.md` |
+| Agentes / Cloud Agents | `AGENTS.md`, `docs/agents/orientacoes.md` |
+| ADRs | `docs/adrs/` |
+| Segurança multi-tenant | `docs/security/multi-tenant.md` |
+| Roadmap / decisões | `docs/roadmap/` |
+| Contribuindo | `CONTRIBUTING.md` |
+| Segurança (reporte) | `SECURITY.md` |
+
+## Cloud Agents
+
+- Setup: `.cursor/environment.json` → `bash infra/scripts/agent-setup.sh`
+- Regras: `.cursor/rules/*.mdc` + `AGENTS.md`
+
+## Licença
+
+Apache License 2.0 — ver `LICENSE`. A escolha definitiva de licença open-source permanece **pendente** (D-01).

@@ -1,0 +1,30 @@
+# Allow documented local-demo placeholders only. Never real production secrets.
+title = "VibeChat gitleaks"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Demo-only credentials and generated/docs paths"
+paths = [
+  '''^\.env\.example$''',
+  '''^infra/keycloak/realm-vibechat\.json$''',
+  '''^docs/''',
+  '''^LICENSE$''',
+  '''^compose\.yaml$''',
+  '''^compose\.override\.yaml$''',
+  '''^apps/api/appsettings\.Development\.json$''',
+  '''^apps/worker/appsettings\.Development\.json$''',
+  '''^tests/''',
+  '''^\.github/''',
+]
+
+regexes = [
+  '''(?i)vibechat_dev(_password_change_me)?''',
+  '''(?i)keycloak_dev_password_change_me''',
+  '''(?i)admin_dev_password_change_me''',
+  '''(?i)minioadmin(_dev_password_change_me)?''',
+  '''(?i)grafana_dev_password_change_me''',
+  '''(?i)Demo123!''',
+  '''(?i)change_me''',
+]

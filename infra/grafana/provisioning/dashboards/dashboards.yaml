@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: vibechat
+    orgId: 1
+    folder: VibeChat
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

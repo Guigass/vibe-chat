@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\modules\BuildingBlocks\VibeChat.BuildingBlocks.csproj" />
+    <ProjectReference Include="..\VibeChat.SharedKernel\VibeChat.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\modules\Identity\VibeChat.Identity.csproj" />
+    <ProjectReference Include="..\..\modules\Tenancy\VibeChat.Tenancy.csproj" />
+    <ProjectReference Include="..\..\modules\Directory\VibeChat.Directory.csproj" />
+    <ProjectReference Include="..\..\modules\Conversations\VibeChat.Conversations.csproj" />
+    <ProjectReference Include="..\..\modules\Messaging\VibeChat.Messaging.csproj" />
+    <ProjectReference Include="..\..\modules\Realtime\VibeChat.Realtime.csproj" />
+    <ProjectReference Include="..\..\modules\Files\VibeChat.Files.csproj" />
+    <ProjectReference Include="..\..\modules\Audit\VibeChat.Audit.csproj" />
+    <ProjectReference Include="..\..\modules\Administration\VibeChat.Administration.csproj" />
+    <ProjectReference Include="..\..\modules\AI\VibeChat.AI.csproj" />
+    <ProjectReference Include="..\..\modules\Notifications\VibeChat.Notifications.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Http" Version="10.0.0" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
+    <PackageReference Include="Minio" Version="7.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.17.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
+    <PackageReference Include="StackExchange.Redis" Version="3.0.17" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

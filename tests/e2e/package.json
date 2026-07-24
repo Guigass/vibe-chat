@@ -1,0 +1,18 @@
+{
+  "name": "vibechat-e2e",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Playwright E2E for VibeChat — two-session chat flow",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.51.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,22 @@
+---
+description: Regras para Compose, scripts e DX
+globs:
+  - compose.yaml
+  - compose.override.yaml
+  - infra/**
+  - Taskfile.yml
+  - .env.example
+  - .cursor/environment.json
+  - .github/**
+---
+
+# Infra
+
+- Compose na raiz (`compose.yaml`) é a fonte da verdade local.
+- Healthchecks obrigatórios nos serviços críticos; scripts idempotentes.
+- `task setup` / `task dev` / `task reset` são o contrato de DX.
+- `.env.example` completo com placeholders; nunca secrets reais.
+- Realm Keycloak versionado em `infra/keycloak/`.
+- Profiles: default (data plane), `tools`, `observability`, `apps`.
+- Sem K8s/Helm como requisito da fase 1.
+- Pin de imagens em releases; evitar `latest` em artefatos estáveis.

@@ -1,0 +1,155 @@
+version: "3"
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+vars:
+  SOLUTION: VibeChat.slnx
+  API_URL: '{{.API_URL | default "http://localhost:5080"}}'
+  WEB_URL: '{{.WEB_URL | default "http://localhost:4200"}}'
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  setup:
+    desc: Copy .env, start Compose, wait healthy, migrate, seed
+    cmds:
+      - |
+        if [[ ! -f .env ]]; then
+          cp .env.example .env
+          echo "Created .env from .env.example"
+        else
+          echo ".env already exists"
+        fi
+      - docker compose up -d postgres redis keycloak minio createbucket
+      - ./infra/scripts/wait-for-healthy.sh postgres redis keycloak minio
+      - task: migrate
+      - |
+        echo "Infra ready. Start apps with: task dev"
+        echo "Then seed (API must be up): task seed"
+        # Soft seed attempt — succeeds only if API already running
+        SEED_WAIT_FOR_HEALTHY=0 ./infra/scripts/seed.sh || \
+          echo "Seed deferred until API is running (task seed)."
+
+  dev:
+    desc: Run API + Web in parallel (Compose deps should already be up)
+    cmds:
+      - |
+        set -euo pipefail
+        if [[ ! -f .env ]]; then cp .env.example .env; fi
+        set -a && source .env && set +a
+        export ASPNETCORE_ENVIRONMENT=Development
+        export ASPNETCORE_URLS="${ASPNETCORE_URLS:-http://localhost:5080}"
+        export ConnectionStrings__Database="${DATABASE_URL:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat;Password=vibechat_dev_password_change_me}"
+        export ConnectionStrings__Redis="${REDIS_URL:-localhost:6379}"
+        export Authentication__Authority="${KEYCLOAK_ISSUER_URL:-http://localhost:8080/realms/vibechat}"
+        export Seed__Enabled=true
+        trap 'kill 0' EXIT INT TERM
+        echo "Starting API on ${ASPNETCORE_URLS} and Web on http://localhost:4200"
+        (cd apps/api && dotnet watch run --no-launch-profile) &
+        (cd apps/web && npm start) &
+        wait
+
+  stop:
+    desc: Stop Compose services
+    cmds:
+      - docker compose stop
+
+  reset:
+    desc: Tear down volumes and re-run setup
+    cmds:
+      - docker compose down -v --remove-orphans
+      - task: setup
+
+  lint:
+    desc: Format verify (.NET) + frontend lint/typecheck
+    cmds:
+      - dotnet format {{.SOLUTION}} --verify-no-changes --verbosity minimal
+      - |
+        if jq -e '.projects.web.architect.lint' apps/web/angular.json >/dev/null 2>&1; then
+          npm run lint --prefix apps/web
+        else
+          echo "ng lint not configured; running TypeScript check"
+          npm exec --prefix apps/web -- tsc -p tsconfig.app.json --noEmit
+        fi
+
+  test:
+    desc: Unit tests
+    cmds:
+      - dotnet test tests/unit/VibeChat.UnitTests.csproj --no-restore --verbosity minimal || \
+        (dotnet restore {{.SOLUTION}} && dotnet test tests/unit/VibeChat.UnitTests.csproj --verbosity minimal)
+
+  test:integration:
+    desc: Integration tests (Testcontainers — Docker required)
+    cmds:
+      - dotnet test tests/integration/VibeChat.IntegrationTests.csproj --verbosity minimal
+
+  test:e2e:
+    desc: Playwright end-to-end tests
+    cmds:
+      - |
+        if [[ ! -d tests/e2e/node_modules ]]; then
+          npm ci --prefix tests/e2e 2>/dev/null || npm install --prefix tests/e2e
+          npx --prefix tests/e2e playwright install chromium
+        fi
+        npm test --prefix tests/e2e
+
+  test:architecture:
+    desc: Architecture / module boundary tests
+    cmds:
+      - dotnet test tests/architecture/VibeChat.ArchitectureTests.csproj --verbosity minimal
+
+  test:security:
+    desc: Security / multi-tenant boundary tests
+    cmds:
+      - dotnet test tests/security/VibeChat.SecurityTests.csproj --verbosity minimal
+
+  verify:
+    desc: Lint + unit + architecture + security (+ integration if Docker available)
+    cmds:
+      - task: lint
+      - task: test
+      - task: test:architecture
+      - task: test:security
+      - |
+        if docker info >/dev/null 2>&1; then
+          task test:integration
+        else
+          echo "Docker unavailable — skipping integration tests"
+        fi
+
+  migrate:
+    desc: Apply EF Core migrations to local Postgres
+    cmds:
+      - |
+        set -a
+        [[ -f .env ]] && source .env
+        set +a
+        export ConnectionStrings__Database="${DATABASE_URL:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat;Password=vibechat_dev_password_change_me}"
+        if ! dotnet ef --version >/dev/null 2>&1; then
+          dotnet tool update -g dotnet-ef >/dev/null 2>&1 || dotnet tool install -g dotnet-ef
+          export PATH="${HOME}/.dotnet/tools:${PATH}"
+        fi
+        dotnet ef database update \
+          --project src/VibeChat.Infrastructure/VibeChat.Infrastructure.csproj \
+          --startup-project apps/api/VibeChat.Api.csproj
+
+  seed:
+    desc: Seed demo tenant/workspace/#geral via API (API must be running)
+    cmds:
+      - ./infra/scripts/seed.sh
+
+  logs:
+    desc: Tail Compose logs
+    cmds:
+      - docker compose logs -f --tail=200
+
+  build:
+    desc: Build .NET solution and Angular app
+    cmds:
+      - dotnet build {{.SOLUTION}} -c Release --verbosity minimal
+      - npm run build --prefix apps/web

@@ -1,0 +1,66 @@
+@use 'styles/tokens';
+@use 'styles/motion';
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@500;600;700&display=swap');
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--vc-font-body);
+  color: var(--vc-color-text);
+  background: var(--vc-bg-atmosphere);
+  background-color: var(--vc-color-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: var(--vc-brand);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--vc-brand-hover);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--vc-focus-ring);
+}
+
+.vc-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+h1,
+h2,
+h3,
+.vc-display {
+  font-family: var(--vc-font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
