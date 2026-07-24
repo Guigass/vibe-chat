@@ -306,12 +306,12 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 
 Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`.
 
-Planejado (Wave 6 — não implementado ainda; atualizar esta seção quando existir):
+Provisionamento (B-068): no primeiro login OIDC, `EnsureProfile` vincula stub `pending:{email}` ao `sub` real — a membership já provisionada pelo admin passa a valer sem self-signup. Ver `POST .../members` acima.
+
+Planejado (Wave 6 restante — atualizar esta seção quando existir):
 
 - **B-067** — API/UI de auditoria de conversa (histórico admin por canal/DM/thread), authZ `admin.dashboard`
 - **B-069** / **B-048** — leitura/edição de tokens, webhooks e settings sensíveis restrita a admin (sem expor secret em claro)
-
-Provisionamento (B-068): no primeiro login OIDC, `EnsureProfile` vincula stub `pending:{email}` ao `sub` real — a membership já provisionada pelo admin passa a valer sem self-signup.
 
 ## Notifications / Email (B-043)
 
