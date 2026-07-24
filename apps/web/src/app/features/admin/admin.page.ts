@@ -231,6 +231,9 @@ export class AdminPage implements OnInit {
     const smtpUsername = String(data.get('smtpUsername') ?? '').trim();
     const smtpFrom = String(data.get('smtpFrom') ?? '').trim();
     const useStartTls = data.get('useStartTls') === 'on';
+    const webhookEnabled = data.get('webhookEnabled') === 'on';
+    const webhookUrl = String(data.get('webhookUrl') ?? '').trim();
+    const webhookSecret = String(data.get('webhookSecret') ?? '').trim();
 
     this.settingsBusy.set(true);
     this.settingsFeedback.set(null);
@@ -247,9 +250,20 @@ export class AdminPage implements OnInit {
           smtpFrom,
           useStartTls,
         },
+        webhooks: {
+          enabled: webhookEnabled,
+          url: webhookUrl,
+          ...(webhookSecret ? { secret: webhookSecret } : {}),
+        },
       });
       this.settings.set(updated);
-      this.settingsFeedback.set('Configurações atualizadas (secrets continuam só via env).');
+      this.settingsFeedback.set(
+        'Configurações atualizadas (AI/SMTP secrets só via env; webhook secret só mascarado).',
+      );
+      const secretInput = form.elements.namedItem('webhookSecret') as HTMLInputElement | null;
+      if (secretInput) {
+        secretInput.value = '';
+      }
     } catch (err) {
       const status = (err as { status?: number } | null)?.status;
       this.settingsErrorMessage.set(

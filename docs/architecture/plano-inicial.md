@@ -63,7 +63,7 @@ Prioridade sobre P2 novo de diferenciação. Detalhe em `docs/roadmap/roadmap.md
 | Typing | Não mostrar “digitando…” para o próprio usuário (B-071) | **Done** |
 | Layout chat | Scroll apenas no bloco da conversa; shell sem rolagem da página (B-072) | **Done** |
 | Cadastro + diretivas | Keycloak autentica → perfil (stub pending ou espelho) → membership via invite admin; diretivas = papéis (B-068) | **Done** |
-| Secrets / integrações | Tokens, webhooks, AI/SMTP só para administradores (B-069, B-048) | **Done** (B-069); B-048 Planned |
+| Secrets / integrações | Tokens, webhooks, AI/SMTP só para administradores (B-069, B-048) | **Done** (B-069 + B-048 MessageCreated) |
 | Auditoria de conversas | Viewer ADMIN completo por canal/DM/thread, além do audit log de ações (B-067) | **Done** |
 | UI | Polish com PrimeNG alinhado aos tokens; emenda ADR-002 (B-073) | **Done** — `/admin`; shell próprio |
 | Compose apps | API + Web (+ Worker) em containers no Compose como deploy oficial self-host (B-074); `task dev` só para DX com hot reload | **Done** — `task apps` |

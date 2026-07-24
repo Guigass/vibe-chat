@@ -1,7 +1,9 @@
 using FluentAssertions;
+using VibeChat.Administration;
 using VibeChat.AI;
 using VibeChat.BuildingBlocks;
 using VibeChat.Files;
+using VibeChat.Integrations;
 using VibeChat.Messaging;
 using VibeChat.Notifications;
 using VibeChat.Search;
@@ -153,6 +155,38 @@ public sealed class BackendUnitTests
         SecretMasking.Mask("ab").Should().Be("••••");
         SecretMasking.Mask("sk-test-secret-key99").Should().Be("••••ey99");
         SecretMasking.Mask("sk-test-secret-key99").Should().NotContain("sk-test");
+    }
+
+    [Fact]
+    public void Webhook_signature_is_stable_hmac_sha256()
+    {
+        var body = """{"tenantId":"00000000-0000-0000-0000-000000000001","body":"hi"}""";
+        var first = WebhookDelivery.ComputeSignature("super-secret", body);
+        var second = WebhookDelivery.ComputeSignature("super-secret", body);
+
+        first.Should().Be(second);
+        first.Should().StartWith("sha256=");
+        first.Should().HaveLength("sha256=".Length + 64);
+        WebhookDelivery.ComputeSignature("other", body).Should().NotBe(first);
+    }
+
+    [Fact]
+    public void Webhook_url_validation_allows_https_and_localhost_http()
+    {
+        WebhookDelivery.IsValidHttpsUrl("https://hooks.example.com/v1").Should().BeTrue();
+        WebhookDelivery.IsValidHttpsUrl("http://localhost:9090/hook").Should().BeTrue();
+        WebhookDelivery.IsValidHttpsUrl("http://127.0.0.1/hook").Should().BeTrue();
+        WebhookDelivery.IsValidHttpsUrl("http://evil.example.com/hook").Should().BeFalse();
+        WebhookDelivery.IsValidHttpsUrl("ftp://localhost/hook").Should().BeFalse();
+        WebhookDelivery.IsValidHttpsUrl("not-a-url").Should().BeFalse();
+    }
+
+    [Fact]
+    public void Webhook_settings_status_resolves_from_flags()
+    {
+        WebhooksSettingsStatus.Resolve(true, false, true).Should().Be(WebhooksSettingsStatus.Unconfigured);
+        WebhooksSettingsStatus.Resolve(false, true, true).Should().Be(WebhooksSettingsStatus.Disabled);
+        WebhooksSettingsStatus.Resolve(true, true, true).Should().Be(WebhooksSettingsStatus.Active);
     }
 
     [Fact]

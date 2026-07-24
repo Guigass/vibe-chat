@@ -21,6 +21,7 @@ using VibeChat.Directory;
 using VibeChat.Files;
 using VibeChat.Identity;
 using VibeChat.Infrastructure;
+using VibeChat.Integrations;
 using VibeChat.Messaging;
 using VibeChat.Notifications;
 using VibeChat.Realtime;
@@ -2013,7 +2014,8 @@ v1.MapPut("/admin/settings", async (
 
     var (profile, workspace) = access.Value;
 
-    // Secrets are env/secret-store only (ADR-012 / B-069) — never accept clear values via API.
+    // AI/SMTP secrets are env/secret-store only (ADR-012 / B-069).
+    // Webhook signing secret is the exception (B-048): shared with the consumer via admin API.
     if (request.Ai?.ApiKey is not null || request.Email?.SmtpPassword is not null)
     {
         return Results.BadRequest(new
@@ -2164,6 +2166,93 @@ v1.MapPut("/admin/settings", async (
         if (created || changes.Any(c => c.StartsWith("email.", StringComparison.Ordinal)))
         {
             emailRow.UpdatedAt = clock.UtcNow;
+        }
+    }
+
+    if (request.Webhooks is not null)
+    {
+        var webhookRow = await db.OutboundWebhookEndpoints
+            .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
+        var created = false;
+        if (webhookRow is null)
+        {
+            webhookRow = new OutboundWebhookEndpoint
+            {
+                TenantId = workspace.TenantId,
+                Enabled = false,
+                Url = string.Empty,
+                Secret = string.Empty,
+                UpdatedAt = clock.UtcNow
+            };
+            db.OutboundWebhookEndpoints.Add(webhookRow);
+            created = true;
+            changes.Add("webhooks.created");
+        }
+
+        if (request.Webhooks.Url is not null)
+        {
+            var url = request.Webhooks.Url.Trim();
+            if (url.Length > 2048)
+            {
+                return Results.BadRequest(new { error = "InvalidWebhookUrl", message = "URL exceeds 2048 characters." });
+            }
+
+            if (url.Length > 0 && !WebhookDelivery.IsValidHttpsUrl(url))
+            {
+                return Results.BadRequest(new
+                {
+                    error = "InvalidWebhookUrl",
+                    message = "URL must be https (or http://localhost for lab)."
+                });
+            }
+
+            if (!string.Equals(webhookRow.Url, url, StringComparison.Ordinal))
+            {
+                webhookRow.Url = url;
+                changes.Add("webhooks.url");
+            }
+        }
+
+        if (request.Webhooks.Secret is not null)
+        {
+            var secret = request.Webhooks.Secret.Trim();
+            if (secret.Length > 512)
+            {
+                return Results.BadRequest(new { error = "InvalidWebhookSecret", message = "Secret exceeds 512 characters." });
+            }
+
+            if (secret.Length > 0 && secret.Length < 8)
+            {
+                return Results.BadRequest(new { error = "InvalidWebhookSecret", message = "Secret must be at least 8 characters." });
+            }
+
+            // Empty string means "keep existing"; only rotate when a non-empty value is provided.
+            if (secret.Length > 0 && !string.Equals(webhookRow.Secret, secret, StringComparison.Ordinal))
+            {
+                webhookRow.Secret = secret;
+                changes.Add("webhooks.secret");
+            }
+        }
+
+        if (request.Webhooks.Enabled is { } webhookEnabled && webhookRow.Enabled != webhookEnabled)
+        {
+            if (webhookEnabled
+                && (!SecretMasking.IsConfigured(webhookRow.Url) || !SecretMasking.IsConfigured(webhookRow.Secret)))
+            {
+                return Results.BadRequest(new
+                {
+                    error = "WebhookIncomplete",
+                    message = "Enable requires a valid URL and signing secret."
+                });
+            }
+
+            webhookRow.Enabled = webhookEnabled;
+            changes.Add("webhooks.enabled");
+        }
+
+        if (created || changes.Any(c => c.StartsWith("webhooks.", StringComparison.Ordinal)))
+        {
+            webhookRow.UpdatedAt = clock.UtcNow;
         }
     }
 
@@ -2335,6 +2424,15 @@ static async Task<SensitiveSettingsResponse> BuildSensitiveSettingsResponseAsync
     var smtp = await emailSettings.ResolveAsync(workspace.TenantId, ct);
     var envPassword = config["Email:Smtp:Password"] ?? config["SMTP_PASSWORD"];
 
+    var webhook = await db.OutboundWebhookEndpoints.AsNoTracking()
+        .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
+    var webhookUrl = webhook?.Url ?? string.Empty;
+    var webhookSecret = webhook?.Secret ?? string.Empty;
+    var webhookUrlConfigured = SecretMasking.IsConfigured(webhookUrl);
+    var webhookSecretConfigured = SecretMasking.IsConfigured(webhookSecret);
+    var webhookEnabled = webhook?.Enabled ?? false;
+    var webhookStatus = WebhooksSettingsStatus.Resolve(webhookEnabled, webhookUrlConfigured, webhookSecretConfigured);
+
     return new SensitiveSettingsResponse(
         workspace.Id.Value,
         new AiSensitiveSettingsResponse(
@@ -2358,8 +2456,14 @@ static async Task<SensitiveSettingsResponse> BuildSensitiveSettingsResponseAsync
             smtp.UseStartTls,
             SecretsWritable: false),
         new WebhooksSensitiveSettingsResponse(
-            WebhooksSettingsStatus.Planned,
-            WebhooksSettingsStatus.Message));
+            webhookStatus,
+            webhookEnabled,
+            webhookUrlConfigured ? webhookUrl.Trim() : string.Empty,
+            webhookUrlConfigured,
+            webhookSecretConfigured,
+            SecretMasking.Mask(webhookSecret),
+            SecretsWritable: true,
+            WebhooksSettingsStatus.MessageFor(webhookStatus)));
 }
 
 static async Task<UserProfile> EnsureProfileAsync(ClaimsPrincipal principal, VibeChatDbContext db, IClock clock, CancellationToken ct)
@@ -2856,7 +2960,15 @@ public sealed record EmailSensitiveSettingsResponse(
     string SmtpFrom,
     bool UseStartTls,
     bool SecretsWritable);
-public sealed record WebhooksSensitiveSettingsResponse(string Status, string Message);
+public sealed record WebhooksSensitiveSettingsResponse(
+    string Status,
+    bool Enabled,
+    string Url,
+    bool UrlConfigured,
+    bool SecretConfigured,
+    string? SecretMask,
+    bool SecretsWritable,
+    string Message);
 public sealed record SensitiveSettingsResponse(
     Guid WorkspaceId,
     AiSensitiveSettingsResponse Ai,
@@ -2874,9 +2986,14 @@ public sealed record UpdateEmailSensitiveSettingsRequest(
     string? SmtpPassword = null,
     string? SmtpFrom = null,
     bool? UseStartTls = null);
+public sealed record UpdateWebhooksSensitiveSettingsRequest(
+    bool? Enabled = null,
+    string? Url = null,
+    string? Secret = null);
 public sealed record UpdateSensitiveSettingsRequest(
     Guid? WorkspaceId = null,
     UpdateAiSensitiveSettingsRequest? Ai = null,
-    UpdateEmailSensitiveSettingsRequest? Email = null);
+    UpdateEmailSensitiveSettingsRequest? Email = null,
+    UpdateWebhooksSensitiveSettingsRequest? Webhooks = null);
 
 public partial class Program;

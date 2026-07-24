@@ -16,6 +16,7 @@ ALTER TABLE IF EXISTS messaging.idempotency ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS audit.audit_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ai.usage_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.webhook_endpoints ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY tenant_isolation_workspaces ON tenancy.workspaces
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
@@ -58,3 +59,6 @@ CREATE POLICY tenant_isolation_ai_usage_records ON ai.usage_records
 
 CREATE POLICY tenant_isolation_notification_preferences ON notifications.preferences
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
+
+CREATE POLICY tenant_isolation_webhook_endpoints ON integrations.webhook_endpoints
+    USING ("TenantId" = current_setting('app.tenant_id', true)::uuid);

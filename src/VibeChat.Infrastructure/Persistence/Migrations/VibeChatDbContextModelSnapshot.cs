@@ -597,6 +597,32 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("email_settings", "notifications");
                 });
 
+            modelBuilder.Entity("VibeChat.Integrations.OutboundWebhookEndpoint", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Secret")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.HasKey("TenantId");
+
+                    b.ToTable("webhook_endpoints", "integrations");
+                });
+
             modelBuilder.Entity("VibeChat.Tenancy.Workspace", b =>
                 {
                     b.Property<Guid>("Id")

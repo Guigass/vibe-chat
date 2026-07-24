@@ -490,7 +490,9 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         settings.Email.SmtpPasswordConfigured.Should().BeTrue();
         settings.Email.SmtpPasswordMask.Should().Be("••••rd42");
         settings.Email.Enabled.Should().BeFalse();
-        settings.Webhooks.Status.Should().Be("planned");
+        settings.Webhooks.Status.Should().Be("unconfigured");
+        settings.Webhooks.SecretsWritable.Should().BeTrue();
+        settings.Webhooks.SecretConfigured.Should().BeFalse();
 
         var originalEnabled = settings.Ai.WorkspaceEnabled;
         var put = await demo.PutAsJsonAsync(
@@ -529,6 +531,79 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             "/api/v1/admin/settings",
             new { workspaceId, ai = new { workspaceEnabled = originalEnabled, provider = "Mock" } });
         restore.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Admin_can_configure_webhook_with_masked_secret()
+    {
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+        const string secret = "webhook-signing-secret-99";
+
+        var put = await demo.PutAsJsonAsync(
+            "/api/v1/admin/settings",
+            new
+            {
+                workspaceId,
+                webhooks = new
+                {
+                    enabled = true,
+                    url = "https://hooks.example.test/vibechat",
+                    secret
+                }
+            });
+        put.StatusCode.Should().Be(HttpStatusCode.OK);
+        var settings = await put.Content.ReadFromJsonAsync<SensitiveSettingsDto>(JsonOptions);
+        settings.Should().NotBeNull();
+        settings!.Webhooks.Status.Should().Be("active");
+        settings.Webhooks.Enabled.Should().BeTrue();
+        settings.Webhooks.Url.Should().Be("https://hooks.example.test/vibechat");
+        settings.Webhooks.SecretConfigured.Should().BeTrue();
+        settings.Webhooks.SecretMask.Should().Be("••••t-99");
+        settings.Webhooks.SecretMask.Should().NotContain(secret);
+        (await put.Content.ReadAsStringAsync()).Should().NotContain(secret);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+            var row = await db.OutboundWebhookEndpoints.IgnoreQueryFilters()
+                .SingleAsync(x => x.TenantId == SeedData.DemoTenantId);
+            row.Enabled.Should().BeTrue();
+            row.Secret.Should().Be(secret);
+
+            var audit = await db.AuditEvents.IgnoreQueryFilters()
+                .Where(x => x.TenantId == SeedData.DemoTenantId && x.Action == AuditActions.SettingsChange)
+                .OrderByDescending(x => x.OccurredAt)
+                .FirstOrDefaultAsync();
+            audit.Should().NotBeNull();
+            audit!.MetadataJson.Should().Contain("webhooks.enabled");
+            audit.MetadataJson.Should().NotContain(secret);
+        }
+
+        // Disable without rotating secret.
+        var disable = await demo.PutAsJsonAsync(
+            "/api/v1/admin/settings",
+            new { workspaceId, webhooks = new { enabled = false } });
+        disable.StatusCode.Should().Be(HttpStatusCode.OK);
+        var disabled = await disable.Content.ReadFromJsonAsync<SensitiveSettingsDto>(JsonOptions);
+        disabled!.Webhooks.Status.Should().Be("disabled");
+        disabled.Webhooks.SecretConfigured.Should().BeTrue();
+        disabled.Webhooks.SecretMask.Should().Be("••••t-99");
+
+        // Restore seed assumption (unconfigured) for sibling tests sharing the factory DB.
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+            var row = await db.OutboundWebhookEndpoints.IgnoreQueryFilters()
+                .SingleOrDefaultAsync(x => x.TenantId == SeedData.DemoTenantId);
+            if (row is not null)
+            {
+                db.OutboundWebhookEndpoints.Remove(row);
+                await db.SaveChangesAsync();
+            }
+        }
     }
 
     [Fact]
@@ -905,7 +980,15 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         string SmtpFrom,
         bool UseStartTls,
         bool SecretsWritable);
-    private sealed record WebhooksSensitiveSettingsDto(string Status, string Message);
+    private sealed record WebhooksSensitiveSettingsDto(
+        string Status,
+        bool Enabled,
+        string Url,
+        bool UrlConfigured,
+        bool SecretConfigured,
+        string? SecretMask,
+        bool SecretsWritable,
+        string Message);
     private sealed record AdminConversationItemDto(Guid Id, Guid WorkspaceId, string Name, string Type);
     private sealed record AdminConversationsDto(AdminConversationItemDto[] Items);
     private sealed record AdminConversationMessageItemDto(
