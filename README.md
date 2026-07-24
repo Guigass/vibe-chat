@@ -104,6 +104,7 @@ tests/            unit, integration, architecture, security, e2e
 
 - Setup: `.cursor/environment.json` → `bash infra/scripts/agent-setup.sh`
 - Regras: `.cursor/rules/*.mdc` + `AGENTS.md`
+- Automações (Build → QA+Merge → Docs): `.cursor/automations/`
 
 ## Licença
 

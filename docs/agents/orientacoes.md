@@ -142,6 +142,9 @@ Deps satisfeitas: W2-2, W1-1
 
 Se bloqueado por decisão humana (D-*), parar e documentar — não inventar licença/retenção.
 
+Pipeline Cloud (Build → QA+Merge → Docs): prompts em `.cursor/automations/`.
+Build não marca `Done`; QA não abre feature; Docs não implementa o próximo item.
+
 ## Definition of Done (agente)
 
 - Código compila / testes da trilha passam
