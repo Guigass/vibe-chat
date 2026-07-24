@@ -301,15 +301,36 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 |----------|-------|
 | `GET /api/v1/admin/dashboard` | Métricas operacionais (auth obrigatória) |
 | `GET /api/v1/admin/audit-events?limit=&action=` | Lista eventos de `audit.audit_events` do tenant do actor; exige `admin.dashboard`; `limit` 1–200 (default 50); nunca retorna eventos de outro tenant |
+| `GET /api/v1/admin/settings?workspaceId=` | Settings sensíveis mascarados (B-069); exige `workspace.admin` **ou** `admin.dashboard`; `workspaceId` opcional (default: primeiro workspace do actor) |
+| `PUT /api/v1/admin/settings` | Atualiza flags não-secretas; mesma authZ; rejeita body com `ai.apiKey` / `email.smtpPassword` (`SecretsNotWritable`); audit `settings.change` |
 
 `AuditEventResponse`: `id`, `action`, `entityType`, `entityId`, `actorUserId`, `occurredAt`, `metadataJson`.
 
-Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`.
+Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `settings.change`.
+
+### Settings sensíveis (B-069)
+
+`SensitiveSettingsResponse`:
+
+| Campo | Notas |
+|-------|-------|
+| `workspaceId` | Workspace alvo (AI workspace settings) |
+| `ai.processEnabled` / `processSource` | Flag de processo (`Ai:Enabled`) — SoT env; somente leitura |
+| `ai.workspaceEnabled` / `provider` | `ai.settings` do workspace — gravável |
+| `ai.apiKeyConfigured` / `apiKeyMask` | Máscara `••••last4` ou `configured: false`; **nunca** valor em claro |
+| `email.*` | Enabled/host/port/user/from/startTls (override tenant em `notifications.email_settings` ou env); senha só `smtpPasswordConfigured` + `smtpPasswordMask` |
+| `webhooks.status` | Placeholder B-048: `planned` (sem delivery outbound) |
+
+Regras:
+
+- Secrets (OpenRouter API key, SMTP password) **só** via env / secret store (ADR-012)
+- Membro comum → `403` em GET/PUT
+- Tenant do actor; nunca aceitar `tenantId` do body
 
 Planejado (Wave 6 — não implementado ainda; atualizar esta seção quando existir):
 
 - **B-067** — API/UI de auditoria de conversa (histórico admin por canal/DM/thread), authZ `admin.dashboard`
-- **B-069** / **B-048** — leitura/edição de tokens, webhooks e settings sensíveis restrita a admin (sem expor secret em claro)
+- **B-048** — webhooks outbound completos (fan-out); superfície admin reservada em `webhooks.status=planned`
 
 Provisionamento (B-068): no primeiro login OIDC, `EnsureProfile` vincula stub `pending:{email}` ao `sub` real — a membership já provisionada pelo admin passa a valer sem self-signup.
 
@@ -324,8 +345,8 @@ public interface IEmailSender
 }
 ```
 
-- Implementações: `NullEmailSender` (default quando `Email:Enabled=false`), `SmtpEmailSender` (SMTP genérico; Mailpit em dev — D-10)
-- Off by default; secrets só via env (`EMAIL__*` / `SMTP_*`); sem vendor lock
+- Implementações: `NullEmailSender` (lab), `SmtpEmailSender` (SMTP genérico; Mailpit em dev — D-10; no-op se efetivamente desligado)
+- Off by default; senha só via env (`EMAIL__*` / `SMTP_*`); host/user/from/enabled podem ter override por tenant (`notifications.email_settings`, B-069)
 - Caso inicial: e-mail ao alterar papel de membro (`MemberRoleChangedEmailEvent` no outbox — fora do hot path de `SendMessage`)
 
 ## AI

@@ -12,7 +12,9 @@ import {
   PresenceStatus,
   ReactionSummary,
   SearchMessagesResult,
+  SensitiveSettings,
   Space,
+  UpdateSensitiveSettingsInput,
   Workspace,
   WorkspaceMember,
 } from '../../shared/models/chat.models';
@@ -500,6 +502,18 @@ export class ApiService {
       occurredAt: row.occurredAt,
       metadataJson: row.metadataJson ?? '{}',
     }));
+  }
+
+  async getAdminSensitiveSettings(workspaceId?: string): Promise<SensitiveSettings> {
+    const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : '';
+    return this.request<SensitiveSettings>(`/api/v1/admin/settings${query}`);
+  }
+
+  async updateAdminSensitiveSettings(input: UpdateSensitiveSettingsInput): Promise<SensitiveSettings> {
+    return this.request<SensitiveSettings>('/api/v1/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
   }
 
   async summarizeChannel(workspaceId: string, channelId: string): Promise<AiSummaryResult> {

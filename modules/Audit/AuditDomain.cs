@@ -24,6 +24,7 @@ public static class AuditActions
     public const string AttachmentUpload = "attachment.upload";
     public const string MemberRoleChange = "member.role.change";
     public const string MemberInvite = "member.invite";
+    public const string SettingsChange = "settings.change";
 }
 
 public interface IAuditWriter

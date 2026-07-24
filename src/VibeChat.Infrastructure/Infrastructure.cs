@@ -68,6 +68,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<AiUsageRecord> AiUsageRecords => Set<AiUsageRecord>();
     public DbSet<AiSettings> AiSettings => Set<AiSettings>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+    public DbSet<TenantEmailSettings> TenantEmailSettings => Set<TenantEmailSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -283,6 +284,17 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.HasKey(x => x.Id);
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<TenantEmailSettings>(entity =>
+        {
+            entity.ToTable("email_settings", "notifications");
+            entity.HasKey(x => x.TenantId);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.Host).HasMaxLength(256);
+            entity.Property(x => x.Username).HasMaxLength(256);
+            entity.Property(x => x.From).HasMaxLength(320);
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
     }
@@ -1060,6 +1072,7 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     var to = "";
                     var subject = "";
                     var body = "";
+                    Guid? emailTenantId = null;
                     if (outbox.Type == nameof(MemberRoleChangedEmailEvent))
                     {
                         var emailEvent = JsonSerializer.Deserialize<MemberRoleChangedEmailEvent>(outbox.Payload)
@@ -1067,6 +1080,7 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                         to = emailEvent.To;
                         subject = emailEvent.Subject;
                         body = emailEvent.BodyText;
+                        emailTenantId = emailEvent.TenantId;
                     }
                     else
                     {
@@ -1075,12 +1089,12 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                         to = emailEvent.To;
                         subject = emailEvent.Subject;
                         body = emailEvent.BodyText;
+                        emailTenantId = emailEvent.TenantId;
                     }
 
-                    if (emailSender.IsEnabled)
-                    {
-                        await emailSender.SendAsync(new EmailMessage(to, subject, body), cancellationToken);
-                    }
+                    await emailSender.SendAsync(
+                        new EmailMessage(to, subject, body, From: null, TenantId: emailTenantId ?? outbox.TenantId.Value),
+                        cancellationToken);
 
                     outbox.ProcessedAt = now;
                     outbox.Error = null;
@@ -1145,39 +1159,108 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
     }
 }
 
-public sealed class SmtpEmailSender(IConfiguration configuration, ILogger<SmtpEmailSender> logger) : IEmailSender
+/// <summary>Resolves effective email/SMTP settings: tenant DB overrides non-secrets; password always from env (B-069).</summary>
+public sealed class EmailSettingsResolver(VibeChatDbContext dbContext, IConfiguration configuration)
+{
+    public async Task<bool> IsEnabledAsync(TenantId tenantId, CancellationToken cancellationToken)
+    {
+        var row = await dbContext.TenantEmailSettings.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.TenantId == tenantId, cancellationToken);
+        if (row is not null)
+        {
+            return row.Enabled;
+        }
+
+        return configuration.GetValue("Email:Enabled", false);
+    }
+
+    public async Task<EffectiveSmtpSettings> ResolveAsync(TenantId tenantId, CancellationToken cancellationToken)
+    {
+        var row = await dbContext.TenantEmailSettings.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.TenantId == tenantId, cancellationToken);
+
+        var envHost = configuration["Email:Smtp:Host"] ?? configuration["SMTP_HOST"] ?? "localhost";
+        var envPort = configuration.GetValue("Email:Smtp:Port", configuration.GetValue("SMTP_PORT", 1025));
+        var envFrom = configuration["Email:Smtp:From"] ?? configuration["SMTP_FROM"] ?? "noreply@localhost";
+        var envUser = configuration["Email:Smtp:Username"] ?? configuration["SMTP_USERNAME"] ?? string.Empty;
+        var envPassword = configuration["Email:Smtp:Password"] ?? configuration["SMTP_PASSWORD"] ?? string.Empty;
+        var envTls = configuration.GetValue("Email:Smtp:UseStartTls", configuration.GetValue("SMTP_USE_STARTTLS", false));
+        var envEnabled = configuration.GetValue("Email:Enabled", false);
+
+        if (row is null)
+        {
+            return new EffectiveSmtpSettings(envEnabled, envHost, envPort, envUser, envPassword, envFrom, envTls, Source: "env");
+        }
+
+        return new EffectiveSmtpSettings(
+            row.Enabled,
+            string.IsNullOrWhiteSpace(row.Host) ? envHost : row.Host,
+            row.Port > 0 ? row.Port : envPort,
+            string.IsNullOrWhiteSpace(row.Username) ? envUser : row.Username,
+            envPassword,
+            string.IsNullOrWhiteSpace(row.From) ? envFrom : row.From,
+            row.UseStartTls,
+            Source: "tenant");
+    }
+}
+
+public sealed record EffectiveSmtpSettings(
+    bool Enabled,
+    string Host,
+    int Port,
+    string Username,
+    string Password,
+    string From,
+    bool UseStartTls,
+    string Source);
+
+public sealed class SmtpEmailSender(
+    IConfiguration configuration,
+    EmailSettingsResolver settingsResolver,
+    ILogger<SmtpEmailSender> logger) : IEmailSender
 {
     public string Name => "Smtp";
     public bool IsEnabled => configuration.GetValue("Email:Enabled", false);
 
     public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {
-        if (!IsEnabled)
+        EffectiveSmtpSettings smtp;
+        if (message.TenantId is { } tenantGuid && tenantGuid != Guid.Empty)
+        {
+            smtp = await settingsResolver.ResolveAsync(new TenantId(tenantGuid), cancellationToken);
+        }
+        else if (!IsEnabled)
+        {
+            return;
+        }
+        else
+        {
+            smtp = new EffectiveSmtpSettings(
+                true,
+                configuration["Email:Smtp:Host"] ?? configuration["SMTP_HOST"] ?? "localhost",
+                configuration.GetValue("Email:Smtp:Port", configuration.GetValue("SMTP_PORT", 1025)),
+                configuration["Email:Smtp:Username"] ?? configuration["SMTP_USERNAME"] ?? string.Empty,
+                configuration["Email:Smtp:Password"] ?? configuration["SMTP_PASSWORD"] ?? string.Empty,
+                configuration["Email:Smtp:From"] ?? configuration["SMTP_FROM"] ?? "noreply@localhost",
+                configuration.GetValue("Email:Smtp:UseStartTls", configuration.GetValue("SMTP_USE_STARTTLS", false)),
+                "env");
+        }
+
+        if (!smtp.Enabled)
         {
             return;
         }
 
-        var host = configuration["Email:Smtp:Host"]
-            ?? configuration["SMTP_HOST"]
-            ?? "localhost";
-        var port = configuration.GetValue("Email:Smtp:Port", configuration.GetValue("SMTP_PORT", 1025));
-        var from = configuration["Email:Smtp:From"]
-            ?? configuration["SMTP_FROM"]
-            ?? "noreply@localhost";
-        var username = configuration["Email:Smtp:Username"] ?? configuration["SMTP_USERNAME"];
-        var password = configuration["Email:Smtp:Password"] ?? configuration["SMTP_PASSWORD"];
-        var useStartTls = configuration.GetValue("Email:Smtp:UseStartTls", configuration.GetValue("SMTP_USE_STARTTLS", false));
-
-        using var client = new System.Net.Mail.SmtpClient(host, port)
+        var from = message.From ?? smtp.From;
+        using var client = new System.Net.Mail.SmtpClient(smtp.Host, smtp.Port)
         {
-            EnableSsl = useStartTls,
+            EnableSsl = smtp.UseStartTls,
             DeliveryMethod = System.Net.Mail.SmtpDeliveryMethod.Network
         };
 
-        if (!string.IsNullOrWhiteSpace(username)
-            && !string.Equals(username, "CHANGE_ME", StringComparison.Ordinal))
+        if (SecretMasking.IsConfigured(smtp.Username))
         {
-            client.Credentials = new System.Net.NetworkCredential(username, password);
+            client.Credentials = new System.Net.NetworkCredential(smtp.Username, smtp.Password);
         }
 
         using var mail = new System.Net.Mail.MailMessage(from, message.To, message.Subject, message.BodyText)
@@ -1192,7 +1275,7 @@ public sealed class SmtpEmailSender(IConfiguration configuration, ILogger<SmtpEm
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "SMTP send failed via {Host}:{Port}", host, port);
+            logger.LogWarning(ex, "SMTP send failed via {Host}:{Port}", smtp.Host, smtp.Port);
             throw;
         }
     }
@@ -1592,17 +1675,10 @@ public static class DependencyInjection
             return new MockAiProvider();
         });
 
-        // D-10 / B-043: email off by default; generic SMTP (Mailpit in dev).
-        services.AddSingleton<IEmailSender>(sp =>
-        {
-            var cfg = sp.GetRequiredService<IConfiguration>();
-            if (!cfg.GetValue("Email:Enabled", false))
-            {
-                return new NullEmailSender();
-            }
-
-            return ActivatorUtilities.CreateInstance<SmtpEmailSender>(sp);
-        });
+        // D-10 / B-043 / B-069: email off by default; runtime tenant overrides via EmailSettingsResolver.
+        // Always register SmtpEmailSender — it no-ops when effectively disabled (env or tenant).
+        services.AddScoped<EmailSettingsResolver>();
+        services.AddScoped<IEmailSender, SmtpEmailSender>();
 
         services.AddHealthChecks()
             .AddCheck<DatabaseHealthCheck>("postgres")

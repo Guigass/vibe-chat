@@ -326,8 +326,7 @@ v1.MapPost("/workspaces/{workspaceId:guid}/members", async (
     ITenantContext tenant,
     IOutboxWriter outbox,
     IAuditWriter audit,
-    IEmailSender email,
-    IConfiguration config,
+    EmailSettingsResolver emailSettings,
     IClock clock,
     CancellationToken ct) =>
 {
@@ -429,8 +428,7 @@ v1.MapPost("/workspaces/{workspaceId:guid}/members", async (
         })
     });
 
-    if (email.IsEnabled
-        && config.GetValue("Email:Enabled", false)
+    if (await emailSettings.IsEnabledAsync(workspace.TenantId, ct)
         && !string.IsNullOrWhiteSpace(targetProfile.Email))
     {
         var subject = $"VibeChat: você foi convidado para {workspace.Name}";
@@ -468,8 +466,7 @@ v1.MapPut("/workspaces/{workspaceId:guid}/members/{userId:guid}/role", async (
     ITenantContext tenant,
     IOutboxWriter outbox,
     IAuditWriter audit,
-    IEmailSender email,
-    IConfiguration config,
+    EmailSettingsResolver emailSettings,
     IClock clock,
     CancellationToken ct) =>
 {
@@ -533,8 +530,7 @@ v1.MapPut("/workspaces/{workspaceId:guid}/members/{userId:guid}/role", async (
     });
 
     // B-043: optional email via outbox (never on SendMessage hot path). Off by default (D-10).
-    if (email.IsEnabled
-        && config.GetValue("Email:Enabled", false)
+    if (await emailSettings.IsEnabledAsync(workspace.TenantId, ct)
         && !string.IsNullOrWhiteSpace(targetProfile.Email))
     {
         var subject = $"VibeChat: seu papel em {workspace.Name} foi atualizado";
@@ -1741,6 +1737,224 @@ v1.MapGet("/admin/audit-events", async (
     return Results.Ok(new AuditEventsResponse(items));
 });
 
+// B-069: sensitive integration settings — admin-only, secrets always masked.
+v1.MapGet("/admin/settings", async (
+    Guid? workspaceId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IConfiguration config,
+    EmailSettingsResolver emailSettings,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var access = await ResolveSensitiveSettingsAccessAsync(http, db, tenant, permissions, workspaceId, clock, ct);
+    if (access is null)
+    {
+        return Results.Forbid();
+    }
+
+    var (_, workspace) = access.Value;
+    return Results.Ok(await BuildSensitiveSettingsResponseAsync(workspace, db, config, emailSettings, ct));
+});
+
+v1.MapPut("/admin/settings", async (
+    UpdateSensitiveSettingsRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IConfiguration config,
+    IAuditWriter audit,
+    EmailSettingsResolver emailSettings,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var access = await ResolveSensitiveSettingsAccessAsync(
+        http, db, tenant, permissions, request.WorkspaceId, clock, ct);
+    if (access is null)
+    {
+        return Results.Forbid();
+    }
+
+    var (profile, workspace) = access.Value;
+
+    // Secrets are env/secret-store only (ADR-012 / B-069) — never accept clear values via API.
+    if (request.Ai?.ApiKey is not null || request.Email?.SmtpPassword is not null)
+    {
+        return Results.BadRequest(new
+        {
+            error = "SecretsNotWritable",
+            message = "API keys and SMTP passwords are configured via environment / secret store only."
+        });
+    }
+
+    var changes = new List<string>();
+
+    if (request.Ai is not null)
+    {
+        var aiSettings = await db.AiSettings
+            .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId && x.WorkspaceId == workspace.Id, ct);
+        if (aiSettings is null)
+        {
+            aiSettings = new AiSettings
+            {
+                WorkspaceId = workspace.Id,
+                TenantId = workspace.TenantId,
+                Enabled = false,
+                Provider = "Mock"
+            };
+            db.AiSettings.Add(aiSettings);
+            changes.Add("ai.created");
+        }
+
+        if (request.Ai.WorkspaceEnabled is { } workspaceEnabled && aiSettings.Enabled != workspaceEnabled)
+        {
+            aiSettings.Enabled = workspaceEnabled;
+            changes.Add("ai.workspaceEnabled");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Ai.Provider))
+        {
+            var provider = request.Ai.Provider.Trim();
+            if (!string.Equals(provider, "Mock", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(provider, "OpenRouter", StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.BadRequest(new { error = "InvalidAiProvider", message = "Provider must be Mock or OpenRouter." });
+            }
+
+            var normalized = string.Equals(provider, "OpenRouter", StringComparison.OrdinalIgnoreCase) ? "OpenRouter" : "Mock";
+            if (!string.Equals(aiSettings.Provider, normalized, StringComparison.Ordinal))
+            {
+                aiSettings.Provider = normalized;
+                changes.Add("ai.provider");
+            }
+        }
+    }
+
+    if (request.Email is not null)
+    {
+        var emailRow = await db.TenantEmailSettings
+            .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
+        var created = false;
+        if (emailRow is null)
+        {
+            var baseline = await emailSettings.ResolveAsync(workspace.TenantId, ct);
+            emailRow = new TenantEmailSettings
+            {
+                TenantId = workspace.TenantId,
+                Enabled = baseline.Enabled,
+                Host = baseline.Host,
+                Port = baseline.Port,
+                Username = baseline.Username,
+                From = baseline.From,
+                UseStartTls = baseline.UseStartTls,
+                UpdatedAt = clock.UtcNow
+            };
+            db.TenantEmailSettings.Add(emailRow);
+            created = true;
+            changes.Add("email.created");
+        }
+
+        if (request.Email.Enabled is { } emailEnabled && emailRow.Enabled != emailEnabled)
+        {
+            emailRow.Enabled = emailEnabled;
+            changes.Add("email.enabled");
+        }
+
+        if (request.Email.SmtpHost is not null)
+        {
+            var host = request.Email.SmtpHost.Trim();
+            if (host.Length > 256)
+            {
+                return Results.BadRequest(new { error = "InvalidSmtpHost" });
+            }
+
+            if (!string.Equals(emailRow.Host, host, StringComparison.Ordinal))
+            {
+                emailRow.Host = host;
+                changes.Add("email.smtpHost");
+            }
+        }
+
+        if (request.Email.SmtpPort is { } port)
+        {
+            if (port is < 1 or > 65535)
+            {
+                return Results.BadRequest(new { error = "InvalidSmtpPort" });
+            }
+
+            if (emailRow.Port != port)
+            {
+                emailRow.Port = port;
+                changes.Add("email.smtpPort");
+            }
+        }
+
+        if (request.Email.SmtpUsername is not null)
+        {
+            var username = request.Email.SmtpUsername.Trim();
+            if (username.Length > 256)
+            {
+                return Results.BadRequest(new { error = "InvalidSmtpUsername" });
+            }
+
+            if (!string.Equals(emailRow.Username, username, StringComparison.Ordinal))
+            {
+                emailRow.Username = username;
+                changes.Add("email.smtpUsername");
+            }
+        }
+
+        if (request.Email.SmtpFrom is not null)
+        {
+            var from = request.Email.SmtpFrom.Trim();
+            if (from.Length > 320)
+            {
+                return Results.BadRequest(new { error = "InvalidSmtpFrom" });
+            }
+
+            if (!string.Equals(emailRow.From, from, StringComparison.Ordinal))
+            {
+                emailRow.From = from;
+                changes.Add("email.smtpFrom");
+            }
+        }
+
+        if (request.Email.UseStartTls is { } tls && emailRow.UseStartTls != tls)
+        {
+            emailRow.UseStartTls = tls;
+            changes.Add("email.useStartTls");
+        }
+
+        if (created || changes.Any(c => c.StartsWith("email.", StringComparison.Ordinal)))
+        {
+            emailRow.UpdatedAt = clock.UtcNow;
+        }
+    }
+
+    if (changes.Count > 0)
+    {
+        audit.Add(new AuditEvent
+        {
+            TenantId = workspace.TenantId,
+            ActorUserId = profile.Id,
+            Action = AuditActions.SettingsChange,
+            EntityType = "SensitiveSettings",
+            EntityId = workspace.Id.Value.ToString(),
+            MetadataJson = JsonSerializer.Serialize(new
+            {
+                workspaceId = workspace.Id.Value,
+                changes
+            })
+        });
+        await db.SaveChangesAsync(ct);
+    }
+
+    return Results.Ok(await BuildSensitiveSettingsResponseAsync(workspace, db, config, emailSettings, ct));
+});
+
 v1.MapGet("/admin/health-summary", async (HealthCheckService health, CancellationToken ct) =>
 {
     var report = await health.CheckHealthAsync(ct);
@@ -1792,6 +2006,103 @@ app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => fa
 app.MapHealthChecks("/health/ready");
 
 app.Run();
+
+static async Task<(UserProfile Profile, Workspace Workspace)?> ResolveSensitiveSettingsAccessAsync(
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    Guid? workspaceId,
+    IClock clock,
+    CancellationToken ct)
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+
+    Workspace? workspace = null;
+    if (workspaceId is { } id && id != Guid.Empty)
+    {
+        workspace = await ResolveWorkspaceAsync(new WorkspaceId(id), profile.Id, db, tenant, ct);
+        if (workspace is null)
+        {
+            return null;
+        }
+    }
+    else
+    {
+        var membership = await db.WorkspaceMembers.IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(x => x.UserId == profile.Id)
+            .OrderBy(x => x.JoinedAt)
+            .FirstOrDefaultAsync(ct);
+        if (membership is null)
+        {
+            return null;
+        }
+
+        workspace = await db.Workspaces.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == membership.WorkspaceId, ct);
+        if (workspace is null)
+        {
+            return null;
+        }
+
+        tenant.SetTenant(workspace.TenantId);
+    }
+
+    var canAdminDashboard = await permissions.HasPermissionAsync(
+        workspace.TenantId, profile.Id, Permissions.Admin.Dashboard, ct);
+    var canWorkspaceAdmin = await permissions.HasPermissionAsync(
+        workspace.TenantId, profile.Id, Permissions.Workspace.Admin, ct);
+    if (!canAdminDashboard && !canWorkspaceAdmin)
+    {
+        return null;
+    }
+
+    return (profile, workspace);
+}
+
+static async Task<SensitiveSettingsResponse> BuildSensitiveSettingsResponseAsync(
+    Workspace workspace,
+    VibeChatDbContext db,
+    IConfiguration config,
+    EmailSettingsResolver emailSettings,
+    CancellationToken ct)
+{
+    var processAiEnabled = config.GetValue("Ai:Enabled", false);
+    var processAiProvider = config["Ai:Provider"] ?? "Mock";
+    var apiKey = config["Ai:OpenRouter:ApiKey"] ?? config["OPENROUTER_API_KEY"];
+    var aiWorkspace = await db.AiSettings.AsNoTracking()
+        .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId && x.WorkspaceId == workspace.Id, ct);
+
+    var smtp = await emailSettings.ResolveAsync(workspace.TenantId, ct);
+    var envPassword = config["Email:Smtp:Password"] ?? config["SMTP_PASSWORD"];
+
+    return new SensitiveSettingsResponse(
+        workspace.Id.Value,
+        new AiSensitiveSettingsResponse(
+            processAiEnabled,
+            "env",
+            aiWorkspace?.Enabled ?? false,
+            aiWorkspace?.Provider ?? processAiProvider,
+            SecretMasking.IsConfigured(apiKey),
+            SecretMasking.Mask(apiKey),
+            SecretsWritable: false),
+        new EmailSensitiveSettingsResponse(
+            smtp.Enabled,
+            smtp.Source,
+            smtp.Host,
+            smtp.Port,
+            smtp.Username,
+            SecretMasking.IsConfigured(smtp.Username),
+            SecretMasking.IsConfigured(envPassword),
+            SecretMasking.Mask(envPassword),
+            smtp.From,
+            smtp.UseStartTls,
+            SecretsWritable: false),
+        new WebhooksSensitiveSettingsResponse(
+            WebhooksSettingsStatus.Planned,
+            WebhooksSettingsStatus.Message));
+}
 
 static async Task<UserProfile> EnsureProfileAsync(ClaimsPrincipal principal, VibeChatDbContext db, IClock clock, CancellationToken ct)
 {
@@ -2240,5 +2551,47 @@ public sealed record AdminDashboardResponse(
     AdminHealthResponse Health,
     string AppVersion,
     string GrafanaUrl);
+public sealed record AiSensitiveSettingsResponse(
+    bool ProcessEnabled,
+    string ProcessSource,
+    bool WorkspaceEnabled,
+    string Provider,
+    bool ApiKeyConfigured,
+    string? ApiKeyMask,
+    bool SecretsWritable);
+public sealed record EmailSensitiveSettingsResponse(
+    bool Enabled,
+    string Source,
+    string SmtpHost,
+    int SmtpPort,
+    string SmtpUsername,
+    bool SmtpUsernameConfigured,
+    bool SmtpPasswordConfigured,
+    string? SmtpPasswordMask,
+    string SmtpFrom,
+    bool UseStartTls,
+    bool SecretsWritable);
+public sealed record WebhooksSensitiveSettingsResponse(string Status, string Message);
+public sealed record SensitiveSettingsResponse(
+    Guid WorkspaceId,
+    AiSensitiveSettingsResponse Ai,
+    EmailSensitiveSettingsResponse Email,
+    WebhooksSensitiveSettingsResponse Webhooks);
+public sealed record UpdateAiSensitiveSettingsRequest(
+    bool? WorkspaceEnabled = null,
+    string? Provider = null,
+    string? ApiKey = null);
+public sealed record UpdateEmailSensitiveSettingsRequest(
+    bool? Enabled = null,
+    string? SmtpHost = null,
+    int? SmtpPort = null,
+    string? SmtpUsername = null,
+    string? SmtpPassword = null,
+    string? SmtpFrom = null,
+    bool? UseStartTls = null);
+public sealed record UpdateSensitiveSettingsRequest(
+    Guid? WorkspaceId = null,
+    UpdateAiSensitiveSettingsRequest? Ai = null,
+    UpdateEmailSensitiveSettingsRequest? Email = null);
 
 public partial class Program;

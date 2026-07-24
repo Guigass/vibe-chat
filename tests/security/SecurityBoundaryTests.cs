@@ -87,6 +87,47 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Member_cannot_read_or_write_sensitive_settings()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var get = await alice.GetAsync(
+            $"/api/v1/admin/settings?workspaceId={SeedData.DemoWorkspaceId.Value}");
+        get.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var put = await alice.PutAsJsonAsync(
+            "/api/v1/admin/settings",
+            new
+            {
+                workspaceId = SeedData.DemoWorkspaceId.Value,
+                ai = new { workspaceEnabled = true, provider = "Mock" }
+            });
+        put.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Cross_tenant_cannot_read_sensitive_settings()
+    {
+        var foreignWorkspaceId = await SeedCrossTenantWorkspaceAsync();
+
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var response = await alice.GetAsync($"/api/v1/admin/settings?workspaceId={foreignWorkspaceId}");
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var put = await alice.PutAsJsonAsync(
+            "/api/v1/admin/settings",
+            new
+            {
+                workspaceId = foreignWorkspaceId,
+                email = new { enabled = true }
+            });
+        put.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Member_cannot_self_elevate_role()
     {
         using var alice = factory.CreateClient();

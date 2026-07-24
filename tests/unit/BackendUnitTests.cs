@@ -145,6 +145,17 @@ public sealed class BackendUnitTests
     }
 
     [Fact]
+    public void Secret_masking_hides_clear_values()
+    {
+        SecretMasking.IsConfigured(null).Should().BeFalse();
+        SecretMasking.IsConfigured("").Should().BeFalse();
+        SecretMasking.IsConfigured("CHANGE_ME").Should().BeFalse();
+        SecretMasking.Mask("ab").Should().Be("••••");
+        SecretMasking.Mask("sk-test-secret-key99").Should().Be("••••ey99");
+        SecretMasking.Mask("sk-test-secret-key99").Should().NotContain("sk-test");
+    }
+
+    [Fact]
     public void Message_sequences_are_orderable_per_conversation()
     {
         var channelId = ChannelId.New();

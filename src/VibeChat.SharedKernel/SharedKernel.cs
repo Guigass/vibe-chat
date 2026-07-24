@@ -95,6 +95,26 @@ public sealed class SystemClock : IClock
     public DateTimeOffset UtcNow => DateTimeOffset.UtcNow;
 }
 
+/// <summary>Masks secrets for admin/API responses (B-069). Never log or return clear values.</summary>
+public static class SecretMasking
+{
+    public static bool IsConfigured(string? value) =>
+        !string.IsNullOrWhiteSpace(value)
+        && !string.Equals(value.Trim(), "CHANGE_ME", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Returns null when not configured; otherwise ••••last4 (or •••• when too short).</summary>
+    public static string? Mask(string? value)
+    {
+        if (!IsConfigured(value))
+        {
+            return null;
+        }
+
+        var trimmed = value!.Trim();
+        return trimmed.Length <= 4 ? "••••" : $"••••{trimmed[^4..]}";
+    }
+}
+
 public static class Permissions
 {
     public static class Workspace

@@ -560,6 +560,43 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("preferences", "notifications");
                 });
 
+            modelBuilder.Entity("VibeChat.Notifications.TenantEmailSettings", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("From")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<string>("Host")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("Port")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("UseStartTls")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("TenantId");
+
+                    b.ToTable("email_settings", "notifications");
+                });
+
             modelBuilder.Entity("VibeChat.Tenancy.Workspace", b =>
                 {
                     b.Property<Guid>("Id")

@@ -148,6 +148,52 @@ export interface AuditEventItem {
   metadataJson: string;
 }
 
+export interface SensitiveSettings {
+  workspaceId: string;
+  ai: {
+    processEnabled: boolean;
+    processSource: string;
+    workspaceEnabled: boolean;
+    provider: string;
+    apiKeyConfigured: boolean;
+    apiKeyMask: string | null;
+    secretsWritable: boolean;
+  };
+  email: {
+    enabled: boolean;
+    source: string;
+    smtpHost: string;
+    smtpPort: number;
+    smtpUsername: string;
+    smtpUsernameConfigured: boolean;
+    smtpPasswordConfigured: boolean;
+    smtpPasswordMask: string | null;
+    smtpFrom: string;
+    useStartTls: boolean;
+    secretsWritable: boolean;
+  };
+  webhooks: {
+    status: string;
+    message: string;
+  };
+}
+
+export interface UpdateSensitiveSettingsInput {
+  workspaceId?: string;
+  ai?: {
+    workspaceEnabled?: boolean;
+    provider?: string;
+  };
+  email?: {
+    enabled?: boolean;
+    smtpHost?: string;
+    smtpPort?: number;
+    smtpUsername?: string;
+    smtpFrom?: string;
+    useStartTls?: boolean;
+  };
+}
+
 export interface AiSummaryResult {
   channelId: string;
   summary: string;

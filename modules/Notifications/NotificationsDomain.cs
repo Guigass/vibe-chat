@@ -11,11 +11,28 @@ public sealed class NotificationPreference
     public bool PushEnabled { get; set; } = true;
 }
 
+/// <summary>
+/// Tenant-level email/SMTP non-secret overrides (B-069). Password/API secrets stay in env.
+/// When a row exists, Enabled/Host/Port/Username/From/UseStartTls override IConfiguration.
+/// </summary>
+public sealed class TenantEmailSettings
+{
+    public TenantId TenantId { get; set; }
+    public bool Enabled { get; set; }
+    public string Host { get; set; } = "localhost";
+    public int Port { get; set; } = 1025;
+    public string Username { get; set; } = string.Empty;
+    public string From { get; set; } = "noreply@localhost";
+    public bool UseStartTls { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
 public sealed record EmailMessage(
     string To,
     string Subject,
     string BodyText,
-    string? From = null);
+    string? From = null,
+    Guid? TenantId = null);
 
 public interface IEmailSender
 {
