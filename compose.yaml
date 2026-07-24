@@ -159,6 +159,8 @@ services:
         sleep 2;
       done;
       mc mb --ignore-existing local/$${MINIO_BUCKET:-vibechat};
+      printf '%s' '{\"CORSRules\":[{\"AllowedOrigins\":[\"http://localhost:4200\",\"https://localhost:4200\",\"*\"],\"AllowedMethods\":[\"GET\",\"PUT\",\"HEAD\"],\"AllowedHeaders\":[\"*\"],\"ExposeHeaders\":[\"ETag\",\"Content-Length\"],\"MaxAgeSeconds\":3600}]}' >/tmp/cors.json;
+      mc cors set local/$${MINIO_BUCKET:-vibechat} /tmp/cors.json || true;
       echo 'MinIO bucket ready: $${MINIO_BUCKET:-vibechat}';
       "
     environment:
@@ -338,10 +340,13 @@ services:
       ConnectionStrings__Redis: redis:6379
       Authentication__Authority: http://keycloak:8080/realms/${KEYCLOAK_REALM:-vibechat}
       Authentication__Audience: ${OIDC_API_AUDIENCE:-vibechat-api}
-      Storage__Endpoint: http://minio:9000
-      Storage__AccessKey: ${MINIO_ROOT_USER:-minioadmin}
-      Storage__SecretKey: ${MINIO_ROOT_PASSWORD:-minioadmin_dev_password_change_me}
-      Storage__Bucket: ${MINIO_BUCKET:-vibechat}
+      Minio__Endpoint: minio:9000
+      Minio__PublicEndpoint: ${MINIO_ENDPOINT:-http://localhost:9000}
+      Minio__AccessKey: ${MINIO_ROOT_USER:-minioadmin}
+      Minio__SecretKey: ${MINIO_ROOT_PASSWORD:-minioadmin_dev_password_change_me}
+      Minio__Bucket: ${MINIO_BUCKET:-vibechat}
+      Minio__UseSsl: "false"
+      Files__MaxSizeBytes: "10485760"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     ports:
       - "${API_PORT:-5080}:5080"

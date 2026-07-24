@@ -69,6 +69,7 @@ public interface IMembershipQuery
 | CreatedAt | DateTimeOffset |
 | EditedAt | DateTimeOffset? |
 | DeletedAt | DateTimeOffset? |
+| Attachments | AttachmentDto[] | Metadados prontos (sem URL) |
 
 ### EditMessage
 
@@ -185,12 +186,23 @@ Nomes de eventos hub (cliente):
 ## Files
 
 ```csharp
-public interface IFileStorage
+public interface IObjectStorage
 {
-    Task<PresignedUpload> CreateUploadAsync(…);
-    Task<PresignedDownload> CreateDownloadAsync(…);
+    Task<PresignedUpload> CreateUploadUrlAsync(string storageKey, string contentType, TimeSpan ttl, CancellationToken ct);
+    Task<PresignedDownload> CreateDownloadUrlAsync(string storageKey, string fileName, TimeSpan ttl, CancellationToken ct);
+    Task<ObjectStat?> StatObjectAsync(string storageKey, CancellationToken ct);
 }
 ```
+
+### Endpoints (API)
+
+| Endpoint | Notas |
+|----------|-------|
+| `POST /api/v1/channels/{channelId}/attachments` | Body `{ fileName, contentType, sizeBytes }` → URL pré-assinada PUT; exige membership + `file.upload` |
+| `POST /api/v1/channels/{channelId}/attachments/{id}/complete` | Confirma objeto no MinIO; status `Ready` |
+| `GET /api/v1/channels/{channelId}/attachments/{id}/download` | URL pré-assinada GET; exige membership + `file.download` |
+
+Regras: keys prefixadas por tenant (`tenants/{tenantId}/…`); MIME/tamanho via `Files:*`; body da mensagem pode ser vazio se houver `AttachmentIds` prontos no `SendMessage`.
 
 ---
 

@@ -33,6 +33,14 @@ export interface ChatUser {
   email?: string;
 }
 
+export interface MessageAttachment {
+  id: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  status?: string;
+}
+
 export interface ChatMessage {
   id: string;
   clientMessageId?: string;
@@ -47,6 +55,7 @@ export interface ChatMessage {
   seq?: number;
   status: MessageStatus;
   mine: boolean;
+  attachments?: MessageAttachment[];
 }
 
 export interface TypingState {

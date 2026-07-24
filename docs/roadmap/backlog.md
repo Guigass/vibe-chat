@@ -26,7 +26,7 @@ Prioridade: **P0** (fatia vertical) → **P1** (MVP usável) → **P2** (diferen
 | B-022 | Threads | |
 | B-023 | Editar / soft-delete mensagem | **Done (Wave 4)** — API authZ + hub + UI + testes |
 | B-024 | Reações | |
-| B-025 | Anexos MinIO | |
+| B-025 | Anexos MinIO | **Done (Wave 4)** — presign upload/download, authZ, UI composer + bubble, testes |
 | B-026 | Presence + typing | parcial (typing existe; polish pendente) |
 | B-027 | Busca FTS | |
 | B-028 | Rate-limit | |

@@ -100,12 +100,19 @@ public sealed record SendMessageCommand(
     string IdempotencyKey,
     string Body,
     MessageId? ReplyToMessageId,
-    Guid? ThreadId);
+    Guid? ThreadId,
+    IReadOnlyList<Guid>? AttachmentIds = null);
 
 public sealed record MessageSendResult(MessageId MessageId, long Sequence, DateTimeOffset CreatedAt, bool Idempotent);
 
 public static class MessageIdempotency
 {
-    public static string ComputeRequestHash(SendMessageCommand command) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{command.MessageId}:{command.ChannelId}:{command.Body}:{command.ReplyToMessageId}:{command.ThreadId}")));
+    public static string ComputeRequestHash(SendMessageCommand command)
+    {
+        var attachmentPart = command.AttachmentIds is { Count: > 0 }
+            ? string.Join(',', command.AttachmentIds.OrderBy(x => x))
+            : string.Empty;
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
+            $"{command.MessageId}:{command.ChannelId}:{command.Body}:{command.ReplyToMessageId}:{command.ThreadId}:{attachmentPart}")));
+    }
 }

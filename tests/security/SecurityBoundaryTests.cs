@@ -84,6 +84,61 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Cross_tenant_cannot_download_or_initiate_attachments()
+    {
+        var foreignChannelId = await SeedCrossTenantChannelAsync();
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var initiate = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{foreignChannelId}/attachments",
+            new CreateAttachmentUploadRequest("secret.txt", "text/plain", 12));
+        initiate.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var download = await client.GetAsync(
+            $"/api/v1/channels/{foreignChannelId}/attachments/{Guid.NewGuid()}/download");
+        download.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Non_member_cannot_download_attachment_from_direct_message()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var open = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/dms",
+            new OpenDirectMessageRequest(SeedData.BobUserId.Value));
+        open.EnsureSuccessStatusCode();
+        var dm = await open.Content.ReadFromJsonAsync<ChannelDto>();
+        dm.Should().NotBeNull();
+
+        var content = "dm-secret"u8.ToArray();
+        var initiate = await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{dm!.Id}/attachments",
+            new CreateAttachmentUploadRequest("dm.txt", "text/plain", content.Length));
+        initiate.EnsureSuccessStatusCode();
+        var upload = await initiate.Content.ReadFromJsonAsync<AttachmentUploadDto>();
+        upload.Should().NotBeNull();
+
+        using var putClient = new HttpClient();
+        var put = await putClient.PutAsync(upload!.UploadUrl, new ByteArrayContent(content));
+        put.IsSuccessStatusCode.Should().BeTrue();
+
+        var complete = await alice.PostAsync(
+            $"/api/v1/channels/{dm.Id}/attachments/{upload.AttachmentId}/complete",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+        complete.EnsureSuccessStatusCode();
+
+        var forbidden = await demo.GetAsync(
+            $"/api/v1/channels/{dm.Id}/attachments/{upload.AttachmentId}/download");
+        forbidden.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Direct_message_is_hidden_from_non_members()
     {
         using var alice = factory.CreateClient();
@@ -108,6 +163,7 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     private sealed record ChannelDto(Guid Id, Guid WorkspaceId, string Name, string Type);
+    private sealed record AttachmentUploadDto(Guid AttachmentId, string UploadUrl);
 
     private async Task<Guid> SeedCrossTenantChannelAsync()
     {
