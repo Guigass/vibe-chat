@@ -115,6 +115,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
             entity.Property(x => x.Name).HasMaxLength(120);
+            entity.HasIndex(x => new { x.WorkspaceId, x.Order });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -129,6 +130,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Type).HasConversion<string>().HasMaxLength(32);
             entity.Property(x => x.Name).HasMaxLength(120);
             entity.HasIndex(x => new { x.WorkspaceId, x.Name }).IsUnique();
+            entity.HasIndex(x => x.SpaceId);
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -714,29 +716,33 @@ public sealed class TypingService(RedisConnection redis, IClock clock) : ITyping
     private static string Key(TenantId tenantId, ChannelId channelId) => $"typing:{tenantId}:{channelId}";
 }
 
-public sealed class PresenceService(RedisConnection redis) : IPresenceService
+public sealed class PresenceService(RedisConnection redis, IClock clock) : IPresenceService
 {
-    public async Task SetOnlineAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken cancellationToken)
-    {
-        var db = await redis.GetDatabaseAsync();
-        if (db is not null)
-        {
-            await db.SetAddAsync($"presence:{tenantId}:{userId}", connectionId);
-            await db.SetAddAsync($"presence-users:{tenantId}", userId.Value.ToString());
-        }
-    }
+    private static readonly TimeSpan PresenceTtl = TimeSpan.FromSeconds(45);
+
+    public Task SetOnlineAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken cancellationToken) =>
+        SetStatusAsync(tenantId, userId, connectionId, PresenceStatus.Online, cancellationToken);
+
+    public Task SetAwayAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken cancellationToken) =>
+        SetStatusAsync(tenantId, userId, connectionId, PresenceStatus.Away, cancellationToken);
+
+    public Task HeartbeatAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken cancellationToken) =>
+        SetStatusAsync(tenantId, userId, connectionId, PresenceStatus.Online, cancellationToken);
 
     public async Task SetOfflineAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken cancellationToken)
     {
         var db = await redis.GetDatabaseAsync();
-        if (db is not null)
+        if (db is null)
         {
-            await db.SetRemoveAsync($"presence:{tenantId}:{userId}", connectionId);
-            var remaining = await db.SetLengthAsync($"presence:{tenantId}:{userId}");
-            if (remaining == 0)
-            {
-                await db.SetRemoveAsync($"presence-users:{tenantId}", userId.Value.ToString());
-            }
+            return;
+        }
+
+        await db.SetRemoveAsync(ConnectionsKey(tenantId, userId), connectionId);
+        var remaining = await db.SetLengthAsync(ConnectionsKey(tenantId, userId));
+        if (remaining == 0)
+        {
+            await db.KeyDeleteAsync(StatusKey(tenantId, userId));
+            await db.SetRemoveAsync(UsersKey(tenantId), userId.Value.ToString());
         }
     }
 
@@ -748,8 +754,92 @@ public sealed class PresenceService(RedisConnection redis) : IPresenceService
             return 0;
         }
 
-        return (int)await db.SetLengthAsync($"presence-users:{tenantId}");
+        var userIds = await db.SetMembersAsync(UsersKey(tenantId));
+        var count = 0;
+        foreach (var entry in userIds)
+        {
+            if (!Guid.TryParse(entry.ToString(), out var userGuid))
+            {
+                continue;
+            }
+
+            var status = await ReadStatusAsync(db, tenantId, new UserId(userGuid));
+            if (status is PresenceStatus.Online or PresenceStatus.Away)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
+
+    public async Task<IReadOnlyDictionary<UserId, PresenceStatus>> GetStatusesAsync(
+        TenantId tenantId,
+        IReadOnlyCollection<UserId> userIds,
+        CancellationToken cancellationToken)
+    {
+        var db = await redis.GetDatabaseAsync();
+        var result = new Dictionary<UserId, PresenceStatus>();
+        if (db is null)
+        {
+            foreach (var userId in userIds)
+            {
+                result[userId] = PresenceStatus.Offline;
+            }
+
+            return result;
+        }
+
+        foreach (var userId in userIds)
+        {
+            result[userId] = await ReadStatusAsync(db, tenantId, userId) ?? PresenceStatus.Offline;
+        }
+
+        return result;
+    }
+
+    private async Task SetStatusAsync(
+        TenantId tenantId,
+        UserId userId,
+        string connectionId,
+        PresenceStatus status,
+        CancellationToken cancellationToken)
+    {
+        var db = await redis.GetDatabaseAsync();
+        if (db is null)
+        {
+            return;
+        }
+
+        var expiresAt = clock.UtcNow.Add(PresenceTtl);
+        var payload = JsonSerializer.Serialize(new PresenceEntry(userId, status, expiresAt));
+        await db.StringSetAsync(StatusKey(tenantId, userId), payload, PresenceTtl);
+        await db.SetAddAsync(ConnectionsKey(tenantId, userId), connectionId);
+        await db.KeyExpireAsync(ConnectionsKey(tenantId, userId), PresenceTtl);
+        await db.SetAddAsync(UsersKey(tenantId), userId.Value.ToString());
+        await db.KeyExpireAsync(UsersKey(tenantId), PresenceTtl.Add(TimeSpan.FromMinutes(5)));
+    }
+
+    private async Task<PresenceStatus?> ReadStatusAsync(IDatabase db, TenantId tenantId, UserId userId)
+    {
+        var raw = await db.StringGetAsync(StatusKey(tenantId, userId));
+        if (raw.IsNullOrEmpty)
+        {
+            return null;
+        }
+
+        var entry = JsonSerializer.Deserialize<PresenceEntry>(raw.ToString());
+        if (entry is null || entry.ExpiresAt <= clock.UtcNow)
+        {
+            return null;
+        }
+
+        return entry.Status;
+    }
+
+    private static string StatusKey(TenantId tenantId, UserId userId) => $"presence:status:{tenantId}:{userId}";
+    private static string ConnectionsKey(TenantId tenantId, UserId userId) => $"presence:conn:{tenantId}:{userId}";
+    private static string UsersKey(TenantId tenantId) => $"presence-users:{tenantId}";
 }
 
 public sealed class MinioObjectStorage(IMinioClient minioClient, IConfiguration configuration) : IObjectStorage
@@ -983,10 +1073,12 @@ public sealed class ChatHub(
     ITypingService typing,
     IPresenceService presence,
     IChannelMembershipReader channels,
+    IWorkspaceMembershipReader workspaces,
     IRateLimiter rateLimiter,
     IConfiguration configuration) : Hub
 {
     public static string ChannelGroup(ChannelId channelId) => $"channel:{channelId.Value}";
+    public static string TenantGroup(TenantId tenantId) => $"tenant:{tenantId.Value}";
 
     public override async Task OnConnectedAsync()
     {
@@ -997,6 +1089,19 @@ public sealed class ChatHub(
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         VibeChatMetrics.AdjustRealtimeConnections(-1);
+        if (Context.Items.TryGetValue("tenantId", out var tenantObj)
+            && tenantObj is Guid tenantGuid
+            && !CurrentUserId().Equals(UserId.Empty))
+        {
+            var tenant = new TenantId(tenantGuid);
+            var userId = CurrentUserId();
+            await presence.SetOfflineAsync(tenant, userId, Context.ConnectionId, Context.ConnectionAborted);
+            await Clients.Group(TenantGroup(tenant)).SendAsync(
+                "PresenceChanged",
+                new { tenantId = tenant.Value, userId = userId.Value, status = PresenceStatus.Offline.ToString().ToLowerInvariant() },
+                Context.ConnectionAborted);
+        }
+
         await base.OnDisconnectedAsync(exception);
     }
 
@@ -1012,14 +1117,37 @@ public sealed class ChatHub(
         }
 
         await Groups.AddToGroupAsync(Context.ConnectionId, ChannelGroup(channel), Context.ConnectionAborted);
-        await presence.SetOnlineAsync(tenant, userId, Context.ConnectionId, Context.ConnectionAborted);
+        await EnsurePresenceGroupAsync(tenant, userId);
+        await presence.HeartbeatAsync(tenant, userId, Context.ConnectionId, Context.ConnectionAborted);
+        await BroadcastPresenceAsync(tenant, userId, PresenceStatus.Online);
     }
 
     public async Task LeaveChannel(Guid tenantId, Guid channelId)
     {
         var channel = new ChannelId(channelId);
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, ChannelGroup(channel), Context.ConnectionAborted);
-        await presence.SetOfflineAsync(new TenantId(tenantId), CurrentUserId(), Context.ConnectionId, Context.ConnectionAborted);
+    }
+
+    public async Task Heartbeat(Guid tenantId)
+    {
+        var userId = CurrentUserId();
+        var tenant = new TenantId(tenantId);
+        await EnsureHubRateLimitAsync(tenant, userId);
+        await EnsureTenantMembershipAsync(tenant, userId);
+        await EnsurePresenceGroupAsync(tenant, userId);
+        await presence.HeartbeatAsync(tenant, userId, Context.ConnectionId, Context.ConnectionAborted);
+        await BroadcastPresenceAsync(tenant, userId, PresenceStatus.Online);
+    }
+
+    public async Task SetAway(Guid tenantId)
+    {
+        var userId = CurrentUserId();
+        var tenant = new TenantId(tenantId);
+        await EnsureHubRateLimitAsync(tenant, userId);
+        await EnsureTenantMembershipAsync(tenant, userId);
+        await EnsurePresenceGroupAsync(tenant, userId);
+        await presence.SetAwayAsync(tenant, userId, Context.ConnectionId, Context.ConnectionAborted);
+        await BroadcastPresenceAsync(tenant, userId, PresenceStatus.Away);
     }
 
     public async Task SendTyping(Guid tenantId, Guid channelId, string displayName)
@@ -1028,9 +1156,36 @@ public sealed class ChatHub(
         var channel = new ChannelId(channelId);
         var userId = CurrentUserId();
         await EnsureHubRateLimitAsync(tenant, userId);
+        if (!await channels.CanAccessAsync(tenant, channel, userId, Context.ConnectionAborted))
+        {
+            throw new HubException("Not authorized for channel.");
+        }
+
         await typing.SetTypingAsync(tenant, channel, userId, displayName, Context.ConnectionAborted);
         await Clients.Group(ChannelGroup(channel)).SendAsync("Typing", new { tenantId, channelId, userId = userId.Value, displayName }, Context.ConnectionAborted);
     }
+
+    private async Task EnsureTenantMembershipAsync(TenantId tenantId, UserId userId)
+    {
+        var roles = await workspaces.GetRolesAsync(tenantId, userId, Context.ConnectionAborted);
+        if (roles.Count == 0)
+        {
+            throw new HubException("Not authorized for tenant.");
+        }
+    }
+
+    private async Task EnsurePresenceGroupAsync(TenantId tenantId, UserId userId)
+    {
+        Context.Items["tenantId"] = tenantId.Value;
+        Context.Items["userId"] = userId.Value;
+        await Groups.AddToGroupAsync(Context.ConnectionId, TenantGroup(tenantId), Context.ConnectionAborted);
+    }
+
+    private Task BroadcastPresenceAsync(TenantId tenantId, UserId userId, PresenceStatus status) =>
+        Clients.Group(TenantGroup(tenantId)).SendAsync(
+            "PresenceChanged",
+            new { tenantId = tenantId.Value, userId = userId.Value, status = status.ToString().ToLowerInvariant() },
+            Context.ConnectionAborted);
 
     private async Task EnsureHubRateLimitAsync(TenantId tenantId, UserId userId)
     {
@@ -1061,6 +1216,8 @@ public sealed class SeedData(VibeChatDbContext dbContext, IClock clock, ILogger<
     public static readonly UserId DemoUserId = new(Guid.Parse("33333333-3333-3333-3333-333333333333"));
     public static readonly UserId AliceUserId = new(Guid.Parse("44444444-4444-4444-4444-444444444444"));
     public static readonly UserId BobUserId = new(Guid.Parse("55555555-5555-5555-5555-555555555555"));
+    public static readonly Guid DemoSpaceGeralId = Guid.Parse("88888888-8888-8888-8888-888888888888");
+    public static readonly Guid DemoSpaceEngenhariaId = Guid.Parse("99999999-9999-9999-9999-999999999999");
 
     public async Task SeedAsync(CancellationToken cancellationToken)
     {
@@ -1086,9 +1243,53 @@ public sealed class SeedData(VibeChatDbContext dbContext, IClock clock, ILogger<
             }
         }
 
+        if (!await dbContext.Spaces.IgnoreQueryFilters().AnyAsync(x => x.Id == DemoSpaceGeralId, cancellationToken))
+        {
+            dbContext.Spaces.Add(new Space
+            {
+                Id = DemoSpaceGeralId,
+                TenantId = DemoTenantId,
+                WorkspaceId = DemoWorkspaceId,
+                Name = "Geral",
+                Order = 0,
+                CreatedAt = now
+            });
+        }
+
+        if (!await dbContext.Spaces.IgnoreQueryFilters().AnyAsync(x => x.Id == DemoSpaceEngenhariaId, cancellationToken))
+        {
+            dbContext.Spaces.Add(new Space
+            {
+                Id = DemoSpaceEngenhariaId,
+                TenantId = DemoTenantId,
+                WorkspaceId = DemoWorkspaceId,
+                Name = "Engenharia",
+                Order = 1,
+                CreatedAt = now
+            });
+        }
+
         if (!await dbContext.Channels.IgnoreQueryFilters().AnyAsync(x => x.Id == DemoChannelId, cancellationToken))
         {
-            dbContext.Channels.Add(new Channel { Id = DemoChannelId, TenantId = DemoTenantId, WorkspaceId = DemoWorkspaceId, Name = "geral", Type = ChannelType.Public, CreatedAt = now, CreatedBy = DemoUserId });
+            dbContext.Channels.Add(new Channel
+            {
+                Id = DemoChannelId,
+                TenantId = DemoTenantId,
+                WorkspaceId = DemoWorkspaceId,
+                SpaceId = DemoSpaceGeralId,
+                Name = "geral",
+                Type = ChannelType.Public,
+                CreatedAt = now,
+                CreatedBy = DemoUserId
+            });
+        }
+        else
+        {
+            var demoChannel = await dbContext.Channels.IgnoreQueryFilters().FirstAsync(x => x.Id == DemoChannelId, cancellationToken);
+            if (demoChannel.SpaceId is null)
+            {
+                demoChannel.SpaceId = DemoSpaceGeralId;
+            }
         }
 
         foreach (var (userId, role) in new[] { (DemoUserId, Role.WorkspaceOwner), (AliceUserId, Role.Member), (BobUserId, Role.Member) })

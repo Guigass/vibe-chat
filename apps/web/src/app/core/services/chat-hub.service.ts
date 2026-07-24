@@ -8,9 +8,15 @@ import {
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 import { TenantContext } from '../tenant/tenant-context';
-import { ChatMessage, TypingState } from '../../shared/models/chat.models';
+import { ChatMessage, PresenceStatus, TypingState } from '../../shared/models/chat.models';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
+
+export interface PresenceChangedEvent {
+  userId: string;
+  status: PresenceStatus;
+  tenantId?: string;
+}
 
 interface MessageCreatedPayload {
   messageId?: string;
@@ -70,12 +76,15 @@ export class ChatHubService {
   private readonly tenant = inject(TenantContext);
   private connection: HubConnection | null = null;
   private joinedChannelId: string | null = null;
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private visibilityHandler: (() => void) | null = null;
 
   private readonly statusSignal = signal<ConnectionStatus>('disconnected');
   private readonly typingSignal = signal<TypingState[]>([]);
   private readonly messageHandlers = new Set<(message: ChatMessage) => void>();
   private readonly editedHandlers = new Set<(event: MessageEditEvent) => void>();
   private readonly deletedHandlers = new Set<(event: MessageDeleteEvent) => void>();
+  private readonly presenceHandlers = new Set<(event: PresenceChangedEvent) => void>();
 
   readonly status = this.statusSignal.asReadonly();
   readonly typingUsers = this.typingSignal.asReadonly();
@@ -104,12 +113,13 @@ export class ChatHubService {
     this.connection.onreconnecting(() => this.statusSignal.set('reconnecting'));
     this.connection.onreconnected(async () => {
       this.statusSignal.set('connected');
-      if (this.joinedChannelId) {
-        try {
+      try {
+        await this.heartbeat();
+        if (this.joinedChannelId) {
           await this.joinChannel(this.joinedChannelId);
-        } catch {
-          // banner already reflects connection; next user action can retry join
         }
+      } catch {
+        // banner already reflects connection; next user action can retry join
       }
     });
     this.connection.onclose(() => this.statusSignal.set('disconnected'));
@@ -176,15 +186,34 @@ export class ChatHubService {
       }, 3000);
     });
 
+    this.connection.on('PresenceChanged', (payload: {
+      tenantId?: string;
+      userId: string;
+      status: string;
+    }) => {
+      const status = (payload.status || 'offline').toLowerCase();
+      const event: PresenceChangedEvent = {
+        userId: String(payload.userId),
+        tenantId: payload.tenantId ? String(payload.tenantId) : undefined,
+        status: status === 'online' || status === 'away' ? status : 'offline',
+      };
+      for (const handler of this.presenceHandlers) {
+        handler(event);
+      }
+    });
+
     try {
       await this.connection.start();
       this.statusSignal.set('connected');
+      await this.heartbeat();
+      this.startPresenceLoop();
     } catch {
       this.statusSignal.set('disconnected');
     }
   }
 
   async disconnect(): Promise<void> {
+    this.stopPresenceLoop();
     if (!this.connection) return;
     await this.connection.stop();
     this.connection = null;
@@ -192,10 +221,22 @@ export class ChatHubService {
   }
 
   async joinChannel(channelId: string): Promise<void> {
-    this.joinedChannelId = channelId;
-    if (!this.connection || this.connection.state !== HubConnectionState.Connected) return;
+    if (!this.connection || this.connection.state !== HubConnectionState.Connected) {
+      this.joinedChannelId = channelId;
+      return;
+    }
     const tenantId = this.tenant.snapshot().tenantId;
     if (!tenantId) return;
+
+    if (this.joinedChannelId && this.joinedChannelId !== channelId) {
+      try {
+        await this.connection.invoke('LeaveChannel', tenantId, this.joinedChannelId);
+      } catch {
+        // ignore leave failures; join still proceeds
+      }
+    }
+
+    this.joinedChannelId = channelId;
     await this.connection.invoke('JoinChannel', tenantId, channelId);
   }
 
@@ -217,6 +258,20 @@ export class ChatHubService {
     await this.connection.invoke('SendTyping', tenantId, channelId, name);
   }
 
+  async heartbeat(): Promise<void> {
+    if (!this.connection || this.connection.state !== HubConnectionState.Connected) return;
+    const tenantId = this.tenant.snapshot().tenantId;
+    if (!tenantId) return;
+    await this.connection.invoke('Heartbeat', tenantId);
+  }
+
+  async setAway(): Promise<void> {
+    if (!this.connection || this.connection.state !== HubConnectionState.Connected) return;
+    const tenantId = this.tenant.snapshot().tenantId;
+    if (!tenantId) return;
+    await this.connection.invoke('SetAway', tenantId);
+  }
+
   onMessage(handler: (message: ChatMessage) => void): () => void {
     this.messageHandlers.add(handler);
     return () => this.messageHandlers.delete(handler);
@@ -230,6 +285,40 @@ export class ChatHubService {
   onMessageDeleted(handler: (event: MessageDeleteEvent) => void): () => void {
     this.deletedHandlers.add(handler);
     return () => this.deletedHandlers.delete(handler);
+  }
+
+  onPresenceChanged(handler: (event: PresenceChangedEvent) => void): () => void {
+    this.presenceHandlers.add(handler);
+    return () => this.presenceHandlers.delete(handler);
+  }
+
+  private startPresenceLoop(): void {
+    this.stopPresenceLoop();
+    this.heartbeatTimer = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void this.heartbeat();
+      }
+    }, 20000);
+
+    this.visibilityHandler = () => {
+      if (document.visibilityState === 'hidden') {
+        void this.setAway();
+      } else {
+        void this.heartbeat();
+      }
+    };
+    document.addEventListener('visibilitychange', this.visibilityHandler);
+  }
+
+  private stopPresenceLoop(): void {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
   }
 
   private mapPayload(payload: MessageCreatedPayload): ChatMessage | null {

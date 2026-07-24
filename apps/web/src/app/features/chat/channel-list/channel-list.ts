@@ -17,12 +17,16 @@ import { SidebarNav, Skeleton } from '../../../shared/ui';
         </div>
       } @else {
         <vc-sidebar-nav
-          [channels]="channels.publicChannels()"
+          [groups]="channels.spaceGroups()"
+          [spaces]="channels.spaces()"
           [directs]="channels.directChannels()"
           [members]="channels.peerCandidates()"
+          [presence]="channels.presence()"
           [activeId]="channels.activeChannel()?.id ?? null"
+          [canCreate]="channels.canCreateChannel()"
           (select)="onSelect($event)"
           (openDm)="onOpenDm($event)"
+          (createChannel)="onCreate($event)"
         />
       }
     </div>
@@ -52,6 +56,23 @@ export class ChannelList {
     const channel = await this.channels.openDirectMessage(userId);
     if (channel) {
       await this.messages.loadChannel(channel.id);
+    }
+  }
+
+  async onCreate(input: {
+    name: string;
+    type: string;
+    spaceId?: string | null;
+    newSpaceName?: string;
+  }): Promise<void> {
+    try {
+      const channel = await this.channels.createChannel(input);
+      if (channel) {
+        await this.messages.loadChannel(channel.id);
+      }
+    } catch (err) {
+      // surface via store hint
+      console.error(err);
     }
   }
 }

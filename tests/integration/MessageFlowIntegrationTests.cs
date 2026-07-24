@@ -219,6 +219,54 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Spaces_and_channels_can_be_created_with_membership()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+        var spaces = await alice.GetFromJsonAsync<SpaceDto[]>(
+            $"/api/v1/workspaces/{workspaceId}/spaces",
+            JsonOptions);
+        spaces.Should().NotBeNull();
+        spaces!.Should().Contain(s => s.Id == SeedData.DemoSpaceGeralId);
+        spaces.Should().Contain(s => s.Id == SeedData.DemoSpaceEngenhariaId);
+
+        var createSpace = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/spaces",
+            new CreateSpaceRequestDto($"Space {Guid.NewGuid():N}"[..20]));
+        createSpace.StatusCode.Should().Be(HttpStatusCode.Created);
+        var space = await createSpace.Content.ReadFromJsonAsync<SpaceDto>(JsonOptions);
+        space.Should().NotBeNull();
+
+        var channelName = $"ch-{Guid.NewGuid():N}"[..16];
+        var createChannel = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/channels",
+            new CreateChannelRequestDto(channelName, "Public", space!.Id));
+        createChannel.StatusCode.Should().Be(HttpStatusCode.Created);
+        var channel = await createChannel.Content.ReadFromJsonAsync<ChannelDto>(JsonOptions);
+        channel.Should().NotBeNull();
+        channel!.SpaceId.Should().Be(space.Id);
+        channel.Name.Should().Be(channelName);
+
+        var listed = await alice.GetFromJsonAsync<ChannelDto[]>(
+            $"/api/v1/workspaces/{workspaceId}/channels",
+            JsonOptions);
+        listed.Should().Contain(c => c.Id == channel.Id && c.SpaceId == space.Id);
+
+        var presence = await alice.GetFromJsonAsync<PresenceDto[]>(
+            $"/api/v1/workspaces/{workspaceId}/presence",
+            JsonOptions);
+        presence.Should().NotBeNull();
+        presence!.Select(p => p.UserId).Should().Contain(SeedData.AliceUserId.Value);
+
+        var badSpace = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/channels",
+            new CreateChannelRequestDto($"bad-{Guid.NewGuid():N}"[..12], "Public", Guid.NewGuid()));
+        badSpace.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Direct_message_is_idempotent_and_private_to_members()
     {
         using var alice = factory.CreateClient();
@@ -513,7 +561,13 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         string Name,
         string Type,
         Guid? PeerUserId,
-        string? PeerDisplayName);
+        string? PeerDisplayName,
+        Guid? SpaceId = null);
+
+    private sealed record SpaceDto(Guid Id, Guid WorkspaceId, string Name, int Order);
+    private sealed record CreateSpaceRequestDto(string Name);
+    private sealed record CreateChannelRequestDto(string Name, string Type, Guid? SpaceId = null);
+    private sealed record PresenceDto(Guid UserId, string Status);
 
     private sealed record WorkspaceMemberDto(Guid UserId, string DisplayName, string Email, string Role);
 

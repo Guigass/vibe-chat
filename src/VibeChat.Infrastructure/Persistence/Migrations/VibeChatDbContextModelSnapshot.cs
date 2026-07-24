@@ -170,6 +170,9 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
+                    b.Property<Guid?>("SpaceId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
 
@@ -182,6 +185,8 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SpaceId");
 
                     b.HasIndex("WorkspaceId", "Name")
                         .IsUnique();
@@ -229,6 +234,9 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
+                    b.Property<int>("Order")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
 
@@ -236,6 +244,8 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("WorkspaceId", "Order");
 
                     b.ToTable("spaces", "directory");
                 });

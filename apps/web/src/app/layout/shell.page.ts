@@ -60,6 +60,7 @@ export class ShellPage implements OnInit, OnDestroy {
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private searchSeq = 0;
   private lastChannelId: string | null = null;
+  private unsubPresence: (() => void) | null = null;
 
   constructor() {
     effect(() => {
@@ -96,6 +97,9 @@ export class ShellPage implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
+    this.unsubPresence = this.hub.onPresenceChanged((event) => {
+      this.channels.setPresence(event.userId, event.status);
+    });
     await Promise.all([this.channels.load(), this.hub.connect()]);
     const active = this.channels.activeChannel();
     if (active) {
@@ -107,6 +111,7 @@ export class ShellPage implements OnInit, OnDestroy {
     if (this.searchTimer) {
       clearTimeout(this.searchTimer);
     }
+    this.unsubPresence?.();
   }
 
   @HostListener('window:keydown', ['$event'])

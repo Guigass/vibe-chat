@@ -8,7 +8,9 @@ import {
   ChatMessage,
   ChatThread,
   MessageAttachment,
+  PresenceStatus,
   SearchMessagesResult,
+  Space,
   Workspace,
   WorkspaceMember,
 } from '../../shared/models/chat.models';
@@ -20,13 +22,26 @@ interface WorkspaceDto {
   role?: string;
 }
 
+interface SpaceDto {
+  id: string;
+  workspaceId: string;
+  name: string;
+  order: number;
+}
+
 interface ChannelDto {
   id: string;
   workspaceId: string;
   name: string;
   type?: string;
+  spaceId?: string | null;
   peerUserId?: string | null;
   peerDisplayName?: string | null;
+}
+
+interface PresenceDto {
+  userId: string;
+  status: string;
 }
 
 interface MemberDto {
@@ -115,12 +130,50 @@ export class ApiService {
 
   async getWorkspaces(): Promise<Workspace[]> {
     const rows = await this.request<WorkspaceDto[]>('/api/v1/workspaces');
-    return rows.map((w) => ({ id: w.id, name: w.name, slug: w.slug }));
+    return rows.map((w) => ({ id: w.id, name: w.name, slug: w.slug, role: w.role }));
+  }
+
+  async getSpaces(workspaceId: string): Promise<Space[]> {
+    const rows = await this.request<SpaceDto[]>(`/api/v1/workspaces/${workspaceId}/spaces`);
+    return rows.map((s) => ({
+      id: s.id,
+      workspaceId: s.workspaceId,
+      name: s.name,
+      order: s.order ?? 0,
+    }));
+  }
+
+  async createSpace(workspaceId: string, name: string): Promise<Space> {
+    const dto = await this.request<SpaceDto>(`/api/v1/workspaces/${workspaceId}/spaces`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+    return {
+      id: dto.id,
+      workspaceId: dto.workspaceId,
+      name: dto.name,
+      order: dto.order ?? 0,
+    };
   }
 
   async getChannels(workspaceId: string): Promise<Channel[]> {
     const rows = await this.request<ChannelDto[]>(`/api/v1/workspaces/${workspaceId}/channels`);
     return rows.map((c) => this.mapChannel(c));
+  }
+
+  async createChannel(
+    workspaceId: string,
+    input: { name: string; type: string; spaceId?: string | null },
+  ): Promise<Channel> {
+    const dto = await this.request<ChannelDto>(`/api/v1/workspaces/${workspaceId}/channels`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: input.name,
+        type: input.type,
+        spaceId: input.spaceId ?? null,
+      }),
+    });
+    return this.mapChannel(dto);
   }
 
   async getMembers(workspaceId: string): Promise<WorkspaceMember[]> {
@@ -131,6 +184,17 @@ export class ApiService {
       email: m.email,
       role: m.role,
     }));
+  }
+
+  async getPresence(workspaceId: string): Promise<Record<string, PresenceStatus>> {
+    const rows = await this.request<PresenceDto[]>(`/api/v1/workspaces/${workspaceId}/presence`);
+    const map: Record<string, PresenceStatus> = {};
+    for (const row of rows) {
+      const status = (row.status || 'offline').toLowerCase();
+      map[row.userId] =
+        status === 'online' || status === 'away' ? status : 'offline';
+    }
+    return map;
   }
 
   async openDirectMessage(workspaceId: string, userId: string): Promise<Channel> {
@@ -339,6 +403,7 @@ export class ApiService {
       name: c.name,
       unreadCount: 0,
       type,
+      spaceId: c.spaceId ?? null,
       isPrivate: type === 'private',
       isDirect: type === 'direct',
       peerUserId: c.peerUserId ?? undefined,

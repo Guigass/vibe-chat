@@ -16,6 +16,7 @@ public sealed class Channel : AggregateRoot
     public ChannelId Id { get; set; }
     public TenantId TenantId { get; set; }
     public WorkspaceId WorkspaceId { get; set; }
+    public Guid? SpaceId { get; set; }
     public string Name { get; set; } = string.Empty;
     public ChannelType Type { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

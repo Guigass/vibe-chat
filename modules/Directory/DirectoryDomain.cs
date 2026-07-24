@@ -8,5 +8,6 @@ public sealed class Space : AggregateRoot
     public TenantId TenantId { get; set; }
     public WorkspaceId WorkspaceId { get; set; }
     public string Name { get; set; } = string.Empty;
+    public int Order { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }
