@@ -63,10 +63,18 @@ import { Button, EmptyState, IconButton, MessageBubble, Skeleton, Textarea } fro
     </aside>
   `,
   styles: `
+    :host {
+      display: block;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+    }
     .thread {
       display: grid;
       grid-template-rows: auto 1fr auto;
-      min-height: 100dvh;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
       border-left: 1px solid var(--vc-border);
       background: color-mix(in srgb, var(--vc-surface-elevated) 94%, transparent);
       animation: vc-thread-in 220ms ease-out;
@@ -90,7 +98,9 @@ import { Button, EmptyState, IconButton, MessageBubble, Skeleton, Textarea } fro
       font-size: 0.8rem;
     }
     .thread__scroll {
+      min-height: 0;
       overflow: auto;
+      overscroll-behavior: contain;
       padding: var(--vc-space-4);
       display: flex;
       flex-direction: column;
