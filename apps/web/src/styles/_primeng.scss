@@ -1,0 +1,33 @@
+/* Bridge PrimeNG components to VibeChat tokens (chat shell stays custom). */
+
+.p-datatable,
+.p-select,
+.p-tag,
+.p-button {
+  font-family: var(--vc-font-body);
+}
+
+.p-datatable {
+  --p-datatable-header-cell-background: var(--vc-surface);
+  --p-datatable-header-cell-color: var(--vc-ink-muted);
+  --p-datatable-row-background: var(--vc-surface-elevated);
+  --p-datatable-row-color: var(--vc-ink);
+  --p-datatable-body-cell-border-color: var(--vc-border);
+  --p-datatable-header-cell-border-color: var(--vc-border);
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-md);
+  overflow: hidden;
+}
+
+.p-datatable .p-datatable-tbody > tr.vc-row-deleted {
+  opacity: 0.72;
+}
+
+.p-select {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.admin .p-datatable-wrapper {
+  overflow-x: auto;
+}

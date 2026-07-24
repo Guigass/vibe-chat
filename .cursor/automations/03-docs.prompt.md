@@ -39,8 +39,9 @@ Re-read and update **only** files that the merge actually affects:
 
 ## Step D — Ship
 
-1. Branch `cursor/docs-<wave-or-gap-id>-<short-slug>`.
-2. Commit; open a **draft** PR to `main` with:
+1. Stay on the Cloud Agent **designated branch** for this run (do not create a
+   separate `cursor/docs-…` branch — `open_git_pr` only accepts the designated one).
+2. Commit; push; call **`open_git_pr`** (draft) to `main` with:
 
 ```text
 Wave: docs-<merged ID>

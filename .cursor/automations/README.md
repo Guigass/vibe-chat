@@ -47,3 +47,17 @@ IDs atuais (referência):
 - Se não houver item elegível: só lacunas P0 (bug/teste/doc/segurança) com orçamento
   pequeno — ver `01-build.prompt.md`.
 - QA **não** abre feature nova; Docs **não** implementa código de produto.
+
+## Branch + `open_git_pr` (obrigatório)
+
+Cloud Agents recebem uma **branch designada** por run (ex.:
+`cursor/vibechat-development-task-<id>`). A ferramenta **`open_git_pr` só abre PR
+dessa branch remota**.
+
+- Build/Docs: **não** criar `cursor/w6-7-…` / `cursor/docs-…` só para o Wave ID.
+- Identificar o item no **título/corpo do PR** (`Wave: W6-7`) e no commit.
+- Se o prompt e a branch designada divergirem, **prevalece a branch designada**.
+
+Após editar os `.prompt.md` aqui, **cole de novo** o conteúdo no dashboard
+[cursor.com/automations](https://cursor.com/automations) — a API não atualiza o
+texto da automação sozinha.

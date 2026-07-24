@@ -152,13 +152,15 @@ Não transformar o shell em dashboard com stats, strips e callouts.
 | Modais | Só para fluxos (criar channel, convidar); CDK overlay |
 | Painel de conversa | Coluna flex com `min-height: 0`; **scroll só na timeline**; composer fora do scroller (B-072) |
 
-### PrimeNG (Wave 6 / B-073 — após emenda ADR-002)
+### PrimeNG (Wave 6 / B-073 — emenda ADR-002 aceita)
 
-Permitido para acelerar admin e formulários densos (DataTable, Dialog, Select, Toast). Obrigatório:
+Usar para acelerar admin e formulários densos (DataTable, Dialog, Select, Toast). Obrigatório:
 
-- Preset/tema amarrado aos tokens `--vc-*` (teal/charcoal, Sora / IBM Plex Sans)
+- Preset `VibeChatPreset` (`apps/web/src/app/core/theme/vibechat.preset.ts`) amarrado aos tokens `--vc-*` (teal/charcoal, Sora / IBM Plex Sans)
+- `darkModeSelector: '[data-theme="dark"]'` alinhado ao `ThemeService`
 - Sem skins roxas/default genéricas
 - Chat shell continua composição própria; PrimeNG não vira “tema Slack”
+- Import modular por área (admin primeiro); não carregar DataTable no hot path do chat
 
 ---
 

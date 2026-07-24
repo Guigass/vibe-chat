@@ -21,7 +21,7 @@
 | R-15 | Design genérico (clone Slack) | M | Médio | design-system.md enforce em review | Frontend |
 | R-16 | Realtime degradado (só typing) | B | Alto | **Mitigado (B-070 Done)** — gap-fill + E2E dois usuários; monitorar métricas SignalR/outbox | Backend / Frontend |
 | R-17 | Secrets/webhooks expostos a membros | M | Crítico | B-069 authZ admin-only; nunca logar tokens | Security |
-| R-18 | PrimeNG sem tema VibeChat | M | Médio | Emenda ADR-002 + tokens; review visual | Frontend |
+| R-18 | PrimeNG sem tema VibeChat | B | Médio | **Mitigado (W6-7)** — emenda ADR-002 aceita + `VibeChatPreset`; review visual contínuo | Frontend |
 
 ## Riscos técnicos detalhados
 
