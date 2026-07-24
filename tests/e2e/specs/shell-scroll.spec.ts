@@ -19,7 +19,8 @@ test.describe(`shell scroll container (${AUTH_MODE})`, () => {
     await page.locator('.timeline').evaluate((el) => {
       const filler = document.createElement('div');
       filler.dataset.e2eFiller = '1';
-      filler.style.height = '3000px';
+      // flex item defaults shrink — pin min/basis so scrollHeight grows
+      filler.style.cssText = 'flex:0 0 3000px;min-height:3000px;height:3000px;';
       filler.setAttribute('aria-hidden', 'true');
       el.appendChild(filler);
     });
