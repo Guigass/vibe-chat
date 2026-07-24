@@ -118,6 +118,7 @@ Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out Signal
 | `POST /api/v1/workspaces/{workspaceId}/channels` | Body `{ name, type, spaceId? }`; exige `channel.create`; `spaceId` deve pertencer ao workspace |
 | `GET /api/v1/workspaces/{workspaceId}/members` | Membros do workspace (membership obrigatória — D-07); inclui `role` |
 | `GET /api/v1/workspaces/{workspaceId}/roles` | Papéis atribuíveis (`Member`, `Moderator`, `Auditor`, `Admin`); exige `workspace.admin` no workspace |
+| `POST /api/v1/workspaces/{workspaceId}/members` | Convite/provisionamento (B-068). Body `{ email, displayName?, role? }` (`role` default `Member`); exige `workspace.admin`; cria perfil stub `pending:{email}` se o usuário ainda não logou; 409 se já membro; rejeita `Guest`/`Bot`/owners; audit `member.invite`; e-mail opcional via outbox se `Email:Enabled`. Sem self-signup — IdP (Keycloak) continua responsável pela autenticação |
 | `PUT /api/v1/workspaces/{workspaceId}/members/{userId}/role` | Body `{ role }`; owner/admin (`workspace.admin`); não permite auto-elevação; rejeita `Guest`/`Bot`/`WorkspaceOwner`/`PlatformOwner` (D-07); audit `member.role.change`; e-mail opcional via outbox se `Email:Enabled` |
 | `GET /api/v1/workspaces/{workspaceId}/presence` | Status `online`/`away`/`offline` dos membros (Redis TTL) |
 | `POST /api/v1/workspaces/{workspaceId}/dms` | Body `{ userId }`; get-or-create DM 1:1 (`ChannelType.Direct`) |
@@ -303,13 +304,14 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 
 `AuditEventResponse`: `id`, `action`, `entityType`, `entityId`, `actorUserId`, `occurredAt`, `metadataJson`.
 
-Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`.
+Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`.
 
 Planejado (Wave 6 — não implementado ainda; atualizar esta seção quando existir):
 
 - **B-067** — API/UI de auditoria de conversa (histórico admin por canal/DM/thread), authZ `admin.dashboard`
-- **B-068** — invite/provisionamento de membership + documentação de cadastro/diretivas
 - **B-069** / **B-048** — leitura/edição de tokens, webhooks e settings sensíveis restrita a admin (sem expor secret em claro)
+
+Provisionamento (B-068): no primeiro login OIDC, `EnsureProfile` vincula stub `pending:{email}` ao `sub` real — a membership já provisionada pelo admin passa a valer sem self-signup.
 
 ## Notifications / Email (B-043)
 

@@ -1055,15 +1055,31 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
         {
             try
             {
-                if (outbox.Type == nameof(MemberRoleChangedEmailEvent))
+                if (outbox.Type is nameof(MemberRoleChangedEmailEvent) or nameof(MemberInvitedEmailEvent))
                 {
-                    var emailEvent = JsonSerializer.Deserialize<MemberRoleChangedEmailEvent>(outbox.Payload)
-                        ?? throw new InvalidOperationException("Invalid MemberRoleChangedEmailEvent payload");
+                    var to = "";
+                    var subject = "";
+                    var body = "";
+                    if (outbox.Type == nameof(MemberRoleChangedEmailEvent))
+                    {
+                        var emailEvent = JsonSerializer.Deserialize<MemberRoleChangedEmailEvent>(outbox.Payload)
+                            ?? throw new InvalidOperationException("Invalid MemberRoleChangedEmailEvent payload");
+                        to = emailEvent.To;
+                        subject = emailEvent.Subject;
+                        body = emailEvent.BodyText;
+                    }
+                    else
+                    {
+                        var emailEvent = JsonSerializer.Deserialize<MemberInvitedEmailEvent>(outbox.Payload)
+                            ?? throw new InvalidOperationException("Invalid MemberInvitedEmailEvent payload");
+                        to = emailEvent.To;
+                        subject = emailEvent.Subject;
+                        body = emailEvent.BodyText;
+                    }
+
                     if (emailSender.IsEnabled)
                     {
-                        await emailSender.SendAsync(
-                            new EmailMessage(emailEvent.To, emailEvent.Subject, emailEvent.BodyText),
-                            cancellationToken);
+                        await emailSender.SendAsync(new EmailMessage(to, subject, body), cancellationToken);
                     }
 
                     outbox.ProcessedAt = now;

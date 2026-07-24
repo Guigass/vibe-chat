@@ -92,7 +92,16 @@ Endpoint (Development): `POST /api/v1/dev/seed`
 |------|------|
 | Keycloak OIDC | “Entrar com Keycloak” |
 | Demo UI | “Explorar demo local” |
-| DevAuth API | Header `X-Dev-User: alice\|bob\|demo` (somente Development) |
+| DevAuth API | Header `X-Dev-User: alice\|bob\|demo` (somente Development). Convite dinâmico: `X-Dev-User` + `X-Dev-Email` (+ `X-Dev-Name` opcional) para testar claim de stub `pending:{email}` |
+
+### Cadastro e diretivas (B-068)
+
+1. **IdP autentica** — crie o usuário no Keycloak (realm `vibechat`) com o e-mail desejado. Não há self-signup aberto no VibeChat.
+2. **Admin provisiona membership** — em `/admin`, formulário “Convidar membro” (`POST /api/v1/workspaces/{id}/members`) com e-mail + papel (`Member`/`Moderator`/`Auditor`/`Admin`).
+3. **Primeiro login vincula** — se o perfil ainda era stub `pending:{email}`, o SSO atualiza o `sub` e a membership já criada passa a valer.
+4. **Diretivas** — papéis existentes continuam editáveis na tabela de membros (`PUT .../members/{userId}/role`).
+
+DX sem Keycloak: DevAuth (`X-Dev-User`) e seed já criam alice/bob/demo com membership.
 
 ## Fluxo de trabalho do desenvolvedor
 

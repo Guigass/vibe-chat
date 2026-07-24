@@ -40,3 +40,12 @@ public sealed record MemberRoleChangedEmailEvent(
     string To,
     string Subject,
     string BodyText);
+
+/// <summary>Optional invite email after admin provisions membership (B-068 / D-10).</summary>
+public sealed record MemberInvitedEmailEvent(
+    Guid TenantId,
+    Guid WorkspaceId,
+    Guid TargetUserId,
+    string To,
+    string Subject,
+    string BodyText);

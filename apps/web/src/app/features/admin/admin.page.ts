@@ -35,7 +35,15 @@ export class AdminPage implements OnInit {
   readonly membersError = signal(false);
   readonly roleBusyUserId = signal<string | null>(null);
   readonly roleFeedback = signal<string | null>(null);
+  readonly inviteBusy = signal(false);
+  readonly inviteFeedback = signal<string | null>(null);
+  readonly inviteError = signal<string | null>(null);
   readonly currentUserId = signal<string | null>(null);
+
+  canInvite(): boolean {
+    const role = this.workspace()?.role;
+    return !!role && MANAGER_ROLES.has(role);
+  }
 
   async ngOnInit(): Promise<void> {
     this.currentUserId.set(this.auth.profile()?.id ?? null);
@@ -92,6 +100,59 @@ export class AdminPage implements OnInit {
       return false;
     }
     return true;
+  }
+
+  async onInviteSubmit(event: Event): Promise<void> {
+    event.preventDefault();
+    const workspaceId = this.workspace()?.id;
+    if (!workspaceId || !this.canInvite()) {
+      return;
+    }
+
+    const form = event.target as HTMLFormElement;
+    const data = new FormData(form);
+    const email = String(data.get('email') ?? '').trim();
+    const displayName = String(data.get('displayName') ?? '').trim();
+    const role = String(data.get('role') ?? 'Member').trim() || 'Member';
+    if (!email) {
+      this.inviteError.set('Informe um e-mail válido.');
+      return;
+    }
+
+    this.inviteBusy.set(true);
+    this.inviteError.set(null);
+    this.inviteFeedback.set(null);
+    try {
+      const created = await this.api.inviteMember(workspaceId, {
+        email,
+        displayName: displayName || undefined,
+        role,
+      });
+      this.members.update((rows) =>
+        [...rows.filter((row) => row.userId !== created.userId), created].sort((a, b) =>
+          a.displayName.localeCompare(b.displayName),
+        ),
+      );
+      this.inviteFeedback.set(
+        `${created.displayName} provisionado como ${created.role}. SSO com este e-mail vincula a membership.`,
+      );
+      form.reset();
+      const roleSelect = form.elements.namedItem('role') as HTMLSelectElement | null;
+      if (roleSelect) {
+        roleSelect.value = 'Member';
+      }
+    } catch (err) {
+      const status = (err as { status?: number } | null)?.status;
+      this.inviteError.set(
+        status === 409
+          ? 'Este e-mail já é membro do workspace.'
+          : status === 403
+            ? 'Sem permissão para convidar membros.'
+            : 'Não foi possível convidar o membro.',
+      );
+    } finally {
+      this.inviteBusy.set(false);
+    }
   }
 
   async onRoleChange(member: WorkspaceMember, event: Event): Promise<void> {

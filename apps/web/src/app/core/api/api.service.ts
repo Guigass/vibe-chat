@@ -240,6 +240,26 @@ export class ApiService {
     };
   }
 
+  async inviteMember(
+    workspaceId: string,
+    input: { email: string; displayName?: string; role?: string },
+  ): Promise<WorkspaceMember> {
+    const dto = await this.request<MemberDto>(`/api/v1/workspaces/${workspaceId}/members`, {
+      method: 'POST',
+      body: JSON.stringify({
+        email: input.email,
+        displayName: input.displayName ?? null,
+        role: input.role ?? 'Member',
+      }),
+    });
+    return {
+      userId: dto.userId,
+      displayName: dto.displayName,
+      email: dto.email,
+      role: dto.role,
+    };
+  }
+
   async getPresence(workspaceId: string): Promise<Record<string, PresenceStatus>> {
     const rows = await this.request<PresenceDto[]>(`/api/v1/workspaces/${workspaceId}/presence`);
     const map: Record<string, PresenceStatus> = {};

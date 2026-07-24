@@ -116,6 +116,32 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Member_cannot_invite_workspace_member()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var response = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/members",
+            new { email = $"intruder-{Guid.NewGuid():N}@vibechat.local", role = "Member" });
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Cross_tenant_cannot_invite_workspace_member()
+    {
+        var foreignWorkspaceId = await SeedCrossTenantWorkspaceAsync();
+
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var response = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{foreignWorkspaceId}/members",
+            new { email = $"x-tenant-{Guid.NewGuid():N}@vibechat.local", role = "Member" });
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Admin_audit_events_are_tenant_scoped()
     {
         var foreignAction = $"foreign.audit.{Guid.NewGuid():N}";

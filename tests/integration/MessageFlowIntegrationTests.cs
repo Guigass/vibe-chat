@@ -429,6 +429,72 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Owner_can_invite_member_and_claim_pending_on_login()
+    {
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+        var email = $"carol-{Guid.NewGuid():N}@vibechat.local";
+
+        var invite = await demo.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/members",
+            new InviteMemberRequestDto(email, "Carol", "Moderator"));
+        invite.StatusCode.Should().Be(HttpStatusCode.Created);
+        var invited = await invite.Content.ReadFromJsonAsync<WorkspaceMemberDto>(JsonOptions);
+        invited.Should().NotBeNull();
+        invited!.Email.Should().Be(email);
+        invited.Role.Should().Be("Moderator");
+        invited.DisplayName.Should().Be("Carol");
+
+        var duplicate = await demo.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/members",
+            new InviteMemberRequestDto(email, "Carol", "Member"));
+        duplicate.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        var guestInvite = await demo.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/members",
+            new InviteMemberRequestDto($"guest-{Guid.NewGuid():N}@vibechat.local", "Guesty", "Guest"));
+        guestInvite.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+            var profile = await db.UserProfiles.IgnoreQueryFilters()
+                .SingleAsync(x => x.Id == new UserId(invited.UserId));
+            profile.Subject.Should().Be($"pending:{email}");
+
+            var audit = await db.AuditEvents.IgnoreQueryFilters()
+                .Where(x => x.TenantId == SeedData.DemoTenantId && x.Action == AuditActions.MemberInvite)
+                .OrderByDescending(x => x.OccurredAt)
+                .FirstOrDefaultAsync();
+            audit.Should().NotBeNull();
+        }
+
+        using var carol = factory.CreateClient();
+        carol.DefaultRequestHeaders.Add("X-Dev-User", $"carol-{Guid.NewGuid():N}");
+        carol.DefaultRequestHeaders.Add("X-Dev-Email", email);
+        carol.DefaultRequestHeaders.Add("X-Dev-Name", "Carol Claimed");
+
+        var me = await carol.GetFromJsonAsync<MeDto>("/api/v1/me", JsonOptions);
+        me.Should().NotBeNull();
+        me!.UserId.Should().Be(invited.UserId);
+        me.Email.Should().Be(email);
+
+        var workspaces = await carol.GetFromJsonAsync<WorkspaceDto[]>("/api/v1/workspaces", JsonOptions);
+        workspaces.Should().Contain(w => w.Id == workspaceId && w.Role == "Moderator");
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+            var profile = await db.UserProfiles.IgnoreQueryFilters()
+                .SingleAsync(x => x.Id == new UserId(invited.UserId));
+            profile.Subject.Should().StartWith("dev:");
+            profile.Subject.Should().NotStartWith("pending:");
+        }
+    }
+
+    [Fact]
     public async Task Health_checks_return_summary()
     {
         using var client = factory.CreateClient();
@@ -708,6 +774,9 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     private sealed record WorkspaceMemberDto(Guid UserId, string DisplayName, string Email, string Role);
     private sealed record WorkspaceRolesDto(string[] AssignableRoles);
     private sealed record UpdateMemberRoleRequestDto(string Role);
+    private sealed record InviteMemberRequestDto(string Email, string? DisplayName = null, string? Role = null);
+    private sealed record MeDto(Guid UserId, string Subject, string Email, string DisplayName, string[] Roles);
+    private sealed record WorkspaceDto(Guid Id, string Name, string Slug, string Role);
 
     private sealed record HealthSummaryDto(string Status, Dictionary<string, string> Checks);
 
