@@ -60,6 +60,55 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
         ownerGet.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
+    [Fact]
+    public async Task Non_author_cannot_edit_or_delete_message()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var bob = factory.CreateClient();
+        bob.DefaultRequestHeaders.Add("X-Dev-User", "bob");
+
+        var messageId = Guid.NewGuid();
+        var create = await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{SeedData.DemoChannelId.Value}/messages",
+            new SendMessageRequest(messageId, $"sec-edit-{messageId:N}", $"owned-by-alice-{messageId:N}", null, null));
+        create.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var edit = await bob.PutAsJsonAsync(
+            $"/api/v1/channels/{SeedData.DemoChannelId.Value}/messages/{messageId}",
+            new EditMessageRequest("hijack"));
+        edit.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var delete = await bob.DeleteAsync($"/api/v1/channels/{SeedData.DemoChannelId.Value}/messages/{messageId}");
+        delete.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Direct_message_is_hidden_from_non_members()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var open = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/dms",
+            new OpenDirectMessageRequest(SeedData.BobUserId.Value));
+        open.EnsureSuccessStatusCode();
+        var dm = await open.Content.ReadFromJsonAsync<ChannelDto>();
+        dm.Should().NotBeNull();
+
+        var forbidden = await demo.GetAsync($"/api/v1/channels/{dm!.Id}/messages");
+        forbidden.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var post = await demo.PostAsJsonAsync(
+            $"/api/v1/channels/{dm.Id}/messages",
+            new SendMessageRequest(Guid.NewGuid(), $"sec-dm-{Guid.NewGuid():N}", "nope", null, null));
+        post.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    private sealed record ChannelDto(Guid Id, Guid WorkspaceId, string Name, string Type);
+
     private async Task<Guid> SeedCrossTenantChannelAsync()
     {
         await using var scope = factory.Services.CreateAsyncScope();

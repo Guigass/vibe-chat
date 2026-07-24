@@ -2,7 +2,7 @@
 
 Plataforma de **chat corporativo open-source e self-hosted**. Organizações instalam, operam e controlam a própria infraestrutura — canais, mensagens em tempo real, arquivos e integrações, sem lock-in de SaaS.
 
-> Licença provisória: **Apache-2.0** (decisão final do owner pendente — ver `docs/roadmap/decisoes-pendentes.md` D-01).
+> Licença: **Apache-2.0** (D-01).
 
 ## O que é
 
@@ -104,4 +104,4 @@ tests/            unit, integration, architecture, security, e2e
 
 ## Licença
 
-Apache License 2.0 — ver `LICENSE`. A escolha definitiva de licença open-source permanece **pendente** (D-01).
+Apache License 2.0 — ver `LICENSE` (D-01).

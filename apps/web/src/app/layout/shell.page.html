@@ -43,9 +43,13 @@
       }
 
       <div class="shell__title">
-        <h1>#{{ channels.activeChannel()?.name || 'channel' }}</h1>
+        <h1>
+          {{ channels.activeChannel()?.isDirect ? '@' : '#' }}{{ channels.activeChannel()?.name || 'channel' }}
+        </h1>
         @if (channels.activeChannel()?.description) {
           <p>{{ channels.activeChannel()?.description }}</p>
+        } @else if (channels.activeChannel()?.isDirect) {
+          <p>Mensagem direta</p>
         }
       </div>
 

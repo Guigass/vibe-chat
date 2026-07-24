@@ -68,6 +68,28 @@ public interface IMembershipQuery
 | Body | string |
 | CreatedAt | DateTimeOffset |
 | EditedAt | DateTimeOffset? |
+| DeletedAt | DateTimeOffset? |
+
+### EditMessage
+
+| Campo | Tipo | Notas |
+|-------|------|-------|
+| Body | string | Obrigatório; só autor com `message.edit.own` |
+
+### Soft-delete Message
+
+- `DELETE /api/v1/channels/{channelId}/messages/{messageId}`
+- Autor com `message.delete.own` **ou** papel com `message.delete.any`
+- Soft-delete (`DeletedAt`); body oculto nas leituras (ADR-018)
+
+### Directory — members & DMs
+
+| Endpoint | Notas |
+|----------|-------|
+| `GET /api/v1/workspaces/{workspaceId}/members` | Membros do workspace (membership obrigatória — D-07) |
+| `POST /api/v1/workspaces/{workspaceId}/dms` | Body `{ userId }`; get-or-create DM 1:1 (`ChannelType.Direct`) |
+
+`ChannelResponse` pode incluir `peerUserId` / `peerDisplayName` para DMs. Channels `Private`/`Direct`/`Group` só aparecem na listagem para membros do canal.
 
 ---
 
@@ -99,9 +121,30 @@ Envelope comum:
 }
 ```
 
-### `messaging.message.edited` / `messaging.message.deleted`
+### `messaging.message.edited`
 
-Payload mínimo com ids + seq + timestamps.
+```json
+{
+  "messageId": "…",
+  "conversationId": "…",
+  "channelId": "…",
+  "seq": 42,
+  "body": "texto atualizado",
+  "editedAt": "…"
+}
+```
+
+### `messaging.message.deleted`
+
+```json
+{
+  "messageId": "…",
+  "conversationId": "…",
+  "channelId": "…",
+  "seq": 42,
+  "deletedAt": "…"
+}
+```
 
 ### `directory.membership.changed`
 

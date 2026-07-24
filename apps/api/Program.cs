@@ -174,12 +174,95 @@ v1.MapGet("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, Ht
         return Results.Forbid();
     }
 
+    var memberChannelIds = await db.ChannelMembers
+        .Where(x => x.UserId == profile.Id)
+        .Select(x => x.ChannelId)
+        .ToListAsync(ct);
+
     var channels = await db.Channels
-        .Where(x => x.WorkspaceId == workspace.Id)
-        .OrderBy(x => x.Name)
-        .Select(x => new ChannelResponse(x.Id.Value, x.WorkspaceId.Value, x.Name, x.Type.ToString()))
-        .ToArrayAsync(ct);
-    return Results.Ok(channels);
+        .Where(x => x.WorkspaceId == workspace.Id
+            && (x.Type == ChannelType.Public || x.Type == ChannelType.Announcement || memberChannelIds.Contains(x.Id)))
+        .OrderBy(x => x.Type == ChannelType.Direct ? 1 : 0)
+        .ThenBy(x => x.Name)
+        .ToListAsync(ct);
+
+    var peerByChannel = await ResolveDirectPeersAsync(channels, profile.Id, db, ct);
+    var response = channels.Select(x =>
+    {
+        peerByChannel.TryGetValue(x.Id, out var peer);
+        var displayName = x.Type == ChannelType.Direct && peer is not null ? peer.DisplayName : x.Name;
+        return new ChannelResponse(x.Id.Value, x.WorkspaceId.Value, displayName, x.Type.ToString(), peer?.UserId.Value, peer?.DisplayName);
+    }).ToArray();
+    return Results.Ok(response);
+});
+
+v1.MapGet("/workspaces/{workspaceId:guid}/members", async (Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    var members = await (
+        from m in db.WorkspaceMembers
+        where m.WorkspaceId == workspace.Id
+        join u in db.UserProfiles on m.UserId equals u.Id
+        orderby u.DisplayName
+        select new WorkspaceMemberResponse(u.Id.Value, u.DisplayName, u.Email, m.Role.ToString())
+    ).ToArrayAsync(ct);
+
+    return Results.Ok(members);
+});
+
+v1.MapPost("/workspaces/{workspaceId:guid}/dms", async (Guid workspaceId, OpenDirectMessageRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    if (request.UserId == Guid.Empty || request.UserId == profile.Id.Value)
+    {
+        return Results.BadRequest(new { error = "userId must reference another workspace member." });
+    }
+
+    var peerId = new UserId(request.UserId);
+    var peerMember = await db.WorkspaceMembers.FirstOrDefaultAsync(x => x.WorkspaceId == workspace.Id && x.UserId == peerId, ct);
+    var peerProfile = await db.UserProfiles.FirstOrDefaultAsync(x => x.Id == peerId, ct);
+    if (peerMember is null || peerProfile is null)
+    {
+        return Results.NotFound(new { error = "Peer user is not a member of this workspace." });
+    }
+
+    var existing = await FindDirectChannelAsync(workspace.Id, profile.Id, peerId, db, ct);
+    if (existing is not null)
+    {
+        return Results.Ok(new ChannelResponse(existing.Id.Value, existing.WorkspaceId.Value, peerProfile.DisplayName, existing.Type.ToString(), peerProfile.Id.Value, peerProfile.DisplayName));
+    }
+
+    var channel = new Channel
+    {
+        Id = ChannelId.New(),
+        TenantId = workspace.TenantId,
+        WorkspaceId = workspace.Id,
+        Name = BuildDirectChannelName(profile.Id, peerId),
+        Type = ChannelType.Direct,
+        CreatedAt = clock.UtcNow,
+        CreatedBy = profile.Id
+    };
+    db.Channels.Add(channel);
+    db.ChannelMembers.AddRange(
+        new ChannelMember { Id = Guid.NewGuid(), TenantId = workspace.TenantId, ChannelId = channel.Id, UserId = profile.Id, JoinedAt = clock.UtcNow },
+        new ChannelMember { Id = Guid.NewGuid(), TenantId = workspace.TenantId, ChannelId = channel.Id, UserId = peerId, JoinedAt = clock.UtcNow });
+    await db.SaveChangesAsync(ct);
+
+    return Results.Created(
+        $"/api/v1/channels/{channel.Id.Value}",
+        new ChannelResponse(channel.Id.Value, channel.WorkspaceId.Value, peerProfile.DisplayName, channel.Type.ToString(), peerProfile.Id.Value, peerProfile.DisplayName));
 });
 
 v1.MapPost("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, CreateChannelRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IAuditWriter audit, IClock clock, CancellationToken ct) =>
@@ -189,6 +272,11 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, C
     if (workspace is null || !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Channel.Create, ct))
     {
         return Results.Forbid();
+    }
+
+    if (Enum.TryParse<ChannelType>(request.Type, true, out var parsed) && parsed is ChannelType.Direct)
+    {
+        return Results.BadRequest(new { error = "Use POST /workspaces/{id}/dms to open direct messages." });
     }
 
     var channel = new Channel
@@ -268,7 +356,7 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (Guid channelId, SendMes
         new MessageResponse(result.MessageId.Value, channel.Id.Value, result.Sequence, profile.Id.Value, request.Body, result.CreatedAt, null, null, profile.DisplayName));
 });
 
-v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, EditMessageRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IOutboxWriter outbox, IClock clock, CancellationToken ct) =>
+v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, EditMessageRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IClock clock, CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
@@ -277,25 +365,45 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid ch
         return Results.Forbid();
     }
 
+    if (string.IsNullOrWhiteSpace(request.Body))
+    {
+        return Results.BadRequest(new { error = "body is required." });
+    }
+
     var message = await db.Messages.FirstOrDefaultAsync(x => x.ConversationId == channel.Id && x.Id == new MessageId(messageId), ct);
-    if (message is null || message.AuthorId != profile.Id || message.DeletedAt is not null)
+    if (message is null || message.DeletedAt is not null)
     {
         return Results.NotFound();
     }
 
-    message.Body = request.Body;
+    var canEditOwn = message.AuthorId == profile.Id
+        && await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.EditOwn, ct);
+    if (!canEditOwn)
+    {
+        return Results.Forbid();
+    }
+
+    message.Body = request.Body.Trim();
     message.EditedAt = clock.UtcNow;
     outbox.Add(new OutboxMessage
     {
         TenantId = channel.TenantId,
         Type = nameof(MessageEditedEvent),
-        Payload = JsonSerializer.Serialize(new { tenantId = channel.TenantId.Value, channelId, messageId, sequence = message.Sequence, editedAt = message.EditedAt })
+        Payload = JsonSerializer.Serialize(new
+        {
+            tenantId = channel.TenantId.Value,
+            channelId,
+            messageId,
+            sequence = message.Sequence,
+            body = message.Body,
+            editedAt = message.EditedAt
+        })
     });
     await db.SaveChangesAsync(ct);
-    return Results.Ok(new MessageResponse(message.Id.Value, message.ConversationId.Value, message.Sequence, message.AuthorId.Value, message.Body, message.CreatedAt, message.EditedAt, message.DeletedAt));
+    return Results.Ok(new MessageResponse(message.Id.Value, message.ConversationId.Value, message.Sequence, message.AuthorId.Value, message.Body, message.CreatedAt, message.EditedAt, message.DeletedAt, profile.DisplayName));
 });
 
-v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IOutboxWriter outbox, IAuditWriter audit, IClock clock, CancellationToken ct) =>
+v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IAuditWriter audit, IClock clock, CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
@@ -310,13 +418,33 @@ v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid
         return Results.NotFound();
     }
 
+    if (message.DeletedAt is not null)
+    {
+        return Results.NoContent();
+    }
+
+    var canDeleteOwn = message.AuthorId == profile.Id
+        && await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.DeleteOwn, ct);
+    var canDeleteAny = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.DeleteAny, ct);
+    if (!canDeleteOwn && !canDeleteAny)
+    {
+        return Results.Forbid();
+    }
+
     message.DeletedAt = clock.UtcNow;
     message.DeletedBy = profile.Id;
     outbox.Add(new OutboxMessage
     {
         TenantId = channel.TenantId,
         Type = nameof(MessageDeletedEvent),
-        Payload = JsonSerializer.Serialize(new { tenantId = channel.TenantId.Value, channelId, messageId, sequence = message.Sequence, deletedAt = message.DeletedAt })
+        Payload = JsonSerializer.Serialize(new
+        {
+            tenantId = channel.TenantId.Value,
+            channelId,
+            messageId,
+            sequence = message.Sequence,
+            deletedAt = message.DeletedAt
+        })
     });
     audit.Add(new AuditEvent { TenantId = channel.TenantId, ActorUserId = profile.Id, Action = AuditActions.MessageDelete, EntityType = "Message", EntityId = message.Id.ToString(), MetadataJson = JsonSerializer.Serialize(new { channelId, message.Sequence }) });
     await db.SaveChangesAsync(ct);
@@ -505,6 +633,60 @@ static async Task<Channel?> ResolveChannelAsync(ChannelId channelId, UserId user
     return channel;
 }
 
+static string BuildDirectChannelName(UserId left, UserId right)
+{
+    var a = left.Value;
+    var b = right.Value;
+    return a.CompareTo(b) <= 0 ? $"dm:{a:D}:{b:D}" : $"dm:{b:D}:{a:D}";
+}
+
+static async Task<Channel?> FindDirectChannelAsync(WorkspaceId workspaceId, UserId left, UserId right, VibeChatDbContext db, CancellationToken ct)
+{
+    var name = BuildDirectChannelName(left, right);
+    return await db.Channels.FirstOrDefaultAsync(
+        x => x.WorkspaceId == workspaceId && x.Type == ChannelType.Direct && x.Name == name,
+        ct);
+}
+
+static async Task<Dictionary<ChannelId, DirectPeerInfo>> ResolveDirectPeersAsync(
+    IReadOnlyCollection<Channel> channels,
+    UserId currentUserId,
+    VibeChatDbContext db,
+    CancellationToken ct)
+{
+    var directIds = channels.Where(x => x.Type == ChannelType.Direct).Select(x => x.Id).ToArray();
+    if (directIds.Length == 0)
+    {
+        return new Dictionary<ChannelId, DirectPeerInfo>();
+    }
+
+    var memberships = await db.ChannelMembers
+        .Where(x => directIds.Contains(x.ChannelId) && x.UserId != currentUserId)
+        .Select(x => new { x.ChannelId, x.UserId })
+        .ToListAsync(ct);
+
+    var peerIds = memberships.Select(x => x.UserId).Distinct().ToArray();
+    var profiles = await db.UserProfiles
+        .Where(x => peerIds.Contains(x.Id))
+        .Select(x => new { x.Id, x.DisplayName })
+        .ToDictionaryAsync(x => x.Id, x => x.DisplayName, ct);
+
+    var result = new Dictionary<ChannelId, DirectPeerInfo>();
+    foreach (var membership in memberships)
+    {
+        if (!profiles.TryGetValue(membership.UserId, out var displayName))
+        {
+            continue;
+        }
+
+        result[membership.ChannelId] = new DirectPeerInfo(membership.UserId, displayName);
+    }
+
+    return result;
+}
+
+internal sealed record DirectPeerInfo(UserId UserId, string DisplayName);
+
 public sealed class DevAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     public const string SchemeName = "DevAuth";
@@ -545,7 +727,9 @@ public sealed class DevAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> 
 
 public sealed record MeResponse(Guid UserId, string Subject, string Email, string DisplayName, string[] Roles);
 public sealed record WorkspaceResponse(Guid Id, string Name, string Slug, string Role);
-public sealed record ChannelResponse(Guid Id, Guid WorkspaceId, string Name, string Type);
+public sealed record ChannelResponse(Guid Id, Guid WorkspaceId, string Name, string Type, Guid? PeerUserId = null, string? PeerDisplayName = null);
+public sealed record WorkspaceMemberResponse(Guid UserId, string DisplayName, string Email, string Role);
+public sealed record OpenDirectMessageRequest(Guid UserId);
 public sealed record CreateChannelRequest(string Name, string Type);
 public sealed record SendMessageRequest(Guid MessageId, string IdempotencyKey, string Body, Guid? ReplyToMessageId, Guid? ThreadId);
 public sealed record EditMessageRequest(string Body);

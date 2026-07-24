@@ -13,7 +13,7 @@ import { Badge } from '../badge/badge';
       [class.vc-channel--active]="active()"
       (click)="select.emit()"
     >
-      <span class="vc-channel__hash" aria-hidden="true">{{ channel().isPrivate ? '◦' : '#' }}</span>
+      <span class="vc-channel__hash" aria-hidden="true">{{ prefix() }}</span>
       <span class="vc-channel__name">{{ channel().name }}</span>
       @if (channel().unreadCount > 0) {
         <vc-badge tone="accent">{{ channel().unreadCount }}</vc-badge>
@@ -74,4 +74,9 @@ export class ChannelItem {
   readonly channel = input.required<Channel>();
   readonly active = input(false);
   readonly select = output<void>();
+
+  prefix(): string {
+    if (this.channel().isDirect) return '@';
+    return this.channel().isPrivate ? '◦' : '#';
+  }
 }

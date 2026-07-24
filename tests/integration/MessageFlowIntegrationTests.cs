@@ -113,6 +113,97 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Edit_message_updates_body_and_edited_at()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var messageId = Guid.NewGuid();
+        var create = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-edit-{messageId:N}", $"edit-me-{messageId:N}", null, null));
+        create.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var editedBody = $"edited-{messageId:N}";
+        var edit = await client.PutAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages/{messageId}",
+            new EditMessageRequest(editedBody));
+        edit.StatusCode.Should().Be(HttpStatusCode.OK);
+        var edited = await edit.Content.ReadFromJsonAsync<MessageDto>(JsonOptions);
+        edited.Should().NotBeNull();
+        edited!.Body.Should().Be(editedBody);
+        edited.EditedAt.Should().NotBeNull();
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        var outbox = await db.OutboxMessages.IgnoreQueryFilters()
+            .Where(x => x.Type == nameof(MessageEditedEvent))
+            .OrderByDescending(x => x.OccurredAt)
+            .Take(20)
+            .ToListAsync();
+        outbox.Should().Contain(x => x.Payload.Contains(messageId.ToString(), StringComparison.OrdinalIgnoreCase)
+            && x.Payload.Contains(editedBody, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Direct_message_is_idempotent_and_private_to_members()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var bob = factory.CreateClient();
+        bob.DefaultRequestHeaders.Add("X-Dev-User", "bob");
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+        var members = await alice.GetFromJsonAsync<WorkspaceMemberDto[]>(
+            $"/api/v1/workspaces/{workspaceId}/members",
+            JsonOptions);
+        members.Should().NotBeNull();
+        members!.Select(m => m.UserId).Should().Contain(SeedData.BobUserId.Value);
+
+        var open1 = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/dms",
+            new OpenDirectMessageRequest(SeedData.BobUserId.Value));
+        open1.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Created);
+        var dm1 = await open1.Content.ReadFromJsonAsync<ChannelDto>(JsonOptions);
+        dm1.Should().NotBeNull();
+        dm1!.Type.Should().Be("Direct");
+        dm1.PeerUserId.Should().Be(SeedData.BobUserId.Value);
+
+        var open2 = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/dms",
+            new OpenDirectMessageRequest(SeedData.BobUserId.Value));
+        open2.StatusCode.Should().Be(HttpStatusCode.OK);
+        var dm2 = await open2.Content.ReadFromJsonAsync<ChannelDto>(JsonOptions);
+        dm2!.Id.Should().Be(dm1.Id);
+
+        var messageId = Guid.NewGuid();
+        var send = await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{dm1.Id}/messages",
+            new SendMessageRequest(messageId, $"idem-dm-{messageId:N}", $"dm-hi-{messageId:N}", null, null));
+        send.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var bobList = await bob.GetFromJsonAsync<MessageDto[]>(
+            $"/api/v1/channels/{dm1.Id}/messages",
+            JsonOptions);
+        bobList.Should().Contain(m => m.Id == messageId);
+
+        var outsider = await demo.GetAsync($"/api/v1/channels/{dm1.Id}/messages");
+        outsider.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var aliceChannels = await alice.GetFromJsonAsync<ChannelDto[]>(
+            $"/api/v1/workspaces/{workspaceId}/channels",
+            JsonOptions);
+        aliceChannels.Should().Contain(c => c.Id == dm1.Id);
+
+        var demoChannels = await demo.GetFromJsonAsync<ChannelDto[]>(
+            $"/api/v1/workspaces/{workspaceId}/channels",
+            JsonOptions);
+        demoChannels.Should().NotContain(c => c.Id == dm1.Id);
+    }
+
+    [Fact]
     public async Task Health_checks_return_summary()
     {
         using var client = factory.CreateClient();
@@ -216,6 +307,16 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         DateTimeOffset CreatedAt,
         DateTimeOffset? EditedAt,
         DateTimeOffset? DeletedAt);
+
+    private sealed record ChannelDto(
+        Guid Id,
+        Guid WorkspaceId,
+        string Name,
+        string Type,
+        Guid? PeerUserId,
+        string? PeerDisplayName);
+
+    private sealed record WorkspaceMemberDto(Guid UserId, string DisplayName, string Email, string Role);
 
     private sealed record HealthSummaryDto(string Status, Dictionary<string, string> Checks);
 }

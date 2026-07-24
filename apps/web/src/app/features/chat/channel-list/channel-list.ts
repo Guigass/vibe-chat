@@ -17,9 +17,12 @@ import { SidebarNav, Skeleton } from '../../../shared/ui';
         </div>
       } @else {
         <vc-sidebar-nav
-          [channels]="channels.channels()"
+          [channels]="channels.publicChannels()"
+          [directs]="channels.directChannels()"
+          [members]="channels.peerCandidates()"
           [activeId]="channels.activeChannel()?.id ?? null"
           (select)="onSelect($event)"
+          (openDm)="onOpenDm($event)"
         />
       }
     </div>
@@ -43,5 +46,12 @@ export class ChannelList {
   async onSelect(channelId: string): Promise<void> {
     this.channels.selectChannel(channelId);
     await this.messages.loadChannel(channelId);
+  }
+
+  async onOpenDm(userId: string): Promise<void> {
+    const channel = await this.channels.openDirectMessage(userId);
+    if (channel) {
+      await this.messages.loadChannel(channel.id);
+    }
   }
 }

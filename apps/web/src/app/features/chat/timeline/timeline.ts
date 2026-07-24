@@ -24,7 +24,11 @@ import { EmptyState, MessageBubble, Skeleton, TypingIndicator } from '../../../s
       } @else {
         <div class="timeline__list">
           @for (message of messages.forActiveChannel(); track message.id) {
-            <vc-message-bubble [message]="message" />
+            <vc-message-bubble
+              [message]="message"
+              (edit)="onEdit(message.id, $event)"
+              (delete)="onDelete(message.id)"
+            />
           }
         </div>
       }
@@ -74,5 +78,13 @@ export class Timeline {
     const channelId = this.channels.activeChannel()?.id;
     if (!channelId) return [];
     return this.hub.typingUsers().filter((t) => t.channelId === channelId);
+  }
+
+  async onEdit(messageId: string, body: string): Promise<void> {
+    await this.messages.edit(messageId, body);
+  }
+
+  async onDelete(messageId: string): Promise<void> {
+    await this.messages.remove(messageId);
   }
 }
