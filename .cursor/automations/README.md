@@ -12,7 +12,7 @@ para [cursor.com/automations](https://cursor.com/automations) (a API só lê met
 ## Fluxo
 
 ```text
-[1 Build] → draft PR
+[1 Build] → PR ready (nunca draft — senão o QA não dispara)
      ↓
 [2 QA] verifica qualidade/segurança → approve (+ auto-merge GitHub)
      ↓
@@ -20,6 +20,9 @@ para [cursor.com/automations](https://cursor.com/automations) (a API só lê met
      ↓
 (schedule) → [1 Build] de novo
 ```
+
+> **Draft = pipeline parado.** Build e Docs devem abrir PR **ready for review**.
+> Se `open_git_pr` criar draft, o agente roda `gh pr ready <n>` antes de encerrar.
 
 ## Configuração no dashboard
 

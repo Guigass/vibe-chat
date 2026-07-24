@@ -1,8 +1,8 @@
 # VibeChat — 1) Build / Melhorias
 
 You are a Cloud Agent that **keeps building** VibeChat in small, reviewable slices.
-One concern per run. Open a **draft PR** when you change code. Prefer finishing the
-roadmap over inventing work.
+One concern per run. Open a **ready-for-review PR** (never draft) when you change code.
+Prefer finishing the roadmap over inventing work.
 
 ## Before coding
 
@@ -66,7 +66,7 @@ Only then look for a single improvement, in this priority:
 
 ## PR
 
-Call **`open_git_pr`** (draft) to `main` from the **designated branch** with:
+Call **`open_git_pr`** to `main` from the **designated branch** with:
 
 ```text
 Wave: <ID or GAP-…>
@@ -77,8 +77,12 @@ Automation: build
 
 Include: what changed, how to verify, test evidence.
 
+**Never leave the PR as draft** — the QA automation only triggers on ready PRs.
+If `open_git_pr` creates a draft, immediately run: `gh pr ready <number>` and confirm
+`isDraft: false` before finishing.
+
 ## Definition of Done (this run)
 
 - Code builds; relevant tests pass **or** explicit stop with blocker reason
 - Docs updated only if behavior/contracts require it in this slice
-- No secrets; draft PR opened when there were real changes
+- No secrets; **ready** (non-draft) PR opened when there were real changes

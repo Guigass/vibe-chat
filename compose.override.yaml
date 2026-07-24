@@ -1,7 +1,11 @@
 # Local development overrides for constrained Cloud Agent / host-dev environments
-# where Docker bridge routing is unreliable. Uses host networking.
+# where Docker bridge routing is unreliable. Uses host networking for the data plane.
 # Normal developer machines can delete or empty this file if bridge networking works.
 # Do not put production secrets here.
+#
+# Official self-host path (B-074 / W6-8) ignores this file:
+#   docker compose -f compose.yaml --profile apps up -d
+#   (or: task apps)
 
 services:
   postgres:

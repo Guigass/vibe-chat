@@ -6,12 +6,35 @@ Operação de uma instância self-hosted em fase 1 (**Docker Compose** oficial �
 
 **Runbooks acionáveis (W5-4):** [`runbooks/README.md`](./runbooks/README.md) — incidentes, backup/restore drill, TLS/proxy, upgrade.
 
+## Compose apps — caminho oficial (B-074 / W6-8)
+
+Deploy self-host/demo sobe **data plane + api + web + worker** via profile `apps` (fonte: `compose.yaml`, rede bridge). Dev com hot reload continua em `task setup` + `task dev`.
+
+```bash
+cp .env.example .env
+task apps
+# equivalente: docker compose -f compose.yaml --profile apps up -d --build
+# espera healthy: postgres redis keycloak minio api web worker
+```
+
+| Serviço | Porta host (default) | Health |
+|---------|----------------------|--------|
+| api | `API_PORT` 5080 | `GET /health`, `GET /ready` |
+| web | `WEB_PORT` 4200 | `GET /healthz` (nginx) |
+| worker | — | process liveness (PID 1) |
+
+- OIDC: `Authentication__Authority` = issuer público (`KEYCLOAK_ISSUER_URL`); discovery in-network via `Authentication__MetadataAddress` → `keycloak:8080`
+- Lab/demo: `ASPNETCORE_ENVIRONMENT=Development` + `SEED_ENABLED=true` (default) aplica migrate/seed no startup
+- Produção: `ASPNETCORE_ENVIRONMENT=Production`, `SEED_ENABLED=false`, secrets reais só via `.env` / secret manager (D-04)
+- `compose.override.yaml` (host networking) é opcional para DX em ambientes restritos — **não** faz parte do caminho oficial; `task apps` usa só `compose.yaml`
+
 ## Componentes críticos
 
 | Componente | Criticidade | Notas |
 |------------|-------------|-------|
 | PostgreSQL | P0 | Source of truth |
-| API + Worker | P0 | App |
+| API + Worker | P0 | App (profile `apps`) |
+| Web | P0 | nginx estático (profile `apps`) |
 | Keycloak | P0 | Login |
 | Redis | P1 | Degrada presence/realtime multi-instância se cair |
 | MinIO | P1 | Anexos |
@@ -19,8 +42,9 @@ Operação de uma instância self-hosted em fase 1 (**Docker Compose** oficial �
 
 ## Health checks
 
-- API: `GET /health` (liveness), `GET /ready` (Postgres + Redis reachability)
-- Worker: heartbeat métrica `worker_alive` / health endpoint se exposto
+- API: `GET /health` (checks), `GET /ready` e `GET /health/ready` (alias ops)
+- Web: `GET /healthz`
+- Worker: healthcheck Compose (processo vivo); métrica `worker_alive` quando OTel ativo
 - Postgres/Redis/Keycloak/MinIO: healthchecks do Compose
 
 ## Escala (fase 1)
