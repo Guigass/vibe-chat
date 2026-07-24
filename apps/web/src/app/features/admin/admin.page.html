@@ -254,6 +254,143 @@
       }
     </section>
 
+    <section class="conv-audit" aria-labelledby="conv-audit-heading">
+      <h2 id="conv-audit-heading">Auditoria de conversas</h2>
+      <p class="conv-audit__lead">
+        Histórico completo por canal/DM/thread (conteúdo, edições, soft-deletes). Exige
+        <code>admin.dashboard</code> — distinto do audit log de ações.
+      </p>
+
+      @if (conversationsForbidden()) {
+        <p class="admin__hint" role="status">Sem permissão para auditar conversas.</p>
+      } @else if (conversationsError()) {
+        <p class="admin__hint" role="status">Não foi possível carregar as conversas.</p>
+      } @else {
+        <label class="conv-audit__picker">
+          <span>Conversação</span>
+          <select
+            [value]="selectedConversationId() ?? ''"
+            (change)="onConversationChange($event)"
+            [disabled]="conversations().length === 0"
+          >
+            <option value="">Selecione um canal ou DM…</option>
+            @for (c of conversations(); track c.id) {
+              <option [value]="c.id">{{ conversationLabel(c) }}</option>
+            }
+          </select>
+        </label>
+
+        @if (conversationMessagesBusy()) {
+          <p class="conv-audit__empty">Carregando mensagens…</p>
+        } @else if (conversationMessagesError()) {
+          <p class="admin__hint" role="status">Não foi possível carregar o histórico.</p>
+        } @else if (selectedConversationId() && conversationMessages().length === 0) {
+          <p class="conv-audit__empty">Nenhuma mensagem nesta conversa.</p>
+        } @else if (conversationMessages().length > 0) {
+          <div class="conv-audit__table-wrap">
+            <table class="conv-audit__table">
+              <thead>
+                <tr>
+                  <th scope="col">Seq</th>
+                  <th scope="col">Quando</th>
+                  <th scope="col">Autor</th>
+                  <th scope="col">Conteúdo</th>
+                  <th scope="col">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of conversationMessages(); track m.id) {
+                  <tr [class.conv-audit__row--deleted]="!!m.deletedAt">
+                    <td class="mono">{{ m.sequence }}</td>
+                    <td>{{ m.createdAt | date: 'short' }}</td>
+                    <td>{{ m.authorName }}</td>
+                    <td>
+                      <span class="conv-audit__body">{{ m.body || '—' }}</span>
+                      @if (m.attachments.length) {
+                        <span class="conv-audit__atts">
+                          @for (a of m.attachments; track a.id) {
+                            <code>{{ a.fileName }}</code>
+                          }
+                        </span>
+                      }
+                      @if (m.threadId && m.replyCount > 0) {
+                        <button type="button" class="conv-audit__thread-btn" (click)="openThread(m.threadId)">
+                          Thread ({{ m.replyCount }})
+                        </button>
+                      }
+                    </td>
+                    <td>
+                      @if (m.deletedAt) {
+                        <span class="conv-audit__badge conv-audit__badge--deleted">
+                          soft-delete
+                          @if (m.deletedByName) {
+                            · {{ m.deletedByName }}
+                          }
+                        </span>
+                      } @else if (m.editedAt) {
+                        <span class="conv-audit__badge">editado</span>
+                      } @else {
+                        <span class="conv-audit__badge conv-audit__badge--ok">ok</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        @if (activeThreadId(); as tid) {
+          <div class="conv-audit__thread" aria-label="Replies da thread">
+            <div class="conv-audit__thread-head">
+              <h3>Thread <code class="mono">{{ tid.slice(0, 8) }}</code></h3>
+              <button type="button" class="conv-audit__thread-btn" (click)="closeThread()">Fechar</button>
+            </div>
+            @if (threadBusy()) {
+              <p class="conv-audit__empty">Carregando thread…</p>
+            } @else if (threadMessages().length === 0) {
+              <p class="conv-audit__empty">Sem replies nesta thread.</p>
+            } @else {
+              <div class="conv-audit__table-wrap">
+                <table class="conv-audit__table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Seq</th>
+                      <th scope="col">Quando</th>
+                      <th scope="col">Autor</th>
+                      <th scope="col">Conteúdo</th>
+                      <th scope="col">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (m of threadMessages(); track m.id) {
+                      <tr [class.conv-audit__row--deleted]="!!m.deletedAt">
+                        <td class="mono">{{ m.sequence }}</td>
+                        <td>{{ m.createdAt | date: 'short' }}</td>
+                        <td>{{ m.authorName }}</td>
+                        <td>
+                          <span class="conv-audit__body">{{ m.body || '—' }}</span>
+                        </td>
+                        <td>
+                          @if (m.deletedAt) {
+                            <span class="conv-audit__badge conv-audit__badge--deleted">soft-delete</span>
+                          } @else if (m.editedAt) {
+                            <span class="conv-audit__badge">editado</span>
+                          } @else {
+                            <span class="conv-audit__badge conv-audit__badge--ok">ok</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+      }
+    </section>
+
     <section class="audit" aria-labelledby="audit-heading">
       <h2 id="audit-heading">Audit log</h2>
       <p class="audit__lead">Ações sensíveis do tenant (exige <code>admin.dashboard</code>).</p>

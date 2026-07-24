@@ -382,6 +382,132 @@
   border: 0;
 }
 
+.conv-audit {
+  margin: 1.5rem 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--vc-border);
+}
+
+.conv-audit h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.conv-audit__lead {
+  margin: 0.35rem 0 0.9rem;
+  color: var(--vc-ink-muted);
+  font-size: 0.9rem;
+}
+
+.conv-audit__picker {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 28rem;
+  margin-bottom: 1rem;
+  font-size: 0.88rem;
+  color: var(--vc-ink-muted);
+}
+
+.conv-audit__picker select {
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-sm);
+  background: var(--vc-surface);
+  color: var(--vc-ink);
+  font: inherit;
+}
+
+.conv-audit__empty {
+  margin: 0;
+  color: var(--vc-ink-muted);
+}
+
+.conv-audit__table-wrap {
+  overflow-x: auto;
+}
+
+.conv-audit__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.conv-audit__table th,
+.conv-audit__table td {
+  text-align: left;
+  padding: 0.55rem 0.45rem;
+  border-bottom: 1px solid var(--vc-border);
+  vertical-align: top;
+}
+
+.conv-audit__table th {
+  color: var(--vc-ink-muted);
+  font-weight: 600;
+}
+
+.conv-audit__row--deleted {
+  background: color-mix(in srgb, var(--vc-warning) 8%, transparent);
+}
+
+.conv-audit__body {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.conv-audit__atts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.conv-audit__badge {
+  font-family: var(--vc-font-mono);
+  font-size: 0.75rem;
+  color: var(--vc-ink-muted);
+}
+
+.conv-audit__badge--deleted {
+  color: var(--vc-warning);
+}
+
+.conv-audit__badge--ok {
+  color: var(--vc-success);
+}
+
+.conv-audit__thread-btn {
+  margin-top: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-sm);
+  background: var(--vc-surface);
+  color: var(--vc-ink);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.conv-audit__thread {
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-md);
+  background: var(--vc-surface-elevated);
+}
+
+.conv-audit__thread-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.conv-audit__thread-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
 .audit h2 {
   margin: 0;
   font-size: 1rem;

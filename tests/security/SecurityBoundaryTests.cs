@@ -87,6 +87,70 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Member_cannot_read_admin_conversation_audit()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var list = await alice.GetAsync("/api/v1/admin/conversations");
+        list.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var history = await alice.GetAsync(
+            $"/api/v1/admin/conversations/{SeedData.DemoChannelId.Value}/messages?limit=10");
+        history.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Admin_conversation_audit_is_tenant_scoped()
+    {
+        var foreignChannelId = await SeedCrossTenantChannelAsync();
+
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var list = await demo.GetAsync("/api/v1/admin/conversations?limit=100");
+        list.StatusCode.Should().Be(HttpStatusCode.OK);
+        var conversations = await list.Content.ReadFromJsonAsync<AdminConversationsDto>();
+        conversations.Should().NotBeNull();
+        conversations!.Items.Should().NotContain(x => x.Id == foreignChannelId);
+
+        var foreignHistory = await demo.GetAsync($"/api/v1/admin/conversations/{foreignChannelId}/messages");
+        foreignHistory.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Admin_can_audit_direct_message_without_channel_membership()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var open = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/dms",
+            new OpenDirectMessageRequest(SeedData.BobUserId.Value));
+        open.EnsureSuccessStatusCode();
+        var dm = await open.Content.ReadFromJsonAsync<ChannelDto>();
+        dm.Should().NotBeNull();
+
+        var memberPath = await demo.GetAsync($"/api/v1/channels/{dm!.Id}/messages");
+        memberPath.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var secret = $"admin-audit-dm-{Guid.NewGuid():N}";
+        var messageId = Guid.NewGuid();
+        var send = await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{dm.Id}/messages",
+            new SendMessageRequest(messageId, $"idem-{messageId:N}", secret, null, null));
+        send.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var adminHistory = await demo.GetAsync($"/api/v1/admin/conversations/{dm.Id}/messages?limit=50");
+        adminHistory.StatusCode.Should().Be(HttpStatusCode.OK);
+        var payload = await adminHistory.Content.ReadFromJsonAsync<AdminConversationMessagesDto>();
+        payload.Should().NotBeNull();
+        payload!.Items.Should().Contain(x => x.Id == messageId && x.Body == secret);
+    }
+
+    [Fact]
     public async Task Member_cannot_read_or_write_sensitive_settings()
     {
         using var alice = factory.CreateClient();
@@ -423,6 +487,17 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     private sealed record SearchMessagesDto(string Query, int Limit, SearchMessageHitDto[] Items);
     private sealed record AuditEventItemDto(Guid Id, string Action, string EntityType, string? EntityId, Guid? ActorUserId, DateTimeOffset OccurredAt, string MetadataJson);
     private sealed record AuditEventsDto(AuditEventItemDto[] Items);
+    private sealed record AdminConversationItemDto(Guid Id, Guid WorkspaceId, string Name, string Type);
+    private sealed record AdminConversationsDto(AdminConversationItemDto[] Items);
+    private sealed record AdminConversationMessageItemDto(
+        Guid Id,
+        Guid ChannelId,
+        long Sequence,
+        Guid AuthorId,
+        string Body,
+        DateTimeOffset? DeletedAt,
+        Guid? DeletedBy);
+    private sealed record AdminConversationMessagesDto(AdminConversationMessageItemDto[] Items);
 
     private async Task<(Guid WorkspaceId, Guid ChannelId)> SeedCrossTenantWorkspaceWithMessageAsync()
     {

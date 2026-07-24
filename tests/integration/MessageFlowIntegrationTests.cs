@@ -429,6 +429,50 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Admin_conversation_audit_shows_soft_deleted_body()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var messageId = Guid.NewGuid();
+        var body = $"admin-audit-body-{messageId:N}";
+        var create = await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-{messageId:N}", body, null, null));
+        create.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var delete = await alice.DeleteAsync($"/api/v1/channels/{DemoChannelId}/messages/{messageId}");
+        delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var memberHistory = await alice.GetAsync($"/api/v1/channels/{DemoChannelId}/messages?after=0&limit=100");
+        memberHistory.EnsureSuccessStatusCode();
+        var memberRows = await memberHistory.Content.ReadFromJsonAsync<MessageDto[]>(JsonOptions);
+        var memberRow = memberRows!.Single(x => x.Id == messageId);
+        memberRow.Body.Should().BeEmpty();
+        memberRow.DeletedAt.Should().NotBeNull();
+
+        var list = await demo.GetAsync(
+            $"/api/v1/admin/conversations?workspaceId={SeedData.DemoWorkspaceId.Value}");
+        list.StatusCode.Should().Be(HttpStatusCode.OK);
+        var conversations = await list.Content.ReadFromJsonAsync<AdminConversationsDto>(JsonOptions);
+        conversations.Should().NotBeNull();
+        conversations!.Items.Should().Contain(x => x.Id == DemoChannelId);
+
+        var adminHistory = await demo.GetAsync(
+            $"/api/v1/admin/conversations/{DemoChannelId}/messages?limit=100");
+        adminHistory.StatusCode.Should().Be(HttpStatusCode.OK);
+        var adminRows = await adminHistory.Content.ReadFromJsonAsync<AdminConversationMessagesDto>(JsonOptions);
+        adminRows.Should().NotBeNull();
+        var adminRow = adminRows!.Items.Single(x => x.Id == messageId);
+        adminRow.Body.Should().Be(body);
+        adminRow.DeletedAt.Should().NotBeNull();
+        adminRow.DeletedBy.Should().Be(SeedData.AliceUserId.Value);
+        adminRow.DeletedByName.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
     public async Task Admin_can_read_masked_settings_and_update_flag_with_audit()
     {
         using var demo = factory.CreateClient();
@@ -862,6 +906,22 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         bool UseStartTls,
         bool SecretsWritable);
     private sealed record WebhooksSensitiveSettingsDto(string Status, string Message);
+    private sealed record AdminConversationItemDto(Guid Id, Guid WorkspaceId, string Name, string Type);
+    private sealed record AdminConversationsDto(AdminConversationItemDto[] Items);
+    private sealed record AdminConversationMessageItemDto(
+        Guid Id,
+        Guid ChannelId,
+        Guid ConversationId,
+        long Sequence,
+        Guid AuthorId,
+        string AuthorName,
+        string Body,
+        DateTimeOffset CreatedAt,
+        DateTimeOffset? EditedAt,
+        DateTimeOffset? DeletedAt,
+        Guid? DeletedBy,
+        string? DeletedByName);
+    private sealed record AdminConversationMessagesDto(AdminConversationMessageItemDto[] Items);
 
     private sealed record HealthSummaryDto(string Status, Dictionary<string, string> Checks);
 

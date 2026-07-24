@@ -2,6 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 import {
+  AdminConversationItem,
+  AdminConversationMessageItem,
   AdminStats,
   AuditEventItem,
   AiSummaryResult,
@@ -150,6 +152,35 @@ interface AuditEventDto {
   actorUserId?: string | null;
   occurredAt: string;
   metadataJson?: string;
+}
+
+interface AdminConversationDto {
+  id: string;
+  workspaceId: string;
+  name: string;
+  type: string;
+  spaceId?: string | null;
+  peerUserId?: string | null;
+  peerDisplayName?: string | null;
+}
+
+interface AdminConversationMessageDto {
+  id: string;
+  channelId: string;
+  conversationId: string;
+  sequence: number;
+  authorId: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+  editedAt?: string | null;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
+  deletedByName?: string | null;
+  threadId?: string | null;
+  replyToMessageId?: string | null;
+  replyCount?: number;
+  attachments?: AttachmentDto[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -504,6 +535,68 @@ export class ApiService {
     }));
   }
 
+  async getAdminConversations(input?: {
+    workspaceId?: string;
+    limit?: number;
+  }): Promise<AdminConversationItem[]> {
+    const params = new URLSearchParams();
+    if (input?.workspaceId) {
+      params.set('workspaceId', input.workspaceId);
+    }
+    if (input?.limit) {
+      params.set('limit', String(input.limit));
+    }
+    const query = params.toString();
+    const result = await this.request<{ items: AdminConversationDto[] }>(
+      `/api/v1/admin/conversations${query ? `?${query}` : ''}`,
+    );
+    return (result.items ?? []).map((row) => ({
+      id: row.id,
+      workspaceId: row.workspaceId,
+      name: row.name,
+      type: row.type,
+      spaceId: row.spaceId ?? null,
+      peerUserId: row.peerUserId ?? null,
+      peerDisplayName: row.peerDisplayName ?? null,
+    }));
+  }
+
+  async getAdminConversationMessages(
+    channelId: string,
+    input?: { after?: number; limit?: number },
+  ): Promise<AdminConversationMessageItem[]> {
+    const params = new URLSearchParams();
+    if (input?.after != null) {
+      params.set('after', String(input.after));
+    }
+    if (input?.limit) {
+      params.set('limit', String(input.limit));
+    }
+    const query = params.toString();
+    const result = await this.request<{ items: AdminConversationMessageDto[] }>(
+      `/api/v1/admin/conversations/${channelId}/messages${query ? `?${query}` : ''}`,
+    );
+    return (result.items ?? []).map((row) => this.mapAdminConversationMessage(row));
+  }
+
+  async getAdminThreadMessages(
+    threadId: string,
+    input?: { after?: number; limit?: number },
+  ): Promise<AdminConversationMessageItem[]> {
+    const params = new URLSearchParams();
+    if (input?.after != null) {
+      params.set('after', String(input.after));
+    }
+    if (input?.limit) {
+      params.set('limit', String(input.limit));
+    }
+    const query = params.toString();
+    const result = await this.request<{ items: AdminConversationMessageDto[] }>(
+      `/api/v1/admin/threads/${threadId}/messages${query ? `?${query}` : ''}`,
+    );
+    return (result.items ?? []).map((row) => this.mapAdminConversationMessage(row));
+  }
+
   async getAdminSensitiveSettings(workspaceId?: string): Promise<SensitiveSettings> {
     const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : '';
     return this.request<SensitiveSettings>(`/api/v1/admin/settings${query}`);
@@ -595,6 +688,33 @@ export class ApiService {
       contentType: a.contentType,
       sizeBytes: a.sizeBytes,
       status: a.status,
+    };
+  }
+
+  private mapAdminConversationMessage(row: AdminConversationMessageDto): AdminConversationMessageItem {
+    return {
+      id: row.id,
+      channelId: row.channelId,
+      conversationId: row.conversationId,
+      sequence: row.sequence,
+      authorId: row.authorId,
+      authorName: row.authorName,
+      body: row.body,
+      createdAt: row.createdAt,
+      editedAt: row.editedAt ?? null,
+      deletedAt: row.deletedAt ?? null,
+      deletedBy: row.deletedBy ?? null,
+      deletedByName: row.deletedByName ?? null,
+      threadId: row.threadId ?? null,
+      replyToMessageId: row.replyToMessageId ?? null,
+      replyCount: row.replyCount ?? 0,
+      attachments: (row.attachments ?? []).map((a) => ({
+        id: a.id,
+        fileName: a.fileName,
+        contentType: a.contentType,
+        sizeBytes: a.sizeBytes,
+        status: a.status,
+      })),
     };
   }
 
