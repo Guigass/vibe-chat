@@ -62,7 +62,7 @@ Prioridade sobre P2 novo de diferenciação. Detalhe em `docs/roadmap/roadmap.md
 | Tempo real | Mensagens/edit/delete/reações ao vivo; gap-fill por `seq` no reconnect (B-070) |
 | Typing | Não mostrar “digitando…” para o próprio usuário (B-071) |
 | Layout chat | Scroll apenas no bloco da conversa; shell sem rolagem da página (B-072) |
-| Cadastro + diretivas | Clareza de fluxo: Keycloak autentica → perfil → membership; diretivas = papéis/permissões; invite/admin (B-068) |
+| Cadastro + diretivas | Keycloak autentica → perfil (stub pending ou espelho) → membership via invite admin; diretivas = papéis (B-068) |
 | Secrets / integrações | Tokens, webhooks, AI/SMTP só para administradores (B-069, B-048) |
 | Auditoria de conversas | Viewer ADMIN completo por canal/DM/thread, além do audit log de ações (B-067) |
 | UI | Polish com PrimeNG alinhado aos tokens; emenda ADR-002 (B-073) |

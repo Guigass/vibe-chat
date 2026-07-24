@@ -317,6 +317,148 @@ v1.MapGet("/workspaces/{workspaceId:guid}/roles", async (Guid workspaceId, HttpC
         WorkspaceRolePolicies.AssignableRoles.Select(r => r.ToString()).ToArray()));
 });
 
+// B-068: admin invite / provision membership (no open self-signup).
+v1.MapPost("/workspaces/{workspaceId:guid}/members", async (
+    Guid workspaceId,
+    InviteMemberRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IOutboxWriter outbox,
+    IAuditWriter audit,
+    IEmailSender email,
+    IConfiguration config,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    var actorMembership = await db.WorkspaceMembers
+        .FirstOrDefaultAsync(x => x.WorkspaceId == workspace.Id && x.UserId == profile.Id, ct);
+    if (actorMembership is null || !WorkspaceRolePolicies.CanInviteMembers(actorMembership.Role))
+    {
+        return Results.Forbid();
+    }
+
+    var emailAddress = (request.Email ?? string.Empty).Trim().ToLowerInvariant();
+    if (string.IsNullOrWhiteSpace(emailAddress) || !emailAddress.Contains('@') || emailAddress.Length > 256)
+    {
+        return Results.BadRequest(new { error = "Valid email is required." });
+    }
+
+    var roleValue = string.IsNullOrWhiteSpace(request.Role) ? Role.Member.ToString() : request.Role;
+    if (!WorkspaceRolePolicies.TryParseRole(roleValue, out var inviteRole)
+        || !WorkspaceRolePolicies.CanAssignInviteRole(actorMembership.Role, inviteRole))
+    {
+        return Results.BadRequest(new { error = "InvalidRole" });
+    }
+
+    var displayName = (request.DisplayName ?? string.Empty).Trim();
+    if (string.IsNullOrWhiteSpace(displayName))
+    {
+        displayName = emailAddress.Split('@')[0];
+    }
+
+    if (displayName.Length > 160)
+    {
+        displayName = displayName[..160];
+    }
+
+    var pendingSubject = WorkspaceRolePolicies.PendingSubjectForEmail(emailAddress);
+    var targetProfile = await db.UserProfiles
+        .FirstOrDefaultAsync(x => x.Email.ToLower() == emailAddress || x.Subject == pendingSubject, ct);
+
+    if (targetProfile is null)
+    {
+        targetProfile = new UserProfile
+        {
+            Id = UserId.New(),
+            Subject = pendingSubject,
+            Email = emailAddress,
+            DisplayName = displayName,
+            CreatedAt = clock.UtcNow,
+            UpdatedAt = clock.UtcNow
+        };
+        db.UserProfiles.Add(targetProfile);
+    }
+    else if (string.IsNullOrWhiteSpace(targetProfile.DisplayName)
+             || (WorkspaceRolePolicies.IsPendingSubject(targetProfile.Subject)
+                 && !string.IsNullOrWhiteSpace(request.DisplayName)))
+    {
+        targetProfile.DisplayName = displayName;
+        targetProfile.UpdatedAt = clock.UtcNow;
+    }
+
+    var existing = await db.WorkspaceMembers
+        .FirstOrDefaultAsync(x => x.WorkspaceId == workspace.Id && x.UserId == targetProfile.Id, ct);
+    if (existing is not null)
+    {
+        return Results.Conflict(new { error = "AlreadyMember", userId = targetProfile.Id.Value, role = existing.Role.ToString() });
+    }
+
+    var membership = new WorkspaceMember
+    {
+        Id = Guid.NewGuid(),
+        TenantId = workspace.TenantId,
+        WorkspaceId = workspace.Id,
+        UserId = targetProfile.Id,
+        Role = inviteRole,
+        JoinedAt = clock.UtcNow
+    };
+    db.WorkspaceMembers.Add(membership);
+
+    audit.Add(new AuditEvent
+    {
+        TenantId = workspace.TenantId,
+        ActorUserId = profile.Id,
+        Action = AuditActions.MemberInvite,
+        EntityType = "WorkspaceMember",
+        EntityId = membership.Id.ToString(),
+        MetadataJson = JsonSerializer.Serialize(new
+        {
+            workspaceId = workspace.Id.Value,
+            userId = targetProfile.Id.Value,
+            email = emailAddress,
+            role = inviteRole.ToString(),
+            pending = WorkspaceRolePolicies.IsPendingSubject(targetProfile.Subject)
+        })
+    });
+
+    if (email.IsEnabled
+        && config.GetValue("Email:Enabled", false)
+        && !string.IsNullOrWhiteSpace(targetProfile.Email))
+    {
+        var subject = $"VibeChat: você foi convidado para {workspace.Name}";
+        var body =
+            $"Olá {targetProfile.DisplayName},\n\n" +
+            $"Você foi adicionado ao workspace \"{workspace.Name}\" com o papel {inviteRole}.\n" +
+            "Autentique-se via SSO (Keycloak/OIDC) com este e-mail para acessar.\n" +
+            "Não há self-signup aberto — a membership já foi provisionada pelo admin.\n";
+        outbox.Add(new OutboxMessage
+        {
+            TenantId = workspace.TenantId,
+            Type = nameof(MemberInvitedEmailEvent),
+            Payload = JsonSerializer.Serialize(new MemberInvitedEmailEvent(
+                workspace.TenantId.Value,
+                workspace.Id.Value,
+                targetProfile.Id.Value,
+                targetProfile.Email,
+                subject,
+                body))
+        });
+    }
+
+    await db.SaveChangesAsync(ct);
+    return Results.Created(
+        $"/api/v1/workspaces/{workspaceId}/members/{targetProfile.Id.Value}",
+        new WorkspaceMemberResponse(targetProfile.Id.Value, targetProfile.DisplayName, targetProfile.Email, membership.Role.ToString()));
+});
+
 v1.MapPut("/workspaces/{workspaceId:guid}/members/{userId:guid}/role", async (
     Guid workspaceId,
     Guid userId,
@@ -1664,13 +1806,35 @@ static async Task<UserProfile> EnsureProfileAsync(ClaimsPrincipal principal, Vib
         return profile;
     }
 
+    var email = (principal.FindFirstValue(ClaimTypes.Email) ?? principal.FindFirstValue("email") ?? string.Empty).Trim();
+    var displayName = principal.FindFirstValue("name") ?? subject;
+
+    // B-068: claim pending invite stub created by admin (subject pending:{email}).
+    if (!string.IsNullOrWhiteSpace(email))
+    {
+        var normalizedEmail = email.ToLowerInvariant();
+        var pendingSubject = WorkspaceRolePolicies.PendingSubjectForEmail(normalizedEmail);
+        var pending = await db.UserProfiles.FirstOrDefaultAsync(
+            x => x.Subject == pendingSubject || (x.Email.ToLower() == normalizedEmail && x.Subject.StartsWith("pending:")),
+            ct);
+        if (pending is not null)
+        {
+            pending.Subject = subject;
+            pending.Email = email;
+            pending.DisplayName = string.IsNullOrWhiteSpace(displayName) ? pending.DisplayName : displayName;
+            pending.UpdatedAt = clock.UtcNow;
+            await db.SaveChangesAsync(ct);
+            return pending;
+        }
+    }
+
     var userId = Guid.TryParse(principal.FindFirstValue("vibechat_user_id"), out var claimId) ? new UserId(claimId) : UserId.New();
     profile = new UserProfile
     {
         Id = userId,
         Subject = subject,
-        Email = principal.FindFirstValue(ClaimTypes.Email) ?? principal.FindFirstValue("email") ?? $"{subject}@unknown.local",
-        DisplayName = principal.FindFirstValue("name") ?? subject,
+        Email = string.IsNullOrWhiteSpace(email) ? $"{subject}@unknown.local" : email,
+        DisplayName = displayName,
         CreatedAt = clock.UtcNow,
         UpdatedAt = clock.UtcNow
     };
@@ -1918,22 +2082,57 @@ public sealed class DevAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> 
             name = queryValues.ToString();
         }
 
-        var (id, email, display) = name.ToLowerInvariant() switch
+        var key = name.ToLowerInvariant();
+        List<Claim> claims;
+        if (key is "alice" or "bob" or "demo")
         {
-            "alice" => (SeedData.AliceUserId, "alice@vibechat.local", "Alice"),
-            "bob" => (SeedData.BobUserId, "bob@vibechat.local", "Bob"),
-            _ => (SeedData.DemoUserId, "demo@vibechat.local", "Demo")
-        };
+            var (id, email, display) = key switch
+            {
+                "alice" => (SeedData.AliceUserId, "alice@vibechat.local", "Alice"),
+                "bob" => (SeedData.BobUserId, "bob@vibechat.local", "Bob"),
+                _ => (SeedData.DemoUserId, "demo@vibechat.local", "Demo")
+            };
 
-        var claims = new[]
+            claims =
+            [
+                new Claim(ClaimTypes.NameIdentifier, $"dev:{key}"),
+                new Claim("sub", $"dev:{key}"),
+                new Claim("vibechat_user_id", id.Value.ToString()),
+                new Claim(ClaimTypes.Email, email),
+                new Claim("name", display),
+                new Claim(ClaimTypes.Role, key == "demo" ? Role.WorkspaceOwner.ToString() : Role.Member.ToString())
+            ];
+        }
+        else if (Request.Headers.TryGetValue("X-Dev-Email", out var emailValues)
+                 && !string.IsNullOrWhiteSpace(emailValues))
         {
-            new Claim(ClaimTypes.NameIdentifier, $"dev:{name.ToLowerInvariant()}"),
-            new Claim("sub", $"dev:{name.ToLowerInvariant()}"),
-            new Claim("vibechat_user_id", id.Value.ToString()),
-            new Claim(ClaimTypes.Email, email),
-            new Claim("name", display),
-            new Claim(ClaimTypes.Role, name.Equals("demo", StringComparison.OrdinalIgnoreCase) ? Role.WorkspaceOwner.ToString() : Role.Member.ToString())
-        };
+            // B-068 DX: dynamic invitee for pending:{email} claim tests (Development only).
+            var email = emailValues.ToString().Trim().ToLowerInvariant();
+            var display = Request.Headers.TryGetValue("X-Dev-Name", out var nameValues) && !string.IsNullOrWhiteSpace(nameValues)
+                ? nameValues.ToString().Trim()
+                : key;
+            claims =
+            [
+                new Claim(ClaimTypes.NameIdentifier, $"dev:{key}"),
+                new Claim("sub", $"dev:{key}"),
+                new Claim(ClaimTypes.Email, email),
+                new Claim("name", display),
+                new Claim(ClaimTypes.Role, Role.Member.ToString())
+            ];
+        }
+        else
+        {
+            // Unknown X-Dev-User without X-Dev-Email keeps demo fallback (prior behavior).
+            claims =
+            [
+                new Claim(ClaimTypes.NameIdentifier, "dev:demo"),
+                new Claim("sub", "dev:demo"),
+                new Claim("vibechat_user_id", SeedData.DemoUserId.Value.ToString()),
+                new Claim(ClaimTypes.Email, "demo@vibechat.local"),
+                new Claim("name", "Demo"),
+                new Claim(ClaimTypes.Role, Role.WorkspaceOwner.ToString())
+            ];
+        }
 
         var identity = new ClaimsIdentity(claims, SchemeName);
         return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName)));
@@ -1947,6 +2146,7 @@ public sealed record ChannelResponse(Guid Id, Guid WorkspaceId, string Name, str
 public sealed record WorkspaceMemberResponse(Guid UserId, string DisplayName, string Email, string Role);
 public sealed record WorkspaceRolesResponse(string[] AssignableRoles);
 public sealed record UpdateMemberRoleRequest(string Role);
+public sealed record InviteMemberRequest(string Email, string? DisplayName = null, string? Role = null);
 public sealed record PresenceResponse(Guid UserId, string Status);
 public sealed record OpenDirectMessageRequest(Guid UserId);
 public sealed record CreateSpaceRequest(string Name, int? Order = null);

@@ -189,6 +189,9 @@ public static class WorkspaceRolePolicies
     public static bool CanManageRoles(Role actorRole) =>
         RolePermissionCatalog.For(actorRole).Contains(Permissions.Workspace.Admin);
 
+    /// <summary>Invite/provision membership (B-068). Same gate as role management.</summary>
+    public static bool CanInviteMembers(Role actorRole) => CanManageRoles(actorRole);
+
     public static bool CanChangeMemberRole(Role actorRole, Role targetCurrentRole, Role targetNewRole, bool isSelf)
     {
         if (isSelf)
@@ -221,8 +224,17 @@ public static class WorkspaceRolePolicies
         return true;
     }
 
+    public static bool CanAssignInviteRole(Role actorRole, Role inviteRole) =>
+        CanInviteMembers(actorRole) && IsAssignable(inviteRole);
+
     public static bool TryParseRole(string? value, out Role role) =>
         Enum.TryParse(value, ignoreCase: true, out role);
+
+    public static string PendingSubjectForEmail(string normalizedEmail) =>
+        $"pending:{normalizedEmail}";
+
+    public static bool IsPendingSubject(string subject) =>
+        subject.StartsWith("pending:", StringComparison.OrdinalIgnoreCase);
 }
 
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]

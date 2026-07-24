@@ -158,6 +158,68 @@
   font-size: 0.9rem;
 }
 
+.invite {
+  margin: 0 0 1.1rem;
+  padding: 0.9rem 0 0;
+  border-top: 1px solid var(--vc-border);
+}
+
+.invite__title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.invite__hint {
+  margin: 0.3rem 0 0.75rem;
+  color: var(--vc-ink-muted);
+  font-size: 0.85rem;
+  max-width: 62ch;
+}
+
+.invite__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: flex-end;
+}
+
+.invite__field {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 11rem;
+  flex: 1 1 11rem;
+}
+
+.invite__field span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--vc-ink-muted);
+}
+
+.invite__field input {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-sm);
+  background: var(--vc-surface);
+  color: var(--vc-ink);
+  font: inherit;
+}
+
+.invite__submit {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--vc-brand);
+  border-radius: var(--vc-radius-sm);
+  background: var(--vc-brand);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.invite__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .roles__feedback {
   margin: 0 0 0.85rem;
   color: var(--vc-success);
