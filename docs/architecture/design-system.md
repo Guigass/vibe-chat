@@ -150,6 +150,15 @@ Não transformar o shell em dashboard com stats, strips e callouts.
 | Bolha de mensagem | Sem sombra pesada; `--vc-msg-mine/theirs`; radius `--vc-radius-md` |
 | Composer | Superfície elevada, não card flutuante com glow |
 | Modais | Só para fluxos (criar channel, convidar); CDK overlay |
+| Painel de conversa | Coluna flex com `min-height: 0`; **scroll só na timeline**; composer fora do scroller (B-072) |
+
+### PrimeNG (Wave 6 / B-073 — após emenda ADR-002)
+
+Permitido para acelerar admin e formulários densos (DataTable, Dialog, Select, Toast). Obrigatório:
+
+- Preset/tema amarrado aos tokens `--vc-*` (teal/charcoal, Sora / IBM Plex Sans)
+- Sem skins roxas/default genéricas
+- Chat shell continua composição própria; PrimeNG não vira “tema Slack”
 
 ---
 

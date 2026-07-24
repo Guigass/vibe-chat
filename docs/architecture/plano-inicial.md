@@ -53,6 +53,20 @@ Entregar a **fatia vertical** (`docs/product/criterios-aceite-fatia-vertical.md`
 - AI opcional (feature flag)
 - Audit log de ações admin
 
+### Fase 3 — Refinamento UX + Admin (Wave 6)
+
+Prioridade sobre P2 novo de diferenciação. Detalhe em `docs/roadmap/roadmap.md` (Wave 6) e `docs/roadmap/backlog.md` (P1.5 / B-067+).
+
+| Tema | Entregáveis |
+|------|-------------|
+| Tempo real | Mensagens/edit/delete/reações ao vivo; gap-fill por `seq` no reconnect (B-070) |
+| Typing | Não mostrar “digitando…” para o próprio usuário (B-071) |
+| Layout chat | Scroll apenas no bloco da conversa; shell sem rolagem da página (B-072) |
+| Cadastro + diretivas | Clareza de fluxo: Keycloak autentica → perfil → membership; diretivas = papéis/permissões; invite/admin (B-068) |
+| Secrets / integrações | Tokens, webhooks, AI/SMTP só para administradores (B-069, B-048) |
+| Auditoria de conversas | Viewer ADMIN completo por canal/DM/thread, além do audit log de ações (B-067) |
+| UI | Polish com PrimeNG alinhado aos tokens; emenda ADR-002 (B-073) |
+
 ## Riscos principais
 
 | Risco | Impacto | Mitigação |

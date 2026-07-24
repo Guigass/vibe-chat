@@ -30,3 +30,14 @@ Usar **Angular 22** com:
 - **+** CDK acelera UI acessível (modais, lists)
 - **−** Curva de aprendizado para quem só conhece React
 - **−** Bundle precisa de atenção (lazy routes por workspace/área)
+
+## Emenda proposta (Wave 6 / B-073) — Pendente
+
+Adotar **PrimeNG** como biblioteca de componentes (tabelas, dialogs, forms, menus) **desde que**:
+
+1. Tema/CSS variables mapeiem para tokens VibeChat (`design-system.md`) — sem look genérico “Prime default”
+2. CDK continue para a11y/overlays pontuais quando PrimeNG não couber
+3. Bundle: import modular / lazy por área (admin vs chat)
+4. Identidade visual própria preservada (não clonar Slack/Discord)
+
+Até a emenda ser aceita em PR dedicado, o código permanece CDK + UI própria.

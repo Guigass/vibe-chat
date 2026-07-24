@@ -94,16 +94,40 @@ Dependências: itens só começam quando deps = done.
 | P2-1 | B/D | Papéis granulares (B-041) | Wave 5, D-07 | **Done** — `PUT .../members/{userId}/role` + UI admin + authZ `workspace.admin` |
 | P2-2 | A/B | Notificações email SMTP (B-043) | D-10, P2-1 | **Done** — Null/SMTP; off default; e-mail role-change via outbox |
 
+## Wave 6 — Refinamento UX + Admin (próximo)
+
+Prioridade: corrigir tempo real / typing / scroll; depois clareza de cadastro e admin sensível.
+
+| ID | Trilha | Tarefa | Deps | Status |
+|----|--------|--------|------|--------|
+| W6-1 | C/D | Realtime estável: MessageCreated/edit/delete/reações + gap-fill reconnect (B-070) | Wave 5 | Planned |
+| W6-2 | C/D | Typing: não mostrar indicador para o próprio usuário (B-071) | W6-1 ou paralelo | Planned |
+| W6-3 | D | Layout: scroll só no container da conversa (B-072) | — | Planned |
+| W6-4 | B/D/G | Cadastro de usuário + diretivas documentados e fluxo admin (B-068) | P2-1 | Planned |
+| W6-5 | B/D/E | Settings sensíveis (tokens, webhooks, AI/SMTP) só admin (B-069, B-048) | W6-4 | Planned |
+| W6-6 | B/D/E | Auditoria completa de conversas no ADMIN (B-067) | W4-6, W6-4 | Planned |
+| W6-7 | D/G | UI polish com PrimeNG + tema tokens (B-073; emenda ADR-002) | W6-3 | Planned |
+
+### Critérios de aceite Wave 6 (resumo)
+
+- Dois usuários: mensagem/edit/delete/reação aparecem sem F5; reconnect preenche lacunas de `seq`
+- Autor de typing não vê o próprio “digitando…”
+- Página do shell não rola inteira; só a timeline
+- Docs/glossário deixam claro: Keycloak autentica; membership/diretivas autorizam
+- Tokens/webhooks/keys inacessíveis a não-admin
+- Admin consegue auditar conversa (não só `audit_events`)
+- PrimeNG só após emenda ADR-002; identidade visual VibeChat preservada
+
 ---
 
 ## Parallelismo sugerido por time de agentes
 
 ```text
 Agent-Infra     → W0-1, W0-2, W0-6, W5-*
-Agent-Backend   → W0-3, W1-*, W2-1..W2-4, W3-1, W3-3, W4-*
-Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7
-Agent-QA        → W0-7, W1-5, W2-6, W2-7, W3-2, W3-5, W5-3
-Agent-Security  → W3-1/W3-2 review, threat model updates
+Agent-Backend   → W0-3, W1-*, W2-1..W2-4, W3-1, W3-3, W4-*, W6-1, W6-2, W6-4..W6-6
+Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7, W6-1..W6-3, W6-7
+Agent-QA        → W0-7, W1-5, W2-6, W2-7, W3-2, W3-5, W5-3, W6-1 E2E
+Agent-Security  → W3-1/W3-2 review, W6-5/W6-6 authZ + threat model
 Agent-Obs       → W0-6, W3-4
 ```
 

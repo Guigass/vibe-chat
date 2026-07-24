@@ -48,9 +48,19 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | Termo | Definição |
 |-------|-----------|
 | **User** | Identidade de pessoa; source of truth de autenticação no Keycloak (OIDC). Perfil espelhado/enriquecido no VibeChat. |
+| **Cadastro / Provisionamento** | Fluxo em duas camadas: (1) **autenticação** no IdP (Keycloak/OIDC cria a identidade); (2) **autorização** no VibeChat via Membership + Diretivas. Login sozinho **não** concede acesso a workspace — falta membership. Fase atual: seed/demo + espelho de perfil no login; fase Wave 6 (B-068): invite/admin atribui membership e papel. Sem self-signup aberto na fase 1. |
+| **Diretiva** | Regra de autorização derivada do papel (`Role` + `RolePermissionCatalog` / policies de workspace). Ex.: quem pode `channel.create`, `workspace.admin`, `admin.dashboard`, `ai.summarize`. Não confundir com “prompt” de IA. |
 | **OIDC / SSO** | OpenID Connect; fluxo padrão via Keycloak. |
 | **Service Account** | Identidade de máquina para workers/integrações. |
 | **Guest** | Membership com escopo reduzido (ex.: canal específico). |
+
+## Administração e compliance
+
+| Termo | Definição |
+|-------|-----------|
+| **Audit log (ações)** | Trilha de eventos sensíveis (`audit.audit_events`: login admin, role change, message.send/delete, etc.). Feed em `/admin` — B-042. |
+| **Auditoria de conversa** | Visão ADMIN do histórico de um canal/DM/thread (conteúdo, edições, soft-delete, autores, anexos) para compliance — B-067; distinta do audit log de ações. |
+| **Configuração sensível** | Tokens, webhooks, chaves de AI/SMTP e secrets de integração. Só administradores leem/alteram (B-069); membros nunca veem o valor em claro. |
 
 ## Plataforma e infra
 
