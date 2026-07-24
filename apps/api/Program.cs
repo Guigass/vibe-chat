@@ -2299,11 +2299,11 @@ static async Task<(UserProfile Profile, Workspace Workspace)?> ResolveSensitiveS
         tenant.SetTenant(workspace.TenantId);
     }
 
-    var canAdminDashboard = await permissions.HasPermissionAsync(
-        workspace.TenantId, profile.Id, Permissions.Admin.Dashboard, ct);
+    // B-069: sensitive settings are workspace-admin only — Auditor (admin.dashboard) may
+    // view conversation audit (B-067) but must not read/alter AI/SMTP integration flags.
     var canWorkspaceAdmin = await permissions.HasPermissionAsync(
         workspace.TenantId, profile.Id, Permissions.Workspace.Admin, ct);
-    if (!canAdminDashboard && !canWorkspaceAdmin)
+    if (!canWorkspaceAdmin)
     {
         return null;
     }

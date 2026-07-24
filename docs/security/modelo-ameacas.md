@@ -65,7 +65,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 
 | Item | Controle |
 |------|----------|
-| Leitura | `GET /admin/settings` exige `workspace.admin` ou `admin.dashboard`; membro → 403 |
+| Leitura | `GET /admin/settings` exige `workspace.admin`; membro/Auditor → 403 |
 | Escrita | `PUT /admin/settings` mesma authZ; rejeita `apiKey` / `smtpPassword` no body |
 | Resposta | Nunca retorna secret em claro; só máscara / `*Configured` |
 | SoT | Env / secret store para chaves; DB só flags e SMTP não-secreto |

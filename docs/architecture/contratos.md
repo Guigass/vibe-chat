@@ -304,7 +304,7 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 | `GET /api/v1/admin/conversations?workspaceId=&limit=` | Lista canais/DMs do tenant para auditoria (B-067); exige `admin.dashboard`; **não** exige `channel_members`; `limit` 1–200 (default 100) |
 | `GET /api/v1/admin/conversations/{channelId}/messages?after=&limit=` | Histórico admin do canal/DM (root); body **visível** mesmo com soft-delete; inclui `deletedBy` / anexos; exige `admin.dashboard`; canal fora do tenant → 403 |
 | `GET /api/v1/admin/threads/{threadId}/messages?after=&limit=` | Histórico admin de replies da thread; mesma authZ e semântica de body |
-| `GET /api/v1/admin/settings?workspaceId=` | Settings sensíveis mascarados (B-069); exige `workspace.admin` **ou** `admin.dashboard`; `workspaceId` opcional (default: primeiro workspace do actor) |
+| `GET /api/v1/admin/settings?workspaceId=` | Settings sensíveis mascarados (B-069); exige `workspace.admin` (Auditor com só `admin.dashboard` → 403); `workspaceId` opcional (default: primeiro workspace do actor) |
 | `PUT /api/v1/admin/settings` | Atualiza flags não-secretas; mesma authZ; rejeita body com `ai.apiKey` / `email.smtpPassword` (`SecretsNotWritable`); audit `settings.change` |
 
 `AuditEventResponse`: `id`, `action`, `entityType`, `entityId`, `actorUserId`, `occurredAt`, `metadataJson`.
@@ -331,7 +331,7 @@ Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send
 Regras:
 
 - Secrets (OpenRouter API key, SMTP password) **só** via env / secret store (ADR-012)
-- Membro comum → `403` em GET/PUT
+- Membro comum e Auditor (sem `workspace.admin`) → `403` em GET/PUT
 - Tenant do actor; nunca aceitar `tenantId` do body
 
 ### Auditoria de conversa (B-067)

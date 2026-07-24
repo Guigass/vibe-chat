@@ -57,16 +57,16 @@ Entregar a **fatia vertical** (`docs/product/criterios-aceite-fatia-vertical.md`
 
 Prioridade sobre P2 novo de diferenciação. Detalhe em `docs/roadmap/roadmap.md` (Wave 6) e `docs/roadmap/backlog.md` (P1.5 / B-067+).
 
-| Tema | Entregáveis |
-|------|-------------|
-| Tempo real | Mensagens/edit/delete/reações ao vivo; gap-fill por `seq` no reconnect (B-070) |
-| Typing | Não mostrar “digitando…” para o próprio usuário (B-071) |
-| Layout chat | Scroll apenas no bloco da conversa; shell sem rolagem da página (B-072) |
-| Cadastro + diretivas | Keycloak autentica → perfil (stub pending ou espelho) → membership via invite admin; diretivas = papéis (B-068) |
-| Secrets / integrações | Tokens, webhooks, AI/SMTP só para administradores (B-069, B-048) |
-| Auditoria de conversas | Viewer ADMIN completo por canal/DM/thread, além do audit log de ações (B-067) |
-| UI | Polish com PrimeNG alinhado aos tokens; emenda ADR-002 (B-073) |
-| Compose apps | API + Web (+ Worker) em containers no Compose como deploy oficial self-host (B-074); `task dev` só para DX com hot reload |
+| Tema | Entregáveis | Status |
+|------|-------------|--------|
+| Tempo real | Mensagens/edit/delete/reações ao vivo; gap-fill por `seq` no reconnect (B-070) | **Done** |
+| Typing | Não mostrar “digitando…” para o próprio usuário (B-071) | **Done** |
+| Layout chat | Scroll apenas no bloco da conversa; shell sem rolagem da página (B-072) | **Done** |
+| Cadastro + diretivas | Keycloak autentica → perfil (stub pending ou espelho) → membership via invite admin; diretivas = papéis (B-068) | **Done** |
+| Secrets / integrações | Tokens, webhooks, AI/SMTP só para administradores (B-069, B-048) | **Done** (B-069); B-048 Planned |
+| Auditoria de conversas | Viewer ADMIN completo por canal/DM/thread, além do audit log de ações (B-067) | **Done** |
+| UI | Polish com PrimeNG alinhado aos tokens; emenda ADR-002 (B-073) | Planned |
+| Compose apps | API + Web (+ Worker) em containers no Compose como deploy oficial self-host (B-074); `task dev` só para DX com hot reload | Planned |
 
 ## Riscos principais
 
