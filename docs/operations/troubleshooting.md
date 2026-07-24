@@ -48,7 +48,9 @@
 
 ### Sintoma: vejo meu próprio “digitando…”
 
-- Esperado até B-071: filtrar self no client ou usar `OthersInGroup` no hub
+- Hub deve usar `Clients.OthersInGroup` em `SendTyping` (B-071 / W6-2)
+- Cliente também ignora `userId` == perfil local (defesa em profundidade)
+- Se ainda aparece: conferir se o payload `userId` bate com `profile.id` (DevAuth/OIDC `sub`)
 
 ### Sintoma: mensagens duplicadas
 

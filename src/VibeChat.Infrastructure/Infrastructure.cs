@@ -1295,7 +1295,11 @@ public sealed class ChatHub(
         }
 
         await typing.SetTypingAsync(tenant, channel, userId, displayName, Context.ConnectionAborted);
-        await Clients.Group(ChannelGroup(channel)).SendAsync("Typing", new { tenantId, channelId, userId = userId.Value, displayName }, Context.ConnectionAborted);
+        // B-071 / W6-2: never fan out typing to the author (OthersInGroup).
+        await Clients.OthersInGroup(ChannelGroup(channel)).SendAsync(
+            "Typing",
+            new { tenantId, channelId, userId = userId.Value, displayName },
+            Context.ConnectionAborted);
     }
 
     private async Task EnsureTenantMembershipAsync(TenantId tenantId, UserId userId)
