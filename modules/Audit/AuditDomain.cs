@@ -18,6 +18,7 @@ public static class AuditActions
 {
     public const string AdminLogin = "admin.login";
     public const string ChannelCreate = "channel.create";
+    public const string SpaceCreate = "space.create";
     public const string MessageSend = "message.send";
     public const string MessageDelete = "message.delete";
     public const string AttachmentUpload = "attachment.upload";

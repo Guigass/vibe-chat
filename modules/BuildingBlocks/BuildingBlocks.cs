@@ -150,7 +150,8 @@ public static class RolePermissionCatalog
 
     private static readonly HashSet<string> MemberPermissions =
     [
-        Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn,
+        Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Channel.Create,
+        Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
         Permissions.Ai.Summarize

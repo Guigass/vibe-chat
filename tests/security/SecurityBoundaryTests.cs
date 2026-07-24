@@ -213,6 +213,31 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Cross_tenant_cannot_list_or_create_spaces()
+    {
+        var (foreignWorkspaceId, _) = await SeedCrossTenantWorkspaceWithMessageAsync();
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var list = await client.GetAsync($"/api/v1/workspaces/{foreignWorkspaceId}/spaces");
+        list.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var createSpace = await client.PostAsJsonAsync(
+            $"/api/v1/workspaces/{foreignWorkspaceId}/spaces",
+            new { name = "intruder" });
+        createSpace.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var createChannel = await client.PostAsJsonAsync(
+            $"/api/v1/workspaces/{foreignWorkspaceId}/channels",
+            new { name = "intruder-ch", type = "Public" });
+        createChannel.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var presence = await client.GetAsync($"/api/v1/workspaces/{foreignWorkspaceId}/presence");
+        presence.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Direct_message_is_hidden_from_non_members()
     {
         using var alice = factory.CreateClient();

@@ -29,6 +29,9 @@
   --vc-success: #047857;
   --vc-warning: #b45309;
   --vc-info: #0369a1;
+  --vc-presence-online: #047857;
+  --vc-presence-away: #b45309;
+  --vc-presence-offline: #a8a29e;
 
   --vc-msg-mine: #ccfbf1;
   --vc-msg-theirs: #ffffff;
@@ -90,6 +93,10 @@
   --vc-msg-mine: #115e59;
   --vc-msg-theirs: #1c1917;
   --vc-composer-bg: #161a1f;
+
+  --vc-presence-online: #2dd4bf;
+  --vc-presence-away: #fbbf24;
+  --vc-presence-offline: #57534e;
 
   --vc-focus-ring: 0 0 0 3px rgba(45, 212, 191, 0.35);
   --vc-shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.35);

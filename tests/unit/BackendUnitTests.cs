@@ -94,7 +94,15 @@ public sealed class BackendUnitTests
         var permissions = RolePermissionCatalog.For(Role.Member);
 
         permissions.Should().Contain(Permissions.Message.Send);
+        permissions.Should().Contain(Permissions.Channel.Create);
         permissions.Should().NotContain(Permissions.Admin.Dashboard);
+    }
+
+    [Fact]
+    public void Permission_catalog_denies_guest_channel_create()
+    {
+        RolePermissionCatalog.For(Role.Guest).Should().NotContain(Permissions.Channel.Create);
+        RolePermissionCatalog.For(Role.Member).Should().Contain(Permissions.Channel.Create);
     }
 
     [Fact]

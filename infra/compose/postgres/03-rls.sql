@@ -4,6 +4,7 @@
 
 ALTER TABLE IF EXISTS tenancy.workspaces ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS tenancy.workspace_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.spaces ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS conversations.channels ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS conversations.channel_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.messages ENABLE ROW LEVEL SECURITY;
@@ -20,6 +21,9 @@ CREATE POLICY tenant_isolation_workspaces ON tenancy.workspaces
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
 
 CREATE POLICY tenant_isolation_workspace_members ON tenancy.workspace_members
+    USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
+
+CREATE POLICY tenant_isolation_spaces ON directory.spaces
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
 
 CREATE POLICY tenant_isolation_channels ON conversations.channels

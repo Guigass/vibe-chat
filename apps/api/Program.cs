@@ -16,6 +16,7 @@ using VibeChat.AI;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
+using VibeChat.Directory;
 using VibeChat.Files;
 using VibeChat.Identity;
 using VibeChat.Infrastructure;
@@ -193,9 +194,74 @@ v1.MapGet("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, Ht
     {
         peerByChannel.TryGetValue(x.Id, out var peer);
         var displayName = x.Type == ChannelType.Direct && peer is not null ? peer.DisplayName : x.Name;
-        return new ChannelResponse(x.Id.Value, x.WorkspaceId.Value, displayName, x.Type.ToString(), peer?.UserId.Value, peer?.DisplayName);
+        return new ChannelResponse(
+            x.Id.Value,
+            x.WorkspaceId.Value,
+            displayName,
+            x.Type.ToString(),
+            peer?.UserId.Value,
+            peer?.DisplayName,
+            x.SpaceId);
     }).ToArray();
     return Results.Ok(response);
+});
+
+v1.MapGet("/workspaces/{workspaceId:guid}/spaces", async (Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    var spaces = await db.Spaces
+        .Where(x => x.WorkspaceId == workspace.Id)
+        .OrderBy(x => x.Order)
+        .ThenBy(x => x.Name)
+        .Select(x => new SpaceResponse(x.Id, x.WorkspaceId.Value, x.Name, x.Order))
+        .ToArrayAsync(ct);
+
+    return Results.Ok(spaces);
+});
+
+v1.MapPost("/workspaces/{workspaceId:guid}/spaces", async (Guid workspaceId, CreateSpaceRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IAuditWriter audit, IClock clock, CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null || !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Channel.Create, ct))
+    {
+        return Results.Forbid();
+    }
+
+    var name = (request.Name ?? string.Empty).Trim();
+    if (string.IsNullOrWhiteSpace(name))
+    {
+        return Results.BadRequest(new { error = "name is required." });
+    }
+
+    var maxOrder = await db.Spaces.Where(x => x.WorkspaceId == workspace.Id).Select(x => (int?)x.Order).MaxAsync(ct) ?? -1;
+    var space = new Space
+    {
+        Id = Guid.NewGuid(),
+        TenantId = workspace.TenantId,
+        WorkspaceId = workspace.Id,
+        Name = name,
+        Order = request.Order ?? maxOrder + 1,
+        CreatedAt = clock.UtcNow
+    };
+    db.Spaces.Add(space);
+    audit.Add(new AuditEvent
+    {
+        TenantId = workspace.TenantId,
+        ActorUserId = profile.Id,
+        Action = AuditActions.SpaceCreate,
+        EntityType = "Space",
+        EntityId = space.Id.ToString(),
+        MetadataJson = JsonSerializer.Serialize(new { workspaceId, name = space.Name })
+    });
+    await db.SaveChangesAsync(ct);
+    return Results.Created($"/api/v1/workspaces/{workspaceId}/spaces/{space.Id}", new SpaceResponse(space.Id, space.WorkspaceId.Value, space.Name, space.Order));
 });
 
 v1.MapGet("/workspaces/{workspaceId:guid}/members", async (Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
@@ -216,6 +282,28 @@ v1.MapGet("/workspaces/{workspaceId:guid}/members", async (Guid workspaceId, Htt
     ).ToArrayAsync(ct);
 
     return Results.Ok(members);
+});
+
+v1.MapGet("/workspaces/{workspaceId:guid}/presence", async (Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPresenceService presence, IClock clock, CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    var memberIds = await db.WorkspaceMembers
+        .Where(x => x.WorkspaceId == workspace.Id)
+        .Select(x => x.UserId)
+        .ToListAsync(ct);
+    var statuses = await presence.GetStatusesAsync(workspace.TenantId, memberIds, ct);
+    var response = memberIds.Select(id =>
+    {
+        statuses.TryGetValue(id, out var status);
+        return new PresenceResponse(id.Value, status.ToString().ToLowerInvariant());
+    }).ToArray();
+    return Results.Ok(response);
 });
 
 v1.MapPost("/workspaces/{workspaceId:guid}/dms", async (Guid workspaceId, OpenDirectMessageRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
@@ -276,9 +364,27 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, C
         return Results.Forbid();
     }
 
+    var name = (request.Name ?? string.Empty).Trim();
+    if (string.IsNullOrWhiteSpace(name))
+    {
+        return Results.BadRequest(new { error = "name is required." });
+    }
+
     if (Enum.TryParse<ChannelType>(request.Type, true, out var parsed) && parsed is ChannelType.Direct)
     {
         return Results.BadRequest(new { error = "Use POST /workspaces/{id}/dms to open direct messages." });
+    }
+
+    Guid? spaceId = null;
+    if (request.SpaceId is Guid requestedSpaceId)
+    {
+        var space = await db.Spaces.FirstOrDefaultAsync(x => x.Id == requestedSpaceId && x.WorkspaceId == workspace.Id, ct);
+        if (space is null)
+        {
+            return Results.BadRequest(new { error = "spaceId must reference a space in this workspace." });
+        }
+
+        spaceId = space.Id;
     }
 
     var channel = new Channel
@@ -286,7 +392,8 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, C
         Id = ChannelId.New(),
         TenantId = workspace.TenantId,
         WorkspaceId = workspace.Id,
-        Name = request.Name.Trim(),
+        SpaceId = spaceId,
+        Name = name,
         Type = Enum.TryParse<ChannelType>(request.Type, true, out var type) ? type : ChannelType.Public,
         CreatedAt = clock.UtcNow,
         CreatedBy = profile.Id
@@ -300,10 +407,12 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, C
         Action = AuditActions.ChannelCreate,
         EntityType = "Channel",
         EntityId = channel.Id.ToString(),
-        MetadataJson = JsonSerializer.Serialize(new { workspaceId, type = channel.Type.ToString() })
+        MetadataJson = JsonSerializer.Serialize(new { workspaceId, type = channel.Type.ToString(), spaceId })
     });
     await db.SaveChangesAsync(ct);
-    return Results.Created($"/api/v1/channels/{channel.Id.Value}", new ChannelResponse(channel.Id.Value, channel.WorkspaceId.Value, channel.Name, channel.Type.ToString()));
+    return Results.Created(
+        $"/api/v1/channels/{channel.Id.Value}",
+        new ChannelResponse(channel.Id.Value, channel.WorkspaceId.Value, channel.Name, channel.Type.ToString(), null, null, channel.SpaceId));
 });
 
 v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? after, int? limit, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
@@ -1478,10 +1587,13 @@ public sealed class DevAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> 
 
 public sealed record MeResponse(Guid UserId, string Subject, string Email, string DisplayName, string[] Roles);
 public sealed record WorkspaceResponse(Guid Id, string Name, string Slug, string Role);
-public sealed record ChannelResponse(Guid Id, Guid WorkspaceId, string Name, string Type, Guid? PeerUserId = null, string? PeerDisplayName = null);
+public sealed record SpaceResponse(Guid Id, Guid WorkspaceId, string Name, int Order);
+public sealed record ChannelResponse(Guid Id, Guid WorkspaceId, string Name, string Type, Guid? PeerUserId = null, string? PeerDisplayName = null, Guid? SpaceId = null);
 public sealed record WorkspaceMemberResponse(Guid UserId, string DisplayName, string Email, string Role);
+public sealed record PresenceResponse(Guid UserId, string Status);
 public sealed record OpenDirectMessageRequest(Guid UserId);
-public sealed record CreateChannelRequest(string Name, string Type);
+public sealed record CreateSpaceRequest(string Name, int? Order = null);
+public sealed record CreateChannelRequest(string Name, string Type, Guid? SpaceId = null);
 public sealed record SendMessageRequest(Guid MessageId, string IdempotencyKey, string Body, Guid? ReplyToMessageId, Guid? ThreadId, Guid[]? AttachmentIds = null);
 public sealed record EditMessageRequest(string Body);
 public sealed record CreateAttachmentUploadRequest(string FileName, string ContentType, long SizeBytes);

@@ -99,14 +99,19 @@ public interface IMembershipQuery
 
 Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out SignalR continua no grupo do **canal pai**, com `threadId` / `conversationId` no payload.
 
-### Directory — members & DMs
+### Directory — spaces, channels, members & DMs
 
 | Endpoint | Notas |
 |----------|-------|
+| `GET /api/v1/workspaces/{workspaceId}/spaces` | Lista spaces do workspace (membership obrigatória — D-07); ordenado por `order` |
+| `POST /api/v1/workspaces/{workspaceId}/spaces` | Body `{ name, order? }`; exige `channel.create` |
+| `GET /api/v1/workspaces/{workspaceId}/channels` | Channels do workspace; `spaceId` opcional no response |
+| `POST /api/v1/workspaces/{workspaceId}/channels` | Body `{ name, type, spaceId? }`; exige `channel.create`; `spaceId` deve pertencer ao workspace |
 | `GET /api/v1/workspaces/{workspaceId}/members` | Membros do workspace (membership obrigatória — D-07) |
+| `GET /api/v1/workspaces/{workspaceId}/presence` | Status `online`/`away`/`offline` dos membros (Redis TTL) |
 | `POST /api/v1/workspaces/{workspaceId}/dms` | Body `{ userId }`; get-or-create DM 1:1 (`ChannelType.Direct`) |
 
-`ChannelResponse` pode incluir `peerUserId` / `peerDisplayName` para DMs. Channels `Private`/`Direct`/`Group` só aparecem na listagem para membros do canal.
+`ChannelResponse` inclui `spaceId?` e, para DMs, `peerUserId` / `peerDisplayName`. Channels `Private`/`Direct`/`Group` só aparecem na listagem para membros do canal. Spaces agrupam channels na UI; DMs ficam fora de spaces.
 
 ---
 
@@ -194,8 +199,15 @@ Nomes de eventos hub (cliente):
 | `message.created` | Nova mensagem |
 | `message.edited` | Edição |
 | `message.deleted` | Soft delete |
-| `typing.started` | Typing |
-| `presence.changed` | Presence |
+| `Typing` | Typing (TTL curto Redis) |
+| `PresenceChanged` | Presence `online`/`away`/`offline` (hub group `tenant:{tenantId}`) |
+
+Hub (além de `JoinChannel` / `LeaveChannel` / `SendTyping`):
+
+| Método | Notas |
+|--------|-------|
+| `Heartbeat(tenantId)` | Renova presença online (TTL ~45s); authZ via membership no tenant |
+| `SetAway(tenantId)` | Marca away; authZ via membership no tenant |
 
 ---
 
@@ -270,10 +282,19 @@ public interface IAiAssistant
 ```csharp
 public interface IPresenceService
 {
-    Task HeartbeatAsync(Guid tenantId, Guid userId, CancellationToken ct);
-    Task SetTypingAsync(Guid tenantId, Guid conversationId, Guid userId, CancellationToken ct);
+    Task SetOnlineAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken ct);
+    Task SetAwayAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken ct);
+    Task HeartbeatAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken ct);
+    Task SetOfflineAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken ct);
+    Task<int> CountOnlineAsync(TenantId tenantId, CancellationToken ct);
+    Task<IReadOnlyDictionary<UserId, PresenceStatus>> GetStatusesAsync(
+        TenantId tenantId,
+        IReadOnlyCollection<UserId> userIds,
+        CancellationToken ct);
 }
 ```
+
+Redis: keys `presence:status:{tenantId}:{userId}` (TTL), `presence:conn:{tenantId}:{userId}`, `presence-users:{tenantId}`. Typing permanece em `ITypingService`.
 
 ---
 

@@ -1,5 +1,5 @@
 import { Component, input, output } from '@angular/core';
-import { Channel } from '../../models/chat.models';
+import { Channel, PresenceStatus } from '../../models/chat.models';
 import { Badge } from '../badge/badge';
 
 @Component({
@@ -13,7 +13,11 @@ import { Badge } from '../badge/badge';
       [class.vc-channel--active]="active()"
       (click)="select.emit()"
     >
-      <span class="vc-channel__hash" aria-hidden="true">{{ prefix() }}</span>
+      @if (presence()) {
+        <span class="vc-channel__presence" [attr.data-status]="presence()" aria-hidden="true"></span>
+      } @else {
+        <span class="vc-channel__hash" aria-hidden="true">{{ prefix() }}</span>
+      }
       <span class="vc-channel__name">{{ channel().name }}</span>
       @if (channel().unreadCount > 0) {
         <vc-badge tone="accent">{{ channel().unreadCount }}</vc-badge>
@@ -62,6 +66,19 @@ import { Badge } from '../badge/badge';
       font-family: var(--vc-font-mono);
       opacity: 0.7;
     }
+    .vc-channel__presence {
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 50%;
+      background: var(--vc-presence-offline);
+      justify-self: center;
+    }
+    .vc-channel__presence[data-status='online'] {
+      background: var(--vc-presence-online);
+    }
+    .vc-channel__presence[data-status='away'] {
+      background: var(--vc-presence-away);
+    }
     .vc-channel__name {
       overflow: hidden;
       text-overflow: ellipsis;
@@ -73,6 +90,7 @@ import { Badge } from '../badge/badge';
 export class ChannelItem {
   readonly channel = input.required<Channel>();
   readonly active = input(false);
+  readonly presence = input<PresenceStatus | null>(null);
   readonly select = output<void>();
 
   prefix(): string {

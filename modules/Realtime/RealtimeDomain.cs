@@ -21,9 +21,24 @@ public interface ITypingService
 
 public sealed record TypingUser(UserId UserId, string DisplayName, DateTimeOffset ExpiresAt);
 
+public enum PresenceStatus
+{
+    Offline = 0,
+    Online = 1,
+    Away = 2
+}
+
+public sealed record PresenceEntry(UserId UserId, PresenceStatus Status, DateTimeOffset ExpiresAt);
+
 public interface IPresenceService
 {
     Task SetOnlineAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken cancellationToken);
+    Task SetAwayAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken cancellationToken);
+    Task HeartbeatAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken cancellationToken);
     Task SetOfflineAsync(TenantId tenantId, UserId userId, string connectionId, CancellationToken cancellationToken);
     Task<int> CountOnlineAsync(TenantId tenantId, CancellationToken cancellationToken);
+    Task<IReadOnlyDictionary<UserId, PresenceStatus>> GetStatusesAsync(
+        TenantId tenantId,
+        IReadOnlyCollection<UserId> userIds,
+        CancellationToken cancellationToken);
 }

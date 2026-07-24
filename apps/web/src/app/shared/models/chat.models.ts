@@ -1,9 +1,18 @@
 export type MessageStatus = 'sending' | 'sent' | 'failed' | 'persisted';
+export type PresenceStatus = 'online' | 'away' | 'offline';
 
 export interface Workspace {
   id: string;
   name: string;
   slug: string;
+  role?: string;
+}
+
+export interface Space {
+  id: string;
+  workspaceId: string;
+  name: string;
+  order: number;
 }
 
 export interface Channel {
@@ -15,6 +24,7 @@ export interface Channel {
   isPrivate?: boolean;
   isDirect?: boolean;
   type?: string;
+  spaceId?: string | null;
   peerUserId?: string;
   peerDisplayName?: string;
 }
@@ -24,6 +34,11 @@ export interface WorkspaceMember {
   displayName: string;
   email: string;
   role: string;
+}
+
+export interface SpaceGroup {
+  space: Space | null;
+  channels: Channel[];
 }
 
 export interface ChatUser {
