@@ -56,14 +56,17 @@ Only then look for a single improvement, in this priority:
 
 ## Implementation
 
-1. Branch `cursor/<wave-or-gap-id>-<short-slug>` (lowercase).
+1. **Stay on the Cloud Agent designated branch** already checked out for this run
+   (e.g. `cursor/vibechat-development-task-*`). Do **not** create or switch to a
+   separate `cursor/<wave>-…` branch — `open_git_pr` only accepts the designated
+   branch. Identify the Wave/Backlog ID in the **commit message** and **PR body**.
 2. Implement only that concern; run relevant tests; fix what you broke.
 3. Do **not** mark roadmap items `Done` (Docs automation does that after merge).
-4. Commit with a clear message referencing the ID.
+4. Commit with a clear message referencing the ID; `git push -u origin <designated-branch>`.
 
 ## PR
 
-Open a **draft** PR to `main` with:
+Call **`open_git_pr`** (draft) to `main` from the **designated branch** with:
 
 ```text
 Wave: <ID or GAP-…>
