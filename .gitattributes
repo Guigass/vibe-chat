@@ -1,0 +1,4 @@
+# Keep shell/entrypoint scripts LF so Docker on Windows can execute them.
+*.sh text eol=lf
+infra/compose/postgres/*.sql text eol=lf
+infra/compose/postgres/*.sh text eol=lf
