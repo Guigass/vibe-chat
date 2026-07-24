@@ -591,6 +591,19 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         disabled!.Webhooks.Status.Should().Be("disabled");
         disabled.Webhooks.SecretConfigured.Should().BeTrue();
         disabled.Webhooks.SecretMask.Should().Be("••••t-99");
+
+        // Restore seed assumption (unconfigured) for sibling tests sharing the factory DB.
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+            var row = await db.OutboundWebhookEndpoints.IgnoreQueryFilters()
+                .SingleOrDefaultAsync(x => x.TenantId == SeedData.DemoTenantId);
+            if (row is not null)
+            {
+                db.OutboundWebhookEndpoints.Remove(row);
+                await db.SaveChangesAsync();
+            }
+        }
     }
 
     [Fact]
