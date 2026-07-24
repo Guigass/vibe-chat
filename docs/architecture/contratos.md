@@ -350,6 +350,10 @@ Regras:
 - URL: `https` (ou `http://localhost` / `127.0.0.1` em lab); timeout ~5s; falha não reprocessa outbox
 - RLS + query filter por `TenantId`
 
+### Auditoria de conversa (B-067)
+
+Distinta do feed `audit_events` (B-042). Viewer compliance: admin/Auditor com `admin.dashboard` lê histórico completo **dentro do tenant**, inclusive DMs onde não é membro e corpos soft-deleted (ADR-018). Membro comum → 403. Canal/thread de outro tenant → 403. Histórico normal (`GET /channels/.../messages`) continua redigindo body deletado e exigindo membership.
+
 Provisionamento (B-068): no primeiro login OIDC, `EnsureProfile` vincula stub `pending:{email}` ao `sub` real — a membership já provisionada pelo admin passa a valer sem self-signup.
 
 ## Notifications / Email (B-043)

@@ -56,11 +56,11 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 | B-045 | AI: sugerir resposta | |
 | B-046 | Export de workspace | após D-03 |
 | B-047 | Políticas de retenção configuráveis | ADR-018; purge/flag depois |
-| B-048 | Webhooks outbound | Só admin (`workspace.admin` / `admin.dashboard`); secrets nunca na UI de membro; ver B-069 |
+| B-048 | Webhooks outbound | **Done** — `integrations.webhook_endpoints` + admin settings; delivery `MessageCreated` HMAC via outbox; secret mascarado; só `workspace.admin` |
 | B-049 | Temas light/dark polish | **Done (Wave 5)** — `color-scheme`, segue OS até pin do usuário, transição sutil |
 | B-067 | Auditoria completa de conversas (ADMIN) | **Done (Wave 6)** — `GET /admin/conversations*` + threads; body soft-delete visível; authZ `admin.dashboard`; distinto de `audit_events` (B-042) |
 | B-068 | Cadastro de usuário + diretivas (clareza + fluxo) | **Done (Wave 6)** — invite admin + claim pending no login; glossário Cadastro/Diretiva; sem self-signup |
-| B-069 | Configurações sensíveis só admin | **Done (Wave 6)** — `GET/PUT /admin/settings` mascarado; exige `workspace.admin` (não Auditor); secrets só env; webhooks delivery = B-048 |
+| B-069 | Configurações sensíveis só admin | **Done (Wave 6)** — `GET/PUT /admin/settings` mascarado; exige `workspace.admin` (não Auditor); AI/SMTP em env; webhook secret gravável (B-048) |
 | B-073 | UI polish com PrimeNG | **Done (Wave 6)** — emenda ADR-002 Accepted; PrimeNG 22 + `VibeChatPreset` (Aura/tokens) no `/admin` (Table/Select/Tag); shell chat permanece composição própria; polish forms/dialogs restante é iterativo |
 | B-074 | API + Web (+ Worker) no Compose | **Done (Wave 6)** — profile `apps` caminho oficial (`task apps`); healthchecks api/web/worker; OIDC Authority + MetadataAddress; `GET /ready`; ops/README/`.env.example`; `task dev` só DX hot-reload |
 
@@ -80,7 +80,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 
 Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup → spaces → presence → reações → PWA. (B-020…B-031 já Done na Wave 4.)
 
-Pós-MVP: **P1.5** (B-070…B-072) e Wave 6 (B-068/B-069/B-067/B-073/B-074) Done. Próximo: B-048 (webhooks outbound).
+Pós-MVP: **P1.5** (B-070…B-072), Wave 6 e B-048 (webhooks outbound) Done. Próximo: P2 restante (ex.: B-045 sugerir resposta).
 
 ## Itens explicitamente rejeitados na fase 1
 

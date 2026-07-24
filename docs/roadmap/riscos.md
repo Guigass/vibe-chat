@@ -20,7 +20,7 @@
 | R-14 | MinIO disco cheio | M | Alto | Alertas disco; retenção anexos | Ops |
 | R-15 | Design genérico (clone Slack) | M | Médio | design-system.md enforce em review | Frontend |
 | R-16 | Realtime degradado (só typing) | B | Alto | **Mitigado (B-070 Done)** — gap-fill + E2E dois usuários; monitorar métricas SignalR/outbox | Backend / Frontend |
-| R-17 | Secrets/webhooks expostos a membros | M | Crítico | B-069 authZ admin-only; nunca logar tokens | Security |
+| R-17 | Secrets/webhooks expostos a membros | M | Crítico | **Mitigado (B-069/B-048)** — settings só `workspace.admin`; secret HMAC mascarado; nunca logar tokens | Security |
 | R-18 | Auditoria de conversa (break-glass de leitura) | M | Alto | B-067 authZ `admin.dashboard` + escopo tenant; testes security; ver `modelo-ameacas.md` | Security |
 | R-19 | PrimeNG sem tema VibeChat | B | Médio | **Mitigado (W6-7)** — emenda ADR-002 aceita + `VibeChatPreset`; review visual contínuo | Frontend |
 
