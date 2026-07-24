@@ -1,0 +1,28 @@
+using VibeChat.SharedKernel;
+
+namespace VibeChat.Audit;
+
+public sealed class AuditEvent : AggregateRoot
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public UserId? ActorUserId { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string EntityType { get; set; } = string.Empty;
+    public string? EntityId { get; set; }
+    public string MetadataJson { get; set; } = "{}";
+    public DateTimeOffset OccurredAt { get; set; }
+}
+
+public static class AuditActions
+{
+    public const string AdminLogin = "admin.login";
+    public const string ChannelCreate = "channel.create";
+    public const string MessageSend = "message.send";
+    public const string MessageDelete = "message.delete";
+}
+
+public interface IAuditWriter
+{
+    void Add(AuditEvent auditEvent);
+}

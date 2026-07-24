@@ -1,0 +1,111 @@
+using VibeChat.BuildingBlocks;
+using VibeChat.SharedKernel;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace VibeChat.Messaging;
+
+public sealed class Message : AggregateRoot
+{
+    public MessageId Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public ChannelId ConversationId { get; set; }
+    public long Sequence { get; set; }
+    public UserId AuthorId { get; set; }
+    public string Body { get; set; } = string.Empty;
+    public MessageId? ReplyToMessageId { get; set; }
+    public Guid? ThreadId { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? EditedAt { get; set; }
+    public DateTimeOffset? DeletedAt { get; set; }
+    public UserId? DeletedBy { get; set; }
+
+    public bool IsDeleted => DeletedAt is not null;
+}
+
+public sealed class Reaction
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public MessageId MessageId { get; set; }
+    public UserId UserId { get; set; }
+    public string Emoji { get; set; } = string.Empty;
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public sealed class ReadCursor
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public ChannelId ChannelId { get; set; }
+    public UserId UserId { get; set; }
+    public long LastReadSequence { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public sealed class ConversationSequence
+{
+    public TenantId TenantId { get; set; }
+    public ChannelId ConversationId { get; set; }
+    public long LastSequence { get; set; }
+}
+
+public sealed class IdempotencyEntry
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public string Key { get; set; } = string.Empty;
+    public string RequestHash { get; set; } = string.Empty;
+    public string ResultJson { get; set; } = string.Empty;
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public sealed record MessageCreatedEvent(
+    TenantId TenantId,
+    ChannelId ChannelId,
+    MessageId MessageId,
+    long Sequence,
+    UserId AuthorId,
+    DateTimeOffset CreatedAt) : IntegrationEvent(TenantId);
+
+public sealed record MessageEditedEvent(
+    TenantId TenantId,
+    ChannelId ChannelId,
+    MessageId MessageId,
+    long Sequence,
+    DateTimeOffset EditedAt) : IntegrationEvent(TenantId);
+
+public sealed record MessageDeletedEvent(
+    TenantId TenantId,
+    ChannelId ChannelId,
+    MessageId MessageId,
+    long Sequence,
+    DateTimeOffset DeletedAt) : IntegrationEvent(TenantId);
+
+public interface IConversationSequenceStore
+{
+    Task<long> NextAsync(TenantId tenantId, ChannelId conversationId, CancellationToken cancellationToken);
+}
+
+public interface IMessageWriter
+{
+    Task<MessageSendResult> SendAsync(SendMessageCommand command, CancellationToken cancellationToken);
+}
+
+public sealed record SendMessageCommand(
+    TenantId TenantId,
+    UserId UserId,
+    ChannelId ChannelId,
+    MessageId MessageId,
+    string IdempotencyKey,
+    string Body,
+    MessageId? ReplyToMessageId,
+    Guid? ThreadId);
+
+public sealed record MessageSendResult(MessageId MessageId, long Sequence, DateTimeOffset CreatedAt, bool Idempotent);
+
+public static class MessageIdempotency
+{
+    public static string ComputeRequestHash(SendMessageCommand command) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{command.MessageId}:{command.ChannelId}:{command.Body}:{command.ReplyToMessageId}:{command.ThreadId}")));
+}
