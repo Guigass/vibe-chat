@@ -78,6 +78,7 @@ Automation: build
 Include: what changed, how to verify, test evidence.
 
 **Never leave the PR as draft** — the QA automation only triggers on ready PRs.
+Do **not** run `gh pr ready --undo` or convert to draft.
 If `open_git_pr` creates a draft, immediately run: `gh pr ready <number>` and confirm
 `isDraft: false` before finishing.
 
