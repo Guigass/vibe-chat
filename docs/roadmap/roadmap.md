@@ -94,9 +94,9 @@ Dependências: itens só começam quando deps = done.
 | P2-1 | B/D | Papéis granulares (B-041) | Wave 5, D-07 | **Done** — `PUT .../members/{userId}/role` + UI admin + authZ `workspace.admin` |
 | P2-2 | A/B | Notificações email SMTP (B-043) | D-10, P2-1 | **Done** — Null/SMTP; off default; e-mail role-change via outbox |
 
-## Wave 6 — Refinamento UX + Admin (próximo)
+## Wave 6 — Refinamento UX + Admin
 
-Prioridade: corrigir tempo real / typing / scroll; depois clareza de cadastro e admin sensível.
+P1.5 + admin (B-068/B-069/B-067) entregues. Próximo: PrimeNG (W6-7) e Compose apps (W6-8).
 
 | ID | Trilha | Tarefa | Deps | Status |
 |----|--------|--------|------|--------|
@@ -105,7 +105,7 @@ Prioridade: corrigir tempo real / typing / scroll; depois clareza de cadastro e 
 | W6-3 | D | Layout: scroll só no container da conversa (B-072) | — | **Done** — shell sem scroll de página |
 | W6-4 | B/D/G | Cadastro de usuário + diretivas documentados e fluxo admin (B-068) | P2-1 | **Done** — invite admin + glossário |
 | W6-5 | B/D/E | Settings sensíveis (tokens, webhooks, AI/SMTP) só admin (B-069, B-048) | W6-4 | **Done** — B-069 settings mascarados; B-048 webhooks ainda `planned` |
-| W6-6 | B/D/E | Auditoria completa de conversas no ADMIN (B-067) | W4-6, W6-4 | Planned |
+| W6-6 | B/D/E | Auditoria completa de conversas no ADMIN (B-067) | W4-6, W6-4 | **Done** — viewer admin canal/DM/thread + body soft-delete; authZ `admin.dashboard` |
 | W6-7 | D/G | UI polish com PrimeNG + tema tokens (B-073; emenda ADR-002) | W6-3 | Planned |
 | W6-8 | A/G | API + Web (+ Worker) containerizados no Compose como caminho oficial (B-074) | W5-2 | Planned |
 

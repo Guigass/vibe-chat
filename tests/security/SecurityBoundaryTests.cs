@@ -171,6 +171,47 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Auditor_with_dashboard_cannot_read_or_write_sensitive_settings()
+    {
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var elevate = await demo.PutAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/members/{SeedData.AliceUserId.Value}/role",
+            new { role = "Auditor" });
+        elevate.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        try
+        {
+            using var alice = factory.CreateClient();
+            alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+            var conversations = await alice.GetAsync("/api/v1/admin/conversations");
+            conversations.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var get = await alice.GetAsync(
+                $"/api/v1/admin/settings?workspaceId={SeedData.DemoWorkspaceId.Value}");
+            get.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+            var put = await alice.PutAsJsonAsync(
+                "/api/v1/admin/settings",
+                new
+                {
+                    workspaceId = SeedData.DemoWorkspaceId.Value,
+                    ai = new { workspaceEnabled = true, provider = "Mock" }
+                });
+            put.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+        finally
+        {
+            var restore = await demo.PutAsJsonAsync(
+                $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/members/{SeedData.AliceUserId.Value}/role",
+                new { role = "Member" });
+            restore.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+    }
+
+    [Fact]
     public async Task Cross_tenant_cannot_read_sensitive_settings()
     {
         var foreignWorkspaceId = await SeedCrossTenantWorkspaceAsync();
