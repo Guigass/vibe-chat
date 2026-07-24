@@ -5,20 +5,6 @@ using VibeChat.SharedKernel;
 
 namespace VibeChat.Infrastructure;
 
-internal sealed class SearchHitRow
-{
-    public Guid MessageId { get; set; }
-    public Guid ChannelId { get; set; }
-    public string ChannelName { get; set; } = string.Empty;
-    public string ChannelType { get; set; } = string.Empty;
-    public long Sequence { get; set; }
-    public Guid AuthorUserId { get; set; }
-    public string AuthorDisplayName { get; set; } = string.Empty;
-    public string Body { get; set; } = string.Empty;
-    public DateTimeOffset CreatedAt { get; set; }
-    public double Rank { get; set; }
-}
-
 public sealed class PostgresSearchIndexer(VibeChatDbContext dbContext) : ISearchIndexer
 {
     public async Task IndexMessageAsync(MessageIndexed doc, CancellationToken cancellationToken)
@@ -59,73 +45,58 @@ public sealed class PostgresSearchQuery(VibeChatDbContext dbContext) : ISearchQu
             return new SearchResultPage(term, [], limit);
         }
 
-        // TextConfig is a fixed constant (not user input); keep it inline so EF parameter
-        // binding stays unique/simple for SqlQuery.
-        const string config = SearchPolicies.TextConfig;
-        var channelId = query.ChannelId?.Value;
+        var tsQuery = EF.Functions.PlainToTsQuery(SearchPolicies.TextConfig, term);
+        var channelFilter = query.ChannelId;
 
-        IQueryable<SearchHitRow> rowsQuery = dbContext.Database.SqlQuery<SearchHitRow>($"""
-            SELECT
-                m."Id" AS "MessageId",
-                m."ConversationId" AS "ChannelId",
-                c."Name" AS "ChannelName",
-                c."Type" AS "ChannelType",
-                m."Sequence" AS "Sequence",
-                m."AuthorId" AS "AuthorUserId",
-                coalesce(u."DisplayName", m."AuthorId"::text) AS "AuthorDisplayName",
-                m."Body" AS "Body",
-                m."CreatedAt" AS "CreatedAt",
-                ts_rank(m.search_vector, plainto_tsquery({config}, {term}))::double precision AS "Rank"
-            FROM messaging.messages AS m
-            INNER JOIN conversations.channels AS c
-                ON c."Id" = m."ConversationId" AND c."TenantId" = m."TenantId"
-            LEFT JOIN identity.user_profiles AS u
-                ON u."Id" = m."AuthorId"
-            WHERE m."TenantId" = {query.TenantId.Value}
-              AND c."WorkspaceId" = {query.WorkspaceId.Value}
-              AND m."DeletedAt" IS NULL
-              AND m.search_vector @@ plainto_tsquery({config}, {term})
-              AND ({channelId}::uuid IS NULL OR m."ConversationId" = {channelId})
-              AND (
+        var rows = await (
+            from message in dbContext.Messages.AsNoTracking()
+            join channel in dbContext.Channels.AsNoTracking() on message.ConversationId equals channel.Id
+            join author in dbContext.UserProfiles.AsNoTracking() on message.AuthorId equals author.Id into authors
+            from author in authors.DefaultIfEmpty()
+            where message.TenantId == query.TenantId
+                && channel.TenantId == query.TenantId
+                && channel.WorkspaceId == query.WorkspaceId
+                && message.DeletedAt == null
+                && (channelFilter == null || message.ConversationId == channelFilter)
+                && EF.Functions.ToTsVector(SearchPolicies.TextConfig, message.Body).Matches(tsQuery)
+                && (
                     (
-                        c."Type" IN ('Public', 'Announcement')
-                        AND EXISTS (
-                            SELECT 1
-                            FROM tenancy.workspace_members AS wm
-                            WHERE wm."TenantId" = m."TenantId"
-                              AND wm."WorkspaceId" = c."WorkspaceId"
-                              AND wm."UserId" = {query.UserId.Value}
-                        )
+                        (channel.Type == ChannelType.Public || channel.Type == ChannelType.Announcement)
+                        && dbContext.WorkspaceMembers.Any(wm =>
+                            wm.TenantId == query.TenantId
+                            && wm.WorkspaceId == channel.WorkspaceId
+                            && wm.UserId == query.UserId)
                     )
-                    OR (
-                        c."Type" NOT IN ('Public', 'Announcement')
-                        AND EXISTS (
-                            SELECT 1
-                            FROM conversations.channel_members AS cm
-                            WHERE cm."TenantId" = m."TenantId"
-                              AND cm."ChannelId" = c."Id"
-                              AND cm."UserId" = {query.UserId.Value}
-                        )
+                    || (
+                        channel.Type != ChannelType.Public
+                        && channel.Type != ChannelType.Announcement
+                        && dbContext.ChannelMembers.Any(cm =>
+                            cm.TenantId == query.TenantId
+                            && cm.ChannelId == channel.Id
+                            && cm.UserId == query.UserId)
                     )
-                  )
-            """);
-
-        var rows = await rowsQuery
-            .OrderByDescending(x => x.Rank)
-            .ThenByDescending(x => x.CreatedAt)
+                )
+            orderby EF.Functions.ToTsVector(SearchPolicies.TextConfig, message.Body).Rank(tsQuery) descending, message.CreatedAt descending
+            select new
+            {
+                Message = message,
+                Channel = channel,
+                AuthorName = author != null ? author.DisplayName : message.AuthorId.Value.ToString(),
+                Rank = EF.Functions.ToTsVector(SearchPolicies.TextConfig, message.Body).Rank(tsQuery)
+            })
             .Take(limit)
             .ToListAsync(cancellationToken);
 
         var items = rows.Select(row => new SearchMessageHit(
-            row.MessageId,
-            row.ChannelId,
-            FormatChannelName(row.ChannelName, row.ChannelType),
-            row.ChannelType,
-            row.Sequence,
-            row.AuthorUserId,
-            row.AuthorDisplayName,
-            SearchPolicies.BuildPreview(row.Body),
-            row.CreatedAt,
+            row.Message.Id.Value,
+            row.Channel.Id.Value,
+            FormatChannelName(row.Channel.Name, row.Channel.Type.ToString()),
+            row.Channel.Type.ToString(),
+            row.Message.Sequence,
+            row.Message.AuthorId.Value,
+            row.AuthorName,
+            SearchPolicies.BuildPreview(row.Message.Body),
+            row.Message.CreatedAt,
             row.Rank)).ToArray();
 
         return new SearchResultPage(term, items, limit);
