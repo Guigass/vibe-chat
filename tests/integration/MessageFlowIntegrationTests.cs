@@ -89,6 +89,63 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Toggle_reaction_persists_and_creates_outbox()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var messageId = Guid.NewGuid();
+        var create = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-react-{messageId:N}", $"react-me-{messageId:N}", null, null));
+        create.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var add = await client.PutAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages/{messageId}/reactions",
+            new ToggleReactionRequestDto("👍"));
+        add.StatusCode.Should().Be(HttpStatusCode.OK);
+        var added = await add.Content.ReadFromJsonAsync<ToggleReactionResponseDto>(JsonOptions);
+        added.Should().NotBeNull();
+        added!.Added.Should().BeTrue();
+        added.Emoji.Should().Be("👍");
+        added.Reactions.Should().ContainSingle(r => r.Emoji == "👍" && r.Count == 1 && r.Me);
+
+        var list = await client.GetFromJsonAsync<MessageDto[]>(
+            $"/api/v1/channels/{DemoChannelId}/messages?after=0&limit=100",
+            JsonOptions);
+        list!.Single(m => m.Id == messageId).Reactions.Should()
+            .ContainSingle(r => r.Emoji == "👍" && r.Count == 1 && r.Me);
+
+        var remove = await client.PutAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages/{messageId}/reactions",
+            new ToggleReactionRequestDto("👍"));
+        remove.StatusCode.Should().Be(HttpStatusCode.OK);
+        var removed = await remove.Content.ReadFromJsonAsync<ToggleReactionResponseDto>(JsonOptions);
+        removed!.Added.Should().BeFalse();
+        removed.Reactions.Should().BeEmpty();
+
+        var bad = await client.PutAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages/{messageId}/reactions",
+            new ToggleReactionRequestDto("🚀"));
+        bad.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        var outbox = await db.OutboxMessages.IgnoreQueryFilters()
+            .Where(x => x.Type == nameof(ReactionChangedEvent))
+            .OrderByDescending(x => x.OccurredAt)
+            .Take(20)
+            .ToListAsync();
+        outbox.Should().Contain(x =>
+            x.Payload.Contains(messageId.ToString(), StringComparison.OrdinalIgnoreCase)
+            && x.Payload.Contains("\"added\":true", StringComparison.Ordinal)
+            && (x.Payload.Contains("👍", StringComparison.Ordinal)
+                || x.Payload.Contains("\\uD83D\\uDC4D", StringComparison.Ordinal)));
+        (await db.Reactions.IgnoreQueryFilters().CountAsync(x => x.MessageId == new MessageId(messageId)))
+            .Should().Be(0);
+    }
+
+    [Fact]
     public async Task Soft_delete_hides_message_body()
     {
         using var client = factory.CreateClient();
@@ -527,6 +584,15 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         return channelId.Value;
     }
 
+    private sealed record ReactionSummaryDto(string Emoji, int Count, bool Me);
+    private sealed record ToggleReactionRequestDto(string Emoji);
+    private sealed record ToggleReactionResponseDto(
+        Guid MessageId,
+        Guid ChannelId,
+        string Emoji,
+        bool Added,
+        ReactionSummaryDto[] Reactions);
+
     private sealed record MessageDto(
         Guid Id,
         Guid ChannelId,
@@ -540,7 +606,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         Guid? ThreadId = null,
         Guid? ReplyToMessageId = null,
         int ReplyCount = 0,
-        Guid? ConversationId = null);
+        Guid? ConversationId = null,
+        ReactionSummaryDto[]? Reactions = null);
 
     private sealed record ThreadDto(
         Guid Id,

@@ -20,6 +20,7 @@ export class MessageStore {
   private unsubCreated: (() => void) | null = null;
   private unsubEdited: (() => void) | null = null;
   private unsubDeleted: (() => void) | null = null;
+  private unsubReactions: (() => void) | null = null;
 
   readonly messages = this.messagesSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
@@ -40,6 +41,7 @@ export class MessageStore {
     this.unsubCreated = this.hub.onMessage((message) => this.ingestRemote(message));
     this.unsubEdited = this.hub.onMessageEdited((patch) => this.applyEdit(patch));
     this.unsubDeleted = this.hub.onMessageDeleted((patch) => this.applyDelete(patch));
+    this.unsubReactions = this.hub.onReactionChanged((event) => this.applyReactions(event.messageId, event.reactions));
   }
 
   async loadChannel(channelId: string): Promise<void> {
@@ -205,6 +207,37 @@ export class MessageStore {
     });
   }
 
+  async toggleReaction(messageId: string, emoji: string): Promise<void> {
+    const channel = this.channels.activeChannel();
+    if (!channel || !emoji) return;
+
+    if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
+      this.messagesSignal.update((list) =>
+        list.map((m) => {
+          if (m.id !== messageId) return m;
+          const current = [...(m.reactions ?? [])];
+          const idx = current.findIndex((r) => r.emoji === emoji);
+          if (idx >= 0) {
+            const item = current[idx];
+            if (item.me) {
+              if (item.count <= 1) current.splice(idx, 1);
+              else current[idx] = { ...item, count: item.count - 1, me: false };
+            } else {
+              current[idx] = { ...item, count: item.count + 1, me: true };
+            }
+          } else {
+            current.push({ emoji, count: 1, me: true });
+          }
+          return { ...m, reactions: current };
+        }),
+      );
+      return;
+    }
+
+    const result = await this.api.toggleReaction(channel.id, messageId, emoji);
+    this.applyReactions(result.messageId, result.reactions);
+  }
+
   private ingestRemote(message: ChatMessage): void {
     const normalized = this.normalize(message);
     const isThreadReply =
@@ -298,6 +331,15 @@ export class MessageStore {
     );
   }
 
+  private applyReactions(
+    messageId: string,
+    reactions: Array<{ emoji: string; count: number; me: boolean }>,
+  ): void {
+    this.messagesSignal.update((list) =>
+      list.map((m) => (m.id === messageId ? { ...m, reactions: [...reactions] } : m)),
+    );
+  }
+
   private patchByClientId(clientMessageId: string, patch: Partial<ChatMessage>): void {
     this.messagesSignal.update((list) =>
       list.map((m) => (m.clientMessageId === clientMessageId ? { ...m, ...patch } : m)),
@@ -314,6 +356,7 @@ export class MessageStore {
       authorName: message.authorName || 'Membro',
       body: message.deletedAt ? '' : message.body,
       replyCount: message.replyCount ?? 0,
+      reactions: message.reactions ?? [],
     };
   }
 

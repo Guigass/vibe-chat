@@ -56,6 +56,14 @@ export interface MessageAttachment {
   status?: string;
 }
 
+export interface ReactionSummary {
+  emoji: string;
+  count: number;
+  me: boolean;
+}
+
+export const REACTION_EMOJI_OPTIONS = ['👍', '❤️', '😂', '🎉', '👀', '✅'] as const;
+
 export interface ChatMessage {
   id: string;
   clientMessageId?: string;
@@ -74,6 +82,7 @@ export interface ChatMessage {
   threadId?: string | null;
   replyToMessageId?: string | null;
   replyCount?: number;
+  reactions?: ReactionSummary[];
 }
 
 export interface ChatThread {

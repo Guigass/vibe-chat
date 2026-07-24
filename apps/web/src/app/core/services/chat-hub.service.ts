@@ -8,7 +8,12 @@ import {
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 import { TenantContext } from '../tenant/tenant-context';
-import { ChatMessage, PresenceStatus, TypingState } from '../../shared/models/chat.models';
+import {
+  ChatMessage,
+  PresenceStatus,
+  ReactionSummary,
+  TypingState,
+} from '../../shared/models/chat.models';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
@@ -70,6 +75,24 @@ export interface MessageDeleteEvent {
   seq?: number;
 }
 
+export interface ReactionChangedEvent {
+  messageId: string;
+  channelId: string;
+  emoji: string;
+  userId: string;
+  added: boolean;
+  reactions: ReactionSummary[];
+}
+
+interface ReactionChangedPayload {
+  messageId?: string;
+  channelId: string;
+  emoji?: string;
+  userId?: string;
+  added?: boolean;
+  reactions?: Array<{ emoji: string; count: number; userIds?: string[]; me?: boolean }>;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ChatHubService {
   private readonly auth = inject(AuthService);
@@ -84,6 +107,7 @@ export class ChatHubService {
   private readonly messageHandlers = new Set<(message: ChatMessage) => void>();
   private readonly editedHandlers = new Set<(event: MessageEditEvent) => void>();
   private readonly deletedHandlers = new Set<(event: MessageDeleteEvent) => void>();
+  private readonly reactionHandlers = new Set<(event: ReactionChangedEvent) => void>();
   private readonly presenceHandlers = new Set<(event: PresenceChangedEvent) => void>();
 
   readonly status = this.statusSignal.asReadonly();
@@ -157,6 +181,29 @@ export class ChatHubService {
         seq: payload.sequence,
       };
       for (const handler of this.deletedHandlers) {
+        handler(event);
+      }
+    });
+
+    this.connection.on('ReactionChanged', (payload: ReactionChangedPayload) => {
+      if (!payload.messageId || !payload.channelId || !payload.emoji) return;
+      const me = this.auth.profile()?.id;
+      const event: ReactionChangedEvent = {
+        messageId: payload.messageId,
+        channelId: payload.channelId,
+        emoji: payload.emoji,
+        userId: String(payload.userId ?? ''),
+        added: !!payload.added,
+        reactions: (payload.reactions ?? []).map((r) => {
+          const userIds = (r.userIds ?? []).map(String);
+          return {
+            emoji: r.emoji,
+            count: r.count,
+            me: me ? userIds.includes(me) : !!r.me,
+          };
+        }),
+      };
+      for (const handler of this.reactionHandlers) {
         handler(event);
       }
     });
@@ -285,6 +332,11 @@ export class ChatHubService {
   onMessageDeleted(handler: (event: MessageDeleteEvent) => void): () => void {
     this.deletedHandlers.add(handler);
     return () => this.deletedHandlers.delete(handler);
+  }
+
+  onReactionChanged(handler: (event: ReactionChangedEvent) => void): () => void {
+    this.reactionHandlers.add(handler);
+    return () => this.reactionHandlers.delete(handler);
   }
 
   onPresenceChanged(handler: (event: PresenceChangedEvent) => void): () => void {

@@ -31,6 +31,7 @@ export class ThreadStore {
 
   constructor() {
     this.hub.onMessage((message) => this.ingestRemote(message));
+    this.hub.onReactionChanged((event) => this.applyReactions(event.messageId, event.reactions));
   }
 
   async openFromMessage(channelId: string, messageId: string): Promise<void> {
@@ -68,6 +69,19 @@ export class ThreadStore {
     if (active?.id === threadId) {
       this.activeSignal.set({ ...active, replyCount: (active.replyCount ?? 0) + 1 });
     }
+  }
+
+  async toggleReaction(messageId: string, emoji: string): Promise<void> {
+    const thread = this.activeSignal();
+    if (!thread || !emoji) return;
+
+    if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
+      this.applyReactionsLocal(messageId, emoji);
+      return;
+    }
+
+    const result = await this.api.toggleReaction(thread.channelId, messageId, emoji);
+    this.applyReactions(result.messageId, result.reactions);
   }
 
   async send(body: string): Promise<void> {
@@ -163,6 +177,50 @@ export class ThreadStore {
     );
   }
 
+  private applyReactions(
+    messageId: string,
+    reactions: Array<{ emoji: string; count: number; me: boolean }>,
+  ): void {
+    this.messagesSignal.update((list) =>
+      list.map((m) => (m.id === messageId ? { ...m, reactions: [...reactions] } : m)),
+    );
+    const active = this.activeSignal();
+    if (active?.parentMessage?.id === messageId) {
+      this.activeSignal.set({
+        ...active,
+        parentMessage: { ...active.parentMessage, reactions: [...reactions] },
+      });
+    }
+  }
+
+  private applyReactionsLocal(messageId: string, emoji: string): void {
+    const toggle = (list: ChatMessage[]): ChatMessage[] =>
+      list.map((m) => {
+        if (m.id !== messageId) return m;
+        const current = [...(m.reactions ?? [])];
+        const idx = current.findIndex((r) => r.emoji === emoji);
+        if (idx >= 0) {
+          const item = current[idx];
+          if (item.me) {
+            if (item.count <= 1) current.splice(idx, 1);
+            else current[idx] = { ...item, count: item.count - 1, me: false };
+          } else {
+            current[idx] = { ...item, count: item.count + 1, me: true };
+          }
+        } else {
+          current.push({ emoji, count: 1, me: true });
+        }
+        return { ...m, reactions: current };
+      });
+
+    this.messagesSignal.update(toggle);
+    const active = this.activeSignal();
+    if (active?.parentMessage?.id === messageId) {
+      const [updated] = toggle([active.parentMessage]);
+      this.activeSignal.set({ ...active, parentMessage: updated });
+    }
+  }
+
   private normalize(message: ChatMessage): ChatMessage {
     return {
       ...message,
@@ -171,6 +229,7 @@ export class ThreadStore {
       mine: message.mine ?? message.authorUserId === this.auth.profile()?.id,
       authorName: message.authorName || 'Membro',
       body: message.deletedAt ? '' : message.body,
+      reactions: message.reactions ?? [],
     };
   }
 

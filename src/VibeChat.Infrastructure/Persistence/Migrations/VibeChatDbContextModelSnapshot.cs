@@ -502,6 +502,9 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "MessageId", "UserId", "Emoji")
+                        .IsUnique();
+
                     b.ToTable("reactions", "messaging");
                 });
 

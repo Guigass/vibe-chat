@@ -31,6 +31,7 @@ import { EmptyState, MessageBubble, Skeleton, TypingIndicator } from '../../../s
               (edit)="onEdit(message.id, $event)"
               (delete)="onDelete(message.id)"
               (openThread)="onOpenThread(message.id)"
+              (react)="onReact(message.id, $event)"
             />
           }
         </div>
@@ -100,5 +101,9 @@ export class Timeline {
     if (thread) {
       this.messages.markThreadOpened(messageId, thread.id);
     }
+  }
+
+  async onReact(messageId: string, emoji: string): Promise<void> {
+    await this.messages.toggleReaction(messageId, emoji);
   }
 }
