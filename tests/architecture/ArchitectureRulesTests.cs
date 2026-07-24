@@ -3,6 +3,7 @@ using NetArchTest.Rules;
 using VibeChat.Conversations;
 using VibeChat.Identity;
 using VibeChat.Messaging;
+using VibeChat.Search;
 using VibeChat.Tenancy;
 
 namespace VibeChat.ArchitectureTests;
@@ -28,7 +29,8 @@ public sealed class ArchitectureRulesTests
             typeof(Message).Assembly,
             typeof(Channel).Assembly,
             typeof(Workspace).Assembly,
-            typeof(UserProfile).Assembly
+            typeof(UserProfile).Assembly,
+            typeof(ISearchQuery).Assembly
         };
 
         foreach (var assembly in assemblies)

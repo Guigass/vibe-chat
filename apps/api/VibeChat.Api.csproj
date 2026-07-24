@@ -37,6 +37,8 @@
     <ProjectReference Include="..\..\modules\Identity\VibeChat.Identity.csproj" />
     <ProjectReference Include="..\..\modules\Tenancy\VibeChat.Tenancy.csproj" />
     <ProjectReference Include="..\..\modules\Directory\VibeChat.Directory.csproj" />
+    <ProjectReference Include="..\..\modules\Files\VibeChat.Files.csproj" />
+    <ProjectReference Include="..\..\modules\Search\VibeChat.Search.csproj" />
   </ItemGroup>
 
 </Project>

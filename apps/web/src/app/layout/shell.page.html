@@ -53,15 +53,40 @@
         }
       </div>
 
-      <div class="shell__search" [class.is-focused]="searchFocused()">
+      <div class="shell__search" [class.is-focused]="searchFocused()" [class.is-open]="searchOpen()">
         <vc-input
           controlId="vc-search"
           [(value)]="search"
           placeholder="Buscar (Ctrl/Cmd+K)"
-          ariaLabel="Buscar"
-          (focused)="searchFocused.set(true)"
+          ariaLabel="Buscar mensagens"
+          (focused)="searchFocused.set(true); searchOpen.set(true)"
           (blurred)="searchFocused.set(false)"
         />
+        @if (searchOpen() && search().trim().length >= 2) {
+          <div class="shell__search-panel" role="listbox" aria-label="Resultados da busca">
+            @if (searchLoading()) {
+              <p class="shell__search-status">Buscando…</p>
+            } @else if (searchError()) {
+              <p class="shell__search-status" role="alert">{{ searchError() }}</p>
+            } @else if (searchResults().length === 0) {
+              <p class="shell__search-status">Nenhuma mensagem encontrada.</p>
+            } @else {
+              @for (hit of searchResults(); track hit.messageId) {
+                <button
+                  type="button"
+                  class="shell__search-hit"
+                  role="option"
+                  (mousedown)="openSearchHit(hit)"
+                >
+                  <span class="shell__search-hit-meta">
+                    #{{ hit.channelName }} · {{ hit.authorDisplayName }}
+                  </span>
+                  <span class="shell__search-hit-body">{{ hit.bodyPreview }}</span>
+                </button>
+              }
+            }
+          </div>
+        }
       </div>
 
       <div class="shell__actions">

@@ -21,6 +21,7 @@ using VibeChat.Identity;
 using VibeChat.Infrastructure;
 using VibeChat.Messaging;
 using VibeChat.Realtime;
+using VibeChat.Search;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
 
@@ -352,13 +353,34 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
     return Results.Ok(messages);
 });
 
-v1.MapPost("/channels/{channelId:guid}/messages", async (Guid channelId, SendMessageRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IMessageWriter writer, IClock clock, CancellationToken ct) =>
+v1.MapPost("/channels/{channelId:guid}/messages", async (
+    Guid channelId,
+    SendMessageRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IMessageWriter writer,
+    IRateLimiter rateLimiter,
+    IConfiguration config,
+    IClock clock,
+    CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
     if (channel is null)
     {
         return Results.Forbid();
+    }
+
+    var sendLimit = config.GetValue("RateLimit:SendPerMinute", RateLimitPolicies.DefaultSendPerMinute);
+    var allowed = await rateLimiter.TryAcquireAsync(
+        RateLimitKeys.SendMessage(channel.TenantId, profile.Id),
+        sendLimit,
+        TimeSpan.FromMinutes(1),
+        ct);
+    if (!allowed)
+    {
+        return Results.StatusCode(StatusCodes.Status429TooManyRequests);
     }
 
     var hasAttachments = request.AttachmentIds is { Length: > 0 };
@@ -732,6 +754,77 @@ v1.MapPut("/channels/{channelId:guid}/read-cursor", async (Guid channelId, Upser
     return Results.Ok(new ReadCursorResponse(channel.Id.Value, profile.Id.Value, cursor.LastReadSequence, cursor.UpdatedAt));
 });
 
+v1.MapGet("/search/messages", async (
+    Guid workspaceId,
+    string? q,
+    Guid? channelId,
+    int? limit,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    ISearchQuery search,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    if (!await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Search.Messages, ct)
+        || !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Message.Read, ct))
+    {
+        return Results.Forbid();
+    }
+
+    ChannelId? scopedChannel = null;
+    if (channelId is not null)
+    {
+        var channel = await ResolveChannelAsync(new ChannelId(channelId.Value), profile.Id, db, tenant, ct);
+        if (channel is null || channel.WorkspaceId != workspace.Id)
+        {
+            return Results.Forbid();
+        }
+
+        scopedChannel = channel.Id;
+    }
+
+    try
+    {
+        var page = await search.SearchMessagesAsync(
+            new SearchMessagesQuery(
+                workspace.TenantId,
+                profile.Id,
+                workspace.Id,
+                q ?? string.Empty,
+                scopedChannel,
+                SearchPolicies.NormalizeLimit(limit)),
+            ct);
+
+        return Results.Ok(new SearchMessagesResponse(
+            page.Query,
+            page.Limit,
+            page.Items.Select(x => new SearchMessageHitResponse(
+                x.MessageId,
+                x.ChannelId,
+                x.ChannelName,
+                x.ChannelType,
+                x.Sequence,
+                x.AuthorUserId,
+                x.AuthorDisplayName,
+                x.BodyPreview,
+                x.CreatedAt,
+                x.Rank)).ToArray()));
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(detail: ex.GetBaseException().Message, statusCode: StatusCodes.Status500InternalServerError);
+    }
+}).RequireAuthorization();
+
 v1.MapGet("/channels/{channelId:guid}/unread-count", async (Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
@@ -1046,6 +1139,18 @@ public sealed record MessageResponse(
     AttachmentResponse[]? Attachments = null);
 public sealed record UpsertReadCursorRequest(long LastReadSequence);
 public sealed record ReadCursorResponse(Guid ChannelId, Guid UserId, long LastReadSequence, DateTimeOffset UpdatedAt);
+public sealed record SearchMessageHitResponse(
+    Guid MessageId,
+    Guid ChannelId,
+    string ChannelName,
+    string ChannelType,
+    long Sequence,
+    Guid AuthorUserId,
+    string AuthorDisplayName,
+    string BodyPreview,
+    DateTimeOffset CreatedAt,
+    double Rank);
+public sealed record SearchMessagesResponse(string Query, int Limit, SearchMessageHitResponse[] Items);
 public sealed record AiSummaryResponse(string Summary);
 public sealed record AdminHealthResponse(string Postgres, string Redis, string Storage);
 public sealed record AdminDashboardResponse(

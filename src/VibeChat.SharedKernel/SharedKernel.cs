@@ -126,6 +126,11 @@ public static class Permissions
         public const string Download = "file.download";
     }
 
+    public static class Search
+    {
+        public const string Messages = "search.messages";
+    }
+
     public static class Admin
     {
         public const string Dashboard = "admin.dashboard";

@@ -298,6 +298,52 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Search_finds_message_by_fts_term()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var messageId = Guid.NewGuid();
+        var token = $"ftsunique{messageId:N}";
+        var create = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-search-{messageId:N}", $"busca {token} no canal", null, null));
+        create.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var search = await client.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={SeedData.DemoWorkspaceId.Value}&q={token}&limit=20",
+            JsonOptions);
+
+        search.Should().NotBeNull();
+        search!.Items.Should().Contain(x => x.MessageId == messageId && x.ChannelId == DemoChannelId);
+        search.Items.Single(x => x.MessageId == messageId).BodyPreview.Should().Contain(token);
+    }
+
+    [Fact]
+    public async Task Search_excludes_soft_deleted_messages()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var messageId = Guid.NewGuid();
+        var token = $"ftsdeleted{messageId:N}";
+        var create = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-search-del-{messageId:N}", $"apagada {token}", null, null));
+        create.EnsureSuccessStatusCode();
+
+        var delete = await client.DeleteAsync($"/api/v1/channels/{DemoChannelId}/messages/{messageId}");
+        delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var search = await client.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={SeedData.DemoWorkspaceId.Value}&q={token}",
+            JsonOptions);
+
+        search.Should().NotBeNull();
+        search!.Items.Should().NotContain(x => x.MessageId == messageId);
+    }
+
+    [Fact]
     public async Task Tenant_isolation_attempt_is_denied()
     {
         var foreignChannelId = await SeedForeignTenantChannelAsync();
@@ -386,4 +432,18 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     private sealed record WorkspaceMemberDto(Guid UserId, string DisplayName, string Email, string Role);
 
     private sealed record HealthSummaryDto(string Status, Dictionary<string, string> Checks);
+
+    private sealed record SearchMessageHitDto(
+        Guid MessageId,
+        Guid ChannelId,
+        string ChannelName,
+        string ChannelType,
+        long Sequence,
+        Guid AuthorUserId,
+        string AuthorDisplayName,
+        string BodyPreview,
+        DateTimeOffset CreatedAt,
+        double Rank);
+
+    private sealed record SearchMessagesDto(string Query, int Limit, SearchMessageHitDto[] Items);
 }

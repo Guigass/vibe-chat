@@ -129,6 +129,7 @@ public static class RolePermissionCatalog
         Permissions.Channel.Read, Permissions.Channel.Create, Permissions.Channel.Manage,
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny,
         Permissions.Files.Upload, Permissions.Files.Download,
+        Permissions.Search.Messages,
         Permissions.Admin.Dashboard, Permissions.Ai.Summarize
     ];
 
@@ -137,18 +138,21 @@ public static class RolePermissionCatalog
         Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Channel.Create,
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny,
         Permissions.Files.Upload, Permissions.Files.Download,
+        Permissions.Search.Messages,
         Permissions.Ai.Summarize
     ];
 
     private static readonly HashSet<string> AuditorPermissions =
     [
-        Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Message.Read, Permissions.Files.Download, Permissions.Admin.Dashboard
+        Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Message.Read, Permissions.Files.Download,
+        Permissions.Search.Messages, Permissions.Admin.Dashboard
     ];
 
     private static readonly HashSet<string> MemberPermissions =
     [
         Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn,
         Permissions.Files.Upload, Permissions.Files.Download,
+        Permissions.Search.Messages,
         Permissions.Ai.Summarize
     ];
 
@@ -161,6 +165,7 @@ public static class RolePermissionCatalog
     [
         Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Message.Read, Permissions.Message.Send,
         Permissions.Files.Upload, Permissions.Files.Download,
+        Permissions.Search.Messages,
         Permissions.Ai.Summarize
     ];
 }
@@ -169,4 +174,21 @@ public static class RolePermissionCatalog
 public sealed class RequirePermissionAttribute(string permission) : Attribute
 {
     public string Permission { get; } = permission;
+}
+
+public interface IRateLimiter
+{
+    Task<bool> TryAcquireAsync(string key, int limit, TimeSpan window, CancellationToken cancellationToken);
+}
+
+public static class RateLimitKeys
+{
+    public static string SendMessage(TenantId tenantId, UserId userId) => $"rl:send:{tenantId.Value:N}:{userId.Value:N}";
+    public static string Hub(TenantId tenantId, UserId userId) => $"rl:hub:{tenantId.Value:N}:{userId.Value:N}";
+}
+
+public static class RateLimitPolicies
+{
+    public const int DefaultSendPerMinute = 60;
+    public const int DefaultHubPerMinute = 120;
 }
