@@ -42,12 +42,12 @@ Prioridade: **P0** (fatia vertical) → **P1** (MVP usável) → **P2** (diferen
 | B-041 | Papéis granulares | |
 | B-042 | Audit log | **Done (Wave 5)** — eventos + `GET /admin/audit-events` + UI admin (`admin.dashboard`) |
 | B-043 | Notificações email (opcional) | SMTP genérico (D-10) |
-| B-044 | AI: resumo de thread (flag) | mock existe; provider externo off default (D-06) |
+| B-044 | AI: resumo de thread (flag) | **Done (Wave 5)** — summarize canal + Mock/OpenRouter; off default; testes security/integration |
 | B-045 | AI: sugerir resposta | |
 | B-046 | Export de workspace | após D-03 |
 | B-047 | Políticas de retenção configuráveis | ADR-018; purge/flag depois |
 | B-048 | Webhooks outbound | |
-| B-049 | Temas light/dark polish | design-system |
+| B-049 | Temas light/dark polish | **Done (Wave 5)** — `color-scheme`, segue OS até pin do usuário, transição sutil |
 
 ## P3 — Escala / futuro
 

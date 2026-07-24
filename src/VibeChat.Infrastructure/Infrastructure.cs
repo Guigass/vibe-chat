@@ -598,16 +598,26 @@ public sealed class DashboardQuery(VibeChatDbContext dbContext) : IDashboardQuer
     }
 }
 
-public sealed class SummarizeChannelFeature(VibeChatDbContext dbContext, IAiCompletionProvider provider, IClock clock) : ISummarizeChannelFeature
+public sealed class SummarizeChannelFeature(
+    VibeChatDbContext dbContext,
+    IAiCompletionProvider provider,
+    IClock clock,
+    IConfiguration configuration) : ISummarizeChannelFeature
 {
-    public async Task<string> SummarizeAsync(TenantId tenantId, WorkspaceId workspaceId, ChannelId channelId, CancellationToken cancellationToken)
+    public async Task<SummarizeChannelResult> SummarizeAsync(TenantId tenantId, WorkspaceId workspaceId, ChannelId channelId, CancellationToken cancellationToken)
     {
+        // D-06 / ADR-012: external AI and summarize stay off unless explicitly enabled.
+        if (!configuration.GetValue("Ai:Enabled", false) || provider is NullAiProvider)
+        {
+            return new SummarizeChannelResult(false, "AI is disabled.", "AiDisabled");
+        }
+
         var settings = await dbContext.AiSettings.AsNoTracking()
             .FirstOrDefaultAsync(x => x.TenantId == tenantId && x.WorkspaceId == workspaceId, cancellationToken);
 
         if (settings is null || !settings.Enabled)
         {
-            return "AI is disabled for this workspace.";
+            return new SummarizeChannelResult(false, "AI is disabled for this workspace.", "AiDisabled");
         }
 
         var recent = await dbContext.Messages.AsNoTracking()
@@ -619,7 +629,15 @@ public sealed class SummarizeChannelFeature(VibeChatDbContext dbContext, IAiComp
             .ToArrayAsync(cancellationToken);
 
         var prompt = string.Join('\n', recent.Select(x => $"#{x.Sequence}: {x.Body}"));
-        var response = await provider.CompleteAsync(new AiCompletionRequest("Summarize recent channel messages without exposing sensitive details.", prompt), cancellationToken);
+        var response = await provider.CompleteAsync(
+            new AiCompletionRequest("Summarize recent channel messages without exposing sensitive details.", prompt),
+            cancellationToken);
+
+        if (string.Equals(provider.Name, "OpenRouter", StringComparison.OrdinalIgnoreCase)
+            && response.Text.Contains("provider is unavailable", StringComparison.OrdinalIgnoreCase))
+        {
+            return new SummarizeChannelResult(false, response.Text, "ProviderError");
+        }
 
         dbContext.AiUsageRecords.Add(new AiUsageRecord
         {
@@ -634,7 +652,7 @@ public sealed class SummarizeChannelFeature(VibeChatDbContext dbContext, IAiComp
             CreatedAt = clock.UtcNow
         });
         await dbContext.SaveChangesAsync(cancellationToken);
-        return response.Text;
+        return new SummarizeChannelResult(true, response.Text);
     }
 }
 
@@ -1421,14 +1439,24 @@ public static class DependencyInjection
         services.AddScoped<IAiCompletionProvider>(sp =>
         {
             var cfg = sp.GetRequiredService<IConfiguration>();
-            if (!cfg.GetValue("Ai:Enabled", true))
+            // D-06: AI off by default; OpenRouter only when Enabled + Provider=OpenRouter + key.
+            if (!cfg.GetValue("Ai:Enabled", false))
             {
                 return new NullAiProvider();
             }
 
-            return string.Equals(cfg["Ai:Provider"], "OpenRouter", StringComparison.OrdinalIgnoreCase)
-                ? sp.GetRequiredService<OpenRouterAiProvider>()
-                : new MockAiProvider();
+            if (string.Equals(cfg["Ai:Provider"], "OpenRouter", StringComparison.OrdinalIgnoreCase))
+            {
+                var apiKey = cfg["Ai:OpenRouter:ApiKey"];
+                if (string.IsNullOrWhiteSpace(apiKey))
+                {
+                    return new NullAiProvider();
+                }
+
+                return sp.GetRequiredService<OpenRouterAiProvider>();
+            }
+
+            return new MockAiProvider();
         });
 
         services.AddHealthChecks()

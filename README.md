@@ -92,6 +92,7 @@ tests/            unit, integration, architecture, security, e2e
 | Área | Caminho |
 |------|---------|
 | Desenvolvimento | `docs/operations/desenvolvimento.md` |
+| Operação / runbooks | `docs/operations/operacao.md`, `docs/operations/runbooks/` |
 | Agentes / Cloud Agents | `AGENTS.md`, `docs/agents/orientacoes.md` |
 | ADRs | `docs/adrs/` |
 | Segurança multi-tenant | `docs/security/multi-tenant.md` |

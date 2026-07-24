@@ -1,5 +1,7 @@
 # Backup e Restore — VibeChat
 
+Atalho operacional (checklist): [`runbooks/backup-restore.md`](./runbooks/backup-restore.md).
+
 ## O que precisa de backup
 
 | Dado | Onde | Prioridade |

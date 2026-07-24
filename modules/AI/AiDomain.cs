@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using VibeChat.SharedKernel;
 
 namespace VibeChat.AI;
@@ -27,6 +28,9 @@ public sealed class AiSettings
 public sealed record AiCompletionRequest(string SystemPrompt, string UserPrompt);
 public sealed record AiCompletionResponse(string Text, int PromptTokens, int CompletionTokens, int LatencyMs);
 
+/// <summary>Result of channel summarize. When Ok is false, Error is a stable code (e.g. AiDisabled, ProviderError).</summary>
+public sealed record SummarizeChannelResult(bool Ok, string Summary, string? Error = null);
+
 public interface IAiCompletionProvider
 {
     string Name { get; }
@@ -38,7 +42,7 @@ public sealed class NullAiProvider : IAiCompletionProvider
     public string Name => "Null";
 
     public Task<AiCompletionResponse> CompleteAsync(AiCompletionRequest request, CancellationToken cancellationToken) =>
-        Task.FromResult(new AiCompletionResponse("AI is disabled for this workspace.", 0, 0, 0));
+        Task.FromResult(new AiCompletionResponse("AI is disabled.", 0, 0, 0));
 }
 
 public sealed class MockAiProvider : IAiCompletionProvider
@@ -74,17 +78,46 @@ public sealed class OpenRouterAiProvider(HttpClient httpClient) : IAiCompletionP
             }
         }, cancellationToken);
 
+        var latencyMs = (int)(DateTimeOffset.UtcNow - started).TotalMilliseconds;
         if (!response.IsSuccessStatusCode)
         {
-            return new AiCompletionResponse("OpenRouter provider is unavailable.", 0, 0, (int)(DateTimeOffset.UtcNow - started).TotalMilliseconds);
+            return new AiCompletionResponse("OpenRouter provider is unavailable.", 0, 0, latencyMs);
         }
 
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
-        return new AiCompletionResponse(body.Length > 512 ? body[..512] : body, request.UserPrompt.Length / 4, body.Length / 4, (int)(DateTimeOffset.UtcNow - started).TotalMilliseconds);
+        var text = ExtractChatCompletionText(body);
+        return new AiCompletionResponse(text, request.UserPrompt.Length / 4, text.Length / 4, latencyMs);
+    }
+
+    public static string ExtractChatCompletionText(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("choices", out var choices)
+                && choices.ValueKind == JsonValueKind.Array
+                && choices.GetArrayLength() > 0)
+            {
+                var first = choices[0];
+                if (first.TryGetProperty("message", out var message)
+                    && message.TryGetProperty("content", out var content)
+                    && content.ValueKind == JsonValueKind.String)
+                {
+                    var text = content.GetString() ?? string.Empty;
+                    return text.Length > 4000 ? text[..4000] : text;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Fall through to truncated raw body — never throw from provider parse.
+        }
+
+        return json.Length > 512 ? json[..512] : json;
     }
 }
 
 public interface ISummarizeChannelFeature
 {
-    Task<string> SummarizeAsync(TenantId tenantId, WorkspaceId workspaceId, ChannelId channelId, CancellationToken cancellationToken);
+    Task<SummarizeChannelResult> SummarizeAsync(TenantId tenantId, WorkspaceId workspaceId, ChannelId channelId, CancellationToken cancellationToken);
 }

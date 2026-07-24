@@ -141,4 +141,22 @@ public sealed class BackendUnitTests
         response.Text.Should().NotContain("one");
         response.PromptTokens.Should().BeGreaterThan(0);
     }
+
+    [Fact]
+    public async Task Null_ai_provider_returns_disabled_without_external_calls()
+    {
+        var provider = new NullAiProvider();
+        var response = await provider.CompleteAsync(new AiCompletionRequest("summarize", "secret"), CancellationToken.None);
+
+        provider.Name.Should().Be("Null");
+        response.Text.Should().Contain("disabled");
+        response.PromptTokens.Should().Be(0);
+    }
+
+    [Fact]
+    public void OpenRouter_extracts_chat_completion_content()
+    {
+        var json = """{"choices":[{"message":{"role":"assistant","content":"Hello summary"}}]}""";
+        OpenRouterAiProvider.ExtractChatCompletionText(json).Should().Be("Hello summary");
+    }
 }
