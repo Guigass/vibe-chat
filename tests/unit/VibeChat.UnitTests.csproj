@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\src\VibeChat.SharedKernel\VibeChat.SharedKernel.csproj" />
     <ProjectReference Include="..\..\modules\Conversations\VibeChat.Conversations.csproj" />
     <ProjectReference Include="..\..\modules\AI\VibeChat.AI.csproj" />
+    <ProjectReference Include="..\..\modules\Notifications\VibeChat.Notifications.csproj" />
   </ItemGroup>
 
 </Project>

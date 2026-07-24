@@ -4,8 +4,11 @@
 
 1. Identifique o sintoma
 2. Colete `correlation_id` / trace no Grafana Tempo
-3. Siga o runbook
-4. Se for bug de produto, abra issue com evidências
+3. Siga o runbook de resposta: [`runbooks/incidentes.md`](./runbooks/incidentes.md)
+4. Use as seções abaixo para diagnóstico
+5. Se for bug de produto, abra issue com evidências
+
+Índice de runbooks: [`runbooks/README.md`](./runbooks/README.md).
 
 ---
 

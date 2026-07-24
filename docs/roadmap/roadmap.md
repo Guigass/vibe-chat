@@ -73,7 +73,7 @@ Dependências: itens só começam quando deps = done.
 | W4-3 | C/D | Presence + typing polidos | W3-5 | **Done** |
 | W4-3b | B/D | Spaces UI + criar channel (B-020) | W3-5 | **Done** |
 | W4-4 | C | Search FTS Postgres | W3-5 | **Done** |
-| W4-5 | C | AI NoOp + OpenRouter adapter + flag | W3-5 | parcial (mock; provider externo off default — D-06) |
+| W4-5 | C | AI NoOp + OpenRouter adapter + flag | W3-5 | **Done** — Mock default em lab; `Ai:Enabled=false` prod; OpenRouter opt-in+key; summarize authZ/503; fora do hot path SendMessage (D-06) |
 | W4-6 | B | Audit log admin | W3-5 | **Done** — `GET /admin/audit-events` + UI admin + authZ `admin.dashboard` |
 | W4-7 | D | PWA installability + offline shell (B-029) | W3-5 | **Done** |
 | W4-8 | C/D | Reações (B-024) | W3-5 | **Done** |
@@ -85,7 +85,14 @@ Dependências: itens só começam quando deps = done.
 | W5-1 | A | Backup automatizado + drill doc validado | W3-5 | **Done** — scripts + doc |
 | W5-2 | A | TLS / proxy reference config | W3-5 | **Done** — nginx Compose profile `proxy` + certs script |
 | W5-3 | E | Load smoke k6 | W3-5 | **Done** — `tests/load/smoke.js` + `task load:smoke` |
-| W5-4 | G | Runbooks finais ops | W5-1 | |
+| W5-4 | G | Runbooks finais ops | W5-1 | **Done** — `docs/operations/runbooks/` (incidentes, backup/restore, TLS/proxy, upgrade) |
+
+## P2 — Admin / diferenciação
+
+| ID | Trilha | Tarefa | Deps | Status |
+|----|--------|--------|------|--------|
+| P2-1 | B/D | Papéis granulares (B-041) | Wave 5, D-07 | **Done** — `PUT .../members/{userId}/role` + UI admin + authZ `workspace.admin` |
+| P2-2 | A/B | Notificações email SMTP (B-043) | D-10, P2-1 | **Done** — Null/SMTP; off default; e-mail role-change via outbox |
 
 ---
 

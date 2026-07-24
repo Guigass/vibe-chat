@@ -4,6 +4,8 @@
 
 Operação de uma instância self-hosted em fase 1 (**Docker Compose** oficial — D-05). Kubernetes não é obrigatório (ADR-017). Sem SLA comercial; RPO/RTO best effort com backup diário Postgres (D-08).
 
+**Runbooks acionáveis (W5-4):** [`runbooks/README.md`](./runbooks/README.md) — incidentes, backup/restore drill, TLS/proxy, upgrade.
+
 ## Componentes críticos
 
 | Componente | Criticidade | Notas |
@@ -32,7 +34,7 @@ Sticky sessions: preferir backplane Redis em vez de sticky-only.
 
 ## TLS / proxy de referência (W5-2)
 
-Compose profile `proxy` (nginx) termina TLS e encaminha `/`, `/api/`, `/hubs/`:
+Compose profile `proxy` (nginx) termina TLS e encaminha `/`, `/api/`, `/hubs/`. Procedimento completo: [`runbooks/tls-proxy.md`](./runbooks/tls-proxy.md).
 
 ```bash
 ./infra/proxy/generate-dev-certs.sh   # ou: task proxy:certs
@@ -92,7 +94,8 @@ Cobre `GET /health`, `GET /me`, history e `POST .../messages` no canal demo.
 
 ## Incidentes comuns
 
-Ver `troubleshooting.md`.
+- Diagnóstico por sintoma: [`troubleshooting.md`](./troubleshooting.md)
+- Resposta estruturada (P0–P2, segurança, pós-mortem): [`runbooks/incidentes.md`](./runbooks/incidentes.md)
 
 ## Segurança operacional
 
@@ -103,8 +106,10 @@ Ver `troubleshooting.md`.
 
 ## Upgrades
 
+Procedimento completo: [`runbooks/upgrade.md`](./runbooks/upgrade.md).
+
 1. Ler changelog / ADRs impactados
-2. Backup Postgres + MinIO
+2. Backup Postgres + MinIO (`./infra/scripts/backup.sh`)
 3. Migrar DB (job migrate)
 4. Deploy Worker → API → Web
 5. Verificar `/ready` e envio de mensagem de teste

@@ -3,6 +3,7 @@ using VibeChat.AI;
 using VibeChat.BuildingBlocks;
 using VibeChat.Files;
 using VibeChat.Messaging;
+using VibeChat.Notifications;
 using VibeChat.Search;
 using VibeChat.SharedKernel;
 
@@ -117,6 +118,33 @@ public sealed class BackendUnitTests
     }
 
     [Fact]
+    public void Workspace_role_policies_block_self_elevation_and_guest()
+    {
+        WorkspaceRolePolicies.CanManageRoles(Role.WorkspaceOwner).Should().BeTrue();
+        WorkspaceRolePolicies.CanManageRoles(Role.Admin).Should().BeTrue();
+        WorkspaceRolePolicies.CanManageRoles(Role.Member).Should().BeFalse();
+
+        WorkspaceRolePolicies.CanChangeMemberRole(Role.WorkspaceOwner, Role.Member, Role.Admin, isSelf: false)
+            .Should().BeTrue();
+        WorkspaceRolePolicies.CanChangeMemberRole(Role.Member, Role.Member, Role.Admin, isSelf: true)
+            .Should().BeFalse();
+        WorkspaceRolePolicies.CanChangeMemberRole(Role.WorkspaceOwner, Role.Member, Role.Guest, isSelf: false)
+            .Should().BeFalse();
+        WorkspaceRolePolicies.CanChangeMemberRole(Role.Admin, Role.WorkspaceOwner, Role.Member, isSelf: false)
+            .Should().BeFalse();
+        WorkspaceRolePolicies.IsAssignable(Role.Moderator).Should().BeTrue();
+        WorkspaceRolePolicies.IsAssignable(Role.Guest).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Null_email_sender_is_disabled_by_default()
+    {
+        var sender = new NullEmailSender();
+        sender.IsEnabled.Should().BeFalse();
+        await sender.SendAsync(new EmailMessage("a@b.c", "subj", "body"), CancellationToken.None);
+    }
+
+    [Fact]
     public void Message_sequences_are_orderable_per_conversation()
     {
         var channelId = ChannelId.New();
@@ -140,5 +168,23 @@ public sealed class BackendUnitTests
         response.Text.Should().StartWith("Mock summary:");
         response.Text.Should().NotContain("one");
         response.PromptTokens.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task Null_ai_provider_returns_disabled_without_external_calls()
+    {
+        var provider = new NullAiProvider();
+        var response = await provider.CompleteAsync(new AiCompletionRequest("summarize", "secret"), CancellationToken.None);
+
+        provider.Name.Should().Be("Null");
+        response.Text.Should().Contain("disabled");
+        response.PromptTokens.Should().Be(0);
+    }
+
+    [Fact]
+    public void OpenRouter_extracts_chat_completion_content()
+    {
+        var json = """{"choices":[{"message":{"role":"assistant","content":"Hello summary"}}]}""";
+        OpenRouterAiProvider.ExtractChatCompletionText(json).Should().Be("Hello summary");
     }
 }

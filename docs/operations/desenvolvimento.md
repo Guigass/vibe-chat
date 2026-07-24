@@ -44,6 +44,8 @@ task build
 task migrate
 ```
 
+Runbooks de operação (incidentes, TLS, backup drill, upgrade): [`runbooks/README.md`](./runbooks/README.md).
+
 ## Serviços locais
 
 | Serviço | Porta típica | Uso |

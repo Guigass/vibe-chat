@@ -171,6 +171,60 @@ public static class RolePermissionCatalog
     ];
 }
 
+/// <summary>
+/// Membership role assignment rules (B-041). Guests are out of MVP (D-07).
+/// </summary>
+public static class WorkspaceRolePolicies
+{
+    public static readonly Role[] AssignableRoles =
+    [
+        Role.Member,
+        Role.Moderator,
+        Role.Auditor,
+        Role.Admin
+    ];
+
+    public static bool IsAssignable(Role role) => AssignableRoles.Contains(role);
+
+    public static bool CanManageRoles(Role actorRole) =>
+        RolePermissionCatalog.For(actorRole).Contains(Permissions.Workspace.Admin);
+
+    public static bool CanChangeMemberRole(Role actorRole, Role targetCurrentRole, Role targetNewRole, bool isSelf)
+    {
+        if (isSelf)
+        {
+            return false;
+        }
+
+        if (!CanManageRoles(actorRole))
+        {
+            return false;
+        }
+
+        if (!IsAssignable(targetNewRole))
+        {
+            return false;
+        }
+
+        // Protect ownership / platform roles — reassignment is out of this admin surface.
+        if (targetCurrentRole is Role.PlatformOwner or Role.WorkspaceOwner)
+        {
+            return false;
+        }
+
+        // Guest/Bot membership is not managed here (D-07: membership obrigatória).
+        if (targetCurrentRole is Role.Guest or Role.Bot)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool TryParseRole(string? value, out Role role) =>
+        Enum.TryParse(value, ignoreCase: true, out role);
+}
+
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
 public sealed class RequirePermissionAttribute(string permission) : Attribute
 {

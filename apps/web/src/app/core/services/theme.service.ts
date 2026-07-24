@@ -1,4 +1,4 @@
-import { Injectable, signal, effect } from '@angular/core';
+import { Injectable, signal, effect, DestroyRef, inject } from '@angular/core';
 
 export type ThemeMode = 'light' | 'dark';
 export type DensityMode = 'comfortable' | 'compact';
@@ -8,8 +8,11 @@ const DENSITY_KEY = 'vc.density';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly themeSignal = signal<ThemeMode>(this.readTheme());
   private readonly densitySignal = signal<DensityMode>(this.readDensity());
+  /** True after an explicit user toggle/set; system preference stops driving theme. */
+  private userPinned = localStorage.getItem(THEME_KEY) === 'light' || localStorage.getItem(THEME_KEY) === 'dark';
 
   readonly theme = this.themeSignal.asReadonly();
   readonly density = this.densitySignal.asReadonly();
@@ -17,21 +20,39 @@ export class ThemeService {
   constructor() {
     effect(() => {
       const theme = this.themeSignal();
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem(THEME_KEY, theme);
+      const root = document.documentElement;
+      root.setAttribute('data-theme', theme);
+      root.style.colorScheme = theme;
+      if (this.userPinned) {
+        localStorage.setItem(THEME_KEY, theme);
+      }
     });
     effect(() => {
       const density = this.densitySignal();
       document.documentElement.setAttribute('data-density', density);
       localStorage.setItem(DENSITY_KEY, density);
     });
+
+    // Follow OS theme only until the user pins a choice (B-049 polish).
+    if (typeof window !== 'undefined' && !this.userPinned) {
+      const media = window.matchMedia('(prefers-color-scheme: dark)');
+      const onChange = (event: MediaQueryListEvent) => {
+        if (!this.userPinned) {
+          this.themeSignal.set(event.matches ? 'dark' : 'light');
+        }
+      };
+      media.addEventListener('change', onChange);
+      this.destroyRef.onDestroy(() => media.removeEventListener('change', onChange));
+    }
   }
 
   toggleTheme(): void {
+    this.userPinned = true;
     this.themeSignal.update((t) => (t === 'dark' ? 'light' : 'dark'));
   }
 
   setTheme(theme: ThemeMode): void {
+    this.userPinned = true;
     this.themeSignal.set(theme);
   }
 

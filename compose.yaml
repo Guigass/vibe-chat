@@ -350,6 +350,10 @@ services:
       Minio__Bucket: ${MINIO_BUCKET:-vibechat}
       Minio__UseSsl: "false"
       Files__MaxSizeBytes: "10485760"
+      Ai__Enabled: ${AI__Enabled:-false}
+      Ai__Provider: ${AI__Provider:-Mock}
+      Ai__OpenRouter__ApiKey: ${OPENROUTER_API_KEY:-}
+      Ai__OpenRouter__BaseUrl: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     ports:
       - "${API_PORT:-5080}:5080"

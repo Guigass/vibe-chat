@@ -24,20 +24,22 @@ Definir:
 ### 2. Feature flag
 
 ```text
-AI__Enabled=true|false
-AI__Features__ThreadSummary=true|false
-AI__Provider=None|OpenRouter
+AI__Enabled=true|false          # default false (D-06)
+AI__Provider=Mock|OpenRouter    # OpenRouter só com key
+AI__OpenRouter__ApiKey=...
 ```
 
-Flags por tenant em settings (quando existir).
+Workspace: tabela `AiSettings` (`Enabled`, `Provider`). Seed demo liga Mock local.
 
 ### 3. Contrato
 
-Em `VibeChat.Contracts` (ou extensão AI):
+Interface canônica: `IAiCompletionProvider` + feature estreita (ex.: `ISummarizeChannelFeature`).
 
 - Request com `TenantId`, `UserId`, `ConversationId`, escopo
-- Response tipada
-- Erros: `AiDisabled`, `ProviderError`, `ContextTooLarge`
+- Response tipada (`SummarizeChannelResult` / `AiSummaryResponse`)
+- Erros: `AiDisabled` (503), `ProviderError` (502), `ContextTooLarge`
+
+Ver endpoint summarize em `docs/architecture/contratos.md`.
 
 ### 4. Coleta de contexto (ACL first)
 
@@ -56,7 +58,7 @@ Preferências:
 | Síncrono curto | UX de sugestão &lt; poucos segundos, com timeout |
 | Async via outbox/job | Resumos longos, fan-out, custo alto |
 
-Implementar adapter `OpenRouterAiAssistant` sem vazar HTTP client para o domínio.
+Implementar adapter `OpenRouterAiProvider` sem vazar HTTP client para o domínio Messaging.
 
 ### 6. Persistência (se houver)
 

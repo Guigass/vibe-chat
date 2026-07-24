@@ -22,6 +22,16 @@ body {
   background-color: var(--vc-color-bg);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* B-049: soft theme switch without layout thrash */
+  transition:
+    color var(--vc-dur-med) var(--vc-ease-out),
+    background-color var(--vc-dur-med) var(--vc-ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
 }
 
 button,

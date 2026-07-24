@@ -11,6 +11,7 @@ export const environment = {
     scope: 'openid profile email offline_access',
   },
   grafanaUrl: 'http://localhost:3000',
-  aiSummarizeEnabled: true,
+  // D-06: UI opt-in; production builds keep summarize hidden unless explicitly enabled.
+  aiSummarizeEnabled: false,
   appVersion: '0.1.0',
 };
