@@ -69,10 +69,21 @@ import { ApiService } from '../../../core/api/api.service';
           }
         }
 
-        @if (message().mine && !message().deletedAt && message().status === 'persisted' && !editing()) {
+        @if (!message().deletedAt && !editing()) {
           <div class="vc-msg__actions">
-            <button type="button" (click)="startEdit()">Editar</button>
-            <button type="button" class="danger" (click)="delete.emit()">Apagar</button>
+            @if (showThreadAction()) {
+              <button type="button" (click)="openThread.emit()">
+                @if (message().replyCount) {
+                  {{ message().replyCount }} {{ message().replyCount === 1 ? 'resposta' : 'respostas' }}
+                } @else {
+                  Responder
+                }
+              </button>
+            }
+            @if (message().mine && message().status === 'persisted') {
+              <button type="button" (click)="startEdit()">Editar</button>
+              <button type="button" class="danger" (click)="delete.emit()">Apagar</button>
+            }
           </div>
         }
       </div>
@@ -194,8 +205,10 @@ export class MessageBubble {
   private readonly api = inject(ApiService);
 
   readonly message = input.required<ChatMessage>();
+  readonly showThreadAction = input(false);
   readonly edit = output<string>();
   readonly delete = output<void>();
+  readonly openThread = output<void>();
 
   readonly editing = signal(false);
   readonly draft = signal('');

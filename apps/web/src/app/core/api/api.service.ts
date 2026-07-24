@@ -6,6 +6,7 @@ import {
   AiSummaryResult,
   Channel,
   ChatMessage,
+  ChatThread,
   MessageAttachment,
   SearchMessagesResult,
   Workspace,
@@ -46,6 +47,7 @@ interface AttachmentDto {
 interface MessageDto {
   id: string;
   channelId: string;
+  conversationId?: string | null;
   sequence: number;
   authorId: string;
   authorName?: string;
@@ -54,6 +56,19 @@ interface MessageDto {
   editedAt?: string | null;
   deletedAt?: string | null;
   attachments?: AttachmentDto[] | null;
+  threadId?: string | null;
+  replyToMessageId?: string | null;
+  replyCount?: number;
+}
+
+interface ThreadDto {
+  id: string;
+  channelId: string;
+  parentMessageId: string;
+  createdBy: string;
+  createdAt: string;
+  replyCount: number;
+  parentMessage?: MessageDto | null;
 }
 
 interface AttachmentUploadDto {
@@ -148,6 +163,47 @@ export class ApiService {
         idempotencyKey: input.idempotencyKey,
         body: input.body,
         attachmentIds: input.attachmentIds ?? [],
+      }),
+    });
+    return this.mapMessage(dto, this.auth.profile()?.id);
+  }
+
+  async openThread(channelId: string, messageId: string): Promise<ChatThread> {
+    const dto = await this.request<ThreadDto>(
+      `/api/v1/channels/${channelId}/messages/${messageId}/threads`,
+      { method: 'POST', body: '{}' },
+    );
+    return this.mapThread(dto);
+  }
+
+  async getThread(threadId: string): Promise<ChatThread> {
+    const dto = await this.request<ThreadDto>(`/api/v1/threads/${threadId}`);
+    return this.mapThread(dto);
+  }
+
+  async getThreadMessages(threadId: string, take = 50): Promise<ChatMessage[]> {
+    const rows = await this.request<MessageDto[]>(
+      `/api/v1/threads/${threadId}/messages?limit=${take}`,
+    );
+    const me = this.auth.profile()?.id;
+    return rows.map((m) => this.mapMessage(m, me));
+  }
+
+  async sendThreadMessage(input: {
+    threadId: string;
+    body: string;
+    clientMessageId: string;
+    idempotencyKey: string;
+    replyToMessageId?: string;
+  }): Promise<ChatMessage> {
+    const dto = await this.request<MessageDto>(`/api/v1/threads/${input.threadId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({
+        messageId: input.clientMessageId,
+        idempotencyKey: input.idempotencyKey,
+        body: input.body,
+        replyToMessageId: input.replyToMessageId ?? null,
+        threadId: input.threadId,
       }),
     });
     return this.mapMessage(dto, this.auth.profile()?.id);
@@ -290,10 +346,24 @@ export class ApiService {
     };
   }
 
+  private mapThread(t: ThreadDto): ChatThread {
+    const me = this.auth.profile()?.id;
+    return {
+      id: t.id,
+      channelId: t.channelId,
+      parentMessageId: t.parentMessageId,
+      createdBy: t.createdBy,
+      createdAt: t.createdAt,
+      replyCount: t.replyCount ?? 0,
+      parentMessage: t.parentMessage ? this.mapMessage(t.parentMessage, me) : null,
+    };
+  }
+
   private mapMessage(m: MessageDto, me?: string): ChatMessage {
+    const conversationId = m.conversationId || m.channelId;
     return {
       id: m.id,
-      conversationId: m.channelId,
+      conversationId,
       channelId: m.channelId,
       authorUserId: m.authorId,
       authorName: m.authorName || m.authorId,
@@ -305,6 +375,9 @@ export class ApiService {
       status: 'persisted',
       mine: !!me && me === m.authorId,
       attachments: (m.attachments ?? []).map((a) => this.mapAttachment(a)),
+      threadId: m.threadId ?? null,
+      replyToMessageId: m.replyToMessageId ?? null,
+      replyCount: m.replyCount ?? 0,
     };
   }
 

@@ -7,6 +7,7 @@ ALTER TABLE IF EXISTS tenancy.workspace_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS conversations.channels ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS conversations.channel_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.threads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS files.attachments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.reactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.read_cursors ENABLE ROW LEVEL SECURITY;
@@ -28,6 +29,9 @@ CREATE POLICY tenant_isolation_channel_members ON conversations.channel_members
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
 
 CREATE POLICY tenant_isolation_messages ON messaging.messages
+    USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
+
+CREATE POLICY tenant_isolation_threads ON messaging.threads
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
 
 CREATE POLICY tenant_isolation_attachments ON files.attachments

@@ -1,4 +1,9 @@
-<div class="shell" [class.shell--sidebar-collapsed]="!sidebarOpen()" [class.shell--context-open]="contextOpen()">
+<div
+  class="shell"
+  [class.shell--sidebar-collapsed]="!sidebarOpen()"
+  [class.shell--context-open]="contextOpen()"
+  [class.shell--thread-open]="threads.open()"
+>
   <aside class="shell__sidebar vc-anim-sidebar" [attr.aria-hidden]="!sidebarOpen()">
     <div class="shell__brand">
       <span class="shell__wordmark">VibeChat</span>
@@ -110,7 +115,9 @@
     <vc-composer />
   </div>
 
-  @if (contextOpen()) {
+  @if (threads.open()) {
+    <vc-thread-panel />
+  } @else if (contextOpen()) {
     <aside class="shell__context vc-anim-sidebar" aria-label="Contexto">
       <header>
         <h2>Contexto</h2>

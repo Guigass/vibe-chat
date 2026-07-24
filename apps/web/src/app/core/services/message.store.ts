@@ -3,6 +3,7 @@ import { ApiService } from '../api/api.service';
 import { ChatHubService } from './chat-hub.service';
 import { AuthService } from '../auth/auth.service';
 import { ChannelStore } from './channel.store';
+import { ThreadStore } from './thread.store';
 import { ChatMessage } from '../../shared/models/chat.models';
 
 @Injectable({ providedIn: 'root' })
@@ -11,6 +12,7 @@ export class MessageStore {
   private readonly hub = inject(ChatHubService);
   private readonly auth = inject(AuthService);
   private readonly channels = inject(ChannelStore);
+  private readonly threads = inject(ThreadStore);
 
   private readonly messagesSignal = signal<ChatMessage[]>([]);
   private readonly loadingSignal = signal(false);
@@ -26,7 +28,11 @@ export class MessageStore {
     const channelId = this.channels.activeChannel()?.id;
     if (!channelId) return [];
     return this.messagesSignal()
-      .filter((m) => m.channelId === channelId)
+      .filter(
+        (m) =>
+          m.channelId === channelId &&
+          (!m.threadId || m.conversationId === channelId || m.conversationId === m.channelId),
+      )
       .sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0) || a.createdAt.localeCompare(b.createdAt));
   });
 
@@ -201,6 +207,17 @@ export class MessageStore {
 
   private ingestRemote(message: ChatMessage): void {
     const normalized = this.normalize(message);
+    const isThreadReply =
+      !!normalized.threadId &&
+      normalized.conversationId !== normalized.channelId &&
+      normalized.conversationId === normalized.threadId;
+
+    if (isThreadReply) {
+      this.bumpParentReplyCount(normalized.threadId!);
+      this.threads.bumpReplyCount(normalized.threadId!);
+      return;
+    }
+
     const mine = normalized.authorUserId === this.auth.profile()?.id;
     if (mine && normalized.clientMessageId) {
       const existing = this.messagesSignal().find(
@@ -224,6 +241,24 @@ export class MessageStore {
     if (!mine) {
       this.channels.bumpUnread(normalized.channelId);
     }
+  }
+
+  private bumpParentReplyCount(threadId: string): void {
+    this.messagesSignal.update((list) =>
+      list.map((m) =>
+        m.threadId === threadId && m.conversationId === m.channelId
+          ? { ...m, replyCount: (m.replyCount ?? 0) + 1 }
+          : m,
+      ),
+    );
+  }
+
+  markThreadOpened(messageId: string, threadId: string): void {
+    this.messagesSignal.update((list) =>
+      list.map((m) =>
+        m.id === messageId ? { ...m, threadId, replyCount: m.replyCount ?? 0 } : m,
+      ),
+    );
   }
 
   private applyEdit(patch: {
@@ -273,10 +308,12 @@ export class MessageStore {
     return {
       ...message,
       channelId: message.channelId || message.conversationId,
+      conversationId: message.conversationId || message.channelId,
       status: message.status ?? 'persisted',
       mine: message.mine ?? message.authorUserId === this.auth.profile()?.id,
       authorName: message.authorName || 'Membro',
       body: message.deletedAt ? '' : message.body,
+      replyCount: message.replyCount ?? 0,
     };
   }
 

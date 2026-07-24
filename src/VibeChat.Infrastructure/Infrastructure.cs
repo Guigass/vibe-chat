@@ -56,6 +56,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<Channel> Channels => Set<Channel>();
     public DbSet<ChannelMember> ChannelMembers => Set<ChannelMember>();
     public DbSet<Message> Messages => Set<Message>();
+    public DbSet<MessageThread> MessageThreads => Set<MessageThread>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Reaction> Reactions => Set<Reaction>();
     public DbSet<ReadCursor> ReadCursors => Set<ReadCursor>();
@@ -154,6 +155,20 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.ReplyToMessageId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new MessageId(v.Value) : null);
             entity.Property(x => x.Body).HasMaxLength(8000);
             entity.HasIndex(x => new { x.ConversationId, x.Sequence }).IsUnique();
+            entity.HasIndex(x => x.ThreadId);
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<MessageThread>(entity =>
+        {
+            entity.ToTable("threads", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.ParentMessageId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.HasIndex(x => new { x.TenantId, x.ParentMessageId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.ChannelId });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -409,7 +424,30 @@ public sealed class MessageWriter(
 {
     public async Task<MessageSendResult> SendAsync(SendMessageCommand command, CancellationToken cancellationToken)
     {
-        if (!await channels.CanAccessAsync(command.TenantId, command.ChannelId, command.UserId, cancellationToken)
+        var parentChannelId = command.ChannelId;
+        var conversationId = command.ChannelId;
+        Guid? threadId = command.ThreadId;
+
+        if (threadId is Guid resolvedThreadId)
+        {
+            var thread = await dbContext.MessageThreads.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == resolvedThreadId && x.TenantId == command.TenantId, cancellationToken);
+            if (thread is null)
+            {
+                VibeChatMetrics.MessagesRejected.Add(1);
+                throw new InvalidOperationException("Thread not found.");
+            }
+
+            parentChannelId = thread.ChannelId;
+            conversationId = new ChannelId(thread.Id);
+            if (command.ChannelId != ChannelId.Empty && command.ChannelId != parentChannelId)
+            {
+                VibeChatMetrics.MessagesRejected.Add(1);
+                throw new UnauthorizedAccessException("Thread does not belong to the requested channel.");
+            }
+        }
+
+        if (!await channels.CanAccessAsync(command.TenantId, parentChannelId, command.UserId, cancellationToken)
             || !await permissions.HasPermissionAsync(command.TenantId, command.UserId, Permissions.Message.Send, cancellationToken))
         {
             VibeChatMetrics.MessagesRejected.Add(1);
@@ -426,7 +464,14 @@ public sealed class MessageWriter(
             throw new ArgumentException("Message body or attachments are required.");
         }
 
-        var hash = MessageIdempotency.ComputeRequestHash(command with { Body = body, AttachmentIds = attachmentIds });
+        var normalized = command with
+        {
+            ChannelId = parentChannelId,
+            ThreadId = threadId,
+            Body = body,
+            AttachmentIds = attachmentIds
+        };
+        var hash = MessageIdempotency.ComputeRequestHash(normalized);
         var existing = await idempotencyStore.FindAsync(command.TenantId, command.IdempotencyKey, cancellationToken);
         if (existing is not null)
         {
@@ -442,7 +487,7 @@ public sealed class MessageWriter(
             attachments = await dbContext.Attachments
                 .Where(x => attachmentIds.Contains(x.Id)
                     && x.TenantId == command.TenantId
-                    && x.ChannelId == command.ChannelId
+                    && x.ChannelId == parentChannelId
                     && x.UploadedBy == command.UserId
                     && x.Status == AttachmentStatus.Ready
                     && x.MessageId == null)
@@ -454,19 +499,19 @@ public sealed class MessageWriter(
             }
         }
 
-        var sequence = await sequences.NextAsync(command.TenantId, command.ChannelId, cancellationToken);
+        var sequence = await sequences.NextAsync(command.TenantId, conversationId, cancellationToken);
         var now = clock.UtcNow;
 
         var message = new Message
         {
             Id = command.MessageId,
             TenantId = command.TenantId,
-            ConversationId = command.ChannelId,
+            ConversationId = conversationId,
             Sequence = sequence,
             AuthorId = command.UserId,
             Body = body,
             ReplyToMessageId = command.ReplyToMessageId,
-            ThreadId = command.ThreadId,
+            ThreadId = threadId,
             CreatedAt = now
         };
 
@@ -490,8 +535,11 @@ public sealed class MessageWriter(
             Payload = JsonSerializer.Serialize(new
             {
                 tenantId = command.TenantId.Value,
-                channelId = command.ChannelId.Value,
+                channelId = parentChannelId.Value,
+                conversationId = conversationId.Value,
+                threadId,
                 messageId = command.MessageId.Value,
+                replyToMessageId = command.ReplyToMessageId?.Value,
                 authorId = command.UserId.Value,
                 authorName,
                 sequence,
@@ -516,7 +564,8 @@ public sealed class MessageWriter(
             EntityId = command.MessageId.ToString(),
             MetadataJson = JsonSerializer.Serialize(new
             {
-                channelId = command.ChannelId.Value,
+                channelId = parentChannelId.Value,
+                threadId,
                 sequence,
                 bodyHash = ComputeHash(body),
                 attachmentIds

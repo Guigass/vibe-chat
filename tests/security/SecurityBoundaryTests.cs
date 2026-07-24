@@ -191,6 +191,28 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Cross_tenant_cannot_open_or_reply_in_thread()
+    {
+        var foreignChannelId = await SeedCrossTenantChannelAsync();
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var open = await client.PostAsync(
+            $"/api/v1/channels/{foreignChannelId}/messages/{Guid.NewGuid()}/threads",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+        open.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var reply = await client.PostAsJsonAsync(
+            $"/api/v1/threads/{Guid.NewGuid()}/messages",
+            new SendMessageRequest(Guid.NewGuid(), $"sec-thread-{Guid.NewGuid():N}", "nope", null, null));
+        reply.StatusCode.Should().BeOneOf(HttpStatusCode.Forbidden, HttpStatusCode.NotFound);
+
+        var history = await client.GetAsync($"/api/v1/threads/{Guid.NewGuid()}/messages");
+        history.StatusCode.Should().BeOneOf(HttpStatusCode.Forbidden, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task Direct_message_is_hidden_from_non_members()
     {
         using var alice = factory.CreateClient();
