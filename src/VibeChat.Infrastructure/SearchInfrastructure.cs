@@ -7,16 +7,16 @@ namespace VibeChat.Infrastructure;
 
 internal sealed class SearchHitRow
 {
-    public Guid MessageId { get; init; }
-    public Guid ChannelId { get; init; }
-    public string ChannelName { get; init; } = string.Empty;
-    public string ChannelType { get; init; } = string.Empty;
-    public long Sequence { get; init; }
-    public Guid AuthorUserId { get; init; }
-    public string AuthorDisplayName { get; init; } = string.Empty;
-    public string Body { get; init; } = string.Empty;
-    public DateTimeOffset CreatedAt { get; init; }
-    public double Rank { get; init; }
+    public Guid MessageId { get; set; }
+    public Guid ChannelId { get; set; }
+    public string ChannelName { get; set; } = string.Empty;
+    public string ChannelType { get; set; } = string.Empty;
+    public long Sequence { get; set; }
+    public Guid AuthorUserId { get; set; }
+    public string AuthorDisplayName { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+    public DateTimeOffset CreatedAt { get; set; }
+    public double Rank { get; set; }
 }
 
 public sealed class PostgresSearchIndexer(VibeChatDbContext dbContext) : ISearchIndexer
@@ -29,26 +29,23 @@ public sealed class PostgresSearchIndexer(VibeChatDbContext dbContext) : ISearch
             return;
         }
 
-        await dbContext.Database.ExecuteSqlRawAsync(
-            """
+        await dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"""
             UPDATE messaging.messages
-            SET search_vector = to_tsvector({0}, coalesce("Body", ''))
-            WHERE "Id" = {1} AND "TenantId" = {2} AND "DeletedAt" IS NULL
+            SET search_vector = to_tsvector({SearchPolicies.TextConfig}, coalesce("Body", ''))
+            WHERE "Id" = {doc.MessageId.Value} AND "TenantId" = {doc.TenantId.Value} AND "DeletedAt" IS NULL
             """,
-            SearchPolicies.TextConfig,
-            doc.MessageId.Value,
-            doc.TenantId.Value);
+            cancellationToken);
     }
 
     public Task RemoveMessageAsync(TenantId tenantId, MessageId messageId, CancellationToken cancellationToken) =>
-        dbContext.Database.ExecuteSqlRawAsync(
-            """
+        dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"""
             UPDATE messaging.messages
             SET search_vector = NULL
-            WHERE "Id" = {0} AND "TenantId" = {1}
+            WHERE "Id" = {messageId.Value} AND "TenantId" = {tenantId.Value}
             """,
-            messageId.Value,
-            tenantId.Value);
+            cancellationToken);
 }
 
 public sealed class PostgresSearchQuery(VibeChatDbContext dbContext) : ISearchQuery
@@ -62,7 +59,12 @@ public sealed class PostgresSearchQuery(VibeChatDbContext dbContext) : ISearchQu
             return new SearchResultPage(term, [], limit);
         }
 
-        const string baseSql = """
+        // TextConfig is a fixed constant (not user input); keep it inline so EF parameter
+        // binding stays unique/simple for SqlQuery.
+        const string config = SearchPolicies.TextConfig;
+        var channelId = query.ChannelId?.Value;
+
+        IQueryable<SearchHitRow> rowsQuery = dbContext.Database.SqlQuery<SearchHitRow>($"""
             SELECT
                 m."Id" AS "MessageId",
                 m."ConversationId" AS "ChannelId",
@@ -73,81 +75,45 @@ public sealed class PostgresSearchQuery(VibeChatDbContext dbContext) : ISearchQu
                 coalesce(u."DisplayName", m."AuthorId"::text) AS "AuthorDisplayName",
                 m."Body" AS "Body",
                 m."CreatedAt" AS "CreatedAt",
-                ts_rank(m.search_vector, plainto_tsquery({0}, {1}))::double precision AS "Rank"
-            FROM messaging.messages m
-            INNER JOIN conversations.channels c
+                ts_rank(m.search_vector, plainto_tsquery({config}, {term}))::double precision AS "Rank"
+            FROM messaging.messages AS m
+            INNER JOIN conversations.channels AS c
                 ON c."Id" = m."ConversationId" AND c."TenantId" = m."TenantId"
-            LEFT JOIN identity.user_profiles u
+            LEFT JOIN identity.user_profiles AS u
                 ON u."Id" = m."AuthorId"
-            WHERE m."TenantId" = {2}
-              AND c."WorkspaceId" = {3}
+            WHERE m."TenantId" = {query.TenantId.Value}
+              AND c."WorkspaceId" = {query.WorkspaceId.Value}
               AND m."DeletedAt" IS NULL
-              AND m.search_vector @@ plainto_tsquery({0}, {1})
+              AND m.search_vector @@ plainto_tsquery({config}, {term})
+              AND ({channelId}::uuid IS NULL OR m."ConversationId" = {channelId})
               AND (
                     (
                         c."Type" IN ('Public', 'Announcement')
                         AND EXISTS (
                             SELECT 1
-                            FROM tenancy.workspace_members wm
+                            FROM tenancy.workspace_members AS wm
                             WHERE wm."TenantId" = m."TenantId"
                               AND wm."WorkspaceId" = c."WorkspaceId"
-                              AND wm."UserId" = {4}
+                              AND wm."UserId" = {query.UserId.Value}
                         )
                     )
                     OR (
                         c."Type" NOT IN ('Public', 'Announcement')
                         AND EXISTS (
                             SELECT 1
-                            FROM conversations.channel_members cm
+                            FROM conversations.channel_members AS cm
                             WHERE cm."TenantId" = m."TenantId"
                               AND cm."ChannelId" = c."Id"
-                              AND cm."UserId" = {4}
+                              AND cm."UserId" = {query.UserId.Value}
                         )
                     )
                   )
-            """;
+            """);
 
-        string sql;
-        object[] parameters;
-        if (query.ChannelId is null)
-        {
-            sql = baseSql + """
-                
-                ORDER BY "Rank" DESC, m."CreatedAt" DESC
-                LIMIT {5}
-                """;
-            parameters =
-            [
-                SearchPolicies.TextConfig,
-                term,
-                query.TenantId.Value,
-                query.WorkspaceId.Value,
-                query.UserId.Value,
-                limit
-            ];
-        }
-        else
-        {
-            sql = baseSql + """
-                
-                  AND m."ConversationId" = {5}
-                ORDER BY "Rank" DESC, m."CreatedAt" DESC
-                LIMIT {6}
-                """;
-            parameters =
-            [
-                SearchPolicies.TextConfig,
-                term,
-                query.TenantId.Value,
-                query.WorkspaceId.Value,
-                query.UserId.Value,
-                query.ChannelId.Value.Value,
-                limit
-            ];
-        }
-
-        var rows = await dbContext.Database
-            .SqlQueryRaw<SearchHitRow>(sql, parameters)
+        var rows = await rowsQuery
+            .OrderByDescending(x => x.Rank)
+            .ThenByDescending(x => x.CreatedAt)
+            .Take(limit)
             .ToListAsync(cancellationToken);
 
         var items = rows.Select(row => new SearchMessageHit(
