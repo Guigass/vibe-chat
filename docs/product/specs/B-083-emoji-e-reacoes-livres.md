@@ -24,8 +24,9 @@ seletor de emoji nenhum. Reagir com 🚀 ou responder com 😅 é impossível.
 ## Contratos
 
 `messaging.message_reactions.Emoji` deixa de ser validado contra lista fixa e passa a
-validar **forma**: sequência Unicode de emoji, até 8 code points, sem texto. A lista
-`AllowedReactionEmojis` sai do código de domínio.
+validar **forma**: sequência Unicode de emoji, até 8 code points, sem texto. A classe
+`ReactionEmojis` (e o set `ReactionEmojis.Allowed` em
+`modules/Messaging/MessagingDomain.cs`) sai do código de domínio.
 
 - `GET .../messages/{messageId}/reactions/{emoji}/users` — quem reagiu; membership.
 - Evento `ReactionChanged` ganha `topUsers: string[]` (até 3) para o tooltip inicial.
