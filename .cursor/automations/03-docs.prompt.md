@@ -25,8 +25,9 @@ Update `docs/roadmap/roadmap.md` and/or `docs/roadmap/backlog.md`:
   delivered but has no status, **report it in your final message** instead of flipping
   it yourself
 
-If the merge was a `GAP-*` without a roadmap row: add a one-line note under the
-relevant wave section or skip — do not invent a new wave.
+If the merge was a `GAP-*` without a roadmap row: add one row to the **Registro de
+GAPs** table at the end of `roadmap.md` (`GAP` / `Trilha` / what it closed / PR).
+Do **not** scatter loose notes under wave sections and do **not** invent a new wave.
 
 ## Step C — Doc sync (only what drifted)
 
