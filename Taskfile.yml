@@ -120,6 +120,11 @@ tasks:
     cmds:
       - ./infra/scripts/ci-e2e.sh
 
+  ux:stack:
+    desc: Sobe data plane + API + Web e deixa no ar (revisão de UI; sem Playwright)
+    cmds:
+      - BOOT_ONLY=1 ./infra/scripts/ci-e2e.sh
+
   test:architecture:
     desc: Architecture / module boundary tests
     cmds:
