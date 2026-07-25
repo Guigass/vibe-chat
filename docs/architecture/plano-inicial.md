@@ -68,6 +68,20 @@ Prioridade sobre P2 novo de diferenciação. Detalhe em `docs/roadmap/roadmap.md
 | UI | Polish admin com tokens VibeChat (B-073 histórico; **B-104** remove PrimeNG / D-15) | B-073 Done; **B-104 Planned** — sair do PrimeNG |
 | Compose apps | API + Web (+ Worker) em containers no Compose como deploy oficial self-host (B-074); `task dev` só para DX com hot reload | **Done** — `task apps` |
 
+### Fase 4 — Admin mínimo via `.env` (Wave 7 / B-105)
+
+Operação self-host com o menor atrito possível: o operador de infra não precisa da UI `/admin` para subir a plataforma nem para integrações sensíveis (AI, SMTP, retenção global).
+
+| Tema | Entregáveis | Status |
+|------|-------------|--------|
+| Inventário | Todas as variáveis de Compose + API + Worker + Web catalogadas | Planned (W7-7) |
+| Contrato `.env` | `.env.example` completo, comentado, alinhado ao `compose.yaml` | Planned |
+| Matriz env vs admin | O que é infra (env) vs política por workspace (`/admin/settings`) | Planned — ver `docs/operations/configuracao-env.md` |
+| Gaps | `Files`, `RateLimit`, `Cors`, etc. expostos ou documentados como fixos | Planned |
+| Ops | `operacao.md` + runbooks referenciam o catálogo | Planned |
+
+**Fora de escopo:** substituir convites, papéis, auditoria de conversas ou export — permanecem em `/admin`.
+
 ## Riscos principais
 
 | Risco | Impacto | Mitigação |

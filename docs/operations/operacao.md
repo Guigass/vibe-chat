@@ -84,9 +84,12 @@ Cobre `GET /health`, `GET /me`, history e `POST .../messages` no canal demo.
 
 ## Configuração
 
-- Tudo via variáveis de ambiente
-- Separar: `ConnectionStrings__`, `OIDC__`, `Redis__`, `S3__`, `Otel__`, `AI__`
-- Feature flags: `AI__Enabled=false` default
+- Tudo via variáveis de ambiente (`.env` na raiz; ver `.env.example`)
+- **Catálogo completo (planejado):** [`configuracao-env.md`](./configuracao-env.md) — fase W7-7 / B-105
+- Separar: `ConnectionStrings__`, `Authentication__`, `Minio__`, `Redis__`, `Otel__`, `AI__`, `Email__`, `MessageRetention__`
+- Feature flags: `AI__Enabled=false` default; `MessageRetention__Enabled=false` default
+- Secrets (AI key, SMTP password, credenciais de DB/MinIO/Keycloak): só env/secret manager — nunca graváveis em `/admin/settings` (B-069)
+- Políticas por workspace (webhook URL, retenção em dias, toggle de AI no workspace): `/admin/settings` + DB — não substituem o `.env` de infra
 
 ## Rotina operacional
 

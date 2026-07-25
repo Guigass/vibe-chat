@@ -141,6 +141,15 @@ checklist de **controles mínimos** de `docs/security/modelo-ameacas.md`.
 | W7-3 | E/A | Atualização automatizada de dependências (B-076) | W0-7 | Planned — não há `.github/dependabot.yml` nem renovate; o job `Dependency audit notes` é informativo e nunca reprova o build |
 | W7-4 | D/E | CSP no web (B-077) | W6-8 | Planned — `infra/proxy/nginx.conf` já manda HSTS/`nosniff`/`X-Frame-Options`/`Referrer-Policy`, mas não CSP, e só no profile `proxy` |
 | W7-5 | C/E | Limite de tamanho de body no envio (B-078) | W2-1 | Planned — `Message.Body` é `HasMaxLength(8000)` só na coluna; o endpoint não valida, então body maior vira 500 em vez de 400 |
+| W7-7 | A/G | Catálogo de configuração admin mínima no `.env` (B-105) | W6-8, W0-2 | Planned — inventariar todas as variáveis operacionais; completar `.env.example`; guia `docs/operations/configuracao-env.md`; mapear env vs `/admin` |
+
+### Critérios de aceite W7-7 (resumo)
+
+- `.env.example` cobre **100%** das variáveis exigidas para `task apps` em produção (data plane + api + web + worker + proxy opcional)
+- Cada variável tem: descrição, serviço afetado, default, obrigatoriedade em prod, e se é secret (`CHANGE_ME` / `*_change_me`)
+- Matriz **env vs admin UI** documentada: o que só o operador de infra mexe no `.env` vs o que o `workspace.admin` mexe em `/admin/settings`
+- Gaps entre `appsettings*.json`, `compose.yaml` e `.env.example` fechados ou listados como follow-up explícito
+- `docs/operations/operacao.md` aponta para o catálogo como fonte da verdade de configuração
 
 ### Modo manutenção (sem item `Planned`)
 
@@ -239,7 +248,7 @@ escreve aqui em vez de espalhar notas soltas pelas seções.
 ## Parallelismo sugerido por time de agentes
 
 ```text
-Agent-Infra     → W0-1, W0-2, W0-6, W5-*, W6-8
+Agent-Infra     → W0-1, W0-2, W0-6, W5-*, W6-8, W7-7
 Agent-Backend   → W0-3, W1-*, W2-1..W2-4, W3-1, W3-3, W4-*, W6-1, W6-2, W6-4..W6-6,
                   W8-4, W9-4, W10-1, W10-7
 Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7, W6-1..W6-3, W6-7,
