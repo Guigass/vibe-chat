@@ -49,6 +49,7 @@ Este documento guia agentes de código (backend, frontend, infra, QA, security, 
 
 - Angular 22 standalone + Signals + CDK
 - Tokens do `design-system.md` (Sora + IBM Plex Sans; teal/charcoal)
+- Reutilizar assets de marca em `apps/web/public/` (logo, fundos, ícones PWA, sons) — ver `design-system.md` § Assets de marca
 - OIDC PKCE; não guardar refresh tokens de forma insegura
 - Ordenar mensagens por `seq`; gap-fill via history
 - Idempotency-Key estável por tentativa de envio (UUID por compose submit)
@@ -60,6 +61,7 @@ Este documento guia agentes de código (backend, frontend, infra, QA, security, 
 - Visual Slack/Discord/WhatsApp
 - Cards no hero/shell sem necessidade
 - Roxo/indigo / cream terracotta / Inter como marca
+- Inventar logo/favicon/fundo genérico quando já existir arquivo catalogado
 - State global pesado sem necessidade no MVP
 
 ### Checklist de PR frontend

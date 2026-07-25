@@ -92,7 +92,7 @@ Prioridade sobre P2 novo de diferenciação. Detalhe em `docs/roadmap/roadmap.md
 Todas fechadas em 2026-07-24 — registros e impacto em `docs/roadmap/decisoes-pendentes.md`:
 
 - Licença open-source — Apache-2.0 (D-01)
-- Marca / trademark — produto “VibeChat”; logo e domínios seguem placeholders (D-02)
+- Marca / trademark — produto “VibeChat”; assets em `apps/web/public/` (D-02; inventário no design-system)
 - Política legal de retenção — soft-delete + purge configurável (D-03 / ADR-018)
 - Credenciais e realms de produção — só via `.env` / secrets manager (D-04)
 

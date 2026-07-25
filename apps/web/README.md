@@ -31,12 +31,22 @@ App: `http://localhost:4200`
 ## Structure
 
 ```
+public/                 static assets (copied to site root)
+  favicon.ico
+  icons/                PWA + favicon PNGs/WebPs
+  assets/
+    audios/             message notification sounds
+    background/         light/dark shell & chat backgrounds
+    images/logo/        brand logos
+    icons/              full platform icon pack
 src/app/
   core/       auth, api, tenant, stores, theme, hub
   shared/ui/  design system components
   features/   auth, chat, admin, ai
   layout/     authenticated shell
 ```
+
+Brand asset inventory (paths/URLs for agents): `docs/architecture/design-system.md` § Assets de marca.
 
 ## Keyboard
 

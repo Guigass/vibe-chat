@@ -48,6 +48,7 @@ Se bloqueado por decisão humana (D-*), parar e documentar — não inventar lic
 ## Frontend
 
 - Angular 22 standalone + Signals + CDK; tokens do `docs/architecture/design-system.md`.
+- Assets de marca (logo, fundos, favicon/PWA, sons) em `apps/web/public/` — inventário em `docs/architecture/design-system.md` § Assets de marca; reutilizar, não inventar.
 - OIDC PKCE; ordenar mensagens por `seq`; Idempotency-Key estável por envio.
 - Light/dark via `data-theme`; motion sutil (2–3), sem poluição visual.
 - Não clonar visual Slack/Discord/WhatsApp; sem cards desnecessários no shell.

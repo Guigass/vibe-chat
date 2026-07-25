@@ -9,6 +9,7 @@ globs:
 
 - Angular 22 standalone + Signals + CDK + PWA.
 - Design system: Sora + IBM Plex Sans; teal/charcoal (`docs/architecture/design-system.md`).
+- Assets de marca em `apps/web/public/` (logo, fundos, favicon/PWA, sons) — inventário no design-system § Assets de marca; reutilizar.
 - PrimeNG (B-073 / ADR-002): preset VibeChat nos tokens `--vc-*`; preferir em admin/forms densos; chat shell permanece composição própria + CDK.
 - OIDC PKCE; demo local só para DX — não confundir com auth de produção.
 - Mensagens ordenadas por `seq`; gap-fill via history; Idempotency-Key por tentativa.

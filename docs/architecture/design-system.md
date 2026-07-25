@@ -175,9 +175,55 @@ Usar para acelerar admin e formulários densos (DataTable, Dialog, Select, Toast
 
 Linha única (ex.: Lucide ou similar stroke), peso consistente. Sem mascotes genéricos de chat roxo.
 
+Ícones de **app/PWA/favicon** (marca) estão em `apps/web/public/` — ver seção [Assets de marca](#assets-de-marca).
+
+---
+
+## Assets de marca
+
+Arquivos estáticos servidos pelo Angular a partir de `apps/web/public/` (glob `**/*` no `angular.json`). Preferir URLs absolutas a partir da raiz do site (`/assets/...`, `/icons/...`).
+
+**Fonte da verdade para agentes:** reutilizar estes arquivos; não inventar logo, favicon ou fundo genérico.
+
+### Layout
+
+| Caminho | Conteúdo |
+|---------|----------|
+| `apps/web/public/favicon.ico` | Favicon raiz (ligado em `index.html`) |
+| `apps/web/public/icons/` | Ícones PWA/manifest + favicons PNG/WebP usados pelo app |
+| `apps/web/public/manifest.webmanifest` | Manifest PWA (referências em `icons/icon-*x*.png`) |
+| `apps/web/public/assets/audios/` | Sons de notificação de mensagem |
+| `apps/web/public/assets/background/` | Fundos light/dark (shell e área de chat) |
+| `apps/web/public/assets/images/` | Logos e placeholder de avatar |
+| `apps/web/public/assets/icons/` | Pack completo (android, ios, pwa, windows11, favicons, webp) — uso futuro / plataformas |
+
+### URLs úteis
+
+| Uso | URL |
+|-----|-----|
+| Logo padrão | `/assets/images/logo/logo.png` |
+| Logo claro / escuro | `/assets/images/logo/logo-white.png`, `logo-black.png` |
+| Logo vertical | `/assets/images/logo/logo-vertical.png`, `logo-white-vertical.png`, `logo-black-vertical.png` |
+| Logo mobile | `/assets/images/logo/logo-mobile.png`, `logo-mobile-black.png`, `logo-moblie-white.png` *(typo no filename preservado)* |
+| Avatar placeholder | `/assets/images/user-ph.png` |
+| Fundo app light/dark | `/assets/background/light.webp`, `/assets/background/dark.webp` |
+| Fundo chat light/dark | `/assets/background/light_chat.webp`, `/assets/background/dark_chat.webp` |
+| Som mensagem | `/assets/audios/msg_n1.mp3` … `msg_n4.mp3` |
+| Favicon / apple | `/favicon.ico`, `/icons/favicon-32x32.png`, `/icons/apple-touch-icon.png` |
+| Ícones PWA | `/icons/icon-72x72.png` … `/icons/icon-512x512.png` (+ variantes `.webp`) |
+
+### Regras de uso
+
+- Wordmark/logo: preferir PNGs em `assets/images/logo/`; casar variante light/dark com `data-theme`.
+- Fundo do shell/chat: usar `background/*` em vez de inventar gradiente genérico que fuja dos tokens (atmosfera CSS `--vc-bg-atmosphere` continua válida para superfícies sem imagem).
+- Notificação sonora: só um dos `msg_n*.mp3`; respeitar mute do usuário / `prefers-reduced-motion` não cobre áudio — oferecer preferência quando implementar.
+- Pack `assets/icons/{android,ios,windows11}/`: não é obrigatório no hot path web; existe para PWA/store/instalação.
+- Domínios oficiais e registro legal de marca seguem D-02; estes arquivos são a identidade visual técnica do produto no repositório.
+
 ## Entrega para o time frontend
 
 1. Publicar tokens em `apps/web/src/styles/tokens.css`
 2. Tema default: light; respeitar `prefers-color-scheme` + toggle
 3. Fontes self-hosted preferível em ambientes air-gapped
 4. Storybook opcional na fase 2; na fase 1, página `/dev/ui` interna basta
+5. Assets de marca: catalogados acima; reutilizar antes de adicionar novos binários

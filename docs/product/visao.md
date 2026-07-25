@@ -69,4 +69,4 @@ Fora do escopo da fase 1:
 
 ## Nome e marca
 
-**VibeChat** — vibe de colaboração leve, sem parecer “mais um clone de Slack”. Decisões finais de marca, licença e identidade legal estão em `docs/roadmap/decisoes-pendentes.md`.
+**VibeChat** — vibe de colaboração leve, sem parecer “mais um clone de Slack”. Assets visuais (logo, ícones, fundos, sons) em `apps/web/public/` — inventário em `docs/architecture/design-system.md` § Assets de marca. Decisões de marca/licença/identidade legal: `docs/roadmap/decisoes-pendentes.md`.

@@ -7,7 +7,7 @@ Estas decisões **não** devem ser tomadas unilateralmente por agentes de códig
 | ID | Decisão | Por que importa | Owner sugerido | Status |
 |----|---------|-----------------|----------------|--------|
 | D-01 | **Licença open-source** | Define adoção, SaaS wrappers, obrigações de copyleft | Founder / Legal | **Decidido (2026-07-24)** — Apache-2.0 definitiva (`LICENSE`) |
-| D-02 | **Marca e naming** | Evita conflito de marca; identidade pública | Founder / Brand | **Decidido (2026-07-24)** — produto **VibeChat**; logo/domínios oficiais ficam placeholders do design system |
+| D-02 | **Marca e naming** | Evita conflito de marca; identidade pública | Founder / Brand | **Decidido (2026-07-24)** — produto **VibeChat**; assets visuais em `apps/web/public/` (ver design-system § Assets de marca); domínios oficiais ainda fora do escopo de agentes |
 | D-03 | **Política de retenção e exclusão** | Delete, export, LGPD/GDPR, backups | Legal / DPO | **Decidido (2026-07-24)** — soft-delete de mensagens; hard-delete/purge configurável depois (90 dias sugerido, feature flag); export workspace em P2 — ver ADR-018 |
 | D-04 | **Credenciais e secrets de produção** | Segurança operacional; nunca em git | Ops / Security | **Decidido (2026-07-24)** — secrets só via `.env` / secrets manager; placeholders `CHANGE_ME` / `*_change_me` em `.env.example` |
 | D-05 | **Modo de deploy alvo oficial** | Expectativa de suporte | Platform owner | **Decidido (2026-07-24)** — fase 1 = **Docker Compose**; K8s só quando ADR-017 justificar |
@@ -33,10 +33,10 @@ Impacto em código/docs: LICENSE já presente; README deixa de marcar licença c
 
 ```text
 Decisão: D-02
-Escolha: Nome de produto VibeChat; marca visual oficial / domínios ficam placeholders do design system
-Data: 2026-07-24
+Escolha: Nome de produto VibeChat; identidade visual técnica versionada em apps/web/public/; domínios oficiais fora do escopo de agentes
+Data: 2026-07-24 (assets de marca adicionados ao repo em 2026-07-25)
 Owner: Founder / Brand
-Impacto em código/docs: UI e docs usam “VibeChat”; sem inventar logo/domínio oficiais
+Impacto em código/docs: UI e docs usam “VibeChat”; reutilizar assets catalogados em design-system.md; não inventar domínio oficial
 ```
 
 ### D-03
@@ -124,7 +124,7 @@ Impacto em código/docs: .env.example (Mailpit + SMTP_*); notificações email e
 
 - Features sensíveis (retenção/IA) com **feature flags** e defaults seguros
 - Usar placeholders em `.env.example`, nunca valores reais de produção
-- Não inventar marca/logo oficiais além do design system técnico
+- Não inventar marca/logo/domínio — usar assets em `apps/web/public/` e o inventário do design-system
 - Novas decisões humanas: abrir linha nesta tabela como Pendente e parar se bloquearem o escopo
 
 ## Como fechar uma decisão
