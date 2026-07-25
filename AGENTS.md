@@ -115,13 +115,15 @@ não óbvios de execução. Comandos padrão estão no `README.md` e `Taskfile.y
 - **Data plane**: `docker compose up -d postgres redis keycloak minio createbucket`.
   O `compose.override.yaml` usa `network_mode: host`, então tudo escuta em
   `localhost` (5432/6379/8080/9000). Keycloak leva ~40s para ficar healthy.
-- **Node/Angular**: o Angular CLI recusa Node abaixo de **22.22.3** (espelhado
-  em `apps/web` `engines.node`). O `node` do sistema (`/exec-daemon/node`) é
-  mais antigo e a versão que vem no nvm pode estar desatualizada — não assuma
-  que existe um `v22.22.3` já instalado. `npm ci` roda com o Node do sistema;
-  só `ng serve`/`ng build` exigem o piso. `infra/scripts/ci-e2e.sh` resolve
-  isso sozinho (`ensure_web_node` instala pelo nvm quando falta), então
-  prefira `task ux:stack` / `task test:e2e:ci` a subir o web na mão.
+- **Node/Angular**: `apps/web` `engines.node` é piso (`>=22.22.3`); o Angular CLI
+  aceita só `^22.22.3 || ^24.15 || >=26` — 23.x / 24.0–24.14 passam no
+  `engines` e falham no `ng serve`. O `node` do sistema (`/exec-daemon/node`) é
+  mais antigo e o nvm da VM pode estar desatualizado — não assuma que
+  `v22.22.3` já está instalado. `npm ci` roda com o Node do sistema; só
+  `ng serve`/`ng build` exigem range compatível. `infra/scripts/ci-e2e.sh`
+  resolve isso (`ensure_web_node` pina `WEB_NODE_MIN=22.22.3` via nvm quando o
+  PATH é incompatível), então prefira `task ux:stack` / `task test:e2e:ci` a
+  subir o web na mão.
 - **`task dev` NÃO funciona** neste ambiente: o interpretador do go-task (gosh)
   não suporta `trap ... INT/TERM` nem o builtin `kill 0` da recipe. Rode API e
   Web diretamente (dois processos, ex.: em tmux):

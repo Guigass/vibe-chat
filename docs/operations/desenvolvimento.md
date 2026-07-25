@@ -4,7 +4,7 @@
 
 - Docker + Docker Compose v2
 - .NET 10 SDK
-- Node.js 22+ (Angular 22)
+- Node.js **22.22.3+** na faixa do Angular CLI (`^22.22.3 || ^24.15 || >=26`)
 - [Task](https://taskfile.dev/) (`go-task`)
 - Acesso à rede para puxar imagens (Keycloak, Postgres, etc.)
 
@@ -37,6 +37,8 @@ task test:integration     # Testcontainers
 task test:architecture
 task test:security
 task test:e2e             # Playwright
+task test:e2e:ci          # compose + API/Web + Playwright (caminho CI)
+task ux:stack             # mesmo boot do E2E CI, sem Playwright (stack fica no ar)
 task proxy:certs          # TLS self-signed (Compose profile proxy)
 task load:smoke           # k6 smoke (API Development + DevAuth)
 task verify               # lint + testes relevantes
