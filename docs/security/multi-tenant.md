@@ -72,6 +72,7 @@
 | T13 | Admin exporta workspace de outro tenant | 403 (B-046) |
 | T14 | Membro/Auditor altera `retention.*` em `/admin/settings` | 403; só `workspace.admin` (B-047) |
 | T15 | Purge com `MessageRetention:Enabled=false` | Nenhuma mensagem hard-deletada (B-047) |
+| T16 | Catálogo RLS (`infra/compose/postgres/03-rls.sql`) inclui `messaging.message_retention_settings` | Policy `tenant_isolation_message_retention_settings` em `"TenantId"` (GAP pós B-047) |
 
 ## Operação multi-tenant vs single-tenant
 
