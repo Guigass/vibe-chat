@@ -112,7 +112,7 @@ sobre o `<input type="file">` que já existe, nunca como caminho único.
 |---|---|---|---|---|---|
 | PWA instalável | sim | sim | sim | web | **Temos** |
 | i18n | ~10 idiomas | muitos | muitos | muitos | **Falta** — B-100 (hoje PT-BR hardcoded) |
-| Acessibilidade WCAG AA | sim | sim | parcial | parcial | **Parcial** — B-999 |
+| Acessibilidade WCAG AA | sim | sim | parcial | parcial | **Parcial** — B-103 |
 | Tema claro/escuro | sim | sim | sim | sim | **Temos** |
 | Webhooks / integrações | sim | sim | sim | Business API | **Temos** (outbound) |
 | Bots / apps | sim | sim | sim | — | Fora de escopo fase 2 |
@@ -151,7 +151,7 @@ que são incompatíveis com E2EE puro. Segue em P3 (B-064), sob mudança de mode
 |------|------|-------|
 | 8 | Composição de mensagem | B-079…B-087 |
 | 9 | Leitura da timeline | B-088…B-094 |
-| 10 | Notificações, organização e acesso | B-095…B-100, B-040, B-101, B-102 |
+| 10 | Notificações, organização e acesso | B-095…B-103, B-040 |
 
 Cada item tem spec em `docs/product/specs/`. Sem spec, o item não é elegível para a
 automação de Build.
