@@ -474,6 +474,20 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Cross_tenant_cannot_suggest_reply_with_ai()
+    {
+        var (foreignWorkspaceId, foreignChannelId) = await SeedCrossTenantWorkspaceWithMessageAsync();
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var suggest = await client.PostAsync(
+            $"/api/v1/workspaces/{foreignWorkspaceId}/channels/{foreignChannelId}/ai/suggest-reply",
+            content: null);
+        suggest.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Cross_tenant_cannot_list_or_create_spaces()
     {
         var (foreignWorkspaceId, _) = await SeedCrossTenantWorkspaceWithMessageAsync();

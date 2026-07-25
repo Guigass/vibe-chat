@@ -99,6 +99,7 @@ public sealed class BackendUnitTests
         permissions.Should().Contain(Permissions.Message.Send);
         permissions.Should().Contain(Permissions.Message.React);
         permissions.Should().Contain(Permissions.Channel.Create);
+        permissions.Should().Contain(Permissions.Ai.SuggestReply);
         permissions.Should().NotContain(Permissions.Admin.Dashboard);
     }
 
@@ -211,6 +212,20 @@ public sealed class BackendUnitTests
         var response = await provider.CompleteAsync(new AiCompletionRequest("summarize", "one\ntwo\nthree"), CancellationToken.None);
 
         response.Text.Should().StartWith("Mock summary:");
+        response.Text.Should().NotContain("one");
+        response.PromptTokens.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task Mock_ai_suggests_reply_without_requiring_external_provider()
+    {
+        var provider = new MockAiProvider();
+
+        var response = await provider.CompleteAsync(
+            new AiCompletionRequest("Suggest one short, professional reply.", "one\ntwo\nthree"),
+            CancellationToken.None);
+
+        response.Text.Should().StartWith("Mock suggestion:");
         response.Text.Should().NotContain("one");
         response.PromptTokens.Should().BeGreaterThan(0);
     }

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { Button, Textarea } from '../../../shared/ui';
 import { MessageStore } from '../../../core/services/message.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
@@ -116,6 +116,17 @@ export class Composer {
   readonly draft = signal('');
   readonly pendingFile = signal<File | null>(null);
   private lastTyping = 0;
+
+  constructor() {
+    effect(() => {
+      const prefill = this.channels.composerPrefill();
+      if (prefill === null) return;
+      const text = this.channels.consumeComposerPrefill();
+      if (text) {
+        this.draft.set(text);
+      }
+    });
+  }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;

@@ -246,3 +246,9 @@ export interface AiSummaryResult {
   messageCount: number;
   generatedAt: string;
 }
+
+export interface AiSuggestReplyResult {
+  channelId: string;
+  suggestion: string;
+  generatedAt: string;
+}
