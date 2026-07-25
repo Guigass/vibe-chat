@@ -217,6 +217,14 @@ export interface SensitiveSettings {
     secretsWritable: boolean;
     message: string;
   };
+  retention: {
+    processEnabled: boolean;
+    processSource: string;
+    enabled: boolean;
+    retentionDays: number;
+    defaultRetentionDays: number;
+    message: string;
+  };
 }
 
 export interface UpdateSensitiveSettingsInput {
@@ -237,6 +245,10 @@ export interface UpdateSensitiveSettingsInput {
     enabled?: boolean;
     url?: string;
     secret?: string;
+  };
+  retention?: {
+    enabled?: boolean;
+    retentionDays?: number;
   };
 }
 

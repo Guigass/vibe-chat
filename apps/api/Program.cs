@@ -2258,6 +2258,63 @@ v1.MapPut("/admin/settings", async (
         }
     }
 
+    if (request.Retention is not null)
+    {
+        var retentionRow = await db.MessageRetentionSettings
+            .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
+        var created = false;
+        if (retentionRow is null)
+        {
+            var defaultDays = config.GetValue(
+                "MessageRetention:DefaultRetentionDays",
+                MessageRetentionSettings.DefaultRetentionDays);
+            if (defaultDays is < MessageRetentionSettings.MinRetentionDays or > MessageRetentionSettings.MaxRetentionDays)
+            {
+                defaultDays = MessageRetentionSettings.DefaultRetentionDays;
+            }
+
+            retentionRow = new MessageRetentionSettings
+            {
+                TenantId = workspace.TenantId,
+                Enabled = false,
+                RetentionDays = defaultDays,
+                UpdatedAt = clock.UtcNow
+            };
+            db.MessageRetentionSettings.Add(retentionRow);
+            created = true;
+            changes.Add("retention.created");
+        }
+
+        if (request.Retention.RetentionDays is { } days)
+        {
+            if (days is < MessageRetentionSettings.MinRetentionDays or > MessageRetentionSettings.MaxRetentionDays)
+            {
+                return Results.BadRequest(new
+                {
+                    error = "InvalidRetentionDays",
+                    message = $"RetentionDays must be between {MessageRetentionSettings.MinRetentionDays} and {MessageRetentionSettings.MaxRetentionDays}."
+                });
+            }
+
+            if (retentionRow.RetentionDays != days)
+            {
+                retentionRow.RetentionDays = days;
+                changes.Add("retention.retentionDays");
+            }
+        }
+
+        if (request.Retention.Enabled is { } retentionEnabled && retentionRow.Enabled != retentionEnabled)
+        {
+            retentionRow.Enabled = retentionEnabled;
+            changes.Add("retention.enabled");
+        }
+
+        if (created || changes.Any(c => c.StartsWith("retention.", StringComparison.Ordinal)))
+        {
+            retentionRow.UpdatedAt = clock.UtcNow;
+        }
+    }
+
     if (changes.Count > 0)
     {
         audit.Add(new AuditEvent
@@ -2680,6 +2737,25 @@ static async Task<SensitiveSettingsResponse> BuildSensitiveSettingsResponseAsync
     var webhookEnabled = webhook?.Enabled ?? false;
     var webhookStatus = WebhooksSettingsStatus.Resolve(webhookEnabled, webhookUrlConfigured, webhookSecretConfigured);
 
+    var processRetentionEnabled = config.GetValue("MessageRetention:Enabled", false);
+    var defaultRetentionDays = config.GetValue(
+        "MessageRetention:DefaultRetentionDays",
+        MessageRetentionSettings.DefaultRetentionDays);
+    if (defaultRetentionDays is < MessageRetentionSettings.MinRetentionDays or > MessageRetentionSettings.MaxRetentionDays)
+    {
+        defaultRetentionDays = MessageRetentionSettings.DefaultRetentionDays;
+    }
+
+    var retention = await db.MessageRetentionSettings.AsNoTracking()
+        .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
+    var retentionEnabled = retention?.Enabled ?? false;
+    var retentionDays = retention?.RetentionDays > 0 ? retention.RetentionDays : defaultRetentionDays;
+    var retentionMessage = !processRetentionEnabled
+        ? "Purge desligado no processo (MessageRetention:Enabled=false). Política do tenant é gravável, mas o worker não hard-deleta."
+        : retentionEnabled
+            ? $"Purge ativo: soft-deletes com mais de {retentionDays} dias serão hard-deleted pelo worker."
+            : "Purge do tenant desligado — soft-deletes permanecem até habilitar.";
+
     return new SensitiveSettingsResponse(
         workspace.Id.Value,
         new AiSensitiveSettingsResponse(
@@ -2710,7 +2786,14 @@ static async Task<SensitiveSettingsResponse> BuildSensitiveSettingsResponseAsync
             webhookSecretConfigured,
             SecretMasking.Mask(webhookSecret),
             SecretsWritable: true,
-            WebhooksSettingsStatus.MessageFor(webhookStatus)));
+            WebhooksSettingsStatus.MessageFor(webhookStatus)),
+        new RetentionSensitiveSettingsResponse(
+            processRetentionEnabled,
+            "env",
+            retentionEnabled,
+            retentionDays,
+            defaultRetentionDays,
+            retentionMessage));
 }
 
 static async Task<UserProfile> EnsureProfileAsync(ClaimsPrincipal principal, VibeChatDbContext db, IClock clock, CancellationToken ct)
@@ -3217,11 +3300,19 @@ public sealed record WebhooksSensitiveSettingsResponse(
     string? SecretMask,
     bool SecretsWritable,
     string Message);
+public sealed record RetentionSensitiveSettingsResponse(
+    bool ProcessEnabled,
+    string ProcessSource,
+    bool Enabled,
+    int RetentionDays,
+    int DefaultRetentionDays,
+    string Message);
 public sealed record SensitiveSettingsResponse(
     Guid WorkspaceId,
     AiSensitiveSettingsResponse Ai,
     EmailSensitiveSettingsResponse Email,
-    WebhooksSensitiveSettingsResponse Webhooks);
+    WebhooksSensitiveSettingsResponse Webhooks,
+    RetentionSensitiveSettingsResponse Retention);
 public sealed record UpdateAiSensitiveSettingsRequest(
     bool? WorkspaceEnabled = null,
     string? Provider = null,
@@ -3238,10 +3329,14 @@ public sealed record UpdateWebhooksSensitiveSettingsRequest(
     bool? Enabled = null,
     string? Url = null,
     string? Secret = null);
+public sealed record UpdateRetentionSensitiveSettingsRequest(
+    bool? Enabled = null,
+    int? RetentionDays = null);
 public sealed record UpdateSensitiveSettingsRequest(
     Guid? WorkspaceId = null,
     UpdateAiSensitiveSettingsRequest? Ai = null,
     UpdateEmailSensitiveSettingsRequest? Email = null,
-    UpdateWebhooksSensitiveSettingsRequest? Webhooks = null);
+    UpdateWebhooksSensitiveSettingsRequest? Webhooks = null,
+    UpdateRetentionSensitiveSettingsRequest? Retention = null);
 
 public partial class Program;

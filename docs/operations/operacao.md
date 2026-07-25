@@ -142,4 +142,4 @@ Procedimento completo: [`runbooks/upgrade.md`](./runbooks/upgrade.md).
 
 - Rate-limit por tenant
 - Quotas de storage (fase 2)
-- Offboarding de tenant: export compliance via `GET /api/v1/admin/workspaces/{id}/export` (B-046); purge/hard-delete ainda pendente (B-047 / D-03)
+- Offboarding de tenant: export compliance via `GET /api/v1/admin/workspaces/{id}/export` (B-046); hard-delete de soft-deletes via retenção configurável (B-047) — `MessageRetention__Enabled=true` no worker + `retention.enabled` no admin settings (default off; sugerido 90 dias)

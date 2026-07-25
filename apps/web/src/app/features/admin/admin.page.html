@@ -166,9 +166,9 @@
     <section class="settings" aria-labelledby="settings-heading">
       <h2 id="settings-heading">Integrações / Settings sensíveis</h2>
       <p class="settings__lead">
-        Flags e máscaras de AI/SMTP. Secrets (API key, senha SMTP) só via env —
-        nunca em claro. Exige <code>workspace.admin</code> (Auditor não acessa).
-        Export compliance do workspace (ZIP) usa a mesma permissão.
+        Flags e máscaras de AI/SMTP, webhooks e retenção. Secrets (API key, senha SMTP)
+        só via env — nunca em claro. Exige <code>workspace.admin</code> (Auditor não
+        acessa). Export compliance do workspace (ZIP) usa a mesma permissão.
       </p>
 
       @if (canManageSettings()) {
@@ -287,6 +287,29 @@
                 value=""
                 placeholder="••••••••"
                 autocomplete="new-password"
+              />
+            </label>
+          </fieldset>
+
+          <fieldset class="settings__block" [disabled]="settingsBusy() || !canManageSettings()">
+            <legend>Retenção / purge</legend>
+            <p class="settings__meta">
+              Processo (<code>{{ s.retention.processSource }}</code>):
+              {{ s.retention.processEnabled ? 'ligado' : 'desligado' }}
+              · default {{ s.retention.defaultRetentionDays }}d — {{ s.retention.message }}
+            </p>
+            <label class="settings__check">
+              <input type="checkbox" name="retentionEnabled" [checked]="s.retention.enabled" />
+              <span>Purge de soft-deletes habilitado neste tenant</span>
+            </label>
+            <label class="settings__field settings__field--narrow">
+              <span>Dias de retenção</span>
+              <input
+                name="retentionDays"
+                type="number"
+                min="1"
+                max="3650"
+                [value]="s.retention.retentionDays"
               />
             </label>
           </fieldset>
