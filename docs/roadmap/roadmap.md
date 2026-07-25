@@ -16,51 +16,55 @@ Roadmap para **times de agentes** trabalharem em paralelo. Cada item tem ID, dep
 
 Dependências: itens só começam quando deps = done.
 
+**Coluna `Status` é obrigatória em toda tabela de wave.** A automação de Build trata
+linha sem `Status` como elegível — tabela sem a coluna faz o agente reabrir trabalho
+já entregue (foi o que aconteceu com W3-2, reimplementado como `GAP-hub-t3` / #37).
+
 ---
 
 ## Wave 0 — Fundação (paralelo total)
 
-| ID | Trilha | Tarefa | Deps |
-|----|--------|--------|------|
-| W0-1 | A | Compose: Postgres, Redis, Keycloak, MinIO | — |
-| W0-2 | A | Scripts seed-dev + .env.example | W0-1 |
-| W0-3 | B | Skeleton solução .NET 10 (Api, Worker, Contracts, Platform) | — |
-| W0-4 | D | Skeleton Angular 22 standalone + tokens CSS | — |
-| W0-5 | G | Design system tokens aplicados no web | W0-4 |
-| W0-6 | F | OTel collector + Prometheus + Grafana + Loki + Tempo no Compose | W0-1 |
-| W0-7 | E | Pipeline CI: build + unit vazio + arch test stub | W0-3 |
+| ID | Trilha | Tarefa | Deps | Status |
+|----|--------|--------|------|--------|
+| W0-1 | A | Compose: Postgres, Redis, Keycloak, MinIO | — | **Done** |
+| W0-2 | A | Scripts seed-dev + .env.example | W0-1 | **Done** |
+| W0-3 | B | Skeleton solução .NET 10 (Api, Worker, Contracts, Platform) | — | **Done** |
+| W0-4 | D | Skeleton Angular 22 standalone + tokens CSS | — | **Done** |
+| W0-5 | G | Design system tokens aplicados no web | W0-4 | **Done** |
+| W0-6 | F | OTel collector + Prometheus + Grafana + Loki + Tempo no Compose | W0-1 | **Done** — profile `observability` |
+| W0-7 | E | Pipeline CI: build + unit vazio + arch test stub | W0-3 | **Done** — `.github/workflows/ci.yml` |
 
 ## Wave 1 — Identidade e Directory
 
-| ID | Trilha | Tarefa | Deps |
-|----|--------|--------|------|
-| W1-1 | B | OIDC validation + TenantContext middleware | W0-3, W0-1 |
-| W1-2 | B | Módulo Directory: Tenant, Workspace, Space, Channel, Membership | W1-1 |
-| W1-3 | B | Seed dados acme + alice/bob | W1-2, W0-2 |
-| W1-4 | D | Login OIDC PKCE + guard de rotas | W0-4, W1-1 |
-| W1-5 | E | Testes auth negativos (401/403) | W1-1 |
+| ID | Trilha | Tarefa | Deps | Status |
+|----|--------|--------|------|--------|
+| W1-1 | B | OIDC validation + TenantContext middleware | W0-3, W0-1 | **Done** |
+| W1-2 | B | Módulo Directory: Tenant, Workspace, Space, Channel, Membership | W1-1 | **Done** |
+| W1-3 | B | Seed dados acme + alice/bob | W1-2, W0-2 | **Done** |
+| W1-4 | D | Login OIDC PKCE + guard de rotas | W0-4, W1-1 | **Done** |
+| W1-5 | E | Testes auth negativos (401/403) | W1-1 | **Done** |
 
 ## Wave 2 — Fatia de mensagem
 
-| ID | Trilha | Tarefa | Deps |
-|----|--------|--------|------|
-| W2-1 | C | Conversation/Message/seq/idempotency + migrations | W1-2 |
-| W2-2 | C | Outbox writer + worker processor | W2-1, W0-3 |
-| W2-3 | C | SignalR hub + Redis backplane config | W2-2, W1-1 |
-| W2-4 | C | History API + gap model | W2-1 |
-| W2-5 | D | UI channel: lista + composer + hub client | W1-4, W2-3, W2-4 |
-| W2-6 | E | Testes integração send+idempotency+seq | W2-1 |
-| W2-7 | E | E2E Playwright dois usuários | W2-5, W1-3 |
+| ID | Trilha | Tarefa | Deps | Status |
+|----|--------|--------|------|--------|
+| W2-1 | C | Conversation/Message/seq/idempotency + migrations | W1-2 | **Done** |
+| W2-2 | C | Outbox writer + worker processor | W2-1, W0-3 | **Done** |
+| W2-3 | C | SignalR hub + Redis backplane config | W2-2, W1-1 | **Done** |
+| W2-4 | C | History API + gap model | W2-1 | **Done** |
+| W2-5 | D | UI channel: lista + composer + hub client | W1-4, W2-3, W2-4 | **Done** |
+| W2-6 | E | Testes integração send+idempotency+seq | W2-1 | **Done** — `tests/integration` |
+| W2-7 | E | E2E Playwright dois usuários | W2-5, W1-3 | **Done** — `tests/e2e/specs`; execução ainda manual (ver W7-1) |
 
 ## Wave 3 — Hardening multi-tenant
 
-| ID | Trilha | Tarefa | Deps |
-|----|--------|--------|------|
-| W3-1 | B | RLS policies em tabelas de negócio | W2-1, W1-2 |
-| W3-2 | E | Suíte tests/security cross-tenant (API+hub) (**Done** — GAP-hub-t3 hub T3) | W3-1, W2-3 |
-| W3-3 | C | Rate-limit Redis em send/hub (**Done**) | W2-3 |
-| W3-4 | F | Dashboards: requests, outbox lag, SignalR (**Done**) | W0-6, W2-2 |
-| W3-5 | E | Critérios de aceite fatia — sign-off | W2-7, W3-2 |
+| ID | Trilha | Tarefa | Deps | Status |
+|----|--------|--------|------|--------|
+| W3-1 | B | RLS policies em tabelas de negócio | W2-1, W1-2 | **Done** — B-009 + GAP-rls-retention (#35) + GAP-rls-catalog (#36) |
+| W3-2 | E | Suíte tests/security cross-tenant (API+hub) | W3-1, W2-3 | **Done** — hub T3 via GAP-hub-t3 (#37) |
+| W3-3 | C | Rate-limit Redis em send/hub | W2-3 | **Done** |
+| W3-4 | F | Dashboards: requests, outbox lag, SignalR | W0-6, W2-2 | **Done** |
+| W3-5 | E | Critérios de aceite fatia — sign-off | W2-7, W3-2 | **Done** — A1…A6 marcados em `criterios-aceite-fatia-vertical.md` |
 
 Nota (GAP-hub-t3 / #37): hub T3 `JoinChannel`/`SendTyping` cross-tenant coberto em `tests/security`; `multi-tenant.md` + `modelo-ameacas.md` já no feature PR.
 
@@ -98,7 +102,7 @@ Nota (GAP-hub-t3 / #37): hub T3 `JoinChannel`/`SendTyping` cross-tenant coberto 
 
 ## Wave 6 — Refinamento UX + Admin
 
-Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks + B-045 suggest-reply + B-046 export + B-047 retenção/purge. Próximo backlog: P2 restante (ex.: B-040 guests).
+Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks + B-045 suggest-reply + B-046 export + B-047 retenção/purge. Próximo: **Wave 7 — Sustentação** (W7-1 E2E na CI); B-040 guests segue bloqueado por spec de produto.
 
 | ID | Trilha | Tarefa | Deps | Status |
 |----|--------|--------|------|--------|
@@ -122,6 +126,16 @@ Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks + B-045 suggest
 - PrimeNG só após emenda ADR-002; identidade visual VibeChat preservada
 - `task apps` (Compose profile `apps`) sobe **api** + **web** (+ worker) healthy; caminho self-host documentado (dev hot-reload continua via `task dev`)
 
+## Wave 7 — Sustentação
+
+Fila explícita para a automação de Build depois da Wave 6. Sem item elegível aqui,
+o agente cai no modo “caçar gap” a cada run — mais caro e menos previsível.
+
+| ID | Trilha | Tarefa | Deps | Status |
+|----|--------|--------|------|--------|
+| W7-1 | E | E2E Playwright na CI (B-075) — hoje `tests/e2e/specs` só roda via `task test:e2e` local | W2-7, W6-8 | Planned |
+| W7-2 | B/D | Guests / link de canal (B-040) | P2-1, D-07 | **Blocked** — precisa spec de produto (escopo do convite, authZ do guest, expiração). Não é elegível para Build sem essa decisão |
+
 ---
 
 ## Parallelismo sugerido por time de agentes
@@ -130,7 +144,7 @@ Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks + B-045 suggest
 Agent-Infra     → W0-1, W0-2, W0-6, W5-*, W6-8
 Agent-Backend   → W0-3, W1-*, W2-1..W2-4, W3-1, W3-3, W4-*, W6-1, W6-2, W6-4..W6-6
 Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7, W6-1..W6-3, W6-7
-Agent-QA        → W0-7, W1-5, W2-6, W2-7, W3-2, W3-5, W5-3, W6-1 E2E, W6-8 smoke
+Agent-QA        → W0-7, W1-5, W2-6, W2-7, W3-2, W3-5, W5-3, W6-1 E2E, W6-8 smoke, W7-1
 Agent-Security  → W3-1/W3-2 review, W6-5/W6-6 authZ + threat model
 Agent-Obs       → W0-6, W3-4
 ```
