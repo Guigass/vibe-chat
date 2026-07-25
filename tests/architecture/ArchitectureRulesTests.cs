@@ -45,13 +45,43 @@ public sealed class ArchitectureRulesTests
     }
 
     [Fact]
-    public void Rls_catalog_covers_message_retention_settings()
+    public void Rls_catalog_covers_all_tenant_scoped_business_tables()
     {
         var sqlPath = FindRepoFile(Path.Combine("infra", "compose", "postgres", "03-rls.sql"));
         var sql = File.ReadAllText(sqlPath);
 
-        sql.Should().Contain("messaging.message_retention_settings");
-        sql.Should().Contain("tenant_isolation_message_retention_settings");
+        // Keep in sync with VibeChatDbContext tables that carry TenantId (identity.user_profiles excluded).
+        string[] tenantTables =
+        [
+            "tenancy.workspaces",
+            "tenancy.workspace_members",
+            "directory.spaces",
+            "conversations.channels",
+            "conversations.channel_members",
+            "messaging.messages",
+            "messaging.threads",
+            "files.attachments",
+            "messaging.reactions",
+            "messaging.read_cursors",
+            "messaging.conversation_sequences",
+            "messaging.idempotency",
+            "messaging.message_retention_settings",
+            "building_blocks.outbox_messages",
+            "audit.audit_events",
+            "ai.usage_records",
+            "ai.settings",
+            "notifications.preferences",
+            "notifications.email_settings",
+            "integrations.webhook_endpoints"
+        ];
+
+        foreach (var table in tenantTables)
+        {
+            sql.Should().Contain(table, because: $"RLS catalog must enable policy coverage for {table}");
+            var policyNeedle = $"ON {table}";
+            sql.Should().Contain(policyNeedle, because: $"RLS catalog must define a policy on {table}");
+        }
+
         sql.Should().Contain("""USING ("TenantId" = current_setting('app.tenant_id', true)::uuid)""");
     }
 

@@ -15,11 +15,15 @@ ALTER TABLE IF EXISTS messaging.threads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS files.attachments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.reactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.read_cursors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.conversation_sequences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.idempotency ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.message_retention_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS building_blocks.outbox_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS audit.audit_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ai.usage_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS notifications.email_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS integrations.webhook_endpoints ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS tenant_isolation_workspaces ON tenancy.workspaces;
@@ -62,12 +66,20 @@ DROP POLICY IF EXISTS tenant_isolation_read_cursors ON messaging.read_cursors;
 CREATE POLICY tenant_isolation_read_cursors ON messaging.read_cursors
     USING ("TenantId" = current_setting('app.tenant_id', true)::uuid);
 
+DROP POLICY IF EXISTS tenant_isolation_conversation_sequences ON messaging.conversation_sequences;
+CREATE POLICY tenant_isolation_conversation_sequences ON messaging.conversation_sequences
+    USING ("TenantId" = current_setting('app.tenant_id', true)::uuid);
+
 DROP POLICY IF EXISTS tenant_isolation_idempotency ON messaging.idempotency;
 CREATE POLICY tenant_isolation_idempotency ON messaging.idempotency
     USING ("TenantId" = current_setting('app.tenant_id', true)::uuid);
 
 DROP POLICY IF EXISTS tenant_isolation_message_retention_settings ON messaging.message_retention_settings;
 CREATE POLICY tenant_isolation_message_retention_settings ON messaging.message_retention_settings
+    USING ("TenantId" = current_setting('app.tenant_id', true)::uuid);
+
+DROP POLICY IF EXISTS tenant_isolation_outbox_messages ON building_blocks.outbox_messages;
+CREATE POLICY tenant_isolation_outbox_messages ON building_blocks.outbox_messages
     USING ("TenantId" = current_setting('app.tenant_id', true)::uuid);
 
 DROP POLICY IF EXISTS tenant_isolation_audit_events ON audit.audit_events;
@@ -78,8 +90,16 @@ DROP POLICY IF EXISTS tenant_isolation_ai_usage_records ON ai.usage_records;
 CREATE POLICY tenant_isolation_ai_usage_records ON ai.usage_records
     USING ("TenantId" = current_setting('app.tenant_id', true)::uuid);
 
+DROP POLICY IF EXISTS tenant_isolation_ai_settings ON ai.settings;
+CREATE POLICY tenant_isolation_ai_settings ON ai.settings
+    USING ("TenantId" = current_setting('app.tenant_id', true)::uuid);
+
 DROP POLICY IF EXISTS tenant_isolation_notification_preferences ON notifications.preferences;
 CREATE POLICY tenant_isolation_notification_preferences ON notifications.preferences
+    USING ("TenantId" = current_setting('app.tenant_id', true)::uuid);
+
+DROP POLICY IF EXISTS tenant_isolation_email_settings ON notifications.email_settings;
+CREATE POLICY tenant_isolation_email_settings ON notifications.email_settings
     USING ("TenantId" = current_setting('app.tenant_id', true)::uuid);
 
 DROP POLICY IF EXISTS tenant_isolation_webhook_endpoints ON integrations.webhook_endpoints;

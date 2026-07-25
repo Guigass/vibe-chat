@@ -73,6 +73,7 @@
 | T14 | Membro/Auditor altera `retention.*` em `/admin/settings` | 403; só `workspace.admin` (B-047) |
 | T15 | Purge com `MessageRetention:Enabled=false` | Nenhuma mensagem hard-deletada (B-047) |
 | T16 | Catálogo RLS (`infra/compose/postgres/03-rls.sql`) inclui `messaging.message_retention_settings` | Policy `tenant_isolation_message_retention_settings` em `"TenantId"` (GAP pós B-047) |
+| T17 | Catálogo RLS cobre todas as tabelas de negócio com `TenantId` (ex.: `conversation_sequences`, `outbox_messages`, `ai.settings`, `email_settings`) | ENABLE + policy por tabela; arch test `Rls_catalog_covers_all_tenant_scoped_business_tables` (GAP-rls-catalog) |
 
 ## Operação multi-tenant vs single-tenant
 
