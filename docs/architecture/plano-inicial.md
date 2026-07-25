@@ -87,14 +87,14 @@ Prioridade sobre P2 novo de diferenciação. Detalhe em `docs/roadmap/roadmap.md
 - OTel + Prometheus + Grafana + Loki + Tempo
 - Sem K8s / bus externo / OpenSearch na fase 1
 
-## Decisões pendentes (humanas)
+## Decisões humanas
 
-Ver `docs/roadmap/decisoes-pendentes.md`:
+Todas fechadas em 2026-07-24 — registros e impacto em `docs/roadmap/decisoes-pendentes.md`:
 
-- Licença open-source
-- Marca / trademark
-- Política legal de retenção
-- Credenciais e realms de produção
+- Licença open-source — Apache-2.0 (D-01)
+- Marca / trademark — produto “VibeChat”; logo e domínios seguem placeholders (D-02)
+- Política legal de retenção — soft-delete + purge configurável (D-03 / ADR-018)
+- Credenciais e realms de produção — só via `.env` / secrets manager (D-04)
 
 ## Ordem sugerida de PRs
 
