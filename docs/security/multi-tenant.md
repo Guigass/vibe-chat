@@ -68,6 +68,8 @@
 | T9 | Admin lê canal de outro tenant | 403 |
 | T10 | Auditor (`admin.dashboard` sem `workspace.admin`) lê `/admin/settings` | 403 (B-069) |
 | T11 | Admin `GET /admin/settings` com webhook ativo | `webhooks.secretMask` só; secret nunca em claro (B-048) |
+| T12 | Membro/Auditor chama `GET /admin/workspaces/{id}/export` | 403; só `workspace.admin` (B-046) |
+| T13 | Admin exporta workspace de outro tenant | 403 (B-046) |
 
 ## Operação multi-tenant vs single-tenant
 

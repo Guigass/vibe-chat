@@ -142,4 +142,4 @@ Procedimento completo: [`runbooks/upgrade.md`](./runbooks/upgrade.md).
 
 - Rate-limit por tenant
 - Quotas de storage (fase 2)
-- Procedimento de offboarding de tenant (export + purge — política legal pendente)
+- Offboarding de tenant: export compliance via `GET /api/v1/admin/workspaces/{id}/export` (B-046); purge/hard-delete ainda pendente (B-047 / D-03)
