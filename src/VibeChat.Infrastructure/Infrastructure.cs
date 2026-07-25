@@ -1526,14 +1526,12 @@ public sealed class MessageRetentionPurgeProcessor(
             }
 
             // Keep attachment metadata for compliance; detach from purged message rows.
-            // Compare underlying Guid column — avoids EF Contains on nullable MessageId?.
-            var messageIdGuidList = messageIdGuids.ToList();
-            var attachments = await db.Attachments.IgnoreQueryFilters()
-                .Where(x => x.TenantId == policy.TenantId
-                    && x.MessageId != null
-                    && messageIdGuidList.Contains(EF.Property<Guid>(x, nameof(Attachment.MessageId))))
+            // Avoid EF Contains/EF.Property on nullable MessageId? — filter in memory (B-046 pitfall).
+            var attachmentCandidates = await db.Attachments.IgnoreQueryFilters()
+                .Where(x => x.TenantId == policy.TenantId && x.MessageId != null)
                 .ToListAsync(cancellationToken);
-            foreach (var attachment in attachments)
+            foreach (var attachment in attachmentCandidates
+                .Where(a => a.MessageId is { } mid && messageIdGuids.Contains(mid.Value)))
             {
                 attachment.MessageId = null;
             }
