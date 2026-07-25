@@ -49,7 +49,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 |-------|-----------|
 | **User** | Identidade de pessoa; source of truth de autenticação no Keycloak (OIDC). Perfil espelhado/enriquecido no VibeChat. |
 | **Cadastro / Provisionamento** | Fluxo em duas camadas: (1) **autenticação** no IdP (Keycloak/OIDC cria a identidade); (2) **autorização** no VibeChat via Membership + Diretivas. Login sozinho **não** concede acesso a workspace — falta membership. Admin convida por e-mail (`POST .../members`) e atribui papel; perfil stub `pending:{email}` é vinculado no primeiro SSO. Seed/demo permanece para DX. Sem self-signup aberto na fase 1 (B-068). |
-| **Diretiva** | Regra de autorização derivada do papel (`Role` + `RolePermissionCatalog` / policies de workspace). Ex.: quem pode `channel.create`, `workspace.admin`, `admin.dashboard`, `ai.summarize`. Gerenciada na UI admin junto ao cadastro. Não confundir com “prompt” de IA. |
+| **Diretiva** | Regra de autorização derivada do papel (`Role` + `RolePermissionCatalog` / policies de workspace). Ex.: quem pode `channel.create`, `workspace.admin`, `admin.dashboard`, `ai.summarize`, `ai.suggest_reply`. Gerenciada na UI admin junto ao cadastro. Não confundir com “prompt” de IA. |
 | **OIDC / SSO** | OpenID Connect; fluxo padrão via Keycloak. |
 | **Service Account** | Identidade de máquina para workers/integrações. |
 | **Guest** | Membership com escopo reduzido (ex.: canal específico). |

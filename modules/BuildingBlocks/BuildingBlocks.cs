@@ -130,7 +130,7 @@ public static class RolePermissionCatalog
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
-        Permissions.Admin.Dashboard, Permissions.Ai.Summarize
+        Permissions.Admin.Dashboard, Permissions.Ai.Summarize, Permissions.Ai.SuggestReply
     ];
 
     private static readonly HashSet<string> ModeratorPermissions =
@@ -139,7 +139,7 @@ public static class RolePermissionCatalog
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
-        Permissions.Ai.Summarize
+        Permissions.Ai.Summarize, Permissions.Ai.SuggestReply
     ];
 
     private static readonly HashSet<string> AuditorPermissions =
@@ -154,7 +154,7 @@ public static class RolePermissionCatalog
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
-        Permissions.Ai.Summarize
+        Permissions.Ai.Summarize, Permissions.Ai.SuggestReply
     ];
 
     private static readonly HashSet<string> GuestPermissions =
@@ -167,7 +167,7 @@ public static class RolePermissionCatalog
         Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
-        Permissions.Ai.Summarize
+        Permissions.Ai.Summarize, Permissions.Ai.SuggestReply
     ];
 }
 

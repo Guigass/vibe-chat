@@ -33,13 +33,13 @@ Workspace: tabela `AiSettings` (`Enabled`, `Provider`). Seed demo liga Mock loca
 
 ### 3. Contrato
 
-Interface canônica: `IAiCompletionProvider` + feature estreita (ex.: `ISummarizeChannelFeature`).
+Interface canônica: `IAiCompletionProvider` + feature estreita (ex.: `ISummarizeChannelFeature`, `ISuggestChannelReplyFeature`).
 
 - Request com `TenantId`, `UserId`, `ConversationId`, escopo
-- Response tipada (`SummarizeChannelResult` / `AiSummaryResponse`)
+- Response tipada (`SummarizeChannelResult` / `SuggestChannelReplyResult` / `AiSummaryResponse` / `AiSuggestReplyResponse`)
 - Erros: `AiDisabled` (503), `ProviderError` (502), `ContextTooLarge`
 
-Ver endpoint summarize em `docs/architecture/contratos.md`.
+Ver endpoints summarize e suggest-reply em `docs/architecture/contratos.md`.
 
 ### 4. Coleta de contexto (ACL first)
 

@@ -2313,6 +2313,34 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/summariz
     return Results.Ok(new AiSummaryResponse(result.Summary));
 });
 
+v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/suggest-reply", async (Guid workspaceId, Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, ISuggestChannelReplyFeature suggestReply, IClock clock, CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null || !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Ai.SuggestReply, ct))
+    {
+        return Results.Forbid();
+    }
+
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null || channel.WorkspaceId != workspace.Id)
+    {
+        return Results.Forbid();
+    }
+
+    // Never on SendMessage hot path — opt-in suggest-reply only (D-06 / ADR-012 / B-045).
+    var result = await suggestReply.SuggestAsync(workspace.TenantId, workspace.Id, channel.Id, ct);
+    if (!result.Ok)
+    {
+        var status = string.Equals(result.Error, "AiDisabled", StringComparison.Ordinal)
+            ? StatusCodes.Status503ServiceUnavailable
+            : StatusCodes.Status502BadGateway;
+        return Results.Json(new AiSummaryErrorResponse(result.Error ?? "AiError", result.Suggestion), statusCode: status);
+    }
+
+    return Results.Ok(new AiSuggestReplyResponse(result.Suggestion));
+});
+
 if (app.Environment.IsDevelopment())
 {
     v1.MapPost("/dev/seed", async (SeedData seed, CancellationToken ct) =>
@@ -2890,6 +2918,7 @@ public sealed record SearchMessageHitResponse(
     double Rank);
 public sealed record SearchMessagesResponse(string Query, int Limit, SearchMessageHitResponse[] Items);
 public sealed record AiSummaryResponse(string Summary);
+public sealed record AiSuggestReplyResponse(string Suggestion);
 public sealed record AiSummaryErrorResponse(string Error, string Message);
 public sealed record AuditEventResponse(
     Guid Id,

@@ -31,6 +31,9 @@ public sealed record AiCompletionResponse(string Text, int PromptTokens, int Com
 /// <summary>Result of channel summarize. When Ok is false, Error is a stable code (e.g. AiDisabled, ProviderError).</summary>
 public sealed record SummarizeChannelResult(bool Ok, string Summary, string? Error = null);
 
+/// <summary>Result of suggest-reply. When Ok is false, Error is a stable code (e.g. AiDisabled, ProviderError).</summary>
+public sealed record SuggestChannelReplyResult(bool Ok, string Suggestion, string? Error = null);
+
 public interface IAiCompletionProvider
 {
     string Name { get; }
@@ -53,9 +56,14 @@ public sealed class MockAiProvider : IAiCompletionProvider
     {
         var lines = request.UserPrompt.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var count = Math.Min(lines.Length, 5);
-        var text = count == 0
-            ? "No recent messages to summarize."
-            : $"Mock summary: {count} recent messages discuss {string.Join(", ", lines.Take(count).Select((_, i) => $"point {i + 1}"))}.";
+        var isSuggest = request.SystemPrompt.Contains("Suggest", StringComparison.OrdinalIgnoreCase);
+        var text = isSuggest
+            ? (count == 0
+                ? "Thanks for the update — happy to help with the next step."
+                : "Mock suggestion: Acknowledge the recent points and propose a clear next step.")
+            : (count == 0
+                ? "No recent messages to summarize."
+                : $"Mock summary: {count} recent messages discuss {string.Join(", ", lines.Take(count).Select((_, i) => $"point {i + 1}"))}.");
 
         return Task.FromResult(new AiCompletionResponse(text, request.UserPrompt.Length / 4, text.Length / 4, 1));
     }
@@ -120,4 +128,9 @@ public sealed class OpenRouterAiProvider(HttpClient httpClient) : IAiCompletionP
 public interface ISummarizeChannelFeature
 {
     Task<SummarizeChannelResult> SummarizeAsync(TenantId tenantId, WorkspaceId workspaceId, ChannelId channelId, CancellationToken cancellationToken);
+}
+
+public interface ISuggestChannelReplyFeature
+{
+    Task<SuggestChannelReplyResult> SuggestAsync(TenantId tenantId, WorkspaceId workspaceId, ChannelId channelId, CancellationToken cancellationToken);
 }

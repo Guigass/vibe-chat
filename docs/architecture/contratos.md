@@ -388,8 +388,10 @@ public interface IAiCompletionProvider
 | Endpoint | AuthZ | Notas |
 |----------|-------|-------|
 | `POST /api/v1/workspaces/{workspaceId}/channels/{channelId}/ai/summarize` | membership + `ai.summarize` | Resumo das últimas ~20 msgs do canal; exige `Ai:Enabled` + `AiSettings` do workspace; `503` + `{ error: AiDisabled }` se off; `502` + `ProviderError` se provider externo falhar; nunca envia PII a terceiros sem flag+key |
+| `POST /api/v1/workspaces/{workspaceId}/channels/{channelId}/ai/suggest-reply` | membership + `ai.suggest_reply` | Sugestão de resposta (efêmera) com base nas últimas ~20 msgs; mesmas flags/`AiSettings` que summarize; `503`/`502` iguais; fora do hot path de `SendMessage` (B-045 / D-06) |
 
 `AiSummaryResponse`: `{ summary }`  
+`AiSuggestReplyResponse`: `{ suggestion }`  
 `AiSummaryErrorResponse`: `{ error, message }`
 
 ---

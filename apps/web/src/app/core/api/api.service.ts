@@ -6,6 +6,7 @@ import {
   AdminConversationMessageItem,
   AdminStats,
   AuditEventItem,
+  AiSuggestReplyResult,
   AiSummaryResult,
   Channel,
   ChatMessage,
@@ -621,6 +622,21 @@ export class ApiService {
       channelId,
       summary: result.summary,
       messageCount: 0,
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  async suggestChannelReply(workspaceId: string, channelId: string): Promise<AiSuggestReplyResult> {
+    const result = await this.request<{ suggestion: string }>(
+      `/api/v1/workspaces/${workspaceId}/channels/${channelId}/ai/suggest-reply`,
+      {
+        method: 'POST',
+        body: JSON.stringify({}),
+      },
+    );
+    return {
+      channelId,
+      suggestion: result.suggestion,
       generatedAt: new Date().toISOString(),
     };
   }

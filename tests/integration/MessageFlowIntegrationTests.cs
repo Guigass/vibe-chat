@@ -834,6 +834,27 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Ai_suggest_reply_uses_mock_provider_outside_send_path()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var messageId = Guid.NewGuid();
+        (await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-ai-sug-{messageId:N}", $"ai-suggest-{messageId:N}", null, null)))
+            .EnsureSuccessStatusCode();
+
+        var suggest = await client.PostAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/channels/{DemoChannelId}/ai/suggest-reply",
+            content: null);
+        suggest.StatusCode.Should().Be(HttpStatusCode.OK);
+        var payload = await suggest.Content.ReadFromJsonAsync<AiSuggestReplyDto>(JsonOptions);
+        payload.Should().NotBeNull();
+        payload!.Suggestion.Should().StartWith("Mock suggestion:");
+    }
+
+    [Fact]
     public async Task Tenant_isolation_attempt_is_denied()
     {
         var foreignChannelId = await SeedForeignTenantChannelAsync();
@@ -897,6 +918,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     private sealed record AiSummaryDto(string Summary);
+    private sealed record AiSuggestReplyDto(string Suggestion);
     private sealed record ReactionSummaryDto(string Emoji, int Count, bool Me);
     private sealed record ToggleReactionRequestDto(string Emoji);
     private sealed record ToggleReactionResponseDto(

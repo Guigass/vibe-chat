@@ -10,6 +10,7 @@ import { ChannelList } from '../features/chat/channel-list/channel-list';
 import { Composer } from '../features/chat/composer/composer';
 import { Timeline } from '../features/chat/timeline/timeline';
 import { ThreadPanel } from '../features/chat/thread-panel/thread-panel';
+import { SuggestReplyButton } from '../features/ai/suggest-reply-button';
 import { SummarizeButton } from '../features/ai/summarize-button';
 import { SearchMessageHit } from '../shared/models/chat.models';
 import {
@@ -31,6 +32,7 @@ import {
     Composer,
     ThreadPanel,
     SummarizeButton,
+    SuggestReplyButton,
     ConnectionBanner,
     ThemeToggle,
     DensityControl,

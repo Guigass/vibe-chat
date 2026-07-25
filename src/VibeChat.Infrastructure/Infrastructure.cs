@@ -681,6 +681,66 @@ public sealed class SummarizeChannelFeature(
     }
 }
 
+public sealed class SuggestChannelReplyFeature(
+    VibeChatDbContext dbContext,
+    IAiCompletionProvider provider,
+    IClock clock,
+    IConfiguration configuration) : ISuggestChannelReplyFeature
+{
+    public async Task<SuggestChannelReplyResult> SuggestAsync(TenantId tenantId, WorkspaceId workspaceId, ChannelId channelId, CancellationToken cancellationToken)
+    {
+        // D-06 / ADR-012: suggest-reply stays off unless explicitly enabled; never on SendMessage hot path.
+        if (!configuration.GetValue("Ai:Enabled", false) || provider is NullAiProvider)
+        {
+            return new SuggestChannelReplyResult(false, "AI is disabled.", "AiDisabled");
+        }
+
+        var settings = await dbContext.AiSettings.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.TenantId == tenantId && x.WorkspaceId == workspaceId, cancellationToken);
+
+        if (settings is null || !settings.Enabled)
+        {
+            return new SuggestChannelReplyResult(false, "AI is disabled for this workspace.", "AiDisabled");
+        }
+
+        var recent = await dbContext.Messages.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.ConversationId == channelId && x.DeletedAt == null)
+            .OrderByDescending(x => x.Sequence)
+            .Take(20)
+            .OrderBy(x => x.Sequence)
+            .Select(x => new { x.Sequence, x.Body })
+            .ToArrayAsync(cancellationToken);
+
+        var prompt = string.Join('\n', recent.Select(x => $"#{x.Sequence}: {x.Body}"));
+        var response = await provider.CompleteAsync(
+            new AiCompletionRequest(
+                "Suggest one short, professional reply to the recent channel messages without exposing sensitive details.",
+                prompt),
+            cancellationToken);
+
+        if (string.Equals(provider.Name, "OpenRouter", StringComparison.OrdinalIgnoreCase)
+            && response.Text.Contains("provider is unavailable", StringComparison.OrdinalIgnoreCase))
+        {
+            return new SuggestChannelReplyResult(false, response.Text, "ProviderError");
+        }
+
+        dbContext.AiUsageRecords.Add(new AiUsageRecord
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            WorkspaceId = workspaceId,
+            Provider = provider.Name,
+            PromptTokens = response.PromptTokens,
+            CompletionTokens = response.CompletionTokens,
+            CostUsd = 0m,
+            LatencyMs = response.LatencyMs,
+            CreatedAt = clock.UtcNow
+        });
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return new SuggestChannelReplyResult(true, response.Text);
+    }
+}
+
 public sealed class RedisConnection : IAsyncDisposable
 {
     private readonly string? _connectionString;
@@ -1686,6 +1746,7 @@ public static class DependencyInjection
         services.AddScoped<IChannelMembershipReader>(sp => sp.GetRequiredService<PermissionChecker>());
         services.AddScoped<IDashboardQuery, DashboardQuery>();
         services.AddScoped<ISummarizeChannelFeature, SummarizeChannelFeature>();
+        services.AddScoped<ISuggestChannelReplyFeature, SuggestChannelReplyFeature>();
         services.AddSingleton<RedisConnection>();
         services.AddScoped<ITypingService, TypingService>();
         services.AddScoped<IPresenceService, PresenceService>();

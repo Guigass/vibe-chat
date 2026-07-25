@@ -25,6 +25,7 @@ export class ChannelStore {
   private readonly loadingSignal = signal(false);
   private readonly errorSignal = signal<string | null>(null);
   private readonly usingDemo = signal(false);
+  private readonly composerPrefillSignal = signal<string | null>(null);
 
   readonly workspaces = this.workspacesSignal.asReadonly();
   readonly spaces = this.spacesSignal.asReadonly();
@@ -70,6 +71,20 @@ export class ChannelStore {
   readonly loading = this.loadingSignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
   readonly isDemo = this.usingDemo.asReadonly();
+  readonly composerPrefill = this.composerPrefillSignal.asReadonly();
+
+  /** Ephemeral draft injection from AI suggest-reply (B-045); composer consumes once. */
+  prefillComposer(text: string): void {
+    this.composerPrefillSignal.set(text);
+  }
+
+  consumeComposerPrefill(): string | null {
+    const text = this.composerPrefillSignal();
+    if (text !== null) {
+      this.composerPrefillSignal.set(null);
+    }
+    return text;
+  }
 
   async load(): Promise<void> {
     this.loadingSignal.set(true);

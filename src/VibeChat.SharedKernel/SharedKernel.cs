@@ -160,6 +160,7 @@ public static class Permissions
     public static class Ai
     {
         public const string Summarize = "ai.summarize";
+        public const string SuggestReply = "ai.suggest_reply";
     }
 }
 
