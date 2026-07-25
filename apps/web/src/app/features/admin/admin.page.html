@@ -168,7 +168,27 @@
       <p class="settings__lead">
         Flags e máscaras de AI/SMTP. Secrets (API key, senha SMTP) só via env —
         nunca em claro. Exige <code>workspace.admin</code> (Auditor não acessa).
+        Export compliance do workspace (ZIP) usa a mesma permissão.
       </p>
+
+      @if (canManageSettings()) {
+        <div class="settings__export">
+          <button
+            type="button"
+            class="settings__submit"
+            [disabled]="exportBusy()"
+            (click)="exportWorkspace()"
+          >
+            {{ exportBusy() ? 'Exportando…' : 'Exportar workspace (ZIP)' }}
+          </button>
+          @if (exportFeedback(); as feedback) {
+            <p class="roles__feedback" role="status">{{ feedback }}</p>
+          }
+          @if (exportError(); as err) {
+            <p class="admin__hint" role="alert">{{ err }}</p>
+          }
+        </div>
+      }
 
       @if (settingsForbidden()) {
         <p class="admin__hint" role="status">Sem permissão para ler settings sensíveis.</p>

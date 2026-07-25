@@ -72,6 +72,9 @@ export class AdminPage implements OnInit {
   readonly settingsBusy = signal(false);
   readonly settingsFeedback = signal<string | null>(null);
   readonly settingsErrorMessage = signal<string | null>(null);
+  readonly exportBusy = signal(false);
+  readonly exportFeedback = signal<string | null>(null);
+  readonly exportError = signal<string | null>(null);
 
   readonly conversations = signal<AdminConversationItem[]>([]);
   readonly conversationsForbidden = signal(false);
@@ -211,6 +214,30 @@ export class AdminPage implements OnInit {
 
   canManageSettings(): boolean {
     return !!this.settings() && !this.settingsForbidden();
+  }
+
+  async exportWorkspace(): Promise<void> {
+    const workspaceId = this.workspace()?.id ?? this.settings()?.workspaceId;
+    if (!workspaceId || !this.canManageSettings() || this.exportBusy()) {
+      return;
+    }
+
+    this.exportBusy.set(true);
+    this.exportFeedback.set(null);
+    this.exportError.set(null);
+    try {
+      await this.api.downloadWorkspaceExport(workspaceId);
+      this.exportFeedback.set('Export baixado.');
+    } catch (error) {
+      const status = (error as { status?: number }).status;
+      this.exportError.set(
+        status === 403
+          ? 'Sem permissão para exportar o workspace.'
+          : 'Falha ao gerar o export.',
+      );
+    } finally {
+      this.exportBusy.set(false);
+    }
   }
 
   async onSettingsSubmit(event: Event): Promise<void> {

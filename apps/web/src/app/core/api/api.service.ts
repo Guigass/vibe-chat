@@ -610,6 +610,47 @@ export class ApiService {
     });
   }
 
+  async downloadWorkspaceExport(workspaceId: string): Promise<void> {
+    const headers = new Headers({ Accept: 'application/zip' });
+    const devUser = this.auth.devUser();
+    if (devUser) {
+      headers.set('X-Dev-User', devUser);
+    } else {
+      const token = await this.auth.getAccessToken();
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+    }
+
+    const response = await fetch(
+      `${this.baseUrl}/api/v1/admin/workspaces/${workspaceId}/export`,
+      { headers },
+    );
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      const error = new Error(text || `HTTP ${response.status}`) as Error & { status: number };
+      error.status = response.status;
+      throw error;
+    }
+
+    const blob = await response.blob();
+    const disposition = response.headers.get('Content-Disposition') ?? '';
+    const match = /filename\*?=(?:UTF-8''|")?([^\";]+)/i.exec(disposition);
+    const fileName = match?.[1]
+      ? decodeURIComponent(match[1].replace(/"/g, ''))
+      : `vibechat-export-${workspaceId}.zip`;
+
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.rel = 'noopener';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
   async summarizeChannel(workspaceId: string, channelId: string): Promise<AiSummaryResult> {
     const result = await this.request<{ summary: string }>(
       `/api/v1/workspaces/${workspaceId}/channels/${channelId}/ai/summarize`,

@@ -233,6 +233,62 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Member_cannot_export_workspace()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var response = await alice.GetAsync(
+            $"/api/v1/admin/workspaces/{SeedData.DemoWorkspaceId.Value}/export");
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Auditor_with_dashboard_cannot_export_workspace()
+    {
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var elevate = await demo.PutAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/members/{SeedData.AliceUserId.Value}/role",
+            new { role = "Auditor" });
+        elevate.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        try
+        {
+            using var alice = factory.CreateClient();
+            alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+            var conversations = await alice.GetAsync("/api/v1/admin/conversations");
+            conversations.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var export = await alice.GetAsync(
+                $"/api/v1/admin/workspaces/{SeedData.DemoWorkspaceId.Value}/export");
+            export.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+        finally
+        {
+            var restore = await demo.PutAsJsonAsync(
+                $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/members/{SeedData.AliceUserId.Value}/role",
+                new { role = "Member" });
+            restore.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+    }
+
+    [Fact]
+    public async Task Cross_tenant_cannot_export_workspace()
+    {
+        var foreignWorkspaceId = await SeedCrossTenantWorkspaceAsync();
+
+        // Seed attaches Demo as owner of the foreign tenant; Alice must not export it.
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var response = await alice.GetAsync($"/api/v1/admin/workspaces/{foreignWorkspaceId}/export");
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Member_cannot_self_elevate_role()
     {
         using var alice = factory.CreateClient();

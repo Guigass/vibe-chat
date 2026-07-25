@@ -1,6 +1,8 @@
+using System.IO.Compression;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -2277,6 +2279,47 @@ v1.MapPut("/admin/settings", async (
     return Results.Ok(await BuildSensitiveSettingsResponseAsync(workspace, db, config, emailSettings, ct));
 });
 
+// B-046: workspace compliance export (ZIP of JSON) — workspace.admin only (not Auditor).
+v1.MapGet("/admin/workspaces/{workspaceId:guid}/export", async (
+    Guid workspaceId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IAuditWriter audit,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var access = await ResolveSensitiveSettingsAccessAsync(
+        http, db, tenant, permissions, workspaceId, clock, ct);
+    if (access is null)
+    {
+        return Results.Forbid();
+    }
+
+    var (profile, workspace) = access.Value;
+    var exportedAt = clock.UtcNow;
+    var zipBytes = await BuildWorkspaceExportZipAsync(workspace, db, profile.Id, exportedAt, ct);
+
+    audit.Add(new AuditEvent
+    {
+        TenantId = workspace.TenantId,
+        ActorUserId = profile.Id,
+        Action = AuditActions.WorkspaceExport,
+        EntityType = "Workspace",
+        EntityId = workspace.Id.Value.ToString(),
+        MetadataJson = JsonSerializer.Serialize(new
+        {
+            workspaceId = workspace.Id.Value,
+            byteLength = zipBytes.Length
+        })
+    });
+    await db.SaveChangesAsync(ct);
+
+    var fileName = $"vibechat-export-{workspace.Slug}-{exportedAt:yyyyMMddHHmmss}.zip";
+    return Results.File(zipBytes, "application/zip", fileName);
+});
+
 v1.MapGet("/admin/health-summary", async (HealthCheckService health, CancellationToken ct) =>
 {
     var report = await health.CheckHealthAsync(ct);
@@ -2424,8 +2467,9 @@ static async Task<(UserProfile Profile, Workspace Workspace)?> ResolveSensitiveS
         tenant.SetTenant(workspace.TenantId);
     }
 
-    // B-069: sensitive settings are workspace-admin only — Auditor (admin.dashboard) may
-    // view conversation audit (B-067) but must not read/alter AI/SMTP integration flags.
+    // B-069 / B-046: sensitive settings and workspace export are workspace-admin only —
+    // Auditor (admin.dashboard) may view conversation audit (B-067) but must not export
+    // or read/alter AI/SMTP integration flags.
     var canWorkspaceAdmin = await permissions.HasPermissionAsync(
         workspace.TenantId, profile.Id, Permissions.Workspace.Admin, ct);
     if (!canWorkspaceAdmin)
@@ -2434,6 +2478,181 @@ static async Task<(UserProfile Profile, Workspace Workspace)?> ResolveSensitiveS
     }
 
     return (profile, workspace);
+}
+
+static async Task<byte[]> BuildWorkspaceExportZipAsync(
+    Workspace workspace,
+    VibeChatDbContext db,
+    UserId actorUserId,
+    DateTimeOffset exportedAt,
+    CancellationToken ct)
+{
+    var jsonOptions = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        WriteIndented = true
+    };
+
+    var members = await (
+        from m in db.WorkspaceMembers.AsNoTracking()
+        join u in db.UserProfiles.AsNoTracking() on m.UserId equals u.Id
+        where m.TenantId == workspace.TenantId && m.WorkspaceId == workspace.Id
+        orderby m.JoinedAt
+        select new
+        {
+            userId = m.UserId.Value,
+            displayName = u.DisplayName,
+            email = u.Email,
+            role = m.Role.ToString(),
+            joinedAt = m.JoinedAt
+        }).ToListAsync(ct);
+
+    var spaces = await db.Spaces.AsNoTracking()
+        .Where(x => x.TenantId == workspace.TenantId && x.WorkspaceId == workspace.Id)
+        .OrderBy(x => x.Order)
+        .Select(x => new
+        {
+            id = x.Id,
+            name = x.Name,
+            order = x.Order,
+            createdAt = x.CreatedAt
+        })
+        .ToListAsync(ct);
+
+    var channels = await db.Channels.AsNoTracking()
+        .Where(x => x.TenantId == workspace.TenantId && x.WorkspaceId == workspace.Id)
+        .OrderBy(x => x.CreatedAt)
+        .Select(x => new
+        {
+            id = x.Id.Value,
+            name = x.Name,
+            type = x.Type.ToString(),
+            spaceId = x.SpaceId,
+            createdAt = x.CreatedAt,
+            createdBy = x.CreatedBy.Value
+        })
+        .ToListAsync(ct);
+
+    var channelIds = channels.Select(c => new ChannelId(c.id)).ToList();
+
+    var threads = await db.MessageThreads.AsNoTracking()
+        .Where(x => x.TenantId == workspace.TenantId && channelIds.Contains(x.ChannelId))
+        .OrderBy(x => x.CreatedAt)
+        .Select(x => new
+        {
+            id = x.Id,
+            channelId = x.ChannelId.Value,
+            parentMessageId = x.ParentMessageId.Value,
+            createdBy = x.CreatedBy.Value,
+            createdAt = x.CreatedAt
+        })
+        .ToListAsync(ct);
+
+    // Messages in root use ConversationId = channel; replies use ConversationId = threadId.
+    // Include soft-deleted bodies (compliance parity with B-067). Attachment binaries omitted.
+    var threadConversationIds = threads.Select(t => new ChannelId(t.id)).ToList();
+    var messageEntities = await db.Messages.AsNoTracking()
+        .Where(x => x.TenantId == workspace.TenantId
+            && (channelIds.Contains(x.ConversationId) || threadConversationIds.Contains(x.ConversationId)))
+        .OrderBy(x => x.CreatedAt)
+        .ThenBy(x => x.Sequence)
+        .ToListAsync(ct);
+
+    var allMessages = messageEntities
+        .Select(x => new
+        {
+            id = x.Id.Value,
+            conversationId = x.ConversationId.Value,
+            sequence = x.Sequence,
+            authorId = x.AuthorId.Value,
+            body = x.Body,
+            replyToMessageId = x.ReplyToMessageId?.Value,
+            threadId = x.ThreadId,
+            createdAt = x.CreatedAt,
+            editedAt = x.EditedAt,
+            deletedAt = x.DeletedAt,
+            deletedBy = x.DeletedBy?.Value
+        })
+        .ToList();
+
+    var messageIdSet = allMessages.Select(m => m.id).ToHashSet();
+    var attachmentEntities = await db.Attachments.AsNoTracking()
+        .Where(x => x.TenantId == workspace.TenantId && channelIds.Contains(x.ChannelId))
+        .OrderBy(x => x.CreatedAt)
+        .ToListAsync(ct);
+
+    var attachments = attachmentEntities
+        .Where(x => x.MessageId is { } mid && messageIdSet.Contains(mid.Value))
+        .Select(x => new
+        {
+            id = x.Id,
+            messageId = x.MessageId!.Value.Value,
+            channelId = x.ChannelId.Value,
+            fileName = x.FileName,
+            contentType = x.ContentType,
+            sizeBytes = x.SizeBytes,
+            status = x.Status.ToString(),
+            checksumSha256 = x.ChecksumSha256,
+            createdAt = x.CreatedAt
+        })
+        .ToList();
+
+    var manifest = new
+    {
+        format = "vibechat.workspace.export.v1",
+        tenantId = workspace.TenantId.Value,
+        workspaceId = workspace.Id.Value,
+        workspaceSlug = workspace.Slug,
+        exportedAt,
+        actorUserId = actorUserId.Value,
+        counts = new
+        {
+            members = members.Count,
+            spaces = spaces.Count,
+            channels = channels.Count,
+            threads = threads.Count,
+            messages = allMessages.Count,
+            attachments = attachments.Count
+        }
+    };
+
+    var workspacePayload = new
+    {
+        id = workspace.Id.Value,
+        tenantId = workspace.TenantId.Value,
+        name = workspace.Name,
+        slug = workspace.Slug,
+        aiEnabled = workspace.AiEnabled,
+        createdAt = workspace.CreatedAt
+    };
+
+    await using var memory = new MemoryStream();
+    using (var zip = new ZipArchive(memory, ZipArchiveMode.Create, leaveOpen: true))
+    {
+        await WriteZipJsonEntryAsync(zip, "manifest.json", manifest, jsonOptions, ct);
+        await WriteZipJsonEntryAsync(zip, "workspace.json", workspacePayload, jsonOptions, ct);
+        await WriteZipJsonEntryAsync(zip, "members.json", members, jsonOptions, ct);
+        await WriteZipJsonEntryAsync(zip, "spaces.json", spaces, jsonOptions, ct);
+        await WriteZipJsonEntryAsync(zip, "channels.json", channels, jsonOptions, ct);
+        await WriteZipJsonEntryAsync(zip, "threads.json", threads, jsonOptions, ct);
+        await WriteZipJsonEntryAsync(zip, "messages.json", allMessages, jsonOptions, ct);
+        await WriteZipJsonEntryAsync(zip, "attachments.json", attachments, jsonOptions, ct);
+    }
+
+    return memory.ToArray();
+}
+
+static async Task WriteZipJsonEntryAsync<T>(
+    ZipArchive zip,
+    string entryName,
+    T payload,
+    JsonSerializerOptions jsonOptions,
+    CancellationToken ct)
+{
+    var entry = zip.CreateEntry(entryName, CompressionLevel.Optimal);
+    await using var stream = entry.Open();
+    await JsonSerializer.SerializeAsync(stream, payload, jsonOptions, ct);
 }
 
 static async Task<SensitiveSettingsResponse> BuildSensitiveSettingsResponseAsync(

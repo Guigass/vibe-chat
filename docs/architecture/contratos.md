@@ -306,6 +306,7 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 | `GET /api/v1/admin/threads/{threadId}/messages?after=&limit=` | Histórico admin de replies da thread; mesma authZ e semântica de body |
 | `GET /api/v1/admin/settings?workspaceId=` | Settings sensíveis mascarados (B-069); exige `workspace.admin` (Auditor com só `admin.dashboard` → 403); `workspaceId` opcional (default: primeiro workspace do actor) |
 | `PUT /api/v1/admin/settings` | Atualiza flags não-secretas; mesma authZ; rejeita body com `ai.apiKey` / `email.smtpPassword` (`SecretsNotWritable`); audit `settings.change` |
+| `GET /api/v1/admin/workspaces/{workspaceId}/export` | Export compliance do workspace (B-046); ZIP `application/zip` com JSON (`manifest`, `workspace`, `members`, `spaces`, `channels`, `threads`, `messages`, `attachments` metadata); corpos soft-deleted incluídos (paridade B-067); **sem** binários MinIO; exige `workspace.admin` (Auditor → 403); audit `workspace.export`; workspace fora do tenant/membership → 403 |
 
 `AuditEventResponse`: `id`, `action`, `entityType`, `entityId`, `actorUserId`, `occurredAt`, `metadataJson`.
 
@@ -313,7 +314,15 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 
 `AdminConversationMessageResponse`: `id`, `channelId`, `conversationId`, `sequence`, `authorId`, `authorName`, `body` (sempre o valor persistido), `createdAt`, `editedAt`, `deletedAt`, `deletedBy`, `deletedByName`, `threadId`, `replyToMessageId`, `replyCount`, `attachments`.
 
-Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `settings.change`.
+Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `settings.change`, `workspace.export`.
+
+### Export de workspace (B-046)
+
+- Formato: `vibechat.workspace.export.v1` (`manifest.json.format`)
+- AuthZ alinhada a settings sensíveis (`workspace.admin`); não usar só `admin.dashboard`
+- Mensagens: body persistido inclusive soft-delete (`deletedAt` / `deletedBy`)
+- Anexos: metadados apenas (`fileName`, `contentType`, `sizeBytes`, `checksumSha256`, `status`) — sem `storageKey` nem bytes
+- Tenant do actor; nunca aceitar `tenantId` do body
 
 ### Settings sensíveis (B-069)
 
