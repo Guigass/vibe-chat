@@ -4,7 +4,7 @@
 
 | ID | Risco | Prob. | Impacto | Mitigação | Owner sugerido |
 |----|-------|-------|---------|-----------|----------------|
-| R-01 | Vazamento cross-tenant | M | Crítico | RLS + testes security + reviews | Security / Backend |
+| R-01 | Vazamento cross-tenant | M | Crítico | RLS + testes security + reviews; hardening contínuo no Registro de GAPs (`roadmap.md`) | Security / Backend |
 | R-02 | Scope creep (K8s, Kafka, ES) | A | Alto | ADRs 015–017; roadmap waves | Tech lead humano |
 | R-03 | Dual-write mensagem/evento | M | Alto | Outbox obrigatório (ADR-010) | Backend |
 | R-04 | Misconfig Keycloak em prod | M | Alto | Realm as code; checklist ops | Infra |
@@ -12,10 +12,10 @@
 | R-06 | SignalR scale sem backplane | M | Médio | Redis backplane doc + config | Backend / Infra |
 | R-07 | Outbox lag sob carga | M | Médio | Métricas + replicas worker | Ops |
 | R-08 | Dependência de AI vazar PII | B | Alto | Flag off; redaction; aceite admin | Security / Produto |
-| R-09 | Licença/marca indefinidas | A | Alto | `decisoes-pendentes.md` | Legal / Founder |
-| R-10 | Retenção legal indefinida | A | Alto | Não apagar em prod até política | Legal |
+| R-09 | Licença/marca indefinidas | A | Alto | **Fechado** — D-01 Apache-2.0 e D-02 “VibeChat” decididos em 2026-07-24 | Legal / Founder |
+| R-10 | Retenção legal indefinida | A | Alto | **Mitigado** — D-03 + ADR-018; retenção configurável por tenant e purge com kill switch (B-047), off por default | Legal |
 | R-11 | Agentes divergindo do glossário | A | Médio | orientacoes.md + glossário canônico | Agents lead |
-| R-12 | Flaky E2E OIDC | M | Médio | Realm estável; retries controlados | QA |
+| R-12 | Flaky E2E OIDC | M | Médio | **Mitigado (W7-1)** — job E2E na CI roda em modo `devauth`, tirando o Keycloak do caminho crítico; modo `oidc` continua manual | QA |
 | R-13 | Postgres como search esgota | B | Médio | ADR-016 gatilhos | Backend |
 | R-14 | MinIO disco cheio | M | Alto | Alertas disco; retenção anexos | Ops |
 | R-15 | Design genérico (clone Slack) | M | Médio | design-system.md enforce em review | Frontend |
@@ -36,7 +36,7 @@ Agentes não devem “já deixar pronto Kafka/K8s” sem gatilho. PRs que adicio
 
 ### R-09 / R-10 Legais
 
-Sem licença clara, adoção OSS trava. Sem política de retenção, features de delete/export ficam ambíguas.
+Sem licença clara, adoção OSS trava. Sem política de retenção, features de delete/export ficam ambíguas. Ambos endereçados em 2026-07-24: Apache-2.0 (D-01) e retenção soft-delete + purge configurável (D-03 / ADR-018 / B-047).
 
 ## Indicadores de risco emergente
 
@@ -47,4 +47,4 @@ Sem licença clara, adoção OSS trava. Sem política de retenção, features de
 
 ## Revisões
 
-Revisar esta lista a cada wave do roadmap ou incidente P0/P1.
+Revisar esta lista a cada wave do roadmap ou incidente P0/P1. Última revisão: Wave 7.

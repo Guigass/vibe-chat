@@ -56,8 +56,6 @@ já entregue (foi o que aconteceu com W3-2, reimplementado como `GAP-hub-t3` / #
 | W2-6 | E | Testes integração send+idempotency+seq | W2-1 | **Done** — `tests/integration` |
 | W2-7 | E | E2E Playwright dois usuários | W2-5, W1-3 | **Done** — `tests/e2e/specs`; na CI via W7-1 |
 
-Nota (GAP-signalr-groups / #47): grupos SignalR alinhados a `t:{tenantId}:c:{channelId}` + `t:{tenantId}` (presence); `contratos.md` + regressão unitária.
-
 ## Wave 3 — Hardening multi-tenant
 
 | ID | Trilha | Tarefa | Deps | Status |
@@ -68,9 +66,7 @@ Nota (GAP-signalr-groups / #47): grupos SignalR alinhados a `t:{tenantId}:c:{cha
 | W3-4 | F | Dashboards: requests, outbox lag, SignalR | W0-6, W2-2 | **Done** |
 | W3-5 | E | Critérios de aceite fatia — sign-off | W2-7, W3-2 | **Done** — A1…A6 marcados em `criterios-aceite-fatia-vertical.md` |
 
-Nota (GAP-hub-t3 / #37): hub T3 `JoinChannel`/`SendTyping` cross-tenant coberto em `tests/security`; `multi-tenant.md` + `modelo-ameacas.md` já no feature PR.
-
-Nota (GAP-redis-keys / #49): keys Redis presence/typing/rate-limit no formato `t:{tenantId}:…`; `contratos.md` + regressão unitária no feature PR.
+Hardening posterior a esta wave está no **Registro de GAPs** no fim do documento.
 
 ## Wave 4 — Extensões pós-fatia (paralelizável)
 
@@ -106,7 +102,7 @@ Nota (GAP-redis-keys / #49): keys Redis presence/typing/rate-limit no formato `t
 
 ## Wave 6 — Refinamento UX + Admin
 
-Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks + B-045 suggest-reply + B-046 export + B-047 retenção/purge. Wave 7: **W7-1 Done**; próximo elegível **Blocked** — W7-2 / B-040 guests (spec de produto).
+Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks + B-045 suggest-reply + B-046 export + B-047 retenção/purge. Trabalho corrente está na **Wave 7 — Sustentação**.
 
 | ID | Trilha | Tarefa | Deps | Status |
 |----|--------|--------|------|--------|
@@ -132,13 +128,39 @@ Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks + B-045 suggest
 
 ## Wave 7 — Sustentação
 
-Fila explícita para a automação de Build depois da Wave 6. Sem item elegível aqui,
-o agente cai no modo “caçar gap” a cada run — mais caro e menos previsível.
+Fila explícita para a automação de Build depois da Wave 6. Enquanto houver linha
+`Planned` aqui, o Build pega dela; W7-3…W7-5 saem da checklist de **controles mínimos**
+de `docs/security/modelo-ameacas.md`, que segue com itens em aberto.
 
 | ID | Trilha | Tarefa | Deps | Status |
 |----|--------|--------|------|--------|
 | W7-1 | E | E2E Playwright na CI (B-075) | W2-7, W6-8 | **Done** — job CI + `infra/scripts/ci-e2e.sh` / `task test:e2e:ci` (DevAuth; #45) |
 | W7-2 | B/D | Guests / link de canal (B-040) | P2-1, D-07 | **Blocked** — precisa spec de produto (escopo do convite, authZ do guest, expiração). Não é elegível para Build sem essa decisão |
+| W7-3 | E/A | Atualização automatizada de dependências (B-076) | W0-7 | Planned — não há `.github/dependabot.yml` nem renovate; o job `Dependency audit notes` é informativo e nunca reprova o build |
+| W7-4 | D/E | CSP no web (B-077) | W6-8 | Planned — `infra/proxy/nginx.conf` já manda HSTS/`nosniff`/`X-Frame-Options`/`Referrer-Policy`, mas não CSP, e só no profile `proxy` |
+| W7-5 | C/E | Limite de tamanho de body no envio (B-078) | W2-1 | Planned — `Message.Body` é `HasMaxLength(8000)` só na coluna; o endpoint não valida, então body maior vira 500 em vez de 400 |
+
+### Modo manutenção (sem item `Planned`)
+
+Quando **toda** linha de wave estiver `Done` ou `Blocked`, o Build entra no Step B do
+`01-build.prompt.md`: uma lacuna pequena por run, com ID `GAP-<curto>`. Isso é
+esperado, não é falha — mas o resultado tem que aparecer no **Registro de GAPs**
+abaixo, senão o trabalho fica invisível no roadmap.
+
+## Registro de GAPs
+
+Lacunas fechadas fora das linhas de wave. Uma linha por `GAP-*`; a automação de Docs
+escreve aqui em vez de espalhar notas soltas pelas seções.
+
+| GAP | Trilha | O que fechou | PR |
+|-----|--------|--------------|-----|
+| `GAP-rls-retention` | E | RLS em `messaging.message_retention_settings` | #35 |
+| `GAP-rls-catalog` | E | RLS nas tabelas com `TenantId` que faltavam + arch test de catálogo | #36 |
+| `GAP-hub-t3` | E | Caso T3: `JoinChannel`/`SendTyping` cross-tenant em `tests/security` | #37 |
+| `GAP-agent-docker` | A | `ensure_docker()` no `agent-setup.sh` (VMs de agente não têm Docker) | #41, #42 |
+| `GAP-test-local-stack` | E | Suítes deixam de vazar estado quando o data plane local é reaproveitado | #44 |
+| `GAP-signalr-groups` | C | Grupos SignalR `t:{tenantId}:c:{channelId}` e `t:{tenantId}` (presence) | #47 |
+| `GAP-redis-keys` | C | Keys de presence/typing/rate-limit com prefixo `t:{tenantId}:` | #49 |
 
 ---
 
@@ -149,7 +171,7 @@ Agent-Infra     → W0-1, W0-2, W0-6, W5-*, W6-8
 Agent-Backend   → W0-3, W1-*, W2-1..W2-4, W3-1, W3-3, W4-*, W6-1, W6-2, W6-4..W6-6
 Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7, W6-1..W6-3, W6-7
 Agent-QA        → W0-7, W1-5, W2-6, W2-7, W3-2, W3-5, W5-3, W6-1 E2E, W6-8 smoke, W7-1
-Agent-Security  → W3-1/W3-2 review, W6-5/W6-6 authZ + threat model
+Agent-Security  → W3-1/W3-2 review, W6-5/W6-6 authZ + threat model, W7-3..W7-5
 Agent-Obs       → W0-6, W3-4
 ```
 
