@@ -473,6 +473,80 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Admin_can_export_workspace_with_soft_deleted_body_and_audit()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var messageId = Guid.NewGuid();
+        var body = $"export-body-{messageId:N}";
+        var create = await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-{messageId:N}", body, null, null));
+        create.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var delete = await alice.DeleteAsync($"/api/v1/channels/{DemoChannelId}/messages/{messageId}");
+        delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var export = await demo.GetAsync(
+            $"/api/v1/admin/workspaces/{SeedData.DemoWorkspaceId.Value}/export");
+        export.StatusCode.Should().Be(HttpStatusCode.OK);
+        export.Content.Headers.ContentType!.MediaType.Should().Be("application/zip");
+        export.Content.Headers.ContentDisposition.Should().NotBeNull();
+        export.Content.Headers.ContentDisposition!.FileName.Should().Contain("vibechat-export");
+
+        var zipBytes = await export.Content.ReadAsByteArrayAsync();
+        zipBytes.Length.Should().BeGreaterThan(32);
+
+        await using (var zipStream = new MemoryStream(zipBytes))
+        using (var zip = new System.IO.Compression.ZipArchive(zipStream, System.IO.Compression.ZipArchiveMode.Read))
+        {
+            zip.Entries.Select(e => e.Name).Should().Contain([
+                "manifest.json",
+                "workspace.json",
+                "members.json",
+                "spaces.json",
+                "channels.json",
+                "threads.json",
+                "messages.json",
+                "attachments.json"
+            ]);
+
+            await using var messagesStream = zip.GetEntry("messages.json")!.Open();
+            using var doc = await JsonDocument.ParseAsync(messagesStream);
+            var messages = doc.RootElement;
+            messages.ValueKind.Should().Be(JsonValueKind.Array);
+            messages.EnumerateArray().Should().Contain(m =>
+                m.GetProperty("id").GetGuid() == messageId
+                && m.GetProperty("body").GetString() == body
+                && m.TryGetProperty("deletedAt", out var deletedAt)
+                && deletedAt.ValueKind == JsonValueKind.String);
+
+            await using var manifestStream = zip.GetEntry("manifest.json")!.Open();
+            using var manifestDoc = await JsonDocument.ParseAsync(manifestStream);
+            manifestDoc.RootElement.GetProperty("format").GetString()
+                .Should().Be("vibechat.workspace.export.v1");
+            manifestDoc.RootElement.GetProperty("workspaceId").GetGuid()
+                .Should().Be(SeedData.DemoWorkspaceId.Value);
+        }
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+            var audit = await db.AuditEvents.IgnoreQueryFilters()
+                .Where(x => x.TenantId == SeedData.DemoTenantId && x.Action == AuditActions.WorkspaceExport)
+                .OrderByDescending(x => x.OccurredAt)
+                .FirstOrDefaultAsync();
+            audit.Should().NotBeNull();
+            audit!.EntityId.Should().Be(SeedData.DemoWorkspaceId.Value.ToString());
+            audit.ActorUserId.Should().Be(SeedData.DemoUserId);
+            audit.MetadataJson.Should().Contain(SeedData.DemoWorkspaceId.Value.ToString());
+        }
+    }
+
+    [Fact]
     public async Task Admin_can_read_masked_settings_and_update_flag_with_audit()
     {
         using var demo = factory.CreateClient();
