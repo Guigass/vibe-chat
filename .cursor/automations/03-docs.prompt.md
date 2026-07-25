@@ -9,14 +9,21 @@ Draft PRs block the QA+Merge trigger — **forbidden**.
 ## Step A — Identify what merged
 
 1. From the merged PR, read `Wave:` / `B-*` / `GAP-*`.
-2. Skim the merge commit / PR body for behavior or API changes.
+2. **If the PR body carries `Automation: docs`, this run was triggered by your own
+   previous output.** The loop is already closed — report “docs idle” and stop. Do not
+   re-open the roadmap.
+3. Skim the merge commit / PR body for behavior or API changes.
 
 ## Step B — Roadmap status
 
 Update `docs/roadmap/roadmap.md` and/or `docs/roadmap/backlog.md`:
 
-- Set the item status to **Done** (keep existing table style / short notes)
-- Do **not** mark other Planned items Done
+- Set the item status in the `Status` column (keep existing table style / short notes)
+- Every wave table has a `Status` column — never drop it and never leave a new row
+  without one. A statusless row reads as *eligible* to the Build automation
+- Do **not** mark other Planned items Done. If you spot a row that is clearly already
+  delivered but has no status, **report it in your final message** instead of flipping
+  it yourself
 
 If the merge was a `GAP-*` without a roadmap row: add a one-line note under the
 relevant wave section or skip — do not invent a new wave.
