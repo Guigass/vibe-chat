@@ -46,9 +46,11 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 
 ## P2 — Diferenciação e admin
 
+**B-040** (guests) saiu desta seção: D-07 foi revisado em 2026-07-25 e o item virou
+W10-10, com spec — ver *Paridade de mensageria*.
+
 | ID | Item | Notas |
 |----|------|-------|
-| B-040 | Guest users / link de canal | **Blocked** — fora do MVP P1 (D-07); precisa spec de produto (escopo do convite, authZ do guest, expiração) antes de virar tarefa de agente (W7-2) |
 | B-041 | Papéis granulares | **Done (P2)** — admin list/altera papel (`workspace.admin`); UI admin; Guest fora (D-07); testes security/integration |
 | B-042 | Audit log (ações sensíveis) | **Done (Wave 5)** — eventos + `GET /admin/audit-events` + UI admin (`admin.dashboard`); **não** substitui auditoria de conversa (B-067) |
 | B-043 | Notificações email (opcional) | **Done (P2)** — `IEmailSender` Null/SMTP genérico; Mailpit/env; off default; e-mail em mudança de papel via outbox (D-10) |
@@ -77,6 +79,52 @@ backlog ficam no **Registro de GAPs** (`roadmap.md`).
 | B-077 | CSP no web | Planned (W7-4) — nginx do profile `proxy` já manda HSTS/`nosniff`/`X-Frame-Options`/`Referrer-Policy`; falta CSP |
 | B-078 | Limite de tamanho de body no envio | Planned (W7-5) — `Message.Body` limitado a 8000 só na coluna; `POST .../messages` não valida e devolve 500 em vez de 400 |
 
+## Paridade de mensageria — Waves 8 a 10
+
+Escopo autorizado por **D-11**; base em `docs/product/benchmark-mensageria.md`. Cada
+item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o Build**.
+
+### Wave 8 — Composição de mensagem
+
+| ID | Item | Notas |
+|----|------|-------|
+| B-079 | Anexos múltiplos, drag & drop, colar, progresso | Planned (W8-1) — hoje é 1 arquivo por botão; drag é enhancement, nunca caminho único (WCAG 2.2 · 2.5.7) |
+| B-080 | Mensagem de áudio | Planned (W8-2) — MIME negociado no cliente, waveform nos metadados, transcrição opt-in (D-12 / D-06) |
+| B-081 | Formatação de texto | Planned (W8-3) — Markdown restrito; `body` continua Markdown no banco |
+| B-082 | Menções | Planned (W8-4) — token `<@userId>`, `message_mentions`, badge separado |
+| B-083 | Emoji picker e reações livres | Planned (W8-5) — hoje 6 emojis fixos; validação por forma no servidor |
+| B-084 | Responder citando | Planned (W8-6) — `ReplyToMessageId` já existe e nunca é usado |
+| B-085 | Encaminhar mensagem | Planned (W8-7) — anexo por referência, contagem para o purge de B-047 |
+| B-086 | Rascunho persistente | Planned (W8-8) — só cliente, por implicação de retenção (D-03) |
+| B-087 | Comandos slash | Planned (W8-9) — lista vem do servidor; sem privilégio novo |
+
+### Wave 9 — Leitura da timeline
+
+| ID | Item | Notas |
+|----|------|-------|
+| B-088 | Agrupamento, separadores e não lidas | Planned (W9-1) |
+| B-089 | Histórico paginado e pular para a mensagem | Planned (W9-2) — hoje janela fixa de 50 |
+| B-090 | Preview de anexos | Planned (W9-3) — miniatura no worker; purge remove junto |
+| B-091 | Link preview | Planned (W9-4) — **exige guarda de SSRF**; sem ela não passa |
+| B-092 | Fixar mensagem | Planned (W9-5) — limite 20, permissão `message.pin` |
+| B-093 | Salvos | Planned (W9-6) — revalida membership na leitura |
+| B-094 | Recibos de leitura e não lidas | Planned (W9-7) — liga o `upsertReadCursor` órfão; `read-by` em canal é contagem |
+
+### Wave 10 — Notificações, organização e acesso
+
+| ID | Item | Notas |
+|----|------|-------|
+| B-095 | Web Push | Planned (W10-1) — VAPID próprio, opt-in, payload mínimo (D-13) |
+| B-096 | Enquetes | Planned (W10-2) — enquete é mensagem; anonimato é requisito de API |
+| B-097 | Preferências de notificação e DND | Planned (W10-3) — fuso IANA; matriz em tabela-verdade |
+| B-098 | Busca com filtros | Planned (W10-4) — filtro só restringe; membership no servidor |
+| B-099 | Paleta de comandos e atalhos | Planned (W10-5) |
+| B-100 | Internacionalização | Planned (W10-6) — pt-BR + en; catálogo incompleto reprova na CI (D-14) |
+| B-101 | DM em grupo | Planned (W10-7) — reusa `Channel`; janela por `seq` de entrada |
+| B-102 | Seguir thread | Planned (W10-8) — auto-inscrição na mesma transação |
+| B-103 | Acessibilidade WCAG 2.2 AA | Planned (W10-9) — axe-core como gate na CI |
+| B-040 | Guests por convite | Planned (W10-10) — deixou de estar Blocked; D-07 revisado em 2026-07-25 |
+
 ## P3 — Escala / futuro
 
 | ID | Item | Gatilho |
@@ -93,7 +141,12 @@ backlog ficam no **Registro de GAPs** (`roadmap.md`).
 
 Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup → spaces → presence → reações → PWA. (B-020…B-031 já Done na Wave 4.)
 
-Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done. Próximo: **B-076 → B-077 → B-078** (Sustentação / Wave 7). **B-040** guests segue Blocked até spec de produto.
+Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done.
+
+Ordem daqui para frente: **Sustentação** (B-076 → B-077 → B-078) e depois
+**paridade de mensageria** na ordem das waves — 8 (composição), 9 (leitura), 10
+(notificações, organização e acesso). Dentro de cada wave, seguir a numeração; itens
+sem dependência entre si podem ir em paralelo por trilhas diferentes.
 
 ## Itens explicitamente rejeitados na fase 1
 
