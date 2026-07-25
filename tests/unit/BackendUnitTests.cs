@@ -3,6 +3,7 @@ using VibeChat.Administration;
 using VibeChat.AI;
 using VibeChat.BuildingBlocks;
 using VibeChat.Files;
+using VibeChat.Infrastructure;
 using VibeChat.Integrations;
 using VibeChat.Messaging;
 using VibeChat.Notifications;
@@ -89,6 +90,27 @@ public sealed class BackendUnitTests
         RateLimitKeys.SendMessage(tenant, user).Should().Contain("rl:send:");
         RateLimitKeys.Hub(tenant, user).Should().Contain("rl:hub:");
         RateLimitKeys.SendMessage(tenant, user).Should().NotBe(RateLimitKeys.Hub(tenant, user));
+    }
+
+    [Fact]
+    public void SignalR_hub_groups_are_tenant_namespaced()
+    {
+        // GAP-signalr-groups — align with docs/security/multi-tenant.md
+        var tenant = new TenantId(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        var otherTenant = new TenantId(Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"));
+        var channel = new ChannelId(Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
+
+        ChatHub.ChannelGroup(tenant, channel)
+            .Should().Be($"t:{tenant.Value}:c:{channel.Value}");
+        ChatHub.TenantGroup(tenant)
+            .Should().Be($"t:{tenant.Value}");
+
+        ChatHub.ChannelGroup(tenant, channel)
+            .Should().NotBe(ChatHub.ChannelGroup(otherTenant, channel));
+        ChatHub.ChannelGroup(tenant, channel)
+            .Should().NotStartWith("channel:");
+        ChatHub.TenantGroup(tenant)
+            .Should().NotStartWith("tenant:");
     }
 
     [Fact]

@@ -20,6 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\modules\Messaging\VibeChat.Messaging.csproj" />
     <ProjectReference Include="..\..\modules\Files\VibeChat.Files.csproj" />
     <ProjectReference Include="..\..\modules\Search\VibeChat.Search.csproj" />
@@ -30,6 +34,7 @@
     <ProjectReference Include="..\..\modules\Notifications\VibeChat.Notifications.csproj" />
     <ProjectReference Include="..\..\modules\Integrations\VibeChat.Integrations.csproj" />
     <ProjectReference Include="..\..\modules\Administration\VibeChat.Administration.csproj" />
+    <ProjectReference Include="..\..\src\VibeChat.Infrastructure\VibeChat.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
