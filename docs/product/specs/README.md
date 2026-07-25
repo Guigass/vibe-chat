@@ -36,20 +36,18 @@ ser implementado sem perguntar: **D-11** em `docs/roadmap/decisoes-pendentes.md`
 
 ### Wave 10 — Notificações, organização e acesso
 
-Specs em redação; item sem spec **não** é elegível para o Build.
-
 | ID | Spec |
 |----|------|
-| B-095 | Web Push |
-| B-096 | Enquetes |
-| B-097 | Preferências de notificação e DND |
-| B-098 | Busca com filtros |
-| B-099 | Paleta de comandos e atalhos |
-| B-100 | Internacionalização |
-| B-101 | DM em grupo |
-| B-102 | Seguir thread |
-| B-103 | Acessibilidade WCAG 2.2 AA |
-| B-040 | Guests por convite |
+| B-095 | [Web Push](B-095-web-push.md) |
+| B-096 | [Enquetes](B-096-enquetes.md) |
+| B-097 | [Preferências de notificação e DND](B-097-preferencias-notificacao-dnd.md) |
+| B-098 | [Busca com filtros](B-098-busca-com-filtros.md) |
+| B-099 | [Paleta de comandos e atalhos](B-099-paleta-de-comandos.md) |
+| B-100 | [Internacionalização](B-100-i18n.md) |
+| B-101 | [DM em grupo](B-101-dm-em-grupo.md) |
+| B-102 | [Seguir thread](B-102-seguir-thread.md) |
+| B-103 | [Acessibilidade WCAG 2.2 AA](B-103-acessibilidade.md) |
+| B-040 | [Guests por convite](B-040-guests-por-convite.md) |
 
 ## Template
 
