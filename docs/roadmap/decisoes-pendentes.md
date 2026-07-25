@@ -250,6 +250,7 @@ Impacto em código/docs:
 
 - Features sensíveis (retenção/IA) com **feature flags** e defaults seguros
 - Usar placeholders em `.env.example`, nunca valores reais de produção
+- Catálogo operacional completo: fase W7-7 / B-105 → `docs/operations/configuracao-env.md`
 - Não inventar marca/logo/domínio — usar assets em `apps/web/public/` e o inventário do design-system
 - Novas decisões humanas: abrir linha nesta tabela como Pendente e parar se bloquearem o escopo
 
