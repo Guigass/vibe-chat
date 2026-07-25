@@ -35,8 +35,8 @@ encontra a mensagem, mas clicar no resultado só troca de canal — não leva at
 | `around` | **novo** — centraliza uma janela em torno de um `seq` |
 | `limit` | já existe; máximo 100 |
 
-`after` e `before` são mutuamente exclusivos; enviar os dois → 400. Resposta ganha
-`hasMoreBefore` e `hasMoreAfter`.
+`after`, `before` e `around` são mutuamente exclusivos; enviar mais de um → 400.
+Resposta ganha `hasMoreBefore` e `hasMoreAfter`.
 
 `contratos.md`: novos parâmetros e campos de resposta.
 
@@ -58,7 +58,7 @@ de outro canal ou tenant devolve vazio, nunca conteúdo — e há teste negativo
 - [ ] “Início da conversa” aparece quando acaba a história
 - [ ] Clicar num resultado de busca abre o canal **e** rola até a mensagem destacada
 - [ ] `around` devolve mensagens antes e depois do `seq` pedido
-- [ ] `after` + `before` juntos → 400
+- [ ] `after` + `before`, `around` + `after` ou `around` + `before` → 400
 - [ ] Gap-fill do reconnect continua funcionando
 
 ## Testes

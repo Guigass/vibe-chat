@@ -43,7 +43,7 @@ Tabela nova `messaging.pinned_messages`:
 
 ## UX
 
-- Barra fina no topo: 📌 “3 fixadas”, abre o painel.
+- Barra fina no topo: texto “3 fixadas” (sem emoji; ícone do design system se houver), abre o painel.
 - Painel lista autor, trecho e data, com “ir até” e “desafixar”.
 - No limite, a UI explica e sugere desafixar antes.
 - Barra some quando não há fixadas — sem espaço vazio permanente.
