@@ -48,7 +48,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 
 | ID | Item | Notas |
 |----|------|-------|
-| B-040 | Guest users / link de canal | fora do MVP P1 (D-07) |
+| B-040 | Guest users / link de canal | **Blocked** — fora do MVP P1 (D-07); precisa spec de produto (escopo do convite, authZ do guest, expiração) antes de virar tarefa de agente (W7-2) |
 | B-041 | Papéis granulares | **Done (P2)** — admin list/altera papel (`workspace.admin`); UI admin; Guest fora (D-07); testes security/integration |
 | B-042 | Audit log (ações sensíveis) | **Done (Wave 5)** — eventos + `GET /admin/audit-events` + UI admin (`admin.dashboard`); **não** substitui auditoria de conversa (B-067) |
 | B-043 | Notificações email (opcional) | **Done (P2)** — `IEmailSender` Null/SMTP genérico; Mailpit/env; off default; e-mail em mudança de papel via outbox (D-10) |
@@ -63,6 +63,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 | B-069 | Configurações sensíveis só admin | **Done (Wave 6)** — `GET/PUT /admin/settings` mascarado; exige `workspace.admin` (não Auditor); AI/SMTP em env; webhook secret gravável (B-048) |
 | B-073 | UI polish com PrimeNG | **Done (Wave 6)** — emenda ADR-002 Accepted; PrimeNG 22 + `VibeChatPreset` (Aura/tokens) no `/admin` (Table/Select/Tag); shell chat permanece composição própria; polish forms/dialogs restante é iterativo |
 | B-074 | API + Web (+ Worker) no Compose | **Done (Wave 6)** — profile `apps` caminho oficial (`task apps`); healthchecks api/web/worker; OIDC Authority + MetadataAddress; `GET /ready`; ops/README/`.env.example`; `task dev` só DX hot-reload |
+| B-075 | E2E Playwright na CI | Planned (W7-1) — `tests/e2e/specs` (dois usuários, realtime, scroll) só roda em `task test:e2e` local; nenhum critério de aceite da Wave 6 é verificado no PR |
 
 ## P3 — Escala / futuro
 
@@ -80,7 +81,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 
 Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup → spaces → presence → reações → PWA. (B-020…B-031 já Done na Wave 4.)
 
-Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045, B-046 e B-047 Done. Próximo: P2 restante (ex.: B-040 guests).
+Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045, B-046 e B-047 Done. Próximo: **B-075** (E2E na CI / W7-1). B-040 só depois da spec de produto.
 
 ## Itens explicitamente rejeitados na fase 1
 
