@@ -52,7 +52,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Diretiva** | Regra de autorização derivada do papel (`Role` + `RolePermissionCatalog` / policies de workspace). Ex.: quem pode `channel.create`, `workspace.admin`, `admin.dashboard`, `ai.summarize`, `ai.suggest_reply`. Gerenciada na UI admin junto ao cadastro. Não confundir com “prompt” de IA. |
 | **OIDC / SSO** | OpenID Connect; fluxo padrão via Keycloak. |
 | **Service Account** | Identidade de máquina para workers/integrações. |
-| **Guest** | Membership com escopo reduzido (ex.: canal específico). |
+| **Guest** | Membership de escopo reduzido a **um canal**, criada por convite de admin com link de uso único e validade (default 7 dias). Guest envia mensagem, anexo e reação no canal do convite; não lista outros canais, não usa busca global, não vê o diretório do workspace e não lê configuração. Revogação pelo admin encerra sessão e membership. Convite e aceite geram audit. Fora do MVP P1; entra na Wave 10 (D-07 revisado em 2026-07-25 / B-040). |
 
 ## Administração e compliance
 
