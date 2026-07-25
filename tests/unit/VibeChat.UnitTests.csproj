@@ -20,6 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\modules\Messaging\VibeChat.Messaging.csproj" />
     <ProjectReference Include="..\..\modules\Files\VibeChat.Files.csproj" />
     <ProjectReference Include="..\..\modules\Search\VibeChat.Search.csproj" />
