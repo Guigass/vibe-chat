@@ -71,6 +71,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
     public DbSet<TenantEmailSettings> TenantEmailSettings => Set<TenantEmailSettings>();
     public DbSet<OutboundWebhookEndpoint> OutboundWebhookEndpoints => Set<OutboundWebhookEndpoint>();
+    public DbSet<MessageRetentionSettings> MessageRetentionSettings => Set<MessageRetentionSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -307,6 +308,14 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.Property(x => x.Url).HasMaxLength(2048);
             entity.Property(x => x.Secret).HasMaxLength(512);
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<MessageRetentionSettings>(entity =>
+        {
+            entity.ToTable("message_retention_settings", "messaging");
+            entity.HasKey(x => x.TenantId);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
     }
@@ -1440,6 +1449,151 @@ public sealed class OutboxDispatcher(OutboxProcessor processor, ILogger<OutboxDi
     }
 }
 
+/// <summary>Process-level kill switch + batch knobs for B-047 purge (ADR-018).</summary>
+public sealed class MessageRetentionOptions
+{
+    public const string SectionName = "MessageRetention";
+
+    public bool Enabled { get; set; }
+    public int DefaultRetentionDays { get; set; } = MessageRetentionSettings.DefaultRetentionDays;
+    public int BatchSize { get; set; } = 500;
+    public int IntervalMinutes { get; set; } = 60;
+}
+
+/// <summary>
+/// Hard-deletes soft-deleted messages past tenant retention (B-047).
+/// Requires MessageRetention:Enabled=true and tenant MessageRetentionSettings.Enabled.
+/// </summary>
+public sealed class MessageRetentionPurgeProcessor(
+    IServiceScopeFactory scopeFactory,
+    IConfiguration configuration,
+    ILogger<MessageRetentionPurgeProcessor> logger)
+{
+    public async Task<int> ProcessBatchAsync(CancellationToken cancellationToken)
+    {
+        var options = configuration.GetSection(MessageRetentionOptions.SectionName).Get<MessageRetentionOptions>()
+            ?? new MessageRetentionOptions();
+        if (!options.Enabled)
+        {
+            return 0;
+        }
+
+        var batchSize = Math.Clamp(options.BatchSize <= 0 ? 500 : options.BatchSize, 1, 2000);
+
+        using var scope = scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        var clock = scope.ServiceProvider.GetRequiredService<IClock>();
+        var now = clock.UtcNow;
+
+        var policies = await db.MessageRetentionSettings.IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(x => x.Enabled)
+            .ToListAsync(cancellationToken);
+        if (policies.Count == 0)
+        {
+            return 0;
+        }
+
+        var purgedTotal = 0;
+        foreach (var policy in policies)
+        {
+            var days = Math.Clamp(
+                policy.RetentionDays <= 0 ? MessageRetentionSettings.DefaultRetentionDays : policy.RetentionDays,
+                MessageRetentionSettings.MinRetentionDays,
+                MessageRetentionSettings.MaxRetentionDays);
+            var cutoff = now.AddDays(-days);
+
+            var candidates = await db.Messages.IgnoreQueryFilters()
+                .Where(x => x.TenantId == policy.TenantId
+                    && x.DeletedAt != null
+                    && x.DeletedAt < cutoff)
+                .OrderBy(x => x.DeletedAt)
+                .Take(batchSize)
+                .ToListAsync(cancellationToken);
+            if (candidates.Count == 0)
+            {
+                continue;
+            }
+
+            var messageIds = candidates.Select(x => x.Id).ToList();
+            var messageIdGuids = candidates.Select(x => x.Id.Value).ToHashSet();
+            var reactions = await db.Reactions.IgnoreQueryFilters()
+                .Where(x => x.TenantId == policy.TenantId && messageIds.Contains(x.MessageId))
+                .ToListAsync(cancellationToken);
+            if (reactions.Count > 0)
+            {
+                db.Reactions.RemoveRange(reactions);
+            }
+
+            // Keep attachment metadata for compliance; detach from purged message rows.
+            // Avoid EF Contains/EF.Property on nullable MessageId? — filter in memory (B-046 pitfall).
+            var attachmentCandidates = await db.Attachments.IgnoreQueryFilters()
+                .Where(x => x.TenantId == policy.TenantId && x.MessageId != null)
+                .ToListAsync(cancellationToken);
+            foreach (var attachment in attachmentCandidates
+                .Where(a => a.MessageId is { } mid && messageIdGuids.Contains(mid.Value)))
+            {
+                attachment.MessageId = null;
+            }
+
+            db.Messages.RemoveRange(candidates);
+            db.AuditEvents.Add(new AuditEvent
+            {
+                Id = Guid.NewGuid(),
+                TenantId = policy.TenantId,
+                ActorUserId = null,
+                Action = AuditActions.MessagePurge,
+                EntityType = "Message",
+                EntityId = null,
+                MetadataJson = JsonSerializer.Serialize(new
+                {
+                    count = candidates.Count,
+                    retentionDays = days,
+                    cutoff
+                }),
+                OccurredAt = now
+            });
+
+            await db.SaveChangesAsync(cancellationToken);
+            purgedTotal += candidates.Count;
+            logger.LogInformation(
+                "Purged {Count} soft-deleted messages for tenant {TenantId} (retention {Days}d)",
+                candidates.Count,
+                policy.TenantId.Value,
+                days);
+        }
+
+        return purgedTotal;
+    }
+}
+
+public sealed class MessageRetentionPurgeDispatcher(
+    MessageRetentionPurgeProcessor processor,
+    IConfiguration configuration,
+    ILogger<MessageRetentionPurgeDispatcher> logger) : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        var options = configuration.GetSection(MessageRetentionOptions.SectionName).Get<MessageRetentionOptions>()
+            ?? new MessageRetentionOptions();
+        var intervalMinutes = Math.Clamp(options.IntervalMinutes <= 0 ? 60 : options.IntervalMinutes, 1, 24 * 60);
+
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                await processor.ProcessBatchAsync(stoppingToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogWarning(ex, "Message retention purge loop failed");
+            }
+
+            await Task.Delay(TimeSpan.FromMinutes(intervalMinutes), stoppingToken);
+        }
+    }
+}
+
 public sealed class ChatHub(
     ITypingService typing,
     IPresenceService presence,
@@ -1761,6 +1915,9 @@ public static class DependencyInjection
         }
         services.AddSingleton<OutboxProcessor>();
         services.AddHostedService<OutboxDispatcher>();
+        // B-047: processor shared; hosted purge loop is registered only in apps/worker.
+        services.Configure<MessageRetentionOptions>(configuration.GetSection(MessageRetentionOptions.SectionName));
+        services.AddSingleton<MessageRetentionPurgeProcessor>();
         services.AddScoped<SeedData>();
 
         // Resolve MinIO from IConfiguration at runtime so WebApplicationFactory overrides apply.

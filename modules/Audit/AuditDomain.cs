@@ -26,6 +26,7 @@ public static class AuditActions
     public const string MemberInvite = "member.invite";
     public const string SettingsChange = "settings.change";
     public const string WorkspaceExport = "workspace.export";
+    public const string MessagePurge = "message.purge";
 }
 
 public interface IAuditWriter

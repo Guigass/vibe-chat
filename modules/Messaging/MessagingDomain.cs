@@ -84,6 +84,22 @@ public sealed class IdempotencyEntry
     public DateTimeOffset CreatedAt { get; set; }
 }
 
+/// <summary>
+/// Tenant-level soft-delete purge policy (B-047 / ADR-018).
+/// Hard-delete only runs when process flag MessageRetention:Enabled=true AND this row is Enabled.
+/// </summary>
+public sealed class MessageRetentionSettings
+{
+    public const int DefaultRetentionDays = 90;
+    public const int MinRetentionDays = 1;
+    public const int MaxRetentionDays = 3650;
+
+    public TenantId TenantId { get; set; }
+    public bool Enabled { get; set; }
+    public int RetentionDays { get; set; } = DefaultRetentionDays;
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
 public sealed record MessageCreatedEvent(
     TenantId TenantId,
     ChannelId ChannelId,

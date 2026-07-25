@@ -115,6 +115,10 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Ai:OpenRouter:ApiKey", "sk-test-secret-key99");
         builder.UseSetting("Email:Enabled", "false");
         builder.UseSetting("Email:Smtp:Password", "smtp-test-password42");
+        // B-047: process kill switch on for purge processor tests; tenant policy still opt-in.
+        builder.UseSetting("MessageRetention:Enabled", "true");
+        builder.UseSetting("MessageRetention:DefaultRetentionDays", "90");
+        builder.UseSetting("MessageRetention:BatchSize", "500");
         builder.UseSetting("Authentication:RequireHttpsMetadata", "false");
     }
 

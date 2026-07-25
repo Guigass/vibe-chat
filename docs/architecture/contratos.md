@@ -314,7 +314,7 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 
 `AdminConversationMessageResponse`: `id`, `channelId`, `conversationId`, `sequence`, `authorId`, `authorName`, `body` (sempre o valor persistido), `createdAt`, `editedAt`, `deletedAt`, `deletedBy`, `deletedByName`, `threadId`, `replyToMessageId`, `replyCount`, `attachments`.
 
-Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `settings.change`, `workspace.export`.
+Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `settings.change`, `workspace.export`, `message.purge`.
 
 ### Export de workspace (B-046)
 
@@ -340,6 +340,10 @@ Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send
 | `webhooks.secretConfigured` / `secretMask` | HMAC secret mascarado (`••••last4`); **nunca** em claro |
 | `webhooks.secretsWritable` | `true` — secret pode ser rotacionado via PUT (omitir/vazio = manter) |
 | `webhooks.message` | Texto de status para UI admin |
+| `retention.processEnabled` / `processSource` | Kill switch de processo (`MessageRetention:Enabled`) — SoT env; somente leitura |
+| `retention.enabled` / `retentionDays` | Política do tenant em `messaging.message_retention_settings` — gravável |
+| `retention.defaultRetentionDays` | Default operacional (sugerido 90; ADR-018 / D-03) |
+| `retention.message` | Texto de status para UI admin |
 
 Regras:
 
@@ -347,6 +351,15 @@ Regras:
 - Secret de webhook é a exceção (B-048): gravável via admin API; resposta só máscara
 - Membro comum e Auditor (sem `workspace.admin`) → `403` em GET/PUT
 - Tenant do actor; nunca aceitar `tenantId` do body
+- Retenção (B-047): `retentionDays` entre 1 e 3650; purge hard-delete só com **processo** `MessageRetention:Enabled=true` **e** `retention.enabled=true` no tenant; job no worker; audit `message.purge`
+
+### Retenção / purge (B-047)
+
+- Soft-delete permanece o default de exclusão (ADR-018); APIs de leitura redigem body
+- Hard-delete: worker `MessageRetentionPurgeDispatcher` remove mensagens com `DeletedAt` anterior ao cutoff (`now - retentionDays`)
+- Cascata mínima: remove `reactions` da mensagem; anexa `attachments.MessageId = null` (metadados preservados; sem delete MinIO neste slice)
+- `ConversationSequence` / `seq` não são reescritos
+- Off por default (processo + tenant)
 
 ### Webhooks outbound (B-048)
 

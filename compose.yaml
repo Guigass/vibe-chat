@@ -425,6 +425,10 @@ services:
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-vibechat};Username=${POSTGRES_USER:-vibechat};Password=${POSTGRES_PASSWORD:-vibechat_dev_password_change_me}
       ConnectionStrings__Redis: redis:6379
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      MessageRetention__Enabled: ${MessageRetention__Enabled:-false}
+      MessageRetention__DefaultRetentionDays: ${MessageRetention__DefaultRetentionDays:-90}
+      MessageRetention__BatchSize: ${MessageRetention__BatchSize:-500}
+      MessageRetention__IntervalMinutes: ${MessageRetention__IntervalMinutes:-60}
     networks:
       - vibechat-net
       - vibechat-observability

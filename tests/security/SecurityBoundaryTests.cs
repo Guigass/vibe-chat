@@ -168,6 +168,15 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
                 ai = new { workspaceEnabled = true, provider = "Mock" }
             });
         put.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var retentionPut = await alice.PutAsJsonAsync(
+            "/api/v1/admin/settings",
+            new
+            {
+                workspaceId = SeedData.DemoWorkspaceId.Value,
+                retention = new { enabled = true, retentionDays = 90 }
+            });
+        retentionPut.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact]

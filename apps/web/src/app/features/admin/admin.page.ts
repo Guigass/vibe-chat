@@ -261,6 +261,8 @@ export class AdminPage implements OnInit {
     const webhookEnabled = data.get('webhookEnabled') === 'on';
     const webhookUrl = String(data.get('webhookUrl') ?? '').trim();
     const webhookSecret = String(data.get('webhookSecret') ?? '').trim();
+    const retentionEnabled = data.get('retentionEnabled') === 'on';
+    const retentionDays = Number(data.get('retentionDays') ?? current.retention.retentionDays);
 
     this.settingsBusy.set(true);
     this.settingsFeedback.set(null);
@@ -282,10 +284,16 @@ export class AdminPage implements OnInit {
           url: webhookUrl,
           ...(webhookSecret ? { secret: webhookSecret } : {}),
         },
+        retention: {
+          enabled: retentionEnabled,
+          retentionDays: Number.isFinite(retentionDays)
+            ? retentionDays
+            : current.retention.retentionDays,
+        },
       });
       this.settings.set(updated);
       this.settingsFeedback.set(
-        'Configurações atualizadas (AI/SMTP secrets só via env; webhook secret só mascarado).',
+        'Configurações atualizadas (AI/SMTP secrets só via env; webhook secret só mascarado; retenção exige kill switch no worker).',
       );
       const secretInput = form.elements.namedItem('webhookSecret') as HTMLInputElement | null;
       if (secretInput) {

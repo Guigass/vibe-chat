@@ -566,6 +566,10 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         settings.Webhooks.Status.Should().Be("unconfigured");
         settings.Webhooks.SecretsWritable.Should().BeTrue();
         settings.Webhooks.SecretConfigured.Should().BeFalse();
+        settings.Retention.ProcessEnabled.Should().BeTrue();
+        settings.Retention.Enabled.Should().BeFalse();
+        settings.Retention.DefaultRetentionDays.Should().Be(90);
+        settings.Retention.RetentionDays.Should().Be(90);
 
         var originalEnabled = settings.Ai.WorkspaceEnabled;
         var put = await demo.PutAsJsonAsync(
@@ -676,6 +680,85 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
                 db.OutboundWebhookEndpoints.Remove(row);
                 await db.SaveChangesAsync();
             }
+        }
+    }
+
+    [Fact]
+    public async Task Admin_can_configure_message_retention_and_purge_soft_deletes()
+    {
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+        var messageId = Guid.NewGuid();
+        var send = await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-purge-{messageId:N}", $"purge-me-{messageId:N}", null, null));
+        send.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var del = await alice.DeleteAsync($"/api/v1/channels/{DemoChannelId}/messages/{messageId}");
+        del.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var keepId = Guid.NewGuid();
+        var keepSend = await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(keepId, $"idem-keep-{keepId:N}", $"keep-{keepId:N}", null, null));
+        keepSend.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var keepDel = await alice.DeleteAsync($"/api/v1/channels/{DemoChannelId}/messages/{keepId}");
+        keepDel.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var put = await demo.PutAsJsonAsync(
+            "/api/v1/admin/settings",
+            new { workspaceId, retention = new { enabled = true, retentionDays = 30 } });
+        put.StatusCode.Should().Be(HttpStatusCode.OK);
+        var settings = await put.Content.ReadFromJsonAsync<SensitiveSettingsDto>(JsonOptions);
+        settings.Should().NotBeNull();
+        settings!.Retention.Enabled.Should().BeTrue();
+        settings.Retention.RetentionDays.Should().Be(30);
+        settings.Retention.ProcessEnabled.Should().BeTrue();
+
+        var invalid = await demo.PutAsJsonAsync(
+            "/api/v1/admin/settings",
+            new { workspaceId, retention = new { retentionDays = 0 } });
+        invalid.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+            var old = await db.Messages.IgnoreQueryFilters()
+                .SingleAsync(x => x.Id == new MessageId(messageId));
+            old.DeletedAt = DateTimeOffset.UtcNow.AddDays(-40);
+            var recent = await db.Messages.IgnoreQueryFilters()
+                .SingleAsync(x => x.Id == new MessageId(keepId));
+            recent.DeletedAt = DateTimeOffset.UtcNow.AddDays(-5);
+            await db.SaveChangesAsync();
+        }
+
+        var processor = factory.Services.GetRequiredService<MessageRetentionPurgeProcessor>();
+        var purged = await processor.ProcessBatchAsync(CancellationToken.None);
+        purged.Should().BeGreaterThanOrEqualTo(1);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+            (await db.Messages.IgnoreQueryFilters()
+                .AnyAsync(x => x.Id == new MessageId(messageId))).Should().BeFalse();
+            (await db.Messages.IgnoreQueryFilters()
+                .AnyAsync(x => x.Id == new MessageId(keepId))).Should().BeTrue();
+
+            var audit = await db.AuditEvents.IgnoreQueryFilters()
+                .Where(x => x.TenantId == SeedData.DemoTenantId && x.Action == AuditActions.MessagePurge)
+                .OrderByDescending(x => x.OccurredAt)
+                .FirstOrDefaultAsync();
+            audit.Should().NotBeNull();
+            audit!.MetadataJson.Should().Contain("retentionDays");
+
+            var policy = await db.MessageRetentionSettings.IgnoreQueryFilters()
+                .SingleAsync(x => x.TenantId == SeedData.DemoTenantId);
+            policy.Enabled = false;
+            await db.SaveChangesAsync();
         }
     }
 
@@ -1054,7 +1137,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         Guid WorkspaceId,
         AiSensitiveSettingsDto Ai,
         EmailSensitiveSettingsDto Email,
-        WebhooksSensitiveSettingsDto Webhooks);
+        WebhooksSensitiveSettingsDto Webhooks,
+        RetentionSensitiveSettingsDto Retention);
     private sealed record AiSensitiveSettingsDto(
         bool ProcessEnabled,
         string ProcessSource,
@@ -1083,6 +1167,13 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         bool SecretConfigured,
         string? SecretMask,
         bool SecretsWritable,
+        string Message);
+    private sealed record RetentionSensitiveSettingsDto(
+        bool ProcessEnabled,
+        string ProcessSource,
+        bool Enabled,
+        int RetentionDays,
+        int DefaultRetentionDays,
         string Message);
     private sealed record AdminConversationItemDto(Guid Id, Guid WorkspaceId, string Name, string Type);
     private sealed record AdminConversationsDto(AdminConversationItemDto[] Items);
