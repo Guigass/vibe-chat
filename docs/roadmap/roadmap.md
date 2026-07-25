@@ -57,10 +57,12 @@ Dependências: itens só começam quando deps = done.
 | ID | Trilha | Tarefa | Deps |
 |----|--------|--------|------|
 | W3-1 | B | RLS policies em tabelas de negócio | W2-1, W1-2 |
-| W3-2 | E | Suíte tests/security cross-tenant (API+hub) | W3-1, W2-3 |
+| W3-2 | E | Suíte tests/security cross-tenant (API+hub) (**Done** — GAP-hub-t3 hub T3) | W3-1, W2-3 |
 | W3-3 | C | Rate-limit Redis em send/hub (**Done**) | W2-3 |
 | W3-4 | F | Dashboards: requests, outbox lag, SignalR (**Done**) | W0-6, W2-2 |
 | W3-5 | E | Critérios de aceite fatia — sign-off | W2-7, W3-2 |
+
+Nota (GAP-hub-t3 / #37): hub T3 `JoinChannel`/`SendTyping` cross-tenant coberto em `tests/security`; `multi-tenant.md` + `modelo-ameacas.md` já no feature PR.
 
 ## Wave 4 — Extensões pós-fatia (paralelizável)
 
