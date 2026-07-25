@@ -157,7 +157,7 @@ escreve aqui em vez de espalhar notas soltas pelas seções.
 | `GAP-rls-retention` | E | RLS em `messaging.message_retention_settings` | #35 |
 | `GAP-rls-catalog` | E | RLS nas tabelas com `TenantId` que faltavam + arch test de catálogo | #36 |
 | `GAP-hub-t3` | E | Caso T3: `JoinChannel`/`SendTyping` cross-tenant em `tests/security` | #37 |
-| `GAP-agent-docker` | A | `ensure_docker()` no `agent-setup.sh` (VMs de agente não têm Docker) | #41, #42 |
+| `GAP-agent-docker` | A | `ensure_docker()` no `agent-setup.sh` (Docker em VMs de agente; log seguro + pacotes) | #41, #42, #43 |
 | `GAP-test-local-stack` | E | Suítes deixam de vazar estado quando o data plane local é reaproveitado | #44 |
 | `GAP-signalr-groups` | C | Grupos SignalR `t:{tenantId}:c:{channelId}` e `t:{tenantId}` (presence) | #47 |
 | `GAP-redis-keys` | C | Keys de presence/typing/rate-limit com prefixo `t:{tenantId}:` | #49 |
