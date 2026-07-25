@@ -53,7 +53,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 | B-042 | Audit log (ações sensíveis) | **Done (Wave 5)** — eventos + `GET /admin/audit-events` + UI admin (`admin.dashboard`); **não** substitui auditoria de conversa (B-067) |
 | B-043 | Notificações email (opcional) | **Done (P2)** — `IEmailSender` Null/SMTP genérico; Mailpit/env; off default; e-mail em mudança de papel via outbox (D-10) |
 | B-044 | AI: resumo de thread (flag) | **Done (Wave 5)** — summarize canal + Mock/OpenRouter; off default; testes security/integration |
-| B-045 | AI: sugerir resposta | |
+| B-045 | AI: sugerir resposta | **Done** — `POST .../ai/suggest-reply` + UI prefill; Mock/OpenRouter; off default; authZ `ai.suggest_reply`; testes security/integration |
 | B-046 | Export de workspace | após D-03 |
 | B-047 | Políticas de retenção configuráveis | ADR-018; purge/flag depois |
 | B-048 | Webhooks outbound | **Done** — `integrations.webhook_endpoints` + admin settings; delivery `MessageCreated` HMAC via outbox; secret mascarado; só `workspace.admin` |
@@ -80,7 +80,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 
 Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup → spaces → presence → reações → PWA. (B-020…B-031 já Done na Wave 4.)
 
-Pós-MVP: **P1.5** (B-070…B-072), Wave 6 e B-048 (webhooks outbound) Done. Próximo: P2 restante (ex.: B-045 sugerir resposta).
+Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048 e B-045 Done. Próximo: P2 restante (ex.: B-040 guests, B-046 export, B-047 retenção).
 
 ## Itens explicitamente rejeitados na fase 1
 
