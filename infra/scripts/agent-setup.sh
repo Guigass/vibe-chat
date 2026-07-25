@@ -75,30 +75,48 @@ ensure_docker() {
     return 1
   fi
 
-  if ! command -v docker >/dev/null 2>&1; then
+  local need_packages=0
+  command -v docker >/dev/null 2>&1 || need_packages=1
+  docker compose version >/dev/null 2>&1 || need_packages=1
+  command -v fuse-overlayfs >/dev/null 2>&1 || need_packages=1
+
+  if (( need_packages )); then
     if ! command -v apt-get >/dev/null 2>&1; then
-      warn "Docker not installed and apt-get unavailable; install Docker manually"
+      warn "Docker packages missing and apt-get unavailable; install Docker manually"
       return 1
     fi
     log "Installing Docker (docker.io + compose v2 + fuse-overlayfs)..."
-    sudo -n env DEBIAN_FRONTEND=noninteractive apt-get update -qq
-    sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-      docker.io docker-compose-v2 fuse-overlayfs
+    if ! sudo -n env DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+      || ! sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+        docker.io docker-compose-v2 fuse-overlayfs; then
+      warn "apt-get failed while installing Docker packages; see apt logs"
+      return 1
+    fi
   fi
 
   # Docker 29 defaults to the containerd snapshotter, which cannot run on this VM.
   if [[ ! -f /etc/docker/daemon.json ]]; then
     log "Writing /etc/docker/daemon.json (fuse-overlayfs; containerd snapshotter off)"
     sudo -n mkdir -p /etc/docker
-    printf '%s\n' '{
+    if ! printf '%s\n' '{
   "storage-driver": "fuse-overlayfs",
   "features": { "containerd-snapshotter": false }
-}' | sudo -n tee /etc/docker/daemon.json >/dev/null
+}' | sudo -n tee /etc/docker/daemon.json >/dev/null; then
+      warn "Failed to write /etc/docker/daemon.json"
+      return 1
+    fi
   fi
 
+  # Log under root-owned /var/log (not /tmp) to avoid symlink races with privileged redirect.
+  local docker_log=/var/log/vibechat/dockerd.log
   if ! pgrep -x dockerd >/dev/null 2>&1; then
-    log "Starting dockerd (log: /tmp/dockerd.log)..."
-    sudo -n sh -c 'nohup dockerd >/tmp/dockerd.log 2>&1 &'
+    log "Starting dockerd (log: ${docker_log})..."
+    sudo -n sh -c "
+      mkdir -p /var/log/vibechat
+      rm -f '${docker_log}'
+      umask 077
+      nohup dockerd >'${docker_log}' 2>&1 &
+    "
   fi
 
   # Some Cloud Agent images leave /var/run as 0700 (not a symlink to /run), so
@@ -117,7 +135,7 @@ ensure_docker() {
     sleep 2
   done
 
-  warn "dockerd did not become ready; see /tmp/dockerd.log"
+  warn "dockerd did not become ready; see ${docker_log}"
   return 1
 }
 
