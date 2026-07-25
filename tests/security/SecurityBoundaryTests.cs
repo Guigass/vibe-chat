@@ -280,10 +280,11 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     {
         var foreignWorkspaceId = await SeedCrossTenantWorkspaceAsync();
 
-        using var demo = factory.CreateClient();
-        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+        // Seed attaches Demo as owner of the foreign tenant; Alice must not export it.
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
 
-        var response = await demo.GetAsync($"/api/v1/admin/workspaces/{foreignWorkspaceId}/export");
+        var response = await alice.GetAsync($"/api/v1/admin/workspaces/{foreignWorkspaceId}/export");
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 

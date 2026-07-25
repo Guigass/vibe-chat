@@ -518,11 +518,10 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             using var doc = await JsonDocument.ParseAsync(messagesStream);
             var messages = doc.RootElement;
             messages.ValueKind.Should().Be(JsonValueKind.Array);
-            messages.EnumerateArray().Should().Contain(m =>
-                m.GetProperty("id").GetGuid() == messageId
-                && m.GetProperty("body").GetString() == body
-                && m.TryGetProperty("deletedAt", out var deletedAt)
-                && deletedAt.ValueKind == JsonValueKind.String);
+            var exported = messages.EnumerateArray()
+                .Single(m => m.GetProperty("id").GetGuid() == messageId);
+            exported.GetProperty("body").GetString().Should().Be(body);
+            exported.GetProperty("deletedAt").ValueKind.Should().Be(JsonValueKind.String);
 
             await using var manifestStream = zip.GetEntry("manifest.json")!.Open();
             using var manifestDoc = await JsonDocument.ParseAsync(manifestStream);

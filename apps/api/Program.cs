@@ -2576,13 +2576,14 @@ static async Task<byte[]> BuildWorkspaceExportZipAsync(
         })
         .ToList();
 
-    var messageIds = allMessages.Select(m => new MessageId(m.id)).ToList();
+    var messageIdSet = allMessages.Select(m => m.id).ToHashSet();
     var attachmentEntities = await db.Attachments.AsNoTracking()
-        .Where(x => x.TenantId == workspace.TenantId && x.MessageId != null && messageIds.Contains(x.MessageId.Value))
+        .Where(x => x.TenantId == workspace.TenantId && channelIds.Contains(x.ChannelId))
         .OrderBy(x => x.CreatedAt)
         .ToListAsync(ct);
 
     var attachments = attachmentEntities
+        .Where(x => x.MessageId is { } mid && messageIdSet.Contains(mid.Value))
         .Select(x => new
         {
             id = x.Id,
