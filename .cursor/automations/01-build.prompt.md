@@ -18,10 +18,14 @@ Scan in order: W0 → W1 → W2 → W3 → W4 → W5 → W6 → P2 → P3.
 
 Eligible when:
 
-- Status is missing / `Planned` / not `Done`
+- `Status` is `Planned` or empty — never `Done` and never `Blocked`
 - All `Deps` are `Done` (or `—` / empty)
 - Not blocked by an open human `D-*` that the item requires
 - No **open** PR already tagged with the same Wave/Backlog ID
+
+If a whole wave table has **no `Status` column**, the roadmap is stale — that does not
+make every row eligible. Cross-check `backlog.md` and the repo, report the stale table,
+and do not rework something already delivered.
 
 If several are eligible, pick the **first** row. Empty earlier waves first.
 
