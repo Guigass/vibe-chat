@@ -46,7 +46,7 @@ Decisão: D-03
 Escolha: Soft-delete de mensagens no MVP; purge/hard-delete configurável (sugestão 90 dias + feature flag); export de workspace em P2
 Data: 2026-07-24
 Owner: Legal / DPO
-Impacto em código/docs: ADR-018; EditedAt/DeletedAt no Messaging; B-047 permanece P2
+Impacto em código/docs: ADR-018; EditedAt/DeletedAt no Messaging; B-047 Done (purge configurável)
 ```
 
 ### D-04

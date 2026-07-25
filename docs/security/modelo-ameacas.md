@@ -49,6 +49,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 9. **Admin settings / integrações** — leitura de secrets por membro; escrita de tokens via API (R-17)
 10. **Auditoria de conversa** — leitura privilegiada de DMs/soft-deletes por quem não é membro do canal (R-18)
 11. **Export de workspace** — download ZIP com conteúdo (incl. soft-delete) por quem não é `workspace.admin` ou cross-tenant
+12. **Retenção / purge** — hard-delete prematuro ou cross-tenant via settings/job; bypass do kill switch de processo
 
 ## Controles mínimos obrigatórios (fase 1)
 
@@ -93,6 +94,16 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Audit | `workspace.export` em `audit.audit_events` |
 | Membro/Auditor | 403 |
 
+### Retenção / purge (B-047)
+
+| Item | Controle |
+|------|----------|
+| AuthZ | `retention.*` via `GET/PUT /admin/settings` exige `workspace.admin` (membro/Auditor → 403) |
+| Kill switch | Processo `MessageRetention:Enabled` off default (SoT env); sem ele o worker não hard-deleta |
+| Escopo | Purge só mensagens do tenant da política; `TenantContext` no job |
+| Cascata | Remove reactions; detach `attachments.MessageId` (sem delete MinIO neste slice) |
+| Audit | `message.purge` em `audit.audit_events` |
+
 ## Ameaças priorizadas para a fatia vertical
 
 1. Leitura/escrita cross-tenant
@@ -102,6 +113,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 5. Exposição de AI/SMTP secrets a membros (R-17 / B-069)
 6. Abuso de auditoria de conversa fora do tenant / por membro (R-18 / B-067)
 7. Abuso de export ZIP fora do tenant / por não-admin (B-046)
+8. Purge hard-delete sem authZ / kill switch / isolamento de tenant (B-047)
 
 ## O que está fora (por ora)
 

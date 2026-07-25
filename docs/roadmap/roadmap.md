@@ -96,7 +96,7 @@ Dependências: itens só começam quando deps = done.
 
 ## Wave 6 — Refinamento UX + Admin
 
-Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks + B-045 suggest-reply + B-046 export. Próximo backlog: P2 restante (ex.: B-040 guests, B-047 retenção).
+Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks + B-045 suggest-reply + B-046 export + B-047 retenção/purge. Próximo backlog: P2 restante (ex.: B-040 guests).
 
 | ID | Trilha | Tarefa | Deps | Status |
 |----|--------|--------|------|--------|
