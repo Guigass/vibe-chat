@@ -31,6 +31,11 @@ If several are eligible, pick the **first** row. Empty earlier waves first.
 
 ## Step B — If none eligible: find ONE small gap (not a feature)
 
+This is **maintenance mode** — expected once every wave row is `Done` or `Blocked`,
+not a failure. The merged result gets a row in the **Registro de GAPs** in
+`roadmap.md` (the Docs automation writes it), so keep the `GAP-<short>` ID stable
+between commit message and PR body.
+
 Only then look for a single improvement, in this priority:
 
 1. Broken / flaky test or clear regression in the vertical slice
