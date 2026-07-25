@@ -71,7 +71,8 @@ Seed cria workspace demo, canal `#geral` e memberships para alice/bob.
 | `task lint` | `dotnet format --verify` + lint/tsc web |
 | `task test` | Testes unitários |
 | `task test:integration` | Integração (Testcontainers) |
-| `task test:e2e` | Playwright (duas sessões) |
+| `task test:e2e` | Playwright (duas sessões; stack já no ar) |
+| `task test:e2e:ci` | E2E caminho CI — compose + API/Web + Playwright (W7-1) |
 | `task test:architecture` | Fronteiras de módulo |
 | `task test:security` | Isolamento multi-tenant |
 | `task verify` | lint + todos os testes relevantes |
