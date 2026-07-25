@@ -47,7 +47,7 @@ do download.
 - `Failed` cai para o cartão de arquivo com o motivo no `title`.
 - Visualizador com foco preso, `Esc` para fechar e foco devolvido à bolha.
 - `alt` da imagem usa o nome do arquivo; decorativo nunca.
-- GIF anima só no hover quando `prefers-reduced-motion` estiver ativo.
+- GIF anima só no hover; com `prefers-reduced-motion`, permanece no primeiro frame.
 
 ## Multi-tenant e authZ
 
