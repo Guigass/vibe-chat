@@ -39,7 +39,10 @@ Escrita na **mesma transação** da mensagem (invariante de messaging).
 
 - `GET /api/v1/workspaces/{workspaceId}/channels/{channelId}/members?query=` — para o
   autocomplete; exige membership; devolve só membros do canal.
-- Evento de hub `MessageCreated` ganha `mentionsMe: bool` calculado por destinatário.
+- Evento de hub `MessageCreated` (broadcast no grupo do canal) ganha
+  `mentionedUserIds: uuid[]` e `mentionKinds` (`User`/`Here`/`Channel` presentes).
+  Cada cliente deriva `mentionsMe` localmente a partir do próprio user id e dos kinds —
+  **não** colocar `mentionsMe: bool` no payload compartilhado (todos receberiam o mesmo valor).
 
 `contratos.md`: tabela, endpoint, campo do evento, formato `<@userId>`.
 
