@@ -1051,7 +1051,7 @@ public sealed class MinioObjectStorage(IMinioClient minioClient, IConfiguration 
 public sealed class SignalRChatPublisher(IHubContext<ChatHub> hubContext) : IChatPublisher
 {
     public Task PublishAsync(RealtimeMessage message, CancellationToken cancellationToken) =>
-        hubContext.Clients.Group(ChatHub.ChannelGroup(message.ChannelId))
+        hubContext.Clients.Group(ChatHub.ChannelGroup(message.TenantId, message.ChannelId))
             .SendAsync(
                 message.EventName,
                 RealtimePayloadNormalization.Normalize(message.Payload),
@@ -1116,7 +1116,9 @@ public sealed class RedisSignalRBridge(RedisConnection redis, IHubContext<ChatHu
 
                 // Normalize payload to JsonNode so the JS client receives an object, not a string.
                 var payload = RealtimePayloadNormalization.Normalize(envelope.Payload);
-                await hubContext.Clients.Group(ChatHub.ChannelGroup(new ChannelId(envelope.ChannelId)))
+                await hubContext.Clients.Group(ChatHub.ChannelGroup(
+                        new TenantId(envelope.TenantId),
+                        new ChannelId(envelope.ChannelId)))
                     .SendAsync(envelope.EventName, payload, stoppingToken);
             }
             catch (Exception ex)
@@ -1602,8 +1604,10 @@ public sealed class ChatHub(
     IRateLimiter rateLimiter,
     IConfiguration configuration) : Hub
 {
-    public static string ChannelGroup(ChannelId channelId) => $"channel:{channelId.Value}";
-    public static string TenantGroup(TenantId tenantId) => $"tenant:{tenantId.Value}";
+    public static string ChannelGroup(TenantId tenantId, ChannelId channelId) =>
+        $"t:{tenantId.Value}:c:{channelId.Value}";
+
+    public static string TenantGroup(TenantId tenantId) => $"t:{tenantId.Value}";
 
     public override async Task OnConnectedAsync()
     {
@@ -1641,7 +1645,7 @@ public sealed class ChatHub(
             throw new HubException("Not authorized for channel.");
         }
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, ChannelGroup(channel), Context.ConnectionAborted);
+        await Groups.AddToGroupAsync(Context.ConnectionId, ChannelGroup(tenant, channel), Context.ConnectionAborted);
         await EnsurePresenceGroupAsync(tenant, userId);
         await presence.HeartbeatAsync(tenant, userId, Context.ConnectionId, Context.ConnectionAborted);
         await BroadcastPresenceAsync(tenant, userId, PresenceStatus.Online);
@@ -1649,8 +1653,9 @@ public sealed class ChatHub(
 
     public async Task LeaveChannel(Guid tenantId, Guid channelId)
     {
+        var tenant = new TenantId(tenantId);
         var channel = new ChannelId(channelId);
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, ChannelGroup(channel), Context.ConnectionAborted);
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, ChannelGroup(tenant, channel), Context.ConnectionAborted);
     }
 
     public async Task Heartbeat(Guid tenantId)
@@ -1688,7 +1693,7 @@ public sealed class ChatHub(
 
         await typing.SetTypingAsync(tenant, channel, userId, displayName, Context.ConnectionAborted);
         // B-071 / W6-2: never fan out typing to the author (OthersInGroup).
-        await Clients.OthersInGroup(ChannelGroup(channel)).SendAsync(
+        await Clients.OthersInGroup(ChannelGroup(tenant, channel)).SendAsync(
             "Typing",
             new { tenantId, channelId, userId = userId.Value, displayName },
             Context.ConnectionAborted);

@@ -232,7 +232,9 @@ Nomes de eventos hub (cliente):
 | `message.deleted` | Soft delete |
 | `ReactionChanged` | Toggle de reação (payload com resumo agregado) |
 | `Typing` | Typing (TTL curto Redis); hub publica com `Clients.OthersInGroup` (B-071) — autor não recebe o próprio evento |
-| `PresenceChanged` | Presence `online`/`away`/`offline` (hub group `tenant:{tenantId}`) |
+| `PresenceChanged` | Presence `online`/`away`/`offline` (hub group `t:{tenantId}`) |
+
+Grupos SignalR: canal `t:{tenantId}:c:{channelId}` (mensagens/typing/reações); tenant `t:{tenantId}` (presence).
 
 Hub (além de `JoinChannel` / `LeaveChannel` / `SendTyping`):
 
