@@ -108,7 +108,7 @@ Escolha: Guest passa a existir na Wave 10, com estas regras não negociáveis:
   - todo convite e todo aceite geram evento de audit
 Data: 2026-07-25
 Owner: Founder / Produto
-Impacto em código/docs: B-040 sai de Blocked e vira W10-8; spec em
+Impacto em código/docs: B-040 sai de Blocked e vira W10-10; spec em
   docs/product/specs/B-040-guests-por-convite.md; glossário atualiza "Guest"
 ```
 
