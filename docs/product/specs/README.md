@@ -24,19 +24,19 @@ ser implementado sem perguntar: **D-11** em `docs/roadmap/decisoes-pendentes.md`
 
 ### Wave 9 — Leitura da timeline
 
-Specs em redação; item sem spec **não** é elegível para o Build.
-
 | ID | Spec |
 |----|------|
-| B-088 | Agrupamento, separadores e não lidas na timeline |
-| B-089 | Histórico paginado e pular para a mensagem |
-| B-090 | Preview de anexos |
-| B-091 | Link preview |
-| B-092 | Fixar mensagem |
-| B-093 | Salvos |
-| B-094 | Recibos de leitura e não lidas |
+| B-088 | [Agrupamento, separadores e não lidas na timeline](B-088-timeline-agrupamento-separadores.md) |
+| B-089 | [Histórico paginado e pular para a mensagem](B-089-historico-paginado.md) |
+| B-090 | [Preview de anexos](B-090-preview-de-anexos.md) |
+| B-091 | [Link preview](B-091-link-preview.md) |
+| B-092 | [Fixar mensagem](B-092-fixar-mensagem.md) |
+| B-093 | [Salvos](B-093-salvos.md) |
+| B-094 | [Recibos de leitura e não lidas](B-094-recibos-de-leitura.md) |
 
 ### Wave 10 — Notificações, organização e acesso
+
+Specs em redação; item sem spec **não** é elegível para o Build.
 
 | ID | Spec |
 |----|------|
