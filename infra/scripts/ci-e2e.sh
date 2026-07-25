@@ -51,40 +51,48 @@ BOOT_ONLY="${BOOT_ONLY:-0}"
 # BOOT_ONLY success path clears the trap before exit so the stack stays up.
 trap cleanup EXIT INT TERM
 
-# O Angular CLI recusa Node abaixo deste piso, independente do "engines" do package.json.
+# Piso pinado (apps/web engines). Angular CLI aceita ^22.22.3 || ^24.15.0 || >=26.
 WEB_NODE_MIN="${WEB_NODE_MIN:-22.22.3}"
 
 # true quando $1 >= $2
 version_ge() { printf '%s\n%s\n' "$2" "$1" | sort -V -C; }
 
+# Angular CLI ranges — floor-only (>= WEB_NODE_MIN) aceitaria 23.x / 24.0–24.14.
+angular_node_ok() {
+  local v="${1:-}"
+  [[ -z "${v}" ]] && return 1
+  local major="${v%%.*}"
+  case "${major}" in
+    22) version_ge "${v}" "22.22.3" ;;
+    24) version_ge "${v}" "24.15.0" ;;
+    *)  version_ge "${v}" "26.0.0" ;;
+  esac
+}
+
 ensure_web_node() {
   local current=""
   command -v node >/dev/null 2>&1 && current="$(node --version 2>/dev/null | tr -d 'v')"
-  if [[ -n "${current}" ]] && version_ge "${current}" "${WEB_NODE_MIN}"; then
-    echo "==> node ${current} (>= ${WEB_NODE_MIN})"
+  if angular_node_ok "${current}"; then
+    echo "==> node ${current} (ok for Angular CLI)"
     return 0
   fi
 
-  echo "==> node ${current:-ausente} não atende ao piso ${WEB_NODE_MIN}; tentando nvm"
+  echo "==> node ${current:-ausente} incompatível com Angular CLI; tentando nvm (${WEB_NODE_MIN})"
   export NVM_DIR="${NVM_DIR:-${HOME}/.nvm}"
   if [[ ! -s "${NVM_DIR}/nvm.sh" ]]; then
-    echo "nvm não encontrado; instale Node >= ${WEB_NODE_MIN} para rodar o web" >&2
+    echo "nvm não encontrado; instale Node ${WEB_NODE_MIN} (ou ^24.15 / >=26) para rodar o web" >&2
     return 1
   fi
   # shellcheck disable=SC1091
   source "${NVM_DIR}/nvm.sh"
 
-  # Só versões realmente instaladas — "nvm ls" também imprime aliases não instalados.
-  local candidate
-  candidate="$(ls -1 "${NVM_DIR}/versions/node" 2>/dev/null | tr -d 'v' | sort -V -u | tail -1 || true)"
-
-  if [[ -z "${candidate}" ]] || ! version_ge "${candidate}" "${WEB_NODE_MIN}"; then
+  # Pin no WEB_NODE_MIN — "maior versão instalada" pode cair em majors que o CLI rejeita.
+  if [[ ! -d "${NVM_DIR}/versions/node/v${WEB_NODE_MIN}" ]]; then
     echo "==> instalando Node ${WEB_NODE_MIN} via nvm"
     nvm install "${WEB_NODE_MIN}" || return 1
-    candidate="${WEB_NODE_MIN}"
   fi
 
-  nvm use "${candidate}" >/dev/null || return 1
+  nvm use "${WEB_NODE_MIN}" >/dev/null || return 1
   hash -r
   echo "==> node $(node --version) via nvm"
 }
