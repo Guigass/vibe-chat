@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http.Connections;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using VibeChat.Audit;
 using VibeChat.Conversations;
@@ -18,7 +21,7 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     [Fact]
     public async Task Cross_tenant_access_is_denied()
     {
-        var foreignChannelId = await SeedCrossTenantChannelAsync();
+        var (_, foreignChannelId) = await SeedCrossTenantChannelAsync();
 
         using var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
@@ -65,7 +68,7 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     [Fact]
     public async Task Cross_tenant_cannot_toggle_reactions()
     {
-        var foreignChannelId = await SeedCrossTenantChannelAsync();
+        var (_, foreignChannelId) = await SeedCrossTenantChannelAsync();
 
         using var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
@@ -103,7 +106,7 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     [Fact]
     public async Task Admin_conversation_audit_is_tenant_scoped()
     {
-        var foreignChannelId = await SeedCrossTenantChannelAsync();
+        var (_, foreignChannelId) = await SeedCrossTenantChannelAsync();
 
         using var demo = factory.CreateClient();
         demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
@@ -399,7 +402,7 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     [Fact]
     public async Task Cross_tenant_cannot_download_or_initiate_attachments()
     {
-        var foreignChannelId = await SeedCrossTenantChannelAsync();
+        var (_, foreignChannelId) = await SeedCrossTenantChannelAsync();
 
         using var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
@@ -505,7 +508,7 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     [Fact]
     public async Task Cross_tenant_cannot_open_or_reply_in_thread()
     {
-        var foreignChannelId = await SeedCrossTenantChannelAsync();
+        var (_, foreignChannelId) = await SeedCrossTenantChannelAsync();
 
         using var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
@@ -522,6 +525,27 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
 
         var history = await client.GetAsync($"/api/v1/threads/{Guid.NewGuid()}/messages");
         history.StatusCode.Should().BeOneOf(HttpStatusCode.Forbidden, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Cross_tenant_hub_join_and_typing_are_rejected()
+    {
+        // T3 — hub subscribe / typing must not succeed for a foreign tenant channel (W3-2).
+        var (foreignTenantId, foreignChannelId) = await SeedCrossTenantChannelAsync();
+
+        await using var hub = CreateHubConnection("alice");
+        await hub.StartAsync();
+
+        var joinForeign = async () => await hub.InvokeAsync("JoinChannel", foreignTenantId, foreignChannelId);
+        await joinForeign.Should().ThrowAsync<HubException>()
+            .WithMessage("*Not authorized*");
+
+        var typingForeign = async () => await hub.InvokeAsync("SendTyping", foreignTenantId, foreignChannelId, "Alice");
+        await typingForeign.Should().ThrowAsync<HubException>()
+            .WithMessage("*Not authorized*");
+
+        // Positive control: alice is a member of the demo tenant channel.
+        await hub.InvokeAsync("JoinChannel", SeedData.DemoTenantId.Value, SeedData.DemoChannelId.Value);
     }
 
     [Fact]
@@ -736,7 +760,18 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
         return workspaceId.Value;
     }
 
-    private async Task<Guid> SeedCrossTenantChannelAsync()
+    private HubConnection CreateHubConnection(string devUser) =>
+        new HubConnectionBuilder()
+            .WithUrl(new Uri(factory.Server.BaseAddress!, "hubs/chat"), options =>
+            {
+                // TestServer does not support WebSockets; LongPolling is enough for authZ checks.
+                options.Transports = HttpTransportType.LongPolling;
+                options.HttpMessageHandlerFactory = _ => factory.Server.CreateHandler();
+                options.Headers["X-Dev-User"] = devUser;
+            })
+            .Build();
+
+    private async Task<(Guid TenantId, Guid ChannelId)> SeedCrossTenantChannelAsync()
     {
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
@@ -776,7 +811,7 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
         });
 
         await db.SaveChangesAsync();
-        return channelId.Value;
+        return (tenantId.Value, channelId.Value);
     }
 
     private async Task<(Guid WorkspaceId, Guid ChannelId)> SeedSiblingWorkspaceChannelAsync()
