@@ -90,6 +90,7 @@ if [[ "${SKIP_APPS:-0}" != "1" ]]; then
     fi
     (
       cd apps/web
+      export NG_CLI_ANALYTICS=false
       npm start -- --host 0.0.0.0 --port 4200
     ) > /tmp/vibechat-e2e-web.log 2>&1 &
     WEB_PID=$!

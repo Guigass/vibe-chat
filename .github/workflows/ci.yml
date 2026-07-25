@@ -107,7 +107,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          # Angular 22 requires >= 22.22.3 (same floor as apps/web engines + AGENTS.md).
+          node-version: "22.22.3"
           cache: npm
           cache-dependency-path: |
             apps/web/package-lock.json
