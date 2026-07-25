@@ -70,6 +70,8 @@
 | T11 | Admin `GET /admin/settings` com webhook ativo | `webhooks.secretMask` só; secret nunca em claro (B-048) |
 | T12 | Membro/Auditor chama `GET /admin/workspaces/{id}/export` | 403; só `workspace.admin` (B-046) |
 | T13 | Admin exporta workspace de outro tenant | 403 (B-046) |
+| T14 | Membro/Auditor altera `retention.*` em `/admin/settings` | 403; só `workspace.admin` (B-047) |
+| T15 | Purge com `MessageRetention:Enabled=false` | Nenhuma mensagem hard-deletada (B-047) |
 
 ## Operação multi-tenant vs single-tenant
 

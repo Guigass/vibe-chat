@@ -63,6 +63,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Configuração sensível** | Tokens, webhooks, chaves de AI/SMTP e secrets de integração. Só administradores leem/alteram via `/admin` + `GET/PUT /api/v1/admin/settings` (`workspace.admin`); membros/Auditor → 403; resposta só com máscara/`configured` (B-069). AI/SMTP secrets ficam em env/secret store; secret HMAC de webhook é gravável no admin e nunca retornado em claro (B-048). |
 | **Webhook outbound** | Endpoint HTTP do tenant que recebe fan-out de eventos (inicialmente `MessageCreated`) assinado com HMAC-SHA256 (`X-VibeChat-Signature`). Configurado só por admin; delivery best-effort via outbox/worker path (B-048). |
 | **Export de workspace** | Pacote ZIP compliance (`vibechat.workspace.export.v1`) com JSON do workspace (membros, spaces, channels, threads, messages com soft-delete, metadados de anexos — sem binários MinIO). `GET /api/v1/admin/workspaces/{id}/export`; exige `workspace.admin`; audit `workspace.export` (B-046 / D-03). |
+| **Retenção / purge** | Política por tenant (`messaging.message_retention_settings`: `enabled`, `retentionDays`) + kill switch de processo `MessageRetention:Enabled` (off default). Com ambos ligados, o worker hard-deleta soft-deletes além do cutoff; remove reactions; detach anexos (sem delete MinIO); audit `message.purge` (B-047 / ADR-018 / D-03). |
 
 ## Plataforma e infra
 

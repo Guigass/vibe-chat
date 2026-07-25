@@ -17,7 +17,7 @@ Atalho operacional (checklist): [`runbooks/backup-restore.md`](./runbooks/backup
 
 1. Backup **automatizado** e testado (restore drill)
 2. Criptografia em repouso dos artefatos de backup
-3. Retenção alinhada à política legal (D-03 / ADR-018: soft-delete default; purge configurável depois)
+3. Retenção alinhada à política legal (D-03 / ADR-018: soft-delete default; purge configurável via B-047 — `MessageRetention:Enabled` + settings do tenant)
 4. **Sem SLA comercial** em self-host (D-08). RPO/RTO são **best effort**; alvo operacional sugerido: backup diário Postgres → RPO ≤ 24h, RTO ≤ 4h
 
 ## Scripts (dev / staging)
