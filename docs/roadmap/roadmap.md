@@ -232,6 +232,7 @@ escreve aqui em vez de espalhar notas soltas pelas seções.
 | `GAP-test-local-stack` | E | Suítes deixam de vazar estado quando o data plane local é reaproveitado | #44 |
 | `GAP-signalr-groups` | C | Grupos SignalR `t:{tenantId}:c:{channelId}` e `t:{tenantId}` (presence) | #47 |
 | `GAP-redis-keys` | C | Keys de presence/typing/rate-limit com prefixo `t:{tenantId}:` | #49 |
+| `GAP-web-node-boot` | A | `BOOT_ONLY` / `task ux:stack` + `ensure_web_node` com piso Angular CLI (`^22.22.3 \|\| ^24.15 \|\| >=26`) | #61 |
 
 ---
 
