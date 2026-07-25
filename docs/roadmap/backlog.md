@@ -63,7 +63,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 | B-069 | Configurações sensíveis só admin | **Done (Wave 6)** — `GET/PUT /admin/settings` mascarado; exige `workspace.admin` (não Auditor); AI/SMTP em env; webhook secret gravável (B-048) |
 | B-073 | UI polish com PrimeNG | **Done (Wave 6)** — emenda ADR-002 Accepted; PrimeNG 22 + `VibeChatPreset` (Aura/tokens) no `/admin` (Table/Select/Tag); shell chat permanece composição própria; polish forms/dialogs restante é iterativo |
 | B-074 | API + Web (+ Worker) no Compose | **Done (Wave 6)** — profile `apps` caminho oficial (`task apps`); healthchecks api/web/worker; OIDC Authority + MetadataAddress; `GET /ready`; ops/README/`.env.example`; `task dev` só DX hot-reload |
-| B-075 | E2E Playwright na CI | Planned (W7-1) — `tests/e2e/specs` (dois usuários, realtime, scroll) só roda em `task test:e2e` local; nenhum critério de aceite da Wave 6 é verificado no PR |
+| B-075 | E2E Playwright na CI | **Done (W7-1)** — job **E2E (Playwright)** na CI com DevAuth; `infra/scripts/ci-e2e.sh` / `task test:e2e:ci` (#45) |
 
 ## P3 — Escala / futuro
 
@@ -81,7 +81,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 
 Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup → spaces → presence → reações → PWA. (B-020…B-031 já Done na Wave 4.)
 
-Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045, B-046 e B-047 Done. Próximo: **B-075** (E2E na CI / W7-1). B-040 só depois da spec de produto.
+Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done. Próximo na Wave 7: **B-040** guests — **Blocked** até spec de produto.
 
 ## Itens explicitamente rejeitados na fase 1
 
