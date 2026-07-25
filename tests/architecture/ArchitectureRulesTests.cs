@@ -43,4 +43,32 @@ public sealed class ArchitectureRulesTests
             result.IsSuccessful.Should().BeTrue();
         }
     }
+
+    [Fact]
+    public void Rls_catalog_covers_message_retention_settings()
+    {
+        var sqlPath = FindRepoFile(Path.Combine("infra", "compose", "postgres", "03-rls.sql"));
+        var sql = File.ReadAllText(sqlPath);
+
+        sql.Should().Contain("messaging.message_retention_settings");
+        sql.Should().Contain("tenant_isolation_message_retention_settings");
+        sql.Should().Contain("""USING ("TenantId" = current_setting('app.tenant_id', true)::uuid)""");
+    }
+
+    private static string FindRepoFile(string relativePath)
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            var candidate = Path.Combine(dir.FullName, relativePath);
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            dir = dir.Parent;
+        }
+
+        throw new FileNotFoundException($"Could not locate '{relativePath}' from test base directory.");
+    }
 }
