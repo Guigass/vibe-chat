@@ -55,14 +55,14 @@ cd tests/e2e && E2E_AUTH_MODE=devauth npm test
 3. DevAuth (`X-Dev-User`) para desenvolvimento/E2E sem depender de OIDC
 4. `compose.override.yaml` usa `network_mode: host` em ambientes com bridge Docker quebrada
 5. Keycloak management port `9002` para não colidir com MinIO `:9000`
-6. Licença provisória Apache-2.0 (decisão humana pendente)
+6. Licença Apache-2.0 — provisória nesta corrida, confirmada depois em D-01
 
 ## Limitações / pendências
 
 - Observabilidade completa (Grafana/Prometheus/Loki/Tempo) sob profile `observability` — não exercitada nesta corrida
 - RLS SQL provisionado; validação contínua via testes de isolamento
 - Login OIDC Keycloak disponível, mas E2E oficial desta fatia usou DevAuth
-- Decisões humanas: licença final, marca, retenção legal, credenciais de produção
+- Decisões humanas pendentes à época (licença, marca, retenção, credenciais de produção) — todas fechadas em 2026-07-24, ver `docs/roadmap/decisoes-pendentes.md`
 
 ## Próximos passos (paralelizáveis)
 
