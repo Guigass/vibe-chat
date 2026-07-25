@@ -47,10 +47,9 @@ cleanup() {
   fi
 }
 BOOT_ONLY="${BOOT_ONLY:-0}"
-# With BOOT_ONLY the whole point is to leave API and Web up for someone else to use.
-if [[ "${BOOT_ONLY}" != "1" ]]; then
-  trap cleanup EXIT INT TERM
-fi
+# Always register cleanup so a failed boot does not leave orphan API/Web processes.
+# BOOT_ONLY success path clears the trap before exit so the stack stays up.
+trap cleanup EXIT INT TERM
 
 # O Angular CLI recusa Node abaixo deste piso, independente do "engines" do package.json.
 WEB_NODE_MIN="${WEB_NODE_MIN:-22.22.3}"
@@ -152,6 +151,7 @@ if [[ "${BOOT_ONLY}" == "1" ]]; then
   echo "    API: ${API_BASE_URL}  (log /tmp/vibechat-e2e-api.log)"
   echo "    Web: ${WEB_BASE_URL}  (log /tmp/vibechat-e2e-web.log)"
   echo "    Login sem Keycloak: botões DevAuth ou header X-Dev-User: alice|bob|demo"
+  trap - EXIT INT TERM
   exit 0
 fi
 
