@@ -54,7 +54,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 | B-043 | Notificações email (opcional) | **Done (P2)** — `IEmailSender` Null/SMTP genérico; Mailpit/env; off default; e-mail em mudança de papel via outbox (D-10) |
 | B-044 | AI: resumo de thread (flag) | **Done (Wave 5)** — summarize canal + Mock/OpenRouter; off default; testes security/integration |
 | B-045 | AI: sugerir resposta | **Done** — `POST .../ai/suggest-reply` + UI prefill; Mock/OpenRouter; off default; authZ `ai.suggest_reply`; testes security/integration |
-| B-046 | Export de workspace | após D-03 |
+| B-046 | Export de workspace | **Done** — `GET .../admin/workspaces/{id}/export` ZIP JSON (`vibechat.workspace.export.v1`); soft-delete incluído; metadados de anexos; authZ `workspace.admin`; audit `workspace.export`; UI admin |
 | B-047 | Políticas de retenção configuráveis | ADR-018; purge/flag depois |
 | B-048 | Webhooks outbound | **Done** — `integrations.webhook_endpoints` + admin settings; delivery `MessageCreated` HMAC via outbox; secret mascarado; só `workspace.admin` |
 | B-049 | Temas light/dark polish | **Done (Wave 5)** — `color-scheme`, segue OS até pin do usuário, transição sutil |
@@ -80,7 +80,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 
 Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup → spaces → presence → reações → PWA. (B-020…B-031 já Done na Wave 4.)
 
-Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048 e B-045 Done. Próximo: P2 restante (ex.: B-040 guests, B-046 export, B-047 retenção).
+Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045 e B-046 Done. Próximo: P2 restante (ex.: B-040 guests, B-047 retenção).
 
 ## Itens explicitamente rejeitados na fase 1
 

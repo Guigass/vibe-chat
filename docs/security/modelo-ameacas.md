@@ -48,6 +48,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 8. **Supply chain** — deps npm/nuget
 9. **Admin settings / integrações** — leitura de secrets por membro; escrita de tokens via API (R-17)
 10. **Auditoria de conversa** — leitura privilegiada de DMs/soft-deletes por quem não é membro do canal (R-18)
+11. **Export de workspace** — download ZIP com conteúdo (incl. soft-delete) por quem não é `workspace.admin` ou cross-tenant
 
 ## Controles mínimos obrigatórios (fase 1)
 
@@ -82,6 +83,16 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Membro | Sem `admin.dashboard` → 403 (não vê body soft-deleted nem DMs alheias) |
 | Histórico normal | Continua redigindo body deletado + ACL de canal |
 
+### Export de workspace (B-046)
+
+| Item | Controle |
+|------|----------|
+| AuthZ | `GET /admin/workspaces/{id}/export` exige `workspace.admin` (não só `admin.dashboard`) |
+| Escopo | Workspace do `tenant_id` do actor + membership; cross-tenant → 403 |
+| Conteúdo | Soft-deleted bodies incluídos; anexos só metadados (sem `storageKey`/bytes MinIO) |
+| Audit | `workspace.export` em `audit.audit_events` |
+| Membro/Auditor | 403 |
+
 ## Ameaças priorizadas para a fatia vertical
 
 1. Leitura/escrita cross-tenant
@@ -90,6 +101,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 4. Token leak no frontend (storage inseguro / logs)
 5. Exposição de AI/SMTP secrets a membros (R-17 / B-069)
 6. Abuso de auditoria de conversa fora do tenant / por membro (R-18 / B-067)
+7. Abuso de export ZIP fora do tenant / por não-admin (B-046)
 
 ## O que está fora (por ora)
 
