@@ -54,7 +54,7 @@ já entregue (foi o que aconteceu com W3-2, reimplementado como `GAP-hub-t3` / #
 | W2-4 | C | History API + gap model | W2-1 | **Done** |
 | W2-5 | D | UI channel: lista + composer + hub client | W1-4, W2-3, W2-4 | **Done** |
 | W2-6 | E | Testes integração send+idempotency+seq | W2-1 | **Done** — `tests/integration` |
-| W2-7 | E | E2E Playwright dois usuários | W2-5, W1-3 | **Done** — `tests/e2e/specs`; execução ainda manual (ver W7-1) |
+| W2-7 | E | E2E Playwright dois usuários | W2-5, W1-3 | **Done** — `tests/e2e/specs`; na CI via W7-1 |
 
 ## Wave 3 — Hardening multi-tenant
 
@@ -102,7 +102,7 @@ Nota (GAP-hub-t3 / #37): hub T3 `JoinChannel`/`SendTyping` cross-tenant coberto 
 
 ## Wave 6 — Refinamento UX + Admin
 
-Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks + B-045 suggest-reply + B-046 export + B-047 retenção/purge. Próximo: **Wave 7 — Sustentação** (W7-1 E2E na CI); B-040 guests segue bloqueado por spec de produto.
+Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks + B-045 suggest-reply + B-046 export + B-047 retenção/purge. Wave 7: **W7-1 Done**; próximo elegível **Blocked** — W7-2 / B-040 guests (spec de produto).
 
 | ID | Trilha | Tarefa | Deps | Status |
 |----|--------|--------|------|--------|
@@ -133,7 +133,7 @@ o agente cai no modo “caçar gap” a cada run — mais caro e menos previsív
 
 | ID | Trilha | Tarefa | Deps | Status |
 |----|--------|--------|------|--------|
-| W7-1 | E | E2E Playwright na CI (B-075) — hoje `tests/e2e/specs` só roda via `task test:e2e` local | W2-7, W6-8 | Planned |
+| W7-1 | E | E2E Playwright na CI (B-075) | W2-7, W6-8 | **Done** — job CI + `infra/scripts/ci-e2e.sh` / `task test:e2e:ci` (DevAuth; #45) |
 | W7-2 | B/D | Guests / link de canal (B-040) | P2-1, D-07 | **Blocked** — precisa spec de produto (escopo do convite, authZ do guest, expiração). Não é elegível para Build sem essa decisão |
 
 ---
