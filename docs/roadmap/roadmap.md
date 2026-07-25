@@ -56,6 +56,8 @@ já entregue (foi o que aconteceu com W3-2, reimplementado como `GAP-hub-t3` / #
 | W2-6 | E | Testes integração send+idempotency+seq | W2-1 | **Done** — `tests/integration` |
 | W2-7 | E | E2E Playwright dois usuários | W2-5, W1-3 | **Done** — `tests/e2e/specs`; na CI via W7-1 |
 
+Nota (GAP-signalr-groups / #47): grupos SignalR alinhados a `t:{tenantId}:c:{channelId}` + `t:{tenantId}` (presence); `contratos.md` + regressão unitária.
+
 ## Wave 3 — Hardening multi-tenant
 
 | ID | Trilha | Tarefa | Deps | Status |
