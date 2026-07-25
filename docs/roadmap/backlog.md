@@ -63,7 +63,19 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 | B-069 | Configurações sensíveis só admin | **Done (Wave 6)** — `GET/PUT /admin/settings` mascarado; exige `workspace.admin` (não Auditor); AI/SMTP em env; webhook secret gravável (B-048) |
 | B-073 | UI polish com PrimeNG | **Done (Wave 6)** — emenda ADR-002 Accepted; PrimeNG 22 + `VibeChatPreset` (Aura/tokens) no `/admin` (Table/Select/Tag); shell chat permanece composição própria; polish forms/dialogs restante é iterativo |
 | B-074 | API + Web (+ Worker) no Compose | **Done (Wave 6)** — profile `apps` caminho oficial (`task apps`); healthchecks api/web/worker; OIDC Authority + MetadataAddress; `GET /ready`; ops/README/`.env.example`; `task dev` só DX hot-reload |
+
+## Sustentação — Wave 7
+
+Itens de manutenção e hardening pós-Wave 6. B-076…B-078 saem dos **controles mínimos**
+ainda em aberto em `docs/security/modelo-ameacas.md`. Lacunas fechadas fora de item de
+backlog ficam no **Registro de GAPs** (`roadmap.md`).
+
+| ID | Item | Notas |
+|----|------|-------|
 | B-075 | E2E Playwright na CI | **Done (W7-1)** — job **E2E (Playwright)** na CI com DevAuth; `infra/scripts/ci-e2e.sh` / `task test:e2e:ci` (#45) |
+| B-076 | Atualização automatizada de dependências | Planned (W7-3) — sem `.github/dependabot.yml` nem renovate; `Dependency audit notes` na CI é informativo e nunca reprova o build |
+| B-077 | CSP no web | Planned (W7-4) — nginx do profile `proxy` já manda HSTS/`nosniff`/`X-Frame-Options`/`Referrer-Policy`; falta CSP |
+| B-078 | Limite de tamanho de body no envio | Planned (W7-5) — `Message.Body` limitado a 8000 só na coluna; `POST .../messages` não valida e devolve 500 em vez de 400 |
 
 ## P3 — Escala / futuro
 
@@ -81,7 +93,7 @@ Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime �
 
 Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup → spaces → presence → reações → PWA. (B-020…B-031 já Done na Wave 4.)
 
-Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done. Próximo na Wave 7: **B-040** guests — **Blocked** até spec de produto.
+Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done. Próximo: **B-076 → B-077 → B-078** (Sustentação / Wave 7). **B-040** guests segue Blocked até spec de produto.
 
 ## Itens explicitamente rejeitados na fase 1
 
