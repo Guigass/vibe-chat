@@ -61,7 +61,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 - [ ] Rate limiting por usuário/IP
 - [ ] Headers de segurança no web (CSP básica, etc.)
 - [ ] Dependabot/renovate ou equivalente
-- [ ] Testes em `tests/security` para cross-tenant
+- [x] Testes em `tests/security` para cross-tenant (API + hub T3 `JoinChannel`/`SendTyping`)
 
 ### R-17 — Secrets/webhooks expostos a membros
 

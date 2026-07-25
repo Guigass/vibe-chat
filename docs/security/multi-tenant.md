@@ -59,7 +59,7 @@
 |---|------|--------------------|
 | T1 | User A lista channels do tenant B | Vazio / 403 |
 | T2 | User A lê messageId do tenant B | 404/403 |
-| T3 | User A subscribe hub conversation do tenant B | Rejeitado |
+| T3 | User A subscribe hub conversation do tenant B | Rejeitado — coberto por `Cross_tenant_hub_join_and_typing_are_rejected` (`JoinChannel` + `SendTyping` → `HubException`) |
 | T4 | Body com tenant_id de B + token de A | Persiste sob A (ou rejeita); nunca sob B |
 | T5 | Presigned URL de anexo do tenant B | 403 / objeto inacessível |
 | T6 | Search query não retorna hits de outro tenant | Garantido |
