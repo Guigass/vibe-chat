@@ -58,9 +58,10 @@ São dois problemas empilhados:
 2. **Compliance** — `AGENTS.md` proíbe dependência proprietária sem decisão explícita,
    e o ADR-002 foi emendado para adotar PrimeNG (B-073) sem essa análise de licença.
 
-Não é correção de código: precisa de **D-15**. Enquanto a decisão não sai, o achado
-fica `Blocked` e o agente **não** deve tentar esconder o banner por CSS — além de ser
-contornar licenciamento, o shadow root fechado existe justamente para impedir isso.
+**D-15 decidiu (c) sair do PrimeNG.** A correção é **B-104** (spec
+`docs/product/specs/B-104-remover-primeng.md`): desinstalar o pacote e reescrever
+`/admin` com composição própria + CDK. O agente **não** deve gerar chave nem
+esconder o banner por CSS.
 
 ### UX-003 — Sidebar não colapsa em viewport estreito
 
