@@ -39,7 +39,7 @@
 1. **Tenant do token/contexto** — ignorar tentativas de override do cliente
 2. **Toda tabela de negócio** tem `tenant_id` NOT NULL + índice
 3. **Grupos SignalR** no formato `t:{tenantId}:c:{channelId}` (canal) e `t:{tenantId}` (presence)
-4. **Redis**: `t:{tenantId}:…` em presence/typing/cache
+4. **Redis**: `t:{tenantId}:…` em presence/typing/rate-limit/cache
 5. **Object keys**: `{tenantId}/{workspaceId}/…`
 6. **Busca** filtra por membership, não só por tenant
 7. **AI**: contexto isolado; proibido batch cross-tenant
