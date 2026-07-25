@@ -20,6 +20,10 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
     private const string MinioUser = "minioadmin";
     private const string MinioPassword = "minioadmin_dev_password_change_me";
     private const string MinioBucket = "vibechat";
+    private const string LocalRedisEndpoint = "localhost:6379";
+
+    // Keep test keys off the dev keyspace (database 0) on a shared local Redis.
+    private const int LocalRedisDatabase = 15;
 
     private PostgreSqlContainer? _postgres;
     private RedisContainer? _redis;
@@ -28,7 +32,7 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
 
     private string _database =
         "Host=localhost;Port=5432;Database=vibechat_test;Username=vibechat;Password=vibechat_dev_password_change_me";
-    private string _redisConnection = "localhost:6379";
+    private string _redisConnection = $"{LocalRedisEndpoint},defaultDatabase={LocalRedisDatabase}";
     private string _minioEndpoint = "localhost:9000";
 
     public async Task InitializeAsync()
@@ -37,7 +41,8 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
             await IsPortOpenAsync("127.0.0.1", 6379) &&
             await IsPortOpenAsync("127.0.0.1", 9000))
         {
-            await EnsureLocalTestDatabaseAsync();
+            await ResetLocalTestDatabaseAsync();
+            await ResetLocalTestRedisAsync();
             await EnsureBucketAsync(_minioEndpoint);
             return;
         }
@@ -122,17 +127,32 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Authentication:RequireHttpsMetadata", "false");
     }
 
-    private static async Task EnsureLocalTestDatabaseAsync()
+    // Testcontainers give every run a clean stack; a reused local stack does not, so
+    // drop the test database instead of keeping whatever the previous run wrote.
+    private static async Task ResetLocalTestDatabaseAsync()
     {
         await using var conn = new Npgsql.NpgsqlConnection(
             "Host=localhost;Port=5432;Database=postgres;Username=vibechat;Password=vibechat_dev_password_change_me");
         await conn.OpenAsync();
-        await using var check = new Npgsql.NpgsqlCommand("SELECT 1 FROM pg_database WHERE datname = 'vibechat_test'", conn);
-        var exists = await check.ExecuteScalarAsync();
-        if (exists is null)
+
+        await using (var drop = new Npgsql.NpgsqlCommand(
+            "DROP DATABASE IF EXISTS vibechat_test WITH (FORCE)", conn))
         {
-            await using var create = new Npgsql.NpgsqlCommand("CREATE DATABASE vibechat_test OWNER vibechat", conn);
-            await create.ExecuteNonQueryAsync();
+            await drop.ExecuteNonQueryAsync();
+        }
+
+        await using var create = new Npgsql.NpgsqlCommand("CREATE DATABASE vibechat_test OWNER vibechat", conn);
+        await create.ExecuteNonQueryAsync();
+    }
+
+    private static async Task ResetLocalTestRedisAsync()
+    {
+        using var connection = await StackExchange.Redis.ConnectionMultiplexer.ConnectAsync(
+            $"{LocalRedisEndpoint},allowAdmin=true");
+
+        foreach (var endpoint in connection.GetEndPoints())
+        {
+            await connection.GetServer(endpoint).FlushDatabaseAsync(LocalRedisDatabase);
         }
     }
 
