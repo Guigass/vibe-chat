@@ -1,6 +1,6 @@
 # Decisões Pendentes (Owner Humano) — VibeChat
 
-Estas decisões **não** devem ser tomadas unilateralmente por agentes de código. Bloqueiam aspectos legais, de marca e de produção. D-01…D-10 foram **fechadas pelo owner** em 2026-07-24 (Wave 4 / MVP P1); D-11…D-14 e a revisão de D-07 foram fechadas em **2026-07-25** para destravar as waves 8–10 (paridade de mensageria).
+Estas decisões **não** devem ser tomadas unilateralmente por agentes de código. Bloqueiam aspectos legais, de marca e de produção. D-01…D-10 foram **fechadas pelo owner** em 2026-07-24 (Wave 4 / MVP P1); D-11…D-15 e a revisão de D-07 foram fechadas em **2026-07-25** (paridade de mensageria + saída do PrimeNG).
 
 ## Lista
 
@@ -20,6 +20,7 @@ Estas decisões **não** devem ser tomadas unilateralmente por agentes de códig
 | D-12 | **Mensagem de áudio** | Formato, limites, privacidade da transcrição | Produto + Security | **Decidido (2026-07-25)** — anexo de áudio com MIME negociado no cliente; 5 min / 10 MB; transcrição opt-in atrás da flag de IA |
 | D-13 | **Notificações push** | Sai do perímetro self-host se usar serviço fechado | Ops + Security | **Decidido (2026-07-25)** — Web Push (VAPID) do próprio servidor; opt-in por usuário; sem FCM/APNs proprietário |
 | D-14 | **Idiomas suportados** | Custo de manutenção de catálogo | Produto | **Decidido (2026-07-25)** — `pt-BR` (default) e `en`; `@angular/localize`; sem terceiro idioma na fase 2 |
+| D-15 | **Licença do PrimeNG / PrimeUI** | `primeng@22` é comercial e, sem chave, injeta banner que cobre o composer | Founder / Legal | **Decidido (2026-07-25)** — **sair do PrimeNG** (opção c); ver B-104 + emenda ADR-002 |
 
 ## Registros
 
@@ -203,6 +204,46 @@ Escolha: pt-BR é o idioma default e en o segundo. Mecanismo: @angular/localize
 Data: 2026-07-25
 Owner: Produto
 Impacto em código/docs: spec B-100; apps/web; orientacoes.md
+```
+
+### D-15
+
+```text
+Decisão: D-15 — Decidido
+Contexto: primeng@22 deixou de ser OSS. O LICENSE.md do pacote instalado diz
+  "This package is part of PrimeUI, a family of commercial UI libraries by
+  PrimeTek Informatics" e "A valid license key is required to use this
+  software... A missing, invalid, or expired key may cause the software to
+  display a license notice".
+  Sem chave, primeng/fesm2022/primeng-license.mjs injeta um div position:fixed
+  no canto inferior direito, z-index 2147483647, dentro de shadow root
+  mode:'closed' — deliberadamente resistente a CSS. Na tela do chat ele cobre
+  os botões Anexar e Enviar (UX-002).
+  Isso conflita com duas coisas já escritas: "sem dependências proprietárias"
+  em AGENTS.md, e a emenda do ADR-002 que adotou PrimeNG no B-073 sem análise
+  de licença.
+
+Opções:
+  a) Community License (grátis) — exige elegibilidade anual declarada:
+     < US$ 1M de receita, < 5 devs, < 10 funcionários, < US$ 3M de captação.
+     Projeto OSS não comercial também qualifica. Precisa gerar e configurar a
+     chave; renovação anual.
+  b) Commercial License (paga) — por desenvolvedor, perpétua, 1 ano de updates.
+  c) Sair do PrimeNG — hoje o uso está confinado ao /admin (Table/Select/Tag);
+     o shell de chat já é composição própria. Substituir por componentes
+     próprios + CDK, e emendar o ADR-002 de novo.
+
+Escolha: (c) Sair do PrimeNG
+Data: 2026-07-25
+Owner: Founder / Legal
+Impacto em código/docs:
+  - Emenda ADR-002 supersede a adoção B-073; stack UI = Angular + CDK + composição
+    própria com tokens VibeChat
+  - Backlog B-104 (Wave 7) + spec docs/product/specs/B-104-remover-primeng.md
+  - Remover primeng do package.json, providePrimeNG, preset, styles/_primeng.scss
+  - Reescrever /admin (Table/Select/Tag) sem PrimeNG
+  - UX-002 deixa de ser Blocked; fecha quando B-104 mergear
+  - Agente NÃO compra/gera chave nem esconde o banner por CSS
 ```
 
 ## Orientações para agentes

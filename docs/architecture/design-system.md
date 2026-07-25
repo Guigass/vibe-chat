@@ -152,15 +152,14 @@ Não transformar o shell em dashboard com stats, strips e callouts.
 | Modais | Só para fluxos (criar channel, convidar); CDK overlay |
 | Painel de conversa | Coluna flex com `min-height: 0`; **scroll só na timeline**; composer fora do scroller (B-072) |
 
-### PrimeNG (Wave 6 / B-073 — emenda ADR-002 aceita)
+### UI kit (Wave 7 / B-104 / D-15 — emenda ADR-002)
 
-Usar para acelerar admin e formulários densos (DataTable, Dialog, Select, Toast). Obrigatório:
+**Não usar PrimeNG** (nem outra lib de UI comercial). Stack:
 
-- Preset `VibeChatPreset` (`apps/web/src/app/core/theme/vibechat.preset.ts`) amarrado aos tokens `--vc-*` (teal/charcoal, Sora / IBM Plex Sans)
-- `darkModeSelector: '[data-theme="dark"]'` alinhado ao `ThemeService`
-- Sem skins roxas/default genéricas
-- Chat shell continua composição própria; PrimeNG não vira “tema Slack”
-- Import modular por área (admin primeiro); não carregar DataTable no hot path do chat
+- Composição própria + tokens `--vc-*` (teal/charcoal, Sora / IBM Plex Sans)
+- Angular CDK para overlays, a11y, drag-drop e lists
+- Admin e chat compartilham a mesma linguagem visual; sem skins de terceiros
+- Histórico: B-073 introduziu PrimeNG no `/admin`; B-104 remove o pacote e reescreve Table/Select/Tag
 
 ---
 

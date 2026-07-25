@@ -14,12 +14,15 @@ Prefer finishing the roadmap over inventing work.
 
 ## Step A — Prefer the next eligible roadmap item
 
-Scan in order: W0 → W1 → W2 → W3 → W4 → W5 → W6 → P2 → P3.
+Scan in order: W0 → W1 → W2 → W3 → W4 → W5 → W6 → W7 → W8 → W9 → W10 → P2 → P3.
 
 Eligible when:
 
 - `Status` is `Planned` or empty — never `Done` and never `Blocked`
-- All `Deps` are `Done` (or `—` / empty)
+- All `Deps` are `Done` (or `—` / empty). Decisões humanas `D-*` com status
+  **Decidido** contam como deps satisfeitas.
+- Item de Wave 8+ (e B-104) só é elegível se existir spec em
+  `docs/product/specs/B-XXX-*.md`
 - Not blocked by an open human `D-*` that the item requires
 - No **open** PR already tagged with the same Wave/Backlog ID
 
@@ -27,7 +30,9 @@ If a whole wave table has **no `Status` column**, the roadmap is stale — that 
 make every row eligible. Cross-check `backlog.md` and the repo, report the stale table,
 and do not rework something already delivered.
 
-If several are eligible, pick the **first** row. Empty earlier waves first.
+If several are eligible, pick the **first** row in scan order. Empty earlier waves
+first. Em W7, **W7-6 (B-104)** vem antes de W7-3…W7-5 na tabela de propósito —
+remover PrimeNG desbloqueia o composer.
 
 ## Step B — If none eligible: find ONE small gap (not a feature)
 

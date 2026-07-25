@@ -63,7 +63,7 @@ W10-10, com spec — ver *Paridade de mensageria*.
 | B-067 | Auditoria completa de conversas (ADMIN) | **Done (Wave 6)** — `GET /admin/conversations*` + threads; body soft-delete visível; authZ `admin.dashboard`; distinto de `audit_events` (B-042) |
 | B-068 | Cadastro de usuário + diretivas (clareza + fluxo) | **Done (Wave 6)** — invite admin + claim pending no login; glossário Cadastro/Diretiva; sem self-signup |
 | B-069 | Configurações sensíveis só admin | **Done (Wave 6)** — `GET/PUT /admin/settings` mascarado; exige `workspace.admin` (não Auditor); AI/SMTP em env; webhook secret gravável (B-048) |
-| B-073 | UI polish com PrimeNG | **Done (Wave 6)** — emenda ADR-002 Accepted; PrimeNG 22 + `VibeChatPreset` (Aura/tokens) no `/admin` (Table/Select/Tag); shell chat permanece composição própria; polish forms/dialogs restante é iterativo |
+| B-073 | UI polish com PrimeNG | **Done (Wave 6)** — histórico; emenda ADR-002 da época Accepted; PrimeNG 22 no `/admin`. **Superseded por D-15 / B-104** (sair do PrimeNG) |
 | B-074 | API + Web (+ Worker) no Compose | **Done (Wave 6)** — profile `apps` caminho oficial (`task apps`); healthchecks api/web/worker; OIDC Authority + MetadataAddress; `GET /ready`; ops/README/`.env.example`; `task dev` só DX hot-reload |
 
 ## Sustentação — Wave 7
@@ -75,6 +75,7 @@ backlog ficam no **Registro de GAPs** (`roadmap.md`).
 | ID | Item | Notas |
 |----|------|-------|
 | B-075 | E2E Playwright na CI | **Done (W7-1)** — job **E2E (Playwright)** na CI com DevAuth; `infra/scripts/ci-e2e.sh` / `task test:e2e:ci` (#45) |
+| B-104 | Remover PrimeNG (UI própria + CDK) | Planned (W7-6) — D-15 opção (c); spec `docs/product/specs/B-104-remover-primeng.md`; prioridade sobre W7-3…W7-5 (desbloqueia composer / UX-002) |
 | B-076 | Atualização automatizada de dependências | Planned (W7-3) — sem `.github/dependabot.yml` nem renovate; `Dependency audit notes` na CI é informativo e nunca reprova o build |
 | B-077 | CSP no web | Planned (W7-4) — nginx do profile `proxy` já manda HSTS/`nosniff`/`X-Frame-Options`/`Referrer-Policy`; falta CSP |
 | B-078 | Limite de tamanho de body no envio | Planned (W7-5) — `Message.Body` limitado a 8000 só na coluna; `POST .../messages` não valida e devolve 500 em vez de 400 |
