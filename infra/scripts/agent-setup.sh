@@ -61,6 +61,62 @@ ensure_dotnet_ef() {
   dotnet tool update -g dotnet-ef >/dev/null 2>&1 || dotnet tool install -g dotnet-ef
 }
 
+# Cursor Cloud Agent VMs ship without Docker and without systemd, so Testcontainers
+# suites fail unless the daemon is installed and started by hand. Only touches hosts
+# with apt-get + passwordless sudo; a contributor laptop falls through untouched.
+ensure_docker() {
+  if docker info >/dev/null 2>&1; then
+    log "docker ready: $(docker --version)"
+    return 0
+  fi
+
+  if ! sudo -n true >/dev/null 2>&1; then
+    warn "Docker unavailable and no passwordless sudo; skipping compose and Testcontainers"
+    return 1
+  fi
+
+  if ! command -v docker >/dev/null 2>&1; then
+    if ! command -v apt-get >/dev/null 2>&1; then
+      warn "Docker not installed and apt-get unavailable; install Docker manually"
+      return 1
+    fi
+    log "Installing Docker (docker.io + compose v2 + fuse-overlayfs)..."
+    sudo -n env DEBIAN_FRONTEND=noninteractive apt-get update -qq
+    sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+      docker.io docker-compose-v2 fuse-overlayfs
+  fi
+
+  # Docker 29 defaults to the containerd snapshotter, which cannot run on this VM.
+  if [[ ! -f /etc/docker/daemon.json ]]; then
+    log "Writing /etc/docker/daemon.json (fuse-overlayfs; containerd snapshotter off)"
+    sudo -n mkdir -p /etc/docker
+    printf '%s\n' '{
+  "storage-driver": "fuse-overlayfs",
+  "features": { "containerd-snapshotter": false }
+}' | sudo -n tee /etc/docker/daemon.json >/dev/null
+  fi
+
+  if ! pgrep -x dockerd >/dev/null 2>&1; then
+    log "Starting dockerd (log: /tmp/dockerd.log)..."
+    sudo -n sh -c 'nohup dockerd >/tmp/dockerd.log 2>&1 &'
+  fi
+
+  local attempt
+  for attempt in $(seq 1 30); do
+    if [[ -S /var/run/docker.sock ]]; then
+      sudo -n chmod 666 /var/run/docker.sock || true
+    fi
+    if docker info >/dev/null 2>&1; then
+      log "docker ready after ${attempt} attempt(s): $(docker --version)"
+      return 0
+    fi
+    sleep 2
+  done
+
+  warn "dockerd did not become ready; see /tmp/dockerd.log"
+  return 1
+}
+
 ensure_env_file() {
   if [[ ! -f .env ]]; then
     log "Copying .env.example → .env"
@@ -90,12 +146,12 @@ restore_and_npm() {
 }
 
 start_compose() {
-  if ! command -v docker >/dev/null 2>&1; then
-    warn "Docker not available; skipping compose up"
-    return 0
-  fi
   if ! docker info >/dev/null 2>&1; then
     warn "Docker daemon not reachable; skipping compose up"
+    return 0
+  fi
+  if ! docker compose version >/dev/null 2>&1; then
+    warn "Compose v2 plugin missing; skipping compose up"
     return 0
   fi
   log "Starting Compose data plane..."
@@ -137,6 +193,7 @@ main() {
   ensure_dotnet
   ensure_task
   ensure_env_file
+  ensure_docker || true
   restore_and_npm
   start_compose
   migrate_and_seed
