@@ -40,8 +40,12 @@ Only then look for a single improvement, in this priority:
 
 1. Broken / flaky test or clear regression in the vertical slice
 2. Multi-tenant / authZ / RLS hole already hinted in docs or QA nits
-3. Contract/docs drift vs code (small sync, not a rewrite)
-4. Obvious bug in an existing path (with a regression test)
+3. Open **Alta** finding in `docs/product/ux-findings.md` (skip `Blocked` ones)
+4. Contract/docs drift vs code (small sync, not a rewrite)
+5. Obvious bug in an existing path (with a regression test)
+6. Open **Média** finding in `docs/product/ux-findings.md`
+
+When you close a `UX-<n>`, mark it `Done` with the PR number in the registry.
 
 **Hard budget (anti-overengineering):**
 

@@ -8,24 +8,32 @@ para [cursor.com/automations](https://cursor.com/automations) (a API só lê met
 | 1 | `01-build.prompt.md` | **Build / Melhorias** (ex-Implement / Next on Merge) | Schedule (ex.: a cada 2–4h) **ou** webhook após docs | Open PR, Memories |
 | 2 | `02-qa-merge.prompt.md` | **QA + Merge** | PR opened + PR pushed + CI completed | Comment, Approve, Memories |
 | 3 | `03-docs.prompt.md` | **Docs / Close** | PR merged → `main` | Open PR (docs-only), Memories |
-| 4 | — (template Cursor) | **Security Reviewer** | PR opened + PR pushed | Inline review comments |
+| 4 | `04-ux-review.prompt.md` | **UX Review** | Schedule (ex.: 1×/dia) | Open PR (docs-only), Memories |
+| 5 | — (template Cursor) | **Security Reviewer** | PR opened + PR pushed | Inline review comments |
 
-A automação 4 não tem prompt versionado aqui: é o template genérico de security
+A automação 5 não tem prompt versionado aqui: é o template genérico de security
 review da Cursor, editável só no dashboard. Ela publica o status check
 `Cursor Security Agent: Security Reviewer`, que o QA lê antes de mergear.
+
+A automação 4 **roda a interface de verdade** (`task ux:stack`), navega pelo percurso
+de `docs/product/ux-review-checklist.md` e registra o que observou em
+`docs/product/ux-findings.md`. Ela não corrige nada — quem corrige é o Build, que
+consome os achados abertos no modo manutenção.
 
 ## Fluxo
 
 ```text
 [1 Build] → PR ready (nunca draft — senão o QA não dispara)
      ↓
-[4 Security Reviewer] (paralelo) → status check no PR
+[5 Security Reviewer] (paralelo) → status check no PR
      ↓
 [2 QA] verifica qualidade/segurança → approve (+ auto-merge GitHub)
      ↓
 [3 Docs] marca Done no roadmap + sincroniza contratos/glossário/ops
      ↓
 (schedule) → [1 Build] de novo
+
+[4 UX Review] (schedule próprio) → roda a UI → ux-findings.md → alimenta o Build
 ```
 
 > **Draft = pipeline parado.** Build e Docs devem abrir PR **ready for review**.
@@ -50,6 +58,7 @@ IDs atuais (conferidos em 2026-07-25 via API de automações):
 | VibeChat — 1) Build / Melhorias | `24ef1c58-87a9-11f1-b532-320a589b8025` | `01-build.prompt.md`; PR **ready** (nunca draft) |
 | VibeChat — 2) QA + Merge | `5589b810-87a9-11f1-b532-320a589b8025` | `02-qa-merge.prompt.md` |
 | VibeChat — 3) Docs / Close | `7de10419-87a9-11f1-b532-320a589b8025` | `03-docs.prompt.md`; PR **ready** (nunca draft) |
+| VibeChat — 4) UX Review | (criar no dashboard) | `04-ux-review.prompt.md`; PR **ready** (nunca draft) |
 | Security Reviewer | `80bb325d-87d6-11f1-b532-320a589b8025` | template Cursor (só no dashboard) |
 
 O ID `294fd0db-8796-…`, listado aqui antes, não existe mais.
