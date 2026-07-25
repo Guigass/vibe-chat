@@ -250,8 +250,12 @@ public interface IRateLimiter
 
 public static class RateLimitKeys
 {
-    public static string SendMessage(TenantId tenantId, UserId userId) => $"rl:send:{tenantId.Value:N}:{userId.Value:N}";
-    public static string Hub(TenantId tenantId, UserId userId) => $"rl:hub:{tenantId.Value:N}:{userId.Value:N}";
+    // GAP-redis-keys — tenant-first prefix (docs/security/multi-tenant.md)
+    public static string SendMessage(TenantId tenantId, UserId userId) =>
+        $"t:{tenantId.Value}:rl:send:{userId.Value}";
+
+    public static string Hub(TenantId tenantId, UserId userId) =>
+        $"t:{tenantId.Value}:rl:hub:{userId.Value}";
 }
 
 public static class RateLimitPolicies

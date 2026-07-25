@@ -826,7 +826,25 @@ public sealed class TypingService(RedisConnection redis, IClock clock) : ITyping
             .ToArray();
     }
 
-    private static string Key(TenantId tenantId, ChannelId channelId) => $"typing:{tenantId}:{channelId}";
+    private static string Key(TenantId tenantId, ChannelId channelId) => RedisKeys.Typing(tenantId, channelId);
+}
+
+/// <summary>
+/// Redis key helpers — always tenant-first (<c>t:{tenantId}:…</c>) per multi-tenant.md.
+/// </summary>
+public static class RedisKeys
+{
+    public static string Typing(TenantId tenantId, ChannelId channelId) =>
+        $"t:{tenantId.Value}:typing:{channelId.Value}";
+
+    public static string PresenceStatus(TenantId tenantId, UserId userId) =>
+        $"t:{tenantId.Value}:presence:status:{userId.Value}";
+
+    public static string PresenceConnections(TenantId tenantId, UserId userId) =>
+        $"t:{tenantId.Value}:presence:conn:{userId.Value}";
+
+    public static string PresenceUsers(TenantId tenantId) =>
+        $"t:{tenantId.Value}:presence:users";
 }
 
 public sealed class PresenceService(RedisConnection redis, IClock clock) : IPresenceService
@@ -950,9 +968,9 @@ public sealed class PresenceService(RedisConnection redis, IClock clock) : IPres
         return entry.Status;
     }
 
-    private static string StatusKey(TenantId tenantId, UserId userId) => $"presence:status:{tenantId}:{userId}";
-    private static string ConnectionsKey(TenantId tenantId, UserId userId) => $"presence:conn:{tenantId}:{userId}";
-    private static string UsersKey(TenantId tenantId) => $"presence-users:{tenantId}";
+    private static string StatusKey(TenantId tenantId, UserId userId) => RedisKeys.PresenceStatus(tenantId, userId);
+    private static string ConnectionsKey(TenantId tenantId, UserId userId) => RedisKeys.PresenceConnections(tenantId, userId);
+    private static string UsersKey(TenantId tenantId) => RedisKeys.PresenceUsers(tenantId);
 }
 
 public sealed class MinioObjectStorage(IMinioClient minioClient, IConfiguration configuration) : IObjectStorage

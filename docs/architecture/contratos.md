@@ -437,7 +437,16 @@ public interface IPresenceService
 }
 ```
 
-Redis: keys `presence:status:{tenantId}:{userId}` (TTL), `presence:conn:{tenantId}:{userId}`, `presence-users:{tenantId}`. Typing permanece em `ITypingService`.
+Redis (prefixo tenant-first, ver `multi-tenant.md`):
+
+| Uso | Key |
+|-----|-----|
+| Presence status | `t:{tenantId}:presence:status:{userId}` (TTL) |
+| Presence connections | `t:{tenantId}:presence:conn:{userId}` |
+| Presence users set | `t:{tenantId}:presence:users` |
+| Typing hash | `t:{tenantId}:typing:{channelId}` |
+
+Typing permanece em `ITypingService`.
 
 ---
 
@@ -450,7 +459,7 @@ public interface IRateLimiter
 }
 ```
 
-Fase 1: Redis fixed-window (`INCR` + `EXPIRE`). Aplicado em `POST .../messages` (429) e hub `JoinChannel`/`SendTyping` (`HubException`). Config: `RateLimit:SendPerMinute`, `RateLimit:HubPerMinute`. Sem Redis configurado: fail-open.
+Fase 1: Redis fixed-window (`INCR` + `EXPIRE`). Keys: `t:{tenantId}:rl:send:{userId}`, `t:{tenantId}:rl:hub:{userId}`. Aplicado em `POST .../messages` (429) e hub `JoinChannel`/`SendTyping` (`HubException`). Config: `RateLimit:SendPerMinute`, `RateLimit:HubPerMinute`. Sem Redis configurado: fail-open.
 
 ---
 

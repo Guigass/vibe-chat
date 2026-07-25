@@ -85,11 +85,36 @@ public sealed class BackendUnitTests
     public void Rate_limit_keys_are_tenant_and_user_scoped()
     {
         var tenant = new TenantId(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        var otherTenant = new TenantId(Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"));
         var user = new UserId(Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
 
-        RateLimitKeys.SendMessage(tenant, user).Should().Contain("rl:send:");
-        RateLimitKeys.Hub(tenant, user).Should().Contain("rl:hub:");
+        RateLimitKeys.SendMessage(tenant, user)
+            .Should().Be($"t:{tenant.Value}:rl:send:{user.Value}");
+        RateLimitKeys.Hub(tenant, user)
+            .Should().Be($"t:{tenant.Value}:rl:hub:{user.Value}");
         RateLimitKeys.SendMessage(tenant, user).Should().NotBe(RateLimitKeys.Hub(tenant, user));
+        RateLimitKeys.SendMessage(tenant, user)
+            .Should().NotBe(RateLimitKeys.SendMessage(otherTenant, user));
+    }
+
+    [Fact]
+    public void Redis_keys_are_tenant_prefixed()
+    {
+        // GAP-redis-keys — align with docs/security/multi-tenant.md
+        var tenant = new TenantId(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        var otherTenant = new TenantId(Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"));
+        var channel = new ChannelId(Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
+        var user = new UserId(Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"));
+
+        RedisKeys.Typing(tenant, channel).Should().Be($"t:{tenant.Value}:typing:{channel.Value}");
+        RedisKeys.PresenceStatus(tenant, user).Should().Be($"t:{tenant.Value}:presence:status:{user.Value}");
+        RedisKeys.PresenceConnections(tenant, user).Should().Be($"t:{tenant.Value}:presence:conn:{user.Value}");
+        RedisKeys.PresenceUsers(tenant).Should().Be($"t:{tenant.Value}:presence:users");
+
+        RedisKeys.Typing(tenant, channel).Should().NotBe(RedisKeys.Typing(otherTenant, channel));
+        RedisKeys.PresenceUsers(tenant).Should().NotBe(RedisKeys.PresenceUsers(otherTenant));
+        RedisKeys.Typing(tenant, channel).Should().NotStartWith("typing:");
+        RedisKeys.PresenceStatus(tenant, user).Should().NotStartWith("presence:");
     }
 
     [Fact]
