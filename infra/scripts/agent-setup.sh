@@ -101,6 +101,10 @@ ensure_docker() {
     sudo -n sh -c 'nohup dockerd >/tmp/dockerd.log 2>&1 &'
   fi
 
+  # Some Cloud Agent images leave /var/run as 0700 (not a symlink to /run), so
+  # chmod 666 on the socket alone is not enough for the unprivileged agent user.
+  sudo -n chmod 755 /var/run 2>/dev/null || true
+
   local attempt
   for attempt in $(seq 1 30); do
     if [[ -S /var/run/docker.sock ]]; then

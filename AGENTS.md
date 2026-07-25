@@ -107,9 +107,10 @@ não óbvios de execução. Comandos padrão estão no `README.md` e `Taskfile.y
   (o install script do ambiente) instala `docker.io`, `docker-compose-v2` e
   `fuse-overlayfs`, escreve `/etc/docker/daemon.json` com
   `storage-driver: fuse-overlayfs` + `containerd-snapshotter: false` (necessário
-  no Docker 29), sobe o `dockerd` e libera o socket. É idempotente: ~10 s na
-  primeira vez, ~0 s depois. Se `docker info` falhar no meio de uma sessão, rode
-  o script de novo em vez de repetir os passos à mão. Log: `/tmp/dockerd.log`.
+  no Docker 29), sobe o `dockerd` e libera `/var/run` + o socket. É idempotente:
+  ~10 s na primeira vez, ~0 s depois. Se `docker info` falhar no meio de uma
+  sessão, rode o script de novo em vez de repetir os passos à mão. Log:
+  `/tmp/dockerd.log`.
 - **Data plane**: `docker compose up -d postgres redis keycloak minio createbucket`.
   O `compose.override.yaml` usa `network_mode: host`, então tudo escuta em
   `localhost` (5432/6379/8080/9000). Keycloak leva ~40s para ficar healthy.
