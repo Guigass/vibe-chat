@@ -70,6 +70,8 @@ Nota (GAP-signalr-groups / #47): grupos SignalR alinhados a `t:{tenantId}:c:{cha
 
 Nota (GAP-hub-t3 / #37): hub T3 `JoinChannel`/`SendTyping` cross-tenant coberto em `tests/security`; `multi-tenant.md` + `modelo-ameacas.md` já no feature PR.
 
+Nota (GAP-redis-keys / #49): keys Redis presence/typing/rate-limit no formato `t:{tenantId}:…`; `contratos.md` + regressão unitária no feature PR.
+
 ## Wave 4 — Extensões pós-fatia (paralelizável)
 
 | ID | Trilha | Tarefa | Deps | Status |
