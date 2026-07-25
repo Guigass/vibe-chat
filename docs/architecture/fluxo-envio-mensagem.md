@@ -78,8 +78,8 @@ sequenceDiagram
   participant C2 as Outros
 
   C->>API: Hub TypingStart
-  API->>RD: SET typing:{conv}:{user} EX 3
-  API->>C2: typing.started
+  API->>RD: HSET t:{tenantId}:typing:{channelId} + EXPIRE
+  API->>C2: Typing (OthersInGroup)
   Note over RD: TTL expira sem evento obrigatório
 ```
 
