@@ -34,7 +34,7 @@
 
 1. Verificar linha na tabela `outbox` — `processed_at` nulo?
 2. Worker está up? Logs de claim/erro
-3. Cliente no grupo SignalR correto? (`t:{tenant}:c:{conversation}`)
+3. Cliente no grupo SignalR correto? (`t:{tenant}:c:{channel}`)
 4. Redis backplane configurado se multi-API?
 5. Cliente precisa gap-fill via history (`seq`)
 

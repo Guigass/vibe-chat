@@ -107,7 +107,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 ## Ameaças priorizadas para a fatia vertical
 
 1. Leitura/escrita cross-tenant
-2. Join SignalR em conversation sem membership
+2. Join SignalR em canal (`JoinChannel`) sem membership / grupo sem namespace de tenant
 3. Replay/duplicação abusiva sem rate-limit
 4. Token leak no frontend (storage inseguro / logs)
 5. Exposição de AI/SMTP secrets a membros (R-17 / B-069)
