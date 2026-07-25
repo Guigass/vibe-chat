@@ -31,11 +31,5 @@ export default defineConfig({
     video: 'retain-on-failure',
     ...devices['Desktop Chrome'],
   },
-  // Uncomment when CI starts web+api as part of the job:
-  // webServer: {
-  //   command: 'task dev',
-  //   url: baseURL,
-  //   reuseExistingServer: !process.env.CI,
-  //   timeout: 180_000,
-  // },
+  // CI (W7-1): API + Web are started by infra/scripts/ci-e2e.sh before Playwright.
 });

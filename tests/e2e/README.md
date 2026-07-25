@@ -36,6 +36,20 @@ E2E_AUTH_MODE=oidc npm test
 
 Ou via Taskfile: `task test:e2e`.
 
+## CI (W7-1 / B-075)
+
+O job **E2E (Playwright)** em `.github/workflows/ci.yml` sobe o data plane
+(`compose.yaml`: postgres/redis/minio), API Development + Web, e roda os specs
+com `E2E_AUTH_MODE=devauth` (sem Keycloak).
+
+Reproduzir localmente o mesmo caminho:
+
+```bash
+./infra/scripts/ci-e2e.sh
+# ou reutilizar stack já no ar:
+SKIP_COMPOSE=1 SKIP_APPS=1 E2E_AUTH_MODE=devauth ./infra/scripts/ci-e2e.sh
+```
+
 ## DevAuth
 
 Quando `ASPNETCORE_ENVIRONMENT=Development`, a API aceita:

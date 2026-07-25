@@ -106,14 +106,19 @@ tasks:
       - dotnet test tests/integration/VibeChat.IntegrationTests.csproj --verbosity minimal
 
   test:e2e:
-    desc: Playwright end-to-end tests
+    desc: Playwright end-to-end tests (expects API+Web up; CI uses infra/scripts/ci-e2e.sh)
     cmds:
       - |
         if [[ ! -d tests/e2e/node_modules ]]; then
           npm ci --prefix tests/e2e 2>/dev/null || npm install --prefix tests/e2e
           npx --prefix tests/e2e playwright install chromium
         fi
-        npm test --prefix tests/e2e
+        E2E_AUTH_MODE="${E2E_AUTH_MODE:-devauth}" npm test --prefix tests/e2e
+
+  test:e2e:ci:
+    desc: Full E2E path used in CI (W7-1) — compose data plane + API + Web + Playwright
+    cmds:
+      - ./infra/scripts/ci-e2e.sh
 
   test:architecture:
     desc: Architecture / module boundary tests

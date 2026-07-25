@@ -147,6 +147,9 @@ task test:e2e
 
 E2E: ver `tests/e2e/README.md` (modos `demo`, `devauth`, `oidc`).
 
+Na CI (W7-1 / B-075), o job **E2E (Playwright)** executa os specs com DevAuth
+via `./infra/scripts/ci-e2e.sh` (data plane Compose + API/Web no host).
+
 ## Leitura obrigatória antes de codar
 
 - `docs/product/glossario.md`
