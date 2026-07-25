@@ -65,7 +65,7 @@ Prioridade sobre P2 novo de diferenciação. Detalhe em `docs/roadmap/roadmap.md
 | Cadastro + diretivas | Keycloak autentica → perfil (stub pending ou espelho) → membership via invite admin; diretivas = papéis (B-068) | **Done** |
 | Secrets / integrações | Tokens, webhooks, AI/SMTP só para administradores (B-069, B-048) | **Done** (B-069 + B-048 MessageCreated) |
 | Auditoria de conversas | Viewer ADMIN completo por canal/DM/thread, além do audit log de ações (B-067) | **Done** |
-| UI | Polish com PrimeNG alinhado aos tokens; emenda ADR-002 (B-073) | **Done** — `/admin`; shell próprio |
+| UI | Polish admin com tokens VibeChat (B-073 histórico; **B-104** remove PrimeNG / D-15) | B-073 Done; **B-104 Planned** — sair do PrimeNG |
 | Compose apps | API + Web (+ Worker) em containers no Compose como deploy oficial self-host (B-074); `task dev` só para DX com hot reload | **Done** — `task apps` |
 
 ## Riscos principais
