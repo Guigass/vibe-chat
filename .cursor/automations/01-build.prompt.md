@@ -58,10 +58,12 @@ first. Em W7, **W7-6 (B-104)** vem antes de W7-3…W7-5 na tabela de propósito 
 remover PrimeNG e adotar spartan/ui (D-27) desbloqueia o composer. Do not skip an
 eligible earlier item to start a more exciting long-term feature.
 
-Confirm the R0–R3 class declared by the spec using `docs/agents/autonomia.md`
-before editing. Correct it only with a concrete rationale in the PR. Apply all
-gates for the confirmed class and record it in the PR body. R3 work starts from
-`docs/architecture/pacotes-decisao-r3.md`.
+For B-* work, confirm the R0–R3 class declared by the spec. For safety-lane
+work, use `Risk class` in the detailed finding; missing class makes the finding
+ineligible until a docs reconciliation. Correct a class only with concrete
+rationale in the PR. Apply all gates and record it in the PR body. R3 feature
+work starts from `docs/architecture/pacotes-decisao-r3.md`; R3 security findings
+also start from their referenced ADR/threat-model contract.
 
 Reserve it using the lease protocol in `docs/agents/operacao-24x7.md` before
 editing. Re-check open PRs after acquiring the lease. Release the lease on

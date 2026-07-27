@@ -115,6 +115,8 @@ Antes de deixar o ciclo sem supervisão, confirmar:
 - [ ] QA/Security deduplicam eventos pelo `head_sha`;
 - [ ] token possui apenas escopos necessários;
 - [ ] environments de produção continuam protegidos e fora do token;
+- [ ] API/Worker usam role PostgreSQL sem ownership, `SUPERUSER` ou
+      `BYPASSRLS`, e os testes de RLS passam com a credencial real de runtime;
 - [ ] custo/quotas de agentes possuem alertas;
 - [ ] backup e restore do repositório/configuração da automação estão descritos;
 - [ ] textos dos prompts versionados foram sincronizados no dashboard.

@@ -194,6 +194,8 @@ Aplica-se a B-141/B-063/B-143.
 - Reconnect faz gap-fill e reenvia operações idempotentes.
 - Edit conflitante mostra estado e não sobrescreve silenciosamente.
 - Delete/retention revogam cache local na próxima sincronização.
+- IDs, ack, cursor, tombstone e rebuild seguem
+  [`protocolo-sync-realtime.md`](protocolo-sync-realtime.md).
 
 ### ADR deve decidir
 
@@ -225,6 +227,7 @@ Aplica-se a B-064 e D-26.
 
 - protocolo e biblioteca públicos, maduros e auditados;
 - nenhuma criptografia própria;
+- avaliar MLS como candidato padrão para grupos antes de escolher alternativa;
 - forward secrecy e rotação documentadas;
 - device verification;
 - tratamento de membro adicionado/removido;
@@ -281,13 +284,14 @@ Desabilitar criação de sessão; sessões existentes expiram; chat permanece at
 
 ## HA, capacidade e storage
 
-Aplica-se a B-145/B-146/B-144 e D-25.
+Aplica-se a B-145/B-146/B-144 e D-25/D-28.
 
 ### Perfis
 
 | Perfil | Objetivo |
 |--------|----------|
-| Standard | Compose, 99,9% como objetivo, RPO 24h, RTO 4h |
+| Basic/Dev | Compose simples, sem objetivo de disponibilidade, RPO ≤24h/RTO ≤4h best effort |
+| Standard | 99,9% como objetivo, PITR/WAL, RPO ≤1h, RTO ≤4h |
 | HA | 99,95% como objetivo, RPO ≤5 min, RTO ≤30 min |
 
 São objetivos da referência, não SLA comercial.
@@ -301,6 +305,9 @@ São objetivos da referência, não SLA comercial.
 - migration com versões adjacentes;
 - storage growth e lifecycle;
 - custo operacional documentado.
+- SignalR multi-instância segue [`signalr-ha.md`](signalr-ha.md).
+- Dados e objetos seguem
+  [`ciclo-vida-dados.md`](../security/ciclo-vida-dados.md).
 
 ### ADR deve decidir
 
@@ -376,6 +383,7 @@ Hold fora do escopo não suspende purge globalmente.
 - formatos de export;
 - mecanismos de DLP;
 - integração SCIM/Keycloak;
+- porta de provisioning independente do adapter/IdP;
 - delegação e quotas.
 
 ### Gate R4

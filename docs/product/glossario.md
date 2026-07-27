@@ -53,7 +53,12 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 
 | Termo | Definição |
 |-------|-----------|
-| **User** | Identidade de pessoa; source of truth de autenticação no Keycloak (OIDC). Perfil espelhado/enriquecido no VibeChat. |
+| **User** | Perfil humano local estável usado como ator. Autenticação vem de External Identity no IdP; memberships e papéis continuam no VibeChat. |
+| **Person** | Pessoa natural, quando conhecida. Não é credencial, sessão, membership nem identificador de autorização. |
+| **External Identity** | Vínculo autenticado `(issuer, subject)` vindo de IdP. E-mail é atributo mutável, não chave canônica. |
+| **Principal** | Ator autorizável: User, Guest, Bot, Service Account ou Automation. Papel pertence ao vínculo/escopo, não globalmente ao principal. |
+| **Device** | Instalação registrada de cliente, usada por push, offline, remote logout e E2EE. Não concede acesso sem sessão/membership atual. |
+| **Session** | Sessão autenticada e revogável associada a principal e, quando disponível, device. Token não substitui revalidação de membership. |
 | **Cadastro / Provisionamento** | Fluxo em duas camadas: (1) **autenticação** no IdP (Keycloak/OIDC cria a identidade); (2) **autorização** no VibeChat via Membership + Diretivas. Login sozinho **não** concede acesso a workspace — falta membership. Admin convida por e-mail (`POST .../members`) e atribui papel; perfil stub `pending:{email}` é vinculado no primeiro SSO. Seed/demo permanece para DX. Sem self-signup aberto na fase 1 (B-068). |
 | **Diretiva** | Regra de autorização derivada do papel (`Role` + `RolePermissionCatalog` / policies de workspace). Ex.: quem pode `channel.create`, `workspace.admin`, `admin.dashboard`, `ai.summarize`, `ai.suggest_reply`. Gerenciada na UI admin junto ao cadastro. Não confundir com “prompt” de IA. |
 | **OIDC / SSO** | OpenID Connect; fluxo padrão via Keycloak. |
@@ -92,6 +97,8 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Playbook** | Sequência operacional reutilizável de passos, owners e evidências, por exemplo para incidente ou onboarding. |
 | **Bridge** | Integração que replica eventos/identidades entre VibeChat e outra rede; implica cópia de dados fora do domínio local. |
 | **Federação** | Comunicação server-to-server entre instâncias independentes, com identidade e dados distribuídos. Não confundir com multi-tenancy local. |
+| **Import batch** | Execução versionada e idempotente que transforma export externo em recursos canônicos após dry-run/staging; não é bridge contínua. |
+| **Support bundle** | Pacote diagnóstico allowlisted, sanitizado, temporário e auditado; nunca dump amplo de logs/dados. |
 
 ## IA (opcional)
 

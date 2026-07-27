@@ -16,6 +16,15 @@ Convenções futuras de contratos/flags:
 - Evento durável usa outbox; consumidor é idempotente.
 - Migration é forward-compatible com rolling upgrade quando B-144 se aplicar.
 - Delete, purge, legal hold e export cobrem projeções derivadas.
+- Derivados seguem provenance e separação de
+  [`estado/outbox/audit/projeções`](../../architecture/estado-eventos-auditoria-projecoes.md).
+- Principals e memberships seguem o
+  [`modelo canônico de identidade`](../../architecture/modelo-identidade-principals.md).
+- Realtime/offline segue o
+  [`protocolo de sincronização`](../../architecture/protocolo-sync-realtime.md).
+- Dados e anexos seguem a
+  [`matriz de lifecycle`](../../security/ciclo-vida-dados.md) e o
+  [`pipeline canônico`](../../architecture/pipeline-anexos.md).
 
 ## Segurança
 

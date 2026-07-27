@@ -47,11 +47,27 @@
 
 ## RLS (orientação)
 
-- Habilitar RLS nas tabelas sensíveis
-- Policy de SELECT/INSERT/UPDATE/DELETE baseada em `app.tenant_id`
-- Role da aplicação **sem** atributo bypassrls
-- Migrations rodam com role privilegiada controlada
-- Após abrir conexão/unit of work: `SET LOCAL app.tenant_id = '…'`
+- Habilitar e **forçar** RLS em toda tabela tenant-aware (`ENABLE` + `FORCE ROW
+  LEVEL SECURITY`)
+- Policy de SELECT/DELETE usa `USING`; INSERT/UPDATE também usa `WITH CHECK`
+  baseada em `app.tenant_id`
+- Role runtime da aplicação não é owner, superuser nem possui `BYPASSRLS`
+- Migrations rodam com role privilegiada separada e controlada
+- API e Worker nunca recebem a credencial de migration/owner
+- Após iniciar transação/unit of work: `SET LOCAL app.tenant_id = '…'`
+- Ausência/valor inválido de `app.tenant_id` falha fechado
+
+### Roles de banco
+
+| Role conceitual | Uso | Proibido |
+|-----------------|-----|----------|
+| `vibechat_migrator` | schema, migrations, policies e grants | connection string de API/Worker |
+| `vibechat_app` | queries/mutações tenant-scoped | ownership, superuser, `BYPASSRLS`, DDL |
+| `vibechat_backup` | backup/restore conforme runbook | uso pela aplicação |
+
+Nomes podem variar por ambiente, mas a separação de autoridade não. O finding
+[`SEC-RLS-RUNTIME`](../roadmap/operational-findings.md#sec-rls-runtime) rastreia
+a implementação ainda pendente deste contrato.
 
 ## Casos de teste obrigatórios
 
@@ -74,6 +90,10 @@
 | T15 | Purge com `MessageRetention:Enabled=false` | Nenhuma mensagem hard-deletada (B-047) |
 | T16 | Catálogo RLS (`infra/compose/postgres/03-rls.sql`) inclui `messaging.message_retention_settings` | Policy `tenant_isolation_message_retention_settings` em `"TenantId"` (GAP pós B-047) |
 | T17 | Catálogo RLS cobre todas as tabelas de negócio com `TenantId` (ex.: `conversation_sequences`, `outbox_messages`, `ai.settings`, `email_settings`) | ENABLE + policy por tabela; arch test `Rls_catalog_covers_all_tenant_scoped_business_tables` (GAP-rls-catalog) |
+| T18 | API/Worker consultam como role dona/superuser/`BYPASSRLS` | Preflight/startup falha; credencial recusada |
+| T19 | Runtime sem `app.tenant_id` executa SELECT/INSERT/UPDATE/DELETE | Falha fechado / nenhuma linha; nunca acesso global |
+| T20 | Runtime tenta gravar `"TenantId"` diferente do `SET LOCAL` | Negado por `WITH CHECK` |
+| T21 | Owner/migrator e runtime são comparados no mesmo cenário cross-tenant | Teste da aplicação usa runtime e prova enforcement real |
 
 ## Operação multi-tenant vs single-tenant
 

@@ -142,7 +142,8 @@ ADRs 015–017 continuam baseados em gatilhos medidos. “O projeto será grande
 - gates R2;
 - ADR;
 - threat model;
-- feature flag off por default;
+- feature opcional atrás de flag off por default; controle fundamental de
+  segurança (ex.: RLS runtime) não recebe bypass/kill switch;
 - failure mode e rollback testados;
 - secrets/PII revistos;
 - load/capacity test proporcional;

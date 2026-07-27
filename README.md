@@ -13,8 +13,11 @@ Plataforma de **chat corporativo open-source e self-hosted**. Organizações ins
 - MinIO para anexos (S3-compatible)
 - Observabilidade opcional (OTel, Prometheus, Grafana, Loki, Tempo)
 
-Visão de produto: [`docs/product/visao.md`](docs/product/visao.md)  
-Arquitetura: [`docs/architecture/visao-geral.md`](docs/architecture/visao-geral.md)
+- Visão de produto: [`docs/product/visao.md`](docs/product/visao.md)
+- Arquitetura: [`docs/architecture/visao-geral.md`](docs/architecture/visao-geral.md)
+- Protocolos centrais: [identidade](docs/architecture/modelo-identidade-principals.md),
+  [sync/realtime](docs/architecture/protocolo-sync-realtime.md) e
+  [ciclo de dados](docs/security/ciclo-vida-dados.md)
 
 ## Quick start
 

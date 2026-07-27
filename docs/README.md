@@ -14,8 +14,8 @@ estado de entrega e a operação do VibeChat.
 | Entender o produto | [Visão](product/visao.md) → [visão de longo prazo](product/visao-longo-prazo.md) → [glossário](product/glossario.md) |
 | Saber o que existe hoje | [Estado atual](roadmap/estado-atual.md) → [roadmap](roadmap/roadmap.md) |
 | Planejar uma feature | [Backlog](roadmap/backlog.md) → [specs](product/specs/README.md) → [decisões](roadmap/decisoes-pendentes.md) |
-| Entender a arquitetura | [Visão geral](architecture/visao-geral.md) → [módulos](architecture/diagrama-modulos.md) → [contratos](architecture/contratos.md) |
-| Revisar segurança | [Multi-tenancy](security/multi-tenant.md) → [modelo de ameaças](security/modelo-ameacas.md) |
+| Entender a arquitetura | [Visão geral](architecture/visao-geral.md) → [domínio](architecture/modelo-dominio.md) → [identidade](architecture/modelo-identidade-principals.md) → [contratos](architecture/contratos.md) |
+| Revisar segurança | [Multi-tenancy](security/multi-tenant.md) → [modelo de ameaças](security/modelo-ameacas.md) → [ciclo de dados](security/ciclo-vida-dados.md) |
 | Desenvolver localmente | [Desenvolvimento](operations/desenvolvimento.md) → [configuração](operations/configuracao-env.md) |
 | Operar uma instância | [Operação](operations/operacao.md) → [runbooks](operations/runbooks/README.md) |
 | Trabalhar como agente | [`AGENTS.md`](../AGENTS.md) → [orientações](agents/orientacoes.md) |
@@ -59,9 +59,14 @@ gap, não defendida apenas pelo texto.
 
 - [Visão geral](architecture/visao-geral.md)
 - [Modelo de domínio](architecture/modelo-dominio.md)
+- [Modelo de identidade e principals](architecture/modelo-identidade-principals.md)
 - [Diagrama de módulos](architecture/diagrama-modulos.md)
 - [Contratos compartilhados](architecture/contratos.md)
 - [Fluxo de envio de mensagem](architecture/fluxo-envio-mensagem.md)
+- [Protocolo de sync e realtime](architecture/protocolo-sync-realtime.md)
+- [Estado, eventos, auditoria e projeções](architecture/estado-eventos-auditoria-projecoes.md)
+- [Pipeline de anexos](architecture/pipeline-anexos.md)
+- [SignalR em HA](architecture/signalr-ha.md)
 - [Design system](architecture/design-system.md)
 - [Matriz de aderência aos ADRs](architecture/aderencia-adrs.md)
 - [Pacotes de decisão R3](architecture/pacotes-decisao-r3.md)
@@ -93,6 +98,7 @@ gap, não defendida apenas pelo texto.
 - [Runbooks](operations/runbooks/README.md)
 - [Segurança multi-tenant](security/multi-tenant.md)
 - [Modelo de ameaças](security/modelo-ameacas.md)
+- [Ciclo de vida, retenção e compliance](security/ciclo-vida-dados.md)
 
 ## Ciclo de vida de uma mudança
 

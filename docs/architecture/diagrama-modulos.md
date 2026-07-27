@@ -73,7 +73,7 @@ Messaging, Realtime e BuildingBlocks. A lista exata é verificável nos
 | Fronteira | Responsabilidade |
 |----------|------------------|
 | Tenancy | TenantContext e escopo do tenant |
-| Identity | Perfis/claims espelhados do IdP |
+| Identity | Users, external identity mappings, principals, devices e sessions |
 | Directory | Workspaces, spaces, memberships e papéis |
 | Conversations | Channels, DMs, threads e conversations |
 | Messaging | Messages, reactions, `seq`, idempotência e eventos |

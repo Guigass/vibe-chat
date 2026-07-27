@@ -26,7 +26,9 @@ durante perda de rede.
 ## Contratos
 
 Sync endpoint incremental com tombstones, server time e compatibility version;
-commands reutilizam APIs canônicas.
+commands reutilizam APIs canônicas. Semântica completa de IDs, ack, cursor,
+gap-fill, conflito, rebuild e revogação segue
+[`protocolo-sync-realtime.md`](../../architecture/protocolo-sync-realtime.md).
 
 ## UX
 
@@ -45,6 +47,9 @@ limpa storage.
 - [ ] Revogação remove dados no próximo contato.
 - [ ] Troca de conta não mistura cache.
 - [ ] Conflito é visível e recuperável.
+- [ ] Cursor expirado executa rebuild sem perder comando local ainda válido.
+- [ ] Ack e evento SignalR em qualquer ordem não duplicam item.
+- [ ] Operação offline anterior a delete/revogação não ressuscita conteúdo.
 
 ## Testes
 

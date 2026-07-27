@@ -18,7 +18,8 @@ Atalho operacional (checklist): [`runbooks/backup-restore.md`](./runbooks/backup
 1. Backup **automatizado** e testado (restore drill)
 2. Criptografia em repouso dos artefatos de backup
 3. Retenção alinhada à política legal (D-03 / ADR-018: soft-delete default; purge configurável via B-047 — `MessageRetention:Enabled` + settings do tenant)
-4. **Sem SLA comercial** em self-host (D-08). RPO/RTO são **best effort**; alvo operacional sugerido: backup diário Postgres → RPO ≤ 24h, RTO ≤ 4h
+4. **Sem SLA comercial** em self-host (D-08/D-28). O perfil escolhido declara
+   objetivo e evidência; backup só conta após restore
 
 ## Scripts (dev / staging)
 
@@ -42,7 +43,16 @@ Variáveis úteis: `BACKUP_DIR`, `RESTORE_DB` (default `vibechat_restore_drill`)
 pg_dump -Fc -d vibechat -f vibechat_$(date +%F).dump
 ```
 
-Em produção: PITR com WAL archiving quando RPO &lt; 24h for necessário.
+### Perfis D-28
+
+| Perfil | PostgreSQL | Objetivo |
+|--------|------------|----------|
+| Basic/Dev | dump completo diário | RPO≤24h/RTO≤4h best effort |
+| Standard | dump diário + WAL archiving/PITR contínuo | RPO≤1h/RTO≤4h |
+| HA | topologia e failover definidos por B-144 | RPO≤5m/RTO≤30m |
+
+Standard de produção precisa comprovar arquivamento, retenção de WAL e restore
+point-in-time. Apenas configurar archive command não satisfaz o gate.
 
 ### Restore
 
@@ -79,7 +89,12 @@ Restore parcial: restaurar objetos + linhas `attachments` correspondentes.
    - [ ] Anexo abre
    - [ ] Envio de nova mensagem funciona
    - [ ] RLS ainda isola tenant (smoke security)
+   - [ ] PITR restaura até o ponto escolhido no perfil Standard/HA
+   - [ ] ledger/tombstones posteriores impedem ressurreição de purge
 6. Registrar tempo de restore (RTO real) e apagar artefatos de drill se contiverem PII
+
+Lifecycle completo de backup, derivados e legal hold:
+[`ciclo-vida-dados.md`](../security/ciclo-vida-dados.md).
 
 ## Desastre completo
 

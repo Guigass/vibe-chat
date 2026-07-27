@@ -1,6 +1,6 @@
 # Roadmap de Longo Prazo — VibeChat
 
-Roadmap executável posterior às Waves 7–10. D-16…D-26 foram decididas em
+Roadmap executável posterior às Waves 7–10. D-16…D-28 foram decididas em
 2026-07-27; todos os itens abaixo estão autorizados e entram como `Planned`.
 O Build só os inicia quando as dependências anteriores estiverem `Done` e a spec
 individual existir.
@@ -47,6 +47,8 @@ completamente novas.
 | B-113 | C/D | Agendar mensagem, lembrete pessoal e “lembrar deste item” | W9-7, B-093 | [B-113](../product/specs/B-113-agendamento-lembretes.md) | Planned |
 | B-114 | C/D/E | Histórico de edição e movimentação de mensagens | B-107, B-089 | [B-114](../product/specs/B-114-historico-edicao-movimentacao.md) | Planned |
 | B-115 | B/D | Templates de workspace/channel e onboarding guiado | B-106 | [B-115](../product/specs/B-115-templates-onboarding.md) | Planned |
+| B-153 | B/C/D/E/G | Migração/importação assistida de usuários, estrutura e histórico | B-089, B-115, B-046 | [B-153](../product/specs/B-153-migracao-importacao.md) | Planned |
+| B-154 | A/B/D/E/G | Diagnóstico administrativo e support bundle sanitizado | B-105, B-106, B-115 | [B-154](../product/specs/B-154-diagnostico-support-bundle.md) | Planned |
 | B-116 | B/D | Status personalizado, disponibilidade e agenda resumida | B-097 | [B-116](../product/specs/B-116-status-disponibilidade.md) | Planned |
 | B-117 | C/D | Inbox unificada com menções, threads, DMs e prioridade | B-094, B-102 | [B-117](../product/specs/B-117-inbox-unificada.md) | Planned |
 | B-118 | B/C/D | Modo de canal por tópicos/fórum | B-089, B-102 | [B-118](../product/specs/B-118-canais-topicos-forum.md) | Planned |
@@ -57,6 +59,8 @@ completamente novas.
 - modelo claro para anúncio versus mensagem;
 - inbox não cria uma segunda fonte de read state;
 - topics reutilizam Conversation/Thread ou justificam mudança por ADR.
+- migração usa dry-run, staging e adapters versionados sem criar credenciais;
+- diagnóstico/support bundle usa allowlist e não inclui conteúdo ou secrets.
 
 ## Wave 12 — Conhecimento e foco
 
@@ -153,7 +157,7 @@ arquitetura preventiva.
 |----|--------|--------|------|------|--------|
 | B-143 | C/D/E | Offline sync real e fila local confiável | B-089, B-094, D-20 | [B-143](../product/specs/B-143-offline-sync.md) | Planned |
 | B-145 | A/C/E | Lifecycle de objetos, quotas de storage e CDN opcional | B-131, B-134 | [B-145](../product/specs/B-145-lifecycle-storage.md) | Planned |
-| B-144 | A/B/C/E/F | HA, rolling upgrade e zero-downtime documentado | B-146, D-25 | [B-144](../product/specs/B-144-ha-rolling-upgrade.md) | Planned |
+| B-144 | A/B/C/E/F | HA, rolling upgrade e zero-downtime documentado | B-146, D-25, D-28 | [B-144](../product/specs/B-144-ha-rolling-upgrade.md) | Planned |
 | B-065 | B/C/A/E | Federação entre instâncias | B-138, B-146, D-21 | [B-065](../product/specs/B-065-federacao.md) | Planned |
 | B-064 | B/C/D/E | Canais confidenciais E2EE | B-129, D-26 | [B-064](../product/specs/B-064-canais-e2ee.md) | Planned |
 

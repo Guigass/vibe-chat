@@ -96,7 +96,7 @@ Não existe phone-home obrigatório.
 | W8 | composição E2E, anexos/áudio, a11y |
 | W9 | histórico/reconnect/read cursor/previews |
 | W10 | push/DND/guests/plugins/security |
-| W11 | inbox/anúncios/tópicos sem segunda fonte de verdade |
+| W11 | inbox/anúncios/tópicos, import dry-run/checkpoint e support bundle sanitizado |
 | W12 | origem de decisão/tarefa, ACL e delete propagation |
 | W13 | automação idempotente, connector security, SCIM |
 | W14 | cadeia de custódia, SIEM, quotas e capacity |
@@ -120,8 +120,9 @@ Cada PR informa:
 
 ## SLOs
 
-Metas Standard/HA vêm de D-25 e B-146. Antes de B-146, números são objetivos de
-referência, não garantias.
+Metas Basic/Standard/HA vêm de D-25/D-28 e B-146. Antes de B-146, números são
+objetivos de referência, não garantias. Persistência, realtime, reconnect, sync,
+revogação, anexos e restore possuem SLIs próprios.
 
 Error budget não autoriza ignorar incidente de segurança ou integridade.
 

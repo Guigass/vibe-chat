@@ -151,6 +151,10 @@ Cada release registra:
 | Node/.NET | apenas para build/DX |
 | Compose | versão mínima |
 | Plugins | contrato mínimo/máximo |
+| Perfil operacional | Basic/Dev, Standard ou HA conforme D-28 |
+
+Declarar perfil não basta: Standard exige evidência PITR/restore e HA exige
+B-146/B-144. Instalação Basic/Dev não herda objetivo de disponibilidade.
 
 ## Gates para 1.0
 

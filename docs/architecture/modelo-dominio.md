@@ -2,6 +2,10 @@
 
 ## Visão conceitual
 
+Identidade, principals, sessions e devices são detalhados em
+[`modelo-identidade-principals.md`](modelo-identidade-principals.md). `User` no
+diagrama abaixo é o perfil local, não a credencial OIDC nem o papel global.
+
 ```mermaid
 erDiagram
   TENANT ||--o{ WORKSPACE : contains
@@ -113,6 +117,9 @@ Abstração técnica de ordenação e entrega:
 3. **Edições/exclusões** geram novos eventos; soft-delete preferido na fase 1
 4. **Topics** são metadados de organização, não agregados de mensagens
 5. **AI** não possui aggregate próprio de chat; opera sobre projeções autorizadas
+6. **Estado, outbox, audit e projeções** seguem contratos distintos em
+   [`estado-eventos-auditoria-projecoes.md`](estado-eventos-auditoria-projecoes.md)
+7. **Autorização atual prevalece** sobre snapshot/provenance histórico
 
 ## Identificadores
 

@@ -10,6 +10,8 @@ Definir as interfaces, DTOs e eventos que permitem colaboração entre módulos 
 2. Sem dependência de EF Core, SignalR ou SDKs de cloud nos contratos de domínio
 3. Eventos de integração são **imutáveis** e serializáveis (JSON)
 4. Queries entre módulos via interfaces estreitas (CQRS leve)
+5. Estado, outbox, audit e projeções têm finalidades diferentes; ver
+   [`estado-eventos-auditoria-projecoes.md`](estado-eventos-auditoria-projecoes.md)
 
 ---
 
@@ -27,6 +29,8 @@ public interface ITenantContext
 ```
 
 `TenantId` e `UserId` vêm exclusivamente do token/contexto autenticado.
+Tipos de principal, sessão, device e delegação seguem
+[`modelo-identidade-principals.md`](modelo-identidade-principals.md).
 
 ---
 
@@ -211,6 +215,10 @@ Metadados prontos / vírus scan ok (quando existir).
 
 ## Realtime
 
+Semântica de ack, dedupe, gap-fill e reconnect:
+[`protocolo-sync-realtime.md`](protocolo-sync-realtime.md). Topologia
+multi-instância: [`signalr-ha.md`](signalr-ha.md).
+
 ```csharp
 public interface IRealtimePublisher
 {
@@ -246,6 +254,9 @@ Hub (além de `JoinChannel` / `LeaveChannel` / `SendTyping`):
 ---
 
 ## Files
+
+State machine, verificação, scan, derivados e lifecycle:
+[`pipeline-anexos.md`](pipeline-anexos.md).
 
 ```csharp
 public interface IObjectStorage

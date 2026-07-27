@@ -116,8 +116,14 @@ Não usar imagem `latest`; registrar tag/digest e matriz de versões.
 
 ## Standard e HA
 
-Standard é baseline Compose. HA só é declarado suportado após B-146/B-144,
-capacity e drills. Kubernetes não é requisito automático.
+Perfis seguem D-28:
+
+- Basic/Dev: Compose simples e backup diário, sem objetivo de disponibilidade;
+- Standard: Compose permitido, 99,9% como objetivo, PITR/WAL, RPO≤1h/RTO≤4h;
+- HA: somente após B-146/B-144, 99,95%, RPO≤5m/RTO≤30m.
+
+Kubernetes não é requisito automático. O operador deve rotular o perfil real e
+não anunciar Standard/HA sem restore/failover medidos.
 
 ## Ações R4
 

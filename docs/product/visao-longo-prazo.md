@@ -53,6 +53,7 @@ combinar:
 ### 4. Plataforma confiável para organizações sérias
 
 - provisioning, grupos, administração delegada e quotas;
+- migração assistida, preflight e diagnóstico sanitizado para adoção real;
 - legal hold, eDiscovery, classificação, DLP e SIEM quando autorizados;
 - malware scanning e políticas de arquivo;
 - SLOs, capacity planning, lifecycle de storage e recuperação testada.

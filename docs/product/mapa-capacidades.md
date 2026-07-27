@@ -18,6 +18,7 @@ organiza. Estados:
 | Anúncios e canais somente leitura | Planned | B-112 / W11 |
 | Agendar mensagem e lembrete | Planned | B-113 / W11 |
 | Histórico de edição/movimentação | Planned | B-114 / W11 |
+| Migração/importação assistida | Planned | B-153 / W11 |
 | Inbox unificada e prioridade | Planned | B-117 / W11 |
 | Tópicos/fórum como modo de canal | Planned | B-118 / W11 |
 | Voz/vídeo/screen share | Planned | B-147/B-148 / W17 |
@@ -59,6 +60,7 @@ organiza. Estados:
 | Export de audit para SIEM | Planned | B-132 / W14 |
 | Policy packs e admin delegado | Planned | B-133/B-134 / W14 |
 | E2EE | Planned | B-064 / W16 |
+| Diagnóstico e support bundle sanitizado | Planned | B-154 / W11 |
 
 ## Plataforma e ecossistema
 

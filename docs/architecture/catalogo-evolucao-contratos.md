@@ -82,6 +82,8 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Features:Recording:Enabled` | tenant | false | B-148 | live sem gravação |
 | `Features:MeetingAi:Enabled` | workspace | false | B-149 | sem transcrição/notas |
 | `Features:CanvasRealtime:Enabled` | workspace | false | B-152 | páginas server-authoritative |
+| `Features:Import:Enabled` | instance | false | B-153 | onboarding/template manual |
+| `Features:SupportBundle:Enabled` | instance | false | B-154 | health/runbooks permanecem |
 
 Nomes de binding podem mudar no ADR, mas semântica/default não muda
 silenciosamente.
@@ -107,6 +109,8 @@ silenciosamente.
 | E2EE | device key/channel epoch | key/device metadata | e2ee.* | crypto ADR |
 | Live | session/participant | start/join/end | live.* | ADR, capacity |
 | Canvas | document/update/snapshot | edit/sync/export | knowledge.* | ADR, retention |
+| Import | import/adapter/batch/checkpoint | validate/plan/execute/publish | workspace.import | threat, migration |
+| Diagnóstico | check/bundle/repair job | preflight/test/bundle | support.* | security, runbook |
 
 ## Registro de dados
 
