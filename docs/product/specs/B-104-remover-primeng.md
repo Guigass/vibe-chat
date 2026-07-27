@@ -42,7 +42,9 @@ O shell de chat **já** é composição própria + CDK.
 
 - Comprar, gerar ou configurar chave Community/Commercial do PrimeUI.
 - Esconder o banner por CSS/JS enquanto o pacote existir.
-- Redesign amplo do admin ou do chat shell.
+- Redesign amplo do admin (menu lateral, toolbars, filtros, listagens polidas) —
+  isso é **B-106** depois deste item.
+- Redesign do chat shell.
 - Adotar outra lib de UI de terceiros (Angular Material, Ng-Zorro, etc.) — ficar
   em composição própria + CDK.
 - Polish visual além do necessário para paridade funcional do `/admin`.
@@ -97,3 +99,8 @@ Nada muda. Admin segue exigindo as mesmas permissões (`workspace.admin`,
 3. `npm uninstall primeng` e commit do lockfile.
 4. Subir web, confirmar ausência do banner e admin ok.
 5. Rodar testes da trilha web.
+
+## Follow-up
+
+Depois do merge: **B-106** — admin shell com nav lateral, toolbars, listagens e
+filtros de respeito (`docs/product/specs/B-106-admin-shell.md`).

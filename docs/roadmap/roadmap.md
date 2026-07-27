@@ -142,6 +142,7 @@ checklist de **controles mínimos** de `docs/security/modelo-ameacas.md`.
 | W7-4 | D/E | CSP no web (B-077) | W6-8 | Planned — `infra/proxy/nginx.conf` já manda HSTS/`nosniff`/`X-Frame-Options`/`Referrer-Policy`, mas não CSP, e só no profile `proxy` |
 | W7-5 | C/E | Limite de tamanho de body no envio (B-078) | W2-1 | Planned — `Message.Body` é `HasMaxLength(8000)` só na coluna; o endpoint não valida, então body maior vira 500 em vez de 400 |
 | W7-7 | A/G | Catálogo de configuração admin mínima no `.env` (B-105) | W6-8, W0-2 | Planned — inventariar todas as variáveis operacionais; completar `.env.example`; guia `docs/operations/configuracao-env.md`; mapear env vs `/admin` |
+| W7-8 | D/G | Admin shell — nav, toolbars, listagens, filtros e hide por papel (B-106; fecha UX-005) | W7-6 | Planned — após saída do PrimeNG; spec `docs/product/specs/B-106-admin-shell.md` |
 
 ### Critérios de aceite W7-7 (resumo)
 
@@ -150,6 +151,15 @@ checklist de **controles mínimos** de `docs/security/modelo-ameacas.md`.
 - Matriz **env vs admin UI** documentada: o que só o operador de infra mexe no `.env` vs o que o `workspace.admin` mexe em `/admin/settings`
 - Gaps entre `appsettings*.json`, `compose.yaml` e `.env.example` fechados ou listados como follow-up explícito
 - `docs/operations/operacao.md` aponta para o catálogo como fonte da verdade de configuração
+
+### Critérios de aceite W7-8 (resumo)
+
+- `/admin` tem menu lateral por área + toolbar contextual + rotas filhas
+- Listagens (membros, audit, conversas) com busca/filtro útil e empty states
+- **Visibilidade:** Auditor não vê Settings/Export/convidar; Admin vê tudo; Member fora
+- Sem banners “Sem permissão…” (UX-005 fechado); deep-link sem claim → área permitida
+- AuthZ de API intacta (`workspace.admin` / `admin.dashboard`); tokens `--vc-*`
+- Sem lib de UI comercial; B-104 já mergeado (sem PrimeNG)
 
 ### Modo manutenção (sem item `Planned`)
 
@@ -195,7 +205,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W9-4 | C/D | Link preview (B-091) | — | [B-091](../product/specs/B-091-link-preview.md) | Planned |
 | W9-5 | C/D | Fixar mensagem (B-092) | W9-2 | [B-092](../product/specs/B-092-fixar-mensagem.md) | Planned |
 | W9-6 | C/D | Salvos (B-093) | W9-2 | [B-093](../product/specs/B-093-salvos.md) | Planned |
-| W9-7 | C/D | Recibos de leitura e não lidas (B-094) | W9-1 | [B-094](../product/specs/B-094-recibos-de-leitura.md) | Planned |
+| W9-7 | C/D | Recibos de leitura e não lidas persistentes (B-094) | W9-1 | [B-094](../product/specs/B-094-recibos-de-leitura.md) | Planned |
 
 ### Wave 10 — Notificações, organização e acesso
 
@@ -211,21 +221,30 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W10-8 | C/D | Seguir thread (B-102) | B-022, W10-1 | [B-102](../product/specs/B-102-seguir-thread.md) | Planned |
 | W10-9 | D/E | Acessibilidade WCAG 2.2 AA (B-103) | W10-5 | [B-103](../product/specs/B-103-acessibilidade.md) | Planned |
 | W10-10 | B/D/E | Guests por convite (B-040) | P2-1, W10-4, D-07 | [B-040](../product/specs/B-040-guests-por-convite.md) | Planned |
+| W10-11 | B/C/D | Políticas de edição/apagar mensagem (B-107) | B-023, B-069 | [B-107](../product/specs/B-107-politicas-edicao-mensagem.md) | Planned |
+| W10-12 | B/C/D | Extender webhooks outbound (B-108) | B-048, B-069 | [B-108](../product/specs/B-108-extender-webhooks.md) | Planned |
+| W10-13 | B/C/D/E | Núcleo plugin — bot/token + envio msgs (B-109) | B-004, B-069, B-021 | [B-109](../product/specs/B-109-api-integracao-envio-mensagens.md) | Planned |
+| W10-14 | B/C/D | Instalar/gerir plugins na instância (B-110) | W10-13 | [B-110](../product/specs/B-110-instalar-plugins.md) | Planned |
 
 ### Itens de maior risco nestas waves
-
-Três itens não passam em review sem o controle correspondente:
 
 | Item | Risco | Controle exigido |
 |------|-------|------------------|
 | W9-4 / B-091 | SSRF — o servidor passa a buscar URL fornecida pelo usuário | Allowlist de esquema, recusa de IP privado/loopback/link-local/metadata **após cada redirect**, timeout, limite de corpo, cache por tenant |
 | W10-10 / B-040 | Escalada de guest para o workspace | Suíte negativa cobrindo **todos** os endpoints de workspace, não uma amostra; membership de canal, nunca de workspace |
 | W10-7 / B-101 | Vazamento de histórico ao adicionar participante | Janela de visibilidade por `seq` de entrada, com teste dedicado |
+| W10-13 / B-109 | Token de integração exfiltrado / bot sem escopo | Token só hash no DB; escopo explícito de canais; rate-limit; suíte security cross-tenant |
+| W10-14 / B-110 | Plugin confundido com runtime de código | Manifesto = config; sem carregar DLL/JS de terceiro; capabilities extras só em B-066 |
 
 ### Fora de escopo destas waves (D-11)
 
 Chamada de voz/vídeo ao vivo e screen share; superfície de documento colaborativo
-(Canvas/Loop); marketplace de bots; E2EE. Não implementar sem nova decisão.
+(Canvas/Loop); **marketplace / App Directory público**; E2EE. Não implementar
+sem nova decisão.
+
+**Trilha de plugins locais** (permitida): B-109 (núcleo) → B-108 (outbound) →
+B-110 (install) → **B-066 / B-111 em P3 por último** (capabilities avançadas;
+ainda sem loja). Registry remoto exige D-* nova.
 
 ## Registro de GAPs
 
@@ -250,12 +269,13 @@ escreve aqui em vez de espalhar notas soltas pelas seções.
 ```text
 Agent-Infra     → W0-1, W0-2, W0-6, W5-*, W6-8, W7-7
 Agent-Backend   → W0-3, W1-*, W2-1..W2-4, W3-1, W3-3, W4-*, W6-1, W6-2, W6-4..W6-6,
-                  W8-4, W9-4, W10-1, W10-7
-Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7, W6-1..W6-3, W6-7,
-                  W8-1..W8-3, W8-5..W8-8, W9-1..W9-3, W10-5, W10-6
+                  W8-4, W9-4, W10-1, W10-7, W10-11, W10-12, W10-13, W10-14
+Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7, W6-1..W6-3, W6-7, W7-6, W7-8,
+                  W8-1..W8-3, W8-5..W8-8, W9-1..W9-3, W9-7, W10-5, W10-6
 Agent-QA        → W0-7, W1-5, W2-6, W2-7, W3-2, W3-5, W5-3, W6-1 E2E, W6-8 smoke, W7-1
 Agent-Security  → W3-1/W3-2 review, W6-5/W6-6 authZ + threat model, W7-3..W7-5,
-                  W9-4 (SSRF), W10-9, W10-10 (guests)
+                  W9-4 (SSRF), W10-9, W10-10 (guests), W10-13 (integration tokens),
+                  W10-14 (plugins)
 Agent-Obs       → W0-6, W3-4
 ```
 

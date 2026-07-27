@@ -58,7 +58,8 @@ Fora do escopo da fase 1:
 - Kubernetes
 - Elasticsearch/OpenSearch, NATS/Kafka/RabbitMQ
 - Clientes nativos mobile (PWA cobre o essencial)
-- Marketplace de apps / bots avançados
+- Marketplace de apps / bots avançados → reescrito como **plugins locais**
+  (B-109 → B-110 → B-066); loja pública continua fora (D-11)
 
 ## Métricas de sucesso (produto)
 

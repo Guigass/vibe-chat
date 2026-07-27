@@ -152,14 +152,16 @@ Não transformar o shell em dashboard com stats, strips e callouts.
 | Modais | Só para fluxos (criar channel, convidar); CDK overlay |
 | Painel de conversa | Coluna flex com `min-height: 0`; **scroll só na timeline**; composer fora do scroller (B-072) |
 
-### UI kit (Wave 7 / B-104 / D-15 — emenda ADR-002)
+### UI kit (Wave 7 / B-104 + B-106 / D-15 — emenda ADR-002)
 
 **Não usar PrimeNG** (nem outra lib de UI comercial). Stack:
 
 - Composição própria + tokens `--vc-*` (teal/charcoal, Sora / IBM Plex Sans)
 - Angular CDK para overlays, a11y, drag-drop e lists
 - Admin e chat compartilham a mesma linguagem visual; sem skins de terceiros
-- Histórico: B-073 introduziu PrimeNG no `/admin`; B-104 remove o pacote e reescreve Table/Select/Tag
+- Histórico: B-073 introduziu PrimeNG no `/admin`; **B-104** remove o pacote
+  (paridade Table/Select/Tag); **B-106** entrega o console admin com nav lateral,
+  toolbars, listagens densas e filtros
 
 ---
 

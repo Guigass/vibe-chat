@@ -1,12 +1,20 @@
 # Specs de Feature — VibeChat
 
-Uma spec por item de backlog das waves 8–10. A automação de Build **só** implementa
-item que tenha spec aqui; sem spec, o item não é elegível.
+Uma spec por item de backlog elegível ao Build (Wave 7 de sustentação com UI, e
+waves 8–10 de paridade). A automação de Build **só** implementa item que tenha
+spec aqui; sem spec, o item não é elegível.
 
 Origem do escopo: `docs/product/benchmark-mensageria.md`. Limites do que pode ou não
 ser implementado sem perguntar: **D-11** em `docs/roadmap/decisoes-pendentes.md`.
 
 ## Índice
+
+### Sustentação — Wave 7
+
+| ID | Spec |
+|----|------|
+| B-104 | [Remover PrimeNG (UI própria + CDK)](B-104-remover-primeng.md) |
+| B-106 | [Admin shell — nav, filtros e visibilidade por papel](B-106-admin-shell.md) |
 
 ### Wave 8 — Composição de mensagem
 
@@ -32,7 +40,7 @@ ser implementado sem perguntar: **D-11** em `docs/roadmap/decisoes-pendentes.md`
 | B-091 | [Link preview](B-091-link-preview.md) |
 | B-092 | [Fixar mensagem](B-092-fixar-mensagem.md) |
 | B-093 | [Salvos](B-093-salvos.md) |
-| B-094 | [Recibos de leitura e não lidas](B-094-recibos-de-leitura.md) |
+| B-094 | [Recibos de leitura e não lidas (persistência definitiva)](B-094-recibos-de-leitura.md) |
 
 ### Wave 10 — Notificações, organização e acesso
 
@@ -48,6 +56,17 @@ ser implementado sem perguntar: **D-11** em `docs/roadmap/decisoes-pendentes.md`
 | B-102 | [Seguir thread](B-102-seguir-thread.md) |
 | B-103 | [Acessibilidade WCAG 2.2 AA](B-103-acessibilidade.md) |
 | B-040 | [Guests por convite](B-040-guests-por-convite.md) |
+| B-107 | [Políticas de edição/apagar mensagem](B-107-politicas-edicao-mensagem.md) |
+| B-108 | [Extender webhooks outbound](B-108-extender-webhooks.md) |
+| B-109 | [Núcleo plugin — bot/token + envio](B-109-api-integracao-envio-mensagens.md) |
+| B-110 | [Instalar/gerir plugins na instância](B-110-instalar-plugins.md) |
+
+### P3 — Plugins (por último na trilha)
+
+| ID | Spec |
+|----|------|
+| B-066 | [Plataforma de plugins — capabilities avançadas](B-066-plugins-plataforma.md) |
+| B-111 | [Horizonte plugins](B-111-plugins-horizonte.md) |
 
 ## Template
 

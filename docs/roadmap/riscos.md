@@ -22,7 +22,7 @@
 | R-16 | Realtime degradado (só typing) | B | Alto | **Mitigado (B-070 Done)** — gap-fill + E2E dois usuários; monitorar métricas SignalR/outbox | Backend / Frontend |
 | R-17 | Secrets/webhooks expostos a membros | M | Crítico | **Mitigado (B-069/B-048)** — settings só `workspace.admin`; secret HMAC mascarado; nunca logar tokens | Security |
 | R-18 | Auditoria de conversa (break-glass de leitura) | M | Alto | B-067 authZ `admin.dashboard` + escopo tenant; testes security; ver `modelo-ameacas.md` | Security |
-| R-19 | Dependência UI comercial (PrimeNG/PrimeUI) | A | Alto | **Mitigação em curso (D-15 / B-104)** — sair do PrimeNG; composição própria + CDK; não gerar chave nem esconder banner por CSS | Frontend |
+| R-19 | Dependência UI comercial (PrimeNG/PrimeUI) | A | Alto | **Mitigação em curso (D-15 / B-104)** — sair do PrimeNG; composição própria + CDK; polish do console admin em **B-106** | Frontend |
 
 ## Riscos técnicos detalhados
 

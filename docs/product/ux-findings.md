@@ -20,7 +20,7 @@ Regras do registro:
 | UX-002 | Todas | Banner vermelho fixo “Invalid PrimeUI License” no canto inferior direito, **cobrindo “Anexar” e “Enviar”** do composer | Alta | Aberto — D-15 decidiu sair do PrimeNG; fecha com **B-104** |
 | UX-003 | Shell | Em viewport estreito (~400 px) a sidebar continua ocupando quase metade da largura; não há colapso nem botão de alternar | Alta | Aberto |
 | UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto |
-| UX-005 | Admin | Seções sem permissão exibem o aviso em laranja/vermelho, dando aparência de erro a um estado esperado | Média | Aberto |
+| UX-005 | Admin | Seções sem permissão exibem o aviso em laranja/vermelho, dando aparência de erro a um estado esperado | Média | Aberto — fecha com **B-106** (esconder nav/áreas sem claim; matriz por papel) |
 | UX-006 | Header | Botões de ícone (buscar, tema, densidade, painel) sem estado de hover/foco perceptível | Média | Aberto |
 
 ## Detalhamento
@@ -80,7 +80,11 @@ B-103, mas é corrigível antes.
 
 Em `/admin`, “Sem permissão para ler settings sensíveis” e “Sem permissão para auditar
 conversas” aparecem em laranja/vermelho. Para um Auditor, esse é o estado **normal**,
-não uma falha. Usar texto neutro ou ocultar a seção.
+não uma falha.
+
+Correção: **B-106** — não renderizar nav, toolbar nem seções sem a claim; deep-link
+sem permissão vai para a primeira área permitida (ou empty neutro). Sem banner de
+“sem permissão”. Matriz Admin vs Auditor vs Member na spec.
 
 ### UX-006 — Botões de ícone sem estado de hover/foco
 

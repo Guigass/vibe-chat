@@ -58,7 +58,7 @@ W10-10, com spec — ver *Paridade de mensageria*.
 | B-045 | AI: sugerir resposta | **Done** — `POST .../ai/suggest-reply` + UI prefill; Mock/OpenRouter; off default; authZ `ai.suggest_reply`; testes security/integration |
 | B-046 | Export de workspace | **Done** — `GET .../admin/workspaces/{id}/export` ZIP JSON (`vibechat.workspace.export.v1`); soft-delete incluído; metadados de anexos; authZ `workspace.admin`; audit `workspace.export`; UI admin |
 | B-047 | Políticas de retenção configuráveis | **Done** — `messaging.message_retention_settings` + `retention.*` em admin settings; kill switch `MessageRetention:Enabled` (off default); worker purge soft-deletes; audit `message.purge`; UI admin (ADR-018 / D-03) |
-| B-048 | Webhooks outbound | **Done** — `integrations.webhook_endpoints` + admin settings; delivery `MessageCreated` HMAC via outbox; secret mascarado; só `workspace.admin` |
+| B-048 | Webhooks outbound | **Done** — `integrations.webhook_endpoints` + admin settings; delivery `MessageCreated` HMAC via outbox; secret mascarado; só `workspace.admin`. **Estender em B-108** |
 | B-049 | Temas light/dark polish | **Done (Wave 5)** — `color-scheme`, segue OS até pin do usuário, transição sutil |
 | B-067 | Auditoria completa de conversas (ADMIN) | **Done (Wave 6)** — `GET /admin/conversations*` + threads; body soft-delete visível; authZ `admin.dashboard`; distinto de `audit_events` (B-042) |
 | B-068 | Cadastro de usuário + diretivas (clareza + fluxo) | **Done (Wave 6)** — invite admin + claim pending no login; glossário Cadastro/Diretiva; sem self-signup |
@@ -75,11 +75,12 @@ backlog ficam no **Registro de GAPs** (`roadmap.md`).
 | ID | Item | Notas |
 |----|------|-------|
 | B-075 | E2E Playwright na CI | **Done (W7-1)** — job **E2E (Playwright)** na CI com DevAuth; `infra/scripts/ci-e2e.sh` / `task test:e2e:ci` (#45) |
-| B-104 | Remover PrimeNG (UI própria + CDK) | Planned (W7-6) — D-15 opção (c); spec `docs/product/specs/B-104-remover-primeng.md`; prioridade sobre W7-3…W7-5 (desbloqueia composer / UX-002) |
+| B-104 | Remover PrimeNG (UI própria + CDK) | Planned (W7-6) — D-15 opção (c); spec `docs/product/specs/B-104-remover-primeng.md`; prioridade sobre W7-3…W7-5 (desbloqueia composer / UX-002); paridade funcional só |
 | B-076 | Atualização automatizada de dependências | Planned (W7-3) — sem `.github/dependabot.yml` nem renovate; `Dependency audit notes` na CI é informativo e nunca reprova o build |
 | B-077 | CSP no web | Planned (W7-4) — nginx do profile `proxy` já manda HSTS/`nosniff`/`X-Frame-Options`/`Referrer-Policy`; falta CSP |
 | B-078 | Limite de tamanho de body no envio | Planned (W7-5) — `Message.Body` limitado a 8000 só na coluna; `POST .../messages` não valida e devolve 500 em vez de 400 |
 | B-105 | Catálogo de configuração admin mínima no `.env` | Planned (W7-7) — inventário completo de variáveis operacionais; `.env.example` como contrato; guia `docs/operations/configuracao-env.md`; matriz env vs `/admin/settings` (B-069) |
+| B-106 | Admin shell (nav, toolbars, listagens, filtros, visibilidade por papel) | Planned (W7-8) — após B-104; esconde opções sem claim (fecha UX-005); matriz Admin/Auditor/Member; spec `docs/product/specs/B-106-admin-shell.md` |
 
 ## Paridade de mensageria — Waves 8 a 10
 
@@ -110,7 +111,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-091 | Link preview | Planned (W9-4) — **exige guarda de SSRF**; sem ela não passa |
 | B-092 | Fixar mensagem | Planned (W9-5) — limite 20, permissão `message.pin` |
 | B-093 | Salvos | Planned (W9-6) — revalida membership na leitura |
-| B-094 | Recibos de leitura e não lidas | Planned (W9-7) — liga o `upsertReadCursor` órfão; `read-by` em canal é contagem |
+| B-094 | Recibos de leitura e não lidas | Planned (W9-7) — persistência definitiva em `messaging.read_cursors`; liga o `upsertReadCursor` órfão; badges sobrevivem a F5/multi-device; `read-by` em canal é contagem |
 
 ### Wave 10 — Notificações, organização e acesso
 
@@ -126,6 +127,10 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-102 | Seguir thread | Planned (W10-8) — auto-inscrição na mesma transação |
 | B-103 | Acessibilidade WCAG 2.2 AA | Planned (W10-9) — axe-core como gate na CI |
 | B-040 | Guests por convite | Planned (W10-10) — deixou de estar Blocked; D-07 revisado em 2026-07-25 |
+| B-107 | Políticas de edição/apagar mensagem | Planned (W10-11) — janela de tempo, papéis e override de moderação; settings admin; spec `docs/product/specs/B-107-politicas-edicao-mensagem.md` |
+| B-108 | Extender webhooks outbound | Planned (W10-12) — mais eventos, multi-endpoint, filtros de canal, ping de teste; spec `docs/product/specs/B-108-extender-webhooks.md` |
+| B-109 | Núcleo plugin — bot/token + envio msgs | Planned (W10-13) — capability `messages.send`; base da trilha; spec `docs/product/specs/B-109-api-integracao-envio-mensagens.md` |
+| B-110 | Instalar/gerir plugins na instância | Planned (W10-14) — manifesto local, built-in Incoming Messages; deps B-109; spec `docs/product/specs/B-110-instalar-plugins.md` |
 
 ## P3 — Escala / futuro
 
@@ -137,7 +142,8 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-063 | Clientes mobile nativos | demanda |
 | B-064 | E2EE (se produto decidir) | mudança de modelo |
 | B-065 | Federation multi-instância | pesquisa |
-| B-066 | Marketplace de bots | pós-contratos estáveis |
+| B-066 | Plugins — capabilities avançadas | pós B-109+B-110; **por último** na trilha; sem loja (D-11); spec `docs/product/specs/B-066-plugins-plataforma.md` |
+| B-111 | Horizonte plugins (slash/UI/registry) | pós B-066; checklist; spec `docs/product/specs/B-111-plugins-horizonte.md` |
 
 ## Ordem de consumo sugerida
 
@@ -145,10 +151,12 @@ Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → a
 
 Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done.
 
-Ordem daqui para frente: **Sustentação** (B-076 → B-077 → B-078 → B-105) e depois
-**paridade de mensageria** na ordem das waves — 8 (composição), 9 (leitura), 10
-(notificações, organização e acesso). Dentro de cada wave, seguir a numeração; itens
-sem dependência entre si podem ir em paralelo por trilhas diferentes.
+Ordem daqui para frente: **Sustentação** (B-104 → B-076 → B-077 → B-078 → B-105 →
+B-106) e depois **paridade de mensageria** na ordem das waves — 8 (composição), 9
+(leitura; B-094 fecha não lidas persistentes), 10 (notificações, organização,
+acesso e **trilha de plugins**: B-109 → B-108 → B-110; B-066/B-111 por último em
+P3). Dentro de cada wave, seguir a numeração; itens sem dependência entre si
+podem ir em paralelo por trilhas diferentes.
 
 ## Itens explicitamente rejeitados na fase 1
 

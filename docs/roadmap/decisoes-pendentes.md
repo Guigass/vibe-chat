@@ -16,7 +16,7 @@ Estas decisões **não** devem ser tomadas unilateralmente por agentes de códig
 | D-08 | **SLA/RPO/RTO** | Dimensiona backup e HA | Ops | **Decidido (2026-07-24)** — dev/self-host sem SLA comercial; RPO/RTO “best effort” + backup diário Postgres (`docs/operations/backup-restore.md`) |
 | D-09 | **Código de conduta e governança** | OSS saudável | Founder | **Decidido (2026-07-24)** — `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1) + `CONTRIBUTING.md` |
 | D-10 | **Provedor SMTP / e-mail** | Features P2 | Ops | **Decidido (2026-07-24)** — Mailpit em dev; produção = SMTP genérico configurável (sem vendor locked) |
-| D-11 | **Escopo de paridade da fase 2** | Define o que o agente pode implementar sem perguntar | Founder / Produto | **Decidido (2026-07-25)** — mensageria rica assíncrona entra; voz/vídeo ao vivo, canvas colaborativo, bots e E2EE ficam fora |
+| D-11 | **Escopo de paridade da fase 2** | Define o que o agente pode implementar sem perguntar | Founder / Produto | **Decidido (2026-07-25)**, **esclarecido (2026-07-27)** — mensageria rica entra; voz/vídeo, canvas, **loja pública** de bots e E2EE fora; **plugins locais** B-109→B-110→B-066 ok |
 | D-12 | **Mensagem de áudio** | Formato, limites, privacidade da transcrição | Produto + Security | **Decidido (2026-07-25)** — anexo de áudio com MIME negociado no cliente; 5 min / 10 MB; transcrição opt-in atrás da flag de IA |
 | D-13 | **Notificações push** | Sai do perímetro self-host se usar serviço fechado | Ops + Security | **Decidido (2026-07-25)** — Web Push (VAPID) do próprio servidor; opt-in por usuário; sem FCM/APNs proprietário |
 | D-14 | **Idiomas suportados** | Custo de manutenção de catálogo | Produto | **Decidido (2026-07-25)** — `pt-BR` (default) e `en`; `@angular/localize`; sem terceiro idioma na fase 2 |
@@ -153,8 +153,12 @@ Escolha: Paridade da fase 2 = mensageria rica assíncrona. Entram composição
   acessibilidade e i18n.
   Ficam FORA, sem ADR novo: chamada de voz/vídeo ao vivo e screen share
   (exigem SFU/TURN e plano de capacidade), superfície de documento colaborativo
-  tipo Canvas/Loop (CRDT + modelo de permissão próprio), marketplace de bots e
-  E2EE (incompatível com B-046/B-067).
+  tipo Canvas/Loop (CRDT + modelo de permissão próprio), **marketplace / App
+  Directory público** e E2EE (incompatível com B-046/B-067).
+  Esclarecimento (2026-07-27): trilha de **plugins locais** (sem loja):
+  B-109 (núcleo bot+token+send) → B-110 (instalar/gerir na instância) →
+  B-066 (capabilities avançadas, P3, por último) → horizonte B-111.
+  Registry remoto opcional exige nova decisão D-*.
 Data: 2026-07-25
 Owner: Founder / Produto
 Impacto em código/docs: waves 8-10 do roadmap; benchmark-mensageria.md;
@@ -240,8 +244,11 @@ Impacto em código/docs:
   - Emenda ADR-002 supersede a adoção B-073; stack UI = Angular + CDK + composição
     própria com tokens VibeChat
   - Backlog B-104 (Wave 7) + spec docs/product/specs/B-104-remover-primeng.md
+  - Follow-up B-106 (W7-8): admin shell com nav lateral, toolbars, listagens e
+    filtros — após B-104; spec docs/product/specs/B-106-admin-shell.md
   - Remover primeng do package.json, providePrimeNG, preset, styles/_primeng.scss
-  - Reescrever /admin (Table/Select/Tag) sem PrimeNG
+  - Reescrever /admin (Table/Select/Tag) sem PrimeNG (paridade em B-104; polish
+    de console em B-106)
   - UX-002 deixa de ser Blocked; fecha quando B-104 mergear
   - Agente NÃO compra/gera chave nem esconde o banner por CSS
 ```
