@@ -4,15 +4,15 @@ Uma spec por item de backlog elegível ao Build (Waves 7–17). A automação de
 Build **só** implementa item que tenha
 spec aqui; sem spec, o item não é elegível.
 
-Baseline de 2026-07-27: **79 itens Planned, 79 specs, 79 classes R0–R3 e zero
+Baseline de 2026-07-27: **81 itens Planned, 81 specs, 81 classes R0–R3 e zero
 ID órfão/duplicado**. Regras de auditoria:
 [`roadmap/qualidade-documental.md`](../../roadmap/qualidade-documental.md).
 
-Waves 11–17 estão autorizadas por D-16…D-26 e possuem specs executáveis. Todas
+Waves 11–17 estão autorizadas por D-16…D-28 e possuem specs executáveis. Todas
 incorporam [`long-term-common.md`](long-term-common.md).
 
 Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
-`mapa-capacidades.md`. Defaults D-01…D-27 estão em
+`mapa-capacidades.md`. Defaults D-01…D-28 estão em
 `docs/roadmap/decisoes-pendentes.md`; autoridade de execução em
 `docs/agents/autonomia.md`.
 
@@ -82,6 +82,8 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-113 | [Agendamento e lembretes](B-113-agendamento-lembretes.md) |
 | B-114 | [Histórico de edição e movimentação](B-114-historico-edicao-movimentacao.md) |
 | B-115 | [Templates e onboarding](B-115-templates-onboarding.md) |
+| B-153 | [Migração e importação assistida](B-153-migracao-importacao.md) |
+| B-154 | [Diagnóstico e support bundle](B-154-diagnostico-support-bundle.md) |
 | B-116 | [Status e disponibilidade](B-116-status-disponibilidade.md) |
 | B-117 | [Inbox unificada](B-117-inbox-unificada.md) |
 | B-118 | [Canais por tópicos/fórum](B-118-canais-topicos-forum.md) |

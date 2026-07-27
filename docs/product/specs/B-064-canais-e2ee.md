@@ -27,7 +27,9 @@ de busca, IA e compliance server-side reduzidos.
 ## Contratos
 
 ADR de protocolo/crypto obrigatório; usar biblioteca/protocolo auditado, nunca
-criptografia própria. Envelope ciphertext versionado; outbox não contém plaintext.
+criptografia própria. MLS deve ser avaliado como candidato padrão para grupos,
+sem inventar protocolo se a implementação/ecossistema não atender os gates.
+Envelope ciphertext versionado; outbox não contém plaintext.
 
 ## UX
 

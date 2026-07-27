@@ -78,7 +78,15 @@ Redis. Health, persistência, outbox processor e rate-limit ficam em
 4. Worker processa outbox → Realtime/SignalR notifica assinantes (via backplane Redis se multi-instância).
 5. Clientes reconciliam por `seq` se necessário.
 
-Detalhes: `fluxo-envio-mensagem.md`, `modelo-dominio.md`, `contratos.md`.
+Detalhes:
+
+- [`fluxo-envio-mensagem.md`](fluxo-envio-mensagem.md);
+- [`modelo-dominio.md`](modelo-dominio.md) e
+  [`modelo-identidade-principals.md`](modelo-identidade-principals.md);
+- [`protocolo-sync-realtime.md`](protocolo-sync-realtime.md);
+- [`estado-eventos-auditoria-projecoes.md`](estado-eventos-auditoria-projecoes.md);
+- [`pipeline-anexos.md`](pipeline-anexos.md);
+- [`contratos.md`](contratos.md).
 
 ## Princípios de design
 
@@ -89,6 +97,8 @@ Detalhes: `fluxo-envio-mensagem.md`, `modelo-dominio.md`, `contratos.md`.
 5. **IA atrás de porta** — núcleo funciona com AI desligada
 6. **Observabilidade default** — todo caminho crítico é traçável
 7. **Compose first** — sem K8s até haver justificativa (ADR-017)
+8. **Principals explícitos** — IdP autentica; memberships/capabilities autorizam
+9. **Derivados são projeções** — audit, outbox e read models não viram domínio
 
 ## Fronteiras de deploy (fase 1)
 

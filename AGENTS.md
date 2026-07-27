@@ -4,7 +4,7 @@ Regras para Cloud Agents e agentes de código que trabalham neste repositório.
 Complementa `docs/agents/orientacoes.md`.
 
 Execução contínua e autoridade delegada: `docs/agents/autonomia.md` e
-`docs/agents/operacao-24x7.md`. Decisões D-01…D-27 estão fechadas; escolhas
+`docs/agents/operacao-24x7.md`. Decisões D-01…D-28 estão fechadas; escolhas
 técnicas reversíveis são feitas pelo agente e registradas em ADR quando necessário.
 
 ## Antes de editar
@@ -21,6 +21,8 @@ técnicas reversíveis são feitas pelo agente e registradas em ADR quando neces
 - **Rodar testes relevantes** da trilha tocada (`task test`, `task test:architecture`, etc.).
 - **Adicionar testes para correções** — bugfix sem regressão coberta não está pronto.
 - **Preservar isolamento multi-tenant** — `tenant_id`, authZ e RLS em todo caminho de dado de negócio.
+- **RLS usa role runtime não privilegiada** — API/Worker não conectam como owner,
+  superuser ou `BYPASSRLS`; tabelas tenant-aware usam `FORCE ROW LEVEL SECURITY`.
 - **Sem dependências proprietárias** — preferir OSS; não adicionar SDKs fechados sem decisão explícita.
 - **Sem secrets em logs ou commits** — usar `.env.example` com placeholders; nunca credenciais reais.
 - **Atualizar documentação** quando comportamento, DX ou decisão mudar.

@@ -137,16 +137,16 @@ enquanto o banner de licença do PrimeUI cobrir o composer (saída = spartan/ui 
 D-27). W7-3…W7-5 saem da checklist de **controles mínimos** de
 `docs/security/modelo-ameacas.md`.
 
-| ID | Trilha | Tarefa | Deps | Status |
-|----|--------|--------|------|--------|
-| W7-1 | E | E2E Playwright na CI (B-075) | W2-7, W6-8 | **Done** — job CI + `infra/scripts/ci-e2e.sh` / `task test:e2e:ci` (DevAuth; #45) |
-| W7-6 | D/G | Remover PrimeNG — spartan/ui + CDK (B-104; D-15; D-27; emenda ADR-002) | W6-7, D-15, D-27 | Planned — **próximo elegível**; spec `docs/product/specs/B-104-remover-primeng.md`; fecha UX-002; NG-ZORRO rejeitado |
-| W7-2 | B/D | Guests / link de canal (B-040) | P2-1, D-07 | **Movido** — D-07 revisado em 2026-07-25 destravou o item; virou W10-10 com spec |
-| W7-3 | E/A | Atualização automatizada de dependências (B-076) | W0-7 | Planned — [spec pronta](../product/specs/B-076-atualizacao-dependencias.md); não há bot de update |
-| W7-4 | D/E | CSP no web (B-077) | W6-8 | Planned — [spec pronta](../product/specs/B-077-csp-web.md); headers básicos existem, CSP não |
-| W7-5 | C/E | Limite de tamanho de body no envio (B-078) | W2-1 | Planned — [spec pronta](../product/specs/B-078-limite-body-mensagem.md); limite hoje só na coluna |
-| W7-7 | A/G | Catálogo de configuração admin mínima no `.env` (B-105) | W6-8, W0-2 | Planned — [spec pronta](../product/specs/B-105-catalogo-configuracao.md); inventário documental iniciado; alinhar Compose/template continua pendente |
-| W7-8 | D/G | Admin shell — nav, toolbars, listagens, filtros e hide por papel (B-106; fecha UX-005) | W7-6 | Planned — após saída do PrimeNG; spec `docs/product/specs/B-106-admin-shell.md` |
+| ID | Trilha | Tarefa | Deps | Spec/evidência | Status |
+|----|--------|--------|------|----------------|--------|
+| W7-1 | E | E2E Playwright na CI (B-075) | W2-7, W6-8 | `infra/scripts/ci-e2e.sh`; `task test:e2e:ci`; #45 | **Done** |
+| W7-6 | D/G | Remover PrimeNG — spartan/ui + CDK; fecha UX-002 (B-104; D-15; D-27; emenda ADR-002) | W6-7, D-15, D-27 | [B-104](../product/specs/B-104-remover-primeng.md) | Planned |
+| W7-2 | B/D | Guests / link de canal (B-040) | P2-1, D-07 | [B-040](../product/specs/B-040-guests-por-convite.md) | **Moved** — W10-10 |
+| W7-3 | E/A | Atualização automatizada de dependências; ainda não há bot de update | W0-7 | [B-076](../product/specs/B-076-atualizacao-dependencias.md) | Planned |
+| W7-4 | D/E | CSP no web; headers básicos existem, CSP não | W6-8 | [B-077](../product/specs/B-077-csp-web.md) | Planned |
+| W7-5 | C/E | Limite de tamanho de body no envio; limite atual existe só na coluna | W2-1 | [B-078](../product/specs/B-078-limite-body-mensagem.md) | Planned |
+| W7-7 | A/G | Catálogo de configuração admin mínima no `.env`; Compose/template ainda pendentes | W6-8, W0-2 | [B-105](../product/specs/B-105-catalogo-configuracao.md) | Planned |
+| W7-8 | D/G | Admin shell — nav, toolbars, listagens, filtros e hide por papel; após saída do PrimeNG | W7-6 | [B-106](../product/specs/B-106-admin-shell.md) | Planned |
 
 ### Critérios de aceite W7-7 (resumo)
 
@@ -194,6 +194,12 @@ roadmap executável e reduz ambiguidade antes das próximas waves.
 | DOC-013 | Catálogo futuro de contratos, dados e flags | **Done (2026-07-27)** — [`architecture/catalogo-evolucao-contratos.md`](../architecture/catalogo-evolucao-contratos.md) |
 | DOC-014 | Guias de colaborador, admin, integração e operador | **Done (2026-07-27)** — [`product/guias/`](../product/guias/) |
 | DOC-015 | Métricas e evidence bundles por wave | **Done (2026-07-27)** — [`product/metricas-e-evidencias.md`](../product/metricas-e-evidencias.md) |
+| DOC-016 | Modelo canônico de identidade, principals, devices e memberships | **Done (2026-07-27)** — [`architecture/modelo-identidade-principals.md`](../architecture/modelo-identidade-principals.md) |
+| DOC-017 | Protocolo de mensagens, realtime e sincronização | **Done (2026-07-27)** — [`architecture/protocolo-sync-realtime.md`](../architecture/protocolo-sync-realtime.md) |
+| DOC-018 | Separação entre estado, outbox, audit e projeções | **Done (2026-07-27)** — [`architecture/estado-eventos-auditoria-projecoes.md`](../architecture/estado-eventos-auditoria-projecoes.md) |
+| DOC-019 | Matriz transversal de ciclo de vida dos dados | **Done (2026-07-27)** — [`security/ciclo-vida-dados.md`](../security/ciclo-vida-dados.md) |
+| DOC-020 | State machine e pipeline canônico de anexos | **Done (2026-07-27)** — [`architecture/pipeline-anexos.md`](../architecture/pipeline-anexos.md) |
+| DOC-021 | Contrato SignalR multi-instância e HA | **Done (2026-07-27)** — [`architecture/signalr-ha.md`](../architecture/signalr-ha.md) |
 
 ---
 
@@ -278,7 +284,7 @@ B-136/B-137 (SDK e registry governado).
 O roadmap executável posterior está em
 [`horizonte-ambicioso.md`](horizonte-ambicioso.md). Waves 11–17 estão `Planned`,
 possuem specs e são elegíveis para o Build somente depois da conclusão das
-Waves 7–10 e de suas dependências. D-16…D-26 registram os defaults já decididos;
+Waves 7–10 e de suas dependências. D-16…D-28 registram os defaults já decididos;
 `docs/agents/autonomia.md` governa decisões técnicas e risco.
 
 A visão de produto correspondente está em

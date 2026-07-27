@@ -3,10 +3,11 @@
 Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
-**Data de corte:** 2026-07-27  
-**Fase:** Wave 7 — Sustentação  
-**Próximo item de produto elegível:** W7-6 / B-104 — remover PrimeNG  
-**Escopo deste snapshot:** documentação e estrutura versionada do repositório
+- **Data de corte:** 2026-07-27
+- **Fase:** Wave 7 — Sustentação
+- **Safety lane obrigatória:** SEC-RLS-RUNTIME — enforcement real de RLS
+- **Próximo item de produto após a safety lane:** W7-6 / B-104 — remover PrimeNG
+- **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
 
@@ -18,12 +19,13 @@ W7-1 estão marcadas como entregues.
 
 O trabalho aberto concentra-se em:
 
-1. retirar a dependência comercial PrimeNG;
-2. fechar hardening de supply chain, CSP e validação de body;
-3. consolidar o contrato de configuração self-host;
-4. reconstruir o shell administrativo;
-5. avançar as Waves 8–10 de paridade de mensageria;
-6. consumir o roadmap autorizado W11–W17.
+1. separar roles de banco e provar FORCE RLS com a credencial runtime;
+2. retirar a dependência comercial PrimeNG;
+3. fechar hardening de supply chain, CSP e validação de body;
+4. consolidar o contrato de configuração self-host;
+5. reconstruir o shell administrativo;
+6. avançar as Waves 8–10 de paridade de mensageria;
+7. consumir o roadmap autorizado W11–W17.
 
 ## Runtime e fronteiras
 
@@ -64,7 +66,7 @@ O trabalho aberto concentra-se em:
 |------------|-------------|
 | Login OIDC, tenant context e memberships | W1, B-002/B-003 |
 | Mensagem com `seq`, idempotência, outbox e gap-fill | W2, B-004…B-007, B-070 |
-| RLS e testes cross-tenant | W3, B-009, GAPs de RLS/hub |
+| Policies RLS e testes cross-tenant | W3, B-009, GAPs de RLS/hub; enforcement da role runtime pendente em SEC-RLS-RUNTIME |
 | Threads, DMs, edit/delete, anexos e reações | W4, B-021…B-025 |
 | Presence, typing, busca FTS e PWA | W4, B-026/B-027/B-029 |
 | Backup, proxy TLS, load smoke e runbooks | W5 |
@@ -76,13 +78,14 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W7-6 / B-104 | Remove dependência comercial e desbloqueia o admin shell |
-| 2 | W7-3 / B-076 | Fecha risco de supply chain sem atualização automatizada |
-| 3 | W7-4 / B-077 | Completa headers com CSP |
-| 4 | W7-5 / B-078 | Evita body acima do limite virar erro 500 |
-| 5 | W7-7 / B-105 | Torna configuração self-host explícita e auditável |
-| 6 | W7-8 / B-106 | Consolida navegação e visibilidade do console admin |
-| 7 | Waves 8–10 | Paridade de composição, leitura, notificação e acesso |
+| 1 | SEC-RLS-RUNTIME | Fecha risco Critical de bypass da defesa RLS pela role de aplicação |
+| 2 | W7-6 / B-104 | Remove dependência comercial e desbloqueia o admin shell |
+| 3 | W7-3 / B-076 | Fecha risco de supply chain sem atualização automatizada |
+| 4 | W7-4 / B-077 | Completa headers com CSP |
+| 5 | W7-5 / B-078 | Evita body acima do limite virar erro 500 |
+| 6 | W7-7 / B-105 | Torna configuração self-host explícita e auditável |
+| 7 | W7-8 / B-106 | Consolida navegação e visibilidade do console admin |
+| 8 | Waves 8–10 | Paridade de composição, leitura, notificação e acesso |
 
 W7-3, W7-4, W7-5 e W7-7 podem avançar em paralelo quando houver agentes por
 trilha. W7-8 depende de W7-6.
@@ -92,13 +95,16 @@ altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
 
 ## Baseline de planejamento
 
-- 79 itens `Planned` entre W7–W17;
-- 79 specs em correspondência 1:1;
-- 79 classes R0–R3 declaradas;
+- 81 itens `Planned` entre W7–W17;
+- 81 specs em correspondência 1:1;
+- 81 classes R0–R3 declaradas;
 - nenhuma decisão D-* aberta;
 - pacotes R3, release/support, catálogo de contratos/flags, manuais e métricas
   documentados no programa DOC-009…DOC-015;
+- identidade, sync, projeções, lifecycle, anexos e SignalR HA formalizados em
+  DOC-016…DOC-021;
 - enforcement automático de DOC-006 ainda exige implementação na fase de código;
+- B-153/B-154 adicionam migração/importação e diagnóstico seguro à Wave 11;
 - três ações R4 do GitHub permanecem em `operational-findings.md`.
 
 ## Gaps documentais e operacionais conhecidos
@@ -110,6 +116,7 @@ altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
 | CSP ausente no proxy/web | Registrado no roadmap e threat model | B-077 |
 | Limite de mensagem só no banco | Registrado no roadmap | B-078 |
 | Dependências sem bot de atualização | Registrado no roadmap | B-076 |
+| Role runtime pode não estar submetida à RLS | Mesmo `POSTGRES_USER` e ausência de FORCE no catálogo | SEC-RLS-RUNTIME, Critical/R3 |
 | `Moderation` é fronteira vazia | Assembly existe sem domínio material | Manter explícito; preencher só com feature autorizada |
 
 ## Decisões e limites vigentes

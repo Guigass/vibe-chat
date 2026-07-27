@@ -37,6 +37,8 @@ Sem endpoint novo. Reusa o fluxo de B-025: `initiate` → `PUT` presigned → `c
 cliente não é fonte de verdade.
 
 `contratos.md`: registrar o limite por mensagem e o 400 correspondente.
+Estados, checksum, verificação, órfãos e cancelamento seguem
+[`pipeline-anexos.md`](../../architecture/pipeline-anexos.md).
 
 ## UX
 

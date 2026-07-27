@@ -37,12 +37,15 @@
 | R-31 | Registry/plugin introduzir supply-chain compromise | M | Crítico | Assinatura, provenance, revisão, revogação e capabilities mínimas | Security / Ecosystem |
 | R-32 | Agente entrar em loop de falhas ou reabrir decisões fechadas | M | Alto | Contrato de autonomia, protocolo de três falhas, `BLOCKED-TECH-*` e seleção de outra trilha | Automation / QA |
 | R-33 | PR autônomo mergear sem evidência proporcional ao risco | M | Crítico | Classe R0–R3 no PR; QA independente; checks obrigatórios; `VibeChat Security Review` conclusivo | QA / Repository admin |
+| R-34 | RLS existir no catálogo mas ser ignorada pela role owner/superuser da aplicação | A | Crítico | `SEC-RLS-RUNTIME`: roles separadas, FORCE RLS, WITH CHECK e testes com credencial runtime real | Security / Infra / Backend |
 
 ## Riscos técnicos detalhados
 
 ### R-01 Isolamento
 
 Qualquer endpoint novo é suspeito até prova de teste negativo. Preferir 404 a 403 quando enumeração for risco.
+RLS só conta como defesa se a role efetiva da API/Worker estiver submetida às
+policies; presença de `ENABLE ROW LEVEL SECURITY` no catálogo não basta.
 
 ### R-02 Scope creep
 

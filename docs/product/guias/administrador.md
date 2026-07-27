@@ -116,6 +116,20 @@ Convite futuro:
 - revogação imediata;
 - audit de criação/aceite/revogação.
 
+## Adoção e migração
+
+### Planejado W11
+
+- aplicar template e checklist de onboarding;
+- validar export externo em dry-run;
+- mapear pessoas, papéis e canais antes de importar;
+- acompanhar staging/checkpoints e publicar explicitamente;
+- executar preflight de OIDC, e-mail, push, storage e Worker;
+- gerar support bundle sanitizado e temporário.
+
+Importação não cria senha nem membership elevada por inferência. Bundle de
+suporte não contém mensagens, anexos, tokens ou secrets.
+
 ## Canais confidenciais E2EE
 
 Antes de habilitar, o admin vê matriz de capacidades perdidas. E2EE não é

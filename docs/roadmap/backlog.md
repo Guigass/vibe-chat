@@ -153,7 +153,7 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 
 | Faixa | Tema | Estado |
 |-------|------|--------|
-| B-112…B-118 | Organização, anúncios, agenda, inbox e tópicos | Planned — W11 |
+| B-112…B-118, B-153/B-154 | Organização, onboarding, migração, diagnóstico, inbox e tópicos | Planned — W11 |
 | B-119…B-124 | Conhecimento, decisões, RAG, tarefas e formulários | Planned — W12 |
 | B-125…B-128, B-131, B-139 | Automações, incidentes, conectores e contratos | Planned — W13 |
 | B-129/B-130/B-132…B-134/B-146 | Segurança enterprise, SIEM, policies e capacidade | Planned — W14 |

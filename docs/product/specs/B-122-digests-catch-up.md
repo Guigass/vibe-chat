@@ -1,6 +1,6 @@
 # B-122 — Digests e catch-up programado
 
-> Wave 12 · Trilha C/D · Deps: B-117 · Risco R3 quando IA; R2 sem IA
+> Wave 12 · Trilha C/D · Deps: B-117 · Risco R3
 > Requisitos comuns: [Waves 11–17](long-term-common.md)
 
 ## Problema
@@ -53,5 +53,7 @@ Clock/schedule, fake AI, ACL revocation, email/push privacy e E2E catch-up.
 ## Riscos
 
 Digest virar canal de exfiltração. Minimizar payload externo e revalidar acesso
-no instante da geração.
+no instante da geração. O caminho determinístico sem IA tem risco operacional
+R2, mas a capacidade inteira permanece classificada no maior risco aplicável
+porque o resumo por IA faz parte do escopo opcional.
 

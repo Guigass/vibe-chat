@@ -2,7 +2,27 @@
 
 ## O que é
 
-VibeChat é uma plataforma de chat corporativo **open-source** e **self-hosted**. Organizações instalam, operam e controlam a própria infraestrutura — sem depender de SaaS de terceiros para conversas internas, arquivos e integrações.
+**O VibeChat é uma plataforma de comunicação organizacional que transforma
+conversas em conhecimento e trabalho rastreável.**
+
+É **open-source** e **self-hosted**: organizações instalam, operam e controlam a
+própria infraestrutura, sem depender de SaaS de terceiros para conversas,
+arquivos e integrações.
+
+### Limite do núcleo
+
+Uma capacidade só entra quando fortalece diretamente comunicação, memória
+institucional, execução rastreável ou governança desses fluxos. Suíte genérica de
+documentos, project management completo, mídia sem vínculo com conversa e
+marketplace comercial permanecem fora.
+
+| Camada | Conteúdo |
+|--------|----------|
+| Fundação | identidade, tenants, canais, DMs, threads, mensagens, anexos, realtime, busca, audit e administração |
+| Colaboração | inbox, agenda, decisões, tarefas, páginas e onboarding/migração |
+| Plataforma | webhooks, bots, plugins, automações, formulários e playbooks |
+| Enterprise | provisioning, retenção avançada, DLP, legal hold, eDiscovery e SIEM |
+| Expansão | clients, offline, bridges/federação, E2EE, live e canvas |
 
 ## Problema
 

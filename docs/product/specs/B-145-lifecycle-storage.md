@@ -26,7 +26,9 @@ instância.
 ## Contratos
 
 Usage ledger reconciliável, lifecycle jobs idempotentes, object state/version e
-events. ADR para provider/CDN quando diferente de MinIO.
+events. ADR para provider/CDN quando diferente de MinIO. Lifecycle segue a
+[`matriz de dados`](../../security/ciclo-vida-dados.md) e o
+[`pipeline de anexos`](../../architecture/pipeline-anexos.md).
 
 ## UX
 
@@ -45,6 +47,7 @@ metrics agregadas sem conteúdo.
 - [ ] GC não remove objeto referenciado.
 - [ ] CDN URL expira e não enumera key.
 - [ ] Reconciliation corrige ledger.
+- [ ] Restore não ressuscita objeto já purgado sem reaplicar tombstone/ledger.
 
 ## Testes
 

@@ -2,7 +2,9 @@
 
 ## Escopo
 
-Operação de uma instância self-hosted em fase 1 (**Docker Compose** oficial — D-05). Kubernetes não é obrigatório (ADR-017). Sem SLA comercial; RPO/RTO best effort com backup diário Postgres (D-08).
+Operação de uma instância self-hosted em fase 1 (**Docker Compose** oficial —
+D-05). Kubernetes não é obrigatório (ADR-017). Sem SLA comercial; Basic,
+Standard e HA seguem os objetivos de D-28.
 
 **Runbooks acionáveis (W5-4):** [`runbooks/README.md`](./runbooks/README.md) — incidentes, backup/restore drill, TLS/proxy, upgrade.
 Visão consolidada: [`manual-operador.md`](./manual-operador.md). Política de
@@ -57,7 +59,10 @@ task apps
 3. Worker: 1–N com claim `SKIP LOCKED` no outbox
 4. Web: estático atrás de nginx/CDN interno
 
-Sticky sessions: preferir backplane Redis em vez de sticky-only.
+Backplane Redis não elimina automaticamente afinidade em toda combinação de
+transporte/proxy. B-144 decide e testa sticky sessions, drain, backpressure,
+token renewal e resync conforme
+[`signalr-ha.md`](../architecture/signalr-ha.md).
 
 ## TLS / proxy de referência (W5-2)
 

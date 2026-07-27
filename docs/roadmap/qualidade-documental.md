@@ -6,20 +6,20 @@ evidência do código nem autoriza marcar feature como `Done`.
 
 ## Baseline auditada
 
-Snapshot de 2026-07-27, após D-27:
+Snapshot de 2026-07-27, após D-28:
 
 | Controle | Resultado |
 |----------|-----------|
-| Decisões de produto | D-01…D-27, 27 IDs únicos, nenhuma aberta |
-| Itens de produto `Planned` | 79 entre W7 e W17 |
-| Specs de itens `Planned` | 79 arquivos, correspondência 1:1 |
+| Decisões de produto | D-01…D-28, 28 IDs únicos, nenhuma aberta |
+| Itens de produto `Planned` | 81 entre W7 e W17 |
+| Specs de itens `Planned` | 81 arquivos, correspondência 1:1 |
 | IDs `Planned` sem spec | 0 |
 | Specs sem item `Planned` | 0 |
 | IDs `Planned` duplicados | 0 |
-| Specs com classe R0–R3 | 79 de 79 |
-| Seções obrigatórias por spec | 79 de 79 |
+| Specs com classe R0–R3 | 81 de 81 |
+| Seções obrigatórias por spec | 81 de 81 |
 | Findings UX abertos sem rota | 0 |
-| Links locais | 384 verificados em 162 arquivos Markdown/MDC; 0 quebrados |
+| Links locais | 446 verificados em 170 arquivos Markdown/MDC; 0 quebrados |
 | `docker compose config --quiet` com `.env.example` | válido; profiles `apps`, `observability`, `proxy`, `tools` |
 
 O comando de Compose emitiu apenas aviso local de acesso ao
@@ -119,9 +119,9 @@ Formato de saída:
 
 ```text
 DOC-CHECK PASS
-decisions=27
-planned=79
-specs=79
+decisions=28
+planned=81
+specs=81
 links=<n>
 warnings=<n>
 ```
@@ -159,6 +159,7 @@ entrega exclusivamente documental:
 - implementar o checker e ligá-lo à CI;
 - alinhar Compose/template nos gaps de B-105;
 - comprovar serviços opt-in dentro dos containers;
+- resolver `SEC-RLS-RUNTIME` com roles separadas, FORCE RLS e testes runtime;
 - configurar required checks e permissões no GitHub.
 
 Essas pendências não podem ser marcadas como feitas apenas porque o comportamento

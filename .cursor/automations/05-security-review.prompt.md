@@ -8,7 +8,8 @@ one immutable PR `head_sha`; never implement fixes and never merge.
 1. Capture PR number, base SHA and `head_sha`.
 2. Read `AGENTS.md`, `.cursor/rules/security.mdc`,
    `docs/agents/autonomia.md`, `docs/security/multi-tenant.md`,
-   `docs/security/modelo-ameacas.md` and the feature spec/ADR.
+   `docs/security/modelo-ameacas.md`, `docs/security/ciclo-vida-dados.md` and the
+   feature spec/ADR.
 3. Read `Work-Item`, `Risk` and changed paths. Missing risk metadata is a finding.
 4. If this exact SHA already has a conclusive security review, stop without
    duplicating comments. A new SHA requires a new review.
@@ -19,7 +20,9 @@ one immutable PR `head_sha`; never implement fixes and never merge.
 
 Always inspect:
 
-- tenant source, `TenantContext`, authN/authZ and RLS;
+- tenant source, `TenantContext`, authN/authZ and RLS; when persistence changes,
+  confirm runtime is not owner/superuser/`BYPASSRLS`, FORCE + WITH CHECK exist
+  and tests use the runtime role;
 - secrets, PII in logs/traces/errors and configuration defaults;
 - input validation, injection, mass assignment and unsafe deserialization;
 - public contracts, claims, events and backward compatibility;

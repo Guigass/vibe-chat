@@ -26,7 +26,14 @@ tempo excessivo.
 ## Contratos
 
 Endpoints `/scim/v2`; schemas RFC compatíveis; externalId unique por tenant;
-erros SCIM padronizados. ADR registra interação Keycloak/profile/membership.
+erros SCIM padronizados. SCIM implementa uma porta de provisioning do VibeChat;
+adapter não escreve diretamente em tabelas do Keycloak nem de membership. ADR
+registra interação Keycloak/profile/membership e segue
+[`modelo-identidade-principals.md`](../../architecture/modelo-identidade-principals.md).
+
+Keycloak autentica; VibeChat continua owner de User local, mappings,
+memberships, papéis e revogação de acesso. Capability do IdP em preview nunca é
+dependência obrigatória do contrato.
 
 ## UX
 
@@ -45,6 +52,8 @@ os endpoints.
 - [ ] Deactivate revoga sessão/acesso rapidamente.
 - [ ] Mapping não cria papel proibido.
 - [ ] Secret só aparece na criação.
+- [ ] Adapter Keycloak desligado não impede SCIM por outro provider.
+- [ ] Evento interno e SCIM usam o mesmo comando de provisioning.
 
 ## Testes
 

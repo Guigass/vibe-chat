@@ -14,7 +14,7 @@ testes nem uma revisão de segurança.
 | [006](../adrs/ADR-006-redis.md) | Redis efêmero/backplane | Compose, presence/typing/rate-limit e backplane | Alinhado |
 | [007](../adrs/ADR-007-keycloak.md) | Keycloak OIDC | serviço Compose, realm versionado, JWT/OIDC web | Alinhado; DevAuth limitado ao ambiente Development |
 | [008](../adrs/ADR-008-minio-s3.md) | MinIO/S3-compatible | serviços MinIO/createbucket, módulo Files, presigned URLs | Alinhado |
-| [009](../adrs/ADR-009-multi-tenancy-rls.md) | Shared schema + RLS | `03-rls.sql`, TenantContext, suíte security e teste de catálogo | Alinhado; toda tabela nova deve reabrir o checklist |
+| [009](../adrs/ADR-009-multi-tenancy-rls.md) | Shared schema + RLS | `03-rls.sql`, TenantContext, suíte security e teste de catálogo | **Parcial/Critical:** API/Worker ainda usam bootstrap owner e catálogo não aplica FORCE/WITH CHECK; `SEC-RLS-RUNTIME` |
 | [010](../adrs/ADR-010-outbox.md) | Transactional outbox | tabela/migration, writer, processor e worker | Alinhado |
 | [011](../adrs/ADR-011-busca-postgresql.md) | FTS no PostgreSQL | migration search vector, módulo Search, endpoint/testes | Alinhado |
 | [012](../adrs/ADR-012-integracao-ia.md) | IA opcional e fora do hot path | módulo AI, Mock/OpenRouter, `Ai:Enabled=false` por default | Alinhado; configuração Compose precisa permanecer opt-in |

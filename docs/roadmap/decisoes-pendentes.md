@@ -2,7 +2,7 @@
 
 O nome do arquivo é preservado por compatibilidade, mas **não há decisão aberta**.
 D-01…D-10 foram fechadas em 2026-07-24; D-11…D-15 e a revisão de D-07 em
-2026-07-25; D-16…D-27 em 2026-07-27. O conjunto define defaults suficientes
+2026-07-25; D-16…D-28 em 2026-07-27. O conjunto define defaults suficientes
 para execução autônoma do roadmap. Nova decisão de produto só é aberta quando
 um caso realmente fora desses defaults também for R4 em `agents/autonomia.md`.
 
@@ -37,10 +37,11 @@ um caso realmente fora desses defaults também for R4 em `agents/autonomia.md`.
 | D-25 | **Porte, SLO e disponibilidade alvo** | HA/multi-região/K8s só podem ser dimensionados com carga, RPO/RTO e orçamento | Platform owner + Founder | **Decidido (2026-07-27)** — perfis Standard/HA; sem multi-region write; escalar por evidência |
 | D-26 | **E2EE versus compliance** | E2EE conflita com busca, moderação, legal hold, export e IA server-side | Founder + Security + Legal | **Decidido (2026-07-27)** — canais confidenciais E2EE opt-in, off default e com capacidades reduzidas |
 | D-27 | **Kit UI OSS pós-PrimeNG** | Substitui PrimeNG sem dependência comercial; define a stack do B-104 | Founder / Frontend | **Decidido (2026-07-27)** — **spartan/ui** (não NG-ZORRO); ver registro D-27 |
+| D-28 | **Perfis de recuperação e RPO Standard** | Separa laboratório de produção e evita prometer que backup diário basta para chat operacional | Founder + Platform | **Decidido (2026-07-27)** — Basic best effort RPO≤24h; Standard de produção RPO≤1h com PITR/WAL; HA mantém RPO≤5m após B-144 |
 
 ## Delegação do horizonte ambicioso
 
-D-16…D-26 fecham as escolhas de produto. Decisões técnicas reversíveis — seleção
+D-16…D-28 fecham as escolhas de produto e operação. Decisões técnicas reversíveis — seleção
 de biblioteca OSS, shape interno, estratégia de migration e implementação —
 foram delegadas aos agentes, que devem registrar ADR quando a arquitetura mudar.
 Não reabrir decisão humana apenas porque a implementação é difícil.
@@ -276,7 +277,7 @@ Impacto em código/docs:
   - Kit OSS substituto definido em D-27 (spartan/ui)
 ```
 
-## Registros D-16…D-26 — autonomia de longo prazo
+## Registros D-16…D-28 — autonomia de longo prazo
 
 ### D-16 — Produto
 
@@ -369,7 +370,7 @@ Proibido: CSS/JS arbitrário, substituir textos legais, esconder security state.
 
 ```text
 Escolha: dois perfis documentados.
-  Standard: objetivo 99,9%; RPO 24h; RTO 4h; Compose.
+  Standard: objetivo 99,9%; detalhes de recuperação refinados por D-28.
   HA: objetivo 99,95%; RPO <= 5 min; RTO <= 30 min, após B-144.
 Sem multi-region write nesta linha de produto. K8s, bus e OpenSearch só quando
 ADRs 015–017 mostrarem gatilho medido.
@@ -420,6 +421,47 @@ Impacto em código/docs:
   - B-106 permanece responsável pelo polish do admin após a paridade funcional
   - Chat shell permanece shared/ui; spartan não substitui o shell
   - Validar versões e peers atuais no lock/build durante B-104
+```
+
+### D-28 — Perfis de recuperação
+
+```text
+Decisão: D-28 — Decidido
+Contexto: backup diário com RPO de 24h é aceitável para laboratório/instalação
+  básica best effort, mas insuficiente como objetivo de produção de chat.
+
+Escolha:
+  Basic/Dev:
+  - Compose simples, sem objetivo de disponibilidade;
+  - backup completo diário;
+  - RPO <= 24h e RTO <= 4h best effort;
+  - claramente rotulado como não recomendado para operação crítica.
+
+  Standard de produção:
+  - objetivo de disponibilidade 99,9%, sem SLA comercial automático;
+  - RPO <= 1h e RTO <= 4h;
+  - PostgreSQL com arquivamento contínuo de WAL/PITR;
+  - backup completo diário + restore drill;
+  - storage de objetos versionado/replicado conforme capacidade;
+  - Keycloak/realm, configuração e secrets incluídos no plano;
+  - Compose continua permitido; Kubernetes não é requisito.
+
+  HA:
+  - objetivo 99,95%, RPO <= 5 min e RTO <= 30 min;
+  - somente após B-146/B-144 e evidência de failover/restore.
+
+Regras:
+  - backup só conta após restore verificável;
+  - operador self-host é responsável por storage/credenciais de backup;
+  - release não transforma objetivo em SLA comercial;
+  - degradação para um perfil inferior deve ser visível.
+
+Data: 2026-07-27
+Owner: Founder + Platform
+Impacto:
+  - refina D-08/D-25;
+  - atualiza backup/restore, operação, B-146 e B-144;
+  - não adiciona K8s, multi-region write ou serviço proprietário.
 ```
 
 ## Orientações para agentes

@@ -27,7 +27,10 @@ confiável à conversa que os originou.
 
 Entidades tenant-scoped; endpoints CRUD idempotentes; eventos
 `decision.*`/`action_item.*`. Delete da origem mantém referência redigida conforme
-retention, sem copiar body indefinidamente.
+retention, sem copiar body indefinidamente. Provenance guarda `source_id`,
+`source_version`, hash de excerpt, método/ator e snapshot explicativo de authZ;
+a autorização atual sempre prevalece, conforme
+[`estado-eventos-auditoria-projecoes.md`](../../architecture/estado-eventos-auditoria-projecoes.md).
 
 ## UX
 

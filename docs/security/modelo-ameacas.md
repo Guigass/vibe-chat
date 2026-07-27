@@ -42,7 +42,8 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 2. **SignalR hub** — join em grupos sem authZ; message spoofing
 3. **Uploads MinIO** — MIME spoofing, zip bombs, URLs pré-assinadas vazadas
 4. **Keycloak** — realm misconfig, clients públicos mal configurados
-5. **Postgres** — conexão sem RLS context; SQL admin bypass
+5. **Postgres** — conexão sem RLS context; app como owner/superuser/`BYPASSRLS`;
+   policy sem `FORCE`/`WITH CHECK`
 6. **Redis** — sem AUTH em rede exposta; flush
 7. **AI provider** — exfiltração de contexto de prompts
 8. **Supply chain** — deps npm/nuget
@@ -50,12 +51,18 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 10. **Auditoria de conversa** — leitura privilegiada de DMs/soft-deletes por quem não é membro do canal (R-18)
 11. **Export de workspace** — download ZIP com conteúdo (incl. soft-delete) por quem não é `workspace.admin` ou cross-tenant
 12. **Retenção / purge** — hard-delete prematuro ou cross-tenant via settings/job; bypass do kill switch de processo
+13. **Importação** — archive hostil, mass assignment, autoria/papel falso e
+    exaustão de storage
+14. **Support bundle/repair** — exfiltração de secret/PII e ação administrativa
+    destrutiva
 
 ## Controles mínimos obrigatórios (fase 1)
 
 - [x] TLS em trânsito (terminação no proxy ou HTTPS direto) — referência Compose profile `proxy` (W5-2)
 - [x] Secrets de AI/SMTP só via env/secret store; API admin devolve máscara (`••••last4` / `configured`) — B-069
-- [x] `TenantContext` + RLS — W3-1, B-009 e gaps de catálogo RLS
+- [x] `TenantContext` + catálogo inicial RLS — W3-1/B-009
+- [ ] Role runtime separada + FORCE/WITH CHECK + teste com credencial real —
+  `SEC-RLS-RUNTIME`
 - [x] AuthZ nas entradas de hub/API existentes — W3-2; toda entrada nova reabre a obrigação de teste
 - [x] Idempotency no envio — B-004
 - [ ] Limite de tamanho de body validado antes do banco — B-078 / W7-5
@@ -139,6 +146,9 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | Live media | Gravação sem consentimento, abuso e exaustão de SFU/TURN | D-19; consentimento visível, quotas, moderação e SLO |
 | E2EE | Recuperação de conta, moderação e compliance incompatíveis | D-26; modelo formal antes de qualquer implementação persistente |
 | Canvas colaborativo | AuthZ por bloco, conflito, histórico e export incompletos | D-17; modelo de permissão e retenção antes de CRDT/OT |
+| Migração/import | Archive hostil, duplicação, papel falso e cross-tenant | B-153; staging, dry-run, adapters versionados, scan e quotas |
+| Diagnóstico/support | Bundle com secret/PII ou repair perigoso | B-154; schema allowlisted, scan, TTL, capability e dry-run |
 
 Ver também: [`multi-tenant.md`](multi-tenant.md) e
+[`ciclo-vida-dados.md`](ciclo-vida-dados.md),
 [`horizonte-ambicioso.md`](../roadmap/horizonte-ambicioso.md).
