@@ -5,7 +5,7 @@
 | ID | Risco | Prob. | Impacto | Mitigação | Owner sugerido |
 |----|-------|-------|---------|-----------|----------------|
 | R-01 | Vazamento cross-tenant | M | Crítico | RLS + testes security + reviews; hardening contínuo no Registro de GAPs (`roadmap.md`) | Security / Backend |
-| R-02 | Scope creep (K8s, Kafka, ES) | A | Alto | ADRs 015–017; roadmap waves | Tech lead humano |
+| R-02 | Scope creep (K8s, Kafka, ES) | A | Alto | ADRs 015–017; roadmap waves; ADR autônomo só após gatilho medido | Architecture agent |
 | R-03 | Dual-write mensagem/evento | M | Alto | Outbox obrigatório (ADR-010) | Backend |
 | R-04 | Misconfig Keycloak em prod | M | Alto | Realm as code; checklist ops | Infra |
 | R-05 | Secrets commitados | M | Crítico | .gitignore; scanning; env only | Todos |
@@ -22,7 +22,21 @@
 | R-16 | Realtime degradado (só typing) | B | Alto | **Mitigado (B-070 Done)** — gap-fill + E2E dois usuários; monitorar métricas SignalR/outbox | Backend / Frontend |
 | R-17 | Secrets/webhooks expostos a membros | M | Crítico | **Mitigado (B-069/B-048)** — settings só `workspace.admin`; secret HMAC mascarado; nunca logar tokens | Security |
 | R-18 | Auditoria de conversa (break-glass de leitura) | M | Alto | B-067 authZ `admin.dashboard` + escopo tenant; testes security; ver `modelo-ameacas.md` | Security |
-| R-19 | Dependência UI comercial (PrimeNG/PrimeUI) | A | Alto | **Mitigação em curso (D-15 / D-16 / B-104)** — sair do PrimeNG; adotar spartan/ui (MIT) + CDK + tokens; NG-ZORRO rejeitado; não gerar chave nem esconder banner por CSS | Frontend |
+| R-19 | Dependência UI comercial (PrimeNG/PrimeUI) | A | Alto | **Mitigação em curso (D-15 / D-27 / B-104)** — sair do PrimeNG; adotar spartan/ui (MIT) + CDK + tokens; não gerar chave nem esconder banner por CSS; polish do console admin em **B-106** | Frontend |
+| R-20 | Drift entre `.env.example`, Compose e appsettings | A | Alto | B-105 + catálogo canônico; smoke do profile `apps`; declarar aliases sem efeito | Infra / Docs |
+| R-21 | Roadmap marcar `Done` sem evidência ou ficar divergente do backlog/spec | M | Alto | `estado-atual.md`, programa DOC-*, revisão por wave e rastreabilidade ID↔spec | Produto / QA / Docs |
+| R-22 | Portfólio ambicioso diluir o chat principal | A | Alto | Waves 7–10 primeiro; W11–W17 em ordem; uma aposta arquitetural por vez | Product / Build agent |
+| R-23 | Conhecimento/tarefas divergirem da mensagem de origem | M | Alto | Referência canônica, propagação de edit/delete/retention e audit | Produto / Backend |
+| R-24 | Automação duplicar ações ou entrar em loop | M | Alto | Idempotência, depth limit, rate-limit, circuit breaker e identidade de execução | Backend / Security |
+| R-25 | Conector/bridge permitir SSRF ou exfiltrar secret | M | Crítico | Egress policy, HMAC/OAuth scoped, rotação, URL validation e audit | Security / Integrations |
+| R-26 | Legal hold conflitar com retenção e direito de exclusão | M | Crítico | D-23; precedência formal e trilha de custódia; validação legal externa só antes de alegação/produção regulada | Security / External legal |
+| R-27 | Embeddings/RAG preservarem conteúdo já revogado | M | Crítico | ACL na consulta, delete propagation, reindex, provider opt-in e citations | AI / Security |
+| R-28 | Federação reduzir soberania e revogação local | M | Crítico | D-21; consentimento, trust domains e política de cópia/retenção | Founder / Security / Legal |
+| R-29 | Live media degradar chat e elevar custo operacional | M | Alto | D-19; plano SFU/TURN separado, quotas e SLOs | Platform / Realtime |
+| R-30 | Desktop/mobile criarem clientes e contratos divergentes | M | Alto | D-20; APIs únicas, contract tests e matriz de suporte | Produto / Frontend |
+| R-31 | Registry/plugin introduzir supply-chain compromise | M | Crítico | Assinatura, provenance, revisão, revogação e capabilities mínimas | Security / Ecosystem |
+| R-32 | Agente entrar em loop de falhas ou reabrir decisões fechadas | M | Alto | Contrato de autonomia, protocolo de três falhas, `BLOCKED-TECH-*` e seleção de outra trilha | Automation / QA |
+| R-33 | PR autônomo mergear sem evidência proporcional ao risco | M | Crítico | Classe R0–R3 no PR; QA independente; checks obrigatórios; `VibeChat Security Review` conclusivo | QA / Repository admin |
 
 ## Riscos técnicos detalhados
 
@@ -44,7 +58,13 @@ Sem licença clara, adoção OSS trava. Sem política de retenção, features de
 - Aumento de 403/401 anômalos
 - Uso de memória Redis sem bound
 - Tempo de PR arquitetural sem ADR
+- Item `Planned` sem spec, dependências ou classe de risco
+- Automação com retry/loop crescente
+- Índice semântico com atraso de delete/revogação
+- Diferença de comportamento entre web e novos clients
+- Custos de mídia/storage crescendo acima de usuários ativos
 
 ## Revisões
 
-Revisar esta lista a cada wave do roadmap ou incidente P0/P1. Última revisão: Wave 7.
+Revisar esta lista a cada wave do roadmap ou incidente P0/P1. Última revisão:
+2026-07-27, promoção W11–W17 e contrato de execução autônoma.

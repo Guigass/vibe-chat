@@ -41,21 +41,34 @@
 | **MinIO** | Object storage S3-compatible |
 | **Stack OTel** | Traces, métricas, logs |
 
-## Módulos de domínio (lógicos)
+## Módulos de domínio e plataforma
+
+Os nomes abaixo acompanham os assemblies em `modules/`. Algumas responsabilidades
+de runtime permanecem na infraestrutura compartilhada, mas não devem atravessar
+fronteiras de domínio silenciosamente.
 
 | Módulo | Responsabilidade |
 |--------|------------------|
+| **Tenancy** | TenantContext e primitivas de isolamento |
 | **Identity** | Usuários locais/espelho, sessão, claims, integração Keycloak |
-| **Directory** | Tenants, workspaces, spaces, memberships, papéis |
-| **Messaging** | Channels, threads, messages, seq, idempotência, outbox de mensagem |
+| **Directory** | Workspaces, spaces, memberships e papéis |
+| **Conversations** | Channels, DMs, threads e conversations |
+| **Messaging** | Messages, reactions, seq, idempotência e outbox de mensagem |
 | **Realtime** | Hubs SignalR, grupos, fan-out de eventos |
 | **Files** | Metadados de anexo, URLs pré-assinadas, políticas de tipo/tamanho |
 | **Search** | Indexação leve / FTS PostgreSQL |
-| **Presence** | Online/away/typing via Redis |
 | **Notifications** | Preferências e entregas assíncronas (fase inicial mínima) |
 | **Audit** | Trilha de ações sensíveis |
 | **AI** | Interface `IAiAssistant`; provedor opcional (OpenRouter) |
-| **Platform** | Health, tenancy context, outbox infrastructure, rate-limit |
+| **Administration** | Dashboard, settings, export e leitura administrativa |
+| **Integrations** | Webhooks outbound e futuras integrações autorizadas |
+| **Moderation** | Fronteira reservada; ainda sem domínio material no snapshot de 2026-07-27 |
+| **BuildingBlocks** | Tipos e contratos técnicos compartilhados |
+
+Presence/typing pertencem hoje à fronteira **Realtime** com estado efêmero no
+Redis. Health, persistência, outbox processor e rate-limit ficam em
+`src/VibeChat.Infrastructure`; não constituem um módulo de negócio chamado
+“Platform”.
 
 ## Fluxo de dados (resumo)
 

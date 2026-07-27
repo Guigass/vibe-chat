@@ -3,6 +3,10 @@
 Regras para Cloud Agents e agentes de código que trabalham neste repositório.
 Complementa `docs/agents/orientacoes.md`.
 
+Execução contínua e autoridade delegada: `docs/agents/autonomia.md` e
+`docs/agents/operacao-24x7.md`. Decisões D-01…D-26 estão fechadas; escolhas
+técnicas reversíveis são feitas pelo agente e registradas em ADR quando necessário.
+
 ## Antes de editar
 
 1. Ler `docs/architecture/` (especialmente `visao-geral.md`, `contratos.md`, `diagrama-modulos.md`) e os ADRs relevantes em `docs/adrs/`.
@@ -33,7 +37,10 @@ Trilha: A|B|C|…
 Deps satisfeitas: …
 ```
 
-Se bloqueado por decisão humana (D-*), parar e documentar — não inventar licença, marca ou retenção.
+Parar para humano somente em `R4 — Externo` de `docs/agents/autonomia.md`
+(licença incompatível, gasto/contrato, secret/produção real, certificação ou
+operação destrutiva externa). Dificuldade técnica não reabre D-*; seguir o
+protocolo autônomo de falha e continuar outra trilha independente quando possível.
 
 ## Backend
 

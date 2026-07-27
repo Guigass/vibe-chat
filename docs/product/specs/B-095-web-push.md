@@ -14,7 +14,8 @@ o que basicamente obriga a deixar o VibeChat aberto o dia inteiro. Não há uso 
 - Assinatura por dispositivo, opt-in, pedida **depois** de uma ação do usuário.
 - Notificação do navegador com a aba em foco em outro canal (in-app, sem push).
 - Push só quando: menção direta, DM, ou canal marcado como “todas as mensagens”.
-- Nada de push para mensagem já lida em outro dispositivo (checa o cursor de B-094).
+- Nada de push para mensagem já lida em outro dispositivo (checa o cursor
+  **persistente** de B-094 — `messaging.read_cursors`).
 - Clicar na notificação abre a conversa na mensagem.
 - Desativar por dispositivo e revogar todas as assinaturas.
 

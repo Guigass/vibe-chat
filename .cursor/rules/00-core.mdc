@@ -14,5 +14,5 @@ alwaysApply: true
 - Sem dependências proprietárias; sem secrets em logs/commits.
 - Atualizar docs; PRs pequenos; apresentar evidência de funcionamento.
 - PT-BR em docs humanas; inglês em código (tipos, APIs, ids).
-- Fatia vertical (login → canal → mensagem em tempo real) tem prioridade sobre P2/P3.
+- O primeiro item elegível do roadmap tem prioridade sobre trabalho inventado.
 - Respeitar `docs/roadmap/decisoes-pendentes.md` e `AGENTS.md`.

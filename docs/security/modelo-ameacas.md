@@ -55,12 +55,13 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 
 - [x] TLS em trânsito (terminação no proxy ou HTTPS direto) — referência Compose profile `proxy` (W5-2)
 - [x] Secrets de AI/SMTP só via env/secret store; API admin devolve máscara (`••••last4` / `configured`) — B-069
-- [ ] `TenantContext` + RLS
-- [ ] AuthZ em **toda** entrada de hub e API
-- [ ] Idempotency + limites de tamanho de body
-- [ ] Rate limiting por usuário/IP
-- [ ] Headers de segurança no web (CSP básica, etc.)
-- [ ] Dependabot/renovate ou equivalente
+- [x] `TenantContext` + RLS — W3-1, B-009 e gaps de catálogo RLS
+- [x] AuthZ nas entradas de hub/API existentes — W3-2; toda entrada nova reabre a obrigação de teste
+- [x] Idempotency no envio — B-004
+- [ ] Limite de tamanho de body validado antes do banco — B-078 / W7-5
+- [x] Rate limiting por usuário/IP nos caminhos de send/hub — B-028
+- [ ] Headers de segurança completos — básicos presentes; CSP pendente em B-077 / W7-4
+- [ ] Dependabot/Renovate ou equivalente — B-076 / W7-3
 - [x] Testes em `tests/security` para cross-tenant (API + hub T3 `JoinChannel`/`SendTyping`)
 
 ### R-17 — Secrets/webhooks expostos a membros
@@ -121,4 +122,23 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 - Formal verification
 - Bug bounty
 
-Ver também: `multi-tenant.md`.
+## Superfícies do horizonte (ainda não implementadas)
+
+As superfícies abaixo não descrevem o runtime atual. São controles obrigatórios
+dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
+
+| Superfície | Ameaça dominante | Controle mínimo decidido |
+|------------|------------------|----------------------|
+| RAG/embeddings | Conteúdo revogado continuar recuperável; ACL desatualizada | D-22; delete propagation, ACL no retrieval, audit e opt-in |
+| Workflows | Loop, replay, privilégio transitivo e ação sem owner | Idempotência, depth/rate limits, identidade e capability por ação |
+| Conectores/bridges | SSRF, secret leak, impersonation e cópia fora do tenant | D-21; egress policy, scopes, HMAC/OAuth, consentimento e audit |
+| Registry de plugins | Supply-chain compromise e pacote revogado continuar ativo | D-18; assinatura, provenance, revisão, revogação e kill switch |
+| Legal hold/DLP | Preservação indevida, abuso de busca e conflito com exclusão | D-23; authZ separada, cadeia de custódia e parecer legal |
+| Offline/mobile | Token e conteúdo persistidos no dispositivo; revogação tardia | D-20; secure storage, remote logout e contrato de sync |
+| Federação | Perda de soberania, retenção e controle de identidade | D-21; trust domains, allowlist e política de cópia |
+| Live media | Gravação sem consentimento, abuso e exaustão de SFU/TURN | D-19; consentimento visível, quotas, moderação e SLO |
+| E2EE | Recuperação de conta, moderação e compliance incompatíveis | D-26; modelo formal antes de qualquer implementação persistente |
+| Canvas colaborativo | AuthZ por bloco, conflito, histórico e export incompletos | D-17; modelo de permissão e retenção antes de CRDT/OT |
+
+Ver também: [`multi-tenant.md`](multi-tenant.md) e
+[`horizonte-ambicioso.md`](../roadmap/horizonte-ambicioso.md).

@@ -10,17 +10,18 @@ Regras do registro:
 - Só entra o que foi **observado** rodando a aplicação. Suspeita sem evidência não entra.
 - Severidade: **Alta** (bloqueia ou quebra uma tarefa), **Média** (atrapalha), **Baixa** (polimento).
 - Achado fechado vira `Done` com o PR, não é apagado.
-- Achado que exige decisão humana aponta o `D-*` e fica `Blocked`.
+- Detalhe reversível recebe recomendação concreta; somente dependência R4 fica
+  `External action`.
 
 ## Abertos
 
 | ID | Tela | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
 | UX-001 | Login | Os três botões DevAuth (Alice/Bob/Demo) renderizam como retângulos vazios, sem rótulo visível | Alta | Aberto |
-| UX-002 | Todas | Banner vermelho fixo “Invalid PrimeUI License” no canto inferior direito, **cobrindo “Anexar” e “Enviar”** do composer | Alta | Aberto — D-15 sair do PrimeNG; D-16 kit = spartan/ui; fecha com **B-104** |
+| UX-002 | Todas | Banner vermelho fixo “Invalid PrimeUI License” no canto inferior direito, **cobrindo “Anexar” e “Enviar”** do composer | Alta | Aberto — D-15 sair do PrimeNG; D-27 kit = spartan/ui; fecha com **B-104** |
 | UX-003 | Shell | Em viewport estreito (~400 px) a sidebar continua ocupando quase metade da largura; não há colapso nem botão de alternar | Alta | Aberto |
 | UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto |
-| UX-005 | Admin | Seções sem permissão exibem o aviso em laranja/vermelho, dando aparência de erro a um estado esperado | Média | Aberto |
+| UX-005 | Admin | Seções sem permissão exibem o aviso em laranja/vermelho, dando aparência de erro a um estado esperado | Média | Aberto — fecha com **B-106** (esconder nav/áreas sem claim; matriz por papel) |
 | UX-006 | Header | Botões de ícone (buscar, tema, densidade, painel) sem estado de hover/foco perceptível | Média | Aberto |
 
 ## Detalhamento
@@ -58,7 +59,7 @@ São dois problemas empilhados:
 2. **Compliance** — `AGENTS.md` proíbe dependência proprietária sem decisão explícita,
    e o ADR-002 foi emendado para adotar PrimeNG (B-073) sem essa análise de licença.
 
-**D-15 decidiu (c) sair do PrimeNG.** **D-16** escolheu o substituto OSS:
+**D-15 decidiu (c) sair do PrimeNG.** **D-27** escolheu o substituto OSS:
 **spartan/ui** (não NG-ZORRO). A correção é **B-104** (spec
 `docs/product/specs/B-104-remover-primeng.md`): desinstalar o pacote, adotar
 `@spartan-ng/brain` + tokens `--vc-*`, e reescrever `/admin` (Select via spartan;
@@ -81,7 +82,11 @@ B-103, mas é corrigível antes.
 
 Em `/admin`, “Sem permissão para ler settings sensíveis” e “Sem permissão para auditar
 conversas” aparecem em laranja/vermelho. Para um Auditor, esse é o estado **normal**,
-não uma falha. Usar texto neutro ou ocultar a seção.
+não uma falha.
+
+Correção: **B-106** — não renderizar nav, toolbar nem seções sem a claim; deep-link
+sem permissão vai para a primeira área permitida (ou empty neutro). Sem banner de
+“sem permissão”. Matriz Admin vs Auditor vs Member na spec.
 
 ### UX-006 — Botões de ícone sem estado de hover/foco
 

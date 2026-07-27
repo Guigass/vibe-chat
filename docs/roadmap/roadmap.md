@@ -2,6 +2,9 @@
 
 Roadmap para **times de agentes** trabalharem em paralelo. Cada item tem ID, dependências e trilha.
 
+Snapshot resumido e fila corrente: [`estado-atual.md`](estado-atual.md). Portal da
+documentação: [`docs/README.md`](../README.md).
+
 ## Legend
 
 | Trilha | Foco |
@@ -123,26 +126,27 @@ Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks + B-045 suggest
 - Docs/glossário deixam claro: Keycloak autentica; membership/diretivas autorizam
 - Tokens/webhooks/keys inacessíveis a não-admin
 - Admin consegue auditar conversa (não só `audit_events`)
-- Identidade visual VibeChat preservada (tokens); saída do PrimeNG (D-15) + kit OSS spartan/ui (D-16) executados em B-104
+- Identidade visual VibeChat preservada (tokens); saída do PrimeNG (D-15) + kit OSS spartan/ui (D-27) executados em B-104
 - `task apps` (Compose profile `apps`) sobe **api** + **web** (+ worker) healthy; caminho self-host documentado (dev hot-reload continua via `task dev`)
 
 ## Wave 7 — Sustentação
 
 Fila explícita para a automação de Build depois da Wave 6. Enquanto houver linha
 `Planned` aqui, o Build pega dela. **W7-6 (B-104) tem prioridade** sobre W7-3…W7-5
-enquanto o banner de licença do PrimeUI cobrir o composer (saída = spartan/ui per
-D-16). W7-3…W7-5 saem da checklist de **controles mínimos** de
+enquanto o banner de licença do PrimeUI cobrir o composer (saída = spartan/ui conforme
+D-27). W7-3…W7-5 saem da checklist de **controles mínimos** de
 `docs/security/modelo-ameacas.md`.
 
 | ID | Trilha | Tarefa | Deps | Status |
 |----|--------|--------|------|--------|
 | W7-1 | E | E2E Playwright na CI (B-075) | W2-7, W6-8 | **Done** — job CI + `infra/scripts/ci-e2e.sh` / `task test:e2e:ci` (DevAuth; #45) |
-| W7-6 | D/G | Remover PrimeNG — spartan/ui + CDK (B-104; D-15; D-16; emenda ADR-002) | W6-7, D-15, D-16 | Planned — **próximo elegível**; spec `docs/product/specs/B-104-remover-primeng.md`; fecha UX-002; NG-ZORRO rejeitado |
+| W7-6 | D/G | Remover PrimeNG — spartan/ui + CDK (B-104; D-15; D-27; emenda ADR-002) | W6-7, D-15, D-27 | Planned — **próximo elegível**; spec `docs/product/specs/B-104-remover-primeng.md`; fecha UX-002; NG-ZORRO rejeitado |
 | W7-2 | B/D | Guests / link de canal (B-040) | P2-1, D-07 | **Movido** — D-07 revisado em 2026-07-25 destravou o item; virou W10-10 com spec |
-| W7-3 | E/A | Atualização automatizada de dependências (B-076) | W0-7 | Planned — não há `.github/dependabot.yml` nem renovate; o job `Dependency audit notes` é informativo e nunca reprova o build |
-| W7-4 | D/E | CSP no web (B-077) | W6-8 | Planned — `infra/proxy/nginx.conf` já manda HSTS/`nosniff`/`X-Frame-Options`/`Referrer-Policy`, mas não CSP, e só no profile `proxy` |
-| W7-5 | C/E | Limite de tamanho de body no envio (B-078) | W2-1 | Planned — `Message.Body` é `HasMaxLength(8000)` só na coluna; o endpoint não valida, então body maior vira 500 em vez de 400 |
-| W7-7 | A/G | Catálogo de configuração admin mínima no `.env` (B-105) | W6-8, W0-2 | Planned — inventariar todas as variáveis operacionais; completar `.env.example`; guia `docs/operations/configuracao-env.md`; mapear env vs `/admin` |
+| W7-3 | E/A | Atualização automatizada de dependências (B-076) | W0-7 | Planned — [spec pronta](../product/specs/B-076-atualizacao-dependencias.md); não há bot de update |
+| W7-4 | D/E | CSP no web (B-077) | W6-8 | Planned — [spec pronta](../product/specs/B-077-csp-web.md); headers básicos existem, CSP não |
+| W7-5 | C/E | Limite de tamanho de body no envio (B-078) | W2-1 | Planned — [spec pronta](../product/specs/B-078-limite-body-mensagem.md); limite hoje só na coluna |
+| W7-7 | A/G | Catálogo de configuração admin mínima no `.env` (B-105) | W6-8, W0-2 | Planned — [spec pronta](../product/specs/B-105-catalogo-configuracao.md); inventário documental iniciado; alinhar Compose/template continua pendente |
+| W7-8 | D/G | Admin shell — nav, toolbars, listagens, filtros e hide por papel (B-106; fecha UX-005) | W7-6 | Planned — após saída do PrimeNG; spec `docs/product/specs/B-106-admin-shell.md` |
 
 ### Critérios de aceite W7-7 (resumo)
 
@@ -152,12 +156,37 @@ D-16). W7-3…W7-5 saem da checklist de **controles mínimos** de
 - Gaps entre `appsettings*.json`, `compose.yaml` e `.env.example` fechados ou listados como follow-up explícito
 - `docs/operations/operacao.md` aponta para o catálogo como fonte da verdade de configuração
 
+### Critérios de aceite W7-8 (resumo)
+
+- `/admin` tem menu lateral por área + toolbar contextual + rotas filhas
+- Listagens (membros, audit, conversas) com busca/filtro útil e empty states
+- **Visibilidade:** Auditor não vê Settings/Export/convidar; Admin vê tudo; Member fora
+- Sem banners “Sem permissão…” (UX-005 fechado); deep-link sem claim → área permitida
+- AuthZ de API intacta (`workspace.admin` / `admin.dashboard`); tokens `--vc-*`
+- Sem lib de UI comercial; B-104 já mergeado (sem PrimeNG)
+
 ### Modo manutenção (sem item `Planned`)
 
 Quando **toda** linha de wave estiver `Done` ou `Blocked`, o Build entra no Step B do
 `01-build.prompt.md`: uma lacuna pequena por run, com ID `GAP-<curto>`. Isso é
 esperado, não é falha — mas o resultado tem que aparecer no **Registro de GAPs**
 abaixo, senão o trabalho fica invisível no roadmap.
+
+## Programa documental transversal
+
+Este programa não altera a ordem do Build e não autoriza código. Ele mantém o
+roadmap executável e reduz ambiguidade antes das próximas waves.
+
+| ID | Entregável | Status |
+|----|------------|--------|
+| DOC-001 | Portal canônico `docs/README.md` e precedência entre fontes | **Done (2026-07-27)** |
+| DOC-002 | Snapshot factual `roadmap/estado-atual.md` | **Done (2026-07-27)** |
+| DOC-003 | Specs completas para todos os itens Planned da Wave 7 | **Done (2026-07-27)** |
+| DOC-004 | Reconciliar mapa de módulos com assemblies existentes | **Done (2026-07-27)** |
+| DOC-005 | Reconciliar checklists de segurança com Done/Planned | **Done (2026-07-27)** |
+| DOC-006 | Auditoria automatizada de links e rastreabilidade ID↔spec | Planned |
+| DOC-007 | Matriz completa de configuração e evidência de `docker compose config` | Planned — parte de B-105 |
+| DOC-008 | Revisão ADR por ADR contra implementação atual | **Done (2026-07-27)** — `architecture/aderencia-adrs.md` |
 
 ---
 
@@ -196,7 +225,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W9-4 | C/D | Link preview (B-091) | — | [B-091](../product/specs/B-091-link-preview.md) | Planned |
 | W9-5 | C/D | Fixar mensagem (B-092) | W9-2 | [B-092](../product/specs/B-092-fixar-mensagem.md) | Planned |
 | W9-6 | C/D | Salvos (B-093) | W9-2 | [B-093](../product/specs/B-093-salvos.md) | Planned |
-| W9-7 | C/D | Recibos de leitura e não lidas (B-094) | W9-1 | [B-094](../product/specs/B-094-recibos-de-leitura.md) | Planned |
+| W9-7 | C/D | Recibos de leitura e não lidas persistentes (B-094) | W9-1 | [B-094](../product/specs/B-094-recibos-de-leitura.md) | Planned |
 
 ### Wave 10 — Notificações, organização e acesso
 
@@ -212,21 +241,41 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W10-8 | C/D | Seguir thread (B-102) | B-022, W10-1 | [B-102](../product/specs/B-102-seguir-thread.md) | Planned |
 | W10-9 | D/E | Acessibilidade WCAG 2.2 AA (B-103) | W10-5 | [B-103](../product/specs/B-103-acessibilidade.md) | Planned |
 | W10-10 | B/D/E | Guests por convite (B-040) | P2-1, W10-4, D-07 | [B-040](../product/specs/B-040-guests-por-convite.md) | Planned |
+| W10-11 | B/C/D | Políticas de edição/apagar mensagem (B-107) | B-023, B-069 | [B-107](../product/specs/B-107-politicas-edicao-mensagem.md) | Planned |
+| W10-12 | B/C/D | Extender webhooks outbound (B-108) | B-048, B-069 | [B-108](../product/specs/B-108-extender-webhooks.md) | Planned |
+| W10-13 | B/C/D/E | Núcleo plugin — bot/token + envio msgs (B-109) | B-004, B-069, B-021 | [B-109](../product/specs/B-109-api-integracao-envio-mensagens.md) | Planned |
+| W10-14 | B/C/D | Instalar/gerir plugins na instância (B-110) | W10-13 | [B-110](../product/specs/B-110-instalar-plugins.md) | Planned |
 
 ### Itens de maior risco nestas waves
-
-Três itens não passam em review sem o controle correspondente:
 
 | Item | Risco | Controle exigido |
 |------|-------|------------------|
 | W9-4 / B-091 | SSRF — o servidor passa a buscar URL fornecida pelo usuário | Allowlist de esquema, recusa de IP privado/loopback/link-local/metadata **após cada redirect**, timeout, limite de corpo, cache por tenant |
 | W10-10 / B-040 | Escalada de guest para o workspace | Suíte negativa cobrindo **todos** os endpoints de workspace, não uma amostra; membership de canal, nunca de workspace |
 | W10-7 / B-101 | Vazamento de histórico ao adicionar participante | Janela de visibilidade por `seq` de entrada, com teste dedicado |
+| W10-13 / B-109 | Token de integração exfiltrado / bot sem escopo | Token só hash no DB; escopo explícito de canais; rate-limit; suíte security cross-tenant |
+| W10-14 / B-110 | Plugin confundido com runtime de código | Manifesto = config; sem carregar DLL/JS de terceiro; capabilities extras só em B-066 |
 
-### Fora de escopo destas waves (D-11)
+### Fora de escopo das Waves 7–10 (D-11)
 
 Chamada de voz/vídeo ao vivo e screen share; superfície de documento colaborativo
-(Canvas/Loop); marketplace de bots; E2EE. Não implementar sem nova decisão.
+(Canvas/Loop); registry remoto; E2EE. Não antecipar nessas waves: essas
+capacidades foram decididas e ordenadas somente para W15–W17.
+
+**Trilha de plugins locais** (permitida): B-109 (núcleo) → B-108 (outbound) →
+B-110 (install) → **B-066 / B-111 em W15** (capabilities avançadas) →
+B-136/B-137 (SDK e registry governado).
+
+## Depois da Wave 10
+
+O roadmap executável posterior está em
+[`horizonte-ambicioso.md`](horizonte-ambicioso.md). Waves 11–17 estão `Planned`,
+possuem specs e são elegíveis para o Build somente depois da conclusão das
+Waves 7–10 e de suas dependências. D-16…D-26 registram os defaults já decididos;
+`docs/agents/autonomia.md` governa decisões técnicas e risco.
+
+A visão de produto correspondente está em
+[`product/visao-longo-prazo.md`](../product/visao-longo-prazo.md).
 
 ## Registro de GAPs
 
@@ -251,14 +300,20 @@ escreve aqui em vez de espalhar notas soltas pelas seções.
 ```text
 Agent-Infra     → W0-1, W0-2, W0-6, W5-*, W6-8, W7-7
 Agent-Backend   → W0-3, W1-*, W2-1..W2-4, W3-1, W3-3, W4-*, W6-1, W6-2, W6-4..W6-6,
-                  W8-4, W9-4, W10-1, W10-7
-Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7, W6-1..W6-3, W6-7,
-                  W8-1..W8-3, W8-5..W8-8, W9-1..W9-3, W10-5, W10-6
+                  W8-4, W9-4, W10-1, W10-7, W10-11, W10-12, W10-13, W10-14
+Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7, W6-1..W6-3, W6-7, W7-6, W7-8,
+                  W8-1..W8-3, W8-5..W8-8, W9-1..W9-3, W9-7, W10-5, W10-6
 Agent-QA        → W0-7, W1-5, W2-6, W2-7, W3-2, W3-5, W5-3, W6-1 E2E, W6-8 smoke, W7-1
 Agent-Security  → W3-1/W3-2 review, W6-5/W6-6 authZ + threat model, W7-3..W7-5,
-                  W9-4 (SSRF), W10-9, W10-10 (guests)
+                  W9-4 (SSRF), W10-9, W10-10 (guests), W10-13 (integration tokens),
+                  W10-14 (plugins)
 Agent-Obs       → W0-6, W3-4
 ```
+
+Após W10, a atribuição vem da trilha da própria linha em
+`horizonte-ambicioso.md`. Até três PRs podem correr em paralelo quando não há
+dependência nem sobreposição material; R2/R3 sempre recebem QA/Security
+independente. A ordem W11→W17 prevalece sobre afinidade do agente.
 
 ## Definição de “Wave 3 completa”
 
