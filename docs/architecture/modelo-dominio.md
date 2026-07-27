@@ -91,13 +91,20 @@ Abstração técnica de ordenação e entrega:
 
 ## Bounded contexts (mapeamento)
 
-| Contexto | Aggregates |
-|----------|------------|
-| Directory | Tenant, Workspace, Space, Membership |
-| Messaging | Channel, Thread, Conversation, Message, Reaction |
+| Contexto | Agregados / modelos |
+|----------|---------------------|
+| Tenancy | TenantContext e escopo de tenant |
+| Directory | Workspace, Space, Membership |
+| Conversations | Channel, ChannelMember, Thread, Conversation |
+| Messaging | Message, Reaction, ReadCursor, Idempotency |
 | Files | Attachment |
-| Identity | User (投影/espelho), Session claims |
-| Platform | OutboxEvent, AuditEntry |
+| Identity | User (projeção/espelho), claims de sessão |
+| Audit | AuditEvent |
+| Administration | Settings e projeções administrativas |
+| AI | Settings e UsageRecord |
+| Notifications | Preferences e EmailSettings |
+| Integrations | WebhookEndpoint |
+| BuildingBlocks | OutboxMessage |
 
 ## Regras transversais
 

@@ -55,12 +55,13 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 
 - [x] TLS em trânsito (terminação no proxy ou HTTPS direto) — referência Compose profile `proxy` (W5-2)
 - [x] Secrets de AI/SMTP só via env/secret store; API admin devolve máscara (`••••last4` / `configured`) — B-069
-- [ ] `TenantContext` + RLS
-- [ ] AuthZ em **toda** entrada de hub e API
-- [ ] Idempotency + limites de tamanho de body
-- [ ] Rate limiting por usuário/IP
-- [ ] Headers de segurança no web (CSP básica, etc.)
-- [ ] Dependabot/renovate ou equivalente
+- [x] `TenantContext` + RLS — W3-1, B-009 e gaps de catálogo RLS
+- [x] AuthZ nas entradas de hub/API existentes — W3-2; toda entrada nova reabre a obrigação de teste
+- [x] Idempotency no envio — B-004
+- [ ] Limite de tamanho de body validado antes do banco — B-078 / W7-5
+- [x] Rate limiting por usuário/IP nos caminhos de send/hub — B-028
+- [ ] Headers de segurança completos — básicos presentes; CSP pendente em B-077 / W7-4
+- [ ] Dependabot/Renovate ou equivalente — B-076 / W7-3
 - [x] Testes em `tests/security` para cross-tenant (API + hub T3 `JoinChannel`/`SendTyping`)
 
 ### R-17 — Secrets/webhooks expostos a membros

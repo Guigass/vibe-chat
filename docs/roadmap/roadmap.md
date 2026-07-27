@@ -2,6 +2,9 @@
 
 Roadmap para **times de agentes** trabalharem em paralelo. Cada item tem ID, dependências e trilha.
 
+Snapshot resumido e fila corrente: [`estado-atual.md`](estado-atual.md). Portal da
+documentação: [`docs/README.md`](../README.md).
+
 ## Legend
 
 | Trilha | Foco |
@@ -138,10 +141,10 @@ checklist de **controles mínimos** de `docs/security/modelo-ameacas.md`.
 | W7-1 | E | E2E Playwright na CI (B-075) | W2-7, W6-8 | **Done** — job CI + `infra/scripts/ci-e2e.sh` / `task test:e2e:ci` (DevAuth; #45) |
 | W7-6 | D/G | Remover PrimeNG — UI própria + CDK (B-104; D-15; emenda ADR-002) | W6-7, D-15 | Planned — **próximo elegível**; spec `docs/product/specs/B-104-remover-primeng.md`; fecha UX-002 |
 | W7-2 | B/D | Guests / link de canal (B-040) | P2-1, D-07 | **Movido** — D-07 revisado em 2026-07-25 destravou o item; virou W10-10 com spec |
-| W7-3 | E/A | Atualização automatizada de dependências (B-076) | W0-7 | Planned — não há `.github/dependabot.yml` nem renovate; o job `Dependency audit notes` é informativo e nunca reprova o build |
-| W7-4 | D/E | CSP no web (B-077) | W6-8 | Planned — `infra/proxy/nginx.conf` já manda HSTS/`nosniff`/`X-Frame-Options`/`Referrer-Policy`, mas não CSP, e só no profile `proxy` |
-| W7-5 | C/E | Limite de tamanho de body no envio (B-078) | W2-1 | Planned — `Message.Body` é `HasMaxLength(8000)` só na coluna; o endpoint não valida, então body maior vira 500 em vez de 400 |
-| W7-7 | A/G | Catálogo de configuração admin mínima no `.env` (B-105) | W6-8, W0-2 | Planned — inventariar todas as variáveis operacionais; completar `.env.example`; guia `docs/operations/configuracao-env.md`; mapear env vs `/admin` |
+| W7-3 | E/A | Atualização automatizada de dependências (B-076) | W0-7 | Planned — [spec pronta](../product/specs/B-076-atualizacao-dependencias.md); não há bot de update |
+| W7-4 | D/E | CSP no web (B-077) | W6-8 | Planned — [spec pronta](../product/specs/B-077-csp-web.md); headers básicos existem, CSP não |
+| W7-5 | C/E | Limite de tamanho de body no envio (B-078) | W2-1 | Planned — [spec pronta](../product/specs/B-078-limite-body-mensagem.md); limite hoje só na coluna |
+| W7-7 | A/G | Catálogo de configuração admin mínima no `.env` (B-105) | W6-8, W0-2 | Planned — [spec pronta](../product/specs/B-105-catalogo-configuracao.md); inventário documental iniciado; alinhar Compose/template continua pendente |
 | W7-8 | D/G | Admin shell — nav, toolbars, listagens, filtros e hide por papel (B-106; fecha UX-005) | W7-6 | Planned — após saída do PrimeNG; spec `docs/product/specs/B-106-admin-shell.md` |
 
 ### Critérios de aceite W7-7 (resumo)
@@ -167,6 +170,22 @@ Quando **toda** linha de wave estiver `Done` ou `Blocked`, o Build entra no Step
 `01-build.prompt.md`: uma lacuna pequena por run, com ID `GAP-<curto>`. Isso é
 esperado, não é falha — mas o resultado tem que aparecer no **Registro de GAPs**
 abaixo, senão o trabalho fica invisível no roadmap.
+
+## Programa documental transversal
+
+Este programa não altera a ordem do Build e não autoriza código. Ele mantém o
+roadmap executável e reduz ambiguidade antes das próximas waves.
+
+| ID | Entregável | Status |
+|----|------------|--------|
+| DOC-001 | Portal canônico `docs/README.md` e precedência entre fontes | **Done (2026-07-27)** |
+| DOC-002 | Snapshot factual `roadmap/estado-atual.md` | **Done (2026-07-27)** |
+| DOC-003 | Specs completas para todos os itens Planned da Wave 7 | **Done (2026-07-27)** |
+| DOC-004 | Reconciliar mapa de módulos com assemblies existentes | **Done (2026-07-27)** |
+| DOC-005 | Reconciliar checklists de segurança com Done/Planned | **Done (2026-07-27)** |
+| DOC-006 | Auditoria automatizada de links e rastreabilidade ID↔spec | Planned |
+| DOC-007 | Matriz completa de configuração e evidência de `docker compose config` | Planned — parte de B-105 |
+| DOC-008 | Revisão ADR por ADR contra implementação atual | **Done (2026-07-27)** — `architecture/aderencia-adrs.md` |
 
 ---
 

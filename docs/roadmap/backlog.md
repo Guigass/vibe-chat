@@ -75,11 +75,11 @@ backlog ficam no **Registro de GAPs** (`roadmap.md`).
 | ID | Item | Notas |
 |----|------|-------|
 | B-075 | E2E Playwright na CI | **Done (W7-1)** — job **E2E (Playwright)** na CI com DevAuth; `infra/scripts/ci-e2e.sh` / `task test:e2e:ci` (#45) |
-| B-104 | Remover PrimeNG (UI própria + CDK) | Planned (W7-6) — D-15 opção (c); spec `docs/product/specs/B-104-remover-primeng.md`; prioridade sobre W7-3…W7-5 (desbloqueia composer / UX-002); paridade funcional só |
-| B-076 | Atualização automatizada de dependências | Planned (W7-3) — sem `.github/dependabot.yml` nem renovate; `Dependency audit notes` na CI é informativo e nunca reprova o build |
-| B-077 | CSP no web | Planned (W7-4) — nginx do profile `proxy` já manda HSTS/`nosniff`/`X-Frame-Options`/`Referrer-Policy`; falta CSP |
-| B-078 | Limite de tamanho de body no envio | Planned (W7-5) — `Message.Body` limitado a 8000 só na coluna; `POST .../messages` não valida e devolve 500 em vez de 400 |
-| B-105 | Catálogo de configuração admin mínima no `.env` | Planned (W7-7) — inventário completo de variáveis operacionais; `.env.example` como contrato; guia `docs/operations/configuracao-env.md`; matriz env vs `/admin/settings` (B-069) |
+| B-104 | Remover PrimeNG (UI própria + CDK) | Planned (W7-6) — D-15 opção (c); [spec](../product/specs/B-104-remover-primeng.md); prioridade sobre W7-3…W7-5 (desbloqueia composer / UX-002); paridade funcional só |
+| B-076 | Atualização automatizada de dependências | Planned (W7-3) — sem `.github/dependabot.yml` nem renovate; `Dependency audit notes` na CI é informativo; [spec](../product/specs/B-076-atualizacao-dependencias.md) |
+| B-077 | CSP no web | Planned (W7-4) — nginx do profile `proxy` já manda headers básicos, mas falta CSP; [spec](../product/specs/B-077-csp-web.md) |
+| B-078 | Limite de tamanho de body no envio | Planned (W7-5) — `Message.Body` limitado a 8000 só na coluna; excesso pode virar 500; [spec](../product/specs/B-078-limite-body-mensagem.md) |
+| B-105 | Catálogo de configuração admin mínima no `.env` | Planned (W7-7) — inventário e gaps documentais iniciados; execução ainda precisa alinhar Compose/template; [spec](../product/specs/B-105-catalogo-configuracao.md) |
 | B-106 | Admin shell (nav, toolbars, listagens, filtros, visibilidade por papel) | Planned (W7-8) — após B-104; esconde opções sem claim (fecha UX-005); matriz Admin/Auditor/Member; spec `docs/product/specs/B-106-admin-shell.md` |
 
 ## Paridade de mensageria — Waves 8 a 10

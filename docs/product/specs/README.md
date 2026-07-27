@@ -13,7 +13,11 @@ ser implementado sem perguntar: **D-11** em `docs/roadmap/decisoes-pendentes.md`
 
 | ID | Spec |
 |----|------|
+| B-076 | [Atualização automatizada de dependências](B-076-atualizacao-dependencias.md) |
+| B-077 | [Content Security Policy no web](B-077-csp-web.md) |
+| B-078 | [Limite de tamanho do body de mensagem](B-078-limite-body-mensagem.md) |
 | B-104 | [Remover PrimeNG (UI própria + CDK)](B-104-remover-primeng.md) |
+| B-105 | [Catálogo de configuração self-host](B-105-catalogo-configuracao.md) |
 | B-106 | [Admin shell — nav, filtros e visibilidade por papel](B-106-admin-shell.md) |
 
 ### Wave 8 — Composição de mensagem

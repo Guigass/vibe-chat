@@ -2,7 +2,13 @@
 
 Guia de referência para operar uma instância self-hosted com o **mínimo de dependência da UI `/admin`**. O operador de infra configura a plataforma via `.env`; o `workspace.admin` ajusta políticas por workspace na UI.
 
-**Status:** fase planejada — **W7-7 / B-105** (`docs/roadmap/roadmap.md`). Este documento será completado quando o catálogo estiver fechado.
+**Status:** inventário documental auditado em **2026-07-27**; alinhamento
+executável continua planejado em **W7-7 / B-105**. Spec:
+[`B-105-catalogo-configuracao.md`](../product/specs/B-105-catalogo-configuracao.md).
+
+> Regra crítica: uma variável presente no `.env` só chega ao processo dentro do
+> container se o `compose.yaml` a mapear em `environment` ou a consumir em uma
+> substituição `${VAR}`. Presença no template, sozinha, não configura API/Worker.
 
 ## Objetivo da fase (B-105)
 
@@ -37,14 +43,39 @@ Regra já em vigor (B-069): **secrets de AI e SMTP não são graváveis pela API
 - Configuração dinâmica por tenant sem restart (permanece em DB + admin API)
 - Secrets manager específico de cloud (apenas padrão: montar env ou arquivo `.env`)
 
-## Inventário inicial (parcial — a completar em B-105)
+## Inventário auditado
+
+Todas as substituições `${VAR}` observadas em `compose.yaml` e
+`compose.override.yaml` possuem entrada no `.env.example` na data do snapshot.
+
+### Imagens e portas do Compose
+
+| Grupo | Variáveis |
+|-------|-----------|
+| Data plane | `POSTGRES_IMAGE`, `REDIS_IMAGE`, `KEYCLOAK_IMAGE`, `MINIO_IMAGE`, `MINIO_MC_IMAGE` |
+| Tools/observabilidade | `MAILPIT_IMAGE`, `OTEL_COLLECTOR_IMAGE`, `PROMETHEUS_IMAGE`, `GRAFANA_IMAGE`, `LOKI_IMAGE`, `TEMPO_IMAGE` |
+| Apps/proxy | `NODE_IMAGE`, `NGINX_IMAGE` |
+| Data plane | `POSTGRES_PORT`, `REDIS_PORT`, `KEYCLOAK_HTTP_PORT`, `MINIO_API_PORT`, `MINIO_CONSOLE_PORT` |
+| Tools/observabilidade | `MAILPIT_SMTP_PORT`, `MAILPIT_UI_PORT`, `PROMETHEUS_PORT`, `GRAFANA_PORT`, `LOKI_PORT`, `TEMPO_PORT` |
+| Apps/proxy | `API_PORT`, `WEB_PORT`, `PROXY_HTTP_PORT`, `PROXY_HTTPS_PORT` |
+
+### Credenciais e identidades
+
+| Variáveis | Secret? | Uso |
+|-----------|---------|-----|
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | senha: sim | Banco da aplicação |
+| `KEYCLOAK_DB`, `KEYCLOAK_DB_USER`, `KEYCLOAK_DB_PASSWORD` | senha: sim | Banco do Keycloak |
+| `KEYCLOAK_ADMIN`, `KEYCLOAK_ADMIN_PASSWORD` | senha: sim | Bootstrap do IdP |
+| `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `MINIO_BUCKET` | senha: sim | S3-compatible |
+| `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD` | senha: sim | Observabilidade |
+| `KEYCLOAK_REALM`, `OIDC_WEB_CLIENT_ID`, `OIDC_API_AUDIENCE` | não | OIDC |
 
 ### Compose / data plane
 
 | Variável | Serviço | Notas |
 |----------|---------|-------|
-| `POSTGRES_*`, `DATABASE_URL` | postgres, api, worker | SoT; senha `*_change_me` em dev |
-| `REDIS_*`, `REDIS_URL` | redis, api, worker | Backplane SignalR + presence |
+| `POSTGRES_*`, `DATABASE_URL` | postgres, api, worker/host | SoT; `DATABASE_URL` é do caminho host |
+| `REDIS_*`, `REDIS_URL` | redis, api, worker/host | Containers usam o endereço interno `redis:6379` |
 | `KEYCLOAK_*`, `OIDC_*` | keycloak, api, web | Realm, issuer, clients |
 | `MINIO_*` | minio, api | Anexos S3-compatível |
 | `MAILPIT_*`, `SMTP_*` | mailpit (tools) | Dev only; prod usa `EMAIL__*` |
@@ -61,19 +92,37 @@ Regra já em vigor (B-069): **secrets de AI e SMTP não são graváveis pela API
 | `SEED_ENABLED` | `Seed__Enabled` | api | `false` em prod |
 | `AI__Enabled`, `AI__Provider` | `Ai__*` | api | Off default (D-06) |
 | `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL` | `Ai__OpenRouter__*` | api | Secret; `CHANGE_ME` |
-| `EMAIL__*` | `Email__*` | api, worker | SMTP; off default (D-10) |
-| `MessageRetention__*` | `MessageRetention__*` | worker | Kill switch purge (B-047) |
+| `EMAIL__*` | `Email__*` | api, worker | **Gap:** template possui, Compose não injeta |
+| `MessageRetention__*` | `MessageRetention__*` | worker | **Gap:** template possui, Compose não injeta |
 
-### Presentes em `appsettings` mas ainda sem variável em `.env.example` (gaps conhecidos)
+### Variáveis do template fora das substituições do Compose
+
+| Grupo | Variáveis | Situação |
+|-------|-----------|----------|
+| Host/DX | `DATABASE_URL`, `POSTGRES_HOST`, `REDIS_HOST`, `REDIS_URL`, `SEED_API_URL` | Task/scripts ou execução no host |
+| Load test | `K6_IMAGE`, `LOAD_API_BASE`, `LOAD_DEV_USER`, `LOAD_CHANNEL_ID` | Ferramentas/testes |
+| Proxy/certs | `PROXY_PUBLIC_URL`, `TLS_DOMAIN`, `TLS_EMAIL`, `TLS_CERT_PATH`, `TLS_KEY_PATH` | Documentais/scripts; Compose substitui apenas imagem/portas |
+| URLs auxiliares | `WEB_BASE_URL`, `OIDC_WEB_REDIRECT_URI`, `OIDC_WEB_POST_LOGOUT_REDIRECT_URI` | Não substituídas no Compose atual |
+| Imagens .NET | `DOTNET_IMAGE`, `DOTNET_SDK_IMAGE` | Não substituídas diretamente pelo Compose |
+| MinIO | `MINIO_REGION` | Não consumida pelo Compose |
+| Observabilidade host | `OTEL_EXPORTER_OTLP_ENDPOINT` | Containers recebem endpoint interno fixo |
+| SMTP | `SMTP_*`, `EMAIL__*` | **Gap:** não injetadas em API/Worker |
+| Retenção | `MessageRetention__*` | **Gap:** não injetadas no Worker |
+| IA duplicada | `AI__OpenRouter__*` | Compose usa `OPENROUTER_*` |
+| Projeto Compose | `COMPOSE_PROJECT_NAME` | Consumida pelo Docker Compose CLI |
+
+### Chaves de aplicação sem contrato fechado
 
 Estes itens devem ser resolvidos ou documentados como intencionalmente fixos em B-105:
 
 | Seção appsettings | Chaves | Status |
 |-------------------|--------|--------|
-| `Files` | `MaxSizeBytes`, `PresignUploadTtlSeconds`, `AllowedContentTypes` | Hardcoded no `compose.yaml` hoje |
-| `RateLimit` | `SendPerMinute`, `HubPerMinute` | Só em `appsettings.Development.json` |
-| `Cors` | `Origins` | Não exposto em `.env.example` |
-| `Authentication` | `RequireHttpsMetadata` | `"false"` no Compose lab |
+| `Files` | `MaxSizeBytes`, TTLs, `AllowedContentTypes` | Defaults em Development/código; não exposto pelo Compose |
+| `RateLimit` | `SendPerMinute`, `HubPerMinute` | Development/defaults; não exposto |
+| `Cors` | `Origins` | Default em código; não exposto |
+| `Authentication` | `RequireHttpsMetadata` | Compose não injeta; revisar Production |
+| `Minio` | `Endpoint`, `UseSsl` | Apenas `PublicEndpoint` é mapeado explicitamente |
+| `Observability` | `GrafanaUrl` | Default pode divergir de `GRAFANA_PORT` |
 
 ### Só via admin UI (não entram no `.env` mínimo)
 
@@ -86,11 +135,13 @@ Estes itens devem ser resolvidos ou documentados como intencionalmente fixos em 
 
 ## Critérios de aceite (B-105)
 
-- [ ] `.env.example` comentado por seção; toda variável do `compose.yaml` (profiles default + apps + proxy + observability + tools) documentada
-- [ ] Tabela env → binding → serviço → obrigatório em prod
+- [x] Inventário documental das substituições do Compose e variáveis extras do template
+- [x] Gaps de injeção SMTP/retenção/aliases registrados explicitamente
+- [ ] `.env.example` e `compose.yaml` alinhados ao catálogo (exige mudança executável)
+- [ ] Tabela final env → binding → serviço → obrigatório em prod, após remover aliases
 - [ ] Matriz env vs `/admin` revisada com Security (B-069 / `modelo-ameacas.md`)
-- [ ] `docs/operations/operacao.md` e `docs/operations/desenvolvimento.md` linkam este guia
-- [ ] Gaps listados acima resolvidos **ou** registrados como decisão explícita (não silencioso)
+- [x] `docs/operations/operacao.md` e `docs/operations/desenvolvimento.md` linkam este guia
+- [ ] Smoke comprova e-mail, IA e retenção opt-in dentro dos containers
 
 ## Bootstrap rápido (hoje)
 
