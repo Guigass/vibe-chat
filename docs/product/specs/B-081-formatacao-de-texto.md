@@ -1,6 +1,6 @@
 # B-081 — Formatação de texto
 
-> Wave W8-3 · Trilha C/D · Deps: — · Decisões: D-11
+> Wave W8-3 · Trilha C/D · Deps: — · Decisões: D-11 · Risco R2
 
 ## Problema
 

@@ -184,9 +184,16 @@ roadmap executável e reduz ambiguidade antes das próximas waves.
 | DOC-003 | Specs completas para todos os itens Planned da Wave 7 | **Done (2026-07-27)** |
 | DOC-004 | Reconciliar mapa de módulos com assemblies existentes | **Done (2026-07-27)** |
 | DOC-005 | Reconciliar checklists de segurança com Done/Planned | **Done (2026-07-27)** |
-| DOC-006 | Auditoria automatizada de links e rastreabilidade ID↔spec | Planned |
-| DOC-007 | Matriz completa de configuração e evidência de `docker compose config` | Planned — parte de B-105 |
+| DOC-006 | Contrato de auditoria automatizada de links/IDs/specs | **Done (2026-07-27)** — baseline 79/79 em [`qualidade-documental.md`](qualidade-documental.md); enforcement rastreado em OPS-DOC-CHECKER |
+| DOC-007 | Matriz de configuração e evidência de `docker compose config` | **Done (2026-07-27)** — parse válido e gaps executáveis preservados em B-105 |
 | DOC-008 | Revisão ADR por ADR contra implementação atual | **Done (2026-07-27)** — `architecture/aderencia-adrs.md` |
+| DOC-009 | Classe R0–R3 declarada em todas as specs W7–W17 | **Done (2026-07-27)** — 79/79 |
+| DOC-010 | Rastreabilidade de todos os findings UX abertos | **Done (2026-07-27)** — B-ID, B-103 ou safety lane |
+| DOC-011 | Pacotes de decisão para capacidades R3 | **Done (2026-07-27)** — [`architecture/pacotes-decisao-r3.md`](../architecture/pacotes-decisao-r3.md) |
+| DOC-012 | Política de release, versionamento e suporte | **Done (2026-07-27)** — [`operations/release-versionamento-suporte.md`](../operations/release-versionamento-suporte.md) |
+| DOC-013 | Catálogo futuro de contratos, dados e flags | **Done (2026-07-27)** — [`architecture/catalogo-evolucao-contratos.md`](../architecture/catalogo-evolucao-contratos.md) |
+| DOC-014 | Guias de colaborador, admin, integração e operador | **Done (2026-07-27)** — [`product/guias/`](../product/guias/) |
+| DOC-015 | Métricas e evidence bundles por wave | **Done (2026-07-27)** — [`product/metricas-e-evidencias.md`](../product/metricas-e-evidencias.md) |
 
 ---
 

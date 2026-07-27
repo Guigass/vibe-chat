@@ -3,6 +3,10 @@
 Toda spec de longo prazo incorpora este documento. Se houver conflito, a regra
 mais segura prevalece; exceção precisa estar explícita na spec e em ADR.
 
+Defaults R3: [`architecture/pacotes-decisao-r3.md`](../../architecture/pacotes-decisao-r3.md).
+Convenções futuras de contratos/flags:
+[`architecture/catalogo-evolucao-contratos.md`](../../architecture/catalogo-evolucao-contratos.md).
+
 ## Contratos e dados
 
 - API sob `/api/v1` até política de versionamento de B-139 entrar.
@@ -60,4 +64,6 @@ Além do aceite individual:
 - `task verify` ou conjunto equivalente verde;
 - evidência anexada ao PR;
 - sem follow-up necessário para tornar o caminho principal seguro.
+- release/compatibilidade alinhadas a
+  [`operations/release-versionamento-suporte.md`](../../operations/release-versionamento-suporte.md).
 

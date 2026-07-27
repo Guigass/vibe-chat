@@ -1,6 +1,6 @@
 # B-107 — Políticas configuráveis de edição (e apagar) de mensagens
 
-> Wave W10-11 · Trilha B/C/D · Deps: B-023, B-069 · Decisões: —
+> Wave W10-11 · Trilha B/C/D · Deps: B-023, B-069 · Decisões: — · Risco R3
 
 ## Problema
 

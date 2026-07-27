@@ -1,6 +1,6 @@
 # B-099 — Paleta de comandos e atalhos
 
-> Wave W10-5 · Trilha D · Deps: B-087, B-098 · Decisões: D-11
+> Wave W10-5 · Trilha D · Deps: B-087, B-098 · Decisões: D-11 · Risco R1
 
 ## Problema
 

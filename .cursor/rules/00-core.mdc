@@ -15,4 +15,6 @@ alwaysApply: true
 - Atualizar docs; PRs pequenos; apresentar evidência de funcionamento.
 - PT-BR em docs humanas; inglês em código (tipos, APIs, ids).
 - O primeiro item elegível do roadmap tem prioridade sobre trabalho inventado.
+- Usar a classe de risco R0–R3 da spec; R3 começa em
+  `docs/architecture/pacotes-decisao-r3.md` e exige ADR, threat model e rollback.
 - Respeitar `docs/roadmap/decisoes-pendentes.md` e `AGENTS.md`.

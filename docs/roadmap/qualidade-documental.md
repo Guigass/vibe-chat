@@ -1,0 +1,165 @@
+# Qualidade e Rastreabilidade Documental
+
+Contrato de integridade para o conjunto de documentos que orienta agentes,
+revisores e operadores. Este arquivo define o que deve ser validado; não substitui
+evidência do código nem autoriza marcar feature como `Done`.
+
+## Baseline auditada
+
+Snapshot de 2026-07-27, após D-27:
+
+| Controle | Resultado |
+|----------|-----------|
+| Decisões de produto | D-01…D-27, 27 IDs únicos, nenhuma aberta |
+| Itens de produto `Planned` | 79 entre W7 e W17 |
+| Specs de itens `Planned` | 79 arquivos, correspondência 1:1 |
+| IDs `Planned` sem spec | 0 |
+| Specs sem item `Planned` | 0 |
+| IDs `Planned` duplicados | 0 |
+| Specs com classe R0–R3 | 79 de 79 |
+| Seções obrigatórias por spec | 79 de 79 |
+| Findings UX abertos sem rota | 0 |
+| Links locais | 384 verificados em 162 arquivos Markdown/MDC; 0 quebrados |
+| `docker compose config --quiet` com `.env.example` | válido; profiles `apps`, `observability`, `proxy`, `tools` |
+
+O comando de Compose emitiu apenas aviso local de acesso ao
+`~/.docker/config.json`; o parse do projeto terminou com código zero. Isso prova
+sintaxe e interpolação, não funcionamento dos containers nem validade de secrets.
+
+## Invariantes
+
+### IDs e estados
+
+- D-* não é reutilizado nem renumerado.
+- B-* aparece em no máximo uma linha `Planned`.
+- W* identifica posição de execução; B-* identifica a capacidade.
+- `Done` exige referência a implementação, teste, migration, configuração ou PR.
+- `Moved` aponta para o destino.
+- `Superseded` aponta para o sucessor.
+- `External action` não bloqueia trilha independente.
+
+### Rastreabilidade
+
+Todo item `Planned` precisa de:
+
+1. B-ID estável;
+2. wave e trilha;
+3. dependências;
+4. link para spec existente;
+5. classe R0–R3;
+6. critérios de aceite e testes;
+7. decisões D-* aplicáveis;
+8. contratos, authZ e riscos explícitos.
+
+Toda spec precisa das seções:
+
+- Problema;
+- Escopo;
+- Fora de escopo;
+- Contratos;
+- UX;
+- Multi-tenant e authZ;
+- Aceite;
+- Testes;
+- Riscos.
+
+Títulos estendidos como “Contratos e dados” não devem ser usados: verificadores
+podem tratar a seção como ausente.
+
+### Links
+
+- Links locais são relativos ao arquivo.
+- Todo link local aponta para arquivo ou diretório existente.
+- Âncora deve existir no destino quando o checker suportar headings.
+- URLs externas em pesquisa são evidência, não contrato de disponibilidade.
+- Assets locais usam o inventário do design system.
+
+### Decisões e arquitetura
+
+- D-* prevalece sobre ADR, spec e roadmap.
+- Arquitetura nova exige ADR; ADR não pode contrariar D-*.
+- ADR 015–017 depende de gatilho medido.
+- Pacotes R3 em `architecture/pacotes-decisao-r3.md` são defaults; o ADR final
+  registra a escolha técnica compatível.
+
+## Contrato do verificador automático (DOC-006)
+
+Quando a fase de código autorizar automação documental, o checker deve ser
+determinístico, offline e executável em Windows/Linux.
+
+### Entradas
+
+- `docs/roadmap/roadmap.md`;
+- `docs/roadmap/horizonte-ambicioso.md`;
+- `docs/roadmap/backlog.md`;
+- `docs/roadmap/decisoes-pendentes.md`;
+- `docs/product/specs/`;
+- `docs/product/ux-findings.md`;
+- todos os arquivos Markdown/MDC para links.
+
+### Falhas bloqueantes
+
+- marcador de conflito Git;
+- link local quebrado;
+- B-ID `Planned` duplicado ou sem spec;
+- spec órfã de item `Planned`;
+- seção obrigatória ausente;
+- classe de risco ausente;
+- dependência apontando para ID inexistente;
+- decisão referenciada inexistente;
+- status desconhecido;
+- tabela de wave sem coluna `Status`;
+- `Done` sem evidência textual rastreável;
+- finding `Alta` sem work item ou safety lane;
+- secret provável em documento versionado.
+
+### Saída
+
+Formato de saída:
+
+```text
+DOC-CHECK PASS
+decisions=27
+planned=79
+specs=79
+links=<n>
+warnings=<n>
+```
+
+Em falha:
+
+```text
+DOC-CHECK FAIL
+rule=<stable-rule-id>
+file=<relative-path>
+line=<line>
+message=<actionable explanation>
+```
+
+O processo retorna `0` em sucesso e código não zero em falha. Não corrige
+automaticamente status ou decisões.
+
+## Revisão após merge
+
+A automação Docs:
+
+1. confirma o merge e o SHA;
+2. atualiza status e evidência do item fechado;
+3. atualiza `estado-atual.md`;
+4. fecha finding relacionado;
+5. libera lease;
+6. executa a auditoria documental;
+7. abre PR R0 separado se a reconciliação não couber no fechamento.
+
+## Pendências executáveis honestas
+
+Este contrato e a baseline documental estão concluídos. Permanecem fora desta
+entrega exclusivamente documental:
+
+- implementar o checker e ligá-lo à CI;
+- alinhar Compose/template nos gaps de B-105;
+- comprovar serviços opt-in dentro dos containers;
+- configurar required checks e permissões no GitHub.
+
+Essas pendências não podem ser marcadas como feitas apenas porque o comportamento
+esperado está bem documentado.

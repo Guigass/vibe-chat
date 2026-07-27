@@ -1,6 +1,6 @@
 # B-094 — Recibos de leitura e não lidas (persistência definitiva)
 
-> Wave W9-7 · Trilha C/D · Deps: B-088 · Decisões: D-11
+> Wave W9-7 · Trilha C/D · Deps: B-088 · Decisões: D-11 · Risco R2
 
 ## Problema
 

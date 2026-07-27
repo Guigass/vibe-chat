@@ -1,6 +1,6 @@
 # B-077 — Content Security Policy no web
 
-> Wave W7-4 · Trilha D/E · Deps: W6-8 · Decisões: D-05
+> Wave W7-4 · Trilha D/E · Deps: W6-8 · Decisões: D-05 · Risco R2
 
 ## Problema
 

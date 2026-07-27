@@ -1,6 +1,6 @@
 # B-105 — Catálogo de configuração self-host
 
-> Wave W7-7 · Trilha A/G · Deps: W6-8, W0-2 · Decisões: D-04, D-05, D-06, D-10
+> Wave W7-7 · Trilha A/G · Deps: W6-8, W0-2 · Decisões: D-04, D-05, D-06, D-10 · Risco R2
 
 ## Problema
 

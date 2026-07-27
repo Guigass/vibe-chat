@@ -143,6 +143,28 @@ Estes itens devem ser resolvidos ou documentados como intencionalmente fixos em 
 - [x] `docs/operations/operacao.md` e `docs/operations/desenvolvimento.md` linkam este guia
 - [ ] Smoke comprova e-mail, IA e retenção opt-in dentro dos containers
 
+## Evidência documental DOC-007
+
+Em 2026-07-27:
+
+```text
+docker compose --env-file .env.example config --quiet
+exit: 0
+
+docker compose --env-file .env.example config --profiles
+apps
+observability
+proxy
+tools
+```
+
+O Docker CLI local também avisou que não conseguia ler o config global do usuário;
+isso não alterou o código de saída nem o parse do projeto.
+
+DOC-007 considera concluídos o inventário, a matriz env/admin e a prova de parse.
+B-105 continua `Planned` porque injetar SMTP/retenção, remover aliases e comprovar
+os serviços dentro dos containers são mudanças executáveis, não documentação.
+
 ## Bootstrap rápido (hoje)
 
 ```bash

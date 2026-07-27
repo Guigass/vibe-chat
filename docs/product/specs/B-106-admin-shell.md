@@ -1,6 +1,6 @@
 # B-106 — Admin shell (navegação, listagens, filtros e visibilidade por papel)
 
-> Wave W7-8 · Trilha D/G · Deps: B-104 · Decisões: D-15
+> Wave W7-8 · Trilha D/G · Deps: B-104 · Decisões: D-15 · Risco R2
 
 ## Problema
 

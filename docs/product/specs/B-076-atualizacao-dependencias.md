@@ -1,6 +1,6 @@
 # B-076 — Atualização automatizada de dependências
 
-> Wave W7-3 · Trilha E/A · Deps: W0-7 · Decisões: D-04
+> Wave W7-3 · Trilha E/A · Deps: W0-7 · Decisões: D-04 · Risco R2
 
 ## Problema
 

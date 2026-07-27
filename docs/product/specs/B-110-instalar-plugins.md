@@ -1,6 +1,6 @@
 # B-110 — Instalar e gerir plugins na instância
 
-> Wave W10-14 · Trilha B/C/D · Deps: B-109 · Decisões: D-11 (sem loja; catálogo só local)
+> Wave W10-14 · Trilha B/C/D · Deps: B-109 · Decisões: D-11 (sem loja; catálogo só local) · Risco R3
 
 ## Problema
 

@@ -1,6 +1,6 @@
 # B-078 — Limite de tamanho do body de mensagem
 
-> Wave W7-5 · Trilha C/E · Deps: W2-1 · Decisões: —
+> Wave W7-5 · Trilha C/E · Deps: W2-1 · Decisões: — · Risco R2
 
 ## Problema
 

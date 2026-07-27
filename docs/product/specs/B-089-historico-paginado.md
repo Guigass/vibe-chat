@@ -1,6 +1,6 @@
 # B-089 — Histórico paginado e pular para a mensagem
 
-> Wave W9-2 · Trilha C/D · Deps: B-088 · Decisões: D-11
+> Wave W9-2 · Trilha C/D · Deps: B-088 · Decisões: D-11 · Risco R2
 
 ## Problema
 

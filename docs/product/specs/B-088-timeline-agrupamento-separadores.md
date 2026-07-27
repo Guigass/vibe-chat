@@ -1,6 +1,6 @@
 # B-088 — Agrupamento, separadores e não lidas na timeline
 
-> Wave W9-1 · Trilha D · Deps: — · Decisões: D-11
+> Wave W9-1 · Trilha D · Deps: — · Decisões: D-11 · Risco R1
 
 ## Problema
 

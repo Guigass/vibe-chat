@@ -1,6 +1,6 @@
 # B-090 — Preview de anexos
 
-> Wave W9-3 · Trilha C/D · Deps: B-079 · Decisões: D-11
+> Wave W9-3 · Trilha C/D · Deps: B-079 · Decisões: D-11 · Risco R2
 
 ## Problema
 

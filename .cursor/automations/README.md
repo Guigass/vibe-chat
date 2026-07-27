@@ -35,7 +35,7 @@ manutenção.
 | Ideia | Decisão |
 |-------|---------|
 | Atualizador autônomo de dependências | Não duplicar B-076/Dependabot-Renovate; PRs gerados passam pelo QA normal |
-| Release manager/tag automático | Adiar até existir política de versão/release; não publicar artefato externo por inferência |
+| Release manager/tag automático | Política existe, mas só automatizar depois dos gates 1.0 e de existir artefato publicável; não publicar externamente por inferência |
 | Discovery de novas features | Não automatizar enquanto W7–W17 estiverem abertos; evitar scope creep |
 | Performance bot permanente | B-146 define workload/SLO primeiro; antes disso benchmark genérico gera ruído |
 
@@ -63,6 +63,9 @@ Waves 7–10 em `roadmap.md` e depois Waves 11–17 em
 `horizonte-ambicioso.md`; escolhas técnicas reversíveis não pausam o pipeline.
 Cadência, lease, concorrência, watchdog e recuperação estão no
 [`runbook 24/7`](../../docs/agents/operacao-24x7.md).
+Integridade de specs, riscos, IDs e links segue o contrato em
+[`qualidade-documental.md`](../../docs/roadmap/qualidade-documental.md);
+o checker executável permanece registrado como `OPS-DOC-CHECKER`.
 
 > **Draft = pipeline parado.** Build e Docs devem abrir PR **ready for review**.
 > Se `open_git_pr` criar draft, o agente roda `gh pr ready <n>` antes de encerrar.

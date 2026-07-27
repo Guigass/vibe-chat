@@ -4,11 +4,15 @@ Uma spec por item de backlog elegível ao Build (Waves 7–17). A automação de
 Build **só** implementa item que tenha
 spec aqui; sem spec, o item não é elegível.
 
+Baseline de 2026-07-27: **79 itens Planned, 79 specs, 79 classes R0–R3 e zero
+ID órfão/duplicado**. Regras de auditoria:
+[`roadmap/qualidade-documental.md`](../../roadmap/qualidade-documental.md).
+
 Waves 11–17 estão autorizadas por D-16…D-26 e possuem specs executáveis. Todas
 incorporam [`long-term-common.md`](long-term-common.md).
 
 Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
-`mapa-capacidades.md`. Defaults D-01…D-26 estão em
+`mapa-capacidades.md`. Defaults D-01…D-27 estão em
 `docs/roadmap/decisoes-pendentes.md`; autoridade de execução em
 `docs/agents/autonomia.md`.
 
@@ -21,7 +25,7 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-076 | [Atualização automatizada de dependências](B-076-atualizacao-dependencias.md) |
 | B-077 | [Content Security Policy no web](B-077-csp-web.md) |
 | B-078 | [Limite de tamanho do body de mensagem](B-078-limite-body-mensagem.md) |
-| B-104 | [Remover PrimeNG (UI própria + CDK)](B-104-remover-primeng.md) |
+| B-104 | [Remover PrimeNG (spartan/ui + CDK)](B-104-remover-primeng.md) |
 | B-105 | [Catálogo de configuração self-host](B-105-catalogo-configuracao.md) |
 | B-106 | [Admin shell — nav, filtros e visibilidade por papel](B-106-admin-shell.md) |
 
@@ -156,7 +160,7 @@ prefira escrever “nada” explicitamente a omitir.
 ```markdown
 # B-0XX — Título
 
-> Wave WX-Y · Trilha X · Deps: … · Decisões: D-…
+> Wave WX-Y · Trilha X · Deps: … · Decisões: D-… · Risco R0|R1|R2|R3
 
 ## Problema
 Uma ou duas frases. O que o usuário não consegue fazer hoje, com evidência do código atual.

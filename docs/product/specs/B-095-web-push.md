@@ -1,6 +1,6 @@
 # B-095 — Web Push
 
-> Wave W10-1 · Trilha B/C/D · Deps: B-082, B-094 · Decisões: D-13, D-04
+> Wave W10-1 · Trilha B/C/D · Deps: B-082, B-094 · Decisões: D-13, D-04 · Risco R3
 
 ## Problema
 

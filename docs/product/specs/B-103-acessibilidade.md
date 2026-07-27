@@ -1,6 +1,6 @@
 # B-103 — Acessibilidade WCAG 2.2 AA
 
-> Wave W10-9 · Trilha D/E · Deps: B-099 · Decisões: D-11
+> Wave W10-9 · Trilha D/E · Deps: B-099 · Decisões: D-11 · Risco R1
 
 ## Problema
 

@@ -102,6 +102,10 @@ combinar:
 
 O detalhamento está em
 [`roadmap/horizonte-ambicioso.md`](../roadmap/horizonte-ambicioso.md).
+Defaults das apostas R3 estão em
+[`architecture/pacotes-decisao-r3.md`](../architecture/pacotes-decisao-r3.md);
+métricas e evidências em
+[`metricas-e-evidencias.md`](metricas-e-evidencias.md).
 
 ## O que não muda
 

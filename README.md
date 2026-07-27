@@ -102,8 +102,10 @@ tests/            unit, integration, architecture, security, e2e
 | Área | Caminho |
 |------|---------|
 | Portal e estado atual | `docs/README.md`, `docs/roadmap/estado-atual.md` |
+| Guias de uso | `docs/product/guias/README.md` |
 | Desenvolvimento | `docs/operations/desenvolvimento.md` |
 | Operação / runbooks | `docs/operations/operacao.md`, `docs/operations/runbooks/` |
+| Release e suporte | `docs/operations/release-versionamento-suporte.md` |
 | Agentes / Cloud Agents | `AGENTS.md`, `docs/agents/orientacoes.md` |
 | ADRs | `docs/adrs/` |
 | Segurança multi-tenant | `docs/security/multi-tenant.md` |

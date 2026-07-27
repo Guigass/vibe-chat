@@ -1,6 +1,6 @@
 # B-108 — Extender webhooks outbound
 
-> Wave W10-12 · Trilha B/C/D · Deps: B-048, B-069 · Decisões: —
+> Wave W10-12 · Trilha B/C/D · Deps: B-048, B-069 · Decisões: — · Risco R3
 
 ## Problema
 

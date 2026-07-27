@@ -1,6 +1,6 @@
 # B-079 — Anexos: múltiplos, drag & drop, colar e progresso
 
-> Wave W8-1 · Trilha C/D · Deps: B-025 · Decisões: D-11
+> Wave W8-1 · Trilha C/D · Deps: B-025 · Decisões: D-11 · Risco R2
 
 ## Problema
 

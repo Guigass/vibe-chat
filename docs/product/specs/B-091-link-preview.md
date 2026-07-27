@@ -1,6 +1,6 @@
 # B-091 — Link preview
 
-> Wave W9-4 · Trilha C/D · Deps: — · Decisões: D-11
+> Wave W9-4 · Trilha C/D · Deps: — · Decisões: D-11 · Risco R3
 
 ## Problema
 

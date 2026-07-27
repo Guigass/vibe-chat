@@ -137,6 +137,11 @@ Avaliar a cada ciclo e em um resumo diário:
 | Finding cross-tenant/secret | Bloqueio global de merge até correção |
 | Custo/uso anômalo | Reduzir cadência; nunca comprar capacidade |
 
+O drift documental é definido por
+[`qualidade-documental.md`](../roadmap/qualidade-documental.md). Enquanto
+`OPS-DOC-CHECKER` não estiver implementado, Docs executa o contrato de auditoria
+descrito ali e anexa o resultado ao PR.
+
 ## Evidência obrigatória
 
 Todo PR registra:

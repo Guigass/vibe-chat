@@ -87,7 +87,7 @@ R3 não significa revisão humana. Significa evidência maior e QA independente.
 
 1. Ler `roadmap.md` e depois `horizonte-ambicioso.md`.
 2. Escolher o primeiro `Planned` cujas dependências estejam `Done`.
-3. Confirmar que existe `B-NNN-*.md`.
+3. Confirmar que existe `B-NNN-*.md` e que a spec declara R0–R3.
 4. Não iniciar se já houver PR aberto com o mesmo ID.
 5. Um PR possui exatamente um Wave/Backlog ID.
 6. Trabalho paralelo é permitido apenas quando módulos/arquivos não se sobrepõem
@@ -103,6 +103,10 @@ ADR pode ser criado e marcado `Accepted` pelo agente quando:
 - existe rollback ou migration path;
 - a escolha não exige R4;
 - o PR inclui testes/evidência compatíveis.
+
+Para R3, começar pelos defaults de
+`docs/architecture/pacotes-decisao-r3.md`. Divergência exige justificativa no
+ADR, não uma nova decisão humana.
 
 ADRs 015–017 continuam baseados em gatilhos medidos. “O projeto será grande” não
 é evidência para bus, OpenSearch ou Kubernetes.
@@ -202,4 +206,5 @@ O programa chega ao estado de manutenção quando:
 - Standard e HA têm evidência de operação;
 - upgrade/restore/security drills estão documentados e reproduzíveis;
 - contratos públicos têm política de compatibilidade;
+- release/versionamento seguem `docs/operations/release-versionamento-suporte.md`;
 - o pipeline muda para gaps, segurança, performance e manutenção.

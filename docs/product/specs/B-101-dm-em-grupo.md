@@ -1,6 +1,6 @@
 # B-101 — DM em grupo
 
-> Wave W10-7 · Trilha B/C/D · Deps: B-021 · Decisões: D-11
+> Wave W10-7 · Trilha B/C/D · Deps: B-021 · Decisões: D-11 · Risco R3
 
 ## Problema
 
