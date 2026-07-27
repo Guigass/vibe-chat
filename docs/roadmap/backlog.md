@@ -79,6 +79,7 @@ backlog ficam no **Registro de GAPs** (`roadmap.md`).
 | B-076 | Atualização automatizada de dependências | Planned (W7-3) — sem `.github/dependabot.yml` nem renovate; `Dependency audit notes` na CI é informativo e nunca reprova o build |
 | B-077 | CSP no web | Planned (W7-4) — nginx do profile `proxy` já manda HSTS/`nosniff`/`X-Frame-Options`/`Referrer-Policy`; falta CSP |
 | B-078 | Limite de tamanho de body no envio | Planned (W7-5) — `Message.Body` limitado a 8000 só na coluna; `POST .../messages` não valida e devolve 500 em vez de 400 |
+| B-105 | Catálogo de configuração admin mínima no `.env` | Planned (W7-7) — inventário completo de variáveis operacionais; `.env.example` como contrato; guia `docs/operations/configuracao-env.md`; matriz env vs `/admin/settings` (B-069) |
 
 ## Paridade de mensageria — Waves 8 a 10
 
@@ -144,7 +145,7 @@ Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → a
 
 Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done.
 
-Ordem daqui para frente: **Sustentação** (B-076 → B-077 → B-078) e depois
+Ordem daqui para frente: **Sustentação** (B-076 → B-077 → B-078 → B-105) e depois
 **paridade de mensageria** na ordem das waves — 8 (composição), 9 (leitura), 10
 (notificações, organização e acesso). Dentro de cada wave, seguir a numeração; itens
 sem dependência entre si podem ir em paralelo por trilhas diferentes.

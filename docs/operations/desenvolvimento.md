@@ -48,6 +48,8 @@ task migrate
 
 Runbooks de operação (incidentes, TLS, backup drill, upgrade): [`runbooks/README.md`](./runbooks/README.md).
 
+Catálogo de variáveis e matriz env vs admin UI: [`configuracao-env.md`](./configuracao-env.md) (fase W7-7 / B-105).
+
 ## Serviços locais
 
 | Serviço | Porta típica | Uso |
