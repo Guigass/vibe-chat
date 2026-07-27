@@ -1,10 +1,14 @@
-# Decisões Pendentes (Owner Humano) — VibeChat
+# Registro de Decisões de Produto — VibeChat
 
-Estas decisões **não** devem ser tomadas unilateralmente por agentes de código. Bloqueiam aspectos legais, de marca e de produção. D-01…D-10 foram **fechadas pelo owner** em 2026-07-24 (Wave 4 / MVP P1); D-11…D-15 e a revisão de D-07 foram fechadas em **2026-07-25** (paridade de mensageria + saída do PrimeNG).
+O nome do arquivo é preservado por compatibilidade, mas **não há decisão aberta**.
+D-01…D-10 foram fechadas em 2026-07-24; D-11…D-15 e a revisão de D-07 em
+2026-07-25; D-16…D-26 em 2026-07-27. O conjunto define defaults suficientes
+para execução autônoma do roadmap. Nova decisão de produto só é aberta quando
+um caso realmente fora desses defaults também for R4 em `agents/autonomia.md`.
 
 ## Lista
 
-| ID | Decisão | Por que importa | Owner sugerido | Status |
+| ID | Decisão | Por que importa | Autoridade original | Status |
 |----|---------|-----------------|----------------|--------|
 | D-01 | **Licença open-source** | Define adoção, SaaS wrappers, obrigações de copyleft | Founder / Legal | **Decidido (2026-07-24)** — Apache-2.0 definitiva (`LICENSE`) |
 | D-02 | **Marca e naming** | Evita conflito de marca; identidade pública | Founder / Brand | **Decidido (2026-07-24)** — produto **VibeChat**; assets visuais em `apps/web/public/` (ver design-system § Assets de marca); domínios oficiais ainda fora do escopo de agentes |
@@ -16,11 +20,29 @@ Estas decisões **não** devem ser tomadas unilateralmente por agentes de códig
 | D-08 | **SLA/RPO/RTO** | Dimensiona backup e HA | Ops | **Decidido (2026-07-24)** — dev/self-host sem SLA comercial; RPO/RTO “best effort” + backup diário Postgres (`docs/operations/backup-restore.md`) |
 | D-09 | **Código de conduta e governança** | OSS saudável | Founder | **Decidido (2026-07-24)** — `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1) + `CONTRIBUTING.md` |
 | D-10 | **Provedor SMTP / e-mail** | Features P2 | Ops | **Decidido (2026-07-24)** — Mailpit em dev; produção = SMTP genérico configurável (sem vendor locked) |
-| D-11 | **Escopo de paridade da fase 2** | Define o que o agente pode implementar sem perguntar | Founder / Produto | **Decidido (2026-07-25)**, **esclarecido (2026-07-27)** — mensageria rica entra; voz/vídeo, canvas, **loja pública** de bots e E2EE fora; **plugins locais** B-109→B-110→B-066 ok |
+| D-11 | **Escopo de paridade da fase 2** | Define o que o agente pode implementar sem perguntar | Founder / Produto | **Decidido (2026-07-25)**, **esclarecido (2026-07-27)** — mensageria rica entra; voz/vídeo, canvas, registry e E2EE ficam fora **da fase 2** e foram ordenados depois por D-16…D-26 |
 | D-12 | **Mensagem de áudio** | Formato, limites, privacidade da transcrição | Produto + Security | **Decidido (2026-07-25)** — anexo de áudio com MIME negociado no cliente; 5 min / 10 MB; transcrição opt-in atrás da flag de IA |
 | D-13 | **Notificações push** | Sai do perímetro self-host se usar serviço fechado | Ops + Security | **Decidido (2026-07-25)** — Web Push (VAPID) do próprio servidor; opt-in por usuário; sem FCM/APNs proprietário |
 | D-14 | **Idiomas suportados** | Custo de manutenção de catálogo | Produto | **Decidido (2026-07-25)** — `pt-BR` (default) e `en`; `@angular/localize`; sem terceiro idioma na fase 2 |
 | D-15 | **Licença do PrimeNG / PrimeUI** | `primeng@22` é comercial e, sem chave, injeta banner que cobre o composer | Founder / Legal | **Decidido (2026-07-25)** — **sair do PrimeNG** (opção c); ver B-104 + emenda ADR-002 |
+| D-16 | **Posicionamento de longo prazo** | Define se VibeChat permanece chat excelente ou vira plataforma de comunicação/conhecimento/automação | Founder / Produto | **Decidido (2026-07-27)** — plataforma aberta de comunicação, conhecimento e automação, self-hosted first |
+| D-17 | **Superfície de conhecimento** | Página leve, canvas colaborativo ou integração externa têm custos e modelos de permissão diferentes | Produto + Arquitetura | **Decidido (2026-07-27)** — páginas server-authoritative primeiro; colaboração CRDT só em B-152 |
+| D-18 | **Distribuição de plugins** | Registry/marketplace exige assinatura, revisão, suporte, revogação e possível modelo comercial | Founder + Security + Legal | **Decidido (2026-07-27)** — registry assinado e catálogos públicos permitidos; sem billing nem código in-process |
+| D-19 | **Comunicação ao vivo** | Áudio/vídeo/screen share exigem SFU/TURN, capacidade, consentimento e gravação | Produto + Platform + Legal | **Decidido (2026-07-27)** — live opcional self-hosted, OSS, profile separado e off por default |
+| D-20 | **Estratégia de clientes** | PWA, desktop empacotado e mobile nativo mudam custo e contratos suportados | Produto + Engenharia | **Decidido (2026-07-27)** — PWA canônica; desktop depois; mobile depois; uma API/contrato |
+| D-21 | **Federação e bridges** | Dados e identidades passam a outros domínios/serviços; revogação e retenção deixam de ser locais | Founder + Security + Legal | **Decidido (2026-07-27)** — bridges antes; federação allowlisted; nunca aberta por default |
+| D-22 | **Governança de IA e indexação semântica** | Define providers, inferência local, consentimento, orçamento, retenção de embeddings e citações | Produto + Security + Legal | **Decidido (2026-07-27)** — provider-neutral, externo opt-in, ACL/retention/citações/orçamento obrigatórios |
+| D-23 | **Meta de compliance enterprise** | SCIM, legal hold, eDiscovery e DLP dependem dos mercados/regulações alvo | Founder + Legal/DPO + Security | **Decidido (2026-07-27)** — LGPD/GDPR + controles alinhados a SOC 2/ISO 27001, sem alegar certificação |
+| D-24 | **White-label e política de marca** | Branding por tenant pode diluir VibeChat e afetar suporte/comercialização | Founder / Brand | **Decidido (2026-07-27)** — nome/logo/tokens limitados por tenant; sem CSS/JS arbitrário |
+| D-25 | **Porte, SLO e disponibilidade alvo** | HA/multi-região/K8s só podem ser dimensionados com carga, RPO/RTO e orçamento | Platform owner + Founder | **Decidido (2026-07-27)** — perfis Standard/HA; sem multi-region write; escalar por evidência |
+| D-26 | **E2EE versus compliance** | E2EE conflita com busca, moderação, legal hold, export e IA server-side | Founder + Security + Legal | **Decidido (2026-07-27)** — canais confidenciais E2EE opt-in, off default e com capacidades reduzidas |
+
+## Delegação do horizonte ambicioso
+
+D-16…D-26 fecham as escolhas de produto. Decisões técnicas reversíveis — seleção
+de biblioteca OSS, shape interno, estratégia de migration e implementação —
+foram delegadas aos agentes, que devem registrar ADR quando a arquitetura mudar.
+Não reabrir decisão humana apenas porque a implementação é difícil.
 
 ## Registros
 
@@ -157,12 +179,12 @@ Escolha: Paridade da fase 2 = mensageria rica assíncrona. Entram composição
   Directory público** e E2EE (incompatível com B-046/B-067).
   Esclarecimento (2026-07-27): trilha de **plugins locais** (sem loja):
   B-109 (núcleo bot+token+send) → B-110 (instalar/gerir na instância) →
-  B-066 (capabilities avançadas, P3, por último) → horizonte B-111.
-  Registry remoto opcional exige nova decisão D-*.
+  B-066 (capabilities avançadas, W15) → B-111.
+  O gate de registry remoto foi posteriormente fechado por D-18 para B-137.
 Data: 2026-07-25
 Owner: Founder / Produto
 Impacto em código/docs: waves 8-10 do roadmap; benchmark-mensageria.md;
-  itens fora de escopo permanecem em P3 quando aplicável
+  itens fora da fase 2 permanecem ordenados em W15–W17 quando aplicável
 ```
 
 ### D-12
@@ -253,13 +275,127 @@ Impacto em código/docs:
   - Agente NÃO compra/gera chave nem esconde o banner por CSS
 ```
 
+## Registros D-16…D-26 — autonomia de longo prazo
+
+### D-16 — Produto
+
+```text
+Escolha: VibeChat evolui para plataforma OSS/self-hosted de comunicação,
+  conhecimento e automação. Chat excelente continua sendo o núcleo.
+Regra: novas superfícies reutilizam identidade, ACL, conversa, audit e outbox.
+Não entra: suíte genérica de escritório nem dependência obrigatória de SaaS.
+```
+
+### D-17 — Conhecimento e canvas
+
+```text
+Escolha: B-120 entrega páginas e coleções server-authoritative com versionamento
+  otimista, histórico e referências a mensagens. B-152 adiciona colaboração
+  realtime por CRDT somente depois dessa base.
+Regra: mesma ACL/retention/export do workspace; nenhuma permissão paralela.
+Seleção técnica de CRDT: agente compara OSS e registra ADR.
+```
+
+### D-18 — Plugins e distribuição
+
+```text
+Escolha: registry assinado é permitido. Instância pode usar catálogo oficial,
+  catálogos comunitários allowlisted ou catálogo privado.
+Segurança: assinatura, checksum, provenance, compatibilidade, revogação e kill
+  switch. Plugin continua config + callbacks/serviço externo; nunca DLL/JS
+  não confiável dentro da API.
+Fora: billing e checkout dentro do VibeChat.
+```
+
+### D-19 — Live
+
+```text
+Escolha: áudio/vídeo/screen share entram como módulo opcional self-hosted.
+Arquitetura: interface de provider + SFU/TURN OSS em profile separado; não roda
+  dentro de apps/api e não é requisito do chat.
+Defaults: off; sem gravação; consentimento explícito para gravar/transcrever.
+Seleção do stack: agente cria ADR com benchmark, licença e capacidade.
+```
+
+### D-20 — Clientes
+
+```text
+Escolha: PWA é cliente canônico e define comportamento. Desktop empacotado vem
+  depois, seguido de mobile. Todos usam a mesma API/eventos e contract tests.
+Offline: fila local criptografada quando disponível, retry idempotente e remote
+  logout. Nenhum client ganha endpoint privilegiado próprio.
+Tecnologia de empacotamento: escolha OSS por ADR técnico.
+```
+
+### D-21 — Bridges e federação
+
+```text
+Escolha: primeiro bridges com escopo explícito; depois federação server-to-server
+  entre trust domains allowlisted. Descoberta/federação pública fica off.
+Regras: consentimento visível, identidade remota marcada, cópia de dados
+  documentada, revogação best-effort e audit de entrada/saída.
+```
+
+### D-22 — IA
+
+```text
+Escolha: contratos provider-neutral; inferência local e externa são adapters.
+Externo permanece opt-in. RAG/embeddings são por workspace, revalidam ACL no
+  retrieval, propagam edit/delete/purge e retornam citações.
+Obrigatório: budget, rate limit, audit de uso, classificação do dado, timeout e
+  fallback. Conteúdo do cliente não é usado para treino pelo VibeChat.
+```
+
+### D-23 — Compliance
+
+```text
+Escolha: baseline LGPD/GDPR e controles técnicos alinhados a SOC 2/ISO 27001.
+O produto não declara certificação sem auditoria externa.
+Entram: SCIM, legal hold, eDiscovery, DLP, SIEM e cadeia de custódia.
+Precedência: legal hold válido suspende purge apenas no escopo registrado; toda
+  aplicação/remoção é segregada e auditada.
+```
+
+### D-24 — White-label
+
+```text
+Escolha: tenant pode configurar nome exibido, logos, favicon e tokens de cor
+  dentro de limites de contraste. About/admin preserva versão e origem VibeChat.
+Proibido: CSS/JS arbitrário, substituir textos legais, esconder security state.
+```
+
+### D-25 — Operação e SLO
+
+```text
+Escolha: dois perfis documentados.
+  Standard: objetivo 99,9%; RPO 24h; RTO 4h; Compose.
+  HA: objetivo 99,95%; RPO <= 5 min; RTO <= 30 min, após B-144.
+Sem multi-region write nesta linha de produto. K8s, bus e OpenSearch só quando
+ADRs 015–017 mostrarem gatilho medido.
+SLO é objetivo da referência self-host; não é SLA comercial automático.
+```
+
+### D-26 — E2EE
+
+```text
+Escolha: canais confidenciais E2EE são opt-in por workspace/canal e off default.
+Capacidades reduzidas e visíveis: sem busca/IA/DLP/moderação de conteúdo,
+legal hold de body ou preview server-side. Metadata mínima continua auditável.
+Chaves não ficam em logs/outbox; perda de chave pode ser irrecuperável.
+Escrow organizacional não entra no v1 e exige spec própria futura.
+```
+
 ## Orientações para agentes
 
 - Features sensíveis (retenção/IA) com **feature flags** e defaults seguros
 - Usar placeholders em `.env.example`, nunca valores reais de produção
 - Catálogo operacional completo: fase W7-7 / B-105 → `docs/operations/configuracao-env.md`
 - Não inventar marca/logo/domínio — usar assets em `apps/web/public/` e o inventário do design-system
-- Novas decisões humanas: abrir linha nesta tabela como Pendente e parar se bloquearem o escopo
+- Decisão técnica reversível: agente decide, documenta evidência e cria ADR quando
+  necessário; não abrir D-*.
+- Abrir nova D-* apenas para licença/marca/legal, gasto/contrato externo,
+  credencial/domínio real ou mudança irreversível do modelo de dados/produto que
+  não tenha default definido em `docs/agents/autonomia.md`.
 
 ## Como fechar uma decisão
 

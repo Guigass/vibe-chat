@@ -30,11 +30,15 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Sequence Number** | Número monotônico por conversation (`seq`). Garante ordenação e detecção de lacunas no cliente. |
 | **Idempotency Key** | Chave fornecida pelo cliente (ou gerada) para evitar duplicar envios em retries. |
 | **Outbox** | Tabela/padrão transacional: evento de domínio gravado na mesma transação da mensagem; um worker publica/entrega depois. |
-| **Inbox / Delivery** | Estado de entrega por destinatário/conexão (delivered, read — conforme fase). |
+| **Inbox / Delivery** | Estado técnico de entrega por destinatário/conexão (delivered, read — conforme fase). |
+| **Inbox unificada** | Visão de produto que reúne DMs, menções, threads seguidas, anúncios e itens prioritários sem criar uma segunda fonte de read state (candidata B-117). |
 | **Read cursor** | Posição de leitura persistente por (`tenant`, `user`, `channel`) em `messaging.read_cursors` (`lastReadSeq`). Fonte da verdade das **não lidas** (badge, divisor, push); sobrevive a F5 e multi-dispositivo (B-094). Não confundir com estado só em memória no client. |
 | **Unread / Não lidas** | Contagem derivada de `maxSeq - lastReadSeq` (e menções). Badge na sidebar hidrata do servidor; só zera de forma definitiva ao avançar o cursor. |
 | **Reaction** | Reação emoji (ou similar) a uma mensagem. |
 | **Attachment** | Arquivo associado a mensagem; bytes no object storage (MinIO); metadados no PostgreSQL. |
+| **Announcement / Anúncio** | Mensagem ou conversa de broadcast com regras de publicação e, opcionalmente, confirmação de leitura; não é sinônimo de notificação push. |
+| **Action item** | Ação estruturada derivada de uma conversa e ligada à mensagem de origem; pode evoluir para tarefa, mas preserva evidência. |
+| **Digest / Catch-up** | Resumo periódico de atividade autorizada, com links para conversas de origem. |
 
 ## Tempo real e presença
 
@@ -64,11 +68,15 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Auditoria de conversa** | Visão ADMIN do histórico de um canal/DM/thread (conteúdo, edições, soft-delete, autores, anexos) para compliance — B-067; distinta do audit log de ações. |
 | **Configuração sensível** | Tokens, webhooks, chaves de AI/SMTP e secrets de integração. Só administradores leem/alteram via `/admin` + `GET/PUT /api/v1/admin/settings` (`workspace.admin`); membros/Auditor → 403; resposta só com máscara/`configured` (B-069). AI/SMTP secrets ficam em env/secret store; secret HMAC de webhook é gravável no admin e nunca retornado em claro (B-048). |
 | **Webhook outbound** | Endpoint HTTP do tenant que recebe fan-out de eventos assinado com HMAC-SHA256 (`X-VibeChat-Signature`). Fase 1 (B-048): 1 endpoint, só `MessageCreated`. Extensão (B-108): multi-endpoint, catálogo de eventos, filtro de canal, ping de teste. Só `workspace.admin`. |
-| **Plugin / Integração** | Pacote instalável **só na instância** (manifesto + capabilities + identidade Bot). Núcleo de envio: **B-109**; install/gestão: **B-110**; capabilities avançadas: **B-066** (P3). Sem loja pública (D-11). |
+| **Plugin / Integração** | Pacote instalável por manifesto + capabilities + identidade Bot. Núcleo de envio: **B-109**; install/gestão local: **B-110**; capabilities avançadas: **B-066/B-111** (W15); registry assinado: **B-137**. Sem billing ou código não confiável in-process (D-18). |
 | **Integração / Bot API** | Identidade `Role.Bot` + token para sistemas externos **enviarem** mensagens (capability `messages.send`, B-109). Base de todo plugin na 1ª onda. |
 | **Export de workspace** | Pacote ZIP compliance (`vibechat.workspace.export.v1`) com JSON do workspace (membros, spaces, channels, threads, messages com soft-delete, metadados de anexos — sem binários MinIO). `GET /api/v1/admin/workspaces/{id}/export`; exige `workspace.admin`; audit `workspace.export` (B-046 / D-03). |
 | **Retenção / purge** | Política por tenant (`messaging.message_retention_settings`: `enabled`, `retentionDays`) + kill switch de processo `MessageRetention:Enabled` (off default). Com ambos ligados, o worker hard-deleta soft-deletes além do cutoff; remove reactions; detach anexos (sem delete MinIO); audit `message.purge` (B-047 / ADR-018 / D-03). |
 | **Política de edição/apagar** | Regras por workspace sobre quem pode editar/apagar mensagem e por quanto tempo após o envio (`messaging.edit.*` / `messaging.delete.*` em admin settings). Papéis do catálogo + janela em minutos + override de moderação (B-107). Distinta de retenção/purge. |
+| **Legal hold** | Suspensão controlada de purge para conteúdo sob obrigação legal; sua precedência sobre retenção precisa de decisão D-23. |
+| **eDiscovery** | Busca, preservação e export de conteúdo para investigação/compliance, com authZ e audit reforçados. |
+| **DLP** | Data Loss Prevention: classificação e políticas que detectam/restringem exposição de dados sensíveis. |
+| **Policy pack** | Conjunto versionado de defaults e controles administrativos para um perfil de organização; nunca reduz controles obrigatórios silenciosamente. |
 
 ## Plataforma e infra
 
@@ -80,6 +88,10 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Worker** | Processo que consome outbox, processa jobs (indexação leve, thumbnails, AI, etc.). |
 | **Object Storage** | MinIO (S3-compatible) para blobs. |
 | **RLS** | Row Level Security no PostgreSQL, política por `tenant_id` (e claims de sessão). |
+| **Workflow / Automação** | Execução auditável de trigger → condições → ações, com idempotência, limites e identidade própria. |
+| **Playbook** | Sequência operacional reutilizável de passos, owners e evidências, por exemplo para incidente ou onboarding. |
+| **Bridge** | Integração que replica eventos/identidades entre VibeChat e outra rede; implica cópia de dados fora do domínio local. |
+| **Federação** | Comunicação server-to-server entre instâncias independentes, com identidade e dados distribuídos. Não confundir com multi-tenancy local. |
 
 ## IA (opcional)
 
@@ -88,6 +100,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **AI Provider** | Implementação atrás de `IAiCompletionProvider` (Null / Mock / OpenRouter). |
 | **AI Feature** | Capacidade opcional (resumo, sugestão, busca semântica futura) desligada por padrão. |
 | **Prompt Context** | Contexto permitido (mensagens/canais com ACL) enviado ao provedor — nunca cruzar tenants. |
+| **RAG** | Retrieval-Augmented Generation: recuperação de fontes autorizadas para fundamentar uma resposta de IA; embeddings e citações também obedecem ACL e retenção. |
 
 ## Observabilidade
 

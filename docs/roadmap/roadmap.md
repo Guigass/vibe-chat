@@ -255,15 +255,26 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W10-13 / B-109 | Token de integração exfiltrado / bot sem escopo | Token só hash no DB; escopo explícito de canais; rate-limit; suíte security cross-tenant |
 | W10-14 / B-110 | Plugin confundido com runtime de código | Manifesto = config; sem carregar DLL/JS de terceiro; capabilities extras só em B-066 |
 
-### Fora de escopo destas waves (D-11)
+### Fora de escopo das Waves 7–10 (D-11)
 
 Chamada de voz/vídeo ao vivo e screen share; superfície de documento colaborativo
-(Canvas/Loop); **marketplace / App Directory público**; E2EE. Não implementar
-sem nova decisão.
+(Canvas/Loop); registry remoto; E2EE. Não antecipar nessas waves: essas
+capacidades foram decididas e ordenadas somente para W15–W17.
 
 **Trilha de plugins locais** (permitida): B-109 (núcleo) → B-108 (outbound) →
-B-110 (install) → **B-066 / B-111 em P3 por último** (capabilities avançadas;
-ainda sem loja). Registry remoto exige D-* nova.
+B-110 (install) → **B-066 / B-111 em W15** (capabilities avançadas) →
+B-136/B-137 (SDK e registry governado).
+
+## Depois da Wave 10
+
+O roadmap executável posterior está em
+[`horizonte-ambicioso.md`](horizonte-ambicioso.md). Waves 11–17 estão `Planned`,
+possuem specs e são elegíveis para o Build somente depois da conclusão das
+Waves 7–10 e de suas dependências. D-16…D-26 registram os defaults já decididos;
+`docs/agents/autonomia.md` governa decisões técnicas e risco.
+
+A visão de produto correspondente está em
+[`product/visao-longo-prazo.md`](../product/visao-longo-prazo.md).
 
 ## Registro de GAPs
 
@@ -297,6 +308,11 @@ Agent-Security  → W3-1/W3-2 review, W6-5/W6-6 authZ + threat model, W7-3..W7-5
                   W10-14 (plugins)
 Agent-Obs       → W0-6, W3-4
 ```
+
+Após W10, a atribuição vem da trilha da própria linha em
+`horizonte-ambicioso.md`. Até três PRs podem correr em paralelo quando não há
+dependência nem sobreposição material; R2/R3 sempre recebem QA/Security
+independente. A ordem W11→W17 prevalece sobre afinidade do agente.
 
 ## Definição de “Wave 3 completa”
 

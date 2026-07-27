@@ -11,7 +11,7 @@ estado de entrega e a operação do VibeChat.
 
 | Objetivo | Leitura recomendada |
 |----------|---------------------|
-| Entender o produto | [Visão](product/visao.md) → [glossário](product/glossario.md) |
+| Entender o produto | [Visão](product/visao.md) → [visão de longo prazo](product/visao-longo-prazo.md) → [glossário](product/glossario.md) |
 | Saber o que existe hoje | [Estado atual](roadmap/estado-atual.md) → [roadmap](roadmap/roadmap.md) |
 | Planejar uma feature | [Backlog](roadmap/backlog.md) → [specs](product/specs/README.md) → [decisões](roadmap/decisoes-pendentes.md) |
 | Entender a arquitetura | [Visão geral](architecture/visao-geral.md) → [módulos](architecture/diagrama-modulos.md) → [contratos](architecture/contratos.md) |
@@ -19,13 +19,14 @@ estado de entrega e a operação do VibeChat.
 | Desenvolver localmente | [Desenvolvimento](operations/desenvolvimento.md) → [configuração](operations/configuracao-env.md) |
 | Operar uma instância | [Operação](operations/operacao.md) → [runbooks](operations/runbooks/README.md) |
 | Trabalhar como agente | [`AGENTS.md`](../AGENTS.md) → [orientações](agents/orientacoes.md) |
+| Operar agentes 24/7 | [Contrato de autonomia](agents/autonomia.md) → [runbook 24/7](agents/operacao-24x7.md) → [roadmap](roadmap/roadmap.md) |
 
 ## Fontes canônicas
 
 Quando dois documentos parecerem divergir, use esta precedência e corrija a
 fonte derivada no mesmo trabalho:
 
-1. Decisão humana registrada em `roadmap/decisoes-pendentes.md`;
+1. Decisão de produto registrada em `roadmap/decisoes-pendentes.md`;
 2. ADR aceito em `adrs/`;
 3. contrato público em `architecture/contratos.md`;
 4. regra de segurança em `security/`;
@@ -42,6 +43,10 @@ gap, não defendida apenas pelo texto.
 ### Produto
 
 - [Visão do produto](product/visao.md)
+- [Visão de longo prazo](product/visao-longo-prazo.md)
+- [Mapa de capacidades](product/mapa-capacidades.md)
+- [Pesquisa de horizontes](product/pesquisa-horizontes.md)
+- [Processo de discovery](product/discovery/README.md)
 - [Glossário](product/glossario.md)
 - [Benchmark de mensageria](product/benchmark-mensageria.md)
 - [Critérios da fatia vertical](product/criterios-aceite-fatia-vertical.md)
@@ -61,11 +66,15 @@ gap, não defendida apenas pelo texto.
 
 ### Planejamento e governança
 
+- [Contrato de autonomia](agents/autonomia.md)
+- [Operação autônoma 24/7](agents/operacao-24x7.md)
 - [Estado atual](roadmap/estado-atual.md)
 - [Roadmap executável](roadmap/roadmap.md)
+- [Horizonte ambicioso](roadmap/horizonte-ambicioso.md)
 - [Backlog priorizado](roadmap/backlog.md)
+- [Findings operacionais](roadmap/operational-findings.md)
 - [Riscos](roadmap/riscos.md)
-- [Decisões humanas](roadmap/decisoes-pendentes.md)
+- [Registro de decisões de produto](roadmap/decisoes-pendentes.md)
 
 ### Operação e segurança
 
@@ -81,7 +90,7 @@ gap, não defendida apenas pelo texto.
 ## Ciclo de vida de uma mudança
 
 ```text
-necessidade → decisão (se humana/arquitetural) → backlog → spec
+necessidade → decisão de produto ou ADR técnico → backlog → spec
            → implementação + testes → evidência → Done → atualização do snapshot
 ```
 
@@ -91,15 +100,19 @@ Uma feature só está pronta para implementação quando:
 - dependências e decisões estão resolvidas;
 - a spec contém escopo, fora de escopo, contratos, UX, authZ, aceite, testes e riscos;
 - mudanças de contrato, arquitetura ou superfície de ameaça estão identificadas;
-- não há conflito com ADRs ou decisões humanas.
+- não há conflito com ADRs ou decisões de produto vigentes;
+- possui classe R0–R3 e gates definidos em `agents/autonomia.md`.
 
 ## Convenções de status
 
 | Status | Significado |
 |--------|-------------|
 | `Planned` | Escopo autorizado, ainda não entregue |
+| `Candidate` | Ideia além do roadmap atual; não elegível para implementação |
+| `Conditional` | Só é promovido quando um gatilho objetivo documentado ocorre |
 | `In progress` | Trabalho ativo e rastreável |
-| `Blocked` | Depende de decisão ou estado externo explícito |
+| `Blocked-tech` | Três abordagens técnicas falharam; outra trilha segue |
+| `External action` | Depende de R4 fora da autoridade do agente |
 | `Moved` | Preservado como histórico; o novo ID/local deve ser citado |
 | `Done` | Implementação, testes e documentação têm evidência |
 | `Superseded` | Decisão ou entrega substituída, com sucessor identificado |

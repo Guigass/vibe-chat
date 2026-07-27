@@ -39,7 +39,7 @@ Fatia mínima — motor reutilizado por plugins:
 
 - Shell de instalação / manifesto / built-ins — **B-110**
 - Capabilities avançadas (slash, events, UI hooks, catálogo built-in rico) —
-  **B-066** / horizonte **B-111** (P3, por último)
+  **B-066** / **B-111** (W15, depois do núcleo)
 - Marketplace / App Directory público (D-11)
 - Slash commands externos, interactive buttons, modals
 - Webhooks inbound genéricos sem identidade Bot

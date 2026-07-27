@@ -35,7 +35,7 @@ Estender `integrations.webhook_endpoints` + UI admin (settings / B-106):
 ## Fora de escopo
 
 - Webhooks inbound genéricos sem identidade — envio por terceiros é **B-109**
-  (núcleo) + **B-110** (install); capabilities avançadas **B-066** (P3);
+  (núcleo) + **B-110** (install); capabilities avançadas **B-066** (W15);
   loja pública continua fora (D-11)
 - Fila dedicada ou bus externo (ADR-015)
 - Retry agressivo com DLQ completa (pode ser follow-up; aqui só last-status)

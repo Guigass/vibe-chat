@@ -4,6 +4,10 @@ Este documento guia agentes de código (backend, frontend, infra, QA, security, 
 
 > Contrato operacional principal: **`AGENTS.md`** (raiz) + regras em **`.cursor/rules/`**.  
 > DX: **`task setup` / `task dev` / `task verify`** — ver `Taskfile.yml` e `docs/operations/desenvolvimento.md`.
+> Autonomia contínua: **[`autonomia.md`](autonomia.md)** — autoridade delegada,
+> classes de risco, auto-merge e únicas condições externas.
+> Operação contínua: **[`operacao-24x7.md`](operacao-24x7.md)** — leases,
+> concorrência, watchdog, evidências e recuperação.
 
 ## Regras universais
 
@@ -13,8 +17,8 @@ Este documento guia agentes de código (backend, frontend, infra, QA, security, 
 4. **Não commitar secrets** nem credenciais de produção
 5. **Não inventar termos** fora do glossário — se precisar, atualizar `glossario.md`
 6. **Não criar arquivos de exemplo de código em `/docs`** — só documentação
-7. Respeitar **decisoes-pendentes.md** (licença, marca, retenção, credenciais prod)
-8. Preferir fatia vertical (P0) a features P2/P3
+7. Respeitar **decisoes-pendentes.md**; decisões D-01…D-26 já fechadas não devem ser reabertas por dificuldade técnica
+8. Preferir o primeiro item elegível do roadmap a qualquer feature não planejada
 9. Toda mutação de mensagem: **idempotência + seq + outbox**
 10. Todo dado de negócio: **tenant_id + authZ + RLS**
 
@@ -142,7 +146,9 @@ Trilha: C
 Deps satisfeitas: W2-2, W1-1
 ```
 
-Se bloqueado por decisão humana (D-*), parar e documentar — não inventar licença/retenção.
+Decisões técnicas reversíveis são do agente e podem exigir ADR. Parar somente nas
+condições `R4 — Externo` de `autonomia.md`; blocker técnico segue o protocolo de
+três tentativas e não bloqueia outras trilhas.
 
 Pipeline Cloud (Build → QA+Merge → Docs): prompts em `.cursor/automations/`.
 Build não marca `Done`; QA não abre feature; Docs não implementa o próximo item.

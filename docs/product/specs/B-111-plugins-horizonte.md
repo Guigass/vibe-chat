@@ -1,31 +1,65 @@
-# B-111 — Horizonte: capabilities avançadas de plugins (após B-066)
+# B-111 — Interações governadas para plugins
 
-> P3 (follow-up) · Trilha B/C/D · Deps: B-066 · Decisões: D-11
+> Wave 15 · Trilha B/C/D/E · Deps: B-066 · Risco R2
+> Regras comuns: [`long-term-common.md`](long-term-common.md)
 
-## Papel deste item
+## Problema
 
-Checklist de **horizonte** depois de B-066. Não é elegível ao Build enquanto
-B-066 não estiver Done. Serve para não misturar “plugins legais” com a fatia
-mínima (B-109 → B-110).
+B-066 registra comandos e eventos, mas integrações úteis ainda precisam
+interagir com mensagens e anexos sem receber acesso genérico ao workspace.
 
-## Candidatos (por último na trilha)
+## Escopo
 
-| Capability / tema | Notas |
-|-------------------|--------|
-| Slash namespaced estável | Conflito com B-087; prefixo `pluginId:` |
-| Interactive messages / botões | Exige contrato de action URL + authZ |
-| Leitura limitada de histórico pelo plugin | Opt-in; membership + rate-limit |
-| Anexos via API de integração | Depois de texto estável |
-| Catálogo built-in ampliado no repo | Mais oficiais; ainda sem registry remoto |
-| Registry URL opcional | **Bloqueado** até nova decisão D-* |
+- interactive messages com botões e ações namespaced;
+- leitura de histórico limitada a canais e janelas explicitamente concedidos;
+- upload e envio de anexos pela API de integração;
+- catálogo built-in ampliado, versionado no repositório;
+- revogação imediata das concessões e trilha de audit por ação;
+- quotas por plugin, tenant e capability.
 
-## Fora de escopo permanente (até D-* nova)
+## Fora de escopo
 
-- App Directory público / marketplace comercial
-- Execução de código não confiável in-process
+- código de terceiros executado dentro da API/web;
+- App Directory comercial, billing e instalação sem revisão;
+- registry e pacotes remotos, tratados por B-137;
+- acesso implícito ao histórico por possuir token.
 
-## Quando abrir spec completa
+## Contratos e dados
 
-Só após B-066 mergeado e demanda real de uma capability da tabela — então
-promover linha a B-11x com spec própria (não implementar este arquivo como
-escopo único).
+Versionar actions, grants de canal/janela e media API. Toda chamada carrega
+identidade do plugin, tenant, capability, grant e idempotency key. Respostas não
+revelam a existência de canais fora do escopo. Eventos de grant/revoke/action
+entram em audit.
+
+## UX e estados
+
+Admin vê capabilities, canais concedidos, último uso, quota e botão de revogar.
+Usuário vê claramente quando uma ação pertence a um plugin. Estados obrigatórios:
+ação expirada, plugin desativado, capability negada, timeout e retry seguro.
+
+## Multi-tenant e authZ
+
+Grants são sempre tenant-scoped e intersectados com o escopo do plugin; nunca
+substituem membership/autorização do ator. Histórico e anexos exigem grants
+separados. Revogação invalida tokens/caches e bloqueia callbacks posteriores.
+
+## Aceite
+
+- [ ] Ação interativa é autenticada, idempotente e auditada.
+- [ ] Plugin só lê a janela/canal concedidos.
+- [ ] Upload respeita tipo, tamanho, quota, scan e tenant.
+- [ ] Revogação impede nova leitura/ação imediatamente.
+- [ ] Nenhum JS/DLL remoto é executado no processo ou no browser.
+
+## Testes
+
+- contract tests de action/grant/media;
+- integration para idempotência, quota, revogação e callback;
+- security cross-tenant, channel scope, SSRF e anexos maliciosos;
+- E2E instalar built-in, conceder canal, interagir e revogar.
+
+## Riscos
+
+Capability inflation, histórico excessivo e interactive action forjada.
+Mitigar com grants mínimos, expiry, assinatura, replay protection, quotas,
+auditoria e defaults negados.

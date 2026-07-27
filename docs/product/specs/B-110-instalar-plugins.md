@@ -30,7 +30,7 @@ disable, listagem no admin e built-in que só encapsula a API de envio — tudo
 
 ## Fora de escopo
 
-- Capabilities avançadas (slash, events, UI hooks) — **B-066** (P3, por último)
+- Capabilities avançadas (slash, events, UI hooks) — **B-066** (W15)
 - Registry remoto / loja / OAuth app directory (D-11)
 - Executar script/DLL do plugin no servidor
 - Alterar o pipeline de SendMessage além do que B-109 já define

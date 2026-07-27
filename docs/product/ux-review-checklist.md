@@ -17,6 +17,10 @@ Login sem Keycloak: botões DevAuth na tela de login (Alice/Bob/Demo) ou header
 Para exercitar realtime, use duas sessões (janela normal + anônima), uma como Alice e
 outra como Bob.
 
+Em automação persistente, registrar antes quais portas já estavam ocupadas e,
+ao final, encerrar somente API/Web iniciados pelo próprio run. Nunca usar
+`docker compose down -v` para cleanup de revisão.
+
 ## Percurso obrigatório
 
 Toda revisão passa por estas telas, nesta ordem:
@@ -86,5 +90,5 @@ Toda revisão passa por estas telas, nesta ordem:
 ## Ao registrar
 
 Cada achado em `docs/product/ux-findings.md` precisa de tela, descrição factual,
-severidade e — quando houver — a pista de causa no código. Achado que exige decisão
-humana aponta o `D-*` e fica `Blocked`.
+severidade e — quando houver — a pista de causa no código. Detalhe reversível
+recebe recomendação concreta; somente dependência R4 fica `External action`.

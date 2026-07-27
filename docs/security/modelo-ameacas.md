@@ -122,4 +122,23 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 - Formal verification
 - Bug bounty
 
-Ver também: `multi-tenant.md`.
+## Superfícies do horizonte (ainda não implementadas)
+
+As superfícies abaixo não descrevem o runtime atual. São controles obrigatórios
+dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
+
+| Superfície | Ameaça dominante | Controle mínimo decidido |
+|------------|------------------|----------------------|
+| RAG/embeddings | Conteúdo revogado continuar recuperável; ACL desatualizada | D-22; delete propagation, ACL no retrieval, audit e opt-in |
+| Workflows | Loop, replay, privilégio transitivo e ação sem owner | Idempotência, depth/rate limits, identidade e capability por ação |
+| Conectores/bridges | SSRF, secret leak, impersonation e cópia fora do tenant | D-21; egress policy, scopes, HMAC/OAuth, consentimento e audit |
+| Registry de plugins | Supply-chain compromise e pacote revogado continuar ativo | D-18; assinatura, provenance, revisão, revogação e kill switch |
+| Legal hold/DLP | Preservação indevida, abuso de busca e conflito com exclusão | D-23; authZ separada, cadeia de custódia e parecer legal |
+| Offline/mobile | Token e conteúdo persistidos no dispositivo; revogação tardia | D-20; secure storage, remote logout e contrato de sync |
+| Federação | Perda de soberania, retenção e controle de identidade | D-21; trust domains, allowlist e política de cópia |
+| Live media | Gravação sem consentimento, abuso e exaustão de SFU/TURN | D-19; consentimento visível, quotas, moderação e SLO |
+| E2EE | Recuperação de conta, moderação e compliance incompatíveis | D-26; modelo formal antes de qualquer implementação persistente |
+| Canvas colaborativo | AuthZ por bloco, conflito, histórico e export incompletos | D-17; modelo de permissão e retenção antes de CRDT/OT |
+
+Ver também: [`multi-tenant.md`](multi-tenant.md) e
+[`horizonte-ambicioso.md`](../roadmap/horizonte-ambicioso.md).

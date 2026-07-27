@@ -10,7 +10,8 @@ Regras do registro:
 - Só entra o que foi **observado** rodando a aplicação. Suspeita sem evidência não entra.
 - Severidade: **Alta** (bloqueia ou quebra uma tarefa), **Média** (atrapalha), **Baixa** (polimento).
 - Achado fechado vira `Done` com o PR, não é apagado.
-- Achado que exige decisão humana aponta o `D-*` e fica `Blocked`.
+- Detalhe reversível recebe recomendação concreta; somente dependência R4 fica
+  `External action`.
 
 ## Abertos
 

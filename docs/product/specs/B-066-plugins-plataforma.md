@@ -1,6 +1,7 @@
 # B-066 — Plataforma de plugins / integrações (capabilities avançadas)
 
-> P3 · Trilha B/C/D · Deps: B-109, B-110, B-108 · Decisões: D-11 (loja pública fora)
+> Wave 15 · Trilha B/C/D/E · Deps: B-109, B-110, B-108 · Risco R2
+> Regras comuns: [`long-term-common.md`](long-term-common.md)
 
 ## Problema
 
@@ -18,7 +19,7 @@ entra (D-11). Esta fatia é a **última** da trilha de integração.
   - `events.subscribe` — assinatura inbound além do send (complementa B-108 no
     sentido inverso: VibeChat → plugin URL com eventos escolhidos)
   - `ui.hooks` (opcional, mínimo) — pontos documentados (ex. badge “bot”, menu
-    de mensagem) sem carregar JS arbitrário de terceiros na 1ª onda desta P3
+    de mensagem) sem carregar JS arbitrário de terceiros na primeira onda de W15
 - **Catálogo built-in** versionado no repositório (manifestos oficiais),
   instalável só na instância via B-110 — **sem** registry remoto / loja
 - Documentar contrato de manifesto estável em `contratos.md`
@@ -28,7 +29,7 @@ entra (D-11). Esta fatia é a **última** da trilha de integração.
 
 - Marketplace / App Directory público, OAuth de apps de terceiros, billing
 - Sandbox executando DLL/JS não confiável no processo da API
-- Registry URL opcional → exige nova decisão D-*
+- Registry remoto e distribuição pública (entram em B-137)
 - Substituir B-109/B-110 — esta fatia **só** adiciona capabilities em cima deles
 
 ## Contratos
@@ -62,6 +63,6 @@ Igual B-109/B-110. Callbacks nunca cruzam tenant. Token/secret só hash.
 
 ## Riscos
 
-- Escopo creep para marketplace → rejeitar registry remoto sem D-*
+- Escopo creep para registry → manter distribuição remota em B-137
 - Runtime de código de plugin → manter modelo **config + HTTP callbacks**, não
-  process-in-process na primeira entrega P3
+  process-in-process na primeira entrega de W15

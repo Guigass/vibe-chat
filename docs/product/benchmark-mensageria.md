@@ -115,7 +115,7 @@ sobre o `<input type="file">` que já existe, nunca como caminho único.
 | Acessibilidade WCAG AA | sim | sim | parcial | parcial | **Parcial** — B-103 |
 | Tema claro/escuro | sim | sim | sim | sim | **Temos** |
 | Webhooks / integrações | sim | sim | sim | Business API | **Parcial** — B-048 Done (`MessageCreated`); estender em **B-108** |
-| Bots / apps | sim | sim | sim | — | **Parcial planejado** — núcleo **B-109** + install **B-110**; plugins avançados **B-066** (P3); loja pública **fora** (D-11) |
+| Bots / apps | sim | sim | sim | — | **Planejado em fases** — núcleo **B-109/B-110** (W10); plugins avançados **B-066/B-111** e registry governado **B-137** (W15) |
 
 ## 7. Tempo real por voz e vídeo
 
@@ -141,7 +141,8 @@ mensagem cobrem o caso “documentar decisão do canal”.
 
 WhatsApp é E2EE por padrão; os outros três não são, em favor de compliance e busca
 server-side. O VibeChat já decidiu por auditoria de conversa (B-067) e export (B-046),
-que são incompatíveis com E2EE puro. Segue em P3 (B-064), sob mudança de modelo.
+que são incompatíveis com E2EE puro. Entra em W16 (B-064), como canal
+confidencial opt-in com capacidades reduzidas (D-26).
 
 ---
 

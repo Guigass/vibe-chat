@@ -22,7 +22,8 @@ O trabalho aberto concentra-se em:
 2. fechar hardening de supply chain, CSP e validação de body;
 3. consolidar o contrato de configuração self-host;
 4. reconstruir o shell administrativo;
-5. avançar as Waves 8–10 de paridade de mensageria.
+5. avançar as Waves 8–10 de paridade de mensageria;
+6. consumir o roadmap autorizado W11–W17.
 
 ## Runtime e fronteiras
 
@@ -86,6 +87,9 @@ O trabalho aberto concentra-se em:
 W7-3, W7-4, W7-5 e W7-7 podem avançar em paralelo quando houver agentes por
 trilha. W7-8 depende de W7-6.
 
+O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W17. Ele não
+altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
+
 ## Gaps documentais e operacionais conhecidos
 
 | Gap | Situação em 2026-07-27 | Tratamento |
@@ -103,10 +107,12 @@ trilha. W7-8 depende de W7-6.
 - Fase 1 permanece Compose; não adicionar K8s, bus externo ou OpenSearch sem os
   gatilhos dos ADRs 015–017.
 - IA externa é opt-in e não entra no hot path de envio.
-- E2EE, marketplace público, voz/vídeo e documento colaborativo estão fora do
-  escopo autorizado.
+- E2EE opt-in, registry governado, voz/vídeo e documento colaborativo estão
+  autorizados apenas nas Waves 15–17, com defaults restritivos e gates R3.
 - Plugins locais seguem B-109 → B-110 → B-066 → B-111.
 - Guests entram apenas pelo modelo restrito de D-07/B-040.
+- Decisões técnicas reversíveis são autônomas; somente ações R4 externas param
+  a etapa afetada.
 
 ## Como manter este snapshot
 
@@ -114,4 +120,3 @@ Atualizar ao fechar uma wave, mudar uma decisão D-*, aceitar/superseder um ADR
 ou descobrir divergência material entre documentação e runtime. Toda afirmação
 de entrega deve apontar para testes, código, migration, configuração ou artefato
 operacional verificável.
-

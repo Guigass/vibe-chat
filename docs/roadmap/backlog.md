@@ -132,18 +132,38 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-109 | Núcleo plugin — bot/token + envio msgs | Planned (W10-13) — capability `messages.send`; base da trilha; spec `docs/product/specs/B-109-api-integracao-envio-mensagens.md` |
 | B-110 | Instalar/gerir plugins na instância | Planned (W10-14) — manifesto local, built-in Incoming Messages; deps B-109; spec `docs/product/specs/B-110-instalar-plugins.md` |
 
-## P3 — Escala / futuro
+## P3 — Capacidades condicionais e itens promovidos
 
-| ID | Item | Gatilho |
-|----|------|---------|
-| B-060 | OpenSearch | ADR-016 |
-| B-061 | Bus externo | ADR-015 |
-| B-062 | Helm/K8s | ADR-017 |
-| B-063 | Clientes mobile nativos | demanda |
-| B-064 | E2EE (se produto decidir) | mudança de modelo |
-| B-065 | Federation multi-instância | pesquisa |
-| B-066 | Plugins — capabilities avançadas | pós B-109+B-110; **por último** na trilha; sem loja (D-11); spec `docs/product/specs/B-066-plugins-plataforma.md` |
-| B-111 | Horizonte plugins (slash/UI/registry) | pós B-066; checklist; spec `docs/product/specs/B-111-plugins-horizonte.md` |
+| ID | Item | Estado / destino |
+|----|------|------------------|
+| B-060 | OpenSearch | Conditional — somente gatilho ADR-016 medido |
+| B-061 | Bus externo | Conditional — somente gatilho ADR-015 medido |
+| B-062 | Helm/K8s | Conditional — somente gatilho ADR-017 medido |
+| B-063 | Clientes mobile nativos | Planned — W15 |
+| B-064 | Canais confidenciais E2EE | Planned — W16 |
+| B-065 | Federação entre instâncias | Planned — W16 |
+| B-066 | Plugins — capabilities avançadas | Planned — W15, após B-109/B-110 |
+| B-111 | Interações governadas para plugins | Planned — W15, após B-066 |
+
+## Waves 11–17 — Horizonte promovido
+
+Os itens abaixo estão catalogados e ordenados no roadmap executável
+[`horizonte-ambicioso.md`](horizonte-ambicioso.md). Eles não competem com Waves
+7–10 porque a conclusão destas é um gate de sequência.
+
+| Faixa | Tema | Estado |
+|-------|------|--------|
+| B-112…B-118 | Organização, anúncios, agenda, inbox e tópicos | Planned — W11 |
+| B-119…B-124 | Conhecimento, decisões, RAG, tarefas e formulários | Planned — W12 |
+| B-125…B-128, B-131, B-139 | Automações, incidentes, conectores e contratos | Planned — W13 |
+| B-129/B-130/B-132…B-134/B-146 | Segurança enterprise, SIEM, policies e capacidade | Planned — W14 |
+| B-135…B-138, B-140/B-141, B-063/B-066/B-111 | Plataforma, registry, bridges, branding e clients | Planned — W15 |
+| B-143…B-145 + B-064/B-065 | Offline, HA, storage, federação e E2EE | Planned — W16 |
+| B-147…B-149, B-152 | Live media, notas de reunião e canvas | Planned — W17 |
+
+Todos possuem decisão e spec. A elegibilidade concreta continua dependendo de
+deps `Done`, ausência de PR concorrente e gates R0–R3 de
+`docs/agents/autonomia.md`.
 
 ## Ordem de consumo sugerida
 
@@ -154,9 +174,14 @@ Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045, B-046, B-047 e B-075 D
 Ordem daqui para frente: **Sustentação** (B-104 → B-076 → B-077 → B-078 → B-105 →
 B-106) e depois **paridade de mensageria** na ordem das waves — 8 (composição), 9
 (leitura; B-094 fecha não lidas persistentes), 10 (notificações, organização,
-acesso e **trilha de plugins**: B-109 → B-108 → B-110; B-066/B-111 por último em
-P3). Dentro de cada wave, seguir a numeração; itens sem dependência entre si
+acesso e núcleo de plugins: B-109 → B-108 → B-110). Depois seguir W11–W17; a
+trilha avançada de plugins continua em W15 com B-066 → B-111/B-136. Dentro de
+cada wave, seguir a ordem da tabela; itens sem dependência entre si
 podem ir em paralelo por trilhas diferentes.
+
+Depois disso, usar a sequência de validação do horizonte ambicioso: comunicação
+organizada → conhecimento/ações → automação/governança → plataforma → apostas
+arquiteturais. Abrir no máximo uma aposta arquitetural por vez.
 
 ## Itens explicitamente rejeitados na fase 1
 

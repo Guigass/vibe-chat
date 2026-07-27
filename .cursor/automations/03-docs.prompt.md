@@ -8,17 +8,28 @@ Draft PRs block the QA+Merge trigger — **forbidden**.
 
 ## Step A — Identify what merged
 
-1. From the merged PR, read `Wave:` / `B-*` / `GAP-*`.
-2. **If the PR body carries `Automation: docs`, this run was triggered by your own
-   previous output.** The loop is already closed — report “docs idle” and stop. Do not
-   re-open the roadmap.
-3. Skim the merge commit / PR body for behavior or API changes.
+1. Confirm the PR is actually merged into `main` and its merge commit is
+   reachable from current `origin/main`.
+2. Read `Work-Item`, `Wave`, `Risk`, `Lease` and QA verdict from the PR,
+   check summary or automation evidence. Read QA nits from the durable verdict
+   and Memories when needed. For an unambiguous legacy PR, infer the single old
+   `Wave`/`B-*` ID and write normalized metadata in the Docs PR.
+3. **If the PR body carries `Automation: docs`, this run was triggered by your own
+   previous output.** Read `Closes-Work-Item`, confirm that item is now `Done` on
+   `main`, clear its `ACTIVE:<ID>` lease, report “docs loop closed” and stop.
+   If it is not `Done`, open one corrective R0 docs PR instead of silently stopping.
+4. If an open Docs PR already carries the same `Closes-Work-Item`, do not create a
+   duplicate; keep the lease and report the existing PR.
+5. Skim the merge commit / PR body for behavior or API changes.
 
 ## Step B — Roadmap status
 
 Update `docs/roadmap/roadmap.md` and/or `docs/roadmap/backlog.md`:
 
 - Set the item status in the `Status` column (keep existing table style / short notes)
+- For W11–W17, update `docs/roadmap/horizonte-ambicioso.md` and its mirrored
+  summary in `backlog.md`; `horizonte-ambicioso.md` is canonical. Change a
+  range-level backlog summary only when the whole range/wave becomes terminal
 - Every wave table has a `Status` column — never drop it and never leave a new row
   without one. A statusless row reads as *eligible* to the Build automation
 - Do **not** mark other Planned items Done. If you spot a row that is clearly already
@@ -43,8 +54,11 @@ Re-read and update **only** files that the merge actually affects:
 
 - Docs-only (or tiny comment/typo in code if required for accuracy)
 - No new features, refactors, or dependency changes
-- No ADR unless the merge already required one and it is missing (then add the
-  minimal ADR stub and stop for human review — do not invent the decision)
+- Do not introduce a new architecture decision in this close-out PR. If the
+  merged implementation required an ADR and omitted it, reconstruct the
+  technical decision from evidence, add an `Accepted` ADR under the authority
+  of `docs/agents/autonomia.md`, and flag the process failure; human review is
+  required only if the missing choice is genuinely R4
 - Prefer one small PR; if nothing is stale beyond the Done marker, a tiny
   docs-only PR with just the roadmap update is enough
 
@@ -55,11 +69,15 @@ Re-read and update **only** files that the merge actually affects:
 2. Commit; push; call **`open_git_pr`** to `main` with:
 
 ```text
-Wave: docs-<merged ID>
+Work-Item: DOCS-<merged ID>
+Wave: docs
 Trilha: G
 Deps satisfeitas: <merged ID>
 Automation: docs
 Previous: <merged PR URL>
+Closes-Work-Item: <merged ID>
+Risk: R0
+Lease: <original lease/run-id>
 ```
 
 3. **PR must be ready for review — never draft:**
@@ -67,10 +85,11 @@ Previous: <merged PR URL>
    - Do **not** run `gh pr ready --undo` or convert to draft.
    - If `open_git_pr` creates a draft, immediately run `gh pr ready <number>`
      and confirm `isDraft: false` before finishing.
-4. Update Memories: last merged Wave/Backlog ID + PR URL + outstanding doc nits.
+4. Update Memories: last merged work item + feature/docs PR URLs + outstanding
+   doc nits. Keep `ACTIVE:<ID>` until this Docs PR itself reaches `main`.
 
 ## Stop conditions
 
 - If the Done marker and docs are already correct on `main`: comment in the run
-  summary “docs idle” and **do not** open an empty PR.
+  summary “docs idle”, clear the lease and **do not** open an empty PR.
 - Never start the next roadmap implementation here.

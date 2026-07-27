@@ -21,6 +21,11 @@ Empresas que precisam de comunicação em tempo real frequentemente enfrentam:
 4. **Extensível** — módulos claros, contratos compartilhados, IA opcional atrás de interface
 5. **Pronto para crescer** — outbox, multi-tenancy com RLS, observabilidade desde o início
 
+Visão além da fase 2:
+[`visao-longo-prazo.md`](visao-longo-prazo.md). O mapa de capacidades e o
+horizonte ambicioso são propostas de produto, não autorização automática de
+implementação.
+
 ## Público-alvo
 
 | Persona | Necessidade |
@@ -59,7 +64,7 @@ Fora do escopo da fase 1:
 - Elasticsearch/OpenSearch, NATS/Kafka/RabbitMQ
 - Clientes nativos mobile (PWA cobre o essencial)
 - Marketplace de apps / bots avançados → reescrito como **plugins locais**
-  (B-109 → B-110 → B-066); loja pública continua fora (D-11)
+  em W10; registry assinado/governado só em W15 (D-18/B-137), sem billing
 
 ## Métricas de sucesso (produto)
 
