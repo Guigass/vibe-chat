@@ -123,20 +123,21 @@ Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks + B-045 suggest
 - Docs/glossário deixam claro: Keycloak autentica; membership/diretivas autorizam
 - Tokens/webhooks/keys inacessíveis a não-admin
 - Admin consegue auditar conversa (não só `audit_events`)
-- Identidade visual VibeChat preservada (tokens); saída do PrimeNG decidida em D-15 e executada em B-104
+- Identidade visual VibeChat preservada (tokens); saída do PrimeNG (D-15) + kit OSS spartan/ui (D-16) executados em B-104
 - `task apps` (Compose profile `apps`) sobe **api** + **web** (+ worker) healthy; caminho self-host documentado (dev hot-reload continua via `task dev`)
 
 ## Wave 7 — Sustentação
 
 Fila explícita para a automação de Build depois da Wave 6. Enquanto houver linha
 `Planned` aqui, o Build pega dela. **W7-6 (B-104) tem prioridade** sobre W7-3…W7-5
-enquanto o banner de licença do PrimeUI cobrir o composer. W7-3…W7-5 saem da
-checklist de **controles mínimos** de `docs/security/modelo-ameacas.md`.
+enquanto o banner de licença do PrimeUI cobrir o composer (saída = spartan/ui per
+D-16). W7-3…W7-5 saem da checklist de **controles mínimos** de
+`docs/security/modelo-ameacas.md`.
 
 | ID | Trilha | Tarefa | Deps | Status |
 |----|--------|--------|------|--------|
 | W7-1 | E | E2E Playwright na CI (B-075) | W2-7, W6-8 | **Done** — job CI + `infra/scripts/ci-e2e.sh` / `task test:e2e:ci` (DevAuth; #45) |
-| W7-6 | D/G | Remover PrimeNG — UI própria + CDK (B-104; D-15; emenda ADR-002) | W6-7, D-15 | Planned — **próximo elegível**; spec `docs/product/specs/B-104-remover-primeng.md`; fecha UX-002 |
+| W7-6 | D/G | Remover PrimeNG — spartan/ui + CDK (B-104; D-15; D-16; emenda ADR-002) | W6-7, D-15, D-16 | Planned — **próximo elegível**; spec `docs/product/specs/B-104-remover-primeng.md`; fecha UX-002; NG-ZORRO rejeitado |
 | W7-2 | B/D | Guests / link de canal (B-040) | P2-1, D-07 | **Movido** — D-07 revisado em 2026-07-25 destravou o item; virou W10-10 com spec |
 | W7-3 | E/A | Atualização automatizada de dependências (B-076) | W0-7 | Planned — não há `.github/dependabot.yml` nem renovate; o job `Dependency audit notes` é informativo e nunca reprova o build |
 | W7-4 | D/E | CSP no web (B-077) | W6-8 | Planned — `infra/proxy/nginx.conf` já manda HSTS/`nosniff`/`X-Frame-Options`/`Referrer-Policy`, mas não CSP, e só no profile `proxy` |

@@ -1,6 +1,6 @@
 # Decisões Pendentes (Owner Humano) — VibeChat
 
-Estas decisões **não** devem ser tomadas unilateralmente por agentes de código. Bloqueiam aspectos legais, de marca e de produção. D-01…D-10 foram **fechadas pelo owner** em 2026-07-24 (Wave 4 / MVP P1); D-11…D-15 e a revisão de D-07 foram fechadas em **2026-07-25** (paridade de mensageria + saída do PrimeNG).
+Estas decisões **não** devem ser tomadas unilateralmente por agentes de código. Bloqueiam aspectos legais, de marca e de produção. D-01…D-10 foram **fechadas pelo owner** em 2026-07-24 (Wave 4 / MVP P1); D-11…D-15 e a revisão de D-07 foram fechadas em **2026-07-25** (paridade de mensageria + saída do PrimeNG); **D-16** fechada em **2026-07-27** (kit UI OSS pós-PrimeNG).
 
 ## Lista
 
@@ -21,6 +21,7 @@ Estas decisões **não** devem ser tomadas unilateralmente por agentes de códig
 | D-13 | **Notificações push** | Sai do perímetro self-host se usar serviço fechado | Ops + Security | **Decidido (2026-07-25)** — Web Push (VAPID) do próprio servidor; opt-in por usuário; sem FCM/APNs proprietário |
 | D-14 | **Idiomas suportados** | Custo de manutenção de catálogo | Produto | **Decidido (2026-07-25)** — `pt-BR` (default) e `en`; `@angular/localize`; sem terceiro idioma na fase 2 |
 | D-15 | **Licença do PrimeNG / PrimeUI** | `primeng@22` é comercial e, sem chave, injeta banner que cobre o composer | Founder / Legal | **Decidido (2026-07-25)** — **sair do PrimeNG** (opção c); ver B-104 + emenda ADR-002 |
+| D-16 | **Kit UI OSS pós-PrimeNG** | Substitui PrimeNG sem dependência comercial; define stack do B-104 | Founder / Frontend | **Decidido (2026-07-27)** — **spartan/ui** (não NG-ZORRO); ver registro D-16 |
 
 ## Registros
 
@@ -237,13 +238,53 @@ Escolha: (c) Sair do PrimeNG
 Data: 2026-07-25
 Owner: Founder / Legal
 Impacto em código/docs:
-  - Emenda ADR-002 supersede a adoção B-073; stack UI = Angular + CDK + composição
-    própria com tokens VibeChat
+  - Emenda ADR-002 supersede a adoção B-073
   - Backlog B-104 (Wave 7) + spec docs/product/specs/B-104-remover-primeng.md
   - Remover primeng do package.json, providePrimeNG, preset, styles/_primeng.scss
   - Reescrever /admin (Table/Select/Tag) sem PrimeNG
   - UX-002 deixa de ser Blocked; fecha quando B-104 mergear
   - Agente NÃO compra/gera chave nem esconde o banner por CSS
+  - Kit OSS substituto definido em D-16 (spartan/ui)
+```
+
+### D-16
+
+```text
+Decisão: D-16 — Decidido
+Contexto: D-15 mandou sair do PrimeNG. O substituto precisa ser 100% OSS
+  (Apache-2.0 do produto / “sem dependências proprietárias” em AGENTS.md),
+  compatível com Angular 22, e compatível com a identidade VibeChat
+  (tokens --vc-*, sem look genérico de kit de terceiros — design-system.md).
+  Uso atual do PrimeNG é só /admin (Table, Select, Tag); o chat já é shared/ui.
+
+Comparativo:
+
+  NG-ZORRO (ng-zorro-antd)
+  - Licença MIT; v22.0.0 com suporte oficial a Angular ^22
+  - Table/Select/Tag maduros (drop-in do admin)
+  - Visual Ant Design opinionated; tema global pesado; risco alto de “cara de
+    Ant Design” no produto e de lutar contra CSS para mapear --vc-*
+  - Bundle/deps maiores (@ant-design/icons-angular, date-fns, etc.)
+  - Conflita com a regra de identidade própria / sem skin de terceiros
+
+  spartan/ui (@spartan-ng/brain + helm)
+  - Licença MIT; peer Angular >=21 <23 (cobre Angular 22); estável 1.x
+  - Headless (brain) sobre Angular CDK + estilos helm copiados/editáveis
+  - Alinha a Signals/standalone e à ideia de “comportamento pronto, visual nosso”
+  - Select e demais primitivas acessíveis; sem DataTable — tabela admin = HTML
+    semântico + tokens (aceitável para o escopo atual)
+  - Custo: peer Tailwind CSS v4 (+ tw-animate-css); projeto hoje é SCSS + --vc-*
+
+Escolha: spartan/ui (não NG-ZORRO)
+Data: 2026-07-27
+Owner: Founder / Frontend
+Impacto em código/docs:
+  - Emenda ADR-002 (stack UI) — spartan + CDK + tokens; NG-ZORRO rejeitado
+  - Spec B-104 atualizada: desinstalar PrimeNG; adotar @spartan-ng/brain;
+    Select admin via spartan; Tag via badge/helm; tabela HTML + --vc-*
+  - design-system.md / frontend.mdc / riscos / roadmap / backlog alinhados
+  - Chat shell permanece shared/ui; spartan não substitui o shell
+  - Agente NÃO adota NG-ZORRO “porque tem Table”
 ```
 
 ## Orientações para agentes

@@ -10,7 +10,7 @@ globs:
 - Angular 22 standalone + Signals + CDK + PWA.
 - Design system: Sora + IBM Plex Sans; teal/charcoal (`docs/architecture/design-system.md`).
 - Assets de marca em `apps/web/public/` (logo, fundos, favicon/PWA, sons) — inventário no design-system § Assets de marca; reutilizar.
-- UI kit (B-104 / D-15 / ADR-002): sem PrimeNG nem lib comercial; composição própria + CDK + tokens `--vc-*` em chat e admin.
+- UI kit (B-104 / D-15 / D-16 / ADR-002): sem PrimeNG nem lib comercial; spartan/ui (`@spartan-ng/brain`) + CDK + tokens `--vc-*`; chat em `shared/ui`; NG-ZORRO rejeitado.
 - OIDC PKCE; demo local só para DX — não confundir com auth de produção.
 - Mensagens ordenadas por `seq`; gap-fill via history; Idempotency-Key por tentativa.
 - Não exibir typing do próprio usuário; scroll só na timeline (B-071 / B-072).

@@ -32,7 +32,7 @@ and do not rework something already delivered.
 
 If several are eligible, pick the **first** row in scan order. Empty earlier waves
 first. Em W7, **W7-6 (B-104)** vem antes de W7-3…W7-5 na tabela de propósito —
-remover PrimeNG desbloqueia o composer.
+remover PrimeNG (e adotar spartan/ui per D-16) desbloqueia o composer.
 
 ## Step B — If none eligible: find ONE small gap (not a feature)
 
