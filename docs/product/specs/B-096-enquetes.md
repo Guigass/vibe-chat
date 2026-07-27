@@ -1,6 +1,6 @@
 # B-096 — Enquetes
 
-> Wave W10-2 · Trilha C/D · Deps: — · Decisões: D-11
+> Wave W10-2 · Trilha C/D · Deps: — · Decisões: D-11 · Risco R2
 
 ## Problema
 

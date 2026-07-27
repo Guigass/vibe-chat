@@ -5,6 +5,9 @@
 Operação de uma instância self-hosted em fase 1 (**Docker Compose** oficial — D-05). Kubernetes não é obrigatório (ADR-017). Sem SLA comercial; RPO/RTO best effort com backup diário Postgres (D-08).
 
 **Runbooks acionáveis (W5-4):** [`runbooks/README.md`](./runbooks/README.md) — incidentes, backup/restore drill, TLS/proxy, upgrade.
+Visão consolidada: [`manual-operador.md`](./manual-operador.md). Política de
+release e compatibilidade:
+[`release-versionamento-suporte.md`](./release-versionamento-suporte.md).
 
 ## Compose apps — caminho oficial (B-074 / W6-8)
 

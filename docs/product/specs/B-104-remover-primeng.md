@@ -1,6 +1,6 @@
 # B-104 — Remover PrimeNG (spartan/ui + CDK)
 
-> Wave W7-6 · Trilha D/G · Deps: W6-7, D-15, D-27 · Decisões: D-15 (c), D-27 (spartan)
+> Wave W7-6 · Trilha D/G · Deps: W6-7, D-15, D-27 · Decisões: D-15 (c), D-27 (spartan) · Risco R1
 
 ## Problema
 

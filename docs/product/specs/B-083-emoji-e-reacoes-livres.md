@@ -1,6 +1,6 @@
 # B-083 — Emoji picker e reações livres
 
-> Wave W8-5 · Trilha C/D · Deps: B-024 · Decisões: D-11
+> Wave W8-5 · Trilha C/D · Deps: B-024 · Decisões: D-11 · Risco R2
 
 ## Problema
 

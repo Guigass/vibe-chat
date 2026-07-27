@@ -1,6 +1,6 @@
 # B-097 — Preferências de notificação e não perturbe
 
-> Wave W10-3 · Trilha B/D · Deps: B-095 · Decisões: D-13, D-10
+> Wave W10-3 · Trilha B/D · Deps: B-095 · Decisões: D-13, D-10 · Risco R2
 
 ## Problema
 

@@ -1,6 +1,6 @@
 # B-082 — Menções
 
-> Wave W8-4 · Trilha B/C/D · Deps: B-081 · Decisões: D-11
+> Wave W8-4 · Trilha B/C/D · Deps: B-081 · Decisões: D-11 · Risco R2
 
 ## Problema
 

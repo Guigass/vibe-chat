@@ -1,6 +1,6 @@
 # B-102 — Seguir thread
 
-> Wave W10-8 · Trilha C/D · Deps: B-022, B-095 · Decisões: D-11
+> Wave W10-8 · Trilha C/D · Deps: B-022, B-095 · Decisões: D-11 · Risco R2
 
 ## Problema
 

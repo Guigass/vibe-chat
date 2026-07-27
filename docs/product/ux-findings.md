@@ -17,12 +17,12 @@ Regras do registro:
 
 | ID | Tela | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
-| UX-001 | Login | Os três botões DevAuth (Alice/Bob/Demo) renderizam como retângulos vazios, sem rótulo visível | Alta | Aberto |
+| UX-001 | Login | Os três botões DevAuth (Alice/Bob/Demo) renderizam como retângulos vazios, sem rótulo visível | Alta | Aberto — safety lane `UX-001`; executar antes do próximo item de produto se ainda reproduzível |
 | UX-002 | Todas | Banner vermelho fixo “Invalid PrimeUI License” no canto inferior direito, **cobrindo “Anexar” e “Enviar”** do composer | Alta | Aberto — D-15 sair do PrimeNG; D-27 kit = spartan/ui; fecha com **B-104** |
-| UX-003 | Shell | Em viewport estreito (~400 px) a sidebar continua ocupando quase metade da largura; não há colapso nem botão de alternar | Alta | Aberto |
-| UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto |
+| UX-003 | Shell | Em viewport estreito (~400 px) a sidebar continua ocupando quase metade da largura; não há colapso nem botão de alternar | Alta | Aberto — safety lane `UX-003`; corrigir como hotfix de responsividade se ainda reproduzível |
+| UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de contraste |
 | UX-005 | Admin | Seções sem permissão exibem o aviso em laranja/vermelho, dando aparência de erro a um estado esperado | Média | Aberto — fecha com **B-106** (esconder nav/áreas sem claim; matriz por papel) |
-| UX-006 | Header | Botões de ícone (buscar, tema, densidade, painel) sem estado de hover/foco perceptível | Média | Aberto |
+| UX-006 | Header | Botões de ícone (buscar, tema, densidade, painel) sem estado de hover/foco perceptível | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de foco |
 
 ## Detalhamento
 
@@ -40,6 +40,9 @@ que no tema claro é tinta escura. Resultado: texto escuro sobre fundo escuro.
 
 Correção esperada: o hero do login precisa fixar o contexto de cor (ou usar tokens
 invertidos), e `.vc-btn` deve ter uma cor de base em vez de depender só da variante.
+
+Execução: safety lane `UX-001` (R1). Revalidar visualmente no SHA atual; se ainda
+reproduzível, corrigir antes de selecionar o próximo item normal do roadmap.
 
 ### UX-002 — Banner de licença do PrimeUI cobrindo o composer
 
@@ -71,6 +74,9 @@ Em 400 px de largura a sidebar mantém a largura fixa e sobra pouco espaço para
 timeline. O shell tem um botão de recolher, mas não há colapso automático por
 breakpoint nem overlay para telas pequenas. Como o app é PWA instalável (B-029),
 o uso em tela pequena é esperado.
+
+Execução: safety lane `UX-003` (R1), com viewport 320/360/400 px, teclado, foco e
+E2E responsivo. Não precisa aguardar mobile nativo.
 
 ### UX-004 — Contraste dos rótulos de seção
 

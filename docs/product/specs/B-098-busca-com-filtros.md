@@ -1,6 +1,6 @@
 # B-098 — Busca com filtros
 
-> Wave W10-4 · Trilha C/D · Deps: B-089 · Decisões: D-11
+> Wave W10-4 · Trilha C/D · Deps: B-089 · Decisões: D-11 · Risco R2
 
 ## Problema
 

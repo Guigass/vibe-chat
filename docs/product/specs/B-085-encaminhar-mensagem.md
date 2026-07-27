@@ -1,6 +1,6 @@
 # B-085 — Encaminhar mensagem
 
-> Wave W8-7 · Trilha C/D · Deps: B-084 · Decisões: D-11
+> Wave W8-7 · Trilha C/D · Deps: B-084 · Decisões: D-11 · Risco R2
 
 ## Problema
 

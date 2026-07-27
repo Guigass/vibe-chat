@@ -1,6 +1,6 @@
 # B-092 — Fixar mensagem
 
-> Wave W9-5 · Trilha C/D · Deps: B-089 · Decisões: D-11
+> Wave W9-5 · Trilha C/D · Deps: B-089 · Decisões: D-11 · Risco R2
 
 ## Problema
 

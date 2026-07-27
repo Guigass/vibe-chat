@@ -1,6 +1,6 @@
 # B-086 — Rascunho persistente
 
-> Wave W8-8 · Trilha D · Deps: — · Decisões: D-11
+> Wave W8-8 · Trilha D · Deps: — · Decisões: D-11 · Risco R1
 
 ## Problema
 

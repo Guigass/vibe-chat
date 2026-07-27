@@ -24,14 +24,14 @@ interagir com mensagens e anexos sem receber acesso genérico ao workspace.
 - registry e pacotes remotos, tratados por B-137;
 - acesso implícito ao histórico por possuir token.
 
-## Contratos e dados
+## Contratos
 
 Versionar actions, grants de canal/janela e media API. Toda chamada carrega
 identidade do plugin, tenant, capability, grant e idempotency key. Respostas não
 revelam a existência de canais fora do escopo. Eventos de grant/revoke/action
 entram em audit.
 
-## UX e estados
+## UX
 
 Admin vê capabilities, canais concedidos, último uso, quota e botão de revogar.
 Usuário vê claramente quando uma ação pertence a um plugin. Estados obrigatórios:

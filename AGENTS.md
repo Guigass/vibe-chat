@@ -4,7 +4,7 @@ Regras para Cloud Agents e agentes de código que trabalham neste repositório.
 Complementa `docs/agents/orientacoes.md`.
 
 Execução contínua e autoridade delegada: `docs/agents/autonomia.md` e
-`docs/agents/operacao-24x7.md`. Decisões D-01…D-26 estão fechadas; escolhas
+`docs/agents/operacao-24x7.md`. Decisões D-01…D-27 estão fechadas; escolhas
 técnicas reversíveis são feitas pelo agente e registradas em ADR quando necessário.
 
 ## Antes de editar
@@ -24,6 +24,8 @@ técnicas reversíveis são feitas pelo agente e registradas em ADR quando neces
 - **Sem dependências proprietárias** — preferir OSS; não adicionar SDKs fechados sem decisão explícita.
 - **Sem secrets em logs ou commits** — usar `.env.example` com placeholders; nunca credenciais reais.
 - **Atualizar documentação** quando comportamento, DX ou decisão mudar.
+- **Declarar risco na spec** — todo item planejado usa R0–R3; R3 começa pelo
+  pacote correspondente em `docs/architecture/pacotes-decisao-r3.md`.
 - **PRs pequenos e revisáveis** — uma intenção clara por mudança.
 - **Apresentar evidência de funcionamento** — saída de `task verify` / testes, screenshots ou traces quando fizer sentido.
 

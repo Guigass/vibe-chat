@@ -15,6 +15,9 @@ individual existir.
 6. contratos, authZ, tenancy, retenção, observabilidade e operação fazem parte
    do item, não são follow-up opcional;
 7. descoberta adicional é permitida dentro do item, sem reabrir decisão humana.
+8. item R3 começa pelos defaults de
+   [`pacotes-decisao-r3.md`](../architecture/pacotes-decisao-r3.md); o ADR escolhe
+   tecnologia sem reabrir produto.
 
 ## Critério de priorização histórico
 

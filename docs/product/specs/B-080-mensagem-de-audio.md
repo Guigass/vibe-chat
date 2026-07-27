@@ -1,6 +1,6 @@
 # B-080 — Mensagem de áudio
 
-> Wave W8-2 · Trilha C/D · Deps: B-079 · Decisões: D-12, D-06
+> Wave W8-2 · Trilha C/D · Deps: B-079 · Decisões: D-12, D-06 · Risco R3
 
 ## Problema
 

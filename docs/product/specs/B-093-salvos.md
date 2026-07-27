@@ -1,6 +1,6 @@
 # B-093 — Salvos
 
-> Wave W9-6 · Trilha C/D · Deps: B-089 · Decisões: D-11
+> Wave W9-6 · Trilha C/D · Deps: B-089 · Decisões: D-11 · Risco R2
 
 ## Problema
 

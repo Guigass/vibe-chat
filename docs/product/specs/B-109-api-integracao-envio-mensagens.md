@@ -1,6 +1,6 @@
 # B-109 — Núcleo de plugin: Bot + token + envio de mensagens
 
-> Wave W10-13 · Trilha B/C/D/E · Deps: B-004, B-069, B-021 · Decisões: D-11 (loja pública fora; plugins locais ok)
+> Wave W10-13 · Trilha B/C/D/E · Deps: B-004, B-069, B-021 · Decisões: D-11 (loja pública fora; plugins locais ok) · Risco R3
 
 ## Problema
 

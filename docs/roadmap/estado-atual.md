@@ -90,6 +90,17 @@ trilha. W7-8 depende de W7-6.
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W17. Ele não
 altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
 
+## Baseline de planejamento
+
+- 79 itens `Planned` entre W7–W17;
+- 79 specs em correspondência 1:1;
+- 79 classes R0–R3 declaradas;
+- nenhuma decisão D-* aberta;
+- pacotes R3, release/support, catálogo de contratos/flags, manuais e métricas
+  documentados no programa DOC-009…DOC-015;
+- enforcement automático de DOC-006 ainda exige implementação na fase de código;
+- três ações R4 do GitHub permanecem em `operational-findings.md`.
+
 ## Gaps documentais e operacionais conhecidos
 
 | Gap | Situação em 2026-07-27 | Tratamento |

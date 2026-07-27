@@ -1,6 +1,6 @@
 # B-040 — Guests por convite
 
-> Wave W10-10 · Trilha B/D/E · Deps: P2-1, B-098 · Decisões: D-07 (revisado 2026-07-25)
+> Wave W10-10 · Trilha B/D/E · Deps: P2-1, B-098 · Decisões: D-07 (revisado 2026-07-25) · Risco R3
 
 ## Problema
 

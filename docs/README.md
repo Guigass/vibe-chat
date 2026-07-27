@@ -52,6 +52,8 @@ gap, não defendida apenas pelo texto.
 - [Critérios da fatia vertical](product/criterios-aceite-fatia-vertical.md)
 - [Findings e checklist de UX](product/ux-findings.md)
 - [Specs de features](product/specs/README.md)
+- [Guias de uso](product/guias/README.md)
+- [Métricas e evidências](product/metricas-e-evidencias.md)
 
 ### Arquitetura
 
@@ -62,6 +64,8 @@ gap, não defendida apenas pelo texto.
 - [Fluxo de envio de mensagem](architecture/fluxo-envio-mensagem.md)
 - [Design system](architecture/design-system.md)
 - [Matriz de aderência aos ADRs](architecture/aderencia-adrs.md)
+- [Pacotes de decisão R3](architecture/pacotes-decisao-r3.md)
+- [Catálogo de evolução de contratos, dados e flags](architecture/catalogo-evolucao-contratos.md)
 - [ADRs 001–018](adrs/README.md)
 
 ### Planejamento e governança
@@ -73,6 +77,7 @@ gap, não defendida apenas pelo texto.
 - [Horizonte ambicioso](roadmap/horizonte-ambicioso.md)
 - [Backlog priorizado](roadmap/backlog.md)
 - [Findings operacionais](roadmap/operational-findings.md)
+- [Qualidade e rastreabilidade documental](roadmap/qualidade-documental.md)
 - [Riscos](roadmap/riscos.md)
 - [Registro de decisões de produto](roadmap/decisoes-pendentes.md)
 
@@ -81,6 +86,8 @@ gap, não defendida apenas pelo texto.
 - [Desenvolvimento](operations/desenvolvimento.md)
 - [Configuração por ambiente](operations/configuracao-env.md)
 - [Operação](operations/operacao.md)
+- [Manual do operador](operations/manual-operador.md)
+- [Release, versionamento e suporte](operations/release-versionamento-suporte.md)
 - [Troubleshooting](operations/troubleshooting.md)
 - [Backup e restore](operations/backup-restore.md)
 - [Runbooks](operations/runbooks/README.md)

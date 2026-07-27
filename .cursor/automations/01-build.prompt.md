@@ -58,8 +58,10 @@ first. Em W7, **W7-6 (B-104)** vem antes de W7-3…W7-5 na tabela de propósito 
 remover PrimeNG e adotar spartan/ui (D-27) desbloqueia o composer. Do not skip an
 eligible earlier item to start a more exciting long-term feature.
 
-Classify the item as R0–R4 using `docs/agents/autonomia.md` before editing. Apply
-all gates for that class and record the class in the PR body.
+Confirm the R0–R3 class declared by the spec using `docs/agents/autonomia.md`
+before editing. Correct it only with a concrete rationale in the PR. Apply all
+gates for the confirmed class and record it in the PR body. R3 work starts from
+`docs/architecture/pacotes-decisao-r3.md`.
 
 Reserve it using the lease protocol in `docs/agents/operacao-24x7.md` before
 editing. Re-check open PRs after acquiring the lease. Release the lease on

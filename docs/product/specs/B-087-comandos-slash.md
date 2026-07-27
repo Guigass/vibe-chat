@@ -1,6 +1,6 @@
 # B-087 — Comandos slash
 
-> Wave W8-9 · Trilha C/D · Deps: B-082 · Decisões: D-11
+> Wave W8-9 · Trilha C/D · Deps: B-082 · Decisões: D-11 · Risco R1
 
 ## Problema
 
