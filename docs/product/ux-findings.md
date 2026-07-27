@@ -18,7 +18,7 @@ Regras do registro:
 | ID | Tela | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
 | UX-001 | Login | Os três botões DevAuth (Alice/Bob/Demo) renderizam como retângulos vazios, sem rótulo visível | Alta | Aberto |
-| UX-002 | Todas | Banner vermelho fixo “Invalid PrimeUI License” no canto inferior direito, **cobrindo “Anexar” e “Enviar”** do composer | Alta | Aberto — D-15 decidiu sair do PrimeNG; fecha com **B-104** |
+| UX-002 | Todas | Banner vermelho fixo “Invalid PrimeUI License” no canto inferior direito, **cobrindo “Anexar” e “Enviar”** do composer | Alta | Aberto — D-15 sair do PrimeNG; D-27 kit = spartan/ui; fecha com **B-104** |
 | UX-003 | Shell | Em viewport estreito (~400 px) a sidebar continua ocupando quase metade da largura; não há colapso nem botão de alternar | Alta | Aberto |
 | UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto |
 | UX-005 | Admin | Seções sem permissão exibem o aviso em laranja/vermelho, dando aparência de erro a um estado esperado | Média | Aberto — fecha com **B-106** (esconder nav/áreas sem claim; matriz por papel) |
@@ -59,10 +59,11 @@ São dois problemas empilhados:
 2. **Compliance** — `AGENTS.md` proíbe dependência proprietária sem decisão explícita,
    e o ADR-002 foi emendado para adotar PrimeNG (B-073) sem essa análise de licença.
 
-**D-15 decidiu (c) sair do PrimeNG.** A correção é **B-104** (spec
-`docs/product/specs/B-104-remover-primeng.md`): desinstalar o pacote e reescrever
-`/admin` com composição própria + CDK. O agente **não** deve gerar chave nem
-esconder o banner por CSS.
+**D-15 decidiu (c) sair do PrimeNG.** **D-27** escolheu o substituto OSS:
+**spartan/ui** (não NG-ZORRO). A correção é **B-104** (spec
+`docs/product/specs/B-104-remover-primeng.md`): desinstalar o pacote, adotar
+`@spartan-ng/brain` + tokens `--vc-*`, e reescrever `/admin` (Select via spartan;
+tabela HTML). O agente **não** deve gerar chave nem esconder o banner por CSS.
 
 ### UX-003 — Sidebar não colapsa em viewport estreito
 

@@ -2,7 +2,7 @@
 
 O nome do arquivo é preservado por compatibilidade, mas **não há decisão aberta**.
 D-01…D-10 foram fechadas em 2026-07-24; D-11…D-15 e a revisão de D-07 em
-2026-07-25; D-16…D-26 em 2026-07-27. O conjunto define defaults suficientes
+2026-07-25; D-16…D-27 em 2026-07-27. O conjunto define defaults suficientes
 para execução autônoma do roadmap. Nova decisão de produto só é aberta quando
 um caso realmente fora desses defaults também for R4 em `agents/autonomia.md`.
 
@@ -36,6 +36,7 @@ um caso realmente fora desses defaults também for R4 em `agents/autonomia.md`.
 | D-24 | **White-label e política de marca** | Branding por tenant pode diluir VibeChat e afetar suporte/comercialização | Founder / Brand | **Decidido (2026-07-27)** — nome/logo/tokens limitados por tenant; sem CSS/JS arbitrário |
 | D-25 | **Porte, SLO e disponibilidade alvo** | HA/multi-região/K8s só podem ser dimensionados com carga, RPO/RTO e orçamento | Platform owner + Founder | **Decidido (2026-07-27)** — perfis Standard/HA; sem multi-region write; escalar por evidência |
 | D-26 | **E2EE versus compliance** | E2EE conflita com busca, moderação, legal hold, export e IA server-side | Founder + Security + Legal | **Decidido (2026-07-27)** — canais confidenciais E2EE opt-in, off default e com capacidades reduzidas |
+| D-27 | **Kit UI OSS pós-PrimeNG** | Substitui PrimeNG sem dependência comercial; define a stack do B-104 | Founder / Frontend | **Decidido (2026-07-27)** — **spartan/ui** (não NG-ZORRO); ver registro D-27 |
 
 ## Delegação do horizonte ambicioso
 
@@ -263,8 +264,7 @@ Escolha: (c) Sair do PrimeNG
 Data: 2026-07-25
 Owner: Founder / Legal
 Impacto em código/docs:
-  - Emenda ADR-002 supersede a adoção B-073; stack UI = Angular + CDK + composição
-    própria com tokens VibeChat
+  - Emenda ADR-002 supersede a adoção B-073
   - Backlog B-104 (Wave 7) + spec docs/product/specs/B-104-remover-primeng.md
   - Follow-up B-106 (W7-8): admin shell com nav lateral, toolbars, listagens e
     filtros — após B-104; spec docs/product/specs/B-106-admin-shell.md
@@ -273,6 +273,7 @@ Impacto em código/docs:
     de console em B-106)
   - UX-002 deixa de ser Blocked; fecha quando B-104 mergear
   - Agente NÃO compra/gera chave nem esconde o banner por CSS
+  - Kit OSS substituto definido em D-27 (spartan/ui)
 ```
 
 ## Registros D-16…D-26 — autonomia de longo prazo
@@ -383,6 +384,42 @@ Capacidades reduzidas e visíveis: sem busca/IA/DLP/moderação de conteúdo,
 legal hold de body ou preview server-side. Metadata mínima continua auditável.
 Chaves não ficam em logs/outbox; perda de chave pode ser irrecuperável.
 Escrow organizacional não entra no v1 e exige spec própria futura.
+```
+
+### D-27 — Kit UI OSS pós-PrimeNG
+
+```text
+Decisão: D-27 — Decidido
+Contexto: D-15 mandou sair do PrimeNG. O substituto precisa ser 100% OSS,
+  compatível com Angular 22 e com a identidade VibeChat (tokens --vc-*; sem
+  aparência genérica de kit de terceiros). O uso atual do PrimeNG está restrito
+  ao /admin (Table, Select, Tag); o chat já usa shared/ui.
+
+Comparativo:
+
+  NG-ZORRO (ng-zorro-antd)
+  - Licença MIT e componentes maduros de Table/Select/Tag
+  - Visual Ant Design opinionated e tema global mais difícil de subordinar a --vc-*
+  - Conflita com a identidade própria e a regra de não adotar skin de terceiros
+
+  spartan/ui (@spartan-ng/brain + Helm)
+  - Licença MIT; pacote brain headless sobre Angular CDK
+  - Peers publicados na data da decisão cobrem Angular 22 e incluem Tailwind CSS v4
+  - Estilos Helm são copiados/editáveis: comportamento pronto, visual VibeChat
+  - Há primitiva de tabela, mas não um data grid rico equivalente ao PrimeNG
+    DataTable; paginação, filtros e ordenação seguem explícitos no produto
+  - Custo: introduzir Tailwind v4 de forma limitada, preservando SCSS e --vc-*
+
+Escolha: spartan/ui (não NG-ZORRO)
+Data: 2026-07-27
+Owner: Founder / Frontend
+Impacto em código/docs:
+  - Emenda ADR-002: spartan + CDK + tokens; NG-ZORRO rejeitado
+  - B-104: desinstalar PrimeNG; adotar @spartan-ng/brain e estilos Helm copiados;
+    Select/Tag via primitivas adequadas; tabela semântica + --vc-*
+  - B-106 permanece responsável pelo polish do admin após a paridade funcional
+  - Chat shell permanece shared/ui; spartan não substitui o shell
+  - Validar versões e peers atuais no lock/build durante B-104
 ```
 
 ## Orientações para agentes

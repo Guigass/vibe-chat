@@ -22,7 +22,7 @@
 | R-16 | Realtime degradado (só typing) | B | Alto | **Mitigado (B-070 Done)** — gap-fill + E2E dois usuários; monitorar métricas SignalR/outbox | Backend / Frontend |
 | R-17 | Secrets/webhooks expostos a membros | M | Crítico | **Mitigado (B-069/B-048)** — settings só `workspace.admin`; secret HMAC mascarado; nunca logar tokens | Security |
 | R-18 | Auditoria de conversa (break-glass de leitura) | M | Alto | B-067 authZ `admin.dashboard` + escopo tenant; testes security; ver `modelo-ameacas.md` | Security |
-| R-19 | Dependência UI comercial (PrimeNG/PrimeUI) | A | Alto | **Mitigação em curso (D-15 / B-104)** — sair do PrimeNG; composição própria + CDK; polish do console admin em **B-106** | Frontend |
+| R-19 | Dependência UI comercial (PrimeNG/PrimeUI) | A | Alto | **Mitigação em curso (D-15 / D-27 / B-104)** — sair do PrimeNG; adotar spartan/ui (MIT) + CDK + tokens; não gerar chave nem esconder banner por CSS; polish do console admin em **B-106** | Frontend |
 | R-20 | Drift entre `.env.example`, Compose e appsettings | A | Alto | B-105 + catálogo canônico; smoke do profile `apps`; declarar aliases sem efeito | Infra / Docs |
 | R-21 | Roadmap marcar `Done` sem evidência ou ficar divergente do backlog/spec | M | Alto | `estado-atual.md`, programa DOC-*, revisão por wave e rastreabilidade ID↔spec | Produto / QA / Docs |
 | R-22 | Portfólio ambicioso diluir o chat principal | A | Alto | Waves 7–10 primeiro; W11–W17 em ordem; uma aposta arquitetural por vez | Product / Build agent |

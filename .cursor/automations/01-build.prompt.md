@@ -55,8 +55,8 @@ can determine the correct status; otherwise report the exact rows and stop.
 
 If several are eligible, pick the **first** row in scan order. Empty earlier waves
 first. Em W7, **W7-6 (B-104)** vem antes de W7-3…W7-5 na tabela de propósito —
-remover PrimeNG desbloqueia o composer. Do not skip an eligible earlier item to
-start a more exciting long-term feature.
+remover PrimeNG e adotar spartan/ui (D-27) desbloqueia o composer. Do not skip an
+eligible earlier item to start a more exciting long-term feature.
 
 Classify the item as R0–R4 using `docs/agents/autonomia.md` before editing. Apply
 all gates for that class and record the class in the PR body.

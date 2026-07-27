@@ -53,16 +53,30 @@ Adotar **PrimeNG** como biblioteca de componentes (tabelas, dialogs, forms, menu
 sem chave, banner fixo cobre o composer — UX-002). Isso conflita com “sem dependências
 proprietárias” (`AGENTS.md`) e com a licença Apache-2.0 do produto (D-01).
 
+## Emenda (Wave 7 / B-104 / D-27) — Accepted
+
+**Kit UI OSS pós-PrimeNG = spartan/ui** (não NG-ZORRO). Comparativo em D-27.
+
 Stack UI oficial:
 
 1. **Angular 22** standalone + Signals (inalterado)
-2. **Angular CDK** para overlays, a11y, drag-drop, lists
-3. **Composição própria** com tokens `--vc-*` (`design-system.md`) — inclusive `/admin`
-4. Sem SDK/biblioteca de UI comercial; sem chave de licença em `.env`
+2. **Angular CDK** para overlays, a11y, drag-drop, lists (base do spartan brain)
+3. **spartan/ui** — `@spartan-ng/brain` (MIT, headless) + estilos Helm copiados e mapeados
+   aos tokens `--vc-*` (`design-system.md`)
+4. **Composição própria** no shell de chat (`shared/ui`) — spartan entra onde há
+   primitiva madura (ex.: select no `/admin`); tabela densa usa a primitiva visual
+   ou HTML semântico + tokens, com paginação/filtros/ordenação explícitos no produto
+5. Sem SDK/biblioteca de UI **comercial**; sem chave de licença em `.env`
+6. **NG-ZORRO rejeitado** — MIT e Angular 22 ok, mas visual Ant Design conflita com
+   identidade VibeChat e com “sem look genérico de kit de terceiros”
 
 ### Consequências
 
 - **+** Compliance OSS; composer utilizável sem banner
-- **+** Uma linguagem visual só (tokens VibeChat) em chat e admin
-- **−** Tabelas/selects densos no admin precisam de componentes próprios (B-104)
-- B-073 permanece no histórico como Done da Wave 6; o trabalho de remoção é **B-104**
+- **+** Primitivas acessíveis (brain) sem lock-in visual; tokens VibeChat mandam
+- **+** Alinhado ao CDK já adotado
+- **−** Os peers publicados incluem **Tailwind CSS v4** — custo de DX no B-104;
+  versões atuais devem ser revalidadas no lock/build durante a implementação
+- **−** Sem data grid rico equivalente ao PrimeNG DataTable; admin mantém a
+  lógica de tabela explícita sobre a primitiva/HTML semântico
+- B-073 permanece no histórico como Done da Wave 6; remoção + adoção spartan = **B-104**

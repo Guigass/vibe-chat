@@ -152,16 +152,25 @@ Não transformar o shell em dashboard com stats, strips e callouts.
 | Modais | Só para fluxos (criar channel, convidar); CDK overlay |
 | Painel de conversa | Coluna flex com `min-height: 0`; **scroll só na timeline**; composer fora do scroller (B-072) |
 
-### UI kit (Wave 7 / B-104 + B-106 / D-15 — emenda ADR-002)
+### UI kit (Wave 7 / B-104 + B-106 / D-15 + D-27 — emenda ADR-002)
 
-**Não usar PrimeNG** (nem outra lib de UI comercial). Stack:
+**Não usar PrimeNG** nem qualquer lib de UI **comercial**. Kit OSS oficial:
 
-- Composição própria + tokens `--vc-*` (teal/charcoal, Sora / IBM Plex Sans)
+- **spartan/ui** (`@spartan-ng/brain` + estilos Helm copiados/próprios) — MIT,
+  headless, CDK
+- Tokens `--vc-*` mandam o visual (teal/charcoal, Sora / IBM Plex Sans); sem skin
+  shadcn/Ant Design default na UI final
 - Angular CDK para overlays, a11y, drag-drop e lists
-- Admin e chat compartilham a mesma linguagem visual; sem skins de terceiros
-- Histórico: B-073 introduziu PrimeNG no `/admin`; **B-104** remove o pacote
-  (paridade Table/Select/Tag); **B-106** entrega o console admin com nav lateral,
-  toolbars, listagens densas e filtros
+- Shell de chat: composição própria em `shared/ui`; spartan onde a primitiva couber
+  (ex.: select no `/admin`)
+- Tabelas: a primitiva visual do spartan ou HTML semântico pode fornecer a base,
+  mas paginação, ordenação e filtros continuam lógica explícita do produto; não
+  tratar a primitiva como um data grid completo
+- **NG-ZORRO rejeitado** (D-27) — MIT ok, mas visual Ant Design conflita com esta
+  identidade
+- Histórico: B-073 introduziu PrimeNG no `/admin`; B-104 remove o pacote e troca
+  Table/Select/Tag por spartan, HTML semântico e tokens; **B-106** entrega o
+  console admin com nav lateral, toolbars, listagens densas e filtros
 
 ---
 
