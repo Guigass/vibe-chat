@@ -69,7 +69,9 @@ o checker executável permanece registrado como `OPS-DOC-CHECKER`.
 
 > **Draft = pipeline parado.** Build e Docs devem abrir PR **ready for review**.
 > Se `open_git_pr` criar draft, o agente roda `gh pr ready <n>` antes de encerrar.
-> **Proibido** `gh pr ready --undo` / converter para draft.
+> **Proibido** `gh pr ready --undo` / converter para draft — inclusive para
+> “pausar” duplicata. Duplicata Docs = **fechar** o extra (`superseded by #n`),
+> nunca deixar draft/`CONFLICTING` (incidente #77 após corrida #72+#73 → #76/#77).
 
 ## Configuração no dashboard
 
