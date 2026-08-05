@@ -17,7 +17,6 @@ Regras do registro:
 
 | ID | Tela | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
-| UX-001 | Login | Os três botões DevAuth (Alice/Bob/Demo) renderizam como retângulos vazios, sem rótulo visível | Alta | Resolved by this PR — hero fixa tokens invertidos; `.vc-btn` com `color` base |
 | UX-002 | Todas | Banner vermelho fixo “Invalid PrimeUI License” no canto inferior direito, **cobrindo “Anexar” e “Enviar”** do composer | Alta | Aberto — D-15 sair do PrimeNG; D-27 kit = spartan/ui; fecha com **B-104** |
 | UX-003 | Shell | Em viewport estreito (~400 px) a sidebar continua ocupando quase metade da largura; não há colapso nem botão de alternar | Alta | Aberto — safety lane `UX-003`; corrigir como hotfix de responsividade se ainda reproduzível |
 | UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de contraste |
@@ -41,9 +40,9 @@ que no tema claro é tinta escura. Resultado: texto escuro sobre fundo escuro.
 Correção esperada: o hero do login precisa fixar o contexto de cor (ou usar tokens
 invertidos), e `.vc-btn` deve ter uma cor de base em vez de depender só da variante.
 
-Execução: safety lane `UX-001` (R1). **Resolved by this PR** — `.login-hero` redefine
-`--vc-ink*`/`--vc-border` para o plano escuro; `.vc-btn` ganha `color` base. Docs
-marca `Done` + número do PR após o merge.
+Execução: safety lane `UX-001` (R1). **Done** via [#74](https://github.com/Guigass/vibe-chat/pull/74) —
+`.login-hero` redefine `--vc-ink*`/`--vc-border` para o plano escuro; `.vc-btn` ganha
+`color` base.
 
 ### UX-002 — Banner de licença do PrimeUI cobrindo o composer
 
@@ -102,4 +101,6 @@ Os ícones do cabeçalho não deixam claro que são clicáveis. Relacionado a B-
 
 ## Fechados
 
-Nenhum ainda.
+| ID | Tela | Achado | Severidade | Status |
+|----|------|--------|------------|--------|
+| UX-001 | Login | Os três botões DevAuth (Alice/Bob/Demo) renderizam como retângulos vazios, sem rótulo visível | Alta | **Done** — [#74](https://github.com/Guigass/vibe-chat/pull/74); hero fixa tokens invertidos; `.vc-btn` com `color` base |
