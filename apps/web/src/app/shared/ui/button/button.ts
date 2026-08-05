@@ -29,12 +29,14 @@ import { Component, input } from '@angular/core';
       padding: 0.55rem 1.1rem;
       border-radius: var(--vc-radius-md);
       border: 1px solid transparent;
+      color: var(--vc-ink);
       cursor: pointer;
       font-weight: 600;
       letter-spacing: -0.01em;
       transition:
         background var(--vc-dur-fast) var(--vc-ease-out),
         border-color var(--vc-dur-fast) var(--vc-ease-out),
+        color var(--vc-dur-fast) var(--vc-ease-out),
         transform var(--vc-dur-fast) var(--vc-ease-out);
     }
     .vc-btn:hover:not(:disabled) {
