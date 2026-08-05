@@ -28,24 +28,28 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 | ID | Categoria | Evidência | Severidade | Status | Resolução |
 |----|-----------|-----------|------------|--------|----------|
-| SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 — roles separadas, FORCE RLS, SET LOCAL + validação de role app |
+| SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 + #73 — roles/FORCE + SET LOCAL na txn + validação de role app |
 
 ## Formato de detalhe
 
 ### SEC-RLS-RUNTIME
 
+- Status: **Resolved** — [#72](https://github.com/Guigass/vibe-chat/pull/72)
+  (roles/FORCE/WITH CHECK) + [#73](https://github.com/Guigass/vibe-chat/pull/73)
+  (`RlsSession` SET LOCAL + commit/rollback da txn + validação de role app).
 - Observado em: `compose.yaml`, `.env.example`,
   `infra/compose/postgres/03-rls.sql` e `security/multi-tenant.md`.
-- Base/head SHA: baseline documental de 2026-07-27.
-- Reprodução: API e Worker recebem `POSTGRES_USER`; o mesmo usuário inicializa o
-  banco/tabelas. O catálogo executa `ENABLE ROW LEVEL SECURITY`, mas não `FORCE
-  ROW LEVEL SECURITY`, e não cria uma role runtime separada.
+- Base/head SHA: baseline documental de 2026-07-27; fechamento 2026-08-05.
+- Reprodução (pré-fix): API e Worker recebiam `POSTGRES_USER`; o mesmo usuário
+  inicializava o banco/tabelas. O catálogo executava `ENABLE ROW LEVEL SECURITY`,
+  mas não `FORCE ROW LEVEL SECURITY`, e não criava role runtime separada.
 - Resultado esperado: processos de aplicação usam role sem ownership,
-  `SUPERUSER` ou `BYPASSRLS`; tabelas tenant-aware forçam RLS inclusive ao owner.
-- Resultado atual: contrato e Compose não provam que as policies se aplicam à
-  role efetiva da aplicação.
-- Impacto: defesa em profundidade cross-tenant pode ser ignorada por configuração
-  privilegiada mesmo com policies presentes.
+  `SUPERUSER` ou `BYPASSRLS`; tabelas tenant-aware forçam RLS inclusive ao owner;
+  GUCs `app.*` via `SET LOCAL` dentro da transação.
+- Resultado atual: entregue — `vibechat_app` / `vibechat_migrator` /
+  `vibechat_backup`; catálogo FORCE+WITH CHECK; `RlsSession` + testes runtime.
+- Impacto (pré-fix): defesa em profundidade cross-tenant podia ser ignorada por
+  configuração privilegiada mesmo com policies presentes.
 - Risk class: R3.
 - Owner automático: Security + Infra + Backend.
 - Critério de resolução:

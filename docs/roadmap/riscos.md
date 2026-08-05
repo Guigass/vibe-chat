@@ -37,7 +37,7 @@
 | R-31 | Registry/plugin introduzir supply-chain compromise | M | Crítico | Assinatura, provenance, revisão, revogação e capabilities mínimas | Security / Ecosystem |
 | R-32 | Agente entrar em loop de falhas ou reabrir decisões fechadas | M | Alto | Contrato de autonomia, protocolo de três falhas, `BLOCKED-TECH-*` e seleção de outra trilha | Automation / QA |
 | R-33 | PR autônomo mergear sem evidência proporcional ao risco | M | Crítico | Classe R0–R3 no PR; QA independente; checks obrigatórios; `VibeChat Security Review` conclusivo | QA / Repository admin |
-| R-34 | RLS existir no catálogo mas ser ignorada pela role owner/superuser da aplicação | A | Crítico | `SEC-RLS-RUNTIME`: roles separadas, FORCE RLS, WITH CHECK e testes com credencial runtime real | Security / Infra / Backend |
+| R-34 | RLS existir no catálogo mas ser ignorada pela role owner/superuser da aplicação | B | Crítico | **Mitigado (`SEC-RLS-RUNTIME` Done #72/#73)** — roles `vibechat_migrator`/`app`/`backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes com credencial runtime | Security / Infra / Backend |
 
 ## Riscos técnicos detalhados
 
@@ -46,6 +46,8 @@
 Qualquer endpoint novo é suspeito até prova de teste negativo. Preferir 404 a 403 quando enumeração for risco.
 RLS só conta como defesa se a role efetiva da API/Worker estiver submetida às
 policies; presença de `ENABLE ROW LEVEL SECURITY` no catálogo não basta.
+Enforcement runtime fechado em `SEC-RLS-RUNTIME` (#72/#73); regressões novas
+continuam exigindo teste cross-tenant na trilha tocada.
 
 ### R-02 Scope creep
 
@@ -70,4 +72,4 @@ Sem licença clara, adoção OSS trava. Sem política de retenção, features de
 ## Revisões
 
 Revisar esta lista a cada wave do roadmap ou incidente P0/P1. Última revisão:
-2026-07-27, promoção W11–W17 e contrato de execução autônoma.
+2026-08-05, `SEC-RLS-RUNTIME` mitigado (#72/#73).
