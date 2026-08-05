@@ -75,7 +75,7 @@ backlog ficam no **Registro de GAPs** (`roadmap.md`).
 | ID | Item | Notas |
 |----|------|-------|
 | B-075 | E2E Playwright na CI | **Done (W7-1)** — job **E2E (Playwright)** na CI com DevAuth; `infra/scripts/ci-e2e.sh` / `task test:e2e:ci` (#45) |
-| B-104 | Remover PrimeNG (spartan/ui + CDK) | Planned (W7-6) — D-15 (c) + D-27; [spec](../product/specs/B-104-remover-primeng.md); prioridade sobre W7-3…W7-5 (desbloqueia composer / UX-002); paridade funcional só |
+| B-104 | Remover PrimeNG (spartan/ui + CDK) | **Done (W7-6)** — [#82](https://github.com/Guigass/vibe-chat/pull/82); D-15 (c) + D-27; `primeng` removido; `@spartan-ng/brain` + Helm select; fecha UX-002 |
 | B-076 | Atualização automatizada de dependências | Planned (W7-3) — sem `.github/dependabot.yml` nem renovate; `Dependency audit notes` na CI é informativo; [spec](../product/specs/B-076-atualizacao-dependencias.md) |
 | B-077 | CSP no web | Planned (W7-4) — nginx do profile `proxy` já manda headers básicos, mas falta CSP; [spec](../product/specs/B-077-csp-web.md) |
 | B-078 | Limite de tamanho de body no envio | Planned (W7-5) — `Message.Body` limitado a 8000 só na coluna; excesso pode virar 500; [spec](../product/specs/B-078-limite-body-mensagem.md) |
@@ -171,7 +171,7 @@ Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → a
 
 Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done.
 
-Ordem daqui para frente: **Sustentação** (B-104 → B-076 → B-077 → B-078 → B-105 →
+Ordem daqui para frente: **Sustentação** (B-104 Done → B-076 → B-077 → B-078 → B-105 →
 B-106) e depois **paridade de mensageria** na ordem das waves — 8 (composição), 9
 (leitura; B-094 fecha não lidas persistentes), 10 (notificações, organização,
 acesso e núcleo de plugins: B-109 → B-108 → B-110). Depois seguir W11–W17; a
