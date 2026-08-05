@@ -156,11 +156,11 @@ A automação Docs:
 Este contrato e a baseline documental estão concluídos. Permanecem fora desta
 entrega exclusivamente documental:
 
-- implementar o checker e ligá-lo à CI;
+- implementar o checker e ligá-lo à CI (`OPS-DOC-CHECKER`);
 - alinhar Compose/template nos gaps de B-105;
 - comprovar serviços opt-in dentro dos containers;
-- resolver `SEC-RLS-RUNTIME` com roles separadas, FORCE RLS e testes runtime;
-- configurar required checks e permissões no GitHub.
+- configurar required checks e permissões no GitHub
+  (`OPS-QA-AUDIT`, `OPS-REQUIRED-CHECK`, `SEC-REVIEW-TEMPLATE`).
 
 Essas pendências não podem ser marcadas como feitas apenas porque o comportamento
 esperado está bem documentado.
