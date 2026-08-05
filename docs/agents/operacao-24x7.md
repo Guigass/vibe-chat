@@ -134,7 +134,7 @@ Avaliar a cada ciclo e em um resumo diário:
 | PR sem progresso > 6 h | Verificar run; renovar ou liberar lease |
 | Check pendente > 60 min | Diagnosticar serviço; não mergear |
 | Mesmo erro 3 vezes | `BLOCKED-TECH-*`; escolher item independente |
-| Dois PRs com mesmo ID | Pausar o mais novo, comentar a duplicidade e preservar evidência |
+| Dois PRs com mesmo ID | Comentar a duplicidade, **fechar** o mais novo/extra (nunca draft) e preservar o survivor |
 | Drift roadmap/spec | PR R0 de reconciliação antes de selecionar o item |
 | Finding cross-tenant/secret | Bloqueio global de merge até correção |
 | Custo/uso anômalo | Reduzir cadência; nunca comprar capacidade |

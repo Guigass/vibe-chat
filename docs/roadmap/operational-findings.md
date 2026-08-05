@@ -23,6 +23,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-REQUIRED-CHECK | Branch protection | O check de segurança ainda depende de disciplina do prompt | Critical | External action | Tornar `VibeChat Security Review` um required check |
 | OPS-DOC-CHECKER | Integridade documental | Contrato e baseline DOC-006 existem, mas a CI ainda não executa checker offline | Medium | Open | Implementar as regras de `qualidade-documental.md` sem alterar prioridade das waves |
 | OPS-PR-DRAFT | Tooling de PR | `open_git_pr` pode criar draft | Medium | Mitigated | Prompts convertem imediatamente para ready; monitorar |
+| OPS-DOCS-RACE | Corrida Docs | Merges #72+#73 (~20s) abriram Docs #76+#77; #77 foi re-draftado e ficou CONFLICTING | High | Open | Colar prompts 03/06 atualizados no dashboard; Watchdog fecha órfãos |
 
 ## Resolvidos
 
@@ -66,6 +67,28 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   9. threat model, catálogo de configuração e runbook de rotação são atualizados.
 - Rollback: reverter roles/policies apenas em ambiente de teste; com dados,
   preferir roll-forward de grants sem desabilitar RLS.
+
+### OPS-DOCS-RACE
+
+- Status: **Open** — #77 fechado manualmente; prompts 03/06 endurecidos no repo
+  (ainda precisam ser colados no dashboard).
+- Observado em: PRs Docs #76 (merged) e #77 (draft → CONFLICTING → closed);
+  merges #72+#73 do mesmo `SEC-RLS-RUNTIME` (~20s).
+- Reprodução: dois feature PRs do mesmo ID mergeiam em sequência → dois triggers
+  Docs → um survivor mergeia → o outro, se draft/órfão, fica `DIRTY`.
+- Resultado esperado: um único Docs close ready; extras fechados com
+  `superseded by #<n>`; nunca `convert_to_draft` para “pausar”.
+- Resultado atual (incidente): agente do #77 fez `gh pr ready` e em seguida
+  `convert_to_draft` após ver #76; pós-merge do #76 o #77 ficou CONFLICTING;
+  Docs pós-#76 não varreu órfãos.
+- Impacto: PR draft bloqueia QA; órfão conflitado exige intervenção humana.
+- Risk class: R1 (processo/automação).
+- Owner automático: Docs + Watchdog.
+- Critério de resolução:
+  1. prompts 03/06 no dashboard exigem dedup pré-PR, orphan sweep e proíbem
+     re-draft;
+  2. Watchdog fecha Docs draft/CONFLICTING supersedidos;
+  3. um ciclo Docs com merge paralelo do mesmo ID não deixa PR aberto órfão.
 
 ```markdown
 ### OPS-exemplo

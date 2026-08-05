@@ -16,11 +16,19 @@ Draft PRs block the QA+Merge trigger — **forbidden**.
    `Wave`/`B-*` ID and write normalized metadata in the Docs PR.
 3. **If the PR body carries `Automation: docs`, this run was triggered by your own
    previous output.** Read `Closes-Work-Item`, confirm that item is now `Done` on
-   `main`, clear its `ACTIVE:<ID>` lease, report “docs loop closed” and stop.
-   If it is not `Done`, open one corrective R0 docs PR instead of silently stopping.
-4. If an open Docs PR already carries the same `Closes-Work-Item`, do not create a
-   duplicate; keep the lease and report the existing PR.
+   `main`, clear its `ACTIVE:<ID>` lease, then **sweep orphans** (step A.6) and
+   report “docs loop closed” and stop. If it is not `Done`, open one corrective
+   R0 docs PR instead of silently stopping.
+4. **Dedup before any edit or PR (mandatory):** list open PRs whose body has
+   `Automation: docs` and the same `Closes-Work-Item` (or clearly closes the same
+   merged ID). Also search recent merged Docs PRs for that ID. If a sibling
+   already exists → do **not** open another PR; keep the lease on the survivor,
+   report the existing URL, run A.6 for any extras, and stop.
 5. Skim the merge commit / PR body for behavior or API changes.
+6. **Orphan sweep:** if other open Docs PRs (draft or ready) share the same
+   `Closes-Work-Item` / merged ID and a survivor is already open or merged,
+   **close** the extras with a short “superseded by #<n>” comment. Never leave
+   them open. Never convert them to draft.
 
 ## Step B — Roadmap status
 
@@ -82,14 +90,25 @@ Lease: <original lease/run-id>
 
 3. **PR must be ready for review — never draft:**
    - Do **not** ask for a draft PR.
-   - Do **not** run `gh pr ready --undo` or convert to draft.
+   - Do **not** run `gh pr ready --undo` or convert to draft — **ever**, including
+     when you discover a duplicate. Draft blocks QA and leaves orphans that go
+     `CONFLICTING` after the survivor merges (see #77).
    - If `open_git_pr` creates a draft, immediately run `gh pr ready <number>`
      and confirm `isDraft: false` before finishing.
-4. Update Memories: last merged work item + feature/docs PR URLs + outstanding
+   - **If you discover a sibling Docs PR after opening yours:** leave yours ready
+     only long enough to comment “duplicate of #<survivor>”, then **close** the
+     newer/extra PR. Prefer closing yourself over converting to draft. Do not
+     rebase a superseded PR.
+4. Immediately before finishing, re-check open Docs PRs for the same
+   `Closes-Work-Item` (A.4 / A.6). Close extras; confirm your PR is ready or closed.
+5. Update Memories: last merged work item + feature/docs PR URLs + outstanding
    doc nits. Keep `ACTIVE:<ID>` until this Docs PR itself reaches `main`.
 
 ## Stop conditions
 
-- If the Done marker and docs are already correct on `main`: comment in the run
-  summary “docs idle”, clear the lease and **do not** open an empty PR.
+- If the Done marker and docs are already correct on `main`: report “docs idle”,
+  clear the lease, run orphan sweep A.6, and **do not** open an empty PR.
+- Two feature PRs for the same ID merged close together (e.g. #72+#73) may each
+  trigger Docs — only **one** close PR may survive; the rest must be closed, not
+  drafted.
 - Never start the next roadmap implementation here.
