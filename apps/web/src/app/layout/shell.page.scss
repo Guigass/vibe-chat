@@ -329,4 +329,15 @@
   .shell__search {
     display: none;
   }
+
+  /* Keep channel title readable; AI actions are secondary on narrow. */
+  .shell__actions > vc-summarize-button,
+  .shell__actions > vc-suggest-reply-button {
+    display: none;
+  }
+
+  .shell__title {
+    flex: 1 1 auto;
+    min-width: 6rem;
+  }
 }

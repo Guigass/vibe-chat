@@ -14,6 +14,7 @@ async function expectCollapsedNarrowShell(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: 'Abrir barra lateral' })).toBeVisible();
   await expect(page.locator('vc-composer')).toBeInViewport();
   await expect(page.locator('.shell__header')).toBeInViewport();
+  await expect(page.getByRole('heading', { name: /geral/i })).toBeVisible();
 }
 
 test.describe(`shell responsive sidebar (${AUTH_MODE})`, () => {
@@ -22,20 +23,28 @@ test.describe(`shell responsive sidebar (${AUTH_MODE})`, () => {
       const session = await openUserSession(browser, 'alice');
       const { page } = session;
 
-      await page.setViewportSize({ width, height: 720 });
+      // Resolve channel while the desktop rail is available, then shrink.
+      await page.setViewportSize({ width: 1280, height: 800 });
       await selectChannelGeral(page);
+
+      await page.setViewportSize({ width, height: 720 });
       await expectCollapsedNarrowShell(page);
 
       await page.getByRole('button', { name: 'Abrir barra lateral' }).click();
       await expect(page.locator('.shell')).not.toHaveClass(/shell--sidebar-collapsed/);
       await expect(page.locator('.shell__sidebar')).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Fechar barra lateral' })).toBeVisible();
+      await expect(page.locator('.shell__backdrop')).toBeVisible();
 
       await page.keyboard.press('Escape');
       await expectCollapsedNarrowShell(page);
 
       await page.getByRole('button', { name: 'Abrir barra lateral' }).click();
-      await page.getByRole('button', { name: 'Fechar barra lateral' }).click();
+      // Click the uncovered strip (sidebar is left-docked overlay).
+      await page.locator('.shell__backdrop').click({ position: { x: width - 8, y: 24 } });
+      await expectCollapsedNarrowShell(page);
+
+      await page.getByRole('button', { name: 'Abrir barra lateral' }).click();
+      await page.getByRole('button', { name: 'Recolher barra lateral' }).click();
       await expectCollapsedNarrowShell(page);
 
       await session.context.close();
