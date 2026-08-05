@@ -70,4 +70,4 @@ Sem licença clara, adoção OSS trava. Sem política de retenção, features de
 ## Revisões
 
 Revisar esta lista a cada wave do roadmap ou incidente P0/P1. Última revisão:
-2026-07-27, promoção W11–W17 e contrato de execução autônoma.
+2026-08-05, mitigações SEC-RLS-RUNTIME (#72/#73).
