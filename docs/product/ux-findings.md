@@ -17,7 +17,6 @@ Regras do registro:
 
 | ID | Tela | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
-| UX-002 | Todas | Banner vermelho fixo “Invalid PrimeUI License” no canto inferior direito, **cobrindo “Anexar” e “Enviar”** do composer | Alta | Resolved by this PR — B-104 remove `primeng` / spartan select + tabelas HTML |
 | UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de contraste |
 | UX-005 | Admin | Seções sem permissão exibem o aviso em laranja/vermelho, dando aparência de erro a um estado esperado | Média | Aberto — fecha com **B-106** (esconder nav/áreas sem claim; matriz por papel) |
 | UX-006 | Header | Botões de ícone (buscar, tema, densidade, painel) sem estado de hover/foco perceptível | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de foco |
@@ -67,8 +66,9 @@ São dois problemas empilhados:
 `@spartan-ng/brain` + tokens `--vc-*`, e reescrever `/admin` (Select via spartan;
 tabela HTML). O agente **não** deve gerar chave nem esconder o banner por CSS.
 
-**Resolved by this PR** — remoção de `primeng`/`@primeuix/themes`, admin com
-`@spartan-ng/brain` + Helm select e tabelas semânticas. Docs marca `Done` após merge.
+**Done** via [#82](https://github.com/Guigass/vibe-chat/pull/82) —
+remoção de `primeng`/`@primeuix/themes`; `/admin` com `@spartan-ng/brain` + Helm
+select e tabelas semânticas; tokens `--vc-*`.
 
 ### UX-003 — Sidebar não colapsa em viewport estreito
 
@@ -110,4 +110,5 @@ Os ícones do cabeçalho não deixam claro que são clicáveis. Relacionado a B-
 | ID | Tela | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
 | UX-001 | Login | Os três botões DevAuth (Alice/Bob/Demo) renderizam como retângulos vazios, sem rótulo visível | Alta | **Done** — [#74](https://github.com/Guigass/vibe-chat/pull/74); hero fixa tokens invertidos; `.vc-btn` com `color` base |
+| UX-002 | Todas | Banner vermelho fixo “Invalid PrimeUI License” no canto inferior direito, **cobrindo “Anexar” e “Enviar”** do composer | Alta | **Done** — [#82](https://github.com/Guigass/vibe-chat/pull/82); B-104 remove `primeng`; spartan/ui + tabelas HTML |
 | UX-003 | Shell | Em viewport estreito (~400 px) a sidebar continua ocupando quase metade da largura; não há colapso nem botão de alternar | Alta | **Done** — [#80](https://github.com/Guigass/vibe-chat/pull/80); auto-collapse ≤960px + overlay/backdrop/Escape |

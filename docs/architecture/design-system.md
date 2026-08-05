@@ -168,9 +168,9 @@ Não transformar o shell em dashboard com stats, strips e callouts.
   tratar a primitiva como um data grid completo
 - **NG-ZORRO rejeitado** (D-27) — MIT ok, mas visual Ant Design conflita com esta
   identidade
-- Histórico: B-073 introduziu PrimeNG no `/admin`; B-104 remove o pacote e troca
-  Table/Select/Tag por spartan, HTML semântico e tokens; **B-106** entrega o
-  console admin com nav lateral, toolbars, listagens densas e filtros
+- Histórico: B-073 introduziu PrimeNG no `/admin`; **B-104 Done** (#82) removeu o
+  pacote e trocou Table/Select/Tag por spartan, HTML semântico e tokens; **B-106**
+  entrega o console admin com nav lateral, toolbars, listagens densas e filtros
 
 ---
 

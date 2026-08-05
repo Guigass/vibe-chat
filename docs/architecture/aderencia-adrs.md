@@ -7,7 +7,7 @@ testes nem uma revisão de segurança.
 | ADR | Decisão | Evidência observada | Aderência |
 |-----|---------|---------------------|-----------|
 | [001](../adrs/ADR-001-monolito-modular.md) | Monólito modular | `apps/api`, `apps/worker`, `modules/*`, testes de arquitetura | Alinhado; ampliar varredura de dependências entre todos os módulos |
-| [002](../adrs/ADR-002-angular.md) | Angular 22 + CDK + UI própria | Angular/CDK no `package.json`; componentes standalone | Parcial: PrimeNG ainda instalado; B-104 é o gap explícito |
+| [002](../adrs/ADR-002-angular.md) | Angular 22 + CDK + UI própria | Angular/CDK + `@spartan-ng/brain` (MIT); sem `primeng` (#82 / B-104) | **Alinhado** (D-15 / D-27 / B-104) |
 | [003](../adrs/ADR-003-aspnet-core.md) | ASP.NET Core / .NET 10 | projetos API/Worker e target framework dos `*.csproj` | Alinhado |
 | [004](../adrs/ADR-004-signalr.md) | SignalR para realtime | módulo Realtime, hub na API, cliente `@microsoft/signalr` | Alinhado |
 | [005](../adrs/ADR-005-postgresql.md) | PostgreSQL como SoT | Compose, EF Core migrations, history no banco | Alinhado |
@@ -29,7 +29,6 @@ testes nem uma revisão de segurança.
 
 | Gap | ADRs afetados | Dono no roadmap |
 |-----|---------------|------------------|
-| Remover PrimeNG comercial | ADR-002 | B-104 / W7-6 |
 | Tornar configuração declarada efetiva nos containers | ADR-012, ADR-018 e D-10 | B-105 / W7-7 |
 | Ampliar teste de dependências para todos os assemblies | ADR-001, ADR-014 | Registro futuro `GAP-*` |
 | CSP no caminho oficial | defesa em profundidade associada a ADR-007/014 | B-077 / W7-4 |
