@@ -150,7 +150,20 @@ CREATE POLICY tenant_isolation_messages ON messaging.messages
 
 DROP POLICY IF EXISTS tenant_isolation_threads ON messaging.threads;
 CREATE POLICY tenant_isolation_threads ON messaging.threads
-    USING ("TenantId" = app.current_tenant_id())
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR (
+            app.current_tenant_id() IS NULL
+            AND app.current_user_id() IS NOT NULL
+            AND EXISTS (
+                SELECT 1
+                FROM conversations.channels c
+                JOIN tenancy.workspace_members m ON m."WorkspaceId" = c."WorkspaceId"
+                WHERE c."Id" = threads."ChannelId"
+                  AND m."UserId" = app.current_user_id()
+            )
+        )
+    )
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
 DROP POLICY IF EXISTS tenant_isolation_attachments ON files.attachments;

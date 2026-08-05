@@ -944,6 +944,7 @@ v1.MapGet("/threads/{threadId:guid}", async (
     CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
     var thread = await db.MessageThreads.AsNoTracking().FirstOrDefaultAsync(x => x.Id == threadId, ct);
     if (thread is null)
     {
@@ -1015,6 +1016,7 @@ v1.MapGet("/threads/{threadId:guid}/messages", async (
     CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
     var thread = await db.MessageThreads.AsNoTracking().FirstOrDefaultAsync(x => x.Id == threadId, ct);
     if (thread is null)
     {
@@ -1086,6 +1088,7 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
     CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
     var thread = await db.MessageThreads.AsNoTracking().FirstOrDefaultAsync(x => x.Id == threadId, ct);
     if (thread is null)
     {
