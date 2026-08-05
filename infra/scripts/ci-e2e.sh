@@ -23,7 +23,17 @@ export WEB_BASE_URL="${WEB_BASE_URL:-http://localhost:4200}"
 export API_BASE_URL="${API_BASE_URL:-http://localhost:5080}"
 export ASPNETCORE_ENVIRONMENT="${ASPNETCORE_ENVIRONMENT:-Development}"
 export ASPNETCORE_URLS="${ASPNETCORE_URLS:-http://localhost:5080}"
-export ConnectionStrings__Database="${ConnectionStrings__Database:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat;Password=vibechat_dev_password_change_me}"
+# SEC-RLS-RUNTIME / ADR-009 — runtime must use vibechat_app (no owner/BYPASSRLS).
+# Migrator/bootstrap are for startup migrate+seed+RLS catalog only.
+export POSTGRES_APP_USER="${POSTGRES_APP_USER:-vibechat_app}"
+export POSTGRES_APP_PASSWORD="${POSTGRES_APP_PASSWORD:-vibechat_app_password_change_me}"
+export POSTGRES_MIGRATOR_USER="${POSTGRES_MIGRATOR_USER:-vibechat_migrator}"
+export POSTGRES_MIGRATOR_PASSWORD="${POSTGRES_MIGRATOR_PASSWORD:-vibechat_migrator_password_change_me}"
+export POSTGRES_USER="${POSTGRES_USER:-vibechat}"
+export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-vibechat_dev_password_change_me}"
+export ConnectionStrings__Database="${ConnectionStrings__Database:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat_app;Password=vibechat_app_password_change_me}"
+export ConnectionStrings__DatabaseMigrator="${ConnectionStrings__DatabaseMigrator:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat_migrator;Password=vibechat_migrator_password_change_me}"
+export ConnectionStrings__DatabaseBootstrap="${ConnectionStrings__DatabaseBootstrap:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat;Password=vibechat_dev_password_change_me}"
 # StackExchange.Redis format (not redis://…)
 export ConnectionStrings__Redis="${ConnectionStrings__Redis:-localhost:6379}"
 export Seed__Enabled="${Seed__Enabled:-true}"
@@ -111,6 +121,10 @@ wait_http() {
     sleep 2
   done
   echo "Timed out waiting for ${label}: ${url}" >&2
+  if [[ "${label}" == "API /health" && -f /tmp/vibechat-e2e-api.log ]]; then
+    echo "==> Last 80 lines of /tmp/vibechat-e2e-api.log" >&2
+    tail -n 80 /tmp/vibechat-e2e-api.log >&2 || true
+  fi
   return 1
 }
 
