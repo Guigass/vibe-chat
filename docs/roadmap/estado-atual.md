@@ -3,10 +3,10 @@
 Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
-- **Data de corte:** 2026-07-27
+- **Data de corte:** 2026-08-05
 - **Fase:** Wave 7 — Sustentação
-- **Safety lane obrigatória:** SEC-RLS-RUNTIME — enforcement real de RLS
-- **Próximo item de produto após a safety lane:** W7-6 / B-104 — remover PrimeNG
+- **Safety lane obrigatória:** UX-003 — sidebar responsiva (viewport estreito)
+- **Próximo item de produto:** W7-6 / B-104 — remover PrimeNG (também fecha UX-002)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -15,12 +15,13 @@ O VibeChat já possui uma fatia vertical funcional e uma base self-hosted ampla:
 autenticação OIDC/DevAuth, isolamento multi-tenant, channels, DMs, mensagens,
 threads, anexos, reações, busca, presença, tempo real, administração, export,
 webhooks, IA opcional, e-mail opcional, retenção e observabilidade. Waves 0–6 e
-W7-1 estão marcadas como entregues.
+W7-1 estão marcadas como entregues. `SEC-RLS-RUNTIME` (#72/#73) fechou o
+enforcement de RLS com role runtime separada, FORCE e SET LOCAL.
 
 O trabalho aberto concentra-se em:
 
-1. separar roles de banco e provar FORCE RLS com a credencial runtime;
-2. retirar a dependência comercial PrimeNG;
+1. corrigir a safety lane UX-003 (sidebar em viewport estreito);
+2. retirar a dependência comercial PrimeNG (B-104 / UX-002);
 3. fechar hardening de supply chain, CSP e validação de body;
 4. consolidar o contrato de configuração self-host;
 5. reconstruir o shell administrativo;
@@ -66,7 +67,7 @@ O trabalho aberto concentra-se em:
 |------------|-------------|
 | Login OIDC, tenant context e memberships | W1, B-002/B-003 |
 | Mensagem com `seq`, idempotência, outbox e gap-fill | W2, B-004…B-007, B-070 |
-| Policies RLS e testes cross-tenant | W3, B-009, GAPs de RLS/hub; enforcement da role runtime pendente em SEC-RLS-RUNTIME |
+| Policies RLS e testes cross-tenant | W3, B-009, GAPs de RLS/hub; role runtime + FORCE + SET LOCAL via SEC-RLS-RUNTIME (#72/#73) |
 | Threads, DMs, edit/delete, anexos e reações | W4, B-021…B-025 |
 | Presence, typing, busca FTS e PWA | W4, B-026/B-027/B-029 |
 | Backup, proxy TLS, load smoke e runbooks | W5 |
@@ -78,8 +79,8 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | SEC-RLS-RUNTIME | Fecha risco Critical de bypass da defesa RLS pela role de aplicação |
-| 2 | W7-6 / B-104 | Remove dependência comercial e desbloqueia o admin shell |
+| 1 | UX-003 | Safety lane Alta — sidebar sem colapso em viewport estreito |
+| 2 | W7-6 / B-104 | Remove dependência comercial e desbloqueia o admin shell (fecha UX-002) |
 | 3 | W7-3 / B-076 | Fecha risco de supply chain sem atualização automatizada |
 | 4 | W7-4 / B-077 | Completa headers com CSP |
 | 5 | W7-5 / B-078 | Evita body acima do limite virar erro 500 |
@@ -109,14 +110,15 @@ altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
 
 ## Gaps documentais e operacionais conhecidos
 
-| Gap | Situação em 2026-07-27 | Tratamento |
+| Gap | Situação em 2026-08-05 | Tratamento |
 |-----|-------------------------|------------|
 | PrimeNG ainda instalado | Confirmado em `apps/web/package.json` | B-104 |
 | `.env.example` contém chaves não injetadas pelo `compose.yaml` | Confirmado para e-mail, retenção e aliases legados | B-105; ver `operations/configuracao-env.md` |
 | CSP ausente no proxy/web | Registrado no roadmap e threat model | B-077 |
 | Limite de mensagem só no banco | Registrado no roadmap | B-078 |
 | Dependências sem bot de atualização | Registrado no roadmap | B-076 |
-| Role runtime pode não estar submetida à RLS | Mesmo `POSTGRES_USER` e ausência de FORCE no catálogo | SEC-RLS-RUNTIME, Critical/R3 |
+| Role runtime / FORCE RLS | **Fechado** — `vibechat_app` + FORCE + SET LOCAL (#72/#73) | — |
+| Sidebar em viewport estreito | UX-003 Aberto | Safety lane UX |
 | `Moderation` é fronteira vazia | Assembly existe sem domínio material | Manter explícito; preencher só com feature autorizada |
 
 ## Decisões e limites vigentes

@@ -28,7 +28,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 | ID | Categoria | Evidência | Severidade | Status | Resolução |
 |----|-----------|-----------|------------|--------|----------|
-| SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 — roles separadas, FORCE RLS, SET LOCAL + validação de role app |
+| SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | #72 (roles/FORCE) + #73 (SET LOCAL + validação de role app) |
 
 ## Formato de detalhe
 

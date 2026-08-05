@@ -159,8 +159,10 @@ entrega exclusivamente documental:
 - implementar o checker e ligá-lo à CI;
 - alinhar Compose/template nos gaps de B-105;
 - comprovar serviços opt-in dentro dos containers;
-- resolver `SEC-RLS-RUNTIME` com roles separadas, FORCE RLS e testes runtime;
 - configurar required checks e permissões no GitHub.
+
+`SEC-RLS-RUNTIME` foi resolvido em #72/#73 (roles separadas, FORCE RLS, SET LOCAL
+e testes com credencial runtime).
 
 Essas pendências não podem ser marcadas como feitas apenas porque o comportamento
 esperado está bem documentado.
