@@ -1,4 +1,13 @@
-import { Component, HostListener, OnDestroy, OnInit, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
 import { ApiService } from '../core/api/api.service';
@@ -20,6 +29,7 @@ import {
   Input,
   ThemeToggle,
 } from '../shared/ui';
+import { defaultSidebarOpen, SHELL_NARROW_MEDIA_QUERY } from './shell-viewport';
 
 @Component({
   selector: 'vc-shell-page',
@@ -49,7 +59,10 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly threads = inject(ThreadStore);
   readonly hub = inject(ChatHubService);
   private readonly api = inject(ApiService);
+  private readonly destroyRef = inject(DestroyRef);
 
+  /** UX-003: tracks max-width 960px; sidebar starts collapsed on narrow. */
+  readonly narrowViewport = signal(false);
   readonly sidebarOpen = signal(true);
   readonly contextOpen = signal(false);
   readonly search = signal('');
@@ -65,10 +78,16 @@ export class ShellPage implements OnInit, OnDestroy {
   private unsubPresence: (() => void) | null = null;
 
   constructor() {
+    this.bindNarrowViewport();
+
     effect(() => {
       const channelId = this.channels.activeChannel()?.id ?? null;
       if (this.lastChannelId !== null && this.lastChannelId !== channelId) {
         this.threads.close();
+        // Narrow overlay: free the timeline after a channel/DM pick.
+        if (this.narrowViewport()) {
+          this.sidebarOpen.set(false);
+        }
       }
       this.lastChannelId = channelId;
     });
@@ -133,11 +152,39 @@ export class ShellPage implements OnInit, OnDestroy {
         this.threads.close();
         return;
       }
+      if (this.narrowViewport() && this.sidebarOpen()) {
+        this.sidebarOpen.set(false);
+        return;
+      }
       this.contextOpen.set(false);
       this.searchFocused.set(false);
       this.searchOpen.set(false);
       (document.activeElement as HTMLElement | null)?.blur?.();
     }
+  }
+
+  private bindNarrowViewport(): void {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
+    }
+
+    const media = window.matchMedia(SHELL_NARROW_MEDIA_QUERY);
+    const apply = (narrow: boolean) => {
+      const wasNarrow = this.narrowViewport();
+      this.narrowViewport.set(narrow);
+      if (narrow) {
+        // Entering (or starting in) narrow: collapse so timeline has room.
+        this.sidebarOpen.set(defaultSidebarOpen(true));
+      } else if (wasNarrow) {
+        // Leaving narrow: restore desktop rail.
+        this.sidebarOpen.set(defaultSidebarOpen(false));
+      }
+    };
+
+    apply(media.matches);
+    const onChange = (event: MediaQueryListEvent) => apply(event.matches);
+    media.addEventListener('change', onChange);
+    this.destroyRef.onDestroy(() => media.removeEventListener('change', onChange));
   }
 
   async onWorkspaceChange(event: Event): Promise<void> {
