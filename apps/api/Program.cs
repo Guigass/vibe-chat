@@ -168,6 +168,29 @@ app.UseForwardedHeaders();
 app.UseCors("localhost");
 app.UseAuthentication();
 app.UseAuthorization();
+// SEC-RLS-RUNTIME: EnsureApplied opens a txn + SET LOCAL; commit/rollback at end of HTTP request.
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+        var db = context.RequestServices.GetService<VibeChatDbContext>();
+        if (db is not null)
+        {
+            await RlsSession.CommitAsync(db, context.RequestAborted);
+        }
+    }
+    catch
+    {
+        var db = context.RequestServices.GetService<VibeChatDbContext>();
+        if (db is not null)
+        {
+            await RlsSession.RollbackAsync(db, CancellationToken.None);
+        }
+
+        throw;
+    }
+});
 
 var v1 = app.MapGroup("/api/v1").RequireAuthorization();
 

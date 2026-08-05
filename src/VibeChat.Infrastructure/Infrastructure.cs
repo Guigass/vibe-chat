@@ -456,6 +456,7 @@ public sealed class ConversationSequenceStore(VibeChatDbContext dbContext) : ICo
 
 public sealed class MessageWriter(
     VibeChatDbContext dbContext,
+    ITenantContext tenantContext,
     IConversationSequenceStore sequences,
     IIdempotencyStore idempotencyStore,
     IOutboxWriter outbox,
@@ -466,6 +467,10 @@ public sealed class MessageWriter(
 {
     public async Task<MessageSendResult> SendAsync(SendMessageCommand command, CancellationToken cancellationToken)
     {
+        tenantContext.SetTenant(command.TenantId);
+        tenantContext.SetUser(command.UserId);
+        await RlsSession.EnsureAppliedAsync(dbContext, tenantContext, cancellationToken);
+
         var parentChannelId = command.ChannelId;
         var conversationId = command.ChannelId;
         Guid? threadId = command.ThreadId;
@@ -520,8 +525,6 @@ public sealed class MessageWriter(
             var idempotentResult = JsonSerializer.Deserialize<MessageSendResult>(existing.ResultJson)!;
             return idempotentResult with { Idempotent = true };
         }
-
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         Attachment[] attachments = [];
         if (attachmentIds.Length > 0)
@@ -616,7 +619,7 @@ public sealed class MessageWriter(
 
         await idempotencyStore.StoreAsync(new IdempotencyRecord(command.TenantId, command.IdempotencyKey, hash, JsonSerializer.Serialize(result), now), cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+        // RLS txn + SET LOCAL are committed by HTTP middleware / hub filter / worker batch Commit.
         VibeChatMetrics.MessagesSent.Add(1);
         return result;
     }
@@ -1275,6 +1278,7 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await RlsSession.CommitAsync(dbContext, cancellationToken);
         return messages.Length;
     }
 }
@@ -1527,6 +1531,7 @@ public sealed class MessageRetentionPurgeProcessor(
             .ToListAsync(cancellationToken);
         if (policies.Count == 0)
         {
+            await RlsSession.CommitAsync(db, cancellationToken);
             return 0;
         }
 
@@ -1602,6 +1607,7 @@ public sealed class MessageRetentionPurgeProcessor(
                 days);
         }
 
+        await RlsSession.CommitAsync(db, cancellationToken);
         return purgedTotal;
     }
 }
@@ -1673,23 +1679,21 @@ public sealed class ChatHub(
         await base.OnDisconnectedAsync(exception);
     }
 
-    public async Task JoinChannel(Guid tenantId, Guid channelId)
-    {
-        var userId = CurrentUserId();
-        var tenant = new TenantId(tenantId);
-        var channel = new ChannelId(channelId);
-        await BindRlsAsync(tenant, userId);
-        await EnsureHubRateLimitAsync(tenant, userId);
-        if (!await channels.CanAccessAsync(tenant, channel, userId, Context.ConnectionAborted))
+    public Task JoinChannel(Guid tenantId, Guid channelId) =>
+        WithRlsAsync(new TenantId(tenantId), CurrentUserId(), async (tenant, userId) =>
         {
-            throw new HubException("Not authorized for channel.");
-        }
+            var channel = new ChannelId(channelId);
+            await EnsureHubRateLimitAsync(tenant, userId);
+            if (!await channels.CanAccessAsync(tenant, channel, userId, Context.ConnectionAborted))
+            {
+                throw new HubException("Not authorized for channel.");
+            }
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, ChannelGroup(tenant, channel), Context.ConnectionAborted);
-        await EnsurePresenceGroupAsync(tenant, userId);
-        await presence.HeartbeatAsync(tenant, userId, Context.ConnectionId, Context.ConnectionAborted);
-        await BroadcastPresenceAsync(tenant, userId, PresenceStatus.Online);
-    }
+            await Groups.AddToGroupAsync(Context.ConnectionId, ChannelGroup(tenant, channel), Context.ConnectionAborted);
+            await EnsurePresenceGroupAsync(tenant, userId);
+            await presence.HeartbeatAsync(tenant, userId, Context.ConnectionId, Context.ConnectionAborted);
+            await BroadcastPresenceAsync(tenant, userId, PresenceStatus.Online);
+        });
 
     public async Task LeaveChannel(Guid tenantId, Guid channelId)
     {
@@ -1698,55 +1702,59 @@ public sealed class ChatHub(
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, ChannelGroup(tenant, channel), Context.ConnectionAborted);
     }
 
-    public async Task Heartbeat(Guid tenantId)
-    {
-        var userId = CurrentUserId();
-        var tenant = new TenantId(tenantId);
-        await BindRlsAsync(tenant, userId);
-        await EnsureHubRateLimitAsync(tenant, userId);
-        await EnsureTenantMembershipAsync(tenant, userId);
-        await EnsurePresenceGroupAsync(tenant, userId);
-        await presence.HeartbeatAsync(tenant, userId, Context.ConnectionId, Context.ConnectionAborted);
-        await BroadcastPresenceAsync(tenant, userId, PresenceStatus.Online);
-    }
-
-    public async Task SetAway(Guid tenantId)
-    {
-        var userId = CurrentUserId();
-        var tenant = new TenantId(tenantId);
-        await BindRlsAsync(tenant, userId);
-        await EnsureHubRateLimitAsync(tenant, userId);
-        await EnsureTenantMembershipAsync(tenant, userId);
-        await EnsurePresenceGroupAsync(tenant, userId);
-        await presence.SetAwayAsync(tenant, userId, Context.ConnectionId, Context.ConnectionAborted);
-        await BroadcastPresenceAsync(tenant, userId, PresenceStatus.Away);
-    }
-
-    public async Task SendTyping(Guid tenantId, Guid channelId, string displayName)
-    {
-        var tenant = new TenantId(tenantId);
-        var channel = new ChannelId(channelId);
-        var userId = CurrentUserId();
-        await BindRlsAsync(tenant, userId);
-        await EnsureHubRateLimitAsync(tenant, userId);
-        if (!await channels.CanAccessAsync(tenant, channel, userId, Context.ConnectionAborted))
+    public Task Heartbeat(Guid tenantId) =>
+        WithRlsAsync(new TenantId(tenantId), CurrentUserId(), async (tenant, userId) =>
         {
-            throw new HubException("Not authorized for channel.");
-        }
+            await EnsureHubRateLimitAsync(tenant, userId);
+            await EnsureTenantMembershipAsync(tenant, userId);
+            await EnsurePresenceGroupAsync(tenant, userId);
+            await presence.HeartbeatAsync(tenant, userId, Context.ConnectionId, Context.ConnectionAborted);
+            await BroadcastPresenceAsync(tenant, userId, PresenceStatus.Online);
+        });
 
-        await typing.SetTypingAsync(tenant, channel, userId, displayName, Context.ConnectionAborted);
-        // B-071 / W6-2: never fan out typing to the author (OthersInGroup).
-        await Clients.OthersInGroup(ChannelGroup(tenant, channel)).SendAsync(
-            "Typing",
-            new { tenantId, channelId, userId = userId.Value, displayName },
-            Context.ConnectionAborted);
-    }
+    public Task SetAway(Guid tenantId) =>
+        WithRlsAsync(new TenantId(tenantId), CurrentUserId(), async (tenant, userId) =>
+        {
+            await EnsureHubRateLimitAsync(tenant, userId);
+            await EnsureTenantMembershipAsync(tenant, userId);
+            await EnsurePresenceGroupAsync(tenant, userId);
+            await presence.SetAwayAsync(tenant, userId, Context.ConnectionId, Context.ConnectionAborted);
+            await BroadcastPresenceAsync(tenant, userId, PresenceStatus.Away);
+        });
 
-    private async Task BindRlsAsync(TenantId tenantId, UserId userId)
+    public Task SendTyping(Guid tenantId, Guid channelId, string displayName) =>
+        WithRlsAsync(new TenantId(tenantId), CurrentUserId(), async (tenant, userId) =>
+        {
+            var channel = new ChannelId(channelId);
+            await EnsureHubRateLimitAsync(tenant, userId);
+            if (!await channels.CanAccessAsync(tenant, channel, userId, Context.ConnectionAborted))
+            {
+                throw new HubException("Not authorized for channel.");
+            }
+
+            await typing.SetTypingAsync(tenant, channel, userId, displayName, Context.ConnectionAborted);
+            // B-071 / W6-2: never fan out typing to the author (OthersInGroup).
+            await Clients.OthersInGroup(ChannelGroup(tenant, channel)).SendAsync(
+                "Typing",
+                new { tenantId, channelId, userId = userId.Value, displayName },
+                Context.ConnectionAborted);
+        });
+
+    private async Task WithRlsAsync(TenantId tenantId, UserId userId, Func<TenantId, UserId, Task> action)
     {
         tenantContext.SetUser(userId);
         tenantContext.SetTenant(tenantId);
         await RlsSession.EnsureAppliedAsync(dbContext, tenantContext, Context.ConnectionAborted);
+        try
+        {
+            await action(tenantId, userId);
+            await RlsSession.CommitAsync(dbContext, Context.ConnectionAborted);
+        }
+        catch
+        {
+            await RlsSession.RollbackAsync(dbContext, CancellationToken.None);
+            throw;
+        }
     }
 
     private async Task EnsureTenantMembershipAsync(TenantId tenantId, UserId userId)
