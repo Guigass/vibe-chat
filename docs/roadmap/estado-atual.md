@@ -5,8 +5,8 @@ Snapshot factual para orientação rápida. Não substitui o
 
 - **Data de corte:** 2026-08-05
 - **Fase:** Wave 7 — Sustentação
-- **Safety lane obrigatória:** UX-003 — sidebar responsiva (viewport estreito)
-- **Próximo item de produto após a safety lane:** W7-6 / B-104 — remover PrimeNG
+- **Safety lane obrigatória:** nenhuma Alta independente (UX-003 Done via #80; UX-002 fecha com B-104)
+- **Próximo item elegível:** W7-6 / B-104 — remover PrimeNG (fecha UX-002)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -16,17 +16,17 @@ autenticação OIDC/DevAuth, isolamento multi-tenant, channels, DMs, mensagens,
 threads, anexos, reações, busca, presença, tempo real, administração, export,
 webhooks, IA opcional, e-mail opcional, retenção e observabilidade. Waves 0–6 e
 W7-1 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #72/#73
-(roles separadas, FORCE+WITH CHECK, `RlsSession` SET LOCAL).
+(roles separadas, FORCE+WITH CHECK, `RlsSession` SET LOCAL). UX-003 fechou via
+#80 (sidebar colapsa em viewport ≤960px).
 
 O trabalho aberto concentra-se em:
 
-1. fechar a safety lane UX-003 (sidebar responsiva);
-2. retirar a dependência comercial PrimeNG (B-104 / UX-002);
-3. fechar hardening de supply chain, CSP e validação de body;
-4. consolidar o contrato de configuração self-host;
-5. reconstruir o shell administrativo;
-6. avançar as Waves 8–10 de paridade de mensageria;
-7. consumir o roadmap autorizado W11–W17.
+1. retirar a dependência comercial PrimeNG (B-104 / UX-002);
+2. fechar hardening de supply chain, CSP e validação de body;
+3. consolidar o contrato de configuração self-host;
+4. reconstruir o shell administrativo;
+5. avançar as Waves 8–10 de paridade de mensageria;
+6. consumir o roadmap autorizado W11–W17.
 
 ## Runtime e fronteiras
 
@@ -79,14 +79,13 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | UX-003 | Safety lane Alta — sidebar responsiva em viewport estreito |
-| 2 | W7-6 / B-104 | Remove dependência comercial e desbloqueia o admin shell (fecha UX-002) |
-| 3 | W7-3 / B-076 | Fecha risco de supply chain sem atualização automatizada |
-| 4 | W7-4 / B-077 | Completa headers com CSP |
-| 5 | W7-5 / B-078 | Evita body acima do limite virar erro 500 |
-| 6 | W7-7 / B-105 | Torna configuração self-host explícita e auditável |
-| 7 | W7-8 / B-106 | Consolida navegação e visibilidade do console admin |
-| 8 | Waves 8–10 | Paridade de composição, leitura, notificação e acesso |
+| 1 | W7-6 / B-104 | Remove dependência comercial e desbloqueia o admin shell (fecha UX-002) |
+| 2 | W7-3 / B-076 | Fecha risco de supply chain sem atualização automatizada |
+| 3 | W7-4 / B-077 | Completa headers com CSP |
+| 4 | W7-5 / B-078 | Evita body acima do limite virar erro 500 |
+| 5 | W7-7 / B-105 | Torna configuração self-host explícita e auditável |
+| 6 | W7-8 / B-106 | Consolida navegação e visibilidade do console admin |
+| 7 | Waves 8–10 | Paridade de composição, leitura, notificação e acesso |
 
 W7-3, W7-4, W7-5 e W7-7 podem avançar em paralelo quando houver agentes por
 trilha. W7-8 depende de W7-6.
