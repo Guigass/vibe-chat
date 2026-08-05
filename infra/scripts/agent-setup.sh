@@ -189,7 +189,9 @@ migrate_and_seed() {
     # shellcheck disable=SC1091
     [[ -f .env ]] && source .env
     set +a
-    export ConnectionStrings__Database="${DATABASE_URL:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat;Password=vibechat_dev_password_change_me}"
+    # EF migrate needs migrator role (BYPASSRLS); runtime DATABASE_URL is vibechat_app.
+    export ConnectionStrings__Database="${DATABASE_MIGRATOR_URL:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat_migrator;Password=vibechat_migrator_password_change_me}"
+    export ConnectionStrings__DatabaseMigrator="${DATABASE_MIGRATOR_URL:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat_migrator;Password=vibechat_migrator_password_change_me}"
     if dotnet ef database update \
       --project src/VibeChat.Infrastructure/VibeChat.Infrastructure.csproj \
       --startup-project apps/api/VibeChat.Api.csproj; then

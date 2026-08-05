@@ -44,8 +44,15 @@ Modelo **não** usa database-per-tenant na fase 1.
 
 ## Aderência observada
 
-Em 2026-07-27, policies e `SET LOCAL` estão documentados, mas Compose ainda
-entrega o mesmo `POSTGRES_USER` de bootstrap para API/Worker e o catálogo não
-aplica `FORCE ROW LEVEL SECURITY`. A implementação pendente está bloqueantemente
-rastreada por
-[`SEC-RLS-RUNTIME`](../roadmap/operational-findings.md#sec-rls-runtime).
+Implementação alinhada em `SEC-RLS-RUNTIME`:
+
+- roles `vibechat_migrator` (BYPASSRLS), `vibechat_app` (runtime) e
+  `vibechat_backup` (leitura);
+- API/Worker usam `ConnectionStrings:Database` = app; migrate/seed/RLS usam
+  `DatabaseMigrator` / bootstrap;
+- `infra/compose/postgres/03-rls.sql` aplica `ENABLE` + `FORCE`, `USING` +
+  `WITH CHECK`, helpers `app.current_*` e grants;
+- sessão por request via `app.tenant_id` / `app.user_id` / `app.job_role`
+  (`RlsSession` + interceptor);
+- testes em `tests/security/RlsRuntimeEnforcementTests.cs` usam a connection
+  string real de runtime.

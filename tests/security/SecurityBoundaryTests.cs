@@ -645,8 +645,7 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
 
     private async Task<(Guid WorkspaceId, Guid ChannelId)> SeedCrossTenantWorkspaceWithMessageAsync()
     {
-        await using var scope = factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        await using var db = factory.CreateMigratorDbContext();
         var now = DateTimeOffset.UtcNow;
 
         var workspaceId = WorkspaceId.New();
@@ -699,8 +698,7 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
 
     private async Task SeedForeignTenantAuditEventAsync(string action)
     {
-        await using var scope = factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        await using var db = factory.CreateMigratorDbContext();
         var workspaceId = WorkspaceId.New();
         var tenantId = new TenantId(workspaceId.Value);
         var now = DateTimeOffset.UtcNow;
@@ -730,8 +728,7 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
 
     private async Task<Guid> SeedCrossTenantWorkspaceAsync()
     {
-        await using var scope = factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        await using var db = factory.CreateMigratorDbContext();
         var now = DateTimeOffset.UtcNow;
 
         var workspaceId = WorkspaceId.New();
@@ -773,8 +770,7 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
 
     private async Task<(Guid TenantId, Guid ChannelId)> SeedCrossTenantChannelAsync()
     {
-        await using var scope = factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        await using var db = factory.CreateMigratorDbContext();
         var now = DateTimeOffset.UtcNow;
 
         var workspaceId = WorkspaceId.New();
@@ -816,8 +812,7 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
 
     private async Task<(Guid WorkspaceId, Guid ChannelId)> SeedSiblingWorkspaceChannelAsync()
     {
-        await using var scope = factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        await using var db = factory.CreateMigratorDbContext();
         var now = DateTimeOffset.UtcNow;
 
         // Same tenant as demo seed, but a workspace Alice is not a member of.

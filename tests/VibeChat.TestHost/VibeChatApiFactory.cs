@@ -3,13 +3,22 @@ using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Minio;
 using Minio.DataModel.Args;
 using Testcontainers.PostgreSql;
 using Testcontainers.Redis;
+using VibeChat.BuildingBlocks;
+using VibeChat.Infrastructure;
 using Xunit;
 
 namespace VibeChat.TestHost;
+
+[CollectionDefinition(Name)]
+public sealed class VibeChatApiCollection : ICollectionFixture<VibeChatApiFactory>
+{
+    public const string Name = "VibeChatApi";
+}
 
 /// <summary>
 /// Hosts the API for integration/security tests.
@@ -21,6 +30,14 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
     private const string MinioPassword = "minioadmin_dev_password_change_me";
     private const string MinioBucket = "vibechat";
     private const string LocalRedisEndpoint = "localhost:6379";
+    private const string BootstrapUser = "vibechat";
+    private const string BootstrapPassword = "vibechat_dev_password_change_me";
+    private const string AppUser = "vibechat_app";
+    private const string AppPassword = "vibechat_app_password_change_me";
+    private const string MigratorUser = "vibechat_migrator";
+    private const string MigratorPassword = "vibechat_migrator_password_change_me";
+    private const string BackupUser = "vibechat_backup";
+    private const string BackupPassword = "vibechat_backup_password_change_me";
 
     // Keep test keys off the dev keyspace (database 0) on a shared local Redis.
     private const int LocalRedisDatabase = 15;
@@ -30,10 +47,30 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
     private IContainer? _minio;
     private bool _ownsContainers;
 
-    private string _database =
-        "Host=localhost;Port=5432;Database=vibechat_test;Username=vibechat;Password=vibechat_dev_password_change_me";
+    private string _bootstrapDatabase =
+        $"Host=localhost;Port=5432;Database=vibechat_test;Username={BootstrapUser};Password={BootstrapPassword}";
+    private string _migratorDatabase =
+        $"Host=localhost;Port=5432;Database=vibechat_test;Username={MigratorUser};Password={MigratorPassword}";
+    private string _runtimeDatabase =
+        $"Host=localhost;Port=5432;Database=vibechat_test;Username={AppUser};Password={AppPassword}";
     private string _redisConnection = $"{LocalRedisEndpoint},defaultDatabase={LocalRedisDatabase}";
     private string _minioEndpoint = "localhost:9000";
+
+    public string RuntimeDatabaseConnectionString => _runtimeDatabase;
+    public string MigratorDatabaseConnectionString => _migratorDatabase;
+    public string BootstrapDatabaseConnectionString => _bootstrapDatabase;
+
+    /// <summary>
+    /// Migrator/BYPASSRLS context for test seeding and DB assertions only.
+    /// Request path under test still uses the app runtime role.
+    /// </summary>
+    public VibeChatDbContext CreateMigratorDbContext()
+    {
+        var options = new DbContextOptionsBuilder<VibeChatDbContext>()
+            .UseNpgsql(_migratorDatabase)
+            .Options;
+        return new VibeChatDbContext(options, new TenantContext());
+    }
 
     public async Task InitializeAsync()
     {
@@ -50,8 +87,8 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         _ownsContainers = true;
         _postgres = new PostgreSqlBuilder("postgres:16.6")
             .WithDatabase("vibechat_test")
-            .WithUsername("vibechat")
-            .WithPassword("vibechat_dev_password_change_me")
+            .WithUsername(BootstrapUser)
+            .WithPassword(BootstrapPassword)
             .Build();
 
         _redis = new RedisBuilder("redis:7.4-alpine").Build();
@@ -70,7 +107,19 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
             _redis.StartAsync(),
             _minio.StartAsync());
 
-        _database = _postgres.GetConnectionString();
+        _bootstrapDatabase = _postgres.GetConnectionString();
+        var builder = new Npgsql.NpgsqlConnectionStringBuilder(_bootstrapDatabase)
+        {
+            Database = "vibechat_test"
+        };
+        _bootstrapDatabase = builder.ConnectionString;
+        builder.Username = MigratorUser;
+        builder.Password = MigratorPassword;
+        _migratorDatabase = builder.ConnectionString;
+        builder.Username = AppUser;
+        builder.Password = AppPassword;
+        _runtimeDatabase = builder.ConnectionString;
+
         _redisConnection = _redis.GetConnectionString();
         // Prefer loopback — Hostname can be unreachable depending on Docker networking.
         _minioEndpoint = $"127.0.0.1:{_minio.GetMappedPublicPort(9000)}";
@@ -104,7 +153,15 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
-        builder.UseSetting("ConnectionStrings:Database", _database);
+        builder.UseSetting("ConnectionStrings:Database", _runtimeDatabase);
+        builder.UseSetting("ConnectionStrings:DatabaseMigrator", _migratorDatabase);
+        builder.UseSetting("ConnectionStrings:DatabaseBootstrap", _bootstrapDatabase);
+        builder.UseSetting("POSTGRES_APP_USER", AppUser);
+        builder.UseSetting("POSTGRES_APP_PASSWORD", AppPassword);
+        builder.UseSetting("POSTGRES_MIGRATOR_USER", MigratorUser);
+        builder.UseSetting("POSTGRES_MIGRATOR_PASSWORD", MigratorPassword);
+        builder.UseSetting("POSTGRES_BACKUP_USER", BackupUser);
+        builder.UseSetting("POSTGRES_BACKUP_PASSWORD", BackupPassword);
         builder.UseSetting("ConnectionStrings:Redis", _redisConnection);
         builder.UseSetting("Minio:Endpoint", _minioEndpoint);
         builder.UseSetting("Minio:PublicEndpoint", $"http://{_minioEndpoint}");
@@ -114,6 +171,7 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Minio:UseSsl", "false");
         builder.UseSetting("Files:MaxSizeBytes", "10485760");
         builder.UseSetting("Seed:Enabled", "true");
+        builder.UseSetting("Database:BootstrapOnStartup", "true");
         builder.UseSetting("Ai:Enabled", "true");
         builder.UseSetting("Ai:Provider", "Mock");
         // Fake secrets for B-069 mask assertions — never real credentials.
@@ -129,10 +187,10 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
 
     // Testcontainers give every run a clean stack; a reused local stack does not, so
     // drop the test database instead of keeping whatever the previous run wrote.
-    private static async Task ResetLocalTestDatabaseAsync()
+    private async Task ResetLocalTestDatabaseAsync()
     {
         await using var conn = new Npgsql.NpgsqlConnection(
-            "Host=localhost;Port=5432;Database=postgres;Username=vibechat;Password=vibechat_dev_password_change_me");
+            $"Host=localhost;Port=5432;Database=postgres;Username={BootstrapUser};Password={BootstrapPassword}");
         await conn.OpenAsync();
 
         await using (var drop = new Npgsql.NpgsqlCommand(
@@ -141,8 +199,15 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
             await drop.ExecuteNonQueryAsync();
         }
 
-        await using var create = new Npgsql.NpgsqlCommand("CREATE DATABASE vibechat_test OWNER vibechat", conn);
+        await using var create = new Npgsql.NpgsqlCommand($"CREATE DATABASE vibechat_test OWNER {BootstrapUser}", conn);
         await create.ExecuteNonQueryAsync();
+
+        _bootstrapDatabase =
+            $"Host=localhost;Port=5432;Database=vibechat_test;Username={BootstrapUser};Password={BootstrapPassword}";
+        _migratorDatabase =
+            $"Host=localhost;Port=5432;Database=vibechat_test;Username={MigratorUser};Password={MigratorPassword}";
+        _runtimeDatabase =
+            $"Host=localhost;Port=5432;Database=vibechat_test;Username={AppUser};Password={AppPassword}";
     }
 
     private static async Task ResetLocalTestRedisAsync()
@@ -179,21 +244,16 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
                     await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(MinioBucket));
                 }
 
-                // Confirm again — health check uses BucketExists.
-                if (await client.BucketExistsAsync(new BucketExistsArgs().WithBucket(MinioBucket)))
-                {
-                    return;
-                }
+                return;
             }
             catch (Exception ex)
             {
                 last = ex;
+                await Task.Delay(500 * attempt);
             }
-
-            await Task.Delay(TimeSpan.FromMilliseconds(400 * attempt));
         }
 
-        throw new InvalidOperationException($"Unable to ensure MinIO bucket '{MinioBucket}' at {endpoint}", last);
+        throw new InvalidOperationException($"MinIO bucket setup failed at {endpoint}", last);
     }
 
     private static async Task<bool> IsPortOpenAsync(string host, int port)
@@ -201,19 +261,12 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         try
         {
             using var client = new TcpClient();
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-            await client.ConnectAsync(host, port, cts.Token);
-            return client.Connected;
+            await client.ConnectAsync(host, port);
+            return true;
         }
         catch
         {
             return false;
         }
     }
-}
-
-[CollectionDefinition(Name)]
-public sealed class VibeChatApiCollection : ICollectionFixture<VibeChatApiFactory>
-{
-    public const string Name = "vibechat-api";
 }

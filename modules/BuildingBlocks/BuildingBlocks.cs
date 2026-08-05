@@ -10,6 +10,15 @@ public interface ITenantContext
     TenantId TenantId { get; }
     bool HasTenant { get; }
     void SetTenant(TenantId tenantId);
+
+    /// <summary>Authenticated user for RLS bootstrap (membership discovery before tenant is known).</summary>
+    UserId UserId { get; }
+    bool HasUser { get; }
+    void SetUser(UserId userId);
+
+    /// <summary>Worker-only GUC: <c>outbox</c> or <c>retention</c>; never a bypass kill-switch.</summary>
+    string? JobRole { get; }
+    void SetJobRole(string? jobRole);
 }
 
 public sealed class TenantContext : ITenantContext
@@ -17,6 +26,14 @@ public sealed class TenantContext : ITenantContext
     public TenantId TenantId { get; private set; } = TenantId.Empty;
     public bool HasTenant => TenantId.Value != Guid.Empty;
     public void SetTenant(TenantId tenantId) => TenantId = tenantId;
+
+    public UserId UserId { get; private set; } = UserId.Empty;
+    public bool HasUser => UserId.Value != Guid.Empty;
+    public void SetUser(UserId userId) => UserId = userId;
+
+    public string? JobRole { get; private set; }
+    public void SetJobRole(string? jobRole) =>
+        JobRole = string.IsNullOrWhiteSpace(jobRole) ? null : jobRole.Trim();
 }
 
 public interface ICurrentUser

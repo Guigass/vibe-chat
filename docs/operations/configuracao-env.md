@@ -63,9 +63,10 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 
 | Variáveis | Secret? | Uso |
 |-----------|---------|-----|
-| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | senha: sim | Bootstrap/owner atual; não deve permanecer como runtime após SEC-RLS-RUNTIME |
-| `POSTGRES_APP_USER`, `POSTGRES_APP_PASSWORD` | senha: sim | Role runtime futura sem ownership/`BYPASSRLS` |
-| `POSTGRES_MIGRATOR_USER`, `POSTGRES_MIGRATOR_PASSWORD` | senha: sim | Role separada para migrations; nunca entregue a API/Worker |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | senha: sim | Bootstrap/owner (init + criação de roles); nunca connection string de request |
+| `POSTGRES_APP_USER`, `POSTGRES_APP_PASSWORD` | senha: sim | Role runtime (`vibechat_app`) sem ownership/`BYPASSRLS` — API/Worker |
+| `POSTGRES_MIGRATOR_USER`, `POSTGRES_MIGRATOR_PASSWORD` | senha: sim | Role `vibechat_migrator` (BYPASSRLS) para migrate/seed/RLS; não no hot path |
+| `POSTGRES_BACKUP_USER`, `POSTGRES_BACKUP_PASSWORD` | senha: sim | Role `vibechat_backup` (SELECT) para runbooks de backup |
 | `KEYCLOAK_DB`, `KEYCLOAK_DB_USER`, `KEYCLOAK_DB_PASSWORD` | senha: sim | Banco do Keycloak |
 | `KEYCLOAK_ADMIN`, `KEYCLOAK_ADMIN_PASSWORD` | senha: sim | Bootstrap do IdP |
 | `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `MINIO_BUCKET` | senha: sim | S3-compatible |
@@ -111,7 +112,7 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 | SMTP | `SMTP_*`, `EMAIL__*` | **Gap:** não injetadas em API/Worker |
 | Retenção | `MessageRetention__*` | **Gap:** não injetadas no Worker |
 | IA duplicada | `AI__OpenRouter__*` | Compose usa `OPENROUTER_*` |
-| Roles PostgreSQL | `POSTGRES_APP_*`, `POSTGRES_MIGRATOR_*` ainda não existem no template/Compose | **Critical:** `SEC-RLS-RUNTIME`; app usa hoje o bootstrap owner |
+| Roles PostgreSQL | `POSTGRES_APP_*`, `POSTGRES_MIGRATOR_*`, `POSTGRES_BACKUP_*` + `DATABASE_*_URL` | Entregue em `SEC-RLS-RUNTIME`; API/Worker usam app role |
 | Projeto Compose | `COMPOSE_PROJECT_NAME` | Consumida pelo Docker Compose CLI |
 
 ### Chaves de aplicação sem contrato fechado
@@ -145,7 +146,7 @@ Estes itens devem ser resolvidos ou documentados como intencionalmente fixos em 
 - [ ] Matriz env vs `/admin` revisada com Security (B-069 / `modelo-ameacas.md`)
 - [x] `docs/operations/operacao.md` e `docs/operations/desenvolvimento.md` linkam este guia
 - [ ] Smoke comprova e-mail, IA e retenção opt-in dentro dos containers
-- [ ] API/Worker usam role runtime sem ownership/`BYPASSRLS`; migration usa role
+- [x] API/Worker usam role runtime sem ownership/`BYPASSRLS`; migration usa role
   separada (`SEC-RLS-RUNTIME`)
 
 ## Evidência documental DOC-007

@@ -46,8 +46,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         list.Should().NotBeNull();
         list!.Should().Contain(m => m.Id == messageId && m.Body == body);
 
-        await using var scope = factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        await using var db = factory.CreateMigratorDbContext();
         var persisted = await db.Messages.IgnoreQueryFilters()
             .SingleAsync(x => x.Id == new MessageId(messageId));
         persisted.Body.Should().Be(body);
@@ -83,8 +82,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         secondDto!.Sequence.Should().Be(firstDto!.Sequence);
         secondDto.Id.Should().Be(firstDto.Id);
 
-        await using var scope = factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        await using var db = factory.CreateMigratorDbContext();
         var count = await db.Messages.IgnoreQueryFilters().CountAsync(x => x.Id == new MessageId(messageId));
         count.Should().Be(1);
     }
@@ -130,8 +128,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             new ToggleReactionRequestDto("🚀"));
         bad.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        await using var scope = factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        await using var db = factory.CreateMigratorDbContext();
         var outbox = await db.OutboxMessages.IgnoreQueryFilters()
             .Where(x => x.Type == nameof(ReactionChangedEvent))
             .OrderByDescending(x => x.OccurredAt)
@@ -192,8 +189,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         edited!.Body.Should().Be(editedBody);
         edited.EditedAt.Should().NotBeNull();
 
-        await using var scope = factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        await using var db = factory.CreateMigratorDbContext();
         var outbox = await db.OutboxMessages.IgnoreQueryFilters()
             .Where(x => x.Type == nameof(MessageEditedEvent))
             .OrderByDescending(x => x.OccurredAt)
@@ -258,8 +254,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             JsonOptions);
         threadMessages.Should().Contain(m => m.Id == replyId && m.Body == replyBody && m.Sequence == 1);
 
-        await using var scope = factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        await using var db = factory.CreateMigratorDbContext();
         var persisted = await db.Messages.IgnoreQueryFilters()
             .SingleAsync(x => x.Id == new MessageId(replyId));
         persisted.ConversationId.Value.Should().Be(thread1.Id);
@@ -409,8 +404,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             new UpdateMemberRoleRequestDto("Guest"));
         guest.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        await using var scope = factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        await using var db = factory.CreateMigratorDbContext();
         var membership = await db.WorkspaceMembers.IgnoreQueryFilters()
             .SingleAsync(x => x.WorkspaceId == SeedData.DemoWorkspaceId && x.UserId == SeedData.BobUserId);
         membership.Role.Should().Be(Role.Moderator);
@@ -531,9 +525,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
                 .Should().Be(SeedData.DemoWorkspaceId.Value);
         }
 
-        await using (var scope = factory.Services.CreateAsyncScope())
+        await using (var db = factory.CreateMigratorDbContext())
         {
-            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
             var audit = await db.AuditEvents.IgnoreQueryFilters()
                 .Where(x => x.TenantId == SeedData.DemoTenantId && x.Action == AuditActions.WorkspaceExport)
                 .OrderByDescending(x => x.OccurredAt)
@@ -590,9 +583,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             new { workspaceId, ai = new { apiKey = "should-never-store" } });
         secretPut.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        await using (var scope = factory.Services.CreateAsyncScope())
+        await using (var db = factory.CreateMigratorDbContext())
         {
-            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
             var audit = await db.AuditEvents.IgnoreQueryFilters()
                 .Where(x => x.TenantId == SeedData.DemoTenantId && x.Action == AuditActions.SettingsChange)
                 .OrderByDescending(x => x.OccurredAt)
@@ -642,9 +634,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         settings.Webhooks.SecretMask.Should().NotContain(secret);
         (await put.Content.ReadAsStringAsync()).Should().NotContain(secret);
 
-        await using (var scope = factory.Services.CreateAsyncScope())
+        await using (var db = factory.CreateMigratorDbContext())
         {
-            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
             var row = await db.OutboundWebhookEndpoints.IgnoreQueryFilters()
                 .SingleAsync(x => x.TenantId == SeedData.DemoTenantId);
             row.Enabled.Should().BeTrue();
@@ -670,9 +661,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         disabled.Webhooks.SecretMask.Should().Be("••••t-99");
 
         // Restore seed assumption (unconfigured) for sibling tests sharing the factory DB.
-        await using (var scope = factory.Services.CreateAsyncScope())
+        await using (var db = factory.CreateMigratorDbContext())
         {
-            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
             var row = await db.OutboundWebhookEndpoints.IgnoreQueryFilters()
                 .SingleOrDefaultAsync(x => x.TenantId == SeedData.DemoTenantId);
             if (row is not null)
@@ -724,9 +714,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             new { workspaceId, retention = new { retentionDays = 0 } });
         invalid.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        await using (var scope = factory.Services.CreateAsyncScope())
+        await using (var db = factory.CreateMigratorDbContext())
         {
-            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
             var old = await db.Messages.IgnoreQueryFilters()
                 .SingleAsync(x => x.Id == new MessageId(messageId));
             old.DeletedAt = DateTimeOffset.UtcNow.AddDays(-40);
@@ -740,9 +729,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         var purged = await processor.ProcessBatchAsync(CancellationToken.None);
         purged.Should().BeGreaterThanOrEqualTo(1);
 
-        await using (var scope = factory.Services.CreateAsyncScope())
+        await using (var db = factory.CreateMigratorDbContext())
         {
-            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
             (await db.Messages.IgnoreQueryFilters()
                 .AnyAsync(x => x.Id == new MessageId(messageId))).Should().BeFalse();
             (await db.Messages.IgnoreQueryFilters()
@@ -791,9 +779,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             new InviteMemberRequestDto($"guest-{Guid.NewGuid():N}@vibechat.local", "Guesty", "Guest"));
         guestInvite.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        await using (var scope = factory.Services.CreateAsyncScope())
+        await using (var db = factory.CreateMigratorDbContext())
         {
-            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
             var profile = await db.UserProfiles.IgnoreQueryFilters()
                 .SingleAsync(x => x.Id == new UserId(invited.UserId));
             profile.Subject.Should().Be($"pending:{email}");
@@ -818,9 +805,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         var workspaces = await carol.GetFromJsonAsync<WorkspaceDto[]>("/api/v1/workspaces", JsonOptions);
         workspaces.Should().Contain(w => w.Id == workspaceId && w.Role == "Moderator");
 
-        await using (var scope = factory.Services.CreateAsyncScope())
+        await using (var db = factory.CreateMigratorDbContext())
         {
-            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
             var profile = await db.UserProfiles.IgnoreQueryFilters()
                 .SingleAsync(x => x.Id == new UserId(invited.UserId));
             profile.Subject.Should().StartWith("dev:");
@@ -1032,8 +1018,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
 
     private async Task<Guid> SeedForeignTenantChannelAsync()
     {
-        await using var scope = factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        await using var db = factory.CreateMigratorDbContext();
         var now = DateTimeOffset.UtcNow;
 
         var workspaceId = WorkspaceId.New();
