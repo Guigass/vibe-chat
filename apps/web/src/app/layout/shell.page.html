@@ -1,9 +1,19 @@
 <div
   class="shell"
   [class.shell--sidebar-collapsed]="!sidebarOpen()"
+  [class.shell--narrow]="narrowViewport()"
   [class.shell--context-open]="contextOpen()"
   [class.shell--thread-open]="threads.open()"
 >
+  @if (narrowViewport() && sidebarOpen()) {
+    <button
+      type="button"
+      class="shell__backdrop"
+      aria-label="Fechar barra lateral"
+      (click)="toggleSidebar()"
+    ></button>
+  }
+
   <aside class="shell__sidebar vc-anim-sidebar" [attr.aria-hidden]="!sidebarOpen()">
     <div class="shell__brand">
       <span class="shell__wordmark">VibeChat</span>
