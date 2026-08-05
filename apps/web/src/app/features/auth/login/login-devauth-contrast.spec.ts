@@ -4,16 +4,26 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LoginPage } from './login.page';
 
-function parseRgb(color: string): { r: number; g: number; b: number } | null {
-  const m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
-  if (!m) {
-    return null;
-  }
-  return { r: Number(m[1]), g: Number(m[2]), b: Number(m[3]) };
+function stubMatchMedia(): void {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
 }
 
 describe('LoginPage DevAuth contrast (UX-001)', () => {
   beforeEach(async () => {
+    stubMatchMedia();
     await TestBed.configureTestingModule({
       imports: [LoginPage],
       providers: [
@@ -34,27 +44,31 @@ describe('LoginPage DevAuth contrast (UX-001)', () => {
     }).compileComponents();
   });
 
-  it('keeps DevAuth ghost labels light on the dark hero under light theme tokens', async () => {
+  it('exposes light ink tokens on the dark hero and labeled DevAuth actions', async () => {
     const fixture = TestBed.createComponent(LoginPage);
     const host = fixture.nativeElement as HTMLElement;
-    // Simulate global light-theme tokens that previously made ghost ink invisible.
-    host.style.setProperty('--vc-ink', '#1c1917');
-    host.style.setProperty('--vc-ink-muted', '#57534e');
-    host.style.setProperty('--vc-border', '#e7e5e4');
+    // Global light-theme tokens that previously made ghost ink invisible on the hero.
+    document.documentElement.style.setProperty('--vc-ink', '#1c1917');
+    document.documentElement.style.setProperty('--vc-ink-muted', '#57534e');
+    document.documentElement.style.setProperty('--vc-border', '#e7e5e4');
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const alice = host.querySelector(
-      '.login-hero__dev-actions .vc-btn--ghost',
-    ) as HTMLButtonElement | null;
-    expect(alice).toBeTruthy();
-    expect(alice!.textContent?.trim()).toBe('Alice');
+    const hero = host.querySelector('.login-hero') as HTMLElement | null;
+    expect(hero).toBeTruthy();
+    expect(getComputedStyle(hero!).getPropertyValue('--vc-ink').trim().toLowerCase()).toBe(
+      '#e8eef4',
+    );
+    expect(getComputedStyle(hero!).getPropertyValue('--vc-ink-muted').trim().toLowerCase()).toBe(
+      '#8b9cb3',
+    );
+    expect(getComputedStyle(hero!).getPropertyValue('--vc-border').trim().toLowerCase()).toBe(
+      'rgba(232, 238, 244, 0.35)',
+    );
 
-    const color = getComputedStyle(alice!).color;
-    const rgb = parseRgb(color);
-    expect(rgb).toBeTruthy();
-    // Light ink on dark hero — channel average well above mid-gray.
-    const avg = (rgb!.r + rgb!.g + rgb!.b) / 3;
-    expect(avg).toBeGreaterThan(160);
+    const labels = [...host.querySelectorAll('.login-hero__dev-actions .vc-btn--ghost')].map(
+      (el) => el.textContent?.trim(),
+    );
+    expect(labels).toEqual(['Alice', 'Bob', 'Demo']);
   });
 });
