@@ -23,7 +23,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-REQUIRED-CHECK | Branch protection | O check de segurança ainda depende de disciplina do prompt | Critical | External action | Tornar `VibeChat Security Review` um required check |
 | OPS-DOC-CHECKER | Integridade documental | Contrato e baseline DOC-006 existem, mas a CI ainda não executa checker offline | Medium | Open | Implementar as regras de `qualidade-documental.md` sem alterar prioridade das waves |
 | OPS-PR-DRAFT | Tooling de PR | `open_git_pr` pode criar draft | Medium | Mitigated | Prompts convertem imediatamente para ready; monitorar |
-| OPS-DOCS-RACE | Corrida Docs | Merges #72+#73 (~20s) abriram Docs #76+#77; #77 foi re-draftado e ficou CONFLICTING | High | Open | Colar prompts 03/06 atualizados no dashboard; Watchdog fecha órfãos |
+| OPS-DOCS-RACE | Corrida Docs | Merges #72+#73 (~20s) abriram Docs #76+#77; #77 foi re-draftado e ficou CONFLICTING | High | External action | Colar prompts 03/06 atualizados no dashboard (repo já em #78) |
 
 ## Resolvidos
 
@@ -70,18 +70,20 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 ### OPS-DOCS-RACE
 
-- Status: **Open** — #77 fechado manualmente; prompts 03/06 endurecidos no repo
-  (ainda precisam ser colados no dashboard).
+- Status: **External action** — fix no repositório em
+  [#78](https://github.com/Guigass/vibe-chat/pull/78); #77 fechado como
+  supersedido. Resta R4: colar prompts 03/06 atualizados no dashboard.
 - Observado em: PRs Docs #76 (merged) e #77 (draft → CONFLICTING → closed);
   merges #72+#73 do mesmo `SEC-RLS-RUNTIME` (~20s).
 - Reprodução: dois feature PRs do mesmo ID mergeiam em sequência → dois triggers
   Docs → um survivor mergeia → o outro, se draft/órfão, fica `DIRTY`.
 - Resultado esperado: um único Docs close ready; extras fechados com
   `superseded by #<n>`; nunca `convert_to_draft` para “pausar”.
-- Resultado atual (incidente): agente do #77 fez `gh pr ready` e em seguida
-  `convert_to_draft` após ver #76; pós-merge do #76 o #77 ficou CONFLICTING;
-  Docs pós-#76 não varreu órfãos.
-- Impacto: PR draft bloqueia QA; órfão conflitado exige intervenção humana.
+- Resultado atual: prompts 03/06 + `operacao-24x7` no repo exigem dedup pré-PR,
+  orphan sweep e proíbem re-draft (#78); Watchdog fecha draft/CONFLICTING
+  supersedidos. Comportamento no dashboard só muda após colar os prompts.
+- Impacto (pré-fix): PR draft bloqueia QA; órfão conflitado exige intervenção
+  humana.
 - Risk class: R1 (processo/automação).
 - Owner automático: Docs + Watchdog.
 - Critério de resolução:
