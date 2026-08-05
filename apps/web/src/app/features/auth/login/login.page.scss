@@ -5,6 +5,12 @@
   place-items: center;
   overflow: hidden;
   isolation: isolate;
+  /* Hero is always dark; invert ink/border so ghost DevAuth labels stay legible
+     under light data-theme (UX-001). */
+  --vc-ink: #e8eef4;
+  --vc-ink-muted: #8b9cb3;
+  --vc-ink-subtle: #94a3b8;
+  --vc-border: rgba(232, 238, 244, 0.35);
 }
 
 .login-hero__atmosphere {
