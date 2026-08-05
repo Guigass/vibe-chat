@@ -51,6 +51,12 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-vibechat}
       POSTGRES_USER: ${POSTGRES_USER:-vibechat}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vibechat_dev_password_change_me}
+      POSTGRES_APP_USER: ${POSTGRES_APP_USER:-vibechat_app}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:-vibechat_app_password_change_me}
+      POSTGRES_MIGRATOR_USER: ${POSTGRES_MIGRATOR_USER:-vibechat_migrator}
+      POSTGRES_MIGRATOR_PASSWORD: ${POSTGRES_MIGRATOR_PASSWORD:-vibechat_migrator_password_change_me}
+      POSTGRES_BACKUP_USER: ${POSTGRES_BACKUP_USER:-vibechat_backup}
+      POSTGRES_BACKUP_PASSWORD: ${POSTGRES_BACKUP_PASSWORD:-vibechat_backup_password_change_me}
       KEYCLOAK_DB: ${KEYCLOAK_DB:-keycloak}
       KEYCLOAK_DB_USER: ${KEYCLOAK_DB_USER:-keycloak}
       KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak_dev_password_change_me}
@@ -60,6 +66,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./infra/compose/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
       - ./infra/compose/postgres/02-keycloak.sh:/docker-entrypoint-initdb.d/02-keycloak.sh:ro
+      - ./infra/compose/postgres/03-app-roles.sh:/docker-entrypoint-initdb.d/03-app-roles.sh:ro
     networks:
       - vibechat-net
     healthcheck:
@@ -340,7 +347,15 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_URLS: http://+:5080
-      ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-vibechat};Username=${POSTGRES_USER:-vibechat};Password=${POSTGRES_PASSWORD:-vibechat_dev_password_change_me}
+      ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-vibechat};Username=${POSTGRES_APP_USER:-vibechat_app};Password=${POSTGRES_APP_PASSWORD:-vibechat_app_password_change_me}
+      ConnectionStrings__DatabaseMigrator: Host=postgres;Port=5432;Database=${POSTGRES_DB:-vibechat};Username=${POSTGRES_MIGRATOR_USER:-vibechat_migrator};Password=${POSTGRES_MIGRATOR_PASSWORD:-vibechat_migrator_password_change_me}
+      ConnectionStrings__DatabaseBootstrap: Host=postgres;Port=5432;Database=${POSTGRES_DB:-vibechat};Username=${POSTGRES_USER:-vibechat};Password=${POSTGRES_PASSWORD:-vibechat_dev_password_change_me}
+      POSTGRES_APP_USER: ${POSTGRES_APP_USER:-vibechat_app}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:-vibechat_app_password_change_me}
+      POSTGRES_MIGRATOR_USER: ${POSTGRES_MIGRATOR_USER:-vibechat_migrator}
+      POSTGRES_MIGRATOR_PASSWORD: ${POSTGRES_MIGRATOR_PASSWORD:-vibechat_migrator_password_change_me}
+      POSTGRES_BACKUP_USER: ${POSTGRES_BACKUP_USER:-vibechat_backup}
+      POSTGRES_BACKUP_PASSWORD: ${POSTGRES_BACKUP_PASSWORD:-vibechat_backup_password_change_me}
       ConnectionStrings__Redis: redis:6379
       # Public issuer must match browser token `iss`; discovery uses in-network MetadataAddress.
       Authentication__Authority: ${KEYCLOAK_ISSUER_URL:-http://localhost:8080/realms/vibechat}
@@ -422,7 +437,7 @@ services:
     restart: unless-stopped
     environment:
       DOTNET_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
-      ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-vibechat};Username=${POSTGRES_USER:-vibechat};Password=${POSTGRES_PASSWORD:-vibechat_dev_password_change_me}
+      ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-vibechat};Username=${POSTGRES_APP_USER:-vibechat_app};Password=${POSTGRES_APP_PASSWORD:-vibechat_app_password_change_me}
       ConnectionStrings__Redis: redis:6379
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       MessageRetention__Enabled: ${MessageRetention__Enabled:-false}

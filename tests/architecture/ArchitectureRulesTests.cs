@@ -80,9 +80,14 @@ public sealed class ArchitectureRulesTests
             sql.Should().Contain(table, because: $"RLS catalog must enable policy coverage for {table}");
             var policyNeedle = $"ON {table}";
             sql.Should().Contain(policyNeedle, because: $"RLS catalog must define a policy on {table}");
+            sql.Should().Contain($"ALTER TABLE IF EXISTS {table} FORCE ROW LEVEL SECURITY",
+                because: $"SEC-RLS-RUNTIME requires FORCE RLS on {table}");
         }
 
-        sql.Should().Contain("""USING ("TenantId" = current_setting('app.tenant_id', true)::uuid)""");
+        sql.Should().Contain("WITH CHECK (\"TenantId\" = app.current_tenant_id())",
+            because: "SEC-RLS-RUNTIME requires WITH CHECK on tenant writes");
+        sql.Should().Contain("app.current_tenant_id()",
+            because: "RLS policies must read app.tenant_id via fail-closed helper");
     }
 
     private static string FindRepoFile(string relativePath)

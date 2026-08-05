@@ -61,7 +61,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 - [x] TLS em trânsito (terminação no proxy ou HTTPS direto) — referência Compose profile `proxy` (W5-2)
 - [x] Secrets de AI/SMTP só via env/secret store; API admin devolve máscara (`••••last4` / `configured`) — B-069
 - [x] `TenantContext` + catálogo inicial RLS — W3-1/B-009
-- [ ] Role runtime separada + FORCE/WITH CHECK + teste com credencial real —
+- [x] Role runtime separada + FORCE/WITH CHECK + teste com credencial real —
   `SEC-RLS-RUNTIME`
 - [x] AuthZ nas entradas de hub/API existentes — W3-2; toda entrada nova reabre a obrigação de teste
 - [x] Idempotency no envio — B-004

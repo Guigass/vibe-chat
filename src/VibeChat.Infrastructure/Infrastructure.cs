@@ -337,9 +337,14 @@ public sealed class VibeChatDbContextFactory : IDesignTimeDbContextFactory<VibeC
 {
     public VibeChatDbContext CreateDbContext(string[] args)
     {
+        var connection =
+            Environment.GetEnvironmentVariable("ConnectionStrings__DatabaseMigrator")
+            ?? Environment.GetEnvironmentVariable("DATABASE_MIGRATOR_URL")
+            ?? Environment.GetEnvironmentVariable("ConnectionStrings__Database")
+            ?? "Host=localhost;Port=5432;Database=vibechat;Username=vibechat_migrator;Password=vibechat_migrator_password_change_me";
+
         var options = new DbContextOptionsBuilder<VibeChatDbContext>()
-            .UseNpgsql(Environment.GetEnvironmentVariable("ConnectionStrings__Database")
-                      ?? "Host=localhost;Port=5432;Database=vibechat;Username=vibechat;Password=vibechat_dev")
+            .UseNpgsql(connection)
             .Options;
 
         return new VibeChatDbContext(options, new TenantContext());
@@ -1159,6 +1164,10 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
         var webhooks = scope.ServiceProvider.GetRequiredService<IOutboundWebhookDispatcher>();
         var now = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow;
 
+        var tenant = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        tenant.SetJobRole("outbox");
+        await RlsSession.EnsureAppliedAsync(dbContext, tenant, cancellationToken);
+
         var messages = await dbContext.OutboxMessages.IgnoreQueryFilters()
             .Where(x => x.ProcessedAt == null)
             .OrderBy(x => x.OccurredAt)
@@ -1169,6 +1178,9 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
         {
             try
             {
+                tenant.SetTenant(outbox.TenantId);
+                await RlsSession.EnsureAppliedAsync(dbContext, tenant, cancellationToken);
+
                 if (outbox.Type is nameof(MemberRoleChangedEmailEvent) or nameof(MemberInvitedEmailEvent))
                 {
                     var to = "";
@@ -1505,6 +1517,10 @@ public sealed class MessageRetentionPurgeProcessor(
         var clock = scope.ServiceProvider.GetRequiredService<IClock>();
         var now = clock.UtcNow;
 
+        var tenant = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        tenant.SetJobRole("retention");
+        await RlsSession.EnsureAppliedAsync(db, tenant, cancellationToken);
+
         var policies = await db.MessageRetentionSettings.IgnoreQueryFilters()
             .AsNoTracking()
             .Where(x => x.Enabled)
@@ -1517,6 +1533,9 @@ public sealed class MessageRetentionPurgeProcessor(
         var purgedTotal = 0;
         foreach (var policy in policies)
         {
+            tenant.SetTenant(policy.TenantId);
+            await RlsSession.EnsureAppliedAsync(db, tenant, cancellationToken);
+
             var days = Math.Clamp(
                 policy.RetentionDays <= 0 ? MessageRetentionSettings.DefaultRetentionDays : policy.RetentionDays,
                 MessageRetentionSettings.MinRetentionDays,
@@ -1620,7 +1639,9 @@ public sealed class ChatHub(
     IChannelMembershipReader channels,
     IWorkspaceMembershipReader workspaces,
     IRateLimiter rateLimiter,
-    IConfiguration configuration) : Hub
+    IConfiguration configuration,
+    ITenantContext tenantContext,
+    VibeChatDbContext dbContext) : Hub
 {
     public static string ChannelGroup(TenantId tenantId, ChannelId channelId) =>
         $"t:{tenantId.Value}:c:{channelId.Value}";
@@ -1657,6 +1678,7 @@ public sealed class ChatHub(
         var userId = CurrentUserId();
         var tenant = new TenantId(tenantId);
         var channel = new ChannelId(channelId);
+        await BindRlsAsync(tenant, userId);
         await EnsureHubRateLimitAsync(tenant, userId);
         if (!await channels.CanAccessAsync(tenant, channel, userId, Context.ConnectionAborted))
         {
@@ -1680,6 +1702,7 @@ public sealed class ChatHub(
     {
         var userId = CurrentUserId();
         var tenant = new TenantId(tenantId);
+        await BindRlsAsync(tenant, userId);
         await EnsureHubRateLimitAsync(tenant, userId);
         await EnsureTenantMembershipAsync(tenant, userId);
         await EnsurePresenceGroupAsync(tenant, userId);
@@ -1691,6 +1714,7 @@ public sealed class ChatHub(
     {
         var userId = CurrentUserId();
         var tenant = new TenantId(tenantId);
+        await BindRlsAsync(tenant, userId);
         await EnsureHubRateLimitAsync(tenant, userId);
         await EnsureTenantMembershipAsync(tenant, userId);
         await EnsurePresenceGroupAsync(tenant, userId);
@@ -1703,6 +1727,7 @@ public sealed class ChatHub(
         var tenant = new TenantId(tenantId);
         var channel = new ChannelId(channelId);
         var userId = CurrentUserId();
+        await BindRlsAsync(tenant, userId);
         await EnsureHubRateLimitAsync(tenant, userId);
         if (!await channels.CanAccessAsync(tenant, channel, userId, Context.ConnectionAborted))
         {
@@ -1715,6 +1740,13 @@ public sealed class ChatHub(
             "Typing",
             new { tenantId, channelId, userId = userId.Value, displayName },
             Context.ConnectionAborted);
+    }
+
+    private async Task BindRlsAsync(TenantId tenantId, UserId userId)
+    {
+        tenantContext.SetUser(userId);
+        tenantContext.SetTenant(tenantId);
+        await RlsSession.EnsureAppliedAsync(dbContext, tenantContext, Context.ConnectionAborted);
     }
 
     private async Task EnsureTenantMembershipAsync(TenantId tenantId, UserId userId)
@@ -1908,7 +1940,12 @@ public static class DependencyInjection
     {
         services.AddSingleton<IClock, SystemClock>();
         services.AddScoped<ITenantContext, TenantContext>();
-        services.AddDbContext<VibeChatDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Database")));
+        services.AddScoped<RlsConnectionInterceptor>();
+        services.AddDbContext<VibeChatDbContext>((sp, options) =>
+        {
+            options.UseNpgsql(DatabaseBootstrap.ResolveRuntimeConnectionString(configuration));
+            options.AddInterceptors(sp.GetRequiredService<RlsConnectionInterceptor>());
+        });
         services.AddScoped<IOutboxWriter, EfOutboxWriter>();
         services.AddScoped<IAuditWriter, EfAuditWriter>();
         services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();

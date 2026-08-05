@@ -44,7 +44,9 @@ tasks:
         set -a && source .env && set +a
         export ASPNETCORE_ENVIRONMENT=Development
         export ASPNETCORE_URLS="${ASPNETCORE_URLS:-http://localhost:5080}"
-        export ConnectionStrings__Database="${DATABASE_URL:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat;Password=vibechat_dev_password_change_me}"
+        export ConnectionStrings__Database="${DATABASE_URL:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat_app;Password=vibechat_app_password_change_me}"
+        export ConnectionStrings__DatabaseMigrator="${DATABASE_MIGRATOR_URL:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat_migrator;Password=vibechat_migrator_password_change_me}"
+        export ConnectionStrings__DatabaseBootstrap="${DATABASE_BOOTSTRAP_URL:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat;Password=vibechat_dev_password_change_me}"
         export ConnectionStrings__Redis="${REDIS_URL:-localhost:6379}"
         export Authentication__Authority="${KEYCLOAK_ISSUER_URL:-http://localhost:8080/realms/vibechat}"
         export Seed__Enabled=true
@@ -191,11 +193,21 @@ tasks:
         set -a
         [[ -f .env ]] && source .env
         set +a
-        export ConnectionStrings__Database="${DATABASE_URL:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat;Password=vibechat_dev_password_change_me}"
+        export ConnectionStrings__Database="${DATABASE_MIGRATOR_URL:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat_migrator;Password=vibechat_migrator_password_change_me}"
+        export ConnectionStrings__DatabaseMigrator="${DATABASE_MIGRATOR_URL:-Host=localhost;Port=5432;Database=vibechat;Username=vibechat_migrator;Password=vibechat_migrator_password_change_me}"
         if ! dotnet ef --version >/dev/null 2>&1; then
           dotnet tool update -g dotnet-ef >/dev/null 2>&1 || dotnet tool install -g dotnet-ef
           export PATH="${HOME}/.dotnet/tools:${PATH}"
         fi
+        # Ensure roles exist on already-initialized volumes (init scripts run only once).
+        docker compose exec -T postgres \
+          env POSTGRES_APP_USER="${POSTGRES_APP_USER:-vibechat_app}" \
+              POSTGRES_APP_PASSWORD="${POSTGRES_APP_PASSWORD:-vibechat_app_password_change_me}" \
+              POSTGRES_MIGRATOR_USER="${POSTGRES_MIGRATOR_USER:-vibechat_migrator}" \
+              POSTGRES_MIGRATOR_PASSWORD="${POSTGRES_MIGRATOR_PASSWORD:-vibechat_migrator_password_change_me}" \
+              POSTGRES_BACKUP_USER="${POSTGRES_BACKUP_USER:-vibechat_backup}" \
+              POSTGRES_BACKUP_PASSWORD="${POSTGRES_BACKUP_PASSWORD:-vibechat_backup_password_change_me}" \
+              bash -s < infra/compose/postgres/03-app-roles.sh
         dotnet ef database update \
           --project src/VibeChat.Infrastructure/VibeChat.Infrastructure.csproj \
           --startup-project apps/api/VibeChat.Api.csproj

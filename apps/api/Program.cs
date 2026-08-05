@@ -143,14 +143,24 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
 
-    if (app.Configuration.GetValue("Seed:Enabled", false))
-    {
-        await using var scope = app.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
-        await db.Database.MigrateAsync();
-        await scope.ServiceProvider.GetRequiredService<SeedData>().SeedAsync(CancellationToken.None);
-    }
+// SEC-RLS-RUNTIME: roles + migrator migrate/RLS catalog + optional seed; runtime role validated.
+if (app.Configuration.GetValue("Seed:Enabled", false)
+    || app.Configuration.GetValue("Database:BootstrapOnStartup", app.Environment.IsDevelopment()))
+{
+    await DatabaseBootstrap.MigrateSeedAndProtectAsync(
+        app.Services,
+        app.Configuration,
+        app.Environment,
+        CancellationToken.None);
+}
+else
+{
+    await DatabaseBootstrap.ValidateRuntimeRoleAsync(
+        DatabaseBootstrap.ResolveRuntimeConnectionString(app.Configuration),
+        app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseBootstrap"),
+        CancellationToken.None);
 }
 
 app.UseExceptionHandler();
@@ -161,29 +171,40 @@ app.UseAuthorization();
 
 var v1 = app.MapGroup("/api/v1").RequireAuthorization();
 
-v1.MapGet("/me", async (HttpContext http, VibeChatDbContext db, IClock clock, IAuditWriter audit, CancellationToken ct) =>
+v1.MapGet("/me", async (HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, IAuditWriter audit, CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
     var roles = await db.WorkspaceMembers.IgnoreQueryFilters().Where(x => x.UserId == profile.Id).Select(x => x.Role).Distinct().ToArrayAsync(ct);
     if (roles.Any(x => x is Role.Admin or Role.PlatformOwner or Role.WorkspaceOwner))
     {
-        audit.Add(new AuditEvent
+        var membershipTenant = await db.WorkspaceMembers.IgnoreQueryFilters()
+            .Where(x => x.UserId == profile.Id)
+            .Select(x => x.TenantId)
+            .FirstOrDefaultAsync(ct);
+        if (membershipTenant.Value != Guid.Empty)
         {
-            TenantId = SeedData.DemoTenantId,
-            ActorUserId = profile.Id,
-            Action = AuditActions.AdminLogin,
-            EntityType = "UserProfile",
-            EntityId = profile.Id.ToString()
-        });
-        await db.SaveChangesAsync(ct);
+            tenant.SetTenant(membershipTenant);
+            await RlsSession.EnsureAppliedAsync(db, tenant, ct);
+            audit.Add(new AuditEvent
+            {
+                TenantId = membershipTenant,
+                ActorUserId = profile.Id,
+                Action = AuditActions.AdminLogin,
+                EntityType = "UserProfile",
+                EntityId = profile.Id.ToString()
+            });
+            await db.SaveChangesAsync(ct);
+        }
     }
 
     return Results.Ok(new MeResponse(profile.Id.Value, profile.Subject, profile.Email, profile.DisplayName, roles.Select(x => x.ToString()).ToArray()));
 });
 
-v1.MapGet("/workspaces", async (HttpContext http, VibeChatDbContext db, IClock clock, CancellationToken ct) =>
+v1.MapGet("/workspaces", async (HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
     var workspaces = await db.WorkspaceMembers.IgnoreQueryFilters()
         .Where(x => x.UserId == profile.Id)
         .Join(db.Workspaces.IgnoreQueryFilters(), m => m.WorkspaceId, w => w.Id, (m, w) => new WorkspaceResponse(w.Id.Value, w.Name, w.Slug, m.Role.ToString()))
@@ -1670,11 +1691,23 @@ v1.MapGet("/channels/{channelId:guid}/unread-count", async (Guid channelId, Http
     return Results.Ok(new { channelId, unreadCount = count });
 });
 
-v1.MapGet("/admin/dashboard", async (HttpContext http, VibeChatDbContext db, IDashboardQuery dashboard, IPresenceService presence, HealthCheckService health, IConfiguration config, IClock clock, CancellationToken ct) =>
+v1.MapGet("/admin/dashboard", async (HttpContext http, VibeChatDbContext db, ITenantContext tenant, IDashboardQuery dashboard, IPresenceService presence, HealthCheckService health, IConfiguration config, IClock clock, CancellationToken ct) =>
 {
-    await EnsureProfileAsync(http.User, db, clock, ct);
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+    var membershipTenant = await db.WorkspaceMembers.IgnoreQueryFilters()
+        .Where(x => x.UserId == profile.Id)
+        .Select(x => x.TenantId)
+        .FirstOrDefaultAsync(ct);
+    if (membershipTenant.Value == Guid.Empty)
+    {
+        return Results.Forbid();
+    }
+
+    tenant.SetTenant(membershipTenant);
+    await RlsSession.EnsureAppliedAsync(db, tenant, ct);
     var stats = await dashboard.GetStatsAsync(ct);
-    var online = await presence.CountOnlineAsync(SeedData.DemoTenantId, ct);
+    var online = await presence.CountOnlineAsync(membershipTenant, ct);
     var failures = await db.OutboxMessages.IgnoreQueryFilters().CountAsync(x => x.ProcessedAt == null && x.Attempts > 0, ct);
     var report = await health.CheckHealthAsync(ct);
     string MapHealth(string name) => report.Entries.TryGetValue(name, out var entry)
@@ -1711,6 +1744,7 @@ v1.MapGet("/admin/audit-events", async (
     CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
     var membership = await db.WorkspaceMembers.IgnoreQueryFilters()
         .AsNoTracking()
         .Where(x => x.UserId == profile.Id)
@@ -1723,6 +1757,7 @@ v1.MapGet("/admin/audit-events", async (
     }
 
     tenant.SetTenant(membership.TenantId);
+    await RlsSession.EnsureAppliedAsync(db, tenant, ct);
     var take = Math.Clamp(limit ?? 50, 1, 200);
     var query = db.AuditEvents.AsNoTracking().Where(x => x.TenantId == membership.TenantId);
     if (!string.IsNullOrWhiteSpace(action))
@@ -2443,8 +2478,13 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/suggest-
 
 if (app.Environment.IsDevelopment())
 {
-    v1.MapPost("/dev/seed", async (SeedData seed, CancellationToken ct) =>
+    v1.MapPost("/dev/seed", async (IServiceProvider services, IConfiguration config, IClock clock, ILoggerFactory logs, CancellationToken ct) =>
     {
+        // Seed must use migrator/BYPASSRLS — never the request-path app role (SEC-RLS-RUNTIME).
+        var migratorCs = DatabaseBootstrap.ResolveMigratorConnectionString(config);
+        var options = new DbContextOptionsBuilder<VibeChatDbContext>().UseNpgsql(migratorCs).Options;
+        await using var seedDb = new VibeChatDbContext(options, new TenantContext());
+        var seed = new SeedData(seedDb, clock, logs.CreateLogger<SeedData>());
         await seed.SeedAsync(ct);
         return Results.Ok(new { seeded = true });
     }).AllowAnonymous();
@@ -2467,6 +2507,7 @@ static async Task<(UserProfile Profile, TenantId TenantId)?> ResolveAdminDashboa
     CancellationToken ct)
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
     var membership = await db.WorkspaceMembers.IgnoreQueryFilters()
         .AsNoTracking()
         .Where(x => x.UserId == profile.Id)
@@ -2479,6 +2520,7 @@ static async Task<(UserProfile Profile, TenantId TenantId)?> ResolveAdminDashboa
     }
 
     tenant.SetTenant(membership.TenantId);
+    await RlsSession.EnsureAppliedAsync(db, tenant, ct);
     return (profile, membership.TenantId);
 }
 
@@ -2504,6 +2546,7 @@ static async Task<(UserProfile Profile, Workspace Workspace)?> ResolveSensitiveS
     }
     else
     {
+        await BeginRlsUserAsync(db, tenant, profile.Id, ct);
         var membership = await db.WorkspaceMembers.IgnoreQueryFilters()
             .AsNoTracking()
             .Where(x => x.UserId == profile.Id)
@@ -2522,6 +2565,7 @@ static async Task<(UserProfile Profile, Workspace Workspace)?> ResolveSensitiveS
         }
 
         tenant.SetTenant(workspace.TenantId);
+        await RlsSession.EnsureAppliedAsync(db, tenant, ct);
     }
 
     // B-069 / B-046: sensitive settings and workspace export are workspace-admin only —
@@ -2846,8 +2890,16 @@ static async Task<UserProfile> EnsureProfileAsync(ClaimsPrincipal principal, Vib
     return profile;
 }
 
+static async Task BeginRlsUserAsync(VibeChatDbContext db, ITenantContext tenant, UserId userId, CancellationToken ct)
+{
+    tenant.SetUser(userId);
+    await RlsSession.EnsureAppliedAsync(db, tenant, ct);
+}
+
 static async Task<Workspace?> ResolveWorkspaceAsync(WorkspaceId workspaceId, UserId userId, VibeChatDbContext db, ITenantContext tenant, CancellationToken ct)
 {
+    await BeginRlsUserAsync(db, tenant, userId, ct);
+
     var workspace = await db.Workspaces.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == workspaceId, ct);
     if (workspace is null)
     {
@@ -2861,11 +2913,14 @@ static async Task<Workspace?> ResolveWorkspaceAsync(WorkspaceId workspaceId, Use
     }
 
     tenant.SetTenant(workspace.TenantId);
+    await RlsSession.EnsureAppliedAsync(db, tenant, ct);
     return workspace;
 }
 
 static async Task<Channel?> ResolveChannelAsync(ChannelId channelId, UserId userId, VibeChatDbContext db, ITenantContext tenant, CancellationToken ct)
 {
+    await BeginRlsUserAsync(db, tenant, userId, ct);
+
     var channel = await db.Channels.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == channelId, ct);
     if (channel is null)
     {
@@ -2888,6 +2943,7 @@ static async Task<Channel?> ResolveChannelAsync(ChannelId channelId, UserId user
     }
 
     tenant.SetTenant(channel.TenantId);
+    await RlsSession.EnsureAppliedAsync(db, tenant, ct);
     return channel;
 }
 
