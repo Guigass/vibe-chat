@@ -117,49 +117,53 @@
       } @else if (members().length === 0) {
         <p class="roles__empty">Nenhum membro listado.</p>
       } @else {
-        <p-table
-          [value]="members()"
-          styleClass="roles__p-table"
-          [tableStyle]="{ 'min-width': '36rem' }"
-          dataKey="userId"
-        >
-          <ng-template #header>
-            <tr>
-              <th scope="col">Membro</th>
-              <th scope="col">E-mail</th>
-              <th scope="col">Papel</th>
-            </tr>
-          </ng-template>
-          <ng-template #body let-member>
-            <tr>
-              <td>{{ member.displayName }}</td>
-              <td class="mono">{{ member.email }}</td>
-              <td>
-                @if (canEditRole(member)) {
-                  <label class="sr-only" [attr.for]="'role-' + member.userId"
-                    >Papel de {{ member.displayName }}</label
-                  >
-                  <select
-                    class="roles__select"
-                    [id]="'role-' + member.userId"
-                    [value]="member.role"
-                    [disabled]="roleBusyUserId() === member.userId"
-                    (change)="onRoleChange(member, $event)"
-                  >
-                    @for (role of assignableRoles(); track role) {
-                      <option [value]="role" [selected]="role === member.role">{{ role }}</option>
+        <div class="roles__table-wrap">
+          <table class="roles__table" style="min-width: 36rem">
+            <thead>
+              <tr>
+                <th scope="col">Membro</th>
+                <th scope="col">E-mail</th>
+                <th scope="col">Papel</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (member of members(); track member.userId) {
+                <tr>
+                  <td>{{ member.displayName }}</td>
+                  <td class="mono">{{ member.email }}</td>
+                  <td>
+                    @if (canEditRole(member)) {
+                      <label class="sr-only" [attr.for]="'role-' + member.userId"
+                        >Papel de {{ member.displayName }}</label
+                      >
+                      <hlm-select
+                        [value]="member.role"
+                        [disabled]="roleBusyUserId() === member.userId"
+                        (valueChange)="onRoleChange(member, $event)"
+                      >
+                        <hlm-select-trigger [buttonId]="'role-' + member.userId" class="w-full min-w-36">
+                          <hlm-select-value [placeholder]="member.role" />
+                        </hlm-select-trigger>
+                        <hlm-select-content *hlmSelectPortal>
+                          <hlm-select-group>
+                            @for (role of assignableRoles(); track role) {
+                              <hlm-select-item [value]="role">{{ role }}</hlm-select-item>
+                            }
+                            @if (!assignableRoles().includes(member.role)) {
+                              <hlm-select-item [value]="member.role">{{ member.role }}</hlm-select-item>
+                            }
+                          </hlm-select-group>
+                        </hlm-select-content>
+                      </hlm-select>
+                    } @else {
+                      <vc-badge tone="muted">{{ member.role }}</vc-badge>
                     }
-                    @if (!assignableRoles().includes(member.role)) {
-                      <option [value]="member.role" selected>{{ member.role }}</option>
-                    }
-                  </select>
-                } @else {
-                  <p-tag [value]="member.role" severity="secondary" />
-                }
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
     </section>
 
@@ -344,17 +348,23 @@
       } @else {
         <label class="conv-audit__picker">
           <span>Conversação</span>
-          <p-select
-            [options]="conversationOptions()"
-            optionLabel="label"
-            optionValue="id"
-            [ngModel]="selectedConversationId()"
-            (ngModelChange)="onConversationSelected($event)"
+          <hlm-select
+            [value]="selectedConversationId()"
             [disabled]="conversations().length === 0"
-            placeholder="Selecione um canal ou DM…"
-            [showClear]="true"
-            inputId="admin-conversation-picker"
-          />
+            [itemToString]="conversationLabelForId"
+            (valueChange)="onConversationSelected($event)"
+          >
+            <hlm-select-trigger buttonId="admin-conversation-picker" class="w-full">
+              <hlm-select-value placeholder="Selecione um canal ou DM…" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-group>
+                @for (option of conversationOptions(); track option.id) {
+                  <hlm-select-item [value]="option.id">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-group>
+            </hlm-select-content>
+          </hlm-select>
         </label>
 
         @if (conversationMessagesBusy()) {
@@ -364,47 +374,46 @@
         } @else if (selectedConversationId() && conversationMessages().length === 0) {
           <p class="conv-audit__empty">Nenhuma mensagem nesta conversa.</p>
         } @else if (conversationMessages().length > 0) {
-          <p-table
-            [value]="conversationMessages()"
-            styleClass="conv-audit__p-table"
-            [tableStyle]="{ 'min-width': '48rem' }"
-            dataKey="id"
-          >
-            <ng-template #header>
-              <tr>
-                <th scope="col">Seq</th>
-                <th scope="col">Quando</th>
-                <th scope="col">Autor</th>
-                <th scope="col">Conteúdo</th>
-                <th scope="col">Estado</th>
-              </tr>
-            </ng-template>
-            <ng-template #body let-m>
-              <tr [class.vc-row-deleted]="!!m.deletedAt">
-                <td class="mono">{{ m.sequence }}</td>
-                <td>{{ m.createdAt | date: 'short' }}</td>
-                <td>{{ m.authorName }}</td>
-                <td>
-                  <span class="conv-audit__body">{{ m.body || '—' }}</span>
-                  @if (m.attachments.length) {
-                    <span class="conv-audit__atts">
-                      @for (a of m.attachments; track a.id) {
-                        <code>{{ a.fileName }}</code>
+          <div class="conv-audit__table-wrap">
+            <table class="conv-audit__table" style="min-width: 48rem">
+              <thead>
+                <tr>
+                  <th scope="col">Seq</th>
+                  <th scope="col">Quando</th>
+                  <th scope="col">Autor</th>
+                  <th scope="col">Conteúdo</th>
+                  <th scope="col">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of conversationMessages(); track m.id) {
+                  <tr [class.conv-audit__row--deleted]="!!m.deletedAt">
+                    <td class="mono">{{ m.sequence }}</td>
+                    <td>{{ m.createdAt | date: 'short' }}</td>
+                    <td>{{ m.authorName }}</td>
+                    <td>
+                      <span class="conv-audit__body">{{ m.body || '—' }}</span>
+                      @if (m.attachments.length) {
+                        <span class="conv-audit__atts">
+                          @for (a of m.attachments; track a.id) {
+                            <code>{{ a.fileName }}</code>
+                          }
+                        </span>
                       }
-                    </span>
-                  }
-                  @if (m.threadId && m.replyCount > 0) {
-                    <button type="button" class="conv-audit__thread-btn" (click)="openThread(m.threadId)">
-                      Thread ({{ m.replyCount }})
-                    </button>
-                  }
-                </td>
-                <td>
-                  <p-tag [value]="messageStatusLabel(m)" [severity]="messageStatusSeverity(m)" />
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
+                      @if (m.threadId && m.replyCount > 0) {
+                        <button type="button" class="conv-audit__thread-btn" (click)="openThread(m.threadId)">
+                          Thread ({{ m.replyCount }})
+                        </button>
+                      }
+                    </td>
+                    <td>
+                      <vc-badge [tone]="messageStatusTone(m)">{{ messageStatusLabel(m) }}</vc-badge>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
         }
 
         @if (activeThreadId(); as tid) {
@@ -418,35 +427,34 @@
             } @else if (threadMessages().length === 0) {
               <p class="conv-audit__empty">Sem replies nesta thread.</p>
             } @else {
-              <p-table
-                [value]="threadMessages()"
-                styleClass="conv-audit__p-table"
-                [tableStyle]="{ 'min-width': '40rem' }"
-                dataKey="id"
-              >
-                <ng-template #header>
-                  <tr>
-                    <th scope="col">Seq</th>
-                    <th scope="col">Quando</th>
-                    <th scope="col">Autor</th>
-                    <th scope="col">Conteúdo</th>
-                    <th scope="col">Estado</th>
-                  </tr>
-                </ng-template>
-                <ng-template #body let-m>
-                  <tr [class.vc-row-deleted]="!!m.deletedAt">
-                    <td class="mono">{{ m.sequence }}</td>
-                    <td>{{ m.createdAt | date: 'short' }}</td>
-                    <td>{{ m.authorName }}</td>
-                    <td>
-                      <span class="conv-audit__body">{{ m.body || '—' }}</span>
-                    </td>
-                    <td>
-                      <p-tag [value]="messageStatusLabel(m)" [severity]="messageStatusSeverity(m)" />
-                    </td>
-                  </tr>
-                </ng-template>
-              </p-table>
+              <div class="conv-audit__table-wrap">
+                <table class="conv-audit__table" style="min-width: 40rem">
+                  <thead>
+                    <tr>
+                      <th scope="col">Seq</th>
+                      <th scope="col">Quando</th>
+                      <th scope="col">Autor</th>
+                      <th scope="col">Conteúdo</th>
+                      <th scope="col">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (m of threadMessages(); track m.id) {
+                      <tr [class.conv-audit__row--deleted]="!!m.deletedAt">
+                        <td class="mono">{{ m.sequence }}</td>
+                        <td>{{ m.createdAt | date: 'short' }}</td>
+                        <td>{{ m.authorName }}</td>
+                        <td>
+                          <span class="conv-audit__body">{{ m.body || '—' }}</span>
+                        </td>
+                        <td>
+                          <vc-badge [tone]="messageStatusTone(m)">{{ messageStatusLabel(m) }}</vc-badge>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
             }
           </div>
         }
@@ -464,34 +472,33 @@
       } @else if (auditEvents().length === 0) {
         <p class="audit__empty">Nenhum evento recente.</p>
       } @else {
-        <p-table
-          [value]="auditEvents()"
-          styleClass="audit__p-table"
-          [tableStyle]="{ 'min-width': '40rem' }"
-          dataKey="id"
-        >
-          <ng-template #header>
-            <tr>
-              <th scope="col">Quando</th>
-              <th scope="col">Ação</th>
-              <th scope="col">Entidade</th>
-              <th scope="col">Ator</th>
-            </tr>
-          </ng-template>
-          <ng-template #body let-ev>
-            <tr>
-              <td>{{ ev.occurredAt | date: 'short' }}</td>
-              <td><code>{{ ev.action }}</code></td>
-              <td>
-                {{ ev.entityType }}
-                @if (ev.entityId) {
-                  <span class="mono">#{{ ev.entityId.slice(0, 8) }}</span>
-                }
-              </td>
-              <td class="mono">{{ ev.actorUserId ? ev.actorUserId.slice(0, 8) : '—' }}</td>
-            </tr>
-          </ng-template>
-        </p-table>
+        <div class="audit__table-wrap">
+          <table class="audit__table" style="min-width: 40rem">
+            <thead>
+              <tr>
+                <th scope="col">Quando</th>
+                <th scope="col">Ação</th>
+                <th scope="col">Entidade</th>
+                <th scope="col">Ator</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ev of auditEvents(); track ev.id) {
+                <tr>
+                  <td>{{ ev.occurredAt | date: 'short' }}</td>
+                  <td><code>{{ ev.action }}</code></td>
+                  <td>
+                    {{ ev.entityType }}
+                    @if (ev.entityId) {
+                      <span class="mono">#{{ ev.entityId.slice(0, 8) }}</span>
+                    }
+                  </td>
+                  <td class="mono">{{ ev.actorUserId ? ev.actorUserId.slice(0, 8) : '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
     </section>
   }

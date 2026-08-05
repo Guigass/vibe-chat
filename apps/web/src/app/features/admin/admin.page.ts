@@ -1,10 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { TableModule } from 'primeng/table';
-import { SelectModule } from 'primeng/select';
-import { TagModule } from 'primeng/tag';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { environment } from '../../../environments/environment';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -17,7 +14,7 @@ import {
   Workspace,
   WorkspaceMember,
 } from '../../shared/models/chat.models';
-import { Skeleton, ThemeToggle } from '../../shared/ui';
+import { Badge, BadgeTone, Skeleton, ThemeToggle } from '../../shared/ui';
 
 const MANAGER_ROLES = new Set(['PlatformOwner', 'WorkspaceOwner', 'Admin']);
 const PROTECTED_ROLES = new Set(['PlatformOwner', 'WorkspaceOwner', 'Guest', 'Bot']);
@@ -30,16 +27,7 @@ interface ConversationOption {
 @Component({
   selector: 'vc-admin-page',
   standalone: true,
-  imports: [
-    RouterLink,
-    FormsModule,
-    Skeleton,
-    ThemeToggle,
-    DatePipe,
-    TableModule,
-    SelectModule,
-    TagModule,
-  ],
+  imports: [RouterLink, Skeleton, ThemeToggle, DatePipe, Badge, ...HlmSelectImports],
   templateUrl: './admin.page.html',
   styleUrl: './admin.page.scss',
 })
@@ -96,9 +84,7 @@ export class AdminPage implements OnInit {
     return !!role && MANAGER_ROLES.has(role);
   }
 
-  messageStatusSeverity(
-    m: AdminConversationMessageItem,
-  ): 'success' | 'warn' | 'danger' | 'secondary' {
+  messageStatusTone(m: AdminConversationMessageItem): BadgeTone {
     if (m.deletedAt) {
       return 'danger';
     }
@@ -107,6 +93,13 @@ export class AdminPage implements OnInit {
     }
     return 'success';
   }
+
+  conversationLabelForId = (id: string | null | undefined): string => {
+    if (!id) {
+      return '';
+    }
+    return this.conversationOptions().find((option) => option.id === id)?.label ?? id;
+  };
 
   messageStatusLabel(m: AdminConversationMessageItem): string {
     if (m.deletedAt) {
@@ -169,7 +162,8 @@ export class AdminPage implements OnInit {
     return `${prefix} ${row.name}`;
   }
 
-  async onConversationSelected(channelId: string | null): Promise<void> {
+  async onConversationSelected(channelId: string | null | undefined): Promise<void> {
+    channelId = channelId ?? null;
     this.selectedConversationId.set(channelId);
     this.activeThreadId.set(null);
     this.threadMessages.set([]);
@@ -378,9 +372,7 @@ export class AdminPage implements OnInit {
     }
   }
 
-  async onRoleChange(member: WorkspaceMember, event: Event): Promise<void> {
-    const select = event.target as HTMLSelectElement;
-    const nextRole = select.value;
+  async onRoleChange(member: WorkspaceMember, nextRole: string | null | undefined): Promise<void> {
     const workspaceId = this.workspace()?.id;
     if (!workspaceId || !nextRole || nextRole === member.role) {
       return;
@@ -395,7 +387,6 @@ export class AdminPage implements OnInit {
       );
       this.roleFeedback.set(`Papel de ${updated.displayName} atualizado para ${updated.role}.`);
     } catch (err) {
-      select.value = member.role;
       const status = (err as { status?: number } | null)?.status;
       this.roleFeedback.set(
         status === 403
