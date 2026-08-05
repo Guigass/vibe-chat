@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -14,29 +15,51 @@ using VibeChat.SharedKernel;
 namespace VibeChat.Infrastructure;
 
 /// <summary>
-/// Applies <c>app.tenant_id</c> / <c>app.user_id</c> / <c>app.job_role</c> on every pooled connection open (SEC-RLS-RUNTIME).
+/// Clears session-level RLS GUCs on pooled connection open/close so leftovers never survive checkout (SEC-RLS-RUNTIME).
+/// Tenant values are applied with <c>SET LOCAL</c> via <see cref="RlsSession.EnsureAppliedAsync"/>.
 /// </summary>
-public sealed class RlsConnectionInterceptor(ITenantContext tenantContext) : DbConnectionInterceptor
+public sealed class RlsConnectionInterceptor : DbConnectionInterceptor
 {
     public override async Task ConnectionOpenedAsync(
         DbConnection connection,
         ConnectionEndEventData eventData,
         CancellationToken cancellationToken = default)
     {
-        await RlsSession.ApplyAsync(connection, tenantContext, cancellationToken);
+        await RlsSession.ClearSessionAsync(connection, transaction: null, cancellationToken);
         await base.ConnectionOpenedAsync(connection, eventData, cancellationToken);
     }
 
     public override void ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData)
     {
-        RlsSession.ApplyAsync(connection, tenantContext, CancellationToken.None).GetAwaiter().GetResult();
+        RlsSession.ClearSessionAsync(connection, transaction: null, CancellationToken.None).GetAwaiter().GetResult();
         base.ConnectionOpened(connection, eventData);
+    }
+
+    public override async ValueTask<InterceptionResult> ConnectionClosingAsync(
+        DbConnection connection,
+        ConnectionEventData eventData,
+        InterceptionResult result)
+    {
+        await RlsSession.ClearSessionAsync(connection, transaction: null, CancellationToken.None);
+        return await base.ConnectionClosingAsync(connection, eventData, result);
+    }
+
+    public override InterceptionResult ConnectionClosing(
+        DbConnection connection,
+        ConnectionEventData eventData,
+        InterceptionResult result)
+    {
+        RlsSession.ClearSessionAsync(connection, transaction: null, CancellationToken.None).GetAwaiter().GetResult();
+        return base.ConnectionClosing(connection, eventData, result);
     }
 }
 
 public static class RlsSession
 {
-    public static async Task ApplyAsync(DbConnection connection, ITenantContext tenantContext, CancellationToken cancellationToken)
+    public static async Task ClearSessionAsync(
+        DbConnection connection,
+        DbTransaction? transaction,
+        CancellationToken cancellationToken)
     {
         if (connection.State != System.Data.ConnectionState.Open)
         {
@@ -44,12 +67,44 @@ public static class RlsSession
         }
 
         await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText =
             """
             SELECT
-              set_config('app.tenant_id', @tenant, false),
-              set_config('app.user_id', @user_id, false),
-              set_config('app.job_role', @job_role, false)
+              set_config('app.tenant_id', '', false),
+              set_config('app.user_id', '', false),
+              set_config('app.job_role', '', false)
+            """;
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Applies RLS GUCs with <c>set_config(..., is_local=true)</c> (SET LOCAL). Requires an open transaction;
+    /// session baseline is cleared first so COMMIT cannot restore a prior tenant/job_role.
+    /// </summary>
+    public static async Task ApplyAsync(
+        DbConnection connection,
+        ITenantContext tenantContext,
+        CancellationToken cancellationToken,
+        DbTransaction transaction)
+    {
+        ArgumentNullException.ThrowIfNull(transaction);
+        if (connection.State != System.Data.ConnectionState.Open)
+        {
+            return;
+        }
+
+        // Fail-closed session baseline — after COMMIT, LOCAL values disappear and session stays empty.
+        await ClearSessionAsync(connection, transaction, cancellationToken);
+
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText =
+            """
+            SELECT
+              set_config('app.tenant_id', @tenant, true),
+              set_config('app.user_id', @user_id, true),
+              set_config('app.job_role', @job_role, true)
             """;
         var tenant = command.CreateParameter();
         tenant.ParameterName = "tenant";
@@ -69,10 +124,10 @@ public static class RlsSession
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    public static Task ApplyAsync(VibeChatDbContext dbContext, ITenantContext tenantContext, CancellationToken cancellationToken) =>
-        ApplyAsync(dbContext.Database.GetDbConnection(), tenantContext, cancellationToken);
-
-    public static async Task EnsureAppliedAsync(VibeChatDbContext dbContext, ITenantContext tenantContext, CancellationToken cancellationToken)
+    public static async Task EnsureAppliedAsync(
+        VibeChatDbContext dbContext,
+        ITenantContext tenantContext,
+        CancellationToken cancellationToken)
     {
         var connection = dbContext.Database.GetDbConnection();
         if (connection.State != System.Data.ConnectionState.Open)
@@ -80,7 +135,30 @@ public static class RlsSession
             await dbContext.Database.OpenConnectionAsync(cancellationToken);
         }
 
-        await ApplyAsync(connection, tenantContext, cancellationToken);
+        if (dbContext.Database.CurrentTransaction is null)
+        {
+            await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        }
+
+        var transaction = dbContext.Database.CurrentTransaction?.GetDbTransaction()
+            ?? throw new InvalidOperationException("RLS requires an open database transaction for SET LOCAL.");
+        await ApplyAsync(connection, tenantContext, cancellationToken, transaction);
+    }
+
+    public static async Task CommitAsync(VibeChatDbContext dbContext, CancellationToken cancellationToken = default)
+    {
+        if (dbContext.Database.CurrentTransaction is { } tx)
+        {
+            await tx.CommitAsync(cancellationToken);
+        }
+    }
+
+    public static async Task RollbackAsync(VibeChatDbContext dbContext, CancellationToken cancellationToken = default)
+    {
+        if (dbContext.Database.CurrentTransaction is { } tx)
+        {
+            await tx.RollbackAsync(cancellationToken);
+        }
     }
 }
 
@@ -153,7 +231,10 @@ public static class DatabaseBootstrap
         }
 
         var runtimeCs = ResolveRuntimeConnectionString(configuration);
-        await ValidateRuntimeRoleAsync(runtimeCs, logger, cancellationToken);
+        var expectedApp = configuration["POSTGRES_APP_USER"]
+            ?? new NpgsqlConnectionStringBuilder(runtimeCs).Username
+            ?? "vibechat_app";
+        await ValidateRuntimeRoleAsync(runtimeCs, logger, cancellationToken, expectedApp);
 
         if (!environment.IsDevelopment() && IsSameRole(migratorCs, runtimeCs))
         {
@@ -162,8 +243,16 @@ public static class DatabaseBootstrap
         }
     }
 
-    public static async Task ValidateRuntimeRoleAsync(string runtimeConnectionString, ILogger logger, CancellationToken cancellationToken)
+    public static async Task ValidateRuntimeRoleAsync(
+        string runtimeConnectionString,
+        ILogger logger,
+        CancellationToken cancellationToken,
+        string? expectedAppRole = null)
     {
+        var expected = expectedAppRole
+            ?? new NpgsqlConnectionStringBuilder(runtimeConnectionString).Username
+            ?? "vibechat_app";
+
         await using var conn = new NpgsqlConnection(runtimeConnectionString);
         await conn.OpenAsync(cancellationToken);
         await using var cmd = conn.CreateCommand();
@@ -181,8 +270,17 @@ public static class DatabaseBootstrap
                 FROM pg_class c
                 JOIN pg_namespace n ON n.oid = c.relnamespace
                 WHERE n.nspname = 'messaging' AND c.relname = 'messages' AND c.relowner = (SELECT oid FROM pg_roles WHERE rolname = current_user)
-              ) AS owns_messages
+              ) AS owns_messages,
+              EXISTS (
+                SELECT 1
+                FROM pg_auth_members m
+                JOIN pg_roles r ON r.oid = m.roleid
+                WHERE m.member = (SELECT oid FROM pg_roles WHERE rolname = current_user)
+                  AND r.rolbypassrls
+              ) AS member_of_bypass,
+              current_user = @expected AS is_expected_app
             """;
+        cmd.Parameters.AddWithValue("expected", expected);
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
         {
@@ -192,13 +290,15 @@ public static class DatabaseBootstrap
         var user = reader.GetString(0);
         var privileged = reader.GetBoolean(2);
         var ownsMessages = reader.GetBoolean(3);
-        if (privileged || ownsMessages)
+        var memberOfBypass = reader.GetBoolean(4);
+        var isExpectedApp = reader.GetBoolean(5);
+        if (privileged || ownsMessages || memberOfBypass || !isExpectedApp)
         {
             throw new InvalidOperationException(
-                $"Runtime PostgreSQL role '{user}' must not be superuser, BYPASSRLS, or owner of tenant tables (SEC-RLS-RUNTIME).");
+                $"Runtime PostgreSQL role '{user}' must be '{expected}' without superuser, BYPASSRLS, ownership, or membership in BYPASSRLS roles (SEC-RLS-RUNTIME).");
         }
 
-        logger.LogInformation("PostgreSQL runtime role {Role} accepted (no superuser/BYPASSRLS/ownership)", user);
+        logger.LogInformation("PostgreSQL runtime role {Role} accepted (app role, no privilege escalation path)", user);
     }
 
     private static VibeChatDbContext CreateMigratorContext(string connectionString)

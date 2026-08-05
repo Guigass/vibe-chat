@@ -65,9 +65,9 @@
 | `vibechat_app` | queries/mutações tenant-scoped | ownership, superuser, `BYPASSRLS`, DDL |
 | `vibechat_backup` | backup/restore conforme runbook | uso pela aplicação |
 
-Nomes podem variar por ambiente, mas a separação de autoridade não. O finding
-[`SEC-RLS-RUNTIME`](../roadmap/operational-findings.md#sec-rls-runtime) rastreia
-a implementação ainda pendente deste contrato.
+Nomes podem variar por ambiente, mas a separação de autoridade não. Implementação
+em `SEC-RLS-RUNTIME` (`RlsSession` + `03-rls.sql` + roles Compose); ver
+[`operational-findings.md`](../roadmap/operational-findings.md#sec-rls-runtime).
 
 ## Casos de teste obrigatórios
 

@@ -1,5 +1,9 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using VibeChat.BuildingBlocks;
 using VibeChat.Infrastructure;
 using VibeChat.Messaging;
 using VibeChat.SharedKernel;
@@ -37,6 +41,13 @@ public sealed class RlsRuntimeEnforcementTests(VibeChatApiFactory factory)
                      FROM pg_class c
                      JOIN pg_namespace n ON n.oid = c.relnamespace
                      WHERE n.nspname = 'messaging' AND c.relname = 'messages' AND c.relforcerowsecurity
+                   ),
+                   EXISTS (
+                     SELECT 1
+                     FROM pg_auth_members m
+                     JOIN pg_roles r ON r.oid = m.roleid
+                     WHERE m.member = (SELECT oid FROM pg_roles WHERE rolname = current_user)
+                       AND r.rolbypassrls
                    )
             """;
         await using var reader = await cmd.ExecuteReaderAsync();
@@ -45,6 +56,50 @@ public sealed class RlsRuntimeEnforcementTests(VibeChatApiFactory factory)
         reader.GetBoolean(1).Should().BeFalse("runtime must not be superuser/BYPASSRLS");
         reader.GetBoolean(2).Should().BeFalse("runtime must not own messaging.messages");
         reader.GetBoolean(3).Should().BeTrue("FORCE ROW LEVEL SECURITY must be enabled");
+        reader.GetBoolean(4).Should().BeFalse("runtime must not inherit BYPASSRLS via role membership");
+    }
+
+    [Fact]
+    public async Task RlsSession_set_local_clears_after_commit()
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        var tenant = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        tenant.SetTenant(SeedData.DemoTenantId);
+        tenant.SetUser(SeedData.AliceUserId);
+        tenant.SetJobRole("outbox");
+
+        await RlsSession.EnsureAppliedAsync(db, tenant, CancellationToken.None);
+
+        var connection = db.Database.GetDbConnection();
+        await using (var check = connection.CreateCommand())
+        {
+            check.Transaction = db.Database.CurrentTransaction!.GetDbTransaction();
+            check.CommandText =
+                """
+                SELECT current_setting('app.tenant_id', true),
+                       current_setting('app.job_role', true)
+                """;
+            await using var reader = await check.ExecuteReaderAsync();
+            (await reader.ReadAsync()).Should().BeTrue();
+            reader.GetString(0).Should().Be(SeedData.DemoTenantId.Value.ToString());
+            reader.GetString(1).Should().Be("outbox");
+        }
+
+        await RlsSession.CommitAsync(db);
+
+        await using (var after = connection.CreateCommand())
+        {
+            after.CommandText =
+                """
+                SELECT coalesce(current_setting('app.tenant_id', true), ''),
+                       coalesce(current_setting('app.job_role', true), '')
+                """;
+            await using var reader = await after.ExecuteReaderAsync();
+            (await reader.ReadAsync()).Should().BeTrue();
+            reader.GetString(0).Should().BeEmpty("SET LOCAL must not persist app.tenant_id after COMMIT");
+            reader.GetString(1).Should().BeEmpty("SET LOCAL must not persist app.job_role after COMMIT");
+        }
     }
 
     [Fact]
