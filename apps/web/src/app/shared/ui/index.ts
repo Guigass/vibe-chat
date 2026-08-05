@@ -2,6 +2,7 @@ export { Button } from './button/button';
 export { IconButton } from './icon-button/icon-button';
 export { Avatar } from './avatar/avatar';
 export { Badge } from './badge/badge';
+export type { BadgeTone } from './badge/badge';
 export { Skeleton } from './skeleton/skeleton';
 export { EmptyState } from './empty-state/empty-state';
 export { Input } from './input/input';

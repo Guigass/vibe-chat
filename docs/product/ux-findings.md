@@ -17,7 +17,7 @@ Regras do registro:
 
 | ID | Tela | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
-| UX-002 | Todas | Banner vermelho fixo “Invalid PrimeUI License” no canto inferior direito, **cobrindo “Anexar” e “Enviar”** do composer | Alta | Aberto — D-15 sair do PrimeNG; D-27 kit = spartan/ui; fecha com **B-104** |
+| UX-002 | Todas | Banner vermelho fixo “Invalid PrimeUI License” no canto inferior direito, **cobrindo “Anexar” e “Enviar”** do composer | Alta | Resolved by this PR — B-104 remove `primeng` / spartan select + tabelas HTML |
 | UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de contraste |
 | UX-005 | Admin | Seções sem permissão exibem o aviso em laranja/vermelho, dando aparência de erro a um estado esperado | Média | Aberto — fecha com **B-106** (esconder nav/áreas sem claim; matriz por papel) |
 | UX-006 | Header | Botões de ícone (buscar, tema, densidade, painel) sem estado de hover/foco perceptível | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de foco |
@@ -66,6 +66,9 @@ São dois problemas empilhados:
 `docs/product/specs/B-104-remover-primeng.md`): desinstalar o pacote, adotar
 `@spartan-ng/brain` + tokens `--vc-*`, e reescrever `/admin` (Select via spartan;
 tabela HTML). O agente **não** deve gerar chave nem esconder o banner por CSS.
+
+**Resolved by this PR** — remoção de `primeng`/`@primeuix/themes`, admin com
+`@spartan-ng/brain` + Helm select e tabelas semânticas. Docs marca `Done` após merge.
 
 ### UX-003 — Sidebar não colapsa em viewport estreito
 

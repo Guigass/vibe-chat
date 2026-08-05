@@ -1,8 +1,13 @@
 @use 'styles/tokens';
 @use 'styles/motion';
-@use 'styles/primeng';
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@500;600;700&display=swap');
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
+@import 'tailwindcss/utilities.css';
+@import '@spartan-ng/brain/hlm-tailwind-preset.css';
+
+/* ThemeService uses html[data-theme], not .dark (B-104 / design-system). */
+@custom-variant dark (&:is([data-theme='dark'] *));
 
 *,
 *::before,
@@ -74,4 +79,66 @@ h3,
   font-family: var(--vc-font-display);
   font-weight: 600;
   letter-spacing: -0.02em;
+}
+
+/* Map spartan/ui CSS vars onto VibeChat tokens (D-27 / B-104). */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+  --font-sans: var(--vc-font-body);
+  --radius: var(--vc-radius-md);
+  --background: var(--vc-surface);
+  --foreground: var(--vc-ink);
+  --card: var(--vc-surface-elevated);
+  --card-foreground: var(--vc-ink);
+  --popover: var(--vc-surface-elevated);
+  --popover-foreground: var(--vc-ink);
+  --primary: var(--vc-brand);
+  --primary-foreground: #ffffff;
+  --secondary: color-mix(in srgb, var(--vc-ink) 8%, var(--vc-surface));
+  --secondary-foreground: var(--vc-ink);
+  --muted: color-mix(in srgb, var(--vc-ink) 6%, var(--vc-surface));
+  --muted-foreground: var(--vc-ink-muted);
+  --accent: var(--vc-brand-soft);
+  --accent-foreground: var(--vc-brand-ink);
+  --destructive: var(--vc-danger);
+  --border: var(--vc-border);
+  --input: var(--vc-border);
+  --ring: var(--vc-brand);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --font-sans: var(--vc-font-body);
+  --radius: var(--vc-radius-md);
+  --background: var(--vc-surface);
+  --foreground: var(--vc-ink);
+  --card: var(--vc-surface-elevated);
+  --card-foreground: var(--vc-ink);
+  --popover: var(--vc-surface-elevated);
+  --popover-foreground: var(--vc-ink);
+  --primary: var(--vc-brand);
+  --primary-foreground: #042f2e;
+  --secondary: color-mix(in srgb, var(--vc-ink) 10%, var(--vc-surface));
+  --secondary-foreground: var(--vc-ink);
+  --muted: color-mix(in srgb, var(--vc-ink) 8%, var(--vc-surface));
+  --muted-foreground: var(--vc-ink-muted);
+  --accent: var(--vc-brand-soft);
+  --accent-foreground: var(--vc-brand-ink);
+  --destructive: var(--vc-danger);
+  --border: var(--vc-border);
+  --input: var(--vc-border);
+  --ring: var(--vc-brand);
+}
+
+/* Admin select trigger: full width of the picker field. */
+.admin hlm-select-trigger,
+.conv-audit__picker hlm-select-trigger {
+  display: block;
+  width: 100%;
+}
+
+.conv-audit__picker hlm-select-trigger button,
+.roles__table hlm-select-trigger button {
+  width: 100%;
 }
