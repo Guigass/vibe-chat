@@ -18,15 +18,15 @@ coordenação, cadência, observabilidade e recuperação.
 
 | Agente | Trigger | Entrada | Saída |
 |--------|---------|---------|-------|
-| Build | Schedule, a cada 2–4 h | Primeiro item elegível | PR ready com testes/evidência |
-| Security Review | PR ready/synchronize | Diff + threat model | Check conclusivo por head SHA |
-| QA + Merge | PR/check event | PR ready + CI | Veredito e squash/auto-merge |
-| Docs / Close | Merge em `main` | PR mergeado | Status `Done` + docs sincronizadas |
-| UX Review | Diário | Aplicação executável | Findings observados ou `ux idle` |
-| Watchdog / Recovery | Horário | Main, PRs, checks e leases | Relatório ou recovery PR |
+| Build | Schedule, a cada 12 h | Primeiro item elegível | PR ready com código, testes, docs e status `Done` |
+| QA + Merge | Somente PR opened | PR ready + CI | Revisão focada, squash/auto-merge e lease limpo |
+| Watchdog / Recovery | Diário, 09:00 BRT | Main, PRs, checks e leases | Relatório ou recovery PR |
+| Security Review | Manual / rodada final | Diff + threat model | Revisão profunda quando solicitada |
+| Docs / Close | Inativa | — | Responsabilidade incorporada ao Build |
+| UX Review | Inativa durante roadmap | — | Rodada humana/exploratória ao final |
 
-Build, QA e Docs não acumulam papéis no mesmo PR: quem implementa não fornece o
-veredito final independente.
+Build implementa e mantém roadmap/docs no mesmo PR; QA continua independente e
+fornece o veredito final sem repetir as suítes já executadas pelo CI.
 
 ## Estado do item
 
@@ -36,12 +36,12 @@ Planned
   → branch/designated run
   → PR ready
   → checks conclusivos
-  → merged
-  → Done
+  → merged + Done
 ```
 
-`leased` e `PR ready` são estados operacionais, não novos status de roadmap.
-Roadmap permanece `Planned` até o merge; Docs é o único agente que marca `Done`.
+`leased` e `PR ready` são estados operacionais, não novos status de roadmap. O
+Build altera o status para `Done` na branch do PR; a mudança só se torna
+autoritativa quando o próprio PR chega a `main`.
 
 ## Reserva de trabalho
 
@@ -54,9 +54,9 @@ Antes de editar, Build:
 5. renova o lease enquanto o run estiver ativo.
 
 Lease expira em 6 horas sem heartbeat. Só pode ser recuperado depois de confirmar
-que não existe PR nem run/branch ativo para o ID. O lease permanece durante o PR
-de fechamento Docs e é limpo quando esse PR chega a `main`; Build limpa ao sair
-sem alterações. `BLOCKED-TECH-*` preserva a evidência e libera o slot.
+que não existe PR nem run/branch ativo para o ID. QA limpa o lease depois do
+merge; Build limpa ao sair sem alterações. `BLOCKED-TECH-*` preserva a evidência
+e libera o slot.
 
 ## Concorrência
 
@@ -86,10 +86,12 @@ Build = 1. Segurança contra trabalho duplicado prevalece sobre velocidade.
 
 | Controle | Default |
 |----------|---------|
-| Build schedule | 1 run a cada 2 h |
-| UX Review | 1 run por dia |
-| Watchdog | 1 run por hora |
-| Security Review | Todo novo `head_sha` ready |
+| Build schedule | 1 run a cada 12 h |
+| QA + Merge | 1 run por PR, somente em PR opened |
+| UX Review | Inativa durante roadmap |
+| Watchdog | 1 run por dia, 09:00 BRT |
+| Security Review | Manual / rodada humana final |
+| Docs / Close | Inativa; fechamento no PR do Build |
 | Revisão de dependências/security | Semanal e por PR |
 | PR ativo máximo | 3 |
 | PR R3 ativo máximo | 1 |
@@ -106,13 +108,12 @@ principal nem transformar requisitos da spec em follow-up.
 Antes de deixar o ciclo sem supervisão, confirmar:
 
 - [ ] branch protection de `main` exige CI e Secret scan;
-- [ ] `VibeChat Security Review` é required check para código/R2/R3;
 - [ ] auto-merge por squash está habilitado;
-- [ ] Build/Docs abrem PR ready, nunca draft;
+- [ ] Build abre PR ready, nunca draft, com roadmap/docs no mesmo PR;
 - [ ] QA pode comentar/aprovar ou persiste o veredito em artefato durável;
-- [ ] triggers ignoram PR produzido pelo próprio Docs (`Automation: docs`);
+- [ ] QA dispara somente em PR opened e ignora Dependabot;
 - [ ] schedules não criam runs Build sobrepostos sem lease;
-- [ ] QA/Security deduplicam eventos pelo `head_sha`;
+- [ ] QA deduplica pelo `head_sha` e não repete suítes do CI;
 - [ ] token possui apenas escopos necessários;
 - [ ] environments de produção continuam protegidos e fora do token;
 - [ ] API/Worker usam role PostgreSQL sem ownership, `SUPERUSER` ou

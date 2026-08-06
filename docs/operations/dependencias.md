@@ -6,13 +6,23 @@ Docker Compose. Sem auto-merge irrestrito e sem ferramenta proprietária.
 
 ## O que o Dependabot faz
 
-- Abre PRs semanais (segunda) com limite de PRs abertos por ecossistema
-  (`open-pull-requests-limit` 3–5).
+- Abre PRs semanais em dias escalonados, sempre às 06:00
+  (`America/Sao_Paulo`): NuGet na segunda, npm web na terça, npm E2E na
+  quarta, GitHub Actions na quinta, Docker na sexta e Docker Compose no
+  sábado.
+- Mantém no máximo **1 PR aberto por ecossistema**. O teto agregado cai de 22
+  para 6 e, pelo escalonamento, o fluxo normal passa a ser de um ecossistema
+  por dia. Isso evita rajadas de automações de QA/segurança sem desativar as
+  atualizações semanais.
 - Agrupa updates **minor/patch** compatíveis (NuGet/npm/Actions) para reduzir
   ruído; **majors** ficam em PRs separados para revisão humana.
 - Todo PR do Dependabot passa pela CI existente (`CI` em
   `.github/workflows/ci.yml`: lint/build, unit, arch, security, integration,
   web, E2E, secret-scan e audit informativo). Falha de teste **impede** merge.
+
+O agendamento vale para updates de versão. Alertas críticos de segurança
+continuam seguindo a política de prioridade abaixo e não devem ser atrasados
+artificialmente pelo escalonamento semanal.
 
 ## Exceção documentada — pins Docker
 

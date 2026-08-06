@@ -9,7 +9,9 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+      time: "06:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 1
     groups:
       nuget-non-major:
         patterns:
@@ -26,8 +28,10 @@ updates:
     directory: "/apps/web"
     schedule:
       interval: weekly
-      day: monday
-    open-pull-requests-limit: 5
+      day: tuesday
+      time: "06:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 1
     groups:
       web-non-major:
         patterns:
@@ -44,8 +48,10 @@ updates:
     directory: "/tests/e2e"
     schedule:
       interval: weekly
-      day: monday
-    open-pull-requests-limit: 3
+      day: wednesday
+      time: "06:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 1
     groups:
       e2e-non-major:
         patterns:
@@ -62,8 +68,10 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
-      day: monday
-    open-pull-requests-limit: 3
+      day: thursday
+      time: "06:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 1
     groups:
       actions-non-major:
         patterns:
@@ -83,8 +91,10 @@ updates:
       - "/apps/web"
     schedule:
       interval: weekly
-      day: monday
-    open-pull-requests-limit: 3
+      day: friday
+      time: "06:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 1
     commit-message:
       prefix: "chore(deps)"
       include: scope
@@ -94,8 +104,10 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
-      day: monday
-    open-pull-requests-limit: 3
+      day: saturday
+      time: "06:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 1
     commit-message:
       prefix: "chore(deps)"
       include: scope

@@ -10,8 +10,8 @@ ou autoridade sobre produção de terceiros.
 Manter o ciclo abaixo funcionando sem depender de escolha humana rotineira:
 
 ```text
-selecionar item → reservar ID → implementar → testar → revisar segurança
-→ abrir PR → QA independente → auto-merge → fechar docs → próximo item
+selecionar item → reservar ID → implementar + atualizar docs/status → testar
+→ abrir PR → CI + QA independente → auto-merge → próximo item
 ```
 
 ## Autoridade delegada
@@ -83,6 +83,20 @@ Empate técnico: registrar a opção mais simples no ADR e implementar. Não par
 
 R3 não significa revisão humana. Significa evidência maior e QA independente.
 
+## Perfil temporário de construção econômica
+
+Durante a construção pré-release do roadmap, o owner autorizou um perfil de
+baixo custo: Build e QA usam o CI como gate determinístico; Security Review,
+Docs Close, UX Review e Bugbot não rodam automaticamente. Build inclui docs e
+status no mesmo PR, e QA limpa o lease após o merge.
+
+Nesse perfil, revisão profunda de segurança/UX e testes exploratórios R2/R3 são
+deferidos para a rodada humana ao término do roadmap. `Done` significa
+implementado, documentado e verde no CI — não significa aprovação para produção.
+Nenhum release/produção pode ocorrer antes dessa rodada final. Testes de
+segurança existentes no CI, isolamento tenant, authZ/RLS, secret scan e os gates
+da classe de risco continuam obrigatórios.
+
 ## Seleção e reserva de trabalho
 
 1. Ler `roadmap.md` e depois `horizonte-ambicioso.md`.
@@ -147,7 +161,8 @@ ADRs 015–017 continuam baseados em gatilhos medidos. “O projeto será grande
 - failure mode e rollback testados;
 - secrets/PII revistos;
 - load/capacity test proporcional;
-- `VibeChat Security Review` conclusivo.
+- `VibeChat Security Review` conclusivo no perfil normal; no perfil econômico,
+  registrar a revisão profunda como gate deferido da rodada humana final.
 
 ## Política de merge
 
@@ -156,7 +171,8 @@ Auto-merge por squash é permitido quando:
 - PR está ready;
 - CI obrigatória está conclusiva e verde;
 - QA independente deu `PASS` ou `PASS WITH NITS`;
-- `VibeChat Security Review` passou para R2/R3;
+- `VibeChat Security Review` passou para R2/R3, exceto no perfil econômico
+  pré-release documentado acima;
 - branch está atualizada e sem conflito;
 - escopo corresponde a um ID;
 - evidência está no PR;

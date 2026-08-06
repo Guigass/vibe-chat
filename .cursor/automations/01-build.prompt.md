@@ -4,6 +4,12 @@ You are a Cloud Agent that **keeps building** VibeChat in small, reviewable slic
 One concern per run. Open a **ready-for-review PR** (never draft) when you change code.
 Prefer finishing the roadmap over inventing work.
 
+## Cost circuit breaker
+
+Before coding, inspect open pull requests. If any open PR has
+`Automation: build`, report its URL and stop without editing or opening another
+PR. Open at most one PR per run. Dependabot PRs are never Build work.
+
 ## Before coding
 
 1. Read `AGENTS.md`, `docs/agents/orientacoes.md`, `.cursor/rules/`, and relevant
@@ -46,8 +52,7 @@ Eligible when:
 - Todo item `Planned` com ID `B-*` só é elegível se existir spec em
   `docs/product/specs/B-XXX-*.md`
 - A spec não possui condição `R4 — Externo` sem placeholder/local substitute
-- No open feature PR with that `Work-Item` and no Docs PR with
-  `Closes-Work-Item: <that ID>`
+- No open feature PR with that `Work-Item`
 
 If a row has empty/unknown status or a whole wave table has **no `Status` column**,
 the roadmap is stale. Open a bounded R0 reconciliation only when code/test evidence
@@ -67,7 +72,7 @@ also start from their referenced ADR/threat-model contract.
 
 Reserve it using the lease protocol in `docs/agents/operacao-24x7.md` before
 editing. Re-check open PRs after acquiring the lease. Release the lease on
-no-change exit; Docs clears it only after the closing status reaches `main`.
+no-change exit; QA clears it only after the feature PR is merged.
 
 ## Step C — Maintenance only after the executable roadmap is terminal
 
@@ -88,8 +93,8 @@ Only then look for a single improvement, in this priority:
 5. Obvious bug in an existing path (with a regression test)
 6. Open **Média** finding in `docs/product/ux-findings.md`
 
-When you close a `UX-<n>`, update it to `Resolved by this PR`; Docs adds the final
-PR number and `Done` marker after merge.
+When you close a `UX-<n>`, update it to `Resolved by this PR` and include the
+final status change in the same PR.
 
 **Hard budget (anti-overengineering):**
 
@@ -125,7 +130,10 @@ PR number and `Done` marker after merge.
 3. Implement only that concern; run relevant tests; fix what you broke.
    Follow the three-failure protocol in `docs/agents/autonomia.md`; do not retry
    the same failing approach indefinitely.
-4. Do **not** mark roadmap items `Done` (Docs automation does that after merge).
+4. Update the selected item's roadmap/backlog status to `Done` in this same
+   branch, together with any contracts/glossary/ops docs changed by the work.
+   The status becomes authoritative only when the feature PR reaches `main`, so
+   code and roadmap close atomically without a follow-up Docs automation.
 5. Commit with a clear message referencing the work item; push the designated branch.
 
 ## PR
@@ -153,5 +161,6 @@ If `open_git_pr` creates a draft, immediately run: `gh pr ready <number>` and co
 
 - Mandatory gates for the risk class pass. A PR with known failing mandatory
   tests is not ready and must not be opened for merge
-- Docs updated only if behavior/contracts require it in this slice
+- Roadmap/backlog status and required behavior/contract docs are updated in the
+  same PR
 - No secrets; **ready** (non-draft) PR opened when there were real changes
