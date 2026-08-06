@@ -41,12 +41,20 @@ arquivo versionado nem expostos em logs.
 
 ## Aceite
 
-- [ ] Atualizador abre PR de teste para ao menos um ecossistema.
-- [ ] NuGet, npm, Docker e Actions estão cobertos ou têm exceção documentada.
-- [ ] PR executa lint, build, testes de arquitetura, segurança e suítes relevantes.
-- [ ] Majors não fazem auto-merge.
-- [ ] Vulnerabilidade crítica tem fluxo de triagem explícito.
-- [ ] Limite de PRs evita tempestade de updates.
+- [x] Atualizador abre PR de teste para ao menos um ecossistema —
+  github-actions via [#87](https://github.com/Guigass/vibe-chat/pull/87)
+  (`actions/checkout` v4→v7); também #85/#88/#89/#90.
+- [x] NuGet, npm, Docker e Actions estão cobertos ou têm exceção documentada —
+  `.github/dependabot.yml` + exceção Docker pins em
+  [`dependencias.md`](../../operations/dependencias.md).
+- [x] PR executa lint, build, testes de arquitetura, segurança e suítes relevantes —
+  CI completa nos PRs Dependabot (evidência #87).
+- [x] Majors não fazem auto-merge — política em `dependencias.md`; majors em PR
+  separado.
+- [x] Vulnerabilidade crítica tem fluxo de triagem explícito —
+  tabela + SLA em `dependencias.md`.
+- [x] Limite de PRs evita tempestade de updates —
+  `open-pull-requests-limit` 3–5 por ecossistema.
 
 ## Testes
 
