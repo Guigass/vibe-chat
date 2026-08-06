@@ -36,6 +36,13 @@ task test:security
 
 5. Abra um PR pequeno e revisável, com evidência de funcionamento.
 
+## Dependências (B-076)
+
+Atualizações automatizadas via **GitHub Dependabot**
+(`.github/dependabot.yml`). Triagem, SLA interno, majors, CVE crítica e
+rollback: [`docs/operations/dependencias.md`](docs/operations/dependencias.md).
+Não habilitar auto-merge de major; tokens só via secrets do GitHub (D-04).
+
 ## Convenções
 
 - **Docs / ops:** português (PT-BR)

@@ -110,6 +110,8 @@ Cobre `GET /health`, `GET /me`, history e `POST .../messages` no canal demo.
 ### Semanal
 
 - Revisar dead-letter do outbox
+- Triar PRs do Dependabot e pins Docker que o bot não cobrir
+  ([`dependencias.md`](./dependencias.md); B-076)
 - Atualizações de segurança de imagens
 
 ### Mensal

@@ -68,7 +68,8 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 - [ ] Limite de tamanho de body validado antes do banco — B-078 / W7-5
 - [x] Rate limiting por usuário/IP nos caminhos de send/hub — B-028
 - [ ] Headers de segurança completos — básicos presentes; CSP pendente em B-077 / W7-4
-- [ ] Dependabot/Renovate ou equivalente — B-076 / W7-3
+- [x] Dependabot/Renovate ou equivalente — B-076 / W7-3
+  (`.github/dependabot.yml` + [`dependencias.md`](../operations/dependencias.md))
 - [x] Testes em `tests/security` para cross-tenant (API + hub T3 `JoinChannel`/`SendTyping`)
 
 ### R-17 — Secrets/webhooks expostos a membros

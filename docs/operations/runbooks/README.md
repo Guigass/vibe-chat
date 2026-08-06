@@ -7,6 +7,7 @@ Use estes runbooks em incidente ou mudança. Detalhes de rotina ficam nos guias 
 | Guia | Quando usar |
 |------|-------------|
 | [`../operacao.md`](../operacao.md) | Rotina, health, alertas, escala, multi-tenant ops |
+| [`../dependencias.md`](../dependencias.md) | Dependabot, triagem de bumps, CVE crítica, rollback (B-076) |
 | [`../troubleshooting.md`](../troubleshooting.md) | Sintoma → diagnóstico |
 | [`../backup-restore.md`](../backup-restore.md) | Backup, restore e drill mensal |
 | [`../desenvolvimento.md`](../desenvolvimento.md) | DX local / agentes |
