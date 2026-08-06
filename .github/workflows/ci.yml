@@ -8,7 +8,7 @@ on:
 
 # push + pull_request on cursor/** both fire for the same commit - dedupe cost.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
 
 env:
