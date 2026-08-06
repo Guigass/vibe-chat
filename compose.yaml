@@ -186,7 +186,7 @@ services:
   # ---------------------------------------------------------------------------
   mailpit:
     profiles: ["tools"]
-    image: ${MAILPIT_IMAGE:-axllent/mailpit:v1.21.0}
+    image: ${MAILPIT_IMAGE:-axllent/mailpit:v1.30.6}
     container_name: vibechat-mailpit
     restart: unless-stopped
     ports:
