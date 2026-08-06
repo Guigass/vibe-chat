@@ -4,19 +4,20 @@ Mecanismo único OSS: **GitHub Dependabot** (`.github/dependabot.yml`).
 Cobre NuGet, npm (`apps/web`, `tests/e2e`), GitHub Actions, Docker e
 Docker Compose. Sem auto-merge irrestrito e sem ferramenta proprietária.
 
-## O que o Dependabot faz
+## Perfil econômico durante a construção do roadmap
 
-- Abre PRs semanais em dias escalonados, sempre às 06:00
-  (`America/Sao_Paulo`): NuGet na segunda, npm web na terça, npm E2E na
-  quarta, GitHub Actions na quinta, Docker na sexta e Docker Compose no
-  sábado.
-- Mantém no máximo **1 PR aberto por ecossistema**. O teto agregado cai de 22
-  para 6 e, pelo escalonamento, o fluxo normal passa a ser de um ecossistema
-  por dia. Isso evita rajadas de automações de QA/segurança sem desativar as
-  atualizações semanais.
+- Updates rotineiros de versão estão temporariamente pausados com
+  `open-pull-requests-limit: 0` nos seis ecossistemas. O limite é por
+  ecossistema; usar `1` ainda permitiria até seis PRs simultâneos e faria o
+  Dependabot repor cada PR mesclado enquanto houvesse backlog.
+- Updates de segurança continuam disponíveis; a pausa vale apenas para PRs de
+  version update. Alertas críticos seguem a política de prioridade abaixo.
+- Ao concluir o roadmap e iniciar a rodada humana, reativar conscientemente os
+  updates rotineiros, preferencialmente um ecossistema por vez, e manter os
+  dias escalonados já registrados no YAML.
 - Agrupa updates **minor/patch** compatíveis (NuGet/npm/Actions) para reduzir
   ruído; **majors** ficam em PRs separados para revisão humana.
-- Todo PR do Dependabot passa pela CI existente (`CI` em
+- Quando reativado, todo PR do Dependabot passa pela CI existente (`CI` em
   `.github/workflows/ci.yml`: lint/build, unit, arch, security, integration,
   web, E2E, secret-scan e audit informativo). Falha de teste **impede** merge.
 

@@ -47,7 +47,7 @@ jobs:
               assert "directory" in u or "directories" in u, u
               assert "schedule" in u and "interval" in u["schedule"], u
               limit = u.get("open-pull-requests-limit")
-              assert limit is not None and int(limit) == 1, u
+              assert limit is not None and int(limit) == 0, u
               schedule = u["schedule"]
               assert schedule.get("time") == "06:00", u
               assert schedule.get("timezone") == "America/Sao_Paulo", u

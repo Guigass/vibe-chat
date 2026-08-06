@@ -1,5 +1,7 @@
 # B-076 / W7-3 — atualização automatizada de dependências (Dependabot OSS).
 # Política de triagem, SLA e rollback: docs/operations/dependencias.md
+# Updates rotineiros pausados durante a construção do roadmap; security updates
+# continuam disponíveis. Reativar conscientemente ao iniciar a rodada humana.
 version: 2
 
 updates:
@@ -11,7 +13,7 @@ updates:
       day: monday
       time: "06:00"
       timezone: "America/Sao_Paulo"
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 0
     groups:
       nuget-non-major:
         patterns:
@@ -31,7 +33,7 @@ updates:
       day: tuesday
       time: "06:00"
       timezone: "America/Sao_Paulo"
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 0
     groups:
       web-non-major:
         patterns:
@@ -51,7 +53,7 @@ updates:
       day: wednesday
       time: "06:00"
       timezone: "America/Sao_Paulo"
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 0
     groups:
       e2e-non-major:
         patterns:
@@ -71,7 +73,7 @@ updates:
       day: thursday
       time: "06:00"
       timezone: "America/Sao_Paulo"
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 0
     groups:
       actions-non-major:
         patterns:
@@ -94,7 +96,7 @@ updates:
       day: friday
       time: "06:00"
       timezone: "America/Sao_Paulo"
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 0
     commit-message:
       prefix: "chore(deps)"
       include: scope
@@ -107,7 +109,7 @@ updates:
       day: saturday
       time: "06:00"
       timezone: "America/Sao_Paulo"
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 0
     commit-message:
       prefix: "chore(deps)"
       include: scope
