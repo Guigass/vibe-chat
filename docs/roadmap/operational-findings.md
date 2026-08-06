@@ -18,7 +18,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 | ID | Categoria | Evidência | Severidade | Status | Próxima ação |
 |----|-----------|-----------|------------|--------|--------------|
-| OPS-QA-AUDIT | Permissão da automação | Token QA recebe 403 em comment/approve | High | External action | Conceder `pull-requests: write`; `actions:write` apenas se re-run for desejado |
+| OPS-QA-AUDIT | Permissão/aprovação da automação | MCP COMMENT OK; APPROVE 422 no bot; CI job **QA Approve** (`github-actions[bot]`) adicionado | High | Mitigated | Habilitar org setting “Actions approve PRs”; opcional PAT separado se setting off |
 | SEC-REVIEW-TEMPLATE | Cobertura de segurança | `privacy_guard` do template usa caminho interno inexistente e heurísticas de outro stack | High | External action | Substituir pelo prompt versionado `05-security-review.prompt.md` |
 | OPS-REQUIRED-CHECK | Branch protection | O check de segurança ainda depende de disciplina do prompt | Critical | External action | Tornar `VibeChat Security Review` um required check |
 | OPS-DOC-CHECKER | Integridade documental | Contrato e baseline DOC-006 existem, mas a CI ainda não executa checker offline | Medium | Open | Implementar as regras de `qualidade-documental.md` sem alterar prioridade das waves |

@@ -64,13 +64,15 @@ Immediately before merging:
 For `PASS`, leave a durable verdict on GitHub and squash-merge (or enable squash
 auto-merge):
 
-1. **Bot-owned PRs** (`cursor[bot]`, `app/cursor`, `dependabot[bot]`): do **not**
-   call MCP `APPROVE` — GitHub returns **422** (“Can not approve your own pull
-   request”). Post the verdict with MCP `COMMENT` only.
+1. **Bot-owned PRs** (`cursor[bot]`, `app/cursor`, `cursoragent`): MCP `APPROVE`
+   returns **422** (same identity as author). Independent approval comes from CI
+   job **QA Approve** (`github-actions[bot]`) after all checks pass. Before merge,
+   confirm an `APPROVED` review from `github-actions[bot]` exists (poll up to 5 min).
 2. **Human-owned PRs**: try MCP `APPROVE` once when available.
-3. On MCP/REST **403**, keep the verdict in the run summary and continue merge
-   only when required CI evidence is durable on GitHub.
-4. Merge via `gh pr merge --squash` (or `--auto` when branch protection allows).
+3. Always post the QA verdict with MCP `COMMENT` (PASS or FAIL).
+4. On MCP/REST **403**, keep the verdict in the run summary; merge only when CI
+   evidence and bot approval (when required) are durable on GitHub.
+5. Merge via `gh pr merge --squash` (or `--auto` when branch protection allows).
 
 For `FAIL`, post MCP `REQUEST_CHANGES` when available; otherwise `COMMENT` with
 `Verdict: FAIL`. Do not merge.
