@@ -25,6 +25,17 @@ Fonte da verdade dos pins: defaults em `compose.yaml` e espelho em
 2. abrir PR manual `chore(deps): bump <image>`;
 3. preservar tags explícitas (nunca `latest` em artefato estável).
 
+Pin atual do profile `observability`: `prom/prometheus:v3.13.2` (Compose default +
+`.env.example`). Em Prometheus 3.x, scrapes sem `Content-Type` válido falham
+fechado — validar otel/apps ao subir o profile.
+
+## Labels do Dependabot
+
+O `dependabot.yml` não declara labels GitHub: o repositório ainda não tem
+`dependencies` / `nuget` / `npm` / `github-actions` / `docker`, e labels
+ausentes geram comentário de erro do bot em cada PR. Quando o maintainer
+criar esses labels no GitHub, pode reintroduzi-los no YAML.
+
 ## Política de triagem
 
 | Tipo | Ação | Owner |
