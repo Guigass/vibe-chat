@@ -61,10 +61,19 @@ Immediately before merging:
 3. confirm no unresolved blocker exists;
 4. confirm there is only one open PR for the Work-Item.
 
-For `PASS`, approve when permission exists and squash-merge (or enable squash
-auto-merge). Try a PR comment/approval only once; on a permission `403`, keep the
-verdict in the run summary and continue only when the required CI evidence is
-durable on GitHub. For `FAIL`, do not merge.
+For `PASS`, leave a durable verdict on GitHub and squash-merge (or enable squash
+auto-merge):
+
+1. **Bot-owned PRs** (`cursor[bot]`, `app/cursor`, `dependabot[bot]`): do **not**
+   call MCP `APPROVE` — GitHub returns **422** (“Can not approve your own pull
+   request”). Post the verdict with MCP `COMMENT` only.
+2. **Human-owned PRs**: try MCP `APPROVE` once when available.
+3. On MCP/REST **403**, keep the verdict in the run summary and continue merge
+   only when required CI evidence is durable on GitHub.
+4. Merge via `gh pr merge --squash` (or `--auto` when branch protection allows).
+
+For `FAIL`, post MCP `REQUEST_CHANGES` when available; otherwise `COMMENT` with
+`Verdict: FAIL`. Do not merge.
 
 After a successful merge, clear the `ACTIVE:<Work-Item>` lease in Memories and
 record the merged PR URL and SHA. Build clears the lease itself only on a
