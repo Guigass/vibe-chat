@@ -133,8 +133,9 @@ Wave 6 entregue (B-068/B-069/B-067/B-073/B-074) + B-048 webhooks + B-045 suggest
 
 Fila explícita para a automação de Build depois da Wave 6. Enquanto houver linha
 `Planned` aqui, o Build pega dela. **W7-6 (B-104) Done** via [#82](https://github.com/Guigass/vibe-chat/pull/82)
-(spartan/ui + CDK; fecha UX-002). Próximos elegíveis na Wave 7: W7-3…W7-5 / W7-7
-(W7-8 depende de W7-6). W7-3…W7-5 saem da checklist de **controles mínimos** de
+(spartan/ui + CDK; fecha UX-002). **W7-3 (B-076) Done** via [#84](https://github.com/Guigass/vibe-chat/pull/84)
+(Dependabot + `dependencias.md`). Próximos elegíveis na Wave 7: W7-4 / W7-5 / W7-7
+(W7-8 depende de W7-6). W7-4…W7-5 saem da checklist de **controles mínimos** de
 `docs/security/modelo-ameacas.md`.
 
 | ID | Trilha | Tarefa | Deps | Spec/evidência | Status |
@@ -142,7 +143,7 @@ Fila explícita para a automação de Build depois da Wave 6. Enquanto houver li
 | W7-1 | E | E2E Playwright na CI (B-075) | W2-7, W6-8 | `infra/scripts/ci-e2e.sh`; `task test:e2e:ci`; #45 | **Done** |
 | W7-6 | D/G | Remover PrimeNG — spartan/ui + CDK; fecha UX-002 (B-104; D-15; D-27; emenda ADR-002) | W6-7, D-15, D-27 | [B-104](../product/specs/B-104-remover-primeng.md); #82 | **Done** |
 | W7-2 | B/D | Guests / link de canal (B-040) | P2-1, D-07 | [B-040](../product/specs/B-040-guests-por-convite.md) | **Moved** — W10-10 |
-| W7-3 | E/A | Atualização automatizada de dependências; ainda não há bot de update | W0-7 | [B-076](../product/specs/B-076-atualizacao-dependencias.md) | Planned |
+| W7-3 | E/A | Atualização automatizada de dependências (Dependabot) | W0-7 | [B-076](../product/specs/B-076-atualizacao-dependencias.md); #84 | **Done** |
 | W7-4 | D/E | CSP no web; headers básicos existem, CSP não | W6-8 | [B-077](../product/specs/B-077-csp-web.md) | Planned |
 | W7-5 | C/E | Limite de tamanho de body no envio; limite atual existe só na coluna | W2-1 | [B-078](../product/specs/B-078-limite-body-mensagem.md) | Planned |
 | W7-7 | A/G | Catálogo de configuração admin mínima no `.env`; Compose/template ainda pendentes | W6-8, W0-2 | [B-105](../product/specs/B-105-catalogo-configuracao.md) | Planned |
