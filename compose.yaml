@@ -236,7 +236,7 @@ services:
 
   prometheus:
     profiles: ["observability"]
-    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v2.55.1}
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.13.2}
     container_name: vibechat-prometheus
     restart: unless-stopped
     command:
