@@ -106,4 +106,23 @@ public sealed class ArchitectureRulesTests
 
         throw new FileNotFoundException($"Could not locate '{relativePath}' from test base directory.");
     }
+
+    [Fact]
+    public void Nginx_configs_include_documented_csp()
+    {
+        var headersPath = FindRepoFile(Path.Combine("infra", "nginx", "security-headers.conf"));
+        var headers = File.ReadAllText(headersPath);
+
+        headers.Should().Contain("Content-Security-Policy", because: "B-077 requires CSP on the official web/proxy path");
+        headers.Should().Contain("default-src 'self'", because: "CSP baseline must restrict default origins to self");
+        headers.Should().NotContain("unsafe-eval", because: "B-077 forbids masking XSS with unsafe-eval");
+        headers.Should().NotContain("*", because: "B-077 forbids wildcard CSP sources in production reference");
+
+        foreach (var relativePath in new[] { Path.Combine("infra", "proxy", "nginx.conf"), Path.Combine("apps", "web", "nginx.conf") })
+        {
+            var nginx = File.ReadAllText(FindRepoFile(relativePath));
+            nginx.Should().Contain("security-headers.conf",
+                because: $"{relativePath} must include the shared B-077 header snippet");
+        }
+    }
 }

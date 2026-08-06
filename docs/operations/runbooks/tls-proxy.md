@@ -33,6 +33,8 @@ Arquivos:
    - `POST /api/v1/...` via proxy
    - SignalR `/hubs/chat` com WebSocket upgrade
    - HSTS presente (nginx referência já envia)
+   - `Content-Security-Policy` via `infra/nginx/security-headers.conf` (B-077); em produção,
+     estender `connect-src`/`frame-src` com URLs HTTPS públicas de Keycloak e MinIO
 
 ## Sintomas comuns
 
