@@ -19,7 +19,7 @@ testes nem uma revisão de segurança.
 | [011](../adrs/ADR-011-busca-postgresql.md) | FTS no PostgreSQL | migration search vector, módulo Search, endpoint/testes | Alinhado |
 | [012](../adrs/ADR-012-integracao-ia.md) | IA opcional e fora do hot path | módulo AI, Mock/OpenRouter, `Ai:Enabled=false` por default | Alinhado; configuração Compose precisa permanecer opt-in |
 | [013](../adrs/ADR-013-observabilidade.md) | OpenTelemetry + stack OSS | collector, Prometheus, Grafana, Loki, Tempo e dashboard | Alinhado |
-| [014](../adrs/ADR-014-estrategia-testes.md) | Pirâmide e testes de segurança | unit, integration, architecture, security, E2E e load | Alinhado; dependências automatizadas ainda em B-076 |
+| [014](../adrs/ADR-014-estrategia-testes.md) | Pirâmide e testes de segurança | unit, integration, architecture, security, E2E e load | Alinhado; Dependabot (B-076 / #84) + `dependencias.md` |
 | [015](../adrs/ADR-015-quando-justificar-bus-mensagens.md) | Sem bus externo antes dos gatilhos | Nenhum NATS/Kafka/RabbitMQ no Compose/projetos | Alinhado |
 | [016](../adrs/ADR-016-quando-justificar-opensearch.md) | Sem OpenSearch antes dos gatilhos | Busca permanece PostgreSQL; sem serviço externo | Alinhado |
 | [017](../adrs/ADR-017-quando-justificar-kubernetes.md) | Compose na fase 1 | `compose.yaml`, profiles e runbooks; sem Helm/K8s | Alinhado |
