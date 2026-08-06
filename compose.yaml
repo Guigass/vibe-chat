@@ -314,7 +314,7 @@ services:
 
   tempo:
     profiles: ["observability"]
-    image: ${TEMPO_IMAGE:-grafana/tempo:2.6.1}
+    image: ${TEMPO_IMAGE:-grafana/tempo:3.0.2}
     container_name: vibechat-tempo
     restart: unless-stopped
     command: ["-config.file=/etc/tempo/config.yaml"]
