@@ -57,7 +57,7 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
@@ -134,7 +134,7 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           # Angular 22 requires >= 22.22.3 (same floor as apps/web engines + AGENTS.md).
           node-version: "22.22.3"
@@ -209,7 +209,7 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
