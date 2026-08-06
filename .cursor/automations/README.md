@@ -1,17 +1,17 @@
 # Automações Cloud — VibeChat
 
-Pipeline contínuo em 4 etapas, revisão de segurança e watchdog. Os prompts
+Pipeline contínuo econômico em 2 etapas, com watchdog diário. Os prompts
 canônicos estão nesta pasta; copie o conteúdo para
 [cursor.com/automations](https://cursor.com/automations) (a API só lê metadados).
 
 | # | Arquivo | Automação (dashboard) | Trigger sugerido | Ferramentas |
 |---|---------|----------------------|------------------|-------------|
-| 1 | `01-build.prompt.md` | **Build / Melhorias** | Schedule (ex.: a cada 2 h), concorrência 1 sem lease atômico | Open PR, Memories |
-| 2 | `02-qa-merge.prompt.md` | **QA + Merge** | PR ready/synchronize; dedupe por head SHA | Comment, Approve, Memories |
-| 3 | `03-docs.prompt.md` | **Docs / Close** | PR merged → `main` | Open PR (docs-only), Memories |
-| 4 | `04-ux-review.prompt.md` | **UX Review** | Schedule (ex.: 1×/dia) | Open PR (docs-only), Memories |
-| 5 | `05-security-review.prompt.md` | **VibeChat Security Review** | PR ready/synchronize; dedupe por head SHA | Check + inline comments |
-| 6 | `06-watchdog-recovery.prompt.md` | **Watchdog / Recovery** | Schedule (ex.: 1×/hora) | Read, Memories, recovery PR |
+| 1 | `01-build.prompt.md` | **Build / Melhorias** | A cada 12 h; concorrência 1 | Open PR, Memories |
+| 2 | `02-qa-merge.prompt.md` | **QA + Merge** | Somente PR opened; 1 run por PR | Comment, Approve/Merge, Memories |
+| 3 | `03-docs.prompt.md` | **Docs / Close** | **Inativa**; Build fecha roadmap/docs no mesmo PR | — |
+| 4 | `04-ux-review.prompt.md` | **UX Review** | **Inativa** durante construção do roadmap | — |
+| 5 | `05-security-review.prompt.md` | **VibeChat Security Review** | **Inativa**; CI + revisão humana final | — |
+| 6 | `06-watchdog-recovery.prompt.md` | **Watchdog / Recovery** | Diário às 09:00 BRT | Read, Memories, recovery PR |
 
 A automação 5 substitui o template genérico: usa EF Core/Npgsql/Angular, as regras
 RLS do projeto e não depende de caminhos internos da Cursor. O check preferido é
@@ -42,20 +42,20 @@ manutenção.
 ## Fluxo
 
 ```text
-[1 Build] → PR ready (nunca draft — senão o QA não dispara)
+[1 Build] implementa + testa + atualiza roadmap/docs → PR ready
      ↓
-[5 Security Review] (paralelo) → status check no PR
+GitHub CI executa os gates determinísticos
      ↓
-[2 QA] verifica qualidade/segurança → approve (+ auto-merge GitHub)
+[2 QA] lê CI + revisão focada → squash merge + limpa lease
      ↓
-[3 Docs] marca Done no roadmap + sincroniza contratos/glossário/ops
-     ↓
-(schedule) → [1 Build] de novo
+(12 h) → [1 Build] de novo
 
-[4 UX Review] (schedule próprio) → roda a UI → ux-findings.md → alimenta o Build
-
-[6 Watchdog] (schedule próprio) → main/checks/leases → relatório ou recovery PR
+[6 Watchdog] (diário) → main/checks/leases → relatório ou recovery PR
 ```
+
+Security, Docs e UX permanecem disponíveis para execução manual, mas não rodam
+automaticamente durante a construção do roadmap. Ao final do roadmap, uma rodada
+humana cobre segurança profunda, UX e testes exploratórios.
 
 O contrato de autoridade, classes R0–R4, gates e prevenção de loops está em
 [`docs/agents/autonomia.md`](../../docs/agents/autonomia.md). Build consome
@@ -75,22 +75,21 @@ o checker executável permanece registrado como `OPS-DOC-CHECKER`.
 
 ## Configuração no dashboard
 
-1. **Build** — habilitar só esta como “continua construindo”. Desabilitar a antiga
-   `VibeChat — Implement` **e** parar de usar `Next on Merge` para implementar
-   (evita corrida). Usar concorrência 1 até confirmar lease compartilhado/atômico.
-2. **QA** — disparar em PR ready/synchronize, não simultaneamente em três eventos;
-   o prompt também deduplica pelo head SHA. **Permitir comment + approve**. No GitHub:
+1. **Build** — habilitar a cada 12 h como “continua construindo”. Desabilitar a
+   antiga `VibeChat — Implement` e usar concorrência 1. O mesmo PR implementa,
+   atualiza docs necessárias e marca o item `Done`.
+2. **QA** — disparar somente em **PR opened**, nunca também em PR pushed. Confiar
+   no CI sem repetir as suítes. **Permitir comment + approve/merge**. No GitHub:
    - exigir CI verde para merge;
    - habilitar **Allow auto-merge**;
-   - exigir uma aprovação independente.
-3. **Docs** — trigger **PR merged**, concorrência 1; mantém o lease até o PR de
-   fechamento chegar a `main`.
-4. **Security** — criar com `05-security-review.prompt.md`, publicar
-   `VibeChat Security Review` e torná-lo required check; desabilitar o template
-   genérico depois de validar o novo.
-5. **UX** — schedule diário, concorrência 1.
-6. **Watchdog** — schedule horário; acesso de escrita apenas para recovery PR,
+   - exigir uma aprovação independente quando a política do repositório permitir.
+3. **Docs** — manter inativa; o Build fecha roadmap/docs no mesmo PR.
+4. **Security** — manter inativa durante o roadmap; CI permanece obrigatório e a
+   revisão profunda acontece na rodada humana final.
+5. **UX** — manter inativa durante o roadmap.
+6. **Watchdog** — schedule diário às 09:00 BRT; escrita apenas para recovery PR,
    nunca push em `main`.
+7. **Bugbot nativo** — manter desativado para não duplicar CI + QA.
 
 IDs atuais (conferidos em 2026-07-25 via API de automações):
 
