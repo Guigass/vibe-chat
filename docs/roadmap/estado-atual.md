@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-06
 - **Fase:** Wave 7 — Sustentação
 - **Safety lane obrigatória:** nenhuma Alta aberta (UX-001/#74, UX-002/#82, UX-003/#80 Done)
-- **Próximo item elegível:** W7-4 / B-077 — CSP no web
+- **Próximo item elegível:** W7-5 / B-078 — validação de body antes do banco
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -23,7 +23,7 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 
 O trabalho aberto concentra-se em:
 
-1. fechar hardening restante (CSP e validação de body);
+1. fechar hardening restante (validação de body);
 2. consolidar o contrato de configuração self-host;
 3. reconstruir o shell administrativo (B-106; depende de B-104 Done);
 4. avançar as Waves 8–10 de paridade de mensageria;
@@ -80,14 +80,14 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W7-4 / B-077 | Completa headers com CSP |
-| 2 | W7-5 / B-078 | Evita body acima do limite virar erro 500 |
-| 3 | W7-7 / B-105 | Torna configuração self-host explícita e auditável |
-| 4 | W7-8 / B-106 | Consolida navegação e visibilidade do console admin |
-| 5 | Waves 8–10 | Paridade de composição, leitura, notificação e acesso |
+| 1 | W7-5 / B-078 | Evita body acima do limite virar erro 500 |
+| 2 | W7-7 / B-105 | Torna configuração self-host explícita e auditável |
+| 3 | W7-8 / B-106 | Consolida navegação e visibilidade do console admin |
+| 4 | Waves 8–10 | Paridade de composição, leitura, notificação e acesso |
 
-W7-4, W7-5 e W7-7 podem avançar em paralelo quando houver agentes por
+W7-5 e W7-7 podem avançar em paralelo quando houver agentes por
 trilha. W7-8 depende de W7-6 (**Done** via #82). W7-3 / B-076 **Done** via #84.
+W7-4 / B-077 **Done** (CSP em `infra/nginx/security-headers.conf`).
 
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W17. Ele não
 altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
@@ -111,7 +111,7 @@ altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
 | Gap | Situação em 2026-07-27 | Tratamento |
 |-----|-------------------------|------------|
 | `.env.example` contém chaves não injetadas pelo `compose.yaml` | Confirmado para e-mail, retenção e aliases legados | B-105; ver `operations/configuracao-env.md` |
-| CSP ausente no proxy/web | Registrado no roadmap e threat model | B-077 |
+| CSP ausente no proxy/web | **Fechado** — `infra/nginx/security-headers.conf` (B-077) | B-077 Done |
 | Limite de mensagem só no banco | Registrado no roadmap | B-078 |
 | Dependências sem bot de atualização | **Fechado** (#84) — Dependabot ativo; triagem em `dependencias.md` | B-076 Done |
 | `Moderation` é fronteira vazia | Assembly existe sem domínio material | Manter explícito; preencher só com feature autorizada |

@@ -38,6 +38,7 @@ RUN mkdir -p /out \
        else echo "Angular build output not found under dist/" >&2; exit 1; fi
 
 FROM ${NGINX_IMAGE} AS final
+COPY infra/nginx/security-headers.conf /etc/nginx/vibechat/security-headers.conf
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /out/ /usr/share/nginx/html/
 EXPOSE 80
