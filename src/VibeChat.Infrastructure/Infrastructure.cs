@@ -505,10 +505,15 @@ public sealed class MessageWriter(
             .Where(x => x != Guid.Empty)
             .Distinct()
             .ToArray();
-        var body = command.Body?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(body) && attachmentIds.Length == 0)
+        var body = MessageBodyPolicies.Normalize(command.Body);
+        if (MessageBodyPolicies.IsEmpty(body) && attachmentIds.Length == 0)
         {
             throw new ArgumentException("Message body or attachments are required.");
+        }
+
+        if (!MessageBodyPolicies.IsWithinLimit(body))
+        {
+            throw new ArgumentException("MessageBodyTooLong");
         }
 
         var normalized = command with

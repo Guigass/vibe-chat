@@ -78,7 +78,7 @@ backlog ficam no **Registro de GAPs** (`roadmap.md`).
 | B-104 | Remover PrimeNG (spartan/ui + CDK) | **Done (W7-6)** — [#82](https://github.com/Guigass/vibe-chat/pull/82); D-15 (c) + D-27; `primeng` removido; `@spartan-ng/brain` + Helm select; fecha UX-002 |
 | B-076 | Atualização automatizada de dependências | **Done (W7-3)** — [#84](https://github.com/Guigass/vibe-chat/pull/84); `.github/dependabot.yml` (nuget/npm/actions/docker/compose) + [`dependencias.md`](../operations/dependencias.md); PRs de bump já abertos pós-merge (#85…) |
 | B-077 | CSP no web | **Done (W7-4)** — `infra/nginx/security-headers.conf` no proxy + web; [spec](../product/specs/B-077-csp-web.md) |
-| B-078 | Limite de tamanho de body no envio | Planned (W7-5) — `Message.Body` limitado a 8000 só na coluna; excesso pode virar 500; [spec](../product/specs/B-078-limite-body-mensagem.md) |
+| B-078 | Limite de tamanho de body no envio | **Done (W7-5)** — `MessageBodyPolicies` (8000 UTF-16); 400 `MessageBodyTooLong`; contador no composer/thread/edit |
 | B-105 | Catálogo de configuração admin mínima no `.env` | Planned (W7-7) — inventário e gaps documentais iniciados; execução ainda precisa alinhar Compose/template; [spec](../product/specs/B-105-catalogo-configuracao.md) |
 | B-106 | Admin shell (nav, toolbars, listagens, filtros, visibilidade por papel) | Planned (W7-8) — após B-104; esconde opções sem claim (fecha UX-005); matriz Admin/Auditor/Member; spec `docs/product/specs/B-106-admin-shell.md` |
 

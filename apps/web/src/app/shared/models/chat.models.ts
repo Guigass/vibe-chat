@@ -1,6 +1,20 @@
 export type MessageStatus = 'sending' | 'sent' | 'failed' | 'persisted';
 export type PresenceStatus = 'online' | 'away' | 'offline';
 
+/** UTF-16 code units — matches server MessageBodyPolicies.MaxLength. */
+export const MESSAGE_BODY_MAX_LENGTH = 8000;
+
+/** Show character counter when draft length reaches this threshold. */
+export const MESSAGE_BODY_COUNTER_THRESHOLD = 7500;
+
+export function measureMessageBodyLength(text: string): number {
+  return text.length;
+}
+
+export function isMessageBodyTooLong(text: string): boolean {
+  return measureMessageBodyLength(text) > MESSAGE_BODY_MAX_LENGTH;
+}
+
 export interface Workspace {
   id: string;
   name: string;

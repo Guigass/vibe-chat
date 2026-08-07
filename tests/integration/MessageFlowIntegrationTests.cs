@@ -200,6 +200,96 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Send_message_accepts_body_at_max_length()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var messageId = Guid.NewGuid();
+        var body = new string('a', MessageBodyPolicies.MaxLength);
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-max-{messageId:N}", body, null, null));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Accepted);
+    }
+
+    [Fact]
+    public async Task Send_message_rejects_body_over_max_length_without_persisting()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var messageId = Guid.NewGuid();
+        var body = new string('a', MessageBodyPolicies.MaxLength + 1);
+
+        await using var dbBefore = factory.CreateMigratorDbContext();
+        var outboxBefore = await dbBefore.OutboxMessages.IgnoreQueryFilters().CountAsync();
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-long-{messageId:N}", body, null, null));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var error = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
+        error.GetProperty("error").GetString().Should().Be("MessageBodyTooLong");
+        error.GetProperty("maxLength").GetInt32().Should().Be(MessageBodyPolicies.MaxLength);
+
+        await using var db = factory.CreateMigratorDbContext();
+        (await db.Messages.IgnoreQueryFilters().AnyAsync(x => x.Id == new MessageId(messageId))).Should().BeFalse();
+        var outboxAfter = await db.OutboxMessages.IgnoreQueryFilters().CountAsync();
+        outboxAfter.Should().Be(outboxBefore);
+    }
+
+    [Fact]
+    public async Task Edit_message_rejects_body_over_max_length()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var messageId = Guid.NewGuid();
+        var create = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-edit-long-{messageId:N}", $"edit-me-{messageId:N}", null, null));
+        create.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var edit = await client.PutAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages/{messageId}",
+            new EditMessageRequest(new string('b', MessageBodyPolicies.MaxLength + 1)));
+        edit.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var error = await edit.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
+        error.GetProperty("error").GetString().Should().Be("MessageBodyTooLong");
+    }
+
+    [Fact]
+    public async Task Thread_reply_rejects_body_over_max_length()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var parentId = Guid.NewGuid();
+        var parentCreate = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(parentId, $"idem-thread-max-parent-{parentId:N}", $"parent-{parentId:N}", null, null));
+        parentCreate.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var threadCreate = await client.PostAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages/{parentId}/threads",
+            null);
+        threadCreate.StatusCode.Should().Be(HttpStatusCode.OK);
+        var thread = await threadCreate.Content.ReadFromJsonAsync<ThreadDto>(JsonOptions);
+        thread.Should().NotBeNull();
+
+        var replyId = Guid.NewGuid();
+        var reply = await client.PostAsJsonAsync(
+            $"/api/v1/threads/{thread!.Id}/messages",
+            new SendMessageRequest(replyId, $"idem-thread-long-{replyId:N}", new string('c', MessageBodyPolicies.MaxLength + 1), parentId, thread.Id));
+        reply.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var error = await reply.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
+        error.GetProperty("error").GetString().Should().Be("MessageBodyTooLong");
+    }
+
+    [Fact]
     public async Task Thread_create_reply_uses_separate_sequence_and_outbox()
     {
         using var client = factory.CreateClient();

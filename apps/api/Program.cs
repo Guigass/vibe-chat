@@ -833,9 +833,20 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
     }
 
     var hasAttachments = request.AttachmentIds is { Length: > 0 };
-    if (request.MessageId == Guid.Empty || string.IsNullOrWhiteSpace(request.IdempotencyKey) || (string.IsNullOrWhiteSpace(request.Body) && !hasAttachments))
+    if (request.MessageId == Guid.Empty || string.IsNullOrWhiteSpace(request.IdempotencyKey))
     {
         return Results.BadRequest(new { error = "messageId, idempotencyKey and body or attachments are required." });
+    }
+
+    var normalizedBody = MessageBodyPolicies.Normalize(request.Body);
+    if (MessageBodyPolicies.IsEmpty(normalizedBody) && !hasAttachments)
+    {
+        return Results.BadRequest(new { error = "messageId, idempotencyKey and body or attachments are required." });
+    }
+
+    if (!MessageBodyPolicies.IsWithinLimit(normalizedBody))
+    {
+        return Results.BadRequest(MessageBodyPolicies.TooLongPayload());
     }
 
     try
@@ -846,7 +857,7 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
             channel.Id,
             new MessageId(request.MessageId),
             request.IdempotencyKey,
-            request.Body ?? string.Empty,
+            normalizedBody,
             request.ReplyToMessageId is null ? null : new MessageId(request.ReplyToMessageId.Value),
             request.ThreadId,
             request.AttachmentIds), ct);
@@ -864,7 +875,7 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
                 channel.Id.Value,
                 result.Sequence,
                 profile.Id.Value,
-                request.Body?.Trim() ?? string.Empty,
+                normalizedBody,
                 result.CreatedAt,
                 null,
                 null,
@@ -1136,9 +1147,20 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
     }
 
     var hasAttachments = request.AttachmentIds is { Length: > 0 };
-    if (request.MessageId == Guid.Empty || string.IsNullOrWhiteSpace(request.IdempotencyKey) || (string.IsNullOrWhiteSpace(request.Body) && !hasAttachments))
+    if (request.MessageId == Guid.Empty || string.IsNullOrWhiteSpace(request.IdempotencyKey))
     {
         return Results.BadRequest(new { error = "messageId, idempotencyKey and body or attachments are required." });
+    }
+
+    var normalizedBody = MessageBodyPolicies.Normalize(request.Body);
+    if (MessageBodyPolicies.IsEmpty(normalizedBody) && !hasAttachments)
+    {
+        return Results.BadRequest(new { error = "messageId, idempotencyKey and body or attachments are required." });
+    }
+
+    if (!MessageBodyPolicies.IsWithinLimit(normalizedBody))
+    {
+        return Results.BadRequest(MessageBodyPolicies.TooLongPayload());
     }
 
     try
@@ -1149,7 +1171,7 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
             channel.Id,
             new MessageId(request.MessageId),
             request.IdempotencyKey,
-            request.Body ?? string.Empty,
+            normalizedBody,
             request.ReplyToMessageId is null ? new MessageId(thread.ParentMessageId.Value) : new MessageId(request.ReplyToMessageId.Value),
             thread.Id,
             request.AttachmentIds), ct);
@@ -1167,7 +1189,7 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
                 channel.Id.Value,
                 result.Sequence,
                 profile.Id.Value,
-                request.Body?.Trim() ?? string.Empty,
+                normalizedBody,
                 result.CreatedAt,
                 null,
                 null,
@@ -1415,6 +1437,17 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid ch
         return Results.BadRequest(new { error = "body is required." });
     }
 
+    var normalizedBody = MessageBodyPolicies.Normalize(request.Body);
+    if (MessageBodyPolicies.IsEmpty(normalizedBody))
+    {
+        return Results.BadRequest(new { error = "body is required." });
+    }
+
+    if (!MessageBodyPolicies.IsWithinLimit(normalizedBody))
+    {
+        return Results.BadRequest(MessageBodyPolicies.TooLongPayload());
+    }
+
     var message = await FindMessageInChannelAsync(db, channel.Id, new MessageId(messageId), ct);
     if (message is null || message.DeletedAt is not null)
     {
@@ -1428,7 +1461,7 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid ch
         return Results.Forbid();
     }
 
-    message.Body = request.Body.Trim();
+    message.Body = normalizedBody;
     message.EditedAt = clock.UtcNow;
     outbox.Add(new OutboxMessage
     {
