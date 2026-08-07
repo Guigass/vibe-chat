@@ -84,11 +84,11 @@ export class ThreadStore {
     this.applyReactions(result.messageId, result.reactions);
   }
 
-  async send(body: string): Promise<void> {
+  async send(body: string): Promise<boolean> {
     const thread = this.activeSignal();
     const profile = this.auth.profile();
     const text = body.trim();
-    if (!thread || !text) return;
+    if (!thread || !text) return false;
 
     const clientMessageId = crypto.randomUUID();
     const idempotencyKey = crypto.randomUUID();
@@ -119,7 +119,7 @@ export class ThreadStore {
           seq: this.messagesSignal().length,
         });
         this.bumpReplyCount(thread.id);
-        return;
+        return true;
       }
 
       const persisted = await this.api.sendThreadMessage({
@@ -137,8 +137,10 @@ export class ThreadStore {
         clientMessageId,
       });
       // replyCount is bumped when the outbox/hub event arrives (or by MessageStore)
+      return true;
     } catch {
       this.patchByClientId(clientMessageId, { status: 'failed' });
+      return false;
     } finally {
       this.sendingSignal.set(false);
     }

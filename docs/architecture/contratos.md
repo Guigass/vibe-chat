@@ -54,7 +54,7 @@ public interface IMembershipQuery
 | Campo | Tipo | Notas |
 |-------|------|-------|
 | ConversationId | Guid | Channel root ou thread |
-| Body | string | Texto (markdown subset futuro) |
+| Body | string | Texto (markdown subset futuro); máx. **8000** code units UTF-16 (`MessageBodyPolicies.MaxLength`); vazio permitido somente com `AttachmentIds` prontos |
 | ContentType | string | `text/plain` inicial |
 | IdempotencyKey | string | Obrigatório no cliente |
 | AttachmentIds | Guid[] | Opcional |
@@ -84,7 +84,19 @@ public interface IMembershipQuery
 
 | Campo | Tipo | Notas |
 |-------|------|-------|
-| Body | string | Obrigatório; só autor com `message.edit.own` |
+| Body | string | Obrigatório; só autor com `message.edit.own`; máx. **8000** code units UTF-16 |
+
+Erro `MessageBodyTooLong` (400):
+
+```json
+{
+  "error": "MessageBodyTooLong",
+  "message": "A mensagem excede o limite de 8000 caracteres.",
+  "maxLength": 8000
+}
+```
+
+Validação ocorre em `POST .../messages`, `POST .../threads/{threadId}/messages` e `PUT .../messages/{messageId}` **antes** da transação.
 
 ### Soft-delete Message
 

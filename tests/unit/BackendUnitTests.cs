@@ -48,6 +48,33 @@ public sealed class BackendUnitTests
         MessageIdempotency.ComputeRequestHash(baseCommand).Should().NotBe(MessageIdempotency.ComputeRequestHash(changed));
     }
 
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(1, true)]
+    [InlineData(8000, true)]
+    [InlineData(8001, false)]
+    public void Message_body_policies_enforce_utf16_code_unit_limit(int length, bool withinLimit)
+    {
+        var body = new string('a', length);
+        MessageBodyPolicies.MeasureLength(body).Should().Be(length);
+        MessageBodyPolicies.IsWithinLimit(body).Should().Be(withinLimit);
+    }
+
+    [Fact]
+    public void Message_body_policies_normalize_trims_whitespace()
+    {
+        MessageBodyPolicies.Normalize("  hello  ").Should().Be("hello");
+        MessageBodyPolicies.IsEmpty("   ").Should().BeTrue();
+    }
+
+    [Fact]
+    public void Message_body_policies_unicode_uses_same_count_as_javascript_string_length()
+    {
+        const string emoji = "😀";
+        emoji.Length.Should().Be(2);
+        MessageBodyPolicies.MeasureLength(emoji).Should().Be(2);
+    }
+
     [Fact]
     public void Attachment_policies_sanitize_file_name_and_validate_content_type()
     {

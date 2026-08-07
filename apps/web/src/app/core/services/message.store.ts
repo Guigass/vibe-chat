@@ -108,11 +108,11 @@ export class MessageStore {
     }
   }
 
-  async send(body: string, file?: File): Promise<void> {
+  async send(body: string, file?: File): Promise<boolean> {
     const channel = this.channels.activeChannel();
     const profile = this.auth.profile();
     const text = body.trim();
-    if (!channel || (!text && !file)) return;
+    if (!channel || (!text && !file)) return false;
 
     const clientMessageId = crypto.randomUUID();
     const idempotencyKey = crypto.randomUUID();
@@ -161,7 +161,7 @@ export class MessageStore {
               ]
             : [],
         });
-        return;
+        return true;
       }
 
       const attachmentIds: string[] = [];
@@ -195,8 +195,10 @@ export class MessageStore {
         mine: true,
         clientMessageId,
       });
+      return true;
     } catch {
       this.patchByClientId(clientMessageId, { status: 'failed' });
+      return false;
     } finally {
       this.sendingSignal.set(false);
     }

@@ -1,9 +1,13 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import {
   ChatMessage,
   MessageAttachment,
   REACTION_EMOJI_OPTIONS,
+  isMessageBodyTooLong,
+  measureMessageBodyLength,
+  MESSAGE_BODY_COUNTER_THRESHOLD,
+  MESSAGE_BODY_MAX_LENGTH,
 } from '../../models/chat.models';
 import { Avatar } from '../avatar/avatar';
 import { ApiService } from '../../../core/api/api.service';
@@ -50,8 +54,17 @@ import { ApiService } from '../../../core/api/api.service';
               rows="3"
               aria-label="Editar mensagem"
             ></textarea>
+            @if (showEditCounter()) {
+              <p
+                class="vc-msg__edit-counter"
+                [class.vc-msg__edit-counter--over]="editTooLong()"
+                aria-live="polite"
+              >
+                {{ editLength() }} / {{ maxLength }}
+              </p>
+            }
             <div class="vc-msg__edit-actions">
-              <button type="button" (click)="saveEdit()">Salvar</button>
+              <button type="button" [disabled]="editSaveDisabled()" (click)="saveEdit()">Salvar</button>
               <button type="button" class="ghost" (click)="cancelEdit()">Cancelar</button>
             </div>
           </div>
@@ -273,6 +286,15 @@ import { ApiService } from '../../../core/api/api.service';
       font: inherit;
       padding: 0.5rem 0.65rem;
     }
+    .vc-msg__edit-counter {
+      margin: 0.35rem 0 0;
+      font-size: 0.72rem;
+      color: var(--vc-ink-subtle);
+      text-align: right;
+    }
+    .vc-msg__edit-counter--over {
+      color: var(--vc-danger);
+    }
   `,
 })
 export class MessageBubble {
@@ -288,6 +310,13 @@ export class MessageBubble {
   readonly editing = signal(false);
   readonly draft = signal('');
   readonly emojiOptions = REACTION_EMOJI_OPTIONS;
+  readonly maxLength = MESSAGE_BODY_MAX_LENGTH;
+  readonly editLength = computed(() => measureMessageBodyLength(this.draft()));
+  readonly editTooLong = computed(() => isMessageBodyTooLong(this.draft()));
+  readonly showEditCounter = computed(() => this.editLength() >= MESSAGE_BODY_COUNTER_THRESHOLD);
+  readonly editSaveDisabled = computed(
+    () => !this.draft().trim() || this.editTooLong(),
+  );
 
   startEdit(): void {
     this.draft.set(this.message().body);
@@ -301,7 +330,7 @@ export class MessageBubble {
 
   saveEdit(): void {
     const value = this.draft().trim();
-    if (!value) return;
+    if (!value || isMessageBodyTooLong(value)) return;
     this.edit.emit(value);
     this.editing.set(false);
   }

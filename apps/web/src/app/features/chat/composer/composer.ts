@@ -1,8 +1,14 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { Button, Textarea } from '../../../shared/ui';
 import { MessageStore } from '../../../core/services/message.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import {
+  isMessageBodyTooLong,
+  measureMessageBodyLength,
+  MESSAGE_BODY_COUNTER_THRESHOLD,
+  MESSAGE_BODY_MAX_LENGTH,
+} from '../../../shared/models/chat.models';
 
 @Component({
   selector: 'vc-composer',
@@ -25,6 +31,15 @@ import { ChannelStore } from '../../../core/services/channel.store';
           [label]="''"
           (keydown)="onKeydown($event)"
         />
+        @if (showCounter()) {
+          <p
+            class="composer__counter"
+            [class.composer__counter--over]="bodyTooLong()"
+            aria-live="polite"
+          >
+            {{ bodyLength() }} / {{ maxLength }}
+          </p>
+        }
       </div>
       <div class="composer__actions">
         <label class="composer__attach">
@@ -39,7 +54,7 @@ import { ChannelStore } from '../../../core/services/channel.store';
         </label>
         <vc-button
           type="submit"
-          [disabled]="(!draft().trim() && !pendingFile()) || messages.sending()"
+          [disabled]="submitDisabled()"
           [loading]="messages.sending()"
         >
           Enviar
@@ -98,6 +113,15 @@ import { ChannelStore } from '../../../core/services/channel.store';
       opacity: 0;
       cursor: pointer;
     }
+    .composer__counter {
+      margin: 0;
+      font-size: 0.75rem;
+      color: var(--vc-ink-subtle);
+      text-align: right;
+    }
+    .composer__counter--over {
+      color: var(--vc-danger);
+    }
     @media (max-width: 720px) {
       .composer {
         grid-template-columns: 1fr;
@@ -115,6 +139,16 @@ export class Composer {
 
   readonly draft = signal('');
   readonly pendingFile = signal<File | null>(null);
+  readonly maxLength = MESSAGE_BODY_MAX_LENGTH;
+  readonly bodyLength = computed(() => measureMessageBodyLength(this.draft()));
+  readonly bodyTooLong = computed(() => isMessageBodyTooLong(this.draft()));
+  readonly showCounter = computed(() => this.bodyLength() >= MESSAGE_BODY_COUNTER_THRESHOLD);
+  readonly submitDisabled = computed(
+    () =>
+      (!this.draft().trim() && !this.pendingFile()) ||
+      this.messages.sending() ||
+      this.bodyTooLong(),
+  );
   private lastTyping = 0;
 
   constructor() {
@@ -144,9 +178,13 @@ export class Composer {
     const body = this.draft().trim();
     const file = this.pendingFile();
     if (!body && !file) return;
-    this.draft.set('');
-    this.pendingFile.set(null);
-    await this.messages.send(body, file ?? undefined);
+    if (isMessageBodyTooLong(body)) return;
+
+    const ok = await this.messages.send(body, file ?? undefined);
+    if (ok) {
+      this.draft.set('');
+      this.pendingFile.set(null);
+    }
   }
 
   onKeydown(event: KeyboardEvent): void {

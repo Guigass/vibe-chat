@@ -1,7 +1,13 @@
-import { Component, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { ThreadStore } from '../../../core/services/thread.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { Button, EmptyState, IconButton, MessageBubble, Skeleton, Textarea } from '../../../shared/ui';
+import {
+  isMessageBodyTooLong,
+  measureMessageBodyLength,
+  MESSAGE_BODY_COUNTER_THRESHOLD,
+  MESSAGE_BODY_MAX_LENGTH,
+} from '../../../shared/models/chat.models';
 
 @Component({
   selector: 'vc-thread-panel',
@@ -56,7 +62,16 @@ import { Button, EmptyState, IconButton, MessageBubble, Skeleton, Textarea } fro
           [label]="''"
           (keydown)="onKeydown($event)"
         />
-        <vc-button type="submit" [disabled]="!draft().trim() || threads.sending()" [loading]="threads.sending()">
+        @if (showCounter()) {
+          <p
+            class="thread__counter"
+            [class.thread__counter--over]="bodyTooLong()"
+            aria-live="polite"
+          >
+            {{ bodyLength() }} / {{ maxLength }}
+          </p>
+        }
+        <vc-button type="submit" [disabled]="submitDisabled()" [loading]="threads.sending()">
           Responder
         </vc-button>
       </form>
@@ -122,6 +137,15 @@ import { Button, EmptyState, IconButton, MessageBubble, Skeleton, Textarea } fro
       padding: var(--vc-space-4);
       border-top: 1px solid var(--vc-border);
     }
+    .thread__counter {
+      margin: 0;
+      font-size: 0.75rem;
+      color: var(--vc-ink-subtle);
+      text-align: right;
+    }
+    .thread__counter--over {
+      color: var(--vc-danger);
+    }
     @keyframes vc-thread-in {
       from {
         opacity: 0;
@@ -139,6 +163,13 @@ export class ThreadPanel {
   private readonly hub = inject(ChatHubService);
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
   readonly draft = signal('');
+  readonly maxLength = MESSAGE_BODY_MAX_LENGTH;
+  readonly bodyLength = computed(() => measureMessageBodyLength(this.draft()));
+  readonly bodyTooLong = computed(() => isMessageBodyTooLong(this.draft()));
+  readonly showCounter = computed(() => this.bodyLength() >= MESSAGE_BODY_COUNTER_THRESHOLD);
+  readonly submitDisabled = computed(
+    () => !this.draft().trim() || this.threads.sending() || this.bodyTooLong(),
+  );
   private lastTyping = 0;
 
   constructor() {
@@ -154,9 +185,12 @@ export class ThreadPanel {
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
     const body = this.draft().trim();
-    if (!body) return;
-    this.draft.set('');
-    await this.threads.send(body);
+    if (!body || isMessageBodyTooLong(body)) return;
+
+    const ok = await this.threads.send(body);
+    if (ok) {
+      this.draft.set('');
+    }
   }
 
   async onReact(messageId: string, emoji: string): Promise<void> {

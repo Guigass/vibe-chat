@@ -164,3 +164,24 @@ public static class MessageIdempotency
             $"{command.MessageId}:{command.ChannelId}:{command.Body}:{command.ReplyToMessageId}:{command.ThreadId}:{attachmentPart}")));
     }
 }
+
+public static class MessageBodyPolicies
+{
+    public const int MaxLength = 8000;
+
+    /// <summary>UTF-16 code units — matches JavaScript String.length and PostgreSQL varchar(n).</summary>
+    public static int MeasureLength(string? body) => body?.Length ?? 0;
+
+    public static string Normalize(string? body) => body?.Trim() ?? string.Empty;
+
+    public static bool IsWithinLimit(string? body) => MeasureLength(body) <= MaxLength;
+
+    public static bool IsEmpty(string? body) => string.IsNullOrWhiteSpace(body);
+
+    public static object TooLongPayload() => new
+    {
+        error = "MessageBodyTooLong",
+        message = "A mensagem excede o limite de 8000 caracteres.",
+        maxLength = MaxLength
+    };
+}

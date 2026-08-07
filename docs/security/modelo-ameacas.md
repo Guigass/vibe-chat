@@ -65,7 +65,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
   `SEC-RLS-RUNTIME`
 - [x] AuthZ nas entradas de hub/API existentes — W3-2; toda entrada nova reabre a obrigação de teste
 - [x] Idempotency no envio — B-004
-- [ ] Limite de tamanho de body validado antes do banco — B-078 / W7-5
+- [x] Limite de tamanho de body validado antes do banco — B-078 / W7-5
 - [x] Rate limiting por usuário/IP nos caminhos de send/hub — B-028
 - [x] Headers de segurança completos — CSP compartilhada em `infra/nginx/security-headers.conf`
   (proxy profile `proxy` + container web); lab inclui localhost Keycloak/MinIO; B-077 / W7-4 Done
