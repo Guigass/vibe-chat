@@ -79,7 +79,7 @@ backlog ficam no **Registro de GAPs** (`roadmap.md`).
 | B-076 | Atualização automatizada de dependências | **Done (W7-3)** — [#84](https://github.com/Guigass/vibe-chat/pull/84); `.github/dependabot.yml` (nuget/npm/actions/docker/compose) + [`dependencias.md`](../operations/dependencias.md); PRs de bump já abertos pós-merge (#85…) |
 | B-077 | CSP no web | **Done (W7-4)** — `infra/nginx/security-headers.conf` no proxy + web; [spec](../product/specs/B-077-csp-web.md) |
 | B-078 | Limite de tamanho de body no envio | **Done (W7-5)** — `MessageBodyPolicies` (8000 UTF-16); 400 `MessageBodyTooLong`; contador no composer/thread/edit |
-| B-105 | Catálogo de configuração admin mínima no `.env` | Planned (W7-7) — inventário e gaps documentais iniciados; execução ainda precisa alinhar Compose/template; [spec](../product/specs/B-105-catalogo-configuracao.md) |
+| B-105 | Catálogo de configuração admin mínima no `.env` | **Done (W7-7)** — EMAIL__* injetado no api; retenção no worker; alias OpenRouter unificado; testes `ComposeConfigCatalogTests`; [spec](../product/specs/B-105-catalogo-configuracao.md) |
 | B-106 | Admin shell (nav, toolbars, listagens, filtros, visibilidade por papel) | Planned (W7-8) — após B-104; esconde opções sem claim (fecha UX-005); matriz Admin/Auditor/Member; spec `docs/product/specs/B-106-admin-shell.md` |
 
 ## Paridade de mensageria — Waves 8 a 10
@@ -171,7 +171,7 @@ Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → a
 
 Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done.
 
-Ordem daqui para frente: **Sustentação** (B-104/B-076 Done → B-077 → B-078 → B-105 →
+Ordem daqui para frente: **Sustentação** (B-104/B-076 Done → B-077 → B-078 → B-105 Done →
 B-106) e depois **paridade de mensageria** na ordem das waves — 8 (composição), 9
 (leitura; B-094 fecha não lidas persistentes), 10 (notificações, organização,
 acesso e núcleo de plugins: B-109 → B-108 → B-110). Depois seguir W11–W17; a

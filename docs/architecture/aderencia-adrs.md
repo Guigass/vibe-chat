@@ -23,13 +23,13 @@ testes nem uma revisão de segurança.
 | [015](../adrs/ADR-015-quando-justificar-bus-mensagens.md) | Sem bus externo antes dos gatilhos | Nenhum NATS/Kafka/RabbitMQ no Compose/projetos | Alinhado |
 | [016](../adrs/ADR-016-quando-justificar-opensearch.md) | Sem OpenSearch antes dos gatilhos | Busca permanece PostgreSQL; sem serviço externo | Alinhado |
 | [017](../adrs/ADR-017-quando-justificar-kubernetes.md) | Compose na fase 1 | `compose.yaml`, profiles e runbooks; sem Helm/K8s | Alinhado |
-| [018](../adrs/ADR-018-retencao-mensagens.md) | Soft-delete + purge configurável | settings, migration, worker purge e kill switch | Parcial operacional: template possui `MessageRetention__*`, mas Compose não injeta no Worker; B-105 |
+| [018](../adrs/ADR-018-retencao-mensagens.md) | Soft-delete + purge configurável | settings, migration, worker purge e kill switch | Operacional: `MessageRetention__*` injetado no worker (B-105) |
 
 ## Gaps transversais derivados
 
 | Gap | ADRs afetados | Dono no roadmap |
 |-----|---------------|------------------|
-| Tornar configuração declarada efetiva nos containers | ADR-012, ADR-018 e D-10 | B-105 / W7-7 |
+| Tornar configuração declarada efetiva nos containers | ADR-012, ADR-018 e D-10 | **Done** — B-105 / W7-7 |
 | Ampliar teste de dependências para todos os assemblies | ADR-001, ADR-014 | Registro futuro `GAP-*` |
 | CSP no caminho oficial | defesa em profundidade associada a ADR-007/014 | B-077 / W7-4 |
 | Validar body antes da persistência | ADR-005/010/014 | B-078 / W7-5 |

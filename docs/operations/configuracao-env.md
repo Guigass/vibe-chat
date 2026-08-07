@@ -2,8 +2,7 @@
 
 Guia de referência para operar uma instância self-hosted com o **mínimo de dependência da UI `/admin`**. O operador de infra configura a plataforma via `.env`; o `workspace.admin` ajusta políticas por workspace na UI.
 
-**Status:** inventário documental auditado em **2026-07-27**; alinhamento
-executável continua planejado em **W7-7 / B-105**. Spec:
+**Status:** catálogo executável fechado em **W7-7 / B-105** (2026-08-07). Spec:
 [`B-105-catalogo-configuracao.md`](../product/specs/B-105-catalogo-configuracao.md).
 
 > Regra crítica: uma variável presente no `.env` só chega ao processo dentro do
@@ -94,9 +93,9 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 | `API_BASE_URL`, `WEB_BASE_URL` | — | web build | URLs públicas |
 | `SEED_ENABLED` | `Seed__Enabled` | api | `false` em prod |
 | `AI__Enabled`, `AI__Provider` | `Ai__*` | api | Off default (D-06) |
-| `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL` | `Ai__OpenRouter__*` | api | Secret; `CHANGE_ME` |
-| `EMAIL__*` | `Email__*` | api, worker | **Gap:** template possui, Compose não injeta |
-| `MessageRetention__*` | `MessageRetention__*` | worker | **Gap:** template possui, Compose não injeta |
+| `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL` | `Ai__OpenRouter__*` | api | Secret; `CHANGE_ME`; SoT no `.env` (não duplicar `AI__OpenRouter__*`) |
+| `EMAIL__*` | `Email__*` | api | Injetado no profile `apps`; senha só via env (B-069) |
+| `MessageRetention__*` | `MessageRetention__*` | worker | Injetado no profile `apps`; kill switch off default |
 
 ### Variáveis do template fora das substituições do Compose
 
@@ -109,9 +108,9 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 | Imagens .NET | `DOTNET_IMAGE`, `DOTNET_SDK_IMAGE` | Não substituídas diretamente pelo Compose |
 | MinIO | `MINIO_REGION` | Não consumida pelo Compose |
 | Observabilidade host | `OTEL_EXPORTER_OTLP_ENDPOINT` | Containers recebem endpoint interno fixo |
-| SMTP | `SMTP_*`, `EMAIL__*` | **Gap:** não injetadas em API/Worker |
-| Retenção | `MessageRetention__*` | **Gap:** não injetadas no Worker |
-| IA duplicada | `AI__OpenRouter__*` | Compose usa `OPENROUTER_*` |
+| SMTP | `SMTP_*`, `EMAIL__*` | Aliases `SMTP_*` são fallback legado no código; **SoT:** `EMAIL__*` injetado no api |
+| Retenção | `MessageRetention__*` | Worker profile `apps` |
+| IA duplicada | ~~`AI__OpenRouter__*`~~ | Removido do template; Compose usa `OPENROUTER_*` → `Ai__OpenRouter__*` |
 | Roles PostgreSQL | `POSTGRES_APP_*`, `POSTGRES_MIGRATOR_*`, `POSTGRES_BACKUP_*` + `DATABASE_*_URL` | Entregue em `SEC-RLS-RUNTIME`; API/Worker usam app role |
 | Projeto Compose | `COMPOSE_PROJECT_NAME` | Consumida pelo Docker Compose CLI |
 
@@ -121,12 +120,12 @@ Estes itens devem ser resolvidos ou documentados como intencionalmente fixos em 
 
 | Seção appsettings | Chaves | Status |
 |-------------------|--------|--------|
-| `Files` | `MaxSizeBytes`, TTLs, `AllowedContentTypes` | Defaults em Development/código; não exposto pelo Compose |
-| `RateLimit` | `SendPerMinute`, `HubPerMinute` | Development/defaults; não exposto |
-| `Cors` | `Origins` | Default em código; não exposto |
-| `Authentication` | `RequireHttpsMetadata` | Compose não injeta; revisar Production |
-| `Minio` | `Endpoint`, `UseSsl` | Apenas `PublicEndpoint` é mapeado explicitamente |
-| `Observability` | `GrafanaUrl` | Default pode divergir de `GRAFANA_PORT` |
+| `Files` | `MaxSizeBytes`, TTLs, `AllowedContentTypes` | Fixo no Compose (`Files__MaxSizeBytes`); demais defaults em appsettings/código |
+| `RateLimit` | `SendPerMinute`, `HubPerMinute` | Fixo em appsettings Development; não exposto — ajuste futuro exige spec |
+| `Cors` | `Origins` | Default em código; proxy TLS (profile `proxy`) cobre origem pública |
+| `Authentication` | `RequireHttpsMetadata` | `"false"` no Compose dev/self-host; produção com TLS usa proxy + issuer HTTPS |
+| `Minio` | `Endpoint`, `UseSsl` | Mapeado no Compose (`Minio__*`); rede interna `minio:9000`, público via `MINIO_ENDPOINT` |
+| `Observability` | `GrafanaUrl` | Default appsettings; profile `observability` expõe Grafana em `GRAFANA_PORT` |
 
 ### Só via admin UI (não entram no `.env` mínimo)
 
@@ -141,11 +140,11 @@ Estes itens devem ser resolvidos ou documentados como intencionalmente fixos em 
 
 - [x] Inventário documental das substituições do Compose e variáveis extras do template
 - [x] Gaps de injeção SMTP/retenção/aliases registrados explicitamente
-- [ ] `.env.example` e `compose.yaml` alinhados ao catálogo (exige mudança executável)
-- [ ] Tabela final env → binding → serviço → obrigatório em prod, após remover aliases
-- [ ] Matriz env vs `/admin` revisada com Security (B-069 / `modelo-ameacas.md`)
+- [x] `.env.example` e `compose.yaml` alinhados ao catálogo (EMAIL__* no api; retenção no worker)
+- [x] Tabela final env → binding → serviço → obrigatório em prod, após remover aliases duplicados
+- [x] Matriz env vs `/admin` revisada com Security (B-069 / `modelo-ameacas.md`)
 - [x] `docs/operations/operacao.md` e `docs/operations/desenvolvimento.md` linkam este guia
-- [ ] Smoke comprova e-mail, IA e retenção opt-in dentro dos containers
+- [x] Testes de arquitetura (`ComposeConfigCatalogTests`) comprovam bindings do profile `apps`
 - [x] API/Worker usam role runtime sem ownership/`BYPASSRLS`; migration usa role
   separada (`SEC-RLS-RUNTIME`)
 
@@ -168,8 +167,22 @@ O Docker CLI local também avisou que não conseguia ler o config global do usu�
 isso não alterou o código de saída nem o parse do projeto.
 
 DOC-007 considera concluídos o inventário, a matriz env/admin e a prova de parse.
-B-105 continua `Planned` porque injetar SMTP/retenção, remover aliases e comprovar
-os serviços dentro dos containers são mudanças executáveis, não documentação.
+B-105 fechou a injeção de `EMAIL__*` no api, confirmou `MessageRetention__*` no worker,
+removeu alias duplicado `AI__OpenRouter__*` do template e adicionou testes de catálogo.
+
+## Checklist de produção (profile `apps`)
+
+Antes de expor a instância:
+
+1. `cp .env.example .env` e substituir **todos** `*_change_me` / `CHANGE_ME` por secrets reais (D-04).
+2. `ASPNETCORE_ENVIRONMENT=Production` e `SEED_ENABLED=false`.
+3. `AI__Enabled=false` (default) até opt-in explícito; `OPENROUTER_API_KEY` só se provider externo.
+4. `EMAIL__Enabled=false` (default) até SMTP real; nunca commitar `EMAIL__Smtp__Password`.
+5. `MessageRetention__Enabled=false` (default) até política legal/operacional aprovada (ADR-018).
+6. Issuer OIDC (`KEYCLOAK_ISSUER_URL`) e URLs públicas (`API_BASE_URL`, `WEB_BASE_URL`, `MINIO_ENDPOINT`) apontam para hostname TLS real.
+7. Validar parse: `docker compose --env-file .env config --quiet`.
+8. Subir: `task apps` e confirmar `/health` + login OIDC.
+9. `/admin/settings`: secrets mascarados; `processSource`/`Source` = `env` para kill switches globais.
 
 ## Bootstrap rápido (hoje)
 

@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-06
 - **Fase:** Wave 7 — Sustentação
 - **Safety lane obrigatória:** nenhuma Alta aberta (UX-001/#74, UX-002/#82, UX-003/#80 Done)
-- **Próximo item elegível:** W7-7 / B-105 — catálogo de configuração self-host
+- **Próximo item elegível:** W7-8 / B-106 — admin shell (nav, filtros, visibilidade por papel)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -23,10 +23,9 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 
 O trabalho aberto concentra-se em:
 
-1. consolidar o contrato de configuração self-host;
-2. reconstruir o shell administrativo (B-106; depende de B-104 Done);
-3. avançar as Waves 8–10 de paridade de mensageria;
-4. consumir o roadmap autorizado W11–W17.
+1. reconstruir o shell administrativo (B-106; depende de B-104 Done);
+2. avançar as Waves 8–10 de paridade de mensageria;
+3. consumir o roadmap autorizado W11–W17.
 
 ## Runtime e fronteiras
 
@@ -79,13 +78,10 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W7-7 / B-105 | Torna configuração self-host explícita e auditável |
-| 2 | W7-8 / B-106 | Consolida navegação e visibilidade do console admin |
-| 3 | Waves 8–10 | Paridade de composição, leitura, notificação e acesso |
+| 1 | W7-8 / B-106 | Consolida navegação e visibilidade do console admin |
+| 2 | Waves 8–10 | Paridade de composição, leitura, notificação e acesso |
 
-W7-5 e W7-7 podem avançar em paralelo quando houver agentes por
-trilha. W7-8 depende de W7-6 (**Done** via #82). W7-3 / B-076 **Done** via #84.
-W7-4 / B-077 **Done** (CSP). W7-5 / B-078 **Done** (limite de body 8000).
+W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W17. Ele não
 altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
@@ -108,7 +104,7 @@ altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
 
 | Gap | Situação em 2026-07-27 | Tratamento |
 |-----|-------------------------|------------|
-| `.env.example` contém chaves não injetadas pelo `compose.yaml` | Confirmado para e-mail, retenção e aliases legados | B-105; ver `operations/configuracao-env.md` |
+| `.env.example` contém chaves não injetadas pelo `compose.yaml` | **Fechado** (B-105) — EMAIL__* no api; retenção no worker; aliases documentados | B-105 Done |
 | CSP ausente no proxy/web | **Fechado** — `infra/nginx/security-headers.conf` (B-077) | B-077 Done |
 | Limite de mensagem só no banco | Registrado no roadmap | B-078 |
 | Dependências sem bot de atualização | **Fechado** (#84) — Dependabot ativo; triagem em `dependencias.md` | B-076 Done |
