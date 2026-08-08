@@ -29,6 +29,8 @@ import {
   Input,
   ThemeToggle,
 } from '../shared/ui';
+import { AttachmentQueueService } from '../features/chat/composer/attachment-queue.service';
+import { collectFilesFromDataTransfer } from '../features/chat/composer/attachment-upload';
 import { defaultSidebarOpen, SHELL_NARROW_MEDIA_QUERY } from './shell-viewport';
 
 @Component({
@@ -59,12 +61,14 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly threads = inject(ThreadStore);
   readonly hub = inject(ChatHubService);
   private readonly api = inject(ApiService);
+  private readonly attachments = inject(AttachmentQueueService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** UX-003: tracks max-width 960px; sidebar starts collapsed on narrow. */
   readonly narrowViewport = signal(false);
   readonly sidebarOpen = signal(true);
   readonly contextOpen = signal(false);
+  readonly fileDragActive = signal(false);
   readonly search = signal('');
   readonly searchFocused = signal(false);
   readonly searchResults = signal<SearchMessageHit[]>([]);
@@ -76,6 +80,7 @@ export class ShellPage implements OnInit, OnDestroy {
   private searchSeq = 0;
   private lastChannelId: string | null = null;
   private unsubPresence: (() => void) | null = null;
+  private fileDragDepth = 0;
 
   constructor() {
     this.bindNarrowViewport();
@@ -202,6 +207,44 @@ export class ShellPage implements OnInit, OnDestroy {
 
   toggleContext(): void {
     this.contextOpen.update((v) => !v);
+  }
+
+  onFileDragEnter(event: DragEvent): void {
+    if (!this.hasFileDrag(event)) return;
+    event.preventDefault();
+    this.fileDragDepth += 1;
+    this.fileDragActive.set(true);
+  }
+
+  onFileDragOver(event: DragEvent): void {
+    if (!this.hasFileDrag(event)) return;
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'copy';
+    }
+  }
+
+  onFileDragLeave(event: DragEvent): void {
+    if (!this.hasFileDrag(event)) return;
+    this.fileDragDepth = Math.max(0, this.fileDragDepth - 1);
+    if (this.fileDragDepth === 0) {
+      this.fileDragActive.set(false);
+    }
+  }
+
+  onFileDrop(event: DragEvent): void {
+    if (!this.hasFileDrag(event)) return;
+    event.preventDefault();
+    this.fileDragDepth = 0;
+    this.fileDragActive.set(false);
+    const files = collectFilesFromDataTransfer(event.dataTransfer);
+    if (files.length) {
+      void this.attachments.addFiles(files);
+    }
+  }
+
+  private hasFileDrag(event: DragEvent): boolean {
+    return !!event.dataTransfer?.types.includes('Files');
   }
 
   async logout(): Promise<void> {

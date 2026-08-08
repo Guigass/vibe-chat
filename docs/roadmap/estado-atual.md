@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-06
 - **Fase:** Wave 7 — Sustentação
 - **Safety lane obrigatória:** nenhuma Alta aberta (UX-001/#74, UX-002/#82, UX-003/#80 Done)
-- **Próximo item elegível:** W8 — paridade de composição (Wave 8)
+- **Próximo item elegível:** W8-2 — mensagem de áudio (B-080)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -77,8 +77,8 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W8 | Paridade de composição (Wave 8) |
-| 2 | Waves 9–10 | Leitura, notificação e acesso |
+| 1 | W8-2 | Mensagem de áudio (B-080) |
+| 2 | W8-3…W8-9 | Restante da paridade de composição |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 

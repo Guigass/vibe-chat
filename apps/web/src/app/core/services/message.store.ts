@@ -108,11 +108,12 @@ export class MessageStore {
     }
   }
 
-  async send(body: string, file?: File): Promise<boolean> {
+  async send(body: string, attachmentIds: string[] = []): Promise<boolean> {
     const channel = this.channels.activeChannel();
     const profile = this.auth.profile();
     const text = body.trim();
-    if (!channel || (!text && !file)) return false;
+    const hasAttachments = attachmentIds.length > 0;
+    if (!channel || (!text && !hasAttachments)) return false;
 
     const clientMessageId = crypto.randomUUID();
     const idempotencyKey = crypto.randomUUID();
@@ -127,16 +128,14 @@ export class MessageStore {
       createdAt: new Date().toISOString(),
       status: 'sending',
       mine: true,
-      attachments: file
-        ? [
-            {
-              id: clientMessageId,
-              fileName: file.name,
-              contentType: file.type || 'application/octet-stream',
-              sizeBytes: file.size,
-              status: 'PendingUpload',
-            },
-          ]
+      attachments: hasAttachments
+        ? attachmentIds.map((id) => ({
+            id,
+            fileName: 'anexo',
+            contentType: 'application/octet-stream',
+            sizeBytes: 0,
+            status: 'PendingUpload',
+          }))
         : [],
     };
 
@@ -149,36 +148,17 @@ export class MessageStore {
         this.patchByClientId(clientMessageId, {
           status: 'sent',
           id: crypto.randomUUID(),
-          attachments: file
-            ? [
-                {
-                  id: crypto.randomUUID(),
-                  fileName: file.name,
-                  contentType: file.type || 'application/octet-stream',
-                  sizeBytes: file.size,
-                  status: 'Ready',
-                },
-              ]
+          attachments: hasAttachments
+            ? attachmentIds.map((id) => ({
+                id,
+                fileName: 'anexo',
+                contentType: 'application/octet-stream',
+                sizeBytes: 0,
+                status: 'Ready',
+              }))
             : [],
         });
         return true;
-      }
-
-      const attachmentIds: string[] = [];
-      if (file) {
-        const initiated = await this.api.initiateAttachmentUpload({
-          channelId: channel.id,
-          fileName: file.name,
-          contentType: file.type || 'application/octet-stream',
-          sizeBytes: file.size,
-        });
-        await this.api.uploadFileToPresignedUrl(
-          initiated.uploadUrl,
-          file,
-          initiated.requiredHeaders ?? {},
-        );
-        const ready = await this.api.completeAttachmentUpload(channel.id, initiated.attachmentId);
-        attachmentIds.push(ready.id);
       }
 
       const persisted = await this.api.sendMessage({

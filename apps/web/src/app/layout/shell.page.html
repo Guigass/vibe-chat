@@ -122,8 +122,20 @@
       <p class="shell__hint" role="status">{{ channels.error() }}</p>
     }
 
-    <vc-timeline />
-    <vc-composer />
+    <div
+      class="shell__conversation"
+      [class.shell__conversation--drop]="fileDragActive()"
+      (dragenter)="onFileDragEnter($event)"
+      (dragover)="onFileDragOver($event)"
+      (dragleave)="onFileDragLeave($event)"
+      (drop)="onFileDrop($event)"
+    >
+      @if (fileDragActive()) {
+        <div class="shell__drop-overlay" aria-hidden="true">Solte para anexar</div>
+      }
+      <vc-timeline />
+      <vc-composer />
+    </div>
   </div>
 
   @if (threads.open()) {

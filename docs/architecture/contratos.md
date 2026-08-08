@@ -289,6 +289,13 @@ public interface IObjectStorage
 
 Regras: keys prefixadas por tenant (`tenants/{tenantId}/…`); MIME/tamanho via `Files:*`; body da mensagem pode ser vazio se houver `AttachmentIds` prontos no `SendMessage`.
 
+Limites (config `Files:*`, default entre parênteses):
+
+| Chave | Default | Validação |
+|-------|---------|-----------|
+| `MaxSizeBytes` | `10485760` (10 MiB) | Por arquivo no `initiate` |
+| `MaxAttachmentsPerMessage` | `10` | Contagem de `attachmentIds` no `SendMessage`; excedente → `400` `{ error: "TooManyAttachments", max }` |
+
 ---
 
 ## Search

@@ -849,6 +849,15 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
         return Results.BadRequest(MessageBodyPolicies.TooLongPayload());
     }
 
+    var maxAttachments = config.GetValue(
+        "Files:MaxAttachmentsPerMessage",
+        AttachmentPolicies.DefaultMaxAttachmentsPerMessage);
+    var attachmentCount = request.AttachmentIds?.Length ?? 0;
+    if (!AttachmentPolicies.IsWithinAttachmentCount(attachmentCount, maxAttachments))
+    {
+        return Results.BadRequest(new { error = "TooManyAttachments", max = maxAttachments });
+    }
+
     try
     {
         var result = await writer.SendAsync(new SendMessageCommand(
@@ -1161,6 +1170,15 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
     if (!MessageBodyPolicies.IsWithinLimit(normalizedBody))
     {
         return Results.BadRequest(MessageBodyPolicies.TooLongPayload());
+    }
+
+    var maxAttachments = config.GetValue(
+        "Files:MaxAttachmentsPerMessage",
+        AttachmentPolicies.DefaultMaxAttachmentsPerMessage);
+    var attachmentCount = request.AttachmentIds?.Length ?? 0;
+    if (!AttachmentPolicies.IsWithinAttachmentCount(attachmentCount, maxAttachments))
+    {
+        return Results.BadRequest(new { error = "TooManyAttachments", max = maxAttachments });
     }
 
     try

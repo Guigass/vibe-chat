@@ -43,6 +43,7 @@ public interface IObjectStorage
 public static class AttachmentPolicies
 {
     public const long DefaultMaxSizeBytes = 10 * 1024 * 1024;
+    public const int DefaultMaxAttachmentsPerMessage = 10;
     public const int DefaultUploadTtlSeconds = 900;
     public const int DefaultDownloadTtlSeconds = 300;
     public const int MaxFileNameLength = 180;
@@ -82,4 +83,7 @@ public static class AttachmentPolicies
 
     public static bool IsAllowedContentType(string contentType, IEnumerable<string>? allowed) =>
         (allowed ?? DefaultAllowedContentTypes).Contains(contentType.Trim(), StringComparer.OrdinalIgnoreCase);
+
+    public static bool IsWithinAttachmentCount(int count, int maxAttachments = DefaultMaxAttachmentsPerMessage) =>
+        count >= 0 && count <= maxAttachments;
 }
