@@ -463,7 +463,8 @@ public sealed class MessageWriter(
     IAuditWriter audit,
     IClock clock,
     IPermissionChecker permissions,
-    IChannelMembershipReader channels) : IMessageWriter
+    IChannelMembershipReader channels,
+    IConfiguration configuration) : IMessageWriter
 {
     public async Task<MessageSendResult> SendAsync(SendMessageCommand command, CancellationToken cancellationToken)
     {
@@ -514,6 +515,14 @@ public sealed class MessageWriter(
         if (!MessageBodyPolicies.IsWithinLimit(body))
         {
             throw new ArgumentException("MessageBodyTooLong");
+        }
+
+        var maxAttachments = configuration.GetValue(
+            "Files:MaxAttachmentsPerMessage",
+            AttachmentPolicies.DefaultMaxAttachmentsPerMessage);
+        if (!AttachmentPolicies.IsWithinAttachmentCount(attachmentIds.Length, maxAttachments))
+        {
+            throw new ArgumentException("TooManyAttachments");
         }
 
         var normalized = command with

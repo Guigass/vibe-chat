@@ -427,19 +427,32 @@ export class ApiService {
     uploadUrl: string,
     file: File,
     requiredHeaders: Record<string, string>,
+    onProgress?: (percent: number) => void,
+    signal?: AbortSignal,
   ): Promise<void> {
-    const headers = new Headers();
-    for (const [key, value] of Object.entries(requiredHeaders ?? {})) {
-      headers.set(key, value);
-    }
-    const response = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers,
-      body: file,
+    await new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', uploadUrl);
+      for (const [key, value] of Object.entries(requiredHeaders ?? {})) {
+        xhr.setRequestHeader(key, value);
+      }
+      xhr.upload.onprogress = (event) => {
+        if (!event.lengthComputable) return;
+        onProgress?.(Math.round((event.loaded / event.total) * 100));
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          onProgress?.(100);
+          resolve();
+          return;
+        }
+        reject(new Error(`Upload failed (${xhr.status})`));
+      };
+      xhr.onerror = () => reject(new Error('Upload failed (network)'));
+      xhr.onabort = () => reject(new DOMException('Upload aborted', 'AbortError'));
+      signal?.addEventListener('abort', () => xhr.abort(), { once: true });
+      xhr.send(file);
     });
-    if (!response.ok) {
-      throw new Error(`Upload failed (${response.status})`);
-    }
   }
 
   async editMessage(channelId: string, messageId: string, body: string): Promise<ChatMessage> {

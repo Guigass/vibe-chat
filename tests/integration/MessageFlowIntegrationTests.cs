@@ -999,6 +999,71 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task SendMessage_persists_multiple_attachments()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var ids = new List<Guid>();
+        for (var i = 0; i < 3; i++)
+        {
+            ids.Add(await UploadReadyAttachmentAsync(
+                client,
+                $"file-{i}.txt",
+                System.Text.Encoding.UTF8.GetBytes($"content-{i}")));
+        }
+
+        var messageId = Guid.NewGuid();
+        var send = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-multi-att-{messageId:N}", "três anexos", null, null, ids.ToArray()));
+        send.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var accepted = await send.Content.ReadFromJsonAsync<MessageDto>(JsonOptions);
+        accepted.Should().NotBeNull();
+        accepted!.Attachments.Should().NotBeNull();
+        accepted.Attachments!.Select(x => x.Id).Should().BeEquivalentTo(ids);
+    }
+
+    [Fact]
+    public async Task SendMessage_rejects_too_many_attachments()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var ids = Enumerable.Range(0, 11).Select(_ => Guid.NewGuid()).ToArray();
+        var messageId = Guid.NewGuid();
+        var send = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-too-many-{messageId:N}", "overflow", null, null, ids));
+        send.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await send.Content.ReadAsStringAsync();
+        body.Should().Contain("TooManyAttachments");
+    }
+
+    private static async Task<Guid> UploadReadyAttachmentAsync(HttpClient client, string fileName, byte[] content)
+    {
+        var initiate = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments",
+            new CreateAttachmentUploadRequest(fileName, "text/plain", content.Length));
+        initiate.EnsureSuccessStatusCode();
+        var upload = await initiate.Content.ReadFromJsonAsync<AttachmentUploadDto>(JsonOptions);
+        upload.Should().NotBeNull();
+
+        using var putRequest = new HttpRequestMessage(HttpMethod.Put, upload!.UploadUrl)
+        {
+            Content = new ByteArrayContent(content)
+        };
+        using var putClient = new HttpClient();
+        (await putClient.SendAsync(putRequest)).EnsureSuccessStatusCode();
+
+        var complete = await client.PostAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments/{upload.AttachmentId}/complete",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+        complete.EnsureSuccessStatusCode();
+        return upload.AttachmentId;
+    }
+
+    [Fact]
     public async Task Search_finds_message_by_fts_term()
     {
         using var client = factory.CreateClient();

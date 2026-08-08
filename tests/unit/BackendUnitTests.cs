@@ -84,6 +84,15 @@ public sealed class BackendUnitTests
         AttachmentPolicies.IsAllowedContentType("application/x-msdownload", null).Should().BeFalse();
     }
 
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(10, true)]
+    [InlineData(11, false)]
+    public void Attachment_policies_enforce_max_attachments_per_message(int count, bool withinLimit)
+    {
+        AttachmentPolicies.IsWithinAttachmentCount(count).Should().Be(withinLimit);
+    }
+
     [Fact]
     public void Permission_catalog_allows_member_to_upload_files()
     {

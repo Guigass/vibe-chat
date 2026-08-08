@@ -123,15 +123,45 @@
 /* Angular hosts between flex children — keep header/banner fixed, timeline fills */
 .shell__main > vc-connection-banner,
 .shell__main > .shell__header,
-.shell__main > .shell__hint,
-.shell__main > vc-composer {
+.shell__main > .shell__hint {
   flex: 0 0 auto;
 }
 
-.shell__main > vc-timeline {
+.shell__conversation {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+}
+
+.shell__conversation > vc-timeline {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.shell__conversation > vc-composer {
+  flex: 0 0 auto;
+}
+
+.shell__conversation--drop {
+  outline: 2px dashed var(--vc-brand);
+  outline-offset: -4px;
+}
+
+.shell__drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--vc-brand) 12%, transparent);
+  color: var(--vc-brand);
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .shell__header {

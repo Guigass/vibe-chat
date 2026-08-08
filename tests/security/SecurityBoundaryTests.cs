@@ -4,9 +4,11 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using VibeChat.Audit;
 using VibeChat.Conversations;
+using VibeChat.Files;
 using VibeChat.Infrastructure;
 using VibeChat.Messaging;
 using VibeChat.SharedKernel;
@@ -418,6 +420,33 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task SendMessage_rejects_foreign_tenant_attachment_id()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        (await client.GetAsync("/health")).EnsureSuccessStatusCode();
+
+        var (_, foreignChannelId) = await SeedCrossTenantChannelAsync();
+        var foreignAttachmentId = await SeedReadyAttachmentInChannelAsync(foreignChannelId, "foreign.txt");
+
+        var messageId = Guid.NewGuid();
+        var send = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{SeedData.DemoChannelId.Value}/messages",
+            new SendMessageRequest(
+                messageId,
+                $"sec-att-{messageId:N}",
+                "cross-tenant attachment",
+                null,
+                null,
+                [foreignAttachmentId]));
+        send.StatusCode.Should().BeOneOf(HttpStatusCode.BadRequest, HttpStatusCode.Forbidden);
+
+        var list = await client.GetFromJsonAsync<MessageDto[]>(
+            $"/api/v1/channels/{SeedData.DemoChannelId.Value}/messages?limit=200");
+        list.Should().NotContain(x => x.Id == messageId);
+    }
+
+    [Fact]
     public async Task Non_member_cannot_download_attachment_from_direct_message()
     {
         using var alice = factory.CreateClient();
@@ -626,6 +655,7 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     private sealed record ChannelDto(Guid Id, Guid WorkspaceId, string Name, string Type);
+    private sealed record MessageDto(Guid Id, Guid ChannelId, long Sequence, Guid AuthorId, string Body, DateTimeOffset CreatedAt);
     private sealed record AttachmentUploadDto(Guid AttachmentId, string UploadUrl);
     private sealed record SearchMessageHitDto(Guid MessageId, Guid ChannelId, string BodyPreview);
     private sealed record SearchMessagesDto(string Query, int Limit, SearchMessageHitDto[] Items);
@@ -808,6 +838,32 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
 
         await db.SaveChangesAsync();
         return (tenantId.Value, channelId.Value);
+    }
+
+    private async Task<Guid> SeedReadyAttachmentInChannelAsync(Guid channelId, string fileName)
+    {
+        await using var db = factory.CreateMigratorDbContext();
+        var channel = await db.Channels.AsNoTracking()
+            .FirstAsync(x => x.Id == new ChannelId(channelId));
+        var attachmentId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var safeName = AttachmentPolicies.SanitizeFileName(fileName);
+        db.Attachments.Add(new Attachment
+        {
+            Id = attachmentId,
+            TenantId = channel.TenantId,
+            ChannelId = channel.Id,
+            UploadedBy = SeedData.DemoUserId,
+            FileName = safeName,
+            ContentType = "text/plain",
+            SizeBytes = 12,
+            StorageKey = AttachmentPolicies.BuildStorageKey(channel.TenantId, channel.Id, attachmentId, safeName),
+            Status = AttachmentStatus.Ready,
+            CreatedAt = now,
+            ReadyAt = now
+        });
+        await db.SaveChangesAsync();
+        return attachmentId;
     }
 
     private async Task<(Guid WorkspaceId, Guid ChannelId)> SeedSiblingWorkspaceChannelAsync()
