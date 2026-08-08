@@ -1,0 +1,198 @@
+<p class="admin-panel__lead">
+  Histórico completo por canal/DM/thread (conteúdo, edições, soft-deletes). Distinto do
+  audit log de ações.
+</p>
+
+@if (loading()) {
+  <p class="admin-empty">Carregando conversas…</p>
+} @else if (loadError()) {
+  <p class="admin-empty">Não foi possível carregar as conversas.</p>
+} @else {
+  <div class="admin-filters" aria-label="Filtros de conversas">
+    <label class="admin-filters__field">
+      <span>Busca</span>
+      <input
+        type="search"
+        placeholder="Nome do canal ou DM"
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)"
+      />
+    </label>
+    <label class="admin-filters__field">
+      <span>Tipo</span>
+      <select [value]="typeFilter()" (change)="typeFilter.set($any($event.target).value)">
+        @for (type of typeOptions(); track type) {
+          <option [value]="type">{{ type === 'all' ? 'Todos' : type }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <label class="conv-audit__picker">
+    <span>Conversação</span>
+    <hlm-select
+      [value]="selectedConversationId()"
+      [disabled]="conversationOptions().length === 0"
+      [itemToString]="conversationLabelForId"
+      (valueChange)="onConversationSelected($event)"
+    >
+      <hlm-select-trigger buttonId="admin-conversation-picker" class="w-full">
+        <hlm-select-value placeholder="Selecione um canal ou DM…" />
+      </hlm-select-trigger>
+      <hlm-select-content *hlmSelectPortal>
+        <hlm-select-group>
+          @for (option of conversationOptions(); track option.id) {
+            <hlm-select-item [value]="option.id">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-group>
+      </hlm-select-content>
+    </hlm-select>
+  </label>
+
+  @if (conversationOptions().length === 0) {
+    <p class="admin-empty">Nenhuma conversa corresponde aos filtros.</p>
+  } @else if (conversationMessagesBusy()) {
+    <p class="admin-empty">Carregando mensagens…</p>
+  } @else if (conversationMessagesError()) {
+    <p class="admin-empty">Não foi possível carregar o histórico.</p>
+  } @else if (selectedConversationId() && conversationMessages().length === 0) {
+    <p class="admin-empty">Nenhuma mensagem nesta conversa.</p>
+  } @else if (conversationMessages().length > 0) {
+    <div class="admin-table-wrap">
+      <table class="admin-table" style="min-width: 48rem">
+        <thead>
+          <tr>
+            <th scope="col">Seq</th>
+            <th scope="col">Quando</th>
+            <th scope="col">Autor</th>
+            <th scope="col">Conteúdo</th>
+            <th scope="col">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of conversationMessages(); track m.id) {
+            <tr [class.conv-audit__row--deleted]="!!m.deletedAt">
+              <td class="mono">{{ m.sequence }}</td>
+              <td>{{ m.createdAt | date: 'short' }}</td>
+              <td>{{ m.authorName }}</td>
+              <td>
+                <span class="conv-audit__body">{{ m.body || '—' }}</span>
+                @if (m.attachments.length) {
+                  <span class="conv-audit__atts">
+                    @for (a of m.attachments; track a.id) {
+                      <code>{{ a.fileName }}</code>
+                    }
+                  </span>
+                }
+                @if (m.threadId && m.replyCount > 0) {
+                  <button type="button" class="admin-btn admin-btn--ghost conv-audit__thread-btn" (click)="openThread(m.threadId)">
+                    Thread ({{ m.replyCount }})
+                  </button>
+                }
+              </td>
+              <td>
+                <vc-badge [tone]="messageStatusTone(m)">{{ messageStatusLabel(m) }}</vc-badge>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (activeThreadId(); as tid) {
+    <div class="conv-audit__thread" aria-label="Replies da thread">
+      <div class="conv-audit__thread-head">
+        <h3>Thread <code class="mono">{{ tid.slice(0, 8) }}</code></h3>
+        <button type="button" class="admin-btn admin-btn--ghost" (click)="closeThread()">Fechar</button>
+      </div>
+      @if (threadBusy()) {
+        <p class="admin-empty">Carregando thread…</p>
+      } @else if (threadMessages().length === 0) {
+        <p class="admin-empty">Sem replies nesta thread.</p>
+      } @else {
+        <div class="admin-table-wrap">
+          <table class="admin-table" style="min-width: 40rem">
+            <thead>
+              <tr>
+                <th scope="col">Seq</th>
+                <th scope="col">Quando</th>
+                <th scope="col">Autor</th>
+                <th scope="col">Conteúdo</th>
+                <th scope="col">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of threadMessages(); track m.id) {
+                <tr [class.conv-audit__row--deleted]="!!m.deletedAt">
+                  <td class="mono">{{ m.sequence }}</td>
+                  <td>{{ m.createdAt | date: 'short' }}</td>
+                  <td>{{ m.authorName }}</td>
+                  <td>
+                    <span class="conv-audit__body">{{ m.body || '—' }}</span>
+                  </td>
+                  <td>
+                    <vc-badge [tone]="messageStatusTone(m)">{{ messageStatusLabel(m) }}</vc-badge>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+}
+
+<style>
+  .conv-audit__picker {
+    display: grid;
+    gap: 0.35rem;
+    max-width: 28rem;
+    margin-bottom: 1rem;
+    font-size: 0.88rem;
+    color: var(--vc-ink-muted);
+  }
+
+  .conv-audit__row--deleted {
+    background: color-mix(in srgb, var(--vc-warning) 8%, transparent);
+  }
+
+  .conv-audit__body {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .conv-audit__atts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+  }
+
+  .conv-audit__thread-btn {
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+  }
+
+  .conv-audit__thread {
+    margin-top: 1rem;
+    padding: 0.85rem;
+    border: 1px solid var(--vc-border);
+    border-radius: var(--vc-radius-md);
+    background: var(--vc-surface-elevated);
+  }
+
+  .conv-audit__thread-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .conv-audit__thread-head h3 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+</style>

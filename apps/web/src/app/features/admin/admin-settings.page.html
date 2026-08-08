@@ -1,0 +1,227 @@
+<p class="admin-panel__lead">
+  Flags e máscaras de AI/SMTP, webhooks e retenção. Secrets (API key, senha SMTP) só via
+  env — nunca em claro.
+</p>
+
+<div class="settings__export">
+  <button type="button" class="admin-btn" [disabled]="exportBusy()" (click)="exportWorkspace()">
+    {{ exportBusy() ? 'Exportando…' : 'Exportar workspace (ZIP)' }}
+  </button>
+  @if (exportFeedback(); as feedback) {
+    <p class="admin-feedback" role="status">{{ feedback }}</p>
+  }
+  @if (exportError(); as err) {
+    <p class="admin-error" role="alert">{{ err }}</p>
+  }
+</div>
+
+@if (loading()) {
+  <p class="admin-empty">Carregando integrações…</p>
+} @else if (loadError()) {
+  <p class="admin-empty">Não foi possível carregar as integrações.</p>
+} @else if (settings(); as s) {
+  <form class="settings__form" (submit)="onSettingsSubmit($event)">
+    <fieldset class="settings__block" [disabled]="settingsBusy()">
+      <legend>AI</legend>
+      <p class="settings__meta">
+        Processo (<code>{{ s.ai.processSource }}</code>):
+        {{ s.ai.processEnabled ? 'ligado' : 'desligado' }}
+        · chave {{ s.ai.apiKeyConfigured ? (s.ai.apiKeyMask ?? 'configurada') : 'não configurada' }}
+      </p>
+      <label class="settings__check">
+        <input type="checkbox" name="aiWorkspaceEnabled" [checked]="s.ai.workspaceEnabled" />
+        <span>Habilitada neste workspace</span>
+      </label>
+      <label class="settings__field">
+        <span>Provider</span>
+        <select name="aiProvider" [value]="s.ai.provider">
+          <option value="Mock" [selected]="s.ai.provider === 'Mock'">Mock</option>
+          <option value="OpenRouter" [selected]="s.ai.provider === 'OpenRouter'">OpenRouter</option>
+        </select>
+      </label>
+    </fieldset>
+
+    <fieldset class="settings__block" [disabled]="settingsBusy()">
+      <legend>Email / SMTP</legend>
+      <p class="settings__meta">
+        Fonte: <code>{{ s.email.source }}</code>
+        · senha
+        {{
+          s.email.smtpPasswordConfigured
+            ? (s.email.smtpPasswordMask ?? 'configurada')
+            : 'não configurada'
+        }}
+      </p>
+      <label class="settings__check">
+        <input type="checkbox" name="emailEnabled" [checked]="s.email.enabled" />
+        <span>E-mail habilitado</span>
+      </label>
+      <div class="settings__row">
+        <label class="settings__field">
+          <span>Host</span>
+          <input name="smtpHost" type="text" [value]="s.email.smtpHost" autocomplete="off" />
+        </label>
+        <label class="settings__field settings__field--narrow">
+          <span>Porta</span>
+          <input name="smtpPort" type="number" min="1" max="65535" [value]="s.email.smtpPort" />
+        </label>
+        <label class="settings__field">
+          <span>Usuário</span>
+          <input name="smtpUsername" type="text" [value]="s.email.smtpUsername" autocomplete="off" />
+        </label>
+        <label class="settings__field">
+          <span>From</span>
+          <input name="smtpFrom" type="email" [value]="s.email.smtpFrom" autocomplete="off" />
+        </label>
+      </div>
+      <label class="settings__check">
+        <input type="checkbox" name="useStartTls" [checked]="s.email.useStartTls" />
+        <span>STARTTLS</span>
+      </label>
+    </fieldset>
+
+    <fieldset class="settings__block" [disabled]="settingsBusy()">
+      <legend>Webhooks</legend>
+      <p class="settings__meta">
+        <code>{{ s.webhooks.status }}</code> — {{ s.webhooks.message }}
+        · secret
+        {{
+          s.webhooks.secretConfigured
+            ? (s.webhooks.secretMask ?? 'configurado')
+            : 'não configurado'
+        }}
+      </p>
+      <label class="settings__check">
+        <input type="checkbox" name="webhookEnabled" [checked]="s.webhooks.enabled" />
+        <span>Delivery habilitado (MessageCreated)</span>
+      </label>
+      <label class="settings__field">
+        <span>URL</span>
+        <input
+          name="webhookUrl"
+          type="url"
+          [value]="s.webhooks.url"
+          placeholder="https://example.com/hooks/vibechat"
+          autocomplete="off"
+        />
+      </label>
+      <label class="settings__field">
+        <span>Signing secret (deixe vazio para manter)</span>
+        <input
+          name="webhookSecret"
+          type="password"
+          value=""
+          placeholder="••••••••"
+          autocomplete="new-password"
+        />
+      </label>
+    </fieldset>
+
+    <fieldset class="settings__block" [disabled]="settingsBusy()">
+      <legend>Retenção / purge</legend>
+      <p class="settings__meta">
+        Processo (<code>{{ s.retention.processSource }}</code>):
+        {{ s.retention.processEnabled ? 'ligado' : 'desligado' }}
+        · default {{ s.retention.defaultRetentionDays }}d — {{ s.retention.message }}
+      </p>
+      <label class="settings__check">
+        <input type="checkbox" name="retentionEnabled" [checked]="s.retention.enabled" />
+        <span>Purge de soft-deletes habilitado neste tenant</span>
+      </label>
+      <label class="settings__field settings__field--narrow">
+        <span>Dias de retenção</span>
+        <input
+          name="retentionDays"
+          type="number"
+          min="1"
+          max="3650"
+          [value]="s.retention.retentionDays"
+        />
+      </label>
+    </fieldset>
+
+    <button type="submit" class="admin-btn" [disabled]="settingsBusy()">
+      {{ settingsBusy() ? 'Salvando…' : 'Salvar integrações' }}
+    </button>
+  </form>
+
+  @if (settingsFeedback(); as feedback) {
+    <p class="admin-feedback" role="status">{{ feedback }}</p>
+  }
+  @if (settingsErrorMessage(); as err) {
+    <p class="admin-error" role="alert">{{ err }}</p>
+  }
+}
+
+<style>
+  .settings__export {
+    margin-bottom: 1rem;
+  }
+
+  .settings__form {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .settings__block {
+    margin: 0;
+    padding: 0.75rem 0 0;
+    border: 0;
+    border-top: 1px solid var(--vc-border);
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .settings__block legend {
+    padding: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .settings__meta {
+    margin: 0;
+    color: var(--vc-ink-muted);
+    font-size: 0.85rem;
+  }
+
+  .settings__check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .settings__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .settings__field {
+    display: grid;
+    gap: 0.3rem;
+    min-width: 11rem;
+    flex: 1 1 11rem;
+  }
+
+  .settings__field--narrow {
+    flex: 0 1 7rem;
+    min-width: 6rem;
+  }
+
+  .settings__field span {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--vc-ink-muted);
+  }
+
+  .settings__field input,
+  .settings__field select {
+    padding: 0.4rem 0.55rem;
+    border: 1px solid var(--vc-border);
+    border-radius: var(--vc-radius-sm);
+    background: var(--vc-surface);
+    color: var(--vc-ink);
+    font: inherit;
+  }
+</style>

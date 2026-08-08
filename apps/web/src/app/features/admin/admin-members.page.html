@@ -1,0 +1,180 @@
+<p class="admin-panel__lead">
+  Keycloak autentica; membership + diretivas (papéis) autorizam neste workspace.
+  Sem self-signup — admin convida por e-mail e atribui o papel.
+</p>
+
+@if (canInvite()) {
+  <form class="invite admin-panel" (submit)="onInviteSubmit($event)" aria-labelledby="invite-heading">
+    <h2 id="invite-heading" class="invite__title">Convidar membro</h2>
+    <p class="invite__hint">
+      Crie a identidade no IdP com o mesmo e-mail; no primeiro login o perfil pending é
+      vinculado e a membership já vale.
+    </p>
+    <div class="invite__row">
+      <label class="invite__field">
+        <span>E-mail</span>
+        <input name="email" type="email" required autocomplete="email" [disabled]="inviteBusy()" />
+      </label>
+      <label class="invite__field">
+        <span>Nome (opcional)</span>
+        <input name="displayName" type="text" maxlength="160" autocomplete="name" [disabled]="inviteBusy()" />
+      </label>
+      <label class="invite__field">
+        <span>Papel</span>
+        <select name="role" class="roles__select" [disabled]="inviteBusy()">
+          @for (role of assignableRoles(); track role) {
+            <option [value]="role" [selected]="role === 'Member'">{{ role }}</option>
+          }
+        </select>
+      </label>
+      <button type="submit" class="admin-btn" [disabled]="inviteBusy()">
+        {{ inviteBusy() ? 'Convidando…' : 'Convidar' }}
+      </button>
+    </div>
+  </form>
+}
+
+@if (inviteFeedback(); as feedback) {
+  <p class="admin-feedback" role="status">{{ feedback }}</p>
+}
+@if (inviteError(); as err) {
+  <p class="admin-error" role="alert">{{ err }}</p>
+}
+@if (roleFeedback(); as feedback) {
+  <p class="admin-feedback" role="status">{{ feedback }}</p>
+}
+
+@if (loading()) {
+  <p class="admin-empty">Carregando membros…</p>
+} @else if (loadError()) {
+  <p class="admin-empty">Não foi possível carregar os membros.</p>
+} @else {
+  <div class="admin-filters" aria-label="Filtros de membros">
+    <label class="admin-filters__field">
+      <span>Busca</span>
+      <input
+        type="search"
+        placeholder="Nome ou e-mail"
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)"
+      />
+    </label>
+    <label class="admin-filters__field">
+      <span>Papel</span>
+      <select [value]="roleFilter()" (change)="roleFilter.set($any($event.target).value)">
+        @for (role of roleOptions(); track role) {
+          <option [value]="role">{{ role === 'all' ? 'Todos' : role }}</option>
+        }
+      </select>
+    </label>
+    <label class="admin-filters__field">
+      <span>Status</span>
+      <select [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
+        <option value="all">Todos</option>
+        <option value="active">Ativo</option>
+        <option value="pending">Pending</option>
+      </select>
+    </label>
+  </div>
+
+  @if (filteredMembers().length === 0) {
+    <p class="admin-empty">Nenhum membro corresponde aos filtros.</p>
+  } @else {
+    <div class="admin-table-wrap">
+      <table class="admin-table" style="min-width: 36rem">
+        <thead>
+          <tr>
+            <th scope="col">Membro</th>
+            <th scope="col">E-mail</th>
+            <th scope="col">Papel</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (member of filteredMembers(); track member.userId) {
+            <tr>
+              <td>{{ member.displayName }}</td>
+              <td class="mono">{{ member.email }}</td>
+              <td>
+                @if (canEditRole(member)) {
+                  <label class="sr-only" [attr.for]="'role-' + member.userId"
+                    >Papel de {{ member.displayName }}</label
+                  >
+                  <hlm-select
+                    [value]="member.role"
+                    [disabled]="roleBusyUserId() === member.userId"
+                    (valueChange)="onRoleChange(member, $event)"
+                  >
+                    <hlm-select-trigger [buttonId]="'role-' + member.userId" class="w-full min-w-36">
+                      <hlm-select-value [placeholder]="member.role" />
+                    </hlm-select-trigger>
+                    <hlm-select-content *hlmSelectPortal>
+                      <hlm-select-group>
+                        @for (role of assignableRoles(); track role) {
+                          <hlm-select-item [value]="role">{{ role }}</hlm-select-item>
+                        }
+                        @if (!assignableRoles().includes(member.role)) {
+                          <hlm-select-item [value]="member.role">{{ member.role }}</hlm-select-item>
+                        }
+                      </hlm-select-group>
+                    </hlm-select-content>
+                  </hlm-select>
+                } @else {
+                  <vc-badge tone="muted">{{ member.role }}</vc-badge>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+<style>
+  .invite {
+    margin: 0 0 1.1rem;
+    padding: 1rem;
+  }
+
+  .invite__title {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .invite__hint {
+    margin: 0.3rem 0 0.75rem;
+    color: var(--vc-ink-muted);
+    font-size: 0.85rem;
+    max-width: 62ch;
+  }
+
+  .invite__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    align-items: flex-end;
+  }
+
+  .invite__field {
+    display: grid;
+    gap: 0.3rem;
+    min-width: 11rem;
+    flex: 1 1 11rem;
+  }
+
+  .invite__field span {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--vc-ink-muted);
+  }
+
+  .invite__field input,
+  .roles__select {
+    padding: 0.4rem 0.55rem;
+    border: 1px solid var(--vc-border);
+    border-radius: var(--vc-radius-sm);
+    background: var(--vc-surface);
+    color: var(--vc-ink);
+    font: inherit;
+  }
+</style>

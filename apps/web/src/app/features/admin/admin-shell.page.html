@@ -1,0 +1,46 @@
+<div class="admin-shell">
+  <aside class="admin-shell__sidebar" aria-label="Navegação administrativa">
+    <p class="admin-shell__brand">VibeChat</p>
+    <a routerLink="/app" class="admin-shell__back">← Voltar ao chat</a>
+
+    @if (!loading() && ctx.canAccessAdmin()) {
+      <nav class="admin-shell__nav">
+        @for (item of navItems(); track item.id) {
+          <a
+            [routerLink]="['/admin', item.path]"
+            routerLinkActive="admin-shell__nav-link--active"
+            class="admin-shell__nav-link"
+            [attr.aria-current]="null"
+          >
+            {{ item.label }}
+          </a>
+        }
+      </nav>
+    }
+  </aside>
+
+  <div class="admin-shell__main">
+    <header class="admin-shell__toolbar">
+      <div>
+        <h1>{{ activeTitle() }}</h1>
+        @if (workspaceName(); as name) {
+          <p class="admin-shell__hint">{{ name }}</p>
+        }
+      </div>
+      <div class="admin-shell__toolbar-actions">
+        <ng-content select="[adminToolbarActions]" />
+        <vc-theme-toggle />
+      </div>
+    </header>
+
+    <div class="admin-shell__content">
+      @if (loading()) {
+        <p class="admin-shell__hint">Carregando console…</p>
+      } @else if (!ctx.canAccessAdmin()) {
+        <p class="admin-shell__empty">Nada a administrar neste perfil.</p>
+      } @else {
+        <router-outlet (activate)="onChildActivate($event)" />
+      }
+    </div>
+  </div>
+</div>

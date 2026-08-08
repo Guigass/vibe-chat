@@ -18,7 +18,6 @@ Regras do registro:
 | ID | Tela | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
 | UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de contraste |
-| UX-005 | Admin | Seções sem permissão exibem o aviso em laranja/vermelho, dando aparência de erro a um estado esperado | Média | Aberto — fecha com **B-106** (esconder nav/áreas sem claim; matriz por papel) |
 | UX-006 | Header | Botões de ícone (buscar, tema, densidade, painel) sem estado de hover/foco perceptível | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de foco |
 
 ## Detalhamento
@@ -92,13 +91,9 @@ B-103, mas é corrigível antes.
 
 ### UX-005 — Aviso de permissão com cara de erro
 
-Em `/admin`, “Sem permissão para ler settings sensíveis” e “Sem permissão para auditar
-conversas” aparecem em laranja/vermelho. Para um Auditor, esse é o estado **normal**,
-não uma falha.
-
-Correção: **B-106** — não renderizar nav, toolbar nem seções sem a claim; deep-link
-sem permissão vai para a primeira área permitida (ou empty neutro). Sem banner de
-“sem permissão”. Matriz Admin vs Auditor vs Member na spec.
+**Resolved** (B-106) — nav lateral e rotas `/admin/*` escondem áreas sem claim;
+Auditor não vê Settings/Export/Plugins; deep-link sem permissão redireciona para a
+primeira área permitida, sem banner laranja/vermelho.
 
 ### UX-006 — Botões de ícone sem estado de hover/foco
 
