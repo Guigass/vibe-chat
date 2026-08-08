@@ -80,7 +80,7 @@ backlog ficam no **Registro de GAPs** (`roadmap.md`).
 | B-077 | CSP no web | **Done (W7-4)** — `infra/nginx/security-headers.conf` no proxy + web; [spec](../product/specs/B-077-csp-web.md) |
 | B-078 | Limite de tamanho de body no envio | **Done (W7-5)** — `MessageBodyPolicies` (8000 UTF-16); 400 `MessageBodyTooLong`; contador no composer/thread/edit |
 | B-105 | Catálogo de configuração admin mínima no `.env` | **Done (W7-7)** — EMAIL__* injetado no api; retenção no worker; alias OpenRouter unificado; testes `ComposeConfigCatalogTests`; [spec](../product/specs/B-105-catalogo-configuracao.md) |
-| B-106 | Admin shell (nav, toolbars, listagens, filtros, visibilidade por papel) | Planned (W7-8) — após B-104; esconde opções sem claim (fecha UX-005); matriz Admin/Auditor/Member; spec `docs/product/specs/B-106-admin-shell.md` |
+| B-106 | Admin shell (nav, toolbars, listagens, filtros, visibilidade por papel) | Done (W7-8) — shell `/admin/*`, hide por claim (UX-005); matriz Admin/Auditor/Member; spec `docs/product/specs/B-106-admin-shell.md` |
 
 ## Paridade de mensageria — Waves 8 a 10
 

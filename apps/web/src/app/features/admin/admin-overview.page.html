@@ -1,0 +1,129 @@
+@if (usingDemo()) {
+  <p class="admin-shell__hint" role="status">API admin indisponível — exibindo snapshot de demonstração.</p>
+}
+
+@if (loading()) {
+  <div class="admin__grid">
+    @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+      <vc-skeleton height="7rem" />
+    }
+  </div>
+} @else if (stats(); as s) {
+  <div class="admin__grid">
+    <article class="stat"><span>Usuários</span><strong>{{ s.users }}</strong></article>
+    <article class="stat"><span>Online</span><strong>{{ s.onlineUsers }}</strong></article>
+    <article class="stat"><span>Workspaces</span><strong>{{ s.workspaces }}</strong></article>
+    <article class="stat"><span>Channels</span><strong>{{ s.channels }}</strong></article>
+    <article class="stat"><span>Mensagens</span><strong>{{ s.messages }}</strong></article>
+    <article class="stat"><span>Conexões realtime</span><strong>{{ s.realtimeConnections }}</strong></article>
+    <article class="stat"><span>Outbox pendente</span><strong>{{ s.outboxPending }}</strong></article>
+    <article class="stat"><span>Falhas de processamento</span><strong>{{ s.processingFailures }}</strong></article>
+  </div>
+
+  <div class="admin__lower">
+    <article class="health admin-panel">
+      <h2>Saúde</h2>
+      <ul>
+        <li>
+          <span>PostgreSQL</span>
+          <em [attr.data-state]="s.health.postgres">{{ s.health.postgres }}</em>
+        </li>
+        <li>
+          <span>Redis</span>
+          <em [attr.data-state]="s.health.redis">{{ s.health.redis }}</em>
+        </li>
+        <li>
+          <span>Storage</span>
+          <em [attr.data-state]="s.health.storage">{{ s.health.storage }}</em>
+        </li>
+      </ul>
+    </article>
+
+    <article class="meta admin-panel">
+      <h2>Versão</h2>
+      <p class="mono">{{ s.appVersion }}</p>
+      <a [href]="s.grafanaUrl" target="_blank" rel="noopener noreferrer">Abrir Grafana ↗</a>
+    </article>
+  </div>
+}
+
+<style>
+  .admin__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .stat {
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--vc-border);
+    border-radius: var(--vc-radius-md);
+    background: var(--vc-surface-elevated);
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .stat span {
+    color: var(--vc-ink-muted);
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+
+  .stat strong {
+    font-family: var(--vc-font-display);
+    font-size: 1.65rem;
+    letter-spacing: -0.03em;
+  }
+
+  .admin__lower {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 0.85rem;
+  }
+
+  .health h2,
+  .meta h2 {
+    margin: 0 0 0.85rem;
+    font-size: 1rem;
+  }
+
+  .health ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .health li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .health em {
+    font-style: normal;
+    font-family: var(--vc-font-mono);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+  }
+
+  .health em[data-state='up'] {
+    color: var(--vc-success);
+  }
+
+  .health em[data-state='degraded'] {
+    color: var(--vc-warning);
+  }
+
+  .health em[data-state='down'] {
+    color: var(--vc-danger);
+  }
+
+  @media (max-width: 720px) {
+    .admin__lower {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

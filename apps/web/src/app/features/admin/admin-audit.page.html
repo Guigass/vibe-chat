@@ -1,0 +1,58 @@
+<p class="admin-panel__lead">Ações sensíveis do tenant registradas para compliance.</p>
+
+@if (loading()) {
+  <p class="admin-empty">Carregando audit log…</p>
+} @else if (loadError()) {
+  <p class="admin-empty">Não foi possível carregar o audit log.</p>
+} @else {
+  <div class="admin-filters" aria-label="Filtros do audit log">
+    <label class="admin-filters__field">
+      <span>Ação</span>
+      <select [value]="actionFilter()" (change)="actionFilter.set($any($event.target).value)">
+        @for (action of actionOptions(); track action) {
+          <option [value]="action">{{ action === 'all' ? 'Todas' : action }}</option>
+        }
+      </select>
+    </label>
+    <label class="admin-filters__field">
+      <span>De</span>
+      <input type="date" [value]="dateFrom()" (input)="dateFrom.set($any($event.target).value)" />
+    </label>
+    <label class="admin-filters__field">
+      <span>Até</span>
+      <input type="date" [value]="dateTo()" (input)="dateTo.set($any($event.target).value)" />
+    </label>
+  </div>
+
+  @if (filteredEvents().length === 0) {
+    <p class="admin-empty">Nenhum evento corresponde aos filtros.</p>
+  } @else {
+    <div class="admin-table-wrap">
+      <table class="admin-table" style="min-width: 40rem">
+        <thead>
+          <tr>
+            <th scope="col">Quando</th>
+            <th scope="col">Ação</th>
+            <th scope="col">Entidade</th>
+            <th scope="col">Ator</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (ev of filteredEvents(); track ev.id) {
+            <tr>
+              <td>{{ ev.occurredAt | date: 'short' }}</td>
+              <td><code>{{ ev.action }}</code></td>
+              <td>
+                {{ ev.entityType }}
+                @if (ev.entityId) {
+                  <span class="mono">#{{ ev.entityId.slice(0, 8) }}</span>
+                }
+              </td>
+              <td class="mono">{{ ev.actorUserId ? ev.actorUserId.slice(0, 8) : '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}

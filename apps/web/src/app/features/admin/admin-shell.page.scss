@@ -1,0 +1,129 @@
+.admin-shell {
+  display: grid;
+  grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr);
+  min-height: 100dvh;
+  background: var(--vc-bg-atmosphere);
+}
+
+.admin-shell__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem 0.85rem;
+  border-right: 1px solid var(--vc-border);
+  background: var(--vc-surface-elevated);
+}
+
+.admin-shell__brand {
+  margin: 0 0 0.25rem 0.65rem;
+  font-family: var(--vc-font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--vc-brand);
+  letter-spacing: -0.03em;
+}
+
+.admin-shell__back {
+  margin: 0 0 0.75rem 0.65rem;
+  color: var(--vc-ink-muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.admin-shell__nav {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.admin-shell__nav-link {
+  display: block;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--vc-radius-sm);
+  color: var(--vc-ink-muted);
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background var(--vc-dur-fast) var(--vc-ease-out),
+    color var(--vc-dur-fast) var(--vc-ease-out);
+}
+
+.admin-shell__nav-link:hover {
+  background: color-mix(in srgb, var(--vc-brand) 8%, transparent);
+  color: var(--vc-ink);
+}
+
+.admin-shell__nav-link:focus-visible {
+  outline: 2px solid var(--vc-brand);
+  outline-offset: 2px;
+}
+
+.admin-shell__nav-link--active {
+  background: color-mix(in srgb, var(--vc-brand) 14%, transparent);
+  color: var(--vc-brand);
+  font-weight: 600;
+}
+
+.admin-shell__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.admin-shell__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem clamp(1rem, 2.5vw, 1.75rem);
+  border-bottom: 1px solid var(--vc-border);
+  background: var(--vc-surface-elevated);
+}
+
+.admin-shell__toolbar h1 {
+  margin: 0;
+  font-family: var(--vc-font-display);
+  font-size: clamp(1.25rem, 2.5vw, 1.55rem);
+  letter-spacing: -0.02em;
+}
+
+.admin-shell__toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-shell__content {
+  flex: 1;
+  padding: clamp(1rem, 2.5vw, 1.75rem);
+}
+
+.admin-shell__empty {
+  margin: 2rem auto;
+  max-width: 36ch;
+  text-align: center;
+  color: var(--vc-ink-muted);
+}
+
+.admin-shell__hint {
+  margin: 0 0 1rem;
+  color: var(--vc-ink-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 840px) {
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-shell__sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--vc-border);
+  }
+
+  .admin-shell__nav {
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+}

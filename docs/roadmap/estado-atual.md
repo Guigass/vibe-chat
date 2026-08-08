@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-06
 - **Fase:** Wave 7 — Sustentação
 - **Safety lane obrigatória:** nenhuma Alta aberta (UX-001/#74, UX-002/#82, UX-003/#80 Done)
-- **Próximo item elegível:** W7-8 / B-106 — admin shell (nav, filtros, visibilidade por papel)
+- **Próximo item elegível:** W8 — paridade de composição (Wave 8)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -23,9 +23,8 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 
 O trabalho aberto concentra-se em:
 
-1. reconstruir o shell administrativo (B-106; depende de B-104 Done);
-2. avançar as Waves 8–10 de paridade de mensageria;
-3. consumir o roadmap autorizado W11–W17.
+1. avançar as Waves 8–10 de paridade de mensageria;
+2. consumir o roadmap autorizado W11–W17.
 
 ## Runtime e fronteiras
 
@@ -78,8 +77,8 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W7-8 / B-106 | Consolida navegação e visibilidade do console admin |
-| 2 | Waves 8–10 | Paridade de composição, leitura, notificação e acesso |
+| 1 | W8 | Paridade de composição (Wave 8) |
+| 2 | Waves 9–10 | Leitura, notificação e acesso |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 
