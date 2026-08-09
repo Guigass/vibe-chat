@@ -1172,6 +1172,28 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Search_finds_markdown_wrapped_term()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var messageId = Guid.NewGuid();
+        var token = $"mdterm{messageId:N}";
+        var create = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-md-{messageId:N}", $"**{token}** destacado", null, null));
+        create.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var search = await client.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={SeedData.DemoWorkspaceId.Value}&q={token}&limit=20",
+            JsonOptions);
+
+        search.Should().NotBeNull();
+        search!.Items.Should().Contain(x => x.MessageId == messageId && x.ChannelId == DemoChannelId);
+        search.Items.Single(x => x.MessageId == messageId).BodyPreview.Should().Contain(token);
+    }
+
+    [Fact]
     public async Task Search_excludes_soft_deleted_messages()
     {
         using var client = factory.CreateClient();

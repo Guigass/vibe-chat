@@ -1,4 +1,4 @@
-import { Component, input, model, output } from '@angular/core';
+import { Component, ElementRef, input, model, output, viewChild } from '@angular/core';
 
 @Component({
   selector: 'vc-textarea',
@@ -9,6 +9,7 @@ import { Component, input, model, output } from '@angular/core';
         <span class="vc-field__label">{{ label() }}</span>
       }
       <textarea
+        #control
         class="vc-field__control"
         rows="1"
         [attr.placeholder]="placeholder()"
@@ -46,11 +47,17 @@ import { Component, input, model, output } from '@angular/core';
   `,
 })
 export class Textarea {
+  private readonly controlRef = viewChild<ElementRef<HTMLTextAreaElement>>('control');
+
   readonly value = model('');
   readonly label = input('');
   readonly placeholder = input('');
   readonly disabled = input(false);
   readonly keydown = output<KeyboardEvent>();
+
+  nativeElement(): HTMLTextAreaElement | null {
+    return this.controlRef()?.nativeElement ?? null;
+  }
 
   onInput(event: Event): void {
     const el = event.target as HTMLTextAreaElement;

@@ -93,7 +93,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 |----|------|-------|
 | B-079 | Anexos múltiplos, drag & drop, colar, progresso | Planned (W8-1) — hoje é 1 arquivo por botão; drag é enhancement, nunca caminho único (WCAG 2.2 · 2.5.7) |
 | B-080 | Mensagem de áudio | Done (W8-2) — MIME negociado no cliente, waveform nos metadados, transcrição opt-in (D-12 / D-06) |
-| B-081 | Formatação de texto | Planned (W8-3) — Markdown restrito; `body` continua Markdown no banco |
+| B-081 | Formatação de texto | Done (W8-3) — Markdown restrito; `body` continua Markdown no banco |
 | B-082 | Menções | Planned (W8-4) — token `<@userId>`, `message_mentions`, badge separado |
 | B-083 | Emoji picker e reações livres | Planned (W8-5) — hoje 6 emojis fixos; validação por forma no servidor |
 | B-084 | Responder citando | Planned (W8-6) — `ReplyToMessageId` já existe e nunca é usado |
