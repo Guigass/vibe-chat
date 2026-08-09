@@ -16,6 +16,9 @@ import {
   formatFileSize,
   resolveContentType,
 } from './attachment-upload';
+import { AudioRecorderService } from './audio-recorder.service';
+import { formatDuration } from './audio-recorder';
+import { drawAudioWaveform } from '../../../shared/utils/audio';
 
 @Component({
   selector: 'vc-composer',
@@ -118,6 +121,36 @@ import {
           />
           Anexar
         </label>
+        @if (audioRecorder.supported) {
+          @if (audioRecorder.phase() === 'idle') {
+            <button
+              type="button"
+              class="composer__mic"
+              [disabled]="messages.sending() || !attachments.canAcceptMore()"
+              (click)="startRecording()"
+              aria-label="Gravar áudio"
+            >
+              Mic
+            </button>
+          } @else if (audioRecorder.phase() === 'recording') {
+            <div class="composer__audio-panel" aria-live="polite">
+              <span>{{ formatDuration(audioRecorder.elapsedMs()) }}</span>
+              <canvas #liveWave width="120" height="28" aria-hidden="true"></canvas>
+              <button type="button" class="ghost" (click)="stopRecording()">Parar</button>
+              <button type="button" class="ghost" (click)="discardRecording()">Descartar</button>
+            </div>
+          } @else if (audioRecorder.phase() === 'preview') {
+            <div class="composer__audio-panel">
+              @if (audioRecorder.previewUrl(); as previewUrl) {
+                <audio [src]="previewUrl" controls aria-label="Prévia do áudio"></audio>
+              }
+              <button type="button" class="ghost" (click)="discardRecording()">Regravar</button>
+              <button type="button" (click)="sendRecording()">Enviar áudio</button>
+            </div>
+          }
+        } @else {
+          <span class="composer__mic-hint" title="Use Anexar para enviar áudio">Mic indisponível</span>
+        }
         <vc-button
           type="submit"
           [disabled]="submitDisabled()"
@@ -233,6 +266,33 @@ import {
       opacity: 0;
       cursor: pointer;
     }
+    .composer__mic,
+    .composer__mic-hint {
+      border: 0;
+      background: transparent;
+      color: var(--vc-brand);
+      font: inherit;
+      font-size: 0.82rem;
+      cursor: pointer;
+      padding: 0.35rem 0.5rem;
+    }
+    .composer__mic-hint {
+      color: var(--vc-ink-subtle);
+      cursor: help;
+      font-size: 0.72rem;
+    }
+    .composer__audio-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      align-items: center;
+      font-size: 0.78rem;
+      color: var(--vc-ink-muted);
+    }
+    .composer__audio-panel audio {
+      max-width: 12rem;
+      height: 1.8rem;
+    }
     .composer__counter {
       margin: 0;
       font-size: 0.75rem;
@@ -256,7 +316,10 @@ export class Composer {
   readonly messages = inject(MessageStore);
   readonly channels = inject(ChannelStore);
   readonly attachments = inject(AttachmentQueueService);
+  readonly audioRecorder = inject(AudioRecorderService);
   private readonly hub = inject(ChatHubService);
+
+  readonly formatDuration = formatDuration;
 
   readonly draft = signal('');
   readonly validationError = signal<string | null>(null);
@@ -291,7 +354,14 @@ export class Composer {
     effect(() => {
       this.channels.activeChannel()?.id;
       this.attachments.clear();
+      this.audioRecorder.reset();
       this.validationError.set(null);
+    });
+
+    effect(() => {
+      if (this.audioRecorder.phase() !== 'recording') return;
+      const canvas = document.querySelector('.composer__audio-panel canvas');
+      drawAudioWaveform(canvas as HTMLCanvasElement | null, this.audioRecorder.liveWaveform());
     });
   }
 
@@ -320,6 +390,41 @@ export class Composer {
   queueFiles(files: File[]): void {
     const error = this.attachments.addFiles(files);
     this.validationError.set(error);
+  }
+
+  async startRecording(): Promise<void> {
+    const error = await this.audioRecorder.start();
+    this.validationError.set(error);
+  }
+
+  stopRecording(): void {
+    this.audioRecorder.stop();
+  }
+
+  discardRecording(): void {
+    this.audioRecorder.discard();
+  }
+
+  async sendRecording(): Promise<void> {
+    const channelId = this.channels.activeChannel()?.id;
+    if (!channelId) return;
+    const recorded = await this.audioRecorder.buildRecordedAudio();
+    if (!recorded) {
+      this.validationError.set(this.audioRecorder.errorMessage());
+      return;
+    }
+
+    const result = await this.attachments.uploadRecordedAudio(channelId, recorded);
+    if (result.error) {
+      this.validationError.set(result.error);
+      return;
+    }
+
+    const ok = await this.messages.send('', result.attachmentId ? [result.attachmentId] : []);
+    if (ok) {
+      this.audioRecorder.reset();
+      this.validationError.set(null);
+    }
   }
 
   async onSubmit(event: Event): Promise<void> {

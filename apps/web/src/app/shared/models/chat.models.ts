@@ -68,6 +68,9 @@ export interface MessageAttachment {
   contentType: string;
   sizeBytes: number;
   status?: string;
+  kind?: 'File' | 'Audio';
+  durationMs?: number;
+  waveform?: number[];
 }
 
 export interface ReactionSummary {

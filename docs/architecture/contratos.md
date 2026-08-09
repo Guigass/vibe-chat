@@ -283,9 +283,10 @@ public interface IObjectStorage
 
 | Endpoint | Notas |
 |----------|-------|
-| `POST /api/v1/channels/{channelId}/attachments` | Body `{ fileName, contentType, sizeBytes }` → URL pré-assinada PUT; exige membership + `file.upload` |
+| `POST /api/v1/channels/{channelId}/attachments` | Body `{ fileName, contentType, sizeBytes, kind?, durationMs?, waveform? }` → URL pré-assinada PUT; exige membership + `file.upload`; `kind=Audio` exige `durationMs` e aceita `waveform` (0–100, ≤100 pts) |
 | `POST /api/v1/channels/{channelId}/attachments/{id}/complete` | Confirma objeto no MinIO; status `Ready` |
 | `GET /api/v1/channels/{channelId}/attachments/{id}/download` | URL pré-assinada GET; exige membership + `file.download` |
+| `POST /api/v1/workspaces/{workspaceId}/channels/{channelId}/messages/{messageId}/attachments/{attachmentId}/transcribe` | membership + `ai.transcribe`; `{ text, language, provider }` efêmero (não persiste); `503 AiDisabled` se IA off |
 
 Regras: keys prefixadas por tenant (`tenants/{tenantId}/…`); MIME/tamanho via `Files:*`; body da mensagem pode ser vazio se houver `AttachmentIds` prontos no `SendMessage`.
 

@@ -7,6 +7,7 @@ import {
   UPLOAD_CONCURRENCY,
   validateAttachmentFile,
 } from './attachment-upload';
+import { RecordedAudio } from './audio-recorder.service';
 
 @Injectable({ providedIn: 'root' })
 export class AttachmentQueueService {
@@ -120,6 +121,59 @@ export class AttachmentQueueService {
       await new Promise((resolve) => setTimeout(resolve, 120));
     }
     return this.readyAttachmentIds();
+  }
+
+  async uploadRecordedAudio(
+    channelId: string,
+    recorded: RecordedAudio,
+  ): Promise<{ attachmentId?: string; error?: string }> {
+    if (!this.canAcceptMore()) {
+      return { error: `No máximo ${MAX_ATTACHMENTS_PER_MESSAGE} anexos por mensagem.` };
+    }
+
+    const localId = crypto.randomUUID();
+    const file = new File([recorded.blob], recorded.fileName, { type: recorded.mimeType });
+    this.itemsSignal.update((list) => [
+      ...list,
+      {
+        localId,
+        file,
+        status: 'uploading',
+        progress: 0,
+      },
+    ]);
+
+    try {
+      const initiated = await this.api.initiateAttachmentUpload({
+        channelId,
+        fileName: recorded.fileName,
+        contentType: recorded.mimeType,
+        sizeBytes: recorded.blob.size,
+        kind: 'Audio',
+        durationMs: recorded.durationMs,
+        waveform: recorded.waveform,
+      });
+
+      await this.api.uploadFileToPresignedUrl(
+        initiated.uploadUrl,
+        file,
+        initiated.requiredHeaders ?? {},
+        (progress) => this.patch(localId, { progress }),
+      );
+
+      const ready = await this.api.completeAttachmentUpload(channelId, initiated.attachmentId);
+      this.patch(localId, {
+        status: 'ready',
+        progress: 100,
+        attachmentId: ready.id,
+      });
+      this.announce('Áudio enviado');
+      return { attachmentId: ready.id };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Falha no upload do áudio';
+      this.patch(localId, { status: 'failed', progress: 0, error: message });
+      return { error: message };
+    }
   }
 
   private scheduleUploads(channelId: string): void {

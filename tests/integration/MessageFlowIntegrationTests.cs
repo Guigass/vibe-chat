@@ -987,6 +987,92 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Audio_attachment_upload_links_to_message_with_metadata()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var content = new byte[] { 0x1a, 0x45, 0xdf, 0xa3, 0x01, 0x00, 0x00, 0x00 };
+        var waveform = Enumerable.Range(0, 20).Select(i => i * 5).ToArray();
+        var initiate = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments",
+            new CreateAttachmentUploadRequest(
+                "voice.webm",
+                "audio/webm",
+                content.Length,
+                Kind: "Audio",
+                DurationMs: 10_000,
+                Waveform: waveform));
+        initiate.StatusCode.Should().Be(HttpStatusCode.OK);
+        var upload = await initiate.Content.ReadFromJsonAsync<AttachmentUploadDto>(JsonOptions);
+        upload.Should().NotBeNull();
+
+        using var putRequest = new HttpRequestMessage(HttpMethod.Put, upload!.UploadUrl)
+        {
+            Content = new ByteArrayContent(content)
+        };
+        using var putClient = new HttpClient();
+        (await putClient.SendAsync(putRequest)).IsSuccessStatusCode.Should().BeTrue();
+
+        var complete = await client.PostAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments/{upload.AttachmentId}/complete",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+        complete.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var messageId = Guid.NewGuid();
+        var send = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-audio-{messageId:N}", string.Empty, null, null, [upload.AttachmentId]));
+        send.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var accepted = await send.Content.ReadFromJsonAsync<MessageDto>(JsonOptions);
+        accepted.Should().NotBeNull();
+        accepted!.Attachments.Should().ContainSingle(a =>
+            a.Id == upload.AttachmentId
+            && a.Kind == "Audio"
+            && a.DurationMs == 10_000
+            && a.Waveform != null
+            && a.Waveform.Length > 0);
+    }
+
+    [Fact]
+    public async Task Ai_transcribe_audio_attachment_outside_send_path()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var content = new byte[] { 0x1a, 0x45, 0xdf, 0xa3, 0x02, 0x00, 0x00, 0x00 };
+        var initiate = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments",
+            new CreateAttachmentUploadRequest("voice.webm", "audio/webm", content.Length, Kind: "Audio", DurationMs: 5_000));
+        initiate.EnsureSuccessStatusCode();
+        var upload = await initiate.Content.ReadFromJsonAsync<AttachmentUploadDto>(JsonOptions);
+
+        using var putClient = new HttpClient();
+        (await putClient.SendAsync(new HttpRequestMessage(HttpMethod.Put, upload!.UploadUrl)
+        {
+            Content = new ByteArrayContent(content)
+        })).EnsureSuccessStatusCode();
+
+        await client.PostAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments/{upload.AttachmentId}/complete",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+
+        var messageId = Guid.NewGuid();
+        (await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-tr-{messageId:N}", string.Empty, null, null, [upload.AttachmentId])))
+            .EnsureSuccessStatusCode();
+
+        var transcribe = await client.PostAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/channels/{DemoChannelId}/messages/{messageId}/attachments/{upload.AttachmentId}/transcribe",
+            content: null);
+        transcribe.StatusCode.Should().Be(HttpStatusCode.OK);
+        var payload = await transcribe.Content.ReadFromJsonAsync<AiTranscribeDto>(JsonOptions);
+        payload.Should().NotBeNull();
+        payload!.Text.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
     public async Task Attachment_rejects_disallowed_content_type()
     {
         using var client = factory.CreateClient();
@@ -1214,6 +1300,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     private sealed record AiSummaryDto(string Summary);
+    private sealed record AiTranscribeDto(string Text, string Language, string Provider);
     private sealed record AiSuggestReplyDto(string Suggestion);
     private sealed record ReactionSummaryDto(string Emoji, int Count, bool Me);
     private sealed record ToggleReactionRequestDto(string Emoji);
@@ -1249,7 +1336,15 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         int ReplyCount,
         MessageDto? ParentMessage = null);
 
-    private sealed record AttachmentDto(Guid Id, string FileName, string ContentType, long SizeBytes, string Status);
+    private sealed record AttachmentDto(
+        Guid Id,
+        string FileName,
+        string ContentType,
+        long SizeBytes,
+        string Status,
+        string Kind = "File",
+        int? DurationMs = null,
+        int[]? Waveform = null);
     private sealed record AttachmentUploadDto(Guid AttachmentId, string UploadUrl, DateTimeOffset ExpiresAt, string FileName, string ContentType);
     private sealed record AttachmentDownloadDto(Guid AttachmentId, string DownloadUrl, DateTimeOffset ExpiresAt, string FileName, string ContentType, long SizeBytes);
 

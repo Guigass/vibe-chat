@@ -192,6 +192,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.StorageKey).HasMaxLength(512);
             entity.Property(x => x.ChecksumSha256).HasMaxLength(96);
             entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
+            entity.Property(x => x.Kind).HasConversion<string>().HasMaxLength(16).HasDefaultValue(AttachmentKind.File);
+            entity.Property(x => x.DurationMs);
+            entity.Property(x => x.Waveform).HasColumnType("jsonb");
             entity.HasIndex(x => x.StorageKey).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.ChannelId, x.MessageId });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
@@ -609,7 +612,10 @@ public sealed class MessageWriter(
                     id = x.Id,
                     fileName = x.FileName,
                     contentType = x.ContentType,
-                    sizeBytes = x.SizeBytes
+                    sizeBytes = x.SizeBytes,
+                    kind = x.Kind.ToString(),
+                    durationMs = x.DurationMs,
+                    waveform = x.Waveform
                 })
             })
         });
@@ -769,6 +775,85 @@ public sealed class SuggestChannelReplyFeature(
         });
         await dbContext.SaveChangesAsync(cancellationToken);
         return new SuggestChannelReplyResult(true, response.Text);
+    }
+}
+
+public sealed class TranscribeAttachmentFeature(
+    VibeChatDbContext dbContext,
+    IAiCompletionProvider provider,
+    IClock clock,
+    IConfiguration configuration) : ITranscribeAttachmentFeature
+{
+    public async Task<TranscribeAttachmentResult> TranscribeAsync(
+        TenantId tenantId,
+        WorkspaceId workspaceId,
+        ChannelId channelId,
+        MessageId messageId,
+        Guid attachmentId,
+        CancellationToken cancellationToken)
+    {
+        if (!configuration.GetValue("Ai:Enabled", false) || provider is NullAiProvider)
+        {
+            return new TranscribeAttachmentResult(false, string.Empty, null, null, "AiDisabled");
+        }
+
+        var settings = await dbContext.AiSettings.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.TenantId == tenantId && x.WorkspaceId == workspaceId, cancellationToken);
+
+        if (settings is null || !settings.Enabled)
+        {
+            return new TranscribeAttachmentResult(false, string.Empty, null, null, "AiDisabled");
+        }
+
+        var attachment = await dbContext.Attachments.AsNoTracking()
+            .FirstOrDefaultAsync(
+                x => x.Id == attachmentId
+                    && x.TenantId == tenantId
+                    && x.ChannelId == channelId
+                    && x.MessageId == messageId
+                    && x.Status == AttachmentStatus.Ready,
+                cancellationToken);
+
+        if (attachment is null)
+        {
+            return new TranscribeAttachmentResult(false, string.Empty, null, null, "NotFound");
+        }
+
+        if (attachment.Kind != AttachmentKind.Audio)
+        {
+            return new TranscribeAttachmentResult(false, string.Empty, null, null, "NotAudio");
+        }
+
+        var durationSec = attachment.DurationMs.HasValue
+            ? Math.Round(attachment.DurationMs.Value / 1000.0, 1)
+            : 0;
+        var prompt = $"Audio attachment {attachment.FileName}; duration {durationSec}s; content-type {attachment.ContentType}.";
+        var response = await provider.CompleteAsync(
+            new AiCompletionRequest(
+                "Transcribe the described audio attachment without exposing sensitive details. Return plain text only.",
+                prompt),
+            cancellationToken);
+
+        if (string.Equals(provider.Name, "OpenRouter", StringComparison.OrdinalIgnoreCase)
+            && response.Text.Contains("provider is unavailable", StringComparison.OrdinalIgnoreCase))
+        {
+            return new TranscribeAttachmentResult(false, string.Empty, null, null, "ProviderError");
+        }
+
+        dbContext.AiUsageRecords.Add(new AiUsageRecord
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            WorkspaceId = workspaceId,
+            Provider = provider.Name,
+            PromptTokens = response.PromptTokens,
+            CompletionTokens = response.CompletionTokens,
+            CostUsd = 0m,
+            LatencyMs = response.LatencyMs,
+            CreatedAt = clock.UtcNow
+        });
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return new TranscribeAttachmentResult(true, response.Text, "und", provider.Name);
     }
 }
 
@@ -1983,6 +2068,7 @@ public static class DependencyInjection
         services.AddScoped<IDashboardQuery, DashboardQuery>();
         services.AddScoped<ISummarizeChannelFeature, SummarizeChannelFeature>();
         services.AddScoped<ISuggestChannelReplyFeature, SuggestChannelReplyFeature>();
+        services.AddScoped<ITranscribeAttachmentFeature, TranscribeAttachmentFeature>();
         services.AddSingleton<RedisConnection>();
         services.AddScoped<ITypingService, TypingService>();
         services.AddScoped<IPresenceService, PresenceService>();

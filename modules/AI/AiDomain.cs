@@ -34,6 +34,9 @@ public sealed record SummarizeChannelResult(bool Ok, string Summary, string? Err
 /// <summary>Result of suggest-reply. When Ok is false, Error is a stable code (e.g. AiDisabled, ProviderError).</summary>
 public sealed record SuggestChannelReplyResult(bool Ok, string Suggestion, string? Error = null);
 
+/// <summary>Result of audio transcription. When Ok is false, Error is a stable code (e.g. AiDisabled, ProviderError).</summary>
+public sealed record TranscribeAttachmentResult(bool Ok, string Text, string? Language, string? Provider, string? Error = null);
+
 public interface IAiCompletionProvider
 {
     string Name { get; }
@@ -57,7 +60,12 @@ public sealed class MockAiProvider : IAiCompletionProvider
         var lines = request.UserPrompt.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var count = Math.Min(lines.Length, 5);
         var isSuggest = request.SystemPrompt.Contains("Suggest", StringComparison.OrdinalIgnoreCase);
-        var text = isSuggest
+        var isTranscribe = request.SystemPrompt.Contains("Transcribe", StringComparison.OrdinalIgnoreCase);
+        var text = isTranscribe
+            ? (count == 0
+                ? "Mock transcription: no audio metadata available."
+                : $"Mock transcription: spoken content approximating {count} audio segment(s).")
+            : isSuggest
             ? (count == 0
                 ? "Thanks for the update — happy to help with the next step."
                 : "Mock suggestion: Acknowledge the recent points and propose a clear next step.")
@@ -133,4 +141,15 @@ public interface ISummarizeChannelFeature
 public interface ISuggestChannelReplyFeature
 {
     Task<SuggestChannelReplyResult> SuggestAsync(TenantId tenantId, WorkspaceId workspaceId, ChannelId channelId, CancellationToken cancellationToken);
+}
+
+public interface ITranscribeAttachmentFeature
+{
+    Task<TranscribeAttachmentResult> TranscribeAsync(
+        TenantId tenantId,
+        WorkspaceId workspaceId,
+        ChannelId channelId,
+        MessageId messageId,
+        Guid attachmentId,
+        CancellationToken cancellationToken);
 }

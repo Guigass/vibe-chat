@@ -13,5 +13,6 @@ export const environment = {
   grafanaUrl: 'http://localhost:3000',
   // D-06: UI opt-in; production builds keep summarize hidden unless explicitly enabled.
   aiSummarizeEnabled: false,
+  aiTranscribeEnabled: false,
   appVersion: '0.1.0',
 };
