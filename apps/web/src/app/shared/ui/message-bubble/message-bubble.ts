@@ -11,6 +11,7 @@ import {
 } from '../../models/chat.models';
 import { Avatar } from '../avatar/avatar';
 import { AudioMessage } from '../audio-message/audio-message';
+import { MarkdownBody } from '../../markdown/markdown-body';
 import { ApiService } from '../../../core/api/api.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { environment } from '../../../../environments/environment';
@@ -18,7 +19,7 @@ import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'vc-message-bubble',
   standalone: true,
-  imports: [Avatar, DatePipe, AudioMessage],
+  imports: [Avatar, DatePipe, AudioMessage, MarkdownBody],
   template: `
     <article
       class="vc-msg vc-anim-fade-in"
@@ -73,7 +74,7 @@ import { environment } from '../../../../environments/environment';
           </div>
         } @else {
           @if (message().body) {
-            <p>{{ message().body }}</p>
+            <vc-markdown-body [source]="message().body" />
           }
           @if (message().attachments?.length) {
             <ul class="vc-msg__attachments">

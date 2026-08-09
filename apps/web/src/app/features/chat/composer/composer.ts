@@ -1,5 +1,10 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { Button, Textarea } from '../../../shared/ui';
+import {
+  applyMarkdownWrap,
+  handleMarkdownShortcut,
+  updateTextareaSelection,
+} from '../../../shared/markdown/markdown-format';
 import { MessageStore } from '../../../core/services/message.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { ChannelStore } from '../../../core/services/channel.store';
@@ -92,7 +97,15 @@ import { drawAudioWaveform } from '../../../shared/utils/audio';
           <p class="composer__validation" role="alert">{{ validationError() }}</p>
         }
 
+        <div class="composer__format" role="toolbar" aria-label="Formatação de texto">
+          <button type="button" aria-label="Negrito" (click)="applyFormat('bold')"><strong>B</strong></button>
+          <button type="button" aria-label="Itálico" (click)="applyFormat('italic')"><em>I</em></button>
+          <button type="button" aria-label="Riscado" (click)="applyFormat('strike')"><s>S</s></button>
+          <button type="button" aria-label="Código inline" (click)="applyFormat('code')">&lt;/&gt;</button>
+        </div>
+
         <vc-textarea
+          #composerTextarea
           [(value)]="draft"
           [placeholder]="'Mensagem em #' + (channels.activeChannel()?.name || 'channel')"
           [label]="''"
@@ -178,6 +191,29 @@ import { drawAudioWaveform } from '../../../shared/utils/audio';
     .composer__main {
       display: grid;
       gap: 0.45rem;
+    }
+    .composer__format {
+      display: flex;
+      gap: 0.25rem;
+      align-items: center;
+    }
+    .composer__format button {
+      border: 1px solid var(--vc-border);
+      background: var(--vc-surface);
+      color: var(--vc-ink-muted);
+      border-radius: var(--vc-radius-sm);
+      font: inherit;
+      font-size: 0.78rem;
+      line-height: 1;
+      min-width: 1.75rem;
+      min-height: 1.75rem;
+      cursor: pointer;
+      padding: 0.2rem 0.35rem;
+    }
+    .composer__format button:hover,
+    .composer__format button:focus-visible {
+      color: var(--vc-ink);
+      border-color: color-mix(in srgb, var(--vc-brand) 35%, var(--vc-border));
     }
     .composer__attachments {
       list-style: none;
@@ -313,6 +349,8 @@ import { drawAudioWaveform } from '../../../shared/utils/audio';
   `,
 })
 export class Composer {
+  private readonly composerTextarea = viewChild<Textarea>('composerTextarea');
+
   readonly messages = inject(MessageStore);
   readonly channels = inject(ChannelStore);
   readonly attachments = inject(AttachmentQueueService);
@@ -443,7 +481,29 @@ export class Composer {
     }
   }
 
+  applyFormat(kind: 'bold' | 'italic' | 'strike' | 'code'): void {
+    const textarea = this.composerTextarea()?.nativeElement();
+    if (!textarea) return;
+
+    const current = this.draft();
+    const result = applyMarkdownWrap(
+      current,
+      textarea.selectionStart,
+      textarea.selectionEnd,
+      kind,
+    );
+    this.draft.set(result.value);
+    updateTextareaSelection(textarea, result.value, result.selectionStart, result.selectionEnd);
+  }
+
   onKeydown(event: KeyboardEvent): void {
+    const shortcut = handleMarkdownShortcut(event);
+    if (shortcut) {
+      event.preventDefault();
+      this.applyFormat(shortcut);
+      return;
+    }
+
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       void this.onSubmit(event);

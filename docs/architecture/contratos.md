@@ -54,7 +54,7 @@ public interface IMembershipQuery
 | Campo | Tipo | Notas |
 |-------|------|-------|
 | ConversationId | Guid | Channel root ou thread |
-| Body | string | Texto (markdown subset futuro); máx. **8000** code units UTF-16 (`MessageBodyPolicies.MaxLength`); vazio permitido somente com `AttachmentIds` prontos |
+| Body | string | Markdown restrito (B-081): `**negrito**`, `*itálico*`, `~~riscado~~`, `` `código` ``, bloco ` ``` ` com linguagem opcional, `> citação`, listas `-`/`1.`, URLs `http(s)://…` auto-link no cliente; renderização só no web — persistência/busca/export/auditoria usam o texto original; máx. **8000** code units UTF-16 (`MessageBodyPolicies.MaxLength`); vazio permitido somente com `AttachmentIds` prontos |
 | ContentType | string | `text/plain` inicial |
 | IdempotencyKey | string | Obrigatório no cliente |
 | AttachmentIds | Guid[] | Opcional |
