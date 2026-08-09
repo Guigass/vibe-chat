@@ -9,6 +9,12 @@ public enum AttachmentStatus
     Failed = 2
 }
 
+public enum AttachmentKind
+{
+    File = 0,
+    Audio = 1
+}
+
 public sealed class Attachment
 {
     public Guid Id { get; set; }
@@ -22,6 +28,9 @@ public sealed class Attachment
     public string StorageKey { get; set; } = string.Empty;
     public string? ChecksumSha256 { get; set; }
     public AttachmentStatus Status { get; set; } = AttachmentStatus.PendingUpload;
+    public AttachmentKind Kind { get; set; } = AttachmentKind.File;
+    public int? DurationMs { get; set; }
+    public int[]? Waveform { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? ReadyAt { get; set; }
 }
@@ -43,6 +52,9 @@ public interface IObjectStorage
 public static class AttachmentPolicies
 {
     public const long DefaultMaxSizeBytes = 10 * 1024 * 1024;
+    public const long DefaultAudioMaxSizeBytes = 10 * 1024 * 1024;
+    public const int DefaultAudioMaxDurationMs = 300_000;
+    public const int MaxWaveformPoints = 100;
     public const int DefaultMaxAttachmentsPerMessage = 10;
     public const int DefaultUploadTtlSeconds = 900;
     public const int DefaultDownloadTtlSeconds = 300;
@@ -56,6 +68,15 @@ public static class AttachmentPolicies
         "image/gif",
         "application/pdf",
         "text/plain"
+    };
+
+    public static readonly HashSet<string> DefaultAllowedAudioContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "audio/webm",
+        "audio/ogg",
+        "audio/mp4",
+        "audio/webm;codecs=opus",
+        "audio/ogg;codecs=opus"
     };
 
     public static string SanitizeFileName(string fileName)
@@ -86,4 +107,65 @@ public static class AttachmentPolicies
 
     public static bool IsWithinAttachmentCount(int count, int maxAttachments = DefaultMaxAttachmentsPerMessage) =>
         count >= 0 && count <= maxAttachments;
+
+    public static bool IsAllowedAudioContentType(string contentType) =>
+        DefaultAllowedAudioContentTypes.Contains(contentType.Trim(), StringComparer.OrdinalIgnoreCase)
+        || contentType.Trim().StartsWith("audio/webm", StringComparison.OrdinalIgnoreCase)
+        || contentType.Trim().StartsWith("audio/ogg", StringComparison.OrdinalIgnoreCase)
+        || contentType.Trim().StartsWith("audio/mp4", StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsValidWaveform(int[]? waveform)
+    {
+        if (waveform is null || waveform.Length == 0)
+        {
+            return true;
+        }
+
+        if (waveform.Length > MaxWaveformPoints)
+        {
+            return false;
+        }
+
+        return waveform.All(v => v is >= 0 and <= 100);
+    }
+
+    public static int[] NormalizeWaveform(int[]? waveform)
+    {
+        if (waveform is null || waveform.Length == 0)
+        {
+            return [];
+        }
+
+        var capped = waveform.Length > MaxWaveformPoints
+            ? DownsampleWaveform(waveform, MaxWaveformPoints)
+            : waveform;
+
+        return capped.Select(v => Math.Clamp(v, 0, 100)).ToArray();
+    }
+
+    public static int[] DownsampleWaveform(int[] samples, int targetPoints)
+    {
+        if (samples.Length <= targetPoints)
+        {
+            return samples;
+        }
+
+        var result = new int[targetPoints];
+        var bucketSize = (double)samples.Length / targetPoints;
+        for (var i = 0; i < targetPoints; i++)
+        {
+            var start = (int)Math.Floor(i * bucketSize);
+            var end = Math.Min(samples.Length, (int)Math.Floor((i + 1) * bucketSize));
+            if (end <= start)
+            {
+                result[i] = samples[Math.Min(start, samples.Length - 1)];
+                continue;
+            }
+
+            var slice = samples[start..end];
+            result[i] = (int)Math.Round(slice.Average());
+        }
+
+        return result;
+    }
 }

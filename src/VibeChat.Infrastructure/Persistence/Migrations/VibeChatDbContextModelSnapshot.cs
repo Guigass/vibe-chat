@@ -295,6 +295,19 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<int?>("DurationMs")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasDefaultValue("File");
+
+                    b.Property<int[]>("Waveform")
+                        .HasColumnType("jsonb");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
 

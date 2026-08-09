@@ -12,5 +12,6 @@ export const environment = {
   },
   grafanaUrl: 'http://localhost:3000',
   aiSummarizeEnabled: true,
+  aiTranscribeEnabled: true,
   appVersion: '0.1.0-dev',
 };

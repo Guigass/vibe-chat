@@ -288,6 +288,27 @@ public sealed class BackendUnitTests
     }
 
     [Fact]
+    public void Attachment_policies_validate_audio_waveform()
+    {
+        AttachmentPolicies.IsValidWaveform([10, 50, 100]).Should().BeTrue();
+        AttachmentPolicies.IsValidWaveform([101]).Should().BeFalse();
+        AttachmentPolicies.NormalizeWaveform(Enumerable.Range(0, 200).Select(i => i % 100).ToArray())
+            .Should().HaveCount(AttachmentPolicies.MaxWaveformPoints);
+    }
+
+    [Fact]
+    public async Task Mock_ai_transcribes_without_requiring_external_provider()
+    {
+        var provider = new MockAiProvider();
+
+        var response = await provider.CompleteAsync(
+            new AiCompletionRequest("Transcribe the described audio attachment.", "Audio attachment voice.webm; duration 5s"),
+            CancellationToken.None);
+
+        response.Text.Should().Contain("Mock transcription");
+    }
+
+    [Fact]
     public async Task Mock_ai_summarizes_without_requiring_external_provider()
     {
         var provider = new MockAiProvider();

@@ -874,7 +874,15 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
         var attachments = await db.Attachments.AsNoTracking()
             .Where(x => x.MessageId == result.MessageId)
             .OrderBy(x => x.CreatedAt)
-            .Select(x => new AttachmentResponse(x.Id, x.FileName, x.ContentType, x.SizeBytes, x.Status.ToString()))
+            .Select(x => new AttachmentResponse(
+                x.Id,
+                x.FileName,
+                x.ContentType,
+                x.SizeBytes,
+                x.Status.ToString(),
+                x.Kind.ToString(),
+                x.DurationMs,
+                x.Waveform))
             .ToArrayAsync(ct);
 
         return Results.Accepted(
@@ -1197,7 +1205,15 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
         var attachments = await db.Attachments.AsNoTracking()
             .Where(x => x.MessageId == result.MessageId)
             .OrderBy(x => x.CreatedAt)
-            .Select(x => new AttachmentResponse(x.Id, x.FileName, x.ContentType, x.SizeBytes, x.Status.ToString()))
+            .Select(x => new AttachmentResponse(
+                x.Id,
+                x.FileName,
+                x.ContentType,
+                x.SizeBytes,
+                x.Status.ToString(),
+                x.Kind.ToString(),
+                x.DurationMs,
+                x.Waveform))
             .ToArrayAsync(ct);
 
         return Results.Accepted(
@@ -1261,20 +1277,53 @@ v1.MapPost("/channels/{channelId:guid}/attachments", async (
     var maxSize = config.GetValue("Files:MaxSizeBytes", AttachmentPolicies.DefaultMaxSizeBytes);
     var allowed = config.GetSection("Files:AllowedContentTypes").Get<string[]>() ?? AttachmentPolicies.DefaultAllowedContentTypes.ToArray();
     var uploadTtl = TimeSpan.FromSeconds(config.GetValue("Files:PresignUploadTtlSeconds", AttachmentPolicies.DefaultUploadTtlSeconds));
+    var kind = Enum.TryParse<AttachmentKind>(request.Kind, ignoreCase: true, out var parsedKind)
+        ? parsedKind
+        : AttachmentKind.File;
 
     if (string.IsNullOrWhiteSpace(request.FileName) || string.IsNullOrWhiteSpace(request.ContentType) || request.SizeBytes <= 0)
     {
         return Results.BadRequest(new { error = "fileName, contentType and sizeBytes are required." });
     }
 
+    int[]? waveform = null;
+    if (kind == AttachmentKind.Audio)
+    {
+        maxSize = config.GetValue("Files:Audio:MaxSizeBytes", AttachmentPolicies.DefaultAudioMaxSizeBytes);
+        var maxDurationMs = config.GetValue("Files:Audio:MaxDurationMs", AttachmentPolicies.DefaultAudioMaxDurationMs);
+        if (!AttachmentPolicies.IsAllowedAudioContentType(request.ContentType))
+        {
+            return Results.BadRequest(new { error = "Audio content type is not allowed." });
+        }
+
+        if (!request.DurationMs.HasValue || request.DurationMs <= 0)
+        {
+            return Results.BadRequest(new { error = "durationMs is required for audio attachments." });
+        }
+
+        if (request.DurationMs > maxDurationMs)
+        {
+            return Results.BadRequest(new { error = $"Audio exceeds max duration of {maxDurationMs} ms." });
+        }
+
+        if (!AttachmentPolicies.IsValidWaveform(request.Waveform))
+        {
+            return Results.BadRequest(new { error = "Waveform must contain up to 100 values between 0 and 100." });
+        }
+
+        waveform = AttachmentPolicies.NormalizeWaveform(request.Waveform);
+    }
+    else
+    {
+        if (!AttachmentPolicies.IsAllowedContentType(request.ContentType, allowed))
+        {
+            return Results.BadRequest(new { error = "Content type is not allowed." });
+        }
+    }
+
     if (request.SizeBytes > maxSize)
     {
         return Results.BadRequest(new { error = $"File exceeds max size of {maxSize} bytes." });
-    }
-
-    if (!AttachmentPolicies.IsAllowedContentType(request.ContentType, allowed))
-    {
-        return Results.BadRequest(new { error = "Content type is not allowed." });
     }
 
     var attachmentId = Guid.NewGuid();
@@ -1292,6 +1341,9 @@ v1.MapPost("/channels/{channelId:guid}/attachments", async (
         SizeBytes = request.SizeBytes,
         StorageKey = storageKey,
         Status = AttachmentStatus.PendingUpload,
+        Kind = kind,
+        DurationMs = kind == AttachmentKind.Audio ? request.DurationMs : null,
+        Waveform = kind == AttachmentKind.Audio ? waveform : null,
         CreatedAt = now
     };
     db.Attachments.Add(attachment);
@@ -1355,7 +1407,7 @@ v1.MapPost("/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete"
 
     if (attachment.Status == AttachmentStatus.Ready)
     {
-        return Results.Ok(new AttachmentResponse(attachment.Id, attachment.FileName, attachment.ContentType, attachment.SizeBytes, attachment.Status.ToString()));
+        return Results.Ok(ToAttachmentResponse(attachment));
     }
 
     var stat = await storage.StatObjectAsync(attachment.StorageKey, ct);
@@ -1366,7 +1418,9 @@ v1.MapPost("/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete"
         return Results.BadRequest(new { error = "Uploaded object was not found in storage." });
     }
 
-    var maxSize = config.GetValue("Files:MaxSizeBytes", AttachmentPolicies.DefaultMaxSizeBytes);
+    var maxSize = attachment.Kind == AttachmentKind.Audio
+        ? config.GetValue("Files:Audio:MaxSizeBytes", AttachmentPolicies.DefaultAudioMaxSizeBytes)
+        : config.GetValue("Files:MaxSizeBytes", AttachmentPolicies.DefaultMaxSizeBytes);
     if (stat.SizeBytes > maxSize || stat.SizeBytes > attachment.SizeBytes)
     {
         attachment.Status = AttachmentStatus.Failed;
@@ -1395,7 +1449,7 @@ v1.MapPost("/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete"
         })
     });
     await db.SaveChangesAsync(ct);
-    return Results.Ok(new AttachmentResponse(attachment.Id, attachment.FileName, attachment.ContentType, attachment.SizeBytes, attachment.Status.ToString()));
+    return Results.Ok(ToAttachmentResponse(attachment));
 });
 
 v1.MapGet("/channels/{channelId:guid}/attachments/{attachmentId:guid}/download", async (
@@ -1501,7 +1555,15 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid ch
     var attachments = await db.Attachments.AsNoTracking()
         .Where(x => x.MessageId == message.Id)
         .OrderBy(x => x.CreatedAt)
-        .Select(x => new AttachmentResponse(x.Id, x.FileName, x.ContentType, x.SizeBytes, x.Status.ToString()))
+        .Select(x => new AttachmentResponse(
+            x.Id,
+            x.FileName,
+            x.ContentType,
+            x.SizeBytes,
+            x.Status.ToString(),
+            x.Kind.ToString(),
+            x.DurationMs,
+            x.Waveform))
         .ToArrayAsync(ct);
     return Results.Ok(new MessageResponse(
         message.Id.Value,
@@ -2553,6 +2615,68 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/suggest-
     return Results.Ok(new AiSuggestReplyResponse(result.Suggestion));
 });
 
+v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/messages/{messageId:guid}/attachments/{attachmentId:guid}/transcribe", async (
+    Guid workspaceId,
+    Guid channelId,
+    Guid messageId,
+    Guid attachmentId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    ITranscribeAttachmentFeature transcribe,
+    IAuditWriter audit,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null || !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Ai.Transcribe, ct))
+    {
+        return Results.Forbid();
+    }
+
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null || channel.WorkspaceId != workspace.Id)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await transcribe.TranscribeAsync(
+        workspace.TenantId,
+        workspace.Id,
+        channel.Id,
+        new MessageId(messageId),
+        attachmentId,
+        ct);
+
+    if (!result.Ok)
+    {
+        var status = result.Error switch
+        {
+            "AiDisabled" => StatusCodes.Status503ServiceUnavailable,
+            "NotFound" => StatusCodes.Status404NotFound,
+            "NotAudio" => StatusCodes.Status400BadRequest,
+            "ProviderError" => StatusCodes.Status502BadGateway,
+            _ => StatusCodes.Status502BadGateway
+        };
+        return Results.Json(new AiTranscribeErrorResponse(result.Error ?? "AiError"), statusCode: status);
+    }
+
+    audit.Add(new AuditEvent
+    {
+        TenantId = workspace.TenantId,
+        ActorUserId = profile.Id,
+        Action = AuditActions.AiTranscribe,
+        EntityType = "Attachment",
+        EntityId = attachmentId.ToString(),
+        MetadataJson = JsonSerializer.Serialize(new { channelId, messageId, provider = result.Provider })
+    });
+    await db.SaveChangesAsync(ct);
+
+    return Results.Ok(new AiTranscribeResponse(result.Text, result.Language ?? "und", result.Provider ?? "Unknown"));
+});
+
 if (app.Environment.IsDevelopment())
 {
     v1.MapPost("/dev/seed", async (IServiceProvider services, IConfiguration config, IClock clock, ILoggerFactory logs, CancellationToken ct) =>
@@ -2574,6 +2698,17 @@ app.MapHealthChecks("/health/ready");
 app.MapHealthChecks("/ready"); // ops alias (runbooks / Compose)
 
 app.Run();
+
+static AttachmentResponse ToAttachmentResponse(Attachment attachment) =>
+    new(
+        attachment.Id,
+        attachment.FileName,
+        attachment.ContentType,
+        attachment.SizeBytes,
+        attachment.Status.ToString(),
+        attachment.Kind.ToString(),
+        attachment.DurationMs,
+        attachment.Waveform);
 
 static async Task<(UserProfile Profile, TenantId TenantId)?> ResolveAdminDashboardAccessAsync(
     HttpContext http,
@@ -3126,7 +3261,7 @@ static async Task<Dictionary<Guid, AttachmentResponse[]>> LoadAttachmentsByMessa
         .GroupBy(x => x.MessageId!.Value.Value)
         .ToDictionary(
             g => g.Key,
-            g => g.Select(x => new AttachmentResponse(x.Id, x.FileName, x.ContentType, x.SizeBytes, x.Status.ToString())).ToArray());
+            g => g.Select(x => ToAttachmentResponse(x)).ToArray());
 }
 
 static async Task<Dictionary<Guid, ReactionSummaryResponse[]>> LoadReactionSummariesByMessageAsync(
@@ -3289,8 +3424,22 @@ public sealed record CreateSpaceRequest(string Name, int? Order = null);
 public sealed record CreateChannelRequest(string Name, string Type, Guid? SpaceId = null);
 public sealed record SendMessageRequest(Guid MessageId, string IdempotencyKey, string Body, Guid? ReplyToMessageId, Guid? ThreadId, Guid[]? AttachmentIds = null);
 public sealed record EditMessageRequest(string Body);
-public sealed record CreateAttachmentUploadRequest(string FileName, string ContentType, long SizeBytes);
-public sealed record AttachmentResponse(Guid Id, string FileName, string ContentType, long SizeBytes, string Status);
+public sealed record CreateAttachmentUploadRequest(
+    string FileName,
+    string ContentType,
+    long SizeBytes,
+    string? Kind = null,
+    int? DurationMs = null,
+    int[]? Waveform = null);
+public sealed record AttachmentResponse(
+    Guid Id,
+    string FileName,
+    string ContentType,
+    long SizeBytes,
+    string Status,
+    string Kind = "File",
+    int? DurationMs = null,
+    int[]? Waveform = null);
 public sealed record AttachmentUploadResponse(
     Guid AttachmentId,
     string UploadUrl,
@@ -3354,6 +3503,8 @@ public sealed record SearchMessageHitResponse(
 public sealed record SearchMessagesResponse(string Query, int Limit, SearchMessageHitResponse[] Items);
 public sealed record AiSummaryResponse(string Summary);
 public sealed record AiSuggestReplyResponse(string Suggestion);
+public sealed record AiTranscribeResponse(string Text, string Language, string Provider);
+public sealed record AiTranscribeErrorResponse(string Error);
 public sealed record AiSummaryErrorResponse(string Error, string Message);
 public sealed record AuditEventResponse(
     Guid Id,

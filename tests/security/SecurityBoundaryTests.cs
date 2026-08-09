@@ -592,6 +592,20 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Cross_tenant_cannot_transcribe_audio_attachment()
+    {
+        var (foreignWorkspaceId, foreignChannelId) = await SeedCrossTenantWorkspaceWithMessageAsync();
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var transcribe = await client.PostAsync(
+            $"/api/v1/workspaces/{foreignWorkspaceId}/channels/{foreignChannelId}/messages/{Guid.NewGuid()}/attachments/{Guid.NewGuid()}/transcribe",
+            content: null);
+        transcribe.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Cross_tenant_cannot_suggest_reply_with_ai()
     {
         var (foreignWorkspaceId, foreignChannelId) = await SeedCrossTenantWorkspaceWithMessageAsync();

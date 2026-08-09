@@ -64,6 +64,9 @@ interface AttachmentDto {
   contentType: string;
   sizeBytes: number;
   status?: string;
+  kind?: string;
+  durationMs?: number;
+  waveform?: number[];
 }
 
 interface ReactionSummaryDto {
@@ -395,6 +398,9 @@ export class ApiService {
     fileName: string;
     contentType: string;
     sizeBytes: number;
+    kind?: 'File' | 'Audio';
+    durationMs?: number;
+    waveform?: number[];
   }): Promise<AttachmentUploadDto> {
     return this.request<AttachmentUploadDto>(`/api/v1/channels/${input.channelId}/attachments`, {
       method: 'POST',
@@ -402,6 +408,9 @@ export class ApiService {
         fileName: input.fileName,
         contentType: input.contentType,
         sizeBytes: input.sizeBytes,
+        kind: input.kind,
+        durationMs: input.durationMs,
+        waveform: input.waveform,
       }),
     });
   }
@@ -412,6 +421,18 @@ export class ApiService {
       { method: 'POST', body: '{}' },
     );
     return this.mapAttachment(dto);
+  }
+
+  async transcribeAttachment(input: {
+    workspaceId: string;
+    channelId: string;
+    messageId: string;
+    attachmentId: string;
+  }): Promise<{ text: string; language: string; provider: string }> {
+    return this.request(`/api/v1/workspaces/${input.workspaceId}/channels/${input.channelId}/messages/${input.messageId}/attachments/${input.attachmentId}/transcribe`, {
+      method: 'POST',
+      body: '{}',
+    });
   }
 
   async getAttachmentDownload(
@@ -758,6 +779,9 @@ export class ApiService {
       contentType: a.contentType,
       sizeBytes: a.sizeBytes,
       status: a.status,
+      kind: a.kind === 'Audio' ? 'Audio' : 'File',
+      durationMs: a.durationMs,
+      waveform: a.waveform,
     };
   }
 

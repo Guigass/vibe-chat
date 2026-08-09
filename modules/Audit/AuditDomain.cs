@@ -27,6 +27,7 @@ public static class AuditActions
     public const string SettingsChange = "settings.change";
     public const string WorkspaceExport = "workspace.export";
     public const string MessagePurge = "message.purge";
+    public const string AiTranscribe = "ai.transcribe";
 }
 
 public interface IAuditWriter

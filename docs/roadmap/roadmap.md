@@ -219,7 +219,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
 | W8-1 | C/D | Anexos múltiplos, drag & drop, colar e progresso (B-079) | B-025 | [B-079](../product/specs/B-079-anexos-multiplos-drag-drop.md) | Done |
-| W8-2 | C/D | Mensagem de áudio (B-080) | W8-1, D-12 | [B-080](../product/specs/B-080-mensagem-de-audio.md) | Planned |
+| W8-2 | C/D | Mensagem de áudio (B-080) | W8-1, D-12 | [B-080](../product/specs/B-080-mensagem-de-audio.md) | Done |
 | W8-3 | C/D | Formatação de texto (B-081) | — | [B-081](../product/specs/B-081-formatacao-de-texto.md) | Planned |
 | W8-4 | B/C/D | Menções (B-082) | W8-3 | [B-082](../product/specs/B-082-mencoes.md) | Planned |
 | W8-5 | C/D | Emoji picker e reações livres (B-083) | B-024 | [B-083](../product/specs/B-083-emoji-e-reacoes-livres.md) | Planned |

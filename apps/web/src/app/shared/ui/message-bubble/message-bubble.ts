@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import {
   ChatMessage,
   MessageAttachment,
@@ -10,12 +10,15 @@ import {
   MESSAGE_BODY_MAX_LENGTH,
 } from '../../models/chat.models';
 import { Avatar } from '../avatar/avatar';
+import { AudioMessage } from '../audio-message/audio-message';
 import { ApiService } from '../../../core/api/api.service';
+import { ChannelStore } from '../../../core/services/channel.store';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'vc-message-bubble',
   standalone: true,
-  imports: [Avatar, DatePipe],
+  imports: [Avatar, DatePipe, AudioMessage],
   template: `
     <article
       class="vc-msg vc-anim-fade-in"
@@ -76,13 +79,28 @@ import { ApiService } from '../../../core/api/api.service';
             <ul class="vc-msg__attachments">
               @for (attachment of message().attachments; track attachment.id) {
                 <li>
-                  <button type="button" (click)="download(attachment)">
-                    {{ attachment.fileName }}
-                    <span>{{ formatSize(attachment.sizeBytes) }}</span>
-                  </button>
+                  @if (attachment.kind === 'Audio') {
+                    <vc-audio-message
+                      [attachment]="attachment"
+                      [downloadUrl]="downloadUrls()[attachment.id] ?? null"
+                    />
+                    @if (transcribeEnabled()) {
+                      <button type="button" class="vc-msg__transcribe" (click)="transcribe(attachment)">
+                        Transcrever
+                      </button>
+                    }
+                  } @else {
+                    <button type="button" (click)="download(attachment)">
+                      {{ attachment.fileName }}
+                      <span>{{ formatSize(attachment.sizeBytes) }}</span>
+                    </button>
+                  }
                 </li>
               }
             </ul>
+            @if (transcript()) {
+              <p class="vc-msg__transcript">{{ transcript() }}</p>
+            }
           }
           @if (message().reactions?.length) {
             <ul class="vc-msg__reactions" aria-label="Reações">
@@ -204,6 +222,17 @@ import { ApiService } from '../../../core/api/api.service';
       gap: 0.45rem;
       align-items: baseline;
     }
+    .vc-msg__transcribe {
+      margin-top: 0.25rem;
+      font-size: 0.72rem;
+    }
+    .vc-msg__transcript {
+      margin-top: 0.35rem;
+      font-size: 0.82rem;
+      color: var(--vc-ink-muted);
+      border-left: 2px solid var(--vc-border);
+      padding-left: 0.55rem;
+    }
     .vc-msg__attachments span {
       color: var(--vc-ink-subtle);
       font-size: 0.72rem;
@@ -299,6 +328,7 @@ import { ApiService } from '../../../core/api/api.service';
 })
 export class MessageBubble {
   private readonly api = inject(ApiService);
+  private readonly channels = inject(ChannelStore);
 
   readonly message = input.required<ChatMessage>();
   readonly showThreadAction = input(false);
@@ -309,6 +339,8 @@ export class MessageBubble {
 
   readonly editing = signal(false);
   readonly draft = signal('');
+  readonly transcript = signal<string | null>(null);
+  readonly downloadUrls = signal<Record<string, string>>({});
   readonly emojiOptions = REACTION_EMOJI_OPTIONS;
   readonly maxLength = MESSAGE_BODY_MAX_LENGTH;
   readonly editLength = computed(() => measureMessageBodyLength(this.draft()));
@@ -317,6 +349,20 @@ export class MessageBubble {
   readonly editSaveDisabled = computed(
     () => !this.draft().trim() || this.editTooLong(),
   );
+  readonly transcribeEnabled = computed(
+    () => environment.aiTranscribeEnabled && environment.aiSummarizeEnabled,
+  );
+
+  constructor() {
+    effect(() => {
+      const attachments = this.message().attachments ?? [];
+      const channelId = this.message().channelId;
+      for (const attachment of attachments) {
+        if (attachment.kind !== 'Audio' || this.downloadUrls()[attachment.id]) continue;
+        void this.loadAudioUrl(channelId, attachment.id);
+      }
+    });
+  }
 
   startEdit(): void {
     this.draft.set(this.message().body);
@@ -346,9 +392,36 @@ export class MessageBubble {
     }
   }
 
+  async transcribe(attachment: MessageAttachment): Promise<void> {
+    const workspace = this.channels.activeWorkspace();
+    const channelId = this.message().channelId;
+    if (!workspace || !channelId) return;
+
+    try {
+      const result = await this.api.transcribeAttachment({
+        workspaceId: workspace.id,
+        channelId,
+        messageId: this.message().id,
+        attachmentId: attachment.id,
+      });
+      this.transcript.set(result.text);
+    } catch {
+      this.transcript.set('Transcrição indisponível.');
+    }
+  }
+
   formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  private async loadAudioUrl(channelId: string, attachmentId: string): Promise<void> {
+    try {
+      const result = await this.api.getAttachmentDownload(channelId, attachmentId);
+      this.downloadUrls.update((current) => ({ ...current, [attachmentId]: result.downloadUrl }));
+    } catch {
+      // playback stays disabled until URL resolves
+    }
   }
 }
