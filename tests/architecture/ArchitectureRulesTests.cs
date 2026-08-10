@@ -116,6 +116,8 @@ public sealed class ArchitectureRulesTests
 
         headers.Should().Contain("Content-Security-Policy", because: "B-077 requires CSP on the official web/proxy path");
         headers.Should().Contain("default-src 'self'", because: "CSP baseline must restrict default origins to self");
+        headers.Should().Contain("http://localhost:5080", because: "lab self-host web calls API/SignalR on :5080 (connect-src)");
+        headers.Should().Contain("ws://localhost:5080", because: "SignalR WebSocket lab origin must be in connect-src");
         headers.Should().NotContain("unsafe-eval", because: "B-077 forbids masking XSS with unsafe-eval");
         headers.Should().NotContain("*", because: "B-077 forbids wildcard CSP sources in production reference");
 
