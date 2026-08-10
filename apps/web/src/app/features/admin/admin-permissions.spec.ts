@@ -31,5 +31,6 @@ describe('admin-permissions (B-106)', () => {
   it('Member cannot access admin dashboard', () => {
     expect(hasAdminDashboard('Member')).toBe(false);
     expect(visibleNavItems('Member')).toEqual([]);
+    expect(canAccessArea('Member', 'overview')).toBe(false);
   });
 });

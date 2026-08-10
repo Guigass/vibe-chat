@@ -1,11 +1,15 @@
 import { Routes } from '@angular/router';
-import { adminAreaGuard, adminGuard } from './admin.guard';
+import { adminAreaGuard, adminLandingGuard, adminRouteGuard } from './admin.guard';
+
+export { adminRouteGuard };
 
 export const ADMIN_CHILD_ROUTES: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'overview',
+    canActivate: [adminLandingGuard],
+    loadComponent: () =>
+      import('./admin-landing.page').then((m) => m.AdminLandingPage),
   },
   {
     path: 'overview',
@@ -47,5 +51,3 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     redirectTo: 'overview',
   },
 ];
-
-export const adminRouteGuard = adminGuard;

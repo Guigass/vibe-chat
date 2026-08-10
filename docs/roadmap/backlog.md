@@ -49,7 +49,7 @@ e entram na **safety lane** do Build (antes de novas features de wave).
 | BUG-002 | Unread/badges após reload | Aberto (Alta) — fecha em **B-094** (W9-7) |
 | BUG-003 | Upload de arquivo com erro | **Done** — presign no PublicEndpoint + CORS fail-closed + resolveContentType |
 | BUG-004 | Áudio do microfone não envia | **Done** — MIME base + erros visíveis + discard/onstop + regressão Vitest |
-| BUG-005 | `/admin` não entra (Member) | Aberto (Alta) — redirect silencioso; Demo OK |
+| BUG-005 | `/admin` não entra (Member) | **Done** — shell com empty-state; Demo/Owner intactos |
 | BUG-006 | Realtime caindo com frequência | Aberto (Alta) — SignalR/reconnect |
 
 ## P2 — Diferenciação e admin

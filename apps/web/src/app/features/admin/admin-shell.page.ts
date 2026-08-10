@@ -1,13 +1,13 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { ThemeToggle } from '../../shared/ui';
+import { EmptyState, ThemeToggle } from '../../shared/ui';
 import { AdminContextService } from './admin-context.service';
 import { areaTitle, AdminAreaId } from './admin-permissions';
 
 @Component({
   selector: 'vc-admin-shell',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, ThemeToggle],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, ThemeToggle, EmptyState],
   templateUrl: './admin-shell.page.html',
   styleUrl: './admin-shell.page.scss',
 })
@@ -22,6 +22,9 @@ export class AdminShellPage implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.ctx.ensureReady();
+    if (!this.ctx.canAccessAdmin()) {
+      this.activeTitle.set('Sem acesso');
+    }
     this.loading.set(false);
   }
 

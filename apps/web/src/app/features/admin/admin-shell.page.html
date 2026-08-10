@@ -37,7 +37,12 @@
       @if (loading()) {
         <p class="admin-shell__hint">Carregando console…</p>
       } @else if (!ctx.canAccessAdmin()) {
-        <p class="admin-shell__empty">Nada a administrar neste perfil.</p>
+        <vc-empty-state
+          title="Sem acesso ao admin"
+          description="Esta área é para Owner, Admin ou Auditor. No laboratório local, use o DevAuth Demo."
+        >
+          <a routerLink="/app" class="admin-shell__back">Voltar ao chat</a>
+        </vc-empty-state>
       } @else {
         <router-outlet (activate)="onChildActivate($event)" />
       }

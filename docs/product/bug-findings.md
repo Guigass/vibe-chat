@@ -28,7 +28,6 @@ Regras do registro:
 | ID | Área | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
 | BUG-002 | Sidebar / unread | Badges de novas mensagens não limpam de forma persistente após reload | Alta | Aberto — fecha em **B-094** |
-| BUG-005 | Admin | Página `/admin` “não entra” (Member redireciona sem feedback) | Alta | Aberto — safety lane |
 | BUG-006 | Realtime | Conexão em tempo real caindo com frequência | Alta | Aberto — safety lane |
 | BUG-007 | Theme | Modo escuro não funciona | Alta | Aberto — safety lane |
 | BUG-008 | Presence | Minimizar a janela marca ausente na hora | Média | Aberto |
@@ -128,7 +127,7 @@ Regras do registro:
 
 ### BUG-005 — Página admin não entra
 
-- Status: **Aberto**
+- Status: **Done**
 - Observado em: Playwright 2026-08-10 — DevAuth **Alice** em `/admin` redireciona
   para `/app`; DevAuth **Demo** abre `/admin/overview` (“Visão geral”).
 - Hipótese: authZ por design — seed Alice/Bob = `Member`, Demo =
@@ -144,8 +143,10 @@ Regras do registro:
 - Owner automático: Frontend (D) + Directory/Admin (B).
 - Critério de resolução: Member não “some” sem explicação; caminho Demo/Admin
   documentado e verificável; authZ de API intacta.
-- Próxima ação: UX de negação + nota no guia/lab; não conceder admin a Alice por
-  default.
+- Resolução: `adminGuard` libera o shell; `adminLandingGuard` manda
+  Owner/Admin/Auditor à primeira área e Member permanece em `/admin`;
+  `adminAreaGuard` evita loop (`/admin` em vez de `overview`); empty-state
+  explica DevAuth Demo; regressão em `admin.guard.spec.ts`.
 
 ### BUG-006 — Conexão em tempo real caindo com frequência
 
@@ -249,4 +250,5 @@ Regras do registro:
 | BUG-001 | Composer / timeline | Mensagens aparecem duplicadas ao enviar | Alta | Done |
 | BUG-003 | Anexos | Upload de arquivo falha com erro | Alta | Done |
 | BUG-004 | Composer / áudio | Áudio do microfone não envia | Alta | Done |
+| BUG-005 | Admin | Página `/admin` “não entra” (Member sem feedback) | Alta | Done |
 | BUG-009 | Threads / realtime | Reply de thread sem update em tempo real | Alta | Done |
