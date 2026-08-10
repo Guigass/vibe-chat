@@ -627,10 +627,10 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     [Fact]
     public async Task Cross_tenant_forward_is_forbidden_without_partial_send()
     {
-        var (_, foreignChannelId) = await SeedCrossTenantChannelAsync();
-
         using var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var (_, foreignChannelId) = await SeedCrossTenantChannelAsync();
 
         var sourceId = Guid.NewGuid();
         var send = await client.PostAsJsonAsync(
