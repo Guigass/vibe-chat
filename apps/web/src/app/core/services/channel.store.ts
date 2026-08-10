@@ -21,7 +21,7 @@ export class ChannelStore {
   private readonly membersSignal = signal<WorkspaceMember[]>([]);
   private readonly presenceSignal = signal<Record<string, PresenceStatus>>({});
   private readonly activeWorkspaceId = signal<string | null>(null);
-  private readonly activeChannelId = signal<string | null>(null);
+  private readonly activeChannelIdSignal = signal<string | null>(null);
   private readonly loadingSignal = signal(false);
   private readonly errorSignal = signal<string | null>(null);
   private readonly usingDemo = signal(false);
@@ -32,11 +32,13 @@ export class ChannelStore {
   readonly channels = this.channelsSignal.asReadonly();
   readonly members = this.membersSignal.asReadonly();
   readonly presence = this.presenceSignal.asReadonly();
+  /** Stable id signal — prefer this over `activeChannel()?.id` in effects that must not re-run on channel list refresh. */
+  readonly activeChannelId = this.activeChannelIdSignal.asReadonly();
   readonly activeWorkspace = computed(
     () => this.workspacesSignal().find((w) => w.id === this.activeWorkspaceId()) ?? null,
   );
   readonly activeChannel = computed(
-    () => this.channelsSignal().find((c) => c.id === this.activeChannelId()) ?? null,
+    () => this.channelsSignal().find((c) => c.id === this.activeChannelIdSignal()) ?? null,
   );
   readonly publicChannels = computed(() =>
     this.channelsSignal().filter((c) => !c.isDirect),
@@ -154,14 +156,14 @@ export class ChannelStore {
         this.presenceSignal.set(presence);
       }
       const first = this.channelsSignal()[0];
-      this.activeChannelId.set(first?.id ?? null);
+      this.activeChannelIdSignal.set(first?.id ?? null);
     } catch (err) {
       this.errorSignal.set(err instanceof Error ? err.message : 'Falha ao carregar channels');
     }
   }
 
   selectChannel(channelId: string): void {
-    this.activeChannelId.set(channelId);
+    this.activeChannelIdSignal.set(channelId);
     this.channelsSignal.update((list) =>
       list.map((c) => (c.id === channelId ? { ...c, unreadCount: 0, mentionCount: 0 } : c)),
     );
@@ -315,7 +317,7 @@ export class ChannelStore {
       'u-alice': 'online',
       'u-bob': 'away',
     });
-    this.activeChannelId.set('ch-general');
+    this.activeChannelIdSignal.set('ch-general');
   }
 
   private demoMembers(): WorkspaceMember[] {

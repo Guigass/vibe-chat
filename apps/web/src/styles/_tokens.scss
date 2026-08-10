@@ -1,5 +1,4 @@
-:root,
-[data-theme='light'] {
+:root[data-theme='light'] {
   --vc-brand: #0d9488;
   --vc-brand-hover: #0f766e;
   --vc-brand-soft: #ccfbf1;
@@ -64,7 +63,7 @@
   --vc-shadow-soft: 0 8px 30px rgba(15, 23, 42, 0.08);
 }
 
-[data-theme='dark'] {
+:root[data-theme='dark'] {
   --vc-brand: #2dd4bf;
   --vc-brand-hover: #5eead4;
   --vc-brand-soft: #134e4a;
@@ -102,12 +101,12 @@
   --vc-shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
-[data-density='compact'] {
+:root[data-density='compact'] {
   --vc-density-row: 2rem;
   --vc-space-row: 0.35rem;
 }
 
-[data-density='comfortable'] {
+:root[data-density='comfortable'] {
   --vc-density-row: 2.75rem;
   --vc-space-row: 0.55rem;
 }

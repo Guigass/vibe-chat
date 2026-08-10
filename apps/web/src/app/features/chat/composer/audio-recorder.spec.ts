@@ -66,4 +66,17 @@ describe('AudioRecorderService.buildRecordedAudio', () => {
     expect(result?.durationMs).toBe(1_500);
     expect(result?.fileName).toMatch(/\.webm$/);
   });
+
+  it('ignores late onstop after reset left the recording phase', async () => {
+    const service = new AudioRecorderService();
+    service.phase.set('idle');
+    await (
+      service as unknown as {
+        onRecorderStop: (mime: string) => Promise<void>;
+      }
+    ).onRecorderStop('audio/webm');
+
+    expect(service.phase()).toBe('idle');
+    expect(service.previewBlob()).toBeNull();
+  });
 });

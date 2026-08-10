@@ -7,7 +7,7 @@
 @import '@spartan-ng/brain/hlm-tailwind-preset.css';
 
 /* ThemeService uses html[data-theme], not .dark (B-104 / design-system). */
-@custom-variant dark (&:is([data-theme='dark'] *));
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 *,
 *::before,
@@ -82,8 +82,7 @@ h3,
 }
 
 /* Map spartan/ui CSS vars onto VibeChat tokens (D-27 / B-104). */
-:root,
-[data-theme='light'] {
+:root[data-theme='light'] {
   color-scheme: light;
   --font-sans: var(--vc-font-body);
   --radius: var(--vc-radius-md);
@@ -107,7 +106,7 @@ h3,
   --ring: var(--vc-brand);
 }
 
-[data-theme='dark'] {
+:root[data-theme='dark'] {
   color-scheme: dark;
   --font-sans: var(--vc-font-body);
   --radius: var(--vc-radius-md);

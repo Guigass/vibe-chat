@@ -512,7 +512,9 @@ export class Composer {
     });
 
     effect(() => {
-      this.channels.activeChannel()?.id;
+      // Depend only on the id signal. Reading `activeChannel()` would re-run on every
+      // channels list refresh (unread/presence) and abort an in-progress mic recording.
+      this.channels.activeChannelId();
       this.attachments.clear();
       this.audioRecorder.reset();
       this.validationError.set(null);

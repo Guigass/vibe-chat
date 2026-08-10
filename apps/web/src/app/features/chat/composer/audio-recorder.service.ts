@@ -108,8 +108,10 @@ export class AudioRecorderService {
   }
 
   stop(): void {
-    if (this.mediaRecorder?.state === 'recording') {
-      this.mediaRecorder.stop();
+    const recorder = this.mediaRecorder;
+    if (!recorder) return;
+    if (recorder.state === 'recording' || recorder.state === 'paused') {
+      recorder.stop();
     }
   }
 
@@ -162,7 +164,14 @@ export class AudioRecorderService {
     this.clearTimers();
     if (this.discardOnStop) {
       this.discardOnStop = false;
-      this.resetInternal(true);
+      if (this.phase() !== 'idle') {
+        this.resetInternal(true);
+      }
+      return;
+    }
+
+    // Channel switch / reset already left recording; do not resurrect a preview.
+    if (this.phase() !== 'recording') {
       return;
     }
 
@@ -209,18 +218,22 @@ export class AudioRecorderService {
   }
 
   private async teardownStream(): Promise<void> {
+    // Capture locals before await so a concurrent start() cannot be wiped after close().
+    const stream = this.mediaStream;
+    const ctx = this.audioContext;
     this.mediaRecorder = null;
     this.chunks = [];
     this.analyser = null;
-    if (this.mediaStream) {
-      for (const track of this.mediaStream.getTracks()) {
+    this.mediaStream = null;
+    this.audioContext = null;
+
+    if (stream) {
+      for (const track of stream.getTracks()) {
         track.stop();
       }
-      this.mediaStream = null;
     }
-    if (this.audioContext) {
-      await this.audioContext.close().catch(() => undefined);
-      this.audioContext = null;
+    if (ctx && ctx.state !== 'closed') {
+      await ctx.close().catch(() => undefined);
     }
   }
 }

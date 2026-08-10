@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ThemeService } from './core/services/theme.service';
 
@@ -14,11 +14,9 @@ import { ThemeService } from './core/services/theme.service';
     }
   `,
 })
-export class App implements OnInit {
-  private readonly theme = inject(ThemeService);
-
-  ngOnInit(): void {
-    // Ensure theme attributes are applied on boot.
-    void this.theme.theme();
+export class App {
+  constructor() {
+    // Construct ThemeService so data-theme is applied synchronously on boot.
+    inject(ThemeService);
   }
 }
