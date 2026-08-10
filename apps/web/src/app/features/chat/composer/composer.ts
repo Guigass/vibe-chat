@@ -212,7 +212,6 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
                 <audio [src]="previewUrl" controls aria-label="Prévia do áudio"></audio>
               }
               <button type="button" class="ghost" (click)="discardRecording()">Regravar</button>
-              <button type="button" (click)="sendRecording()">Enviar áudio</button>
             </div>
           }
         } @else {
@@ -221,9 +220,9 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
         <vc-button
           type="submit"
           [disabled]="submitDisabled()"
-          [loading]="messages.sending() || attachments.hasActiveUploads()"
+          [loading]="messages.sending() || attachments.hasActiveUploads() || sendingAudio()"
         >
-          Enviar
+          {{ audioSubmitLabel() }}
         </vc-button>
       </div>
     </form>
@@ -427,6 +426,10 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
       font-size: 0.78rem;
       color: var(--vc-ink-muted);
     }
+    .composer__audio-panel .ghost {
+      padding: 0.25rem 0.4rem;
+      font-weight: 600;
+    }
     .composer__audio-panel audio {
       max-width: 12rem;
       height: 1.8rem;
@@ -474,14 +477,22 @@ export class Composer {
   readonly bodyTooLong = computed(() => isMessageBodyTooLong(this.draft()));
   readonly showCounter = computed(() => this.bodyLength() >= MESSAGE_BODY_COUNTER_THRESHOLD);
   readonly readyCount = computed(() => this.attachments.readyAttachmentIds().length);
+  readonly sendingAudio = signal(false);
+  /** Primary CTA while mic is active — the main Enviar was disabled with no text/attachments. */
+  readonly audioSubmitLabel = computed(() => {
+    const phase = this.audioRecorder.phase();
+    if (phase === 'recording' || phase === 'preview') return 'Enviar áudio';
+    return 'Enviar';
+  });
   readonly submitDisabled = computed(() => {
+    if (this.submitting() || this.messages.sending() || this.sendingAudio()) return true;
+    const phase = this.audioRecorder.phase();
+    if (phase === 'recording' || phase === 'preview') return false;
     const hasText = !!this.draft().trim();
     const ready = this.readyCount();
     const uploading = this.attachments.hasActiveUploads();
     return (
       (!hasText && ready === 0 && !uploading) ||
-      this.submitting() ||
-      this.messages.sending() ||
       this.bodyTooLong() ||
       this.attachments.submitBlocked()
     );
@@ -576,6 +587,7 @@ export class Composer {
   async sendRecording(): Promise<void> {
     const channelId = this.channels.activeChannel()?.id;
     if (!channelId) return;
+
     const recorded = await this.audioRecorder.buildRecordedAudio();
     if (!recorded) {
       this.validationError.set(
@@ -601,9 +613,45 @@ export class Composer {
     this.validationError.set('Não foi possível enviar o áudio. Tente novamente.');
   }
 
+  /** Stop an in-progress take and wait until preview (or idle) is ready. */
+  private async waitForRecordingPreview(timeoutMs = 5_000): Promise<boolean> {
+    if (this.audioRecorder.phase() === 'preview') return true;
+    if (this.audioRecorder.phase() !== 'recording') return false;
+
+    this.audioRecorder.stop();
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const phase = this.audioRecorder.phase();
+      if (phase === 'preview') return true;
+      if (phase === 'idle') return false;
+      await new Promise((resolve) => setTimeout(resolve, 40));
+    }
+    return this.audioRecorder.phase() === 'preview';
+  }
+
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
-    if (this.submitting()) return;
+    if (this.submitting() || this.sendingAudio()) return;
+
+    const phase = this.audioRecorder.phase();
+    if (phase === 'recording' || phase === 'preview') {
+      this.sendingAudio.set(true);
+      try {
+        if (phase === 'recording') {
+          const ready = await this.waitForRecordingPreview();
+          if (!ready) {
+            this.validationError.set(
+              this.audioRecorder.errorMessage() ?? 'Não foi possível finalizar a gravação.',
+            );
+            return;
+          }
+        }
+        await this.sendRecording();
+      } finally {
+        this.sendingAudio.set(false);
+      }
+      return;
+    }
 
     const body = this.draft().trim();
     if (isMessageBodyTooLong(body)) return;

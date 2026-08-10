@@ -64,6 +64,8 @@ export class ThemeService {
     const root = document.documentElement;
     root.setAttribute('data-theme', theme);
     root.style.colorScheme = theme;
+    // Keep class in sync for Tailwind `dark:` utilities (variant also matches data-theme).
+    root.classList.toggle('dark', theme === 'dark');
     if (this.userPinned) {
       localStorage.setItem(THEME_KEY, theme);
     }

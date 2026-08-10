@@ -25,11 +25,11 @@ Regras do registro:
 
 ## Abertos
 
-| ID | Área | Achado | Severidade | Status |
-|----|------|--------|------------|--------|
-| BUG-002 | Sidebar / unread | Badges de novas mensagens não limpam de forma persistente após reload | Alta | Aberto — fecha em **B-094** |
-| BUG-006 | Realtime | Conexão em tempo real caindo com frequência | Alta | Aberto — safety lane |
-| BUG-008 | Presence | Minimizar a janela marca ausente na hora | Média | Aberto |
+| ID      | Área             | Achado                                                                | Severidade | Status                      |
+| ------- | ---------------- | --------------------------------------------------------------------- | ---------- | --------------------------- |
+| BUG-002 | Sidebar / unread | Badges de novas mensagens não limpam de forma persistente após reload | Alta       | Aberto — fecha em **B-094** |
+| BUG-006 | Realtime         | Conexão em tempo real caindo com frequência                           | Alta       | Aberto — safety lane        |
+| BUG-008 | Presence         | Minimizar a janela marca ausente na hora                              | Média      | Aberto                      |
 
 ## Detalhamento
 
@@ -193,10 +193,10 @@ Regras do registro:
 - Critério de resolução: toggle dark/light altera `data-theme` e a superfície
   principal; preferência sobrevive a F5; regressão unit/componente no
   `ThemeService` / toggle.
-- Resolução: tokens/Spartan em `:root[data-theme='light'|'dark']` (especificidade
-  estável); `@custom-variant dark` Tailwind v4 com `:where`; `ThemeService`
-  aplica `data-theme`/`colorScheme` de forma síncrona (sem depender só de
-  `effect`); regressão `theme.service.spec.ts`.
+- Resolução: layout estrutural em `:root`; cores light em
+  `html:not([data-theme='dark'])`; cores dark em `html[data-theme='dark']`
+  (mutuamente exclusivas); `ThemeService` aplica `data-theme` + classe `.dark`;
+  variant Tailwind cobre ambos; regressão `theme.service.spec.ts`.
 
 ### BUG-008 — Ausente imediato ao minimizar
 
@@ -248,11 +248,11 @@ Regras do registro:
 
 ## Fechados
 
-| ID | Área | Achado | Severidade | Status |
-|----|------|--------|------------|--------|
-| BUG-001 | Composer / timeline | Mensagens aparecem duplicadas ao enviar | Alta | Done |
-| BUG-003 | Anexos | Upload de arquivo falha com erro | Alta | Done |
-| BUG-004 | Composer / áudio | Áudio do microfone não envia | Alta | Done |
-| BUG-005 | Admin | Página `/admin` “não entra” (Member sem feedback) | Alta | Done |
-| BUG-007 | Theme | Modo escuro não funciona | Alta | Done |
-| BUG-009 | Threads / realtime | Reply de thread sem update em tempo real | Alta | Done |
+| ID      | Área                | Achado                                            | Severidade | Status |
+| ------- | ------------------- | ------------------------------------------------- | ---------- | ------ |
+| BUG-001 | Composer / timeline | Mensagens aparecem duplicadas ao enviar           | Alta       | Done   |
+| BUG-003 | Anexos              | Upload de arquivo falha com erro                  | Alta       | Done   |
+| BUG-004 | Composer / áudio    | Áudio do microfone não envia                      | Alta       | Done   |
+| BUG-005 | Admin               | Página `/admin` “não entra” (Member sem feedback) | Alta       | Done   |
+| BUG-007 | Theme               | Modo escuro não funciona                          | Alta       | Done   |
+| BUG-009 | Threads / realtime  | Reply de thread sem update em tempo real          | Alta       | Done   |

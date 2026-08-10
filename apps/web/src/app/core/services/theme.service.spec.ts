@@ -10,15 +10,28 @@ type StorageMap = Record<string, string>;
 
 function installDomMocks(initialStorage: StorageMap = {}): {
   storage: StorageMap;
-  root: { attributes: StorageMap; style: { colorScheme: string }; dataset: StorageMap };
+  root: {
+    attributes: StorageMap;
+    style: { colorScheme: string };
+    dataset: { theme?: string; density?: string };
+    classList: { contains: (name: string) => boolean; toggle: (name: string, force?: boolean) => void };
+  };
 } {
   const storage: StorageMap = { ...initialStorage };
   const attributes: StorageMap = {};
+  const classes = new Set<string>();
   const style = { colorScheme: '' };
   const root = {
     attributes,
     style,
-    dataset: attributes,
+    classList: {
+      contains: (name: string) => classes.has(name),
+      toggle: (name: string, force?: boolean) => {
+        const on = force ?? !classes.has(name);
+        if (on) classes.add(name);
+        else classes.delete(name);
+      },
+    },
     setAttribute(name: string, value: string) {
       attributes[name.startsWith('data-') ? name.slice(5) : name] = value;
       attributes[name] = value;
@@ -115,6 +128,7 @@ describe('ThemeService (BUG-007)', () => {
 
     expect(service.theme()).toBe('dark');
     expect(root.dataset.theme).toBe('dark');
+    expect(root.classList.contains('dark')).toBe(true);
     expect(storage[THEME_KEY]).toBe('dark');
   });
 

@@ -15,8 +15,6 @@ import { ThemeService } from './core/services/theme.service';
   `,
 })
 export class App {
-  constructor() {
-    // Construct ThemeService so data-theme is applied synchronously on boot.
-    inject(ThemeService);
-  }
+  /** Field inject applies data-theme synchronously on bootstrap. */
+  private readonly theme = inject(ThemeService);
 }
