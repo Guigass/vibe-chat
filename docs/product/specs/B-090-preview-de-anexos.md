@@ -1,26 +1,30 @@
 # B-090 — Preview de anexos
 
-> Wave W9-3 · Trilha C/D · Deps: B-079 · Decisões: D-11 · Risco R2
+> Wave W9-3 · Trilha C/D · Deps: B-079, B-163 · Decisões: D-11 · Risco R2
 
 ## Problema
 
-Anexo aparece como nome + tamanho e um link de download que abre em nova aba
-(`message-bubble.ts`). Mandar um print obriga quem recebe a baixar o arquivo para ver.
+A bolha tipada e o lightbox de mídia entram em **B-163** (UI). Sem derivados no
+worker, a timeline ainda baixa o **original** para mostrar preview — caro em
+imagem/PDF grandes e sem reserva de espaço (`Width`/`Height`).
 
 ## Escopo
 
-- Imagem (`png`, `jpeg`, `webp`, `gif`) renderizada inline com proporção preservada,
-  altura máxima de 320 px e `loading="lazy"`.
-- Miniatura gerada pelo **worker** e servida no lugar do original na timeline.
-- Visualizador em tela cheia: `Esc` fecha, setas navegam entre as imagens da mensagem,
-  botão de baixar o original.
-- PDF: primeira página como miniatura + contagem de páginas; abre em nova aba.
-- Áudio usa o player de B-080; demais tipos mantêm o cartão atual.
+- Miniatura gerada pelo **worker** e servida no lugar do original na timeline
+  (slot visual já definido em B-163).
+- Imagem: WebP lado maior 640 px; cliente usa `ThumbnailKey` + `Width`/`Height`.
+- Visualizador em tela cheia (B-163) passa a preferir a miniatura na grade e o
+  original só no “baixar” / zoom.
+- PDF: primeira página como miniatura + contagem de páginas.
+- Áudio permanece no player de B-080; vídeo e demais tipos usam o cartão tipado
+  de B-163 (sem transcode).
 - Falha ao carregar a miniatura cai para o cartão de arquivo, sem bolha quebrada.
 
 ## Fora de escopo
 
-- Visualizador de PDF embutido, edição/anotação de imagem, preview de Office.
+- Layout tipado da bolha, toolbar/context menu e lightbox client-side → **B-163**
+  (deps: B-163 entregue ou em paralelo com fallback ao original).
+- Visualizador de PDF embutido rico, edição/anotação de imagem, preview de Office.
 - Transcodificação de vídeo.
 
 ## Contratos
@@ -57,13 +61,13 @@ miniatura junto com o original — incluir no teste de purge.
 
 ## Aceite
 
-- [ ] Enviar PNG mostra a imagem inline nas duas sessões
-- [ ] Clicar abre em tela cheia; `Esc` fecha e devolve o foco
-- [ ] Miniatura é servida em vez do original (verificar tamanho baixado)
-- [ ] PDF mostra a primeira página e a contagem
-- [ ] Miniatura falhada cai para o cartão de arquivo
+- [ ] `complete` do upload enfileira job; `ThumbnailStatus` → `Ready` com `ThumbnailKey`
+- [ ] Timeline (B-163) serve a miniatura no lugar do original (bytes baixados menores)
+- [ ] `Width`/`Height` evitam layout shift no placeholder
+- [ ] PDF: miniatura da 1ª página + contagem de páginas no DTO
+- [ ] Miniatura falhada → `Failed`; bolha cai no cartão de arquivo
 - [ ] Miniatura de outro tenant → 403
-- [ ] Sem layout shift ao carregar (dimensões reservadas)
+- [ ] Purge (B-047) remove original e miniatura
 
 ## Testes
 

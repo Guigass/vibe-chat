@@ -48,7 +48,7 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 
 | ID | Spec |
 |----|------|
-| B-163 | [Message bubble moderno (ações discretas + context menu)](B-163-message-bubble-context-menu.md) |
+| B-163 | [Message bubble moderno (layout tipado + ações + preview)](B-163-message-bubble-context-menu.md) |
 | B-088 | [Agrupamento, separadores e não lidas na timeline](B-088-timeline-agrupamento-separadores.md) |
 | B-089 | [Histórico paginado e pular para a mensagem](B-089-historico-paginado.md) |
 | B-090 | [Preview de anexos](B-090-preview-de-anexos.md) |

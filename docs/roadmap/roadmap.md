@@ -245,17 +245,17 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W8-5 | C/D | Emoji picker e reações livres (B-083) | B-024 | [B-083](../product/specs/B-083-emoji-e-reacoes-livres.md) | Done |
 | W8-6 | C/D | Responder citando (B-084) | — | [B-084](../product/specs/B-084-responder-citando.md) | Done |
 | W8-7 | C/D | Encaminhar mensagem (B-085) | W8-6 | [B-085](../product/specs/B-085-encaminhar-mensagem.md) | Done |
-| W8-8 | D | Rascunho persistente (B-086) | — | [B-086](../product/specs/B-086-rascunho-persistente.md) | Planned |
+| W8-8 | D | Rascunho persistente (B-086) | — | [B-086](../product/specs/B-086-rascunho-persistente.md) | Done |
 | W8-9 | C/D | Comandos slash (B-087) | W8-4 | [B-087](../product/specs/B-087-comandos-slash.md) | Planned |
 
 ### Wave 9 — Leitura da timeline
 
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
-| W9-0 | D | Message bubble moderno — ações discretas + context menu (B-163) | B-023, B-024, B-083 | [B-163](../product/specs/B-163-message-bubble-context-menu.md) | Planned |
+| W9-0 | D | Message bubble moderno — layout tipado, preview e context menu (B-163) | B-023, B-024, B-083 | [B-163](../product/specs/B-163-message-bubble-context-menu.md) | Planned |
 | W9-1 | D | Agrupamento, separadores e não lidas (B-088) | — | [B-088](../product/specs/B-088-timeline-agrupamento-separadores.md) | Planned |
 | W9-2 | C/D | Histórico paginado e pular para a mensagem (B-089) | W9-1 | [B-089](../product/specs/B-089-historico-paginado.md) | Planned |
-| W9-3 | C/D | Preview de anexos (B-090) | W8-1 | [B-090](../product/specs/B-090-preview-de-anexos.md) | Planned |
+| W9-3 | C/D | Preview de anexos — miniaturas no worker (B-090) | W8-1, W9-0 | [B-090](../product/specs/B-090-preview-de-anexos.md) | Planned |
 | W9-4 | C/D | Link preview (B-091) | — | [B-091](../product/specs/B-091-link-preview.md) | Planned |
 | W9-5 | C/D | Fixar mensagem (B-092) | W9-2 | [B-092](../product/specs/B-092-fixar-mensagem.md) | Planned |
 | W9-6 | C/D | Salvos (B-093) | W9-2 | [B-093](../product/specs/B-093-salvos.md) | Planned |
