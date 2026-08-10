@@ -45,6 +45,15 @@ interface MessageCreatedPayload {
     preview?: string;
     deleted?: boolean;
   } | null;
+  forwardedFromMessageId?: string | null;
+  forwardedFromChannelId?: string | null;
+  forwardedFrom?: {
+    messageId?: string;
+    channelId?: string;
+    channelName?: string;
+    authorName?: string;
+    createdAt?: string;
+  } | null;
   sequence?: number;
   authorId?: string;
   authorName?: string;
@@ -606,6 +615,21 @@ export class ChatHubService {
             authorName: payload.replyTo.authorName ?? '',
             preview: payload.replyTo.preview ?? '',
             deleted: !!payload.replyTo.deleted,
+          }
+        : null,
+      forwardedFromMessageId: payload.forwardedFromMessageId
+        ? String(payload.forwardedFromMessageId)
+        : null,
+      forwardedFromChannelId: payload.forwardedFromChannelId
+        ? String(payload.forwardedFromChannelId)
+        : null,
+      forwardedFrom: payload.forwardedFrom?.messageId
+        ? {
+            messageId: String(payload.forwardedFrom.messageId),
+            channelId: String(payload.forwardedFrom.channelId ?? ''),
+            channelName: payload.forwardedFrom.channelName ?? '',
+            authorName: payload.forwardedFrom.authorName ?? '',
+            createdAt: payload.forwardedFrom.createdAt ?? new Date().toISOString(),
           }
         : null,
       attachments: (payload.attachments ?? []).map((a) => ({

@@ -78,6 +78,43 @@ public sealed class BackendUnitTests
     }
 
     [Fact]
+    public void Attachment_reference_policies_gate_blob_delete_on_zero_rows()
+    {
+        AttachmentReferencePolicies.CountAfterAdd(1).Should().Be(2);
+        AttachmentReferencePolicies.CountAfterRelease(2).Should().Be(1);
+        AttachmentReferencePolicies.CountAfterRelease(1).Should().Be(0);
+        AttachmentReferencePolicies.CanDeleteBlob(1).Should().BeFalse();
+        AttachmentReferencePolicies.CanDeleteBlob(0).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Forward_idempotency_hash_is_stable_for_same_targets()
+    {
+        var tenantId = TenantId.New();
+        var userId = UserId.New();
+        var workspaceId = WorkspaceId.New();
+        var sourceId = MessageId.New();
+        var a = ChannelId.New();
+        var b = ChannelId.New();
+        var command = new ForwardMessageCommand(
+            tenantId,
+            userId,
+            workspaceId,
+            sourceId,
+            "idem-fwd",
+            [b, a],
+            "  hi  ");
+
+        var normalized = command with
+        {
+            TargetChannelIds = [a, b],
+            Comment = MessageBodyPolicies.Normalize(command.Comment)
+        };
+        MessageIdempotency.ComputeForwardRequestHash(normalized)
+            .Should().Be(MessageIdempotency.ComputeForwardRequestHash(normalized with { TargetChannelIds = [b, a] }));
+    }
+
+    [Fact]
     public void Attachment_policies_sanitize_file_name_and_validate_content_type()
     {
         AttachmentPolicies.SanitizeFileName(@"..\evil/report.pdf").Should().Be("report.pdf");

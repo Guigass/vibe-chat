@@ -106,7 +106,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-082 | Menções | Done (W8-4) — token `<@userId>`, `message_mentions`, badge separado |
 | B-083 | Emoji picker e reações livres | Done (W8-5) — picker compartilhado, validação Unicode no servidor, tooltip de quem reagiu |
 | B-084 | Responder citando | **Done (W8-6)** — `replyTo` no history/hub; UI composer + bolha; Responder ≠ Abrir thread; BUG-009 realtime thread |
-| B-085 | Encaminhar mensagem | Planned (W8-7) — anexo por referência, contagem para o purge de B-047 |
+| B-085 | Encaminhar mensagem | **Done (W8-7)** — `POST .../messages/{id}/forward`; anexos por referência + `ReferenceCount`; UI seletor ≤5; audit `message.forward` |
 | B-086 | Rascunho persistente | Planned (W8-8) — só cliente, por implicação de retenção (D-03) |
 | B-087 | Comandos slash | Planned (W8-9) — lista vem do servidor; sem privilégio novo |
 

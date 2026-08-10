@@ -164,6 +164,8 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.AuthorId).HasConversion(v => v.Value, v => new UserId(v));
             entity.Property(x => x.DeletedBy).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new UserId(v.Value) : null);
             entity.Property(x => x.ReplyToMessageId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new MessageId(v.Value) : null);
+            entity.Property(x => x.ForwardedFromMessageId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new MessageId(v.Value) : null);
+            entity.Property(x => x.ForwardedFromChannelId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new ChannelId(v.Value) : null);
             entity.Property(x => x.Body).HasMaxLength(8000);
             entity.HasIndex(x => new { x.ConversationId, x.Sequence }).IsUnique();
             entity.HasIndex(x => x.ThreadId);
@@ -197,9 +199,10 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.ChecksumSha256).HasMaxLength(96);
             entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
             entity.Property(x => x.Kind).HasConversion<string>().HasMaxLength(16).HasDefaultValue(AttachmentKind.File);
+            entity.Property(x => x.ReferenceCount).HasDefaultValue(1);
             entity.Property(x => x.DurationMs);
             entity.Property(x => x.Waveform).HasColumnType("jsonb");
-            entity.HasIndex(x => x.StorageKey).IsUnique();
+            entity.HasIndex(x => x.StorageKey);
             entity.HasIndex(x => new { x.TenantId, x.ChannelId, x.MessageId });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
@@ -754,6 +757,268 @@ public sealed class MessageWriter(
         await dbContext.SaveChangesAsync(cancellationToken);
         // RLS txn + SET LOCAL are committed by HTTP middleware / hub filter / worker batch Commit.
         VibeChatMetrics.MessagesSent.Add(1);
+        return result;
+    }
+
+    public async Task<ForwardMessageResult> ForwardAsync(ForwardMessageCommand command, CancellationToken cancellationToken)
+    {
+        tenantContext.SetTenant(command.TenantId);
+        tenantContext.SetUser(command.UserId);
+        await RlsSession.EnsureAppliedAsync(dbContext, tenantContext, cancellationToken);
+
+        var targetIds = (command.TargetChannelIds ?? [])
+            .Where(x => x.Value != Guid.Empty)
+            .Distinct()
+            .Take(MessageForwardPolicies.MaxTargets + 1)
+            .ToArray();
+        if (targetIds.Length == 0 || targetIds.Length > MessageForwardPolicies.MaxTargets)
+        {
+            throw new ArgumentException("ForwardTargetCountInvalid");
+        }
+
+        var comment = MessageBodyPolicies.Normalize(command.Comment);
+        if (!MessageBodyPolicies.IsWithinLimit(comment))
+        {
+            throw new ArgumentException("MessageBodyTooLong");
+        }
+
+        var hash = MessageIdempotency.ComputeForwardRequestHash(command with
+        {
+            TargetChannelIds = targetIds,
+            Comment = comment
+        });
+        var existing = await idempotencyStore.FindAsync(command.TenantId, command.IdempotencyKey, cancellationToken);
+        if (existing is not null)
+        {
+            var idempotentResult = JsonSerializer.Deserialize<ForwardMessageResult>(existing.ResultJson)!;
+            return idempotentResult with { Idempotent = true };
+        }
+
+        if (!await permissions.HasPermissionAsync(command.TenantId, command.UserId, Permissions.Message.Send, cancellationToken))
+        {
+            throw new UnauthorizedAccessException("User cannot send messages.");
+        }
+
+        var source = await dbContext.Messages
+            .FirstOrDefaultAsync(x => x.Id == command.SourceMessageId && x.TenantId == command.TenantId, cancellationToken);
+        if (source is null || source.DeletedAt is not null)
+        {
+            throw new UnauthorizedAccessException("Source message not accessible.");
+        }
+
+        var sourceChannelId = source.ConversationId;
+        if (source.ThreadId is Guid sourceThreadId)
+        {
+            var thread = await dbContext.MessageThreads.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == sourceThreadId && x.TenantId == command.TenantId, cancellationToken);
+            if (thread is null)
+            {
+                throw new UnauthorizedAccessException("Source message not accessible.");
+            }
+
+            sourceChannelId = thread.ChannelId;
+        }
+
+        var sourceChannel = await dbContext.Channels.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == sourceChannelId && x.TenantId == command.TenantId, cancellationToken);
+        if (sourceChannel is null || sourceChannel.WorkspaceId != command.WorkspaceId)
+        {
+            throw new UnauthorizedAccessException("Source message not accessible.");
+        }
+
+        if (!await channels.CanAccessAsync(command.TenantId, sourceChannelId, command.UserId, cancellationToken))
+        {
+            throw new UnauthorizedAccessException("User cannot access source channel.");
+        }
+
+        foreach (var targetId in targetIds)
+        {
+            var target = await dbContext.Channels.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == targetId && x.TenantId == command.TenantId, cancellationToken);
+            if (target is null
+                || target.WorkspaceId != command.WorkspaceId
+                || !await channels.CanAccessAsync(command.TenantId, targetId, command.UserId, cancellationToken))
+            {
+                throw new UnauthorizedAccessException("User cannot forward to one or more target channels.");
+            }
+        }
+
+        var sourceAttachments = await dbContext.Attachments
+            .Where(x => x.TenantId == command.TenantId
+                && x.MessageId == source.Id
+                && x.Status == AttachmentStatus.Ready)
+            .OrderBy(x => x.CreatedAt)
+            .ToArrayAsync(cancellationToken);
+
+        var body = !MessageBodyPolicies.IsEmpty(comment)
+            ? comment
+            : (source.DeletedAt is null ? MessageBodyPolicies.Normalize(source.Body) : string.Empty);
+        if (MessageBodyPolicies.IsEmpty(body) && sourceAttachments.Length == 0)
+        {
+            throw new ArgumentException("Message body or attachments are required.");
+        }
+
+        var authorName = await dbContext.UserProfiles.AsNoTracking()
+            .Where(x => x.Id == command.UserId)
+            .Select(x => x.DisplayName)
+            .FirstOrDefaultAsync(cancellationToken) ?? command.UserId.Value.ToString();
+
+        var sourceAuthorName = await dbContext.UserProfiles.AsNoTracking()
+            .Where(x => x.Id == source.AuthorId)
+            .Select(x => x.DisplayName)
+            .FirstOrDefaultAsync(cancellationToken) ?? source.AuthorId.Value.ToString();
+
+        var sourceChannelName = sourceChannel.Type == ChannelType.Direct
+            ? (string.IsNullOrWhiteSpace(sourceChannel.Name) ? "DM" : sourceChannel.Name)
+            : sourceChannel.Name;
+
+        var forwardedFromPayload = new
+        {
+            messageId = source.Id.Value,
+            channelId = sourceChannelId.Value,
+            channelName = sourceChannelName,
+            authorName = sourceAuthorName,
+            createdAt = source.CreatedAt
+        };
+
+        var now = clock.UtcNow;
+        var created = new List<ForwardedMessageResult>(targetIds.Length);
+
+        foreach (var targetId in targetIds)
+        {
+            var messageId = MessageId.New();
+            var sequence = await sequences.NextAsync(command.TenantId, targetId, cancellationToken);
+            var message = new Message
+            {
+                Id = messageId,
+                TenantId = command.TenantId,
+                ConversationId = targetId,
+                Sequence = sequence,
+                AuthorId = command.UserId,
+                Body = body,
+                ForwardedFromMessageId = source.Id,
+                ForwardedFromChannelId = sourceChannelId,
+                CreatedAt = now
+            };
+            dbContext.Messages.Add(message);
+
+            var clonedAttachments = new List<Attachment>(sourceAttachments.Length);
+            foreach (var original in sourceAttachments)
+            {
+                var siblings = await dbContext.Attachments
+                    .Where(x => x.TenantId == command.TenantId && x.StorageKey == original.StorageKey)
+                    .ToListAsync(cancellationToken);
+                var pendingClones = dbContext.ChangeTracker.Entries<Attachment>()
+                    .Where(e => e.State == EntityState.Added && e.Entity.StorageKey == original.StorageKey)
+                    .Select(e => e.Entity)
+                    .ToList();
+                var nextCount = AttachmentReferencePolicies.CountAfterAdd(siblings.Count + pendingClones.Count);
+                foreach (var sibling in siblings)
+                {
+                    sibling.ReferenceCount = nextCount;
+                }
+
+                foreach (var pending in pendingClones)
+                {
+                    pending.ReferenceCount = nextCount;
+                }
+
+                var clone = new Attachment
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = command.TenantId,
+                    ChannelId = targetId,
+                    MessageId = messageId,
+                    UploadedBy = original.UploadedBy,
+                    FileName = original.FileName,
+                    ContentType = original.ContentType,
+                    SizeBytes = original.SizeBytes,
+                    StorageKey = original.StorageKey,
+                    ChecksumSha256 = original.ChecksumSha256,
+                    Status = AttachmentStatus.Ready,
+                    Kind = original.Kind,
+                    ReferenceCount = nextCount,
+                    DurationMs = original.DurationMs,
+                    Waveform = original.Waveform,
+                    CreatedAt = now,
+                    ReadyAt = original.ReadyAt ?? now
+                };
+                dbContext.Attachments.Add(clone);
+                clonedAttachments.Add(clone);
+            }
+
+            var mentionContext = await BuildMentionsAsync(
+                command.TenantId,
+                targetId,
+                messageId,
+                command.UserId,
+                body,
+                now,
+                cancellationToken);
+
+            outbox.Add(new OutboxMessage
+            {
+                TenantId = command.TenantId,
+                Type = nameof(MessageCreatedEvent),
+                Payload = JsonSerializer.Serialize(new
+                {
+                    tenantId = command.TenantId.Value,
+                    channelId = targetId.Value,
+                    conversationId = targetId.Value,
+                    threadId = (Guid?)null,
+                    parentMessageId = (Guid?)null,
+                    messageId = messageId.Value,
+                    clientMessageId = messageId.Value,
+                    replyToMessageId = (Guid?)null,
+                    replyTo = (object?)null,
+                    forwardedFromMessageId = source.Id.Value,
+                    forwardedFromChannelId = sourceChannelId.Value,
+                    forwardedFrom = forwardedFromPayload,
+                    authorId = command.UserId.Value,
+                    authorName,
+                    sequence,
+                    body,
+                    createdAt = now,
+                    mentionedUserIds = mentionContext.MentionedUserIds,
+                    mentionKinds = mentionContext.MentionKinds,
+                    attachments = clonedAttachments.Select(x => new
+                    {
+                        id = x.Id,
+                        fileName = x.FileName,
+                        contentType = x.ContentType,
+                        sizeBytes = x.SizeBytes,
+                        kind = x.Kind.ToString(),
+                        durationMs = x.DurationMs,
+                        waveform = x.Waveform
+                    })
+                })
+            });
+
+            created.Add(new ForwardedMessageResult(messageId, targetId, sequence, now));
+            VibeChatMetrics.MessagesSent.Add(1);
+        }
+
+        audit.Add(new AuditEvent
+        {
+            TenantId = command.TenantId,
+            ActorUserId = command.UserId,
+            Action = AuditActions.MessageForward,
+            EntityType = "Message",
+            EntityId = command.SourceMessageId.ToString(),
+            MetadataJson = JsonSerializer.Serialize(new
+            {
+                sourceMessageId = command.SourceMessageId.Value,
+                sourceChannelId = sourceChannelId.Value,
+                targetChannelIds = targetIds.Select(x => x.Value).ToArray(),
+                messageIds = created.Select(x => x.MessageId.Value).ToArray()
+            })
+        });
+
+        var result = new ForwardMessageResult(created, false);
+        await idempotencyStore.StoreAsync(
+            new IdempotencyRecord(command.TenantId, command.IdempotencyKey, hash, JsonSerializer.Serialize(result), now),
+            cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
         return result;
     }
 
@@ -1474,6 +1739,20 @@ public sealed class MinioObjectStorage(
         }
     }
 
+    public async Task DeleteObjectAsync(string storageKey, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await minioClient.RemoveObjectAsync(new Minio.DataModel.Args.RemoveObjectArgs()
+                .WithBucket(Bucket())
+                .WithObject(storageKey), cancellationToken);
+        }
+        catch (Minio.Exceptions.ObjectNotFoundException)
+        {
+            // Idempotent: already gone.
+        }
+    }
+
     private string Bucket() => configuration["Minio:Bucket"] ?? "vibechat";
 }
 
@@ -2078,15 +2357,36 @@ public sealed class MessageRetentionPurgeProcessor(
                 db.MessageMentions.RemoveRange(mentions);
             }
 
-            // Keep attachment metadata for compliance; detach from purged message rows.
-            // Avoid EF Contains/EF.Property on nullable MessageId? — filter in memory (B-046 pitfall).
+            // Shared StorageKey (B-085): remove this message's attachment row and keep siblings.
+            // Sole reference: detach metadata (B-047) — no MinIO delete in this slice.
             var attachmentCandidates = await db.Attachments.IgnoreQueryFilters()
                 .Where(x => x.TenantId == policy.TenantId && x.MessageId != null)
                 .ToListAsync(cancellationToken);
             foreach (var attachment in attachmentCandidates
                 .Where(a => a.MessageId is { } mid && messageIdGuids.Contains(mid.Value)))
             {
-                attachment.MessageId = null;
+                var siblings = await db.Attachments.IgnoreQueryFilters()
+                    .Where(x => x.TenantId == policy.TenantId
+                        && x.StorageKey == attachment.StorageKey
+                        && x.Id != attachment.Id)
+                    .ToListAsync(cancellationToken);
+                if (siblings.Count == 0)
+                {
+                    // Sole row: detach for compliance (B-047). Blob stays (CanDeleteBlob only when 0 rows).
+                    attachment.MessageId = null;
+                    attachment.ReferenceCount = 1;
+                }
+                else
+                {
+                    var next = Math.Max(1, siblings.Count);
+                    foreach (var sibling in siblings)
+                    {
+                        sibling.ReferenceCount = next;
+                    }
+
+                    // Shared blob still referenced — drop this row only; never delete MinIO here.
+                    db.Attachments.Remove(attachment);
+                }
             }
 
             db.Messages.RemoveRange(candidates);

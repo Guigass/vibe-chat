@@ -29,6 +29,8 @@ public sealed class Attachment
     public string? ChecksumSha256 { get; set; }
     public AttachmentStatus Status { get; set; } = AttachmentStatus.PendingUpload;
     public AttachmentKind Kind { get; set; } = AttachmentKind.File;
+    /// <summary>How many attachment rows share <see cref="StorageKey"/> (B-085 forward-by-reference).</summary>
+    public int ReferenceCount { get; set; } = 1;
     public int? DurationMs { get; set; }
     public int[]? Waveform { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
@@ -47,6 +49,18 @@ public interface IObjectStorage
     Task<PresignedUpload> CreateUploadUrlAsync(string storageKey, string contentType, TimeSpan ttl, CancellationToken cancellationToken);
     Task<PresignedDownload> CreateDownloadUrlAsync(string storageKey, string fileName, TimeSpan ttl, CancellationToken cancellationToken);
     Task<ObjectStat?> StatObjectAsync(string storageKey, CancellationToken cancellationToken);
+    Task DeleteObjectAsync(string storageKey, CancellationToken cancellationToken);
+}
+
+/// <summary>Shared-blob lifecycle for forward-by-reference attachments (B-085).</summary>
+public static class AttachmentReferencePolicies
+{
+    public static int CountAfterAdd(int existingRowsSharingKey) => existingRowsSharingKey + 1;
+
+    public static int CountAfterRelease(int currentReferenceCount) => Math.Max(0, currentReferenceCount - 1);
+
+    /// <summary>Blob may be deleted only when no attachment row still references the key.</summary>
+    public static bool CanDeleteBlob(int remainingRowsSharingKey) => remainingRowsSharingKey <= 0;
 }
 
 /// <summary>Tenant-level file/attachment limits (ADR-020). Env values act as security ceiling.</summary>

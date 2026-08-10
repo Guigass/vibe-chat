@@ -324,7 +324,8 @@ export class MessageStore {
     this.applyReactions(result.messageId, result.reactions);
   }
 
-  private ingestRemote(message: ChatMessage): void {
+  /** Merge hub/HTTP messages into the local timeline (also used after forward fan-out). */
+  ingestRemote(message: ChatMessage): void {
     const normalized = this.normalize(message);
     const isThreadReply =
       !!normalized.threadId &&

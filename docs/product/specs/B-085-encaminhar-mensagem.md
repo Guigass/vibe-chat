@@ -53,12 +53,12 @@ perde autoria, anexos e contexto.
 
 ## Aceite
 
-- [ ] Encaminhar para 2 canais cria 2 mensagens com `seq` próprio
-- [ ] Anexo aparece nos destinos sem duplicar bytes no MinIO
-- [ ] Um destino sem membership → 403 e nenhum envio
-- [ ] Cabeçalho de origem correto na bolha
-- [ ] Reenvio com a mesma `idempotencyKey` não duplica
-- [ ] Purge de retenção não apaga blob ainda referenciado
+- [x] Encaminhar para 2 canais cria 2 mensagens com `seq` próprio
+- [x] Anexo aparece nos destinos sem duplicar bytes no MinIO
+- [x] Um destino sem membership → 403 e nenhum envio
+- [x] Cabeçalho de origem correto na bolha
+- [x] Reenvio com a mesma `idempotencyKey` não duplica
+- [x] Purge de retenção não apaga blob ainda referenciado
 
 ## Testes
 

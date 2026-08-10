@@ -16,6 +16,8 @@ public sealed class Message : AggregateRoot
     public UserId AuthorId { get; set; }
     public string Body { get; set; } = string.Empty;
     public MessageId? ReplyToMessageId { get; set; }
+    public MessageId? ForwardedFromMessageId { get; set; }
+    public ChannelId? ForwardedFromChannelId { get; set; }
     public Guid? ThreadId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? EditedAt { get; set; }
@@ -291,6 +293,7 @@ public interface IConversationSequenceStore
 public interface IMessageWriter
 {
     Task<MessageSendResult> SendAsync(SendMessageCommand command, CancellationToken cancellationToken);
+    Task<ForwardMessageResult> ForwardAsync(ForwardMessageCommand command, CancellationToken cancellationToken);
 }
 
 public sealed record SendMessageCommand(
@@ -306,6 +309,30 @@ public sealed record SendMessageCommand(
 
 public sealed record MessageSendResult(MessageId MessageId, long Sequence, DateTimeOffset CreatedAt, bool Idempotent);
 
+public sealed record ForwardMessageCommand(
+    TenantId TenantId,
+    UserId UserId,
+    WorkspaceId WorkspaceId,
+    MessageId SourceMessageId,
+    string IdempotencyKey,
+    IReadOnlyList<ChannelId> TargetChannelIds,
+    string? Comment);
+
+public sealed record ForwardedMessageResult(
+    MessageId MessageId,
+    ChannelId ChannelId,
+    long Sequence,
+    DateTimeOffset CreatedAt);
+
+public sealed record ForwardMessageResult(
+    IReadOnlyList<ForwardedMessageResult> Messages,
+    bool Idempotent);
+
+public static class MessageForwardPolicies
+{
+    public const int MaxTargets = 5;
+}
+
 public static class MessageIdempotency
 {
     public static string ComputeRequestHash(SendMessageCommand command)
@@ -315,6 +342,14 @@ public static class MessageIdempotency
             : string.Empty;
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
             $"{command.MessageId}:{command.ChannelId}:{command.Body}:{command.ReplyToMessageId}:{command.ThreadId}:{attachmentPart}")));
+    }
+
+    public static string ComputeForwardRequestHash(ForwardMessageCommand command)
+    {
+        var targets = string.Join(',', command.TargetChannelIds.Select(x => x.Value).OrderBy(x => x));
+        var comment = MessageBodyPolicies.Normalize(command.Comment);
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
+            $"{command.SourceMessageId}:{command.WorkspaceId}:{targets}:{comment}")));
     }
 }
 

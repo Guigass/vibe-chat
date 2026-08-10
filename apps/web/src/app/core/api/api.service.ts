@@ -85,6 +85,14 @@ interface ReplyToDto {
   deleted: boolean;
 }
 
+interface ForwardedFromDto {
+  messageId: string;
+  channelId: string;
+  channelName: string;
+  authorName: string;
+  createdAt: string;
+}
+
 interface MessageDto {
   id: string;
   channelId: string;
@@ -100,8 +108,15 @@ interface MessageDto {
   threadId?: string | null;
   replyToMessageId?: string | null;
   replyTo?: ReplyToDto | null;
+  forwardedFromMessageId?: string | null;
+  forwardedFromChannelId?: string | null;
+  forwardedFrom?: ForwardedFromDto | null;
   replyCount?: number;
   reactions?: ReactionSummaryDto[] | null;
+}
+
+interface ForwardMessageResponseDto {
+  messages: MessageDto[];
 }
 
 interface ToggleReactionDto {
@@ -363,6 +378,28 @@ export class ApiService {
       }),
     });
     return this.mapMessage(dto, this.auth.profile()?.id);
+  }
+
+  async forwardMessage(input: {
+    workspaceId: string;
+    messageId: string;
+    targetChannelIds: string[];
+    comment?: string;
+    idempotencyKey: string;
+  }): Promise<ChatMessage[]> {
+    const dto = await this.request<ForwardMessageResponseDto>(
+      `/api/v1/workspaces/${input.workspaceId}/messages/${input.messageId}/forward`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          targetChannelIds: input.targetChannelIds,
+          comment: input.comment ?? null,
+          idempotencyKey: input.idempotencyKey,
+        }),
+      },
+    );
+    const me = this.auth.profile()?.id;
+    return (dto.messages ?? []).map((m) => this.mapMessage(m, me));
   }
 
   async openThread(channelId: string, messageId: string): Promise<ChatThread> {
@@ -848,6 +885,17 @@ export class ApiService {
             authorName: m.replyTo.authorName ?? '',
             preview: m.replyTo.preview ?? '',
             deleted: !!m.replyTo.deleted,
+          }
+        : null,
+      forwardedFromMessageId: m.forwardedFromMessageId ?? null,
+      forwardedFromChannelId: m.forwardedFromChannelId ?? null,
+      forwardedFrom: m.forwardedFrom
+        ? {
+            messageId: String(m.forwardedFrom.messageId),
+            channelId: String(m.forwardedFrom.channelId),
+            channelName: m.forwardedFrom.channelName ?? '',
+            authorName: m.forwardedFrom.authorName ?? '',
+            createdAt: m.forwardedFrom.createdAt,
           }
         : null,
       replyCount: m.replyCount ?? 0,

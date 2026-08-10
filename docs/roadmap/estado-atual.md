@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-10
 - **Fase:** Wave 7 — Sustentação / paridade (W8+)
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done
-- **Próximo item elegível:** W8-7 / B-085 (Encaminhar mensagem); BUG-002 fecha em B-094 quando W9-7 elegível; W8-6 / B-084 Done (responder citando + BUG-009)
+- **Próximo item elegível:** W8-8 / B-086 (Rascunho persistente); BUG-002 fecha em B-094 quando W9-7 elegível; W8-7 / B-085 Done (encaminhar mensagem)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -24,7 +24,7 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
-2. avançar as Waves 8–10 de paridade de mensageria (próximo: W8-7 / B-085);
+2. avançar as Waves 8–10 de paridade de mensageria (próximo: W8-8 / B-086);
 3. consumir o roadmap autorizado W11–W17.
 
 ## Runtime e fronteiras
@@ -78,8 +78,8 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W8-7 | Encaminhar (B-085); safety lane Alta vazia (BUG-006 Done); BUG-002 aliviado (Média → B-094) |
-| 2 | W8-8+ | Demais itens Wave 8 Planned com spec |
+| 1 | W8-8 | Rascunho persistente (B-086); safety lane Alta vazia; B-085 Done |
+| 2 | W8-9+ | Demais itens Wave 8–9 Planned com spec |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 

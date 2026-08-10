@@ -108,12 +108,30 @@ membership. Endpoints tipicamente checam membership + `HasPermissionAsync` (ex.:
 | ThreadId | Guid? | Presente em pai (após abrir thread) e replies |
 | ReplyToMessageId | Guid? | Citação inline (B-084); validado no mesmo canal/thread |
 | ReplyTo | `{ messageId, authorName, preview, deleted }`? | Prévia resolvida no servidor (até 140 chars); history + Accepted + hub |
+| ForwardedFromMessageId | Guid? | Origem do encaminhamento (B-085); cabeçalho histórico |
+| ForwardedFromChannelId | Guid? | Canal de origem do encaminhamento |
+| ForwardedFrom | `{ messageId, channelId, channelName, authorName, createdAt }`? | Cabeçalho resolvido (permanece se a origem for apagada depois) |
 | ReplyCount | int | Contagem de replies (timeline do canal) |
 | Attachments | AttachmentDto[] | Metadados prontos (sem URL) |
 | Reactions | ReactionSummaryDto[] | `{ emoji, count, me }` agregado |
 
 `ReplyToMessageId` de outro canal → 400 `ReplyToDifferentChannel`. Inexistente → 400 `ReplyToNotFound`. Soft-delete da original: `replyTo.deleted = true`, preview vazio (UI: “Mensagem removida”).
 
+### ForwardMessage (B-085)
+
+`POST /api/v1/workspaces/{workspaceId}/messages/{messageId}/forward`
+
+| Campo | Tipo | Notas |
+|-------|------|-------|
+| TargetChannelIds | Guid[] | 1–5 destinos; membership obrigatória em cada um |
+| Comment | string? | Opcional; se vazio, body da nova mensagem copia o da origem |
+| IdempotencyKey | string | Obrigatório; reenvio não duplica o fan-out |
+
+- Membership na origem **e** em cada destino; qualquer destino inválido → **403** e **nenhum** envio parcial.
+- Cria uma mensagem nova por destino (`seq` + outbox `MessageCreated` próprios).
+- Anexos por **referência**: novas linhas em `files.attachments` com o mesmo `StorageKey`; `ReferenceCount` compartilhado. Índice de `StorageKey` **não** é único.
+- Audit `message.forward` com origem e destinos.
+- Purge (B-047): se o blob ainda tem irmãos com o mesmo `StorageKey`, remove só a linha da mensagem purgada e ajusta `ReferenceCount`; blob MinIO só seria elegível a delete quando `AttachmentReferencePolicies.CanDeleteBlob` (0 linhas).
 ### EditMessage
 
 | Campo | Tipo | Notas |
@@ -295,7 +313,7 @@ Nomes de eventos hub (cliente):
 
 | Evento | Quando |
 |--------|--------|
-| `MessageCreated` | Nova mensagem — payload inclui `messageId`, `clientMessageId` (mesmo UUID do `messageId` do comando), `channelId`, `conversationId`, `threadId?`, `parentMessageId?`, `replyToMessageId?`, `replyTo?`, `sequence`, `authorId`, `body`, menções/anexos |
+| `MessageCreated` | Nova mensagem — payload inclui `messageId`, `clientMessageId` (mesmo UUID do `messageId` do comando), `channelId`, `conversationId`, `threadId?`, `parentMessageId?`, `replyToMessageId?`, `replyTo?`, `forwardedFromMessageId?`, `forwardedFromChannelId?`, `forwardedFrom?`, `sequence`, `authorId`, `body`, menções/anexos |
 | `MessageEdited` | Edição |
 | `MessageDeleted` | Soft delete |
 | `ReactionChanged` | Toggle de reação (payload com resumo agregado) |
@@ -326,9 +344,11 @@ public interface IObjectStorage
     Task<PresignedUpload> CreateUploadUrlAsync(string storageKey, string contentType, TimeSpan ttl, CancellationToken ct);
     Task<PresignedDownload> CreateDownloadUrlAsync(string storageKey, string fileName, TimeSpan ttl, CancellationToken ct);
     Task<ObjectStat?> StatObjectAsync(string storageKey, CancellationToken ct);
+    Task DeleteObjectAsync(string storageKey, CancellationToken ct);
 }
 ```
 
+`Attachment.ReferenceCount` (default 1): quantas linhas compartilham o `StorageKey` após encaminhar (B-085).
 ### Endpoints (API)
 
 | Endpoint | Notas |
@@ -448,7 +468,7 @@ Regras:
 
 - Soft-delete permanece o default de exclusão (ADR-018); APIs de leitura redigem body
 - Hard-delete: worker `MessageRetentionPurgeDispatcher` remove mensagens com `DeletedAt` anterior ao cutoff (`now - retentionDays`)
-- Cascata mínima: remove `reactions` da mensagem; anexa `attachments.MessageId = null` (metadados preservados; sem delete MinIO neste slice)
+- Cascata mínima: remove `reactions` da mensagem; anexos com `StorageKey` exclusivo fazem `attachments.MessageId = null` (metadados preservados); anexos compartilhados (B-085) removem só a linha da mensagem purgada e ajustam `ReferenceCount` nos irmãos — sem delete MinIO enquanto houver referência
 - `ConversationSequence` / `seq` não são reescritos
 - Off por default (processo + tenant)
 

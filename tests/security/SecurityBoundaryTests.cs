@@ -625,6 +625,34 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Cross_tenant_forward_is_forbidden_without_partial_send()
+    {
+        var (_, foreignChannelId) = await SeedCrossTenantChannelAsync();
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var sourceId = Guid.NewGuid();
+        var send = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{SeedData.DemoChannelId.Value}/messages",
+            new SendMessageRequest(sourceId, $"sec-fwd-src-{sourceId:N}", "forward source", null, null));
+        send.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var forward = await client.PostAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/messages/{sourceId}/forward",
+            new ForwardMessageRequest(
+                [SeedData.DemoChannelId.Value, foreignChannelId],
+                null,
+                $"sec-fwd-{sourceId:N}"));
+        forward.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        await using var db = factory.CreateMigratorDbContext();
+        var created = await db.Messages.IgnoreQueryFilters()
+            .CountAsync(x => x.ForwardedFromMessageId == new MessageId(sourceId));
+        created.Should().Be(0);
+    }
+
+    [Fact]
     public async Task Cross_tenant_hub_join_and_typing_are_rejected()
     {
         // T3 — hub subscribe / typing must not succeed for a foreign tenant channel (W3-2).

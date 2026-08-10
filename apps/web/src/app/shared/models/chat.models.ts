@@ -87,6 +87,14 @@ export interface MessageReplyTo {
   deleted: boolean;
 }
 
+export interface MessageForwardedFrom {
+  messageId: string;
+  channelId: string;
+  channelName: string;
+  authorName: string;
+  createdAt: string;
+}
+
 export const REACTION_EMOJI_OPTIONS = ['👍', '❤️', '😂', '🎉', '👀', '✅'] as const;
 
 export interface ChatMessage {
@@ -108,6 +116,10 @@ export interface ChatMessage {
   replyToMessageId?: string | null;
   /** Resolved cite preview (B-084); prefer over raw replyToMessageId in UI. */
   replyTo?: MessageReplyTo | null;
+  forwardedFromMessageId?: string | null;
+  forwardedFromChannelId?: string | null;
+  /** Resolved forward header (B-085). */
+  forwardedFrom?: MessageForwardedFrom | null;
   /** Thread anchor id when this MessageCreated is a thread reply (hub). */
   parentMessageId?: string | null;
   replyCount?: number;

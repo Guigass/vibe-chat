@@ -234,7 +234,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W8-4 | B/C/D | Menções (B-082) | W8-3 | [B-082](../product/specs/B-082-mencoes.md) | Done |
 | W8-5 | C/D | Emoji picker e reações livres (B-083) | B-024 | [B-083](../product/specs/B-083-emoji-e-reacoes-livres.md) | Done |
 | W8-6 | C/D | Responder citando (B-084) | — | [B-084](../product/specs/B-084-responder-citando.md) | Done |
-| W8-7 | C/D | Encaminhar mensagem (B-085) | W8-6 | [B-085](../product/specs/B-085-encaminhar-mensagem.md) | Planned |
+| W8-7 | C/D | Encaminhar mensagem (B-085) | W8-6 | [B-085](../product/specs/B-085-encaminhar-mensagem.md) | Done |
 | W8-8 | D | Rascunho persistente (B-086) | — | [B-086](../product/specs/B-086-rascunho-persistente.md) | Planned |
 | W8-9 | C/D | Comandos slash (B-087) | W8-4 | [B-087](../product/specs/B-087-comandos-slash.md) | Planned |
 

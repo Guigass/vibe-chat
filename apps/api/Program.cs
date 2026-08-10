@@ -827,6 +827,8 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
             m.DeletedAt,
             m.ThreadId,
             m.ReplyToMessageId,
+            m.ForwardedFromMessageId,
+            m.ForwardedFromChannelId,
             AuthorName = u != null ? u.DisplayName : m.AuthorId.Value.ToString()
         })
         .Take(take)
@@ -845,6 +847,10 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
     var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, channel.Id, messageIds, ct);
     var reactionsByMessage = await LoadReactionSummariesByMessageAsync(db, messageIds, profile.Id, ct);
     var replyToById = await LoadReplyToByIdsAsync(db, rows.Select(x => x.ReplyToMessageId), ct);
+    var forwardedFromById = await LoadForwardedFromByIdsAsync(
+        db,
+        rows.Select(x => (x.ForwardedFromMessageId, x.ForwardedFromChannelId)),
+        ct);
     var messages = rows.Select(x => new MessageResponse(
         x.Id.Value,
         x.ChannelId.Value,
@@ -861,7 +867,10 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
         x.ThreadId is Guid tid && replyCounts.TryGetValue(tid, out var count) ? count : 0,
         x.ChannelId.Value,
         x.DeletedAt == null && reactionsByMessage.TryGetValue(x.Id.Value, out var rx) ? rx : [],
-        x.ReplyToMessageId is MessageId rtid && replyToById.TryGetValue(rtid.Value, out var replyTo) ? replyTo : null)).ToArray();
+        x.ReplyToMessageId is MessageId rtid && replyToById.TryGetValue(rtid.Value, out var replyTo) ? replyTo : null,
+        x.ForwardedFromMessageId?.Value,
+        x.ForwardedFromChannelId?.Value,
+        x.ForwardedFromMessageId is MessageId ffid && forwardedFromById.TryGetValue(ffid.Value, out var forwarded) ? forwarded : null)).ToArray();
     return Results.Ok(messages);
 });
 
@@ -985,6 +994,137 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
         return Results.Json(
             new { error = "MentionAllForbidden", message = "Você não pode usar @canal neste canal." },
             statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
+    }
+});
+
+v1.MapPost("/workspaces/{workspaceId:guid}/messages/{messageId:guid}/forward", async (
+    Guid workspaceId,
+    Guid messageId,
+    ForwardMessageRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IMessageWriter writer,
+    IRateLimiter rateLimiter,
+    RateLimitSettingsResolver rateLimits,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+
+    var membership = await db.WorkspaceMembers.AsNoTracking()
+        .FirstOrDefaultAsync(x => x.WorkspaceId == new WorkspaceId(workspaceId) && x.UserId == profile.Id, ct);
+    if (membership is null)
+    {
+        return Results.Forbid();
+    }
+
+    if (string.IsNullOrWhiteSpace(request.IdempotencyKey)
+        || request.TargetChannelIds is null
+        || request.TargetChannelIds.Length == 0)
+    {
+        return Results.BadRequest(new { error = "idempotencyKey and targetChannelIds are required." });
+    }
+
+    if (request.TargetChannelIds.Length > MessageForwardPolicies.MaxTargets)
+    {
+        return Results.BadRequest(new { error = "TooManyForwardTargets", max = MessageForwardPolicies.MaxTargets });
+    }
+
+    var normalizedComment = MessageBodyPolicies.Normalize(request.Comment);
+    if (!MessageBodyPolicies.IsWithinLimit(normalizedComment))
+    {
+        return Results.BadRequest(MessageBodyPolicies.TooLongPayload());
+    }
+
+    var rate = await rateLimits.ResolveAsync(membership.TenantId, ct);
+    var allowed = await rateLimiter.TryAcquireAsync(
+        RateLimitKeys.SendMessage(membership.TenantId, profile.Id),
+        rate.SendPerMinute,
+        TimeSpan.FromMinutes(1),
+        ct);
+    if (!allowed)
+    {
+        return Results.StatusCode(StatusCodes.Status429TooManyRequests);
+    }
+
+    try
+    {
+        var result = await writer.ForwardAsync(new ForwardMessageCommand(
+            membership.TenantId,
+            profile.Id,
+            new WorkspaceId(workspaceId),
+            new MessageId(messageId),
+            request.IdempotencyKey,
+            request.TargetChannelIds.Select(x => new ChannelId(x)).ToArray(),
+            normalizedComment), ct);
+
+        var messageIds = result.Messages.Select(x => x.MessageId).ToArray();
+        var attachments = await db.Attachments.AsNoTracking()
+            .Where(x => x.MessageId != null && messageIds.Contains(x.MessageId.Value))
+            .OrderBy(x => x.CreatedAt)
+            .ToArrayAsync(ct);
+        var attachmentsByMessage = attachments
+            .GroupBy(x => x.MessageId!.Value.Value)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(x => new AttachmentResponse(
+                    x.Id,
+                    x.FileName,
+                    x.ContentType,
+                    x.SizeBytes,
+                    x.Status.ToString(),
+                    x.Kind.ToString(),
+                    x.DurationMs,
+                    x.Waveform)).ToArray());
+
+        var createdRows = await db.Messages.AsNoTracking()
+            .Where(x => messageIds.Contains(x.Id))
+            .ToArrayAsync(ct);
+        var forwardedFromById = await LoadForwardedFromByIdsAsync(
+            db,
+            createdRows.Select(x => (x.ForwardedFromMessageId, x.ForwardedFromChannelId)),
+            ct);
+
+        var responses = result.Messages.Select(m =>
+        {
+            var row = createdRows.First(x => x.Id == m.MessageId);
+            forwardedFromById.TryGetValue(row.ForwardedFromMessageId?.Value ?? Guid.Empty, out var forwarded);
+            attachmentsByMessage.TryGetValue(m.MessageId.Value, out var atts);
+            return new MessageResponse(
+                m.MessageId.Value,
+                m.ChannelId.Value,
+                m.Sequence,
+                profile.Id.Value,
+                row.Body,
+                m.CreatedAt,
+                null,
+                null,
+                profile.DisplayName,
+                atts ?? [],
+                null,
+                null,
+                0,
+                m.ChannelId.Value,
+                null,
+                null,
+                row.ForwardedFromMessageId?.Value,
+                row.ForwardedFromChannelId?.Value,
+                forwarded);
+        }).ToArray();
+
+        return Results.Accepted(
+            $"/api/v1/workspaces/{workspaceId}/messages/{messageId}/forward",
+            new ForwardMessageResponse(responses));
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
     }
     catch (UnauthorizedAccessException)
     {
@@ -1179,6 +1319,8 @@ v1.MapGet("/threads/{threadId:guid}/messages", async (
             m.DeletedAt,
             m.ThreadId,
             m.ReplyToMessageId,
+            m.ForwardedFromMessageId,
+            m.ForwardedFromChannelId,
             AuthorName = u != null ? u.DisplayName : m.AuthorId.Value.ToString()
         })
         .Take(take)
@@ -1188,6 +1330,10 @@ v1.MapGet("/threads/{threadId:guid}/messages", async (
     var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, channel.Id, messageIds, ct);
     var reactionsByMessage = await LoadReactionSummariesByMessageAsync(db, messageIds, profile.Id, ct);
     var replyToById = await LoadReplyToByIdsAsync(db, rows.Select(x => x.ReplyToMessageId), ct);
+    var forwardedFromById = await LoadForwardedFromByIdsAsync(
+        db,
+        rows.Select(x => (x.ForwardedFromMessageId, x.ForwardedFromChannelId)),
+        ct);
     var messages = rows.Select(x => new MessageResponse(
         x.Id.Value,
         channel.Id.Value,
@@ -1204,7 +1350,10 @@ v1.MapGet("/threads/{threadId:guid}/messages", async (
         0,
         thread.Id,
         x.DeletedAt == null && reactionsByMessage.TryGetValue(x.Id.Value, out var rx) ? rx : [],
-        x.ReplyToMessageId is MessageId rtid && replyToById.TryGetValue(rtid.Value, out var replyTo) ? replyTo : null)).ToArray();
+        x.ReplyToMessageId is MessageId rtid && replyToById.TryGetValue(rtid.Value, out var replyTo) ? replyTo : null,
+        x.ForwardedFromMessageId?.Value,
+        x.ForwardedFromChannelId?.Value,
+        x.ForwardedFromMessageId is MessageId ffid && forwardedFromById.TryGetValue(ffid.Value, out var forwarded) ? forwarded : null)).ToArray();
     return Results.Ok(messages);
 });
 
@@ -1436,6 +1585,7 @@ v1.MapPost("/channels/{channelId:guid}/attachments", async (
         SizeBytes = request.SizeBytes,
         StorageKey = storageKey,
         Status = AttachmentStatus.PendingUpload,
+        ReferenceCount = 1,
         Kind = kind,
         DurationMs = kind == AttachmentKind.Audio ? request.DurationMs : null,
         Waveform = kind == AttachmentKind.Audio ? waveform : null,
@@ -3477,6 +3627,64 @@ static async Task<Dictionary<Guid, ReplyToResponse>> LoadReplyToByIdsAsync(
             x.DeletedAt is not null));
 }
 
+static async Task<Dictionary<Guid, ForwardedFromResponse>> LoadForwardedFromByIdsAsync(
+    VibeChatDbContext db,
+    IEnumerable<(MessageId? MessageId, ChannelId? ChannelId)> pairs,
+    CancellationToken ct)
+{
+    var list = pairs
+        .Where(x => x.MessageId is not null && x.ChannelId is not null)
+        .Select(x => (MessageId: x.MessageId!.Value, ChannelId: x.ChannelId!.Value))
+        .GroupBy(x => x.MessageId.Value)
+        .Select(g => g.First())
+        .ToArray();
+    if (list.Length == 0)
+    {
+        return new Dictionary<Guid, ForwardedFromResponse>();
+    }
+
+    var messageIds = list.Select(x => x.MessageId).Distinct().ToArray();
+    var channelIds = list.Select(x => x.ChannelId).Distinct().ToArray();
+
+    var messages = await (
+        from m in db.Messages.AsNoTracking().IgnoreQueryFilters()
+        where messageIds.Contains(m.Id)
+        join u in db.UserProfiles.IgnoreQueryFilters() on m.AuthorId equals u.Id into authors
+        from u in authors.DefaultIfEmpty()
+        select new
+        {
+            m.Id,
+            m.CreatedAt,
+            AuthorName = u != null ? u.DisplayName : m.AuthorId.Value.ToString()
+        }).ToDictionaryAsync(x => x.Id.Value, ct);
+
+    var channels = await db.Channels.AsNoTracking().IgnoreQueryFilters()
+        .Where(c => channelIds.Contains(c.Id))
+        .Select(c => new { c.Id, c.Name, c.Type })
+        .ToDictionaryAsync(c => c.Id.Value, ct);
+
+    var result = new Dictionary<Guid, ForwardedFromResponse>();
+    foreach (var item in list)
+    {
+        messages.TryGetValue(item.MessageId.Value, out var msg);
+        channels.TryGetValue(item.ChannelId.Value, out var channel);
+        var channelName = channel is null
+            ? item.ChannelId.Value.ToString()
+            : channel.Type == ChannelType.Direct
+                ? (string.IsNullOrWhiteSpace(channel.Name) ? "DM" : channel.Name)
+                : channel.Name;
+
+        result[item.MessageId.Value] = new ForwardedFromResponse(
+            item.MessageId.Value,
+            item.ChannelId.Value,
+            channelName,
+            msg?.AuthorName ?? string.Empty,
+            msg?.CreatedAt ?? default);
+    }
+
+    return result;
+}
+
 static async Task<Dictionary<Guid, AttachmentResponse[]>> LoadAttachmentsByMessageAsync(
     VibeChatDbContext db,
     ChannelId channelId,
@@ -3710,6 +3918,13 @@ public sealed record ReplyToResponse(
     string Preview,
     bool Deleted);
 
+public sealed record ForwardedFromResponse(
+    Guid MessageId,
+    Guid ChannelId,
+    string ChannelName,
+    string AuthorName,
+    DateTimeOffset CreatedAt);
+
 public sealed record MessageResponse(
     Guid Id,
     Guid ChannelId,
@@ -3726,7 +3941,17 @@ public sealed record MessageResponse(
     int ReplyCount = 0,
     Guid? ConversationId = null,
     ReactionSummaryResponse[]? Reactions = null,
-    ReplyToResponse? ReplyTo = null);
+    ReplyToResponse? ReplyTo = null,
+    Guid? ForwardedFromMessageId = null,
+    Guid? ForwardedFromChannelId = null,
+    ForwardedFromResponse? ForwardedFrom = null);
+
+public sealed record ForwardMessageRequest(
+    Guid[] TargetChannelIds,
+    string? Comment,
+    string IdempotencyKey);
+
+public sealed record ForwardMessageResponse(MessageResponse[] Messages);
 public sealed record ThreadResponse(
     Guid Id,
     Guid ChannelId,

@@ -78,6 +78,14 @@ import { environment } from '../../../../environments/environment';
             </div>
           </div>
         } @else {
+          @if (message().forwardedFrom; as origin) {
+            <p class="vc-msg__forwarded">
+              Encaminhada de
+              {{ origin.channelName.startsWith('#') || origin.channelName === 'DM' ? origin.channelName : ('#' + origin.channelName) }}
+              · {{ origin.authorName }}
+              · {{ origin.createdAt | date: 'shortDate' }}
+            </p>
+          }
           @if (message().replyTo; as cite) {
             @if (cite.deleted) {
               <div class="vc-msg__quote vc-msg__quote--deleted">Mensagem removida</div>
@@ -173,6 +181,9 @@ import { environment } from '../../../../environments/environment';
             @if (showReplyAction()) {
               <button type="button" (click)="reply.emit()">Responder</button>
             }
+            @if (showForwardAction()) {
+              <button type="button" (click)="forward.emit()">Encaminhar</button>
+            }
             @if (showThreadAction()) {
               <button type="button" (click)="openThread.emit()">
                 @if (message().replyCount) {
@@ -227,6 +238,11 @@ import { environment } from '../../../../environments/environment';
       outline: 2px solid color-mix(in srgb, var(--vc-brand) 55%, transparent);
       outline-offset: 2px;
       transition: outline-color 200ms ease;
+    }
+    .vc-msg__forwarded {
+      margin: 0 0 0.4rem;
+      font-size: 0.78rem;
+      color: var(--vc-ink-muted);
     }
     .vc-msg__quote {
       display: grid;
@@ -429,11 +445,13 @@ export class MessageBubble {
   readonly message = input.required<ChatMessage>();
   readonly showThreadAction = input(false);
   readonly showReplyAction = input(false);
+  readonly showForwardAction = input(false);
   readonly highlighted = input(false);
   readonly edit = output<string>();
   readonly delete = output<void>();
   readonly openThread = output<void>();
   readonly reply = output<void>();
+  readonly forward = output<void>();
   readonly quoteClick = output<string>();
   readonly react = output<string>();
 

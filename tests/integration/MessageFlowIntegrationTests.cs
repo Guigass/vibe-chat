@@ -440,6 +440,116 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Forward_message_creates_one_message_per_target_with_shared_attachment()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+        var createChannel = await client.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/channels",
+            new CreateChannelRequestDto($"fwd-{Guid.NewGuid():N}"[..18], "Public", SeedData.DemoSpaceGeralId));
+        createChannel.StatusCode.Should().Be(HttpStatusCode.Created);
+        var target = await createChannel.Content.ReadFromJsonAsync<ChannelDto>(JsonOptions);
+        target.Should().NotBeNull();
+
+        var content = "forward-attachment"u8.ToArray();
+        var initiate = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments",
+            new CreateAttachmentUploadRequest("fwd.txt", "text/plain", content.Length));
+        initiate.StatusCode.Should().Be(HttpStatusCode.OK);
+        var upload = await initiate.Content.ReadFromJsonAsync<AttachmentUploadDto>(JsonOptions);
+        upload.Should().NotBeNull();
+
+        using var putClient = new HttpClient();
+        using var putRequest = new HttpRequestMessage(HttpMethod.Put, upload!.UploadUrl)
+        {
+            Content = new ByteArrayContent(content)
+        };
+        var put = await putClient.SendAsync(putRequest);
+        put.IsSuccessStatusCode.Should().BeTrue();
+
+        var complete = await client.PostAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments/{upload.AttachmentId}/complete",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+        complete.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var sourceId = Guid.NewGuid();
+        var send = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(sourceId, $"idem-fwd-src-{sourceId:N}", "origem forward", null, null, [upload.AttachmentId]));
+        send.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var idem = $"idem-fwd-{sourceId:N}";
+        var forward = await client.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/messages/{sourceId}/forward",
+            new ForwardMessageRequest([DemoChannelId, target!.Id], "comentário", idem));
+        forward.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var forwarded = await forward.Content.ReadFromJsonAsync<ForwardMessageResponseDto>(JsonOptions);
+        forwarded.Should().NotBeNull();
+        forwarded!.Messages.Should().HaveCount(2);
+        forwarded.Messages.Select(m => m.ChannelId).Should().BeEquivalentTo([DemoChannelId, target.Id]);
+        forwarded.Messages.Should().OnlyContain(m =>
+            m.ForwardedFromMessageId == sourceId
+            && m.ForwardedFrom != null
+            && m.ForwardedFrom.MessageId == sourceId
+            && m.Body == "comentário"
+            && m.Attachments != null
+            && m.Attachments.Length == 1);
+
+        var again = await client.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/messages/{sourceId}/forward",
+            new ForwardMessageRequest([DemoChannelId, target.Id], "comentário", idem));
+        again.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var againDto = await again.Content.ReadFromJsonAsync<ForwardMessageResponseDto>(JsonOptions);
+        againDto!.Messages.Select(m => m.Id).Should().BeEquivalentTo(forwarded.Messages.Select(m => m.Id));
+
+        await using var db = factory.CreateMigratorDbContext();
+        var sourceKey = await db.Attachments.IgnoreQueryFilters()
+            .Where(x => x.Id == upload.AttachmentId)
+            .Select(x => x.StorageKey)
+            .SingleAsync();
+        var refs = await db.Attachments.IgnoreQueryFilters()
+            .Where(x => x.StorageKey == sourceKey)
+            .ToListAsync();
+        refs.Should().HaveCount(3);
+        refs.Should().OnlyContain(x => x.ReferenceCount == 3);
+
+        var history = await client.GetFromJsonAsync<MessageDto[]>(
+            $"/api/v1/channels/{target.Id}/messages?after=0&limit=50",
+            JsonOptions);
+        history!.Should().Contain(m =>
+            m.ForwardedFromMessageId == sourceId
+            && m.ForwardedFrom != null
+            && m.ForwardedFrom.ChannelId == DemoChannelId);
+    }
+
+    [Fact]
+    public async Task Forward_rejects_target_without_membership_without_partial_send()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+        var sourceId = Guid.NewGuid();
+        var send = await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(sourceId, $"idem-fwd-deny-src-{sourceId:N}", "no partial", null, null));
+        send.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var foreign = Guid.NewGuid();
+        var forward = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/messages/{sourceId}/forward",
+            new ForwardMessageRequest([DemoChannelId, foreign], null, $"idem-fwd-deny-{sourceId:N}"));
+        forward.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        await using var db = factory.CreateMigratorDbContext();
+        var created = await db.Messages.IgnoreQueryFilters()
+            .CountAsync(x => x.ForwardedFromMessageId == new MessageId(sourceId));
+        created.Should().Be(0);
+    }
+
+    [Fact]
     public async Task Spaces_and_channels_can_be_created_with_membership()
     {
         using var alice = factory.CreateClient();
@@ -1610,6 +1720,13 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         string Preview,
         bool Deleted);
 
+    private sealed record ForwardedFromDto(
+        Guid MessageId,
+        Guid ChannelId,
+        string ChannelName,
+        string AuthorName,
+        DateTimeOffset CreatedAt);
+
     private sealed record MessageDto(
         Guid Id,
         Guid ChannelId,
@@ -1625,7 +1742,12 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         int ReplyCount = 0,
         Guid? ConversationId = null,
         ReactionSummaryDto[]? Reactions = null,
-        ReplyToDto? ReplyTo = null);
+        ReplyToDto? ReplyTo = null,
+        Guid? ForwardedFromMessageId = null,
+        Guid? ForwardedFromChannelId = null,
+        ForwardedFromDto? ForwardedFrom = null);
+
+    private sealed record ForwardMessageResponseDto(MessageDto[] Messages);
 
     private sealed record ThreadDto(
         Guid Id,

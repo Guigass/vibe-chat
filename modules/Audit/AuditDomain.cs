@@ -20,6 +20,7 @@ public static class AuditActions
     public const string ChannelCreate = "channel.create";
     public const string SpaceCreate = "space.create";
     public const string MessageSend = "message.send";
+    public const string MessageForward = "message.forward";
     public const string MessageDelete = "message.delete";
     public const string AttachmentUpload = "attachment.upload";
     public const string MemberRoleChange = "member.role.change";
