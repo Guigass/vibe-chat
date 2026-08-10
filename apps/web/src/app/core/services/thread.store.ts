@@ -4,6 +4,11 @@ import { AuthService } from '../auth/auth.service';
 import { ChatHubService } from './chat-hub.service';
 import { ChannelStore } from './channel.store';
 import { ChatMessage, ChatThread } from '../../shared/models/chat.models';
+import {
+  findMessageByCorrelators,
+  idsEqual,
+  upsertRemoteMessage,
+} from './message-sync';
 
 @Injectable({ providedIn: 'root' })
 export class ThreadStore {
@@ -153,29 +158,24 @@ export class ThreadStore {
 
     const normalized = this.normalize(message);
     const mine = normalized.authorUserId === this.auth.profile()?.id;
-    if (mine && normalized.clientMessageId) {
-      const existing = this.messagesSignal().find(
-        (m) => m.clientMessageId === normalized.clientMessageId,
-      );
-      if (existing) {
-        this.patchByClientId(normalized.clientMessageId, {
-          ...normalized,
-          status: 'persisted',
-          mine: true,
-        });
-        return;
-      }
+    const remote: ChatMessage = { ...normalized, mine, status: 'persisted' };
+    const existing = findMessageByCorrelators(this.messagesSignal(), remote);
+
+    if (existing?.clientMessageId) {
+      this.patchByClientId(existing.clientMessageId, {
+        ...remote,
+        clientMessageId: existing.clientMessageId,
+        mine: true,
+      });
+      return;
     }
 
-    this.messagesSignal.update((list) => {
-      if (list.some((m) => m.id === normalized.id)) return list;
-      return [...list, { ...normalized, mine }];
-    });
+    this.messagesSignal.update((list) => upsertRemoteMessage(list, remote));
   }
 
   private patchByClientId(clientMessageId: string, patch: Partial<ChatMessage>): void {
     this.messagesSignal.update((list) =>
-      list.map((m) => (m.clientMessageId === clientMessageId ? { ...m, ...patch } : m)),
+      list.map((m) => (idsEqual(m.clientMessageId, clientMessageId) ? { ...m, ...patch } : m)),
     );
   }
 

@@ -1,5 +1,11 @@
 import { ChatMessage } from '../../shared/models/chat.models';
 
+/** Case-insensitive GUID/string id compare (hub/API casing may differ). */
+export function idsEqual(a: string | undefined | null, b: string | undefined | null): boolean {
+  if (!a || !b) return false;
+  return a.toLowerCase() === b.toLowerCase();
+}
+
 /** Highest persisted sequence for a channel (ignores optimistic/sending without seq). */
 export function maxSeqForChannel(messages: readonly ChatMessage[], channelId: string): number {
   let max = 0;
@@ -24,8 +30,26 @@ export function hasSeqGap(
 }
 
 /**
+ * Match optimistic/local row to an incoming hub/HTTP message by id or clientMessageId.
+ */
+export function findMessageByCorrelators(
+  messages: readonly ChatMessage[],
+  incoming: Pick<ChatMessage, 'id' | 'clientMessageId'>,
+): ChatMessage | undefined {
+  return messages.find(
+    (m) =>
+      idsEqual(m.id, incoming.id) ||
+      idsEqual(m.clientMessageId, incoming.id) ||
+      (!!incoming.clientMessageId &&
+        (idsEqual(m.clientMessageId, incoming.clientMessageId) ||
+          idsEqual(m.id, incoming.clientMessageId))),
+  );
+}
+
+/**
  * Upsert by id. Preserves clientMessageId / optimistic mine flags.
  * Prefer incoming body/edit/delete/reactions (history is source of truth).
+ * Keys are compared case-insensitively.
  */
 export function mergeMessagesById(
   current: readonly ChatMessage[],
@@ -33,19 +57,21 @@ export function mergeMessagesById(
 ): ChatMessage[] {
   const byId = new Map<string, ChatMessage>();
   for (const message of current) {
-    byId.set(message.id, message);
+    byId.set(message.id.toLowerCase(), message);
   }
 
   for (const raw of incoming) {
-    const existing = byId.get(raw.id);
+    const key = raw.id.toLowerCase();
+    const existing = byId.get(key);
     if (!existing) {
-      byId.set(raw.id, raw);
+      byId.set(key, raw);
       continue;
     }
 
-    byId.set(raw.id, {
+    byId.set(key, {
       ...existing,
       ...raw,
+      id: existing.id,
       clientMessageId: existing.clientMessageId ?? raw.clientMessageId,
       mine: existing.mine || raw.mine,
       status:
@@ -56,6 +82,30 @@ export function mergeMessagesById(
   }
 
   return [...byId.values()];
+}
+
+/**
+ * Reconcile a remote MessageCreated (or HTTP ack) into the local list without duplicating
+ * an optimistic bubble that shares id / clientMessageId.
+ */
+export function upsertRemoteMessage(
+  current: readonly ChatMessage[],
+  incoming: ChatMessage,
+): ChatMessage[] {
+  const existing = findMessageByCorrelators(current, incoming);
+  if (!existing) {
+    return [...current, incoming];
+  }
+
+  return mergeMessagesById(current, [
+    {
+      ...incoming,
+      id: existing.id,
+      clientMessageId: existing.clientMessageId ?? incoming.clientMessageId,
+      mine: existing.mine || incoming.mine,
+      status: incoming.status ?? 'persisted',
+    },
+  ]);
 }
 
 /** Overlap window so reconnect also refreshes recent edit/delete/reaction state. */

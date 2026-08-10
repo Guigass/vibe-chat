@@ -56,7 +56,9 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             .OrderByDescending(x => x.OccurredAt)
             .Take(20)
             .ToListAsync();
-        outbox.Should().Contain(x => x.Payload.Contains(messageId.ToString(), StringComparison.OrdinalIgnoreCase));
+        outbox.Should().Contain(x =>
+            x.Payload.Contains(messageId.ToString(), StringComparison.OrdinalIgnoreCase)
+            && x.Payload.Contains("clientMessageId", StringComparison.Ordinal));
     }
 
     [Fact]

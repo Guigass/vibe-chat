@@ -27,7 +27,6 @@ Regras do registro:
 
 | ID | Área | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
-| BUG-001 | Composer / timeline | Mensagens aparecem duplicadas ao enviar | Alta | Aberto — safety lane |
 | BUG-002 | Sidebar / unread | Badges de novas mensagens não limpam de forma persistente após reload | Alta | Aberto — fecha em **B-094** |
 | BUG-003 | Anexos | Upload de arquivo falha com erro | Alta | Aberto — safety lane |
 | BUG-004 | Composer / áudio | Áudio do microfone não envia | Alta | Aberto — safety lane |
@@ -38,7 +37,7 @@ Regras do registro:
 
 ### BUG-001 — Mensagens duplicadas no envio
 
-- Status: **Aberto**
+- Status: **Done**
 - Observado em: `http://localhost:4200/app` (Compose profile `apps`), 2026-08-10;
   relato de produto + inspeção de código.
 - Hipótese: race entre mensagem otimista no cliente e fan-out SignalR
@@ -56,9 +55,9 @@ Regras do registro:
 - Critério de resolução: regressão (unit/E2E) cobrindo optimistic + hub overlap;
   sem duplicata visual nem segunda linha no banco para a mesma
   `Idempotency-Key`.
-- Próxima ação: reproduzir com DevAuth Alice; inspecionar payload
-  `MessageCreated`; incluir `clientMessageId` no contrato do hub ou dedupe
-  estável no store.
+- Resolução: lock síncrono no composer/thread + clear draft early; dedupe
+  case-insensitive por `id`/`clientMessageId` (`message-sync.upsertRemoteMessage`);
+  outbox/hub ecoa `clientMessageId`; unit `message-sync.spec` + E2E count===1.
 
 ### BUG-002 — Unread / notificações após reload
 
@@ -169,4 +168,4 @@ Regras do registro:
 
 | ID | Área | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
-| — | — | *(nenhum ainda)* | — | — |
+| BUG-001 | Composer / timeline | Mensagens aparecem duplicadas ao enviar | Alta | Done |

@@ -45,7 +45,7 @@ e entram na **safety lane** do Build (antes de novas features de wave).
 | B-070 | Realtime: mensagens/eventos ao vivo | **Done (Wave 6)** — ingest hub `MessageCreated`/edit/delete/`ReactionChanged` (payload JsonNode) + gap-fill por `seq` no reconnect/overlap; E2E dois usuários |
 | B-071 | Typing: ocultar indicador do próprio usuário | **Done (Wave 6)** — filtro no client + E2E; autor não vê o próprio “digitando…” |
 | B-072 | Scroll só no bloco da conversa | **Done (Wave 6)** — shell sem scroll da página; timeline com overflow interno + composer fixo |
-| BUG-001 | Mensagens duplicadas no envio | Aberto (Alta) — race optimistic ↔ hub |
+| BUG-001 | Mensagens duplicadas no envio | **Done** — lock composer + dedupe store + `clientMessageId` no hub |
 | BUG-002 | Unread/badges após reload | Aberto (Alta) — fecha em **B-094** (W9-7) |
 | BUG-003 | Upload de arquivo com erro | Aberto (Alta) — presign/MinIO |
 | BUG-004 | Áudio do microfone não envia | Aberto (Alta) — Mic + upload |

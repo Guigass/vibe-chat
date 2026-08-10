@@ -437,6 +437,7 @@ export class Composer {
     const uploading = this.attachments.hasActiveUploads();
     return (
       (!hasText && ready === 0 && !uploading) ||
+      this.submitting() ||
       this.messages.sending() ||
       this.bodyTooLong() ||
       this.attachments.submitBlocked()
@@ -452,6 +453,8 @@ export class Composer {
     ];
     return filterMentionItems(base, context.query);
   });
+  /** Sync gate so Enter×2 cannot start two sends before `messages.sending` flips. */
+  private readonly submitting = signal(false);
   private lastTyping = 0;
   private mentionFetchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -544,17 +547,27 @@ export class Composer {
 
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
+    if (this.submitting()) return;
+
     const body = this.draft().trim();
     if (isMessageBodyTooLong(body)) return;
 
-    const attachmentIds = await this.attachments.waitForReady();
-    if (!body && attachmentIds.length === 0) return;
+    this.submitting.set(true);
+    try {
+      const attachmentIds = await this.attachments.waitForReady();
+      if (!body && attachmentIds.length === 0) return;
 
-    const ok = await this.messages.send(body, attachmentIds);
-    if (ok) {
+      // Clear before await send so a second Enter cannot resubmit the same draft.
       this.draft.set('');
       this.attachments.clear();
       this.validationError.set(null);
+
+      const ok = await this.messages.send(body, attachmentIds);
+      if (!ok) {
+        this.draft.set(body);
+      }
+    } finally {
+      this.submitting.set(false);
     }
   }
 

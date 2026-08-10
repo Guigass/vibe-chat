@@ -27,6 +27,8 @@ export interface PresenceChangedEvent {
 interface MessageCreatedPayload {
   messageId?: string;
   id?: string;
+  /** Echo of the client-supplied message id for optimistic UI reconciliation. */
+  clientMessageId?: string;
   channelId: string;
   conversationId?: string;
   threadId?: string | null;
@@ -442,8 +444,12 @@ export class ChatHubService {
     const channelId = String(payload.channelId);
     const mentionedUserIds = (payload.mentionedUserIds ?? []).map(String);
     const mentionsMe = !!me && mentionedUserIds.includes(me);
+    const clientMessageId = payload.clientMessageId
+      ? String(payload.clientMessageId)
+      : undefined;
     return {
       id: String(id),
+      clientMessageId,
       conversationId,
       channelId,
       authorUserId: String(payload.authorId ?? ''),

@@ -124,7 +124,7 @@ Validação ocorre em `POST .../messages`, `POST .../threads/{threadId}/messages
 | Autocomplete | `GET /api/v1/workspaces/{workspaceId}/channels/{channelId}/members?query=` — membership do canal; até 8 resultados |
 | Unread | `GET /api/v1/channels/{channelId}/unread-count` → `{ unreadCount, mentionCount }` |
 | Permissão | `@canal` exige `channel.mention_all` (default: quem pode postar) |
-| Hub `MessageCreated` | `mentionedUserIds: uuid[]`, `mentionKinds: string[]`; cada cliente deriva `mentionsMe` localmente |
+| Hub `MessageCreated` | `mentionedUserIds: uuid[]`, `mentionKinds: string[]`; cada cliente deriva `mentionsMe` localmente; `clientMessageId` ecoa o `messageId` aceito do cliente (reconcilia UI otimista) |
 
 ### Threads
 
@@ -261,12 +261,14 @@ Nomes de eventos hub (cliente):
 
 | Evento | Quando |
 |--------|--------|
-| `message.created` | Nova mensagem |
-| `message.edited` | Edição |
-| `message.deleted` | Soft delete |
+| `MessageCreated` | Nova mensagem — payload inclui `messageId`, `clientMessageId` (mesmo UUID do `messageId` do comando), `channelId`, `conversationId`, `sequence`, `authorId`, `body`, menções/anexos |
+| `MessageEdited` | Edição |
+| `MessageDeleted` | Soft delete |
 | `ReactionChanged` | Toggle de reação (payload com resumo agregado) |
 | `Typing` | Typing (TTL curto Redis); hub publica com `Clients.OthersInGroup` (B-071) — autor não recebe o próprio evento |
 | `PresenceChanged` | Presence `online`/`away`/`offline` (hub group `t:{tenantId}`) |
+
+Cliente deduplica ack HTTP + fan-out hub por `messageId` / `clientMessageId` (case-insensitive) — ver `protocolo-sync-realtime.md`.
 
 Grupos SignalR: canal `t:{tenantId}:c:{channelId}` (mensagens/typing/reações); tenant `t:{tenantId}` (presence).
 

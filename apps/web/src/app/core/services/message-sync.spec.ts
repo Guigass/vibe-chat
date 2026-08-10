@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { ChatMessage } from '../../shared/models/chat.models';
 import {
+  findMessageByCorrelators,
   gapFillAfterSeq,
   hasSeqGap,
+  idsEqual,
   maxSeqForChannel,
   mergeMessagesById,
+  upsertRemoteMessage,
 } from './message-sync';
 
-function msg(partial: Partial<ChatMessage> & Pick<ChatMessage, 'id' | 'channelId' | 'seq'>): ChatMessage {
+function msg(partial: Partial<ChatMessage> & Pick<ChatMessage, 'id' | 'channelId'>): ChatMessage {
   return {
     conversationId: partial.channelId,
     authorUserId: 'u1',
@@ -94,5 +97,77 @@ describe('message-sync', () => {
     expect(byId['m2'].deletedAt).toBeTruthy();
     expect(byId['m3'].body).toBe('new');
     expect(merged).toHaveLength(3);
+  });
+
+  it('idsEqual compares case-insensitively', () => {
+    expect(idsEqual('AaBb', 'aabb')).toBe(true);
+    expect(idsEqual('a', 'b')).toBe(false);
+    expect(idsEqual(undefined, 'a')).toBe(false);
+  });
+
+  it('findMessageByCorrelators matches optimistic id / clientMessageId', () => {
+    const clientId = '11111111-1111-1111-1111-111111111111';
+    const current = [
+      msg({
+        id: clientId,
+        channelId: 'c1',
+        clientMessageId: clientId,
+        status: 'sending',
+        mine: true,
+      }),
+    ];
+
+    expect(
+      findMessageByCorrelators(current, {
+        id: clientId.toUpperCase(),
+        clientMessageId: undefined,
+      })?.id,
+    ).toBe(clientId);
+
+    expect(
+      findMessageByCorrelators(current, {
+        id: '99999999-9999-9999-9999-999999999999',
+        clientMessageId: clientId,
+      })?.clientMessageId,
+    ).toBe(clientId);
+  });
+
+  it('upsertRemoteMessage merges hub fan-out onto optimistic bubble (BUG-001)', () => {
+    const clientId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+    const optimistic = msg({
+      id: clientId,
+      channelId: 'c1',
+      body: 'ping',
+      clientMessageId: clientId,
+      status: 'sending',
+      mine: true,
+    });
+
+    const fromHubNoClientId = msg({
+      id: clientId.toUpperCase(),
+      channelId: 'c1',
+      seq: 12,
+      body: 'ping',
+      status: 'persisted',
+      mine: true,
+    });
+
+    const merged = upsertRemoteMessage([optimistic], fromHubNoClientId);
+    expect(merged).toHaveLength(1);
+    expect(merged[0].id).toBe(clientId);
+    expect(merged[0].clientMessageId).toBe(clientId);
+    expect(merged[0].seq).toBe(12);
+    expect(merged[0].status).toBe('persisted');
+
+    const fromHubWithClientId = msg({
+      id: clientId,
+      channelId: 'c1',
+      seq: 12,
+      body: 'ping',
+      clientMessageId: clientId,
+      status: 'persisted',
+      mine: true,
+    });
+    expect(upsertRemoteMessage([optimistic], fromHubWithClientId)).toHaveLength(1);
   });
 });

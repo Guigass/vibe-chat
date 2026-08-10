@@ -30,8 +30,9 @@ test.describe(`two sessions chat (${AUTH_MODE})`, () => {
     await composer.fill(uniqueBody);
     await alice.page.getByRole('button', { name: /^Enviar$/i }).click();
 
-    // Alice always sees her optimistic/local message
+    // Alice always sees her optimistic/local message — exactly one bubble (BUG-001).
     await expect(alice.page.getByText(uniqueBody)).toBeVisible({ timeout: 15_000 });
+    await expect(alice.page.getByText(uniqueBody)).toHaveCount(1);
 
     if (AUTH_MODE === 'demo') {
       test.info().annotations.push({

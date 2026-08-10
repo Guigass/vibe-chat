@@ -628,6 +628,8 @@ public sealed class MessageWriter(
                 conversationId = conversationId.Value,
                 threadId,
                 messageId = command.MessageId.Value,
+                // Same UUID the client sent as messageId — reconciles optimistic UI (BUG-001).
+                clientMessageId = command.MessageId.Value,
                 replyToMessageId = command.ReplyToMessageId?.Value,
                 authorId = command.UserId.Value,
                 authorName,

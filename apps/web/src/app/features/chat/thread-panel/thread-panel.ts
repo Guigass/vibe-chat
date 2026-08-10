@@ -168,8 +168,14 @@ export class ThreadPanel {
   readonly bodyTooLong = computed(() => isMessageBodyTooLong(this.draft()));
   readonly showCounter = computed(() => this.bodyLength() >= MESSAGE_BODY_COUNTER_THRESHOLD);
   readonly submitDisabled = computed(
-    () => !this.draft().trim() || this.threads.sending() || this.bodyTooLong(),
+    () =>
+      !this.draft().trim() ||
+      this.submitting() ||
+      this.threads.sending() ||
+      this.bodyTooLong(),
   );
+  /** Sync gate so Enter×2 cannot start two sends before `threads.sending` flips. */
+  private readonly submitting = signal(false);
   private lastTyping = 0;
 
   constructor() {
@@ -184,12 +190,21 @@ export class ThreadPanel {
 
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
+    if (this.submitting()) return;
+
     const body = this.draft().trim();
     if (!body || isMessageBodyTooLong(body)) return;
 
-    const ok = await this.threads.send(body);
-    if (ok) {
-      this.draft.set('');
+    this.submitting.set(true);
+    // Clear before await send so a second Enter cannot resubmit the same draft.
+    this.draft.set('');
+    try {
+      const ok = await this.threads.send(body);
+      if (!ok) {
+        this.draft.set(body);
+      }
+    } finally {
+      this.submitting.set(false);
     }
   }
 
