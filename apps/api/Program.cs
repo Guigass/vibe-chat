@@ -1895,7 +1895,7 @@ v1.MapPut("/channels/{channelId:guid}/read-cursor", async (Guid channelId, Upser
         db.ReadCursors.Add(cursor);
     }
 
-    cursor.LastReadSequence = request.LastReadSequence;
+    cursor.LastReadSequence = Math.Max(cursor.LastReadSequence, request.LastReadSequence);
     cursor.UpdatedAt = clock.UtcNow;
     await db.SaveChangesAsync(ct);
     await publisher.PublishAsync(new RealtimeMessage("ReadCursorUpdated", channel.TenantId, channel.Id, new { tenantId = channel.TenantId.Value, channelId, userId = profile.Id.Value, cursor.LastReadSequence }), ct);

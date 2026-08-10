@@ -30,7 +30,8 @@ function runGuard(
     ],
   }) as EnvironmentInjector;
 
-  return runInInjectionContext(injector, () => guard({} as never, {} as never));
+  const result = runInInjectionContext(injector, () => guard({} as never, {} as never));
+  return Promise.resolve(result as boolean | UrlTree | Promise<boolean | UrlTree>);
 }
 
 describe('admin guards (BUG-005)', () => {

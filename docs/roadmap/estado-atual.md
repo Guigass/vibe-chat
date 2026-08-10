@@ -5,8 +5,8 @@ Snapshot factual para orientação rápida. Não substitui o
 
 - **Data de corte:** 2026-08-10
 - **Fase:** Wave 7 — Sustentação / paridade (W8+)
-- **Safety lane obrigatória:** BUG-001…BUG-006 Alta abertos em [`bug-findings.md`](../product/bug-findings.md) (UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done)
-- **Próximo item elegível:** safety lane `BUG-*` Alta restantes; BUG-002 fecha em B-094 quando W9-7 elegível; W8-6 / B-084 Done (responder citando + BUG-009)
+- **Safety lane obrigatória:** BUG-006 Alta aberto em [`bug-findings.md`](../product/bug-findings.md); BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done
+- **Próximo item elegível:** safety lane `BUG-006` Alta; BUG-002 fecha em B-094 quando W9-7 elegível; W8-6 / B-084 Done (responder citando + BUG-009)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -23,7 +23,7 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 
 O trabalho aberto concentra-se em:
 
-1. esvaziar a safety lane de bugs funcionais (`BUG-001`…`BUG-006`);
+1. esvaziar a safety lane de bugs funcionais Alta (`BUG-006`; BUG-002 aliviado);
 2. avançar as Waves 8–10 de paridade de mensageria;
 3. consumir o roadmap autorizado W11–W17.
 
@@ -78,7 +78,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | BUG-002…007 | Safety lane Alta — ver [`bug-findings.md`](../product/bug-findings.md) |
+| 1 | BUG-006 | Safety lane Alta — ver [`bug-findings.md`](../product/bug-findings.md); BUG-002 aliviado (Média) |
 | 2 | W8-7 | Encaminhar (B-085); W8-6 / B-084 Done (citar + BUG-009) |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
@@ -98,8 +98,8 @@ altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
   DOC-016…DOC-021;
 - enforcement automático de DOC-006 ainda exige implementação na fase de código;
 - B-153/B-154 adicionam migração/importação e diagnóstico seguro à Wave 11;
-- seis bugs funcionais Alta abertos em `docs/product/bug-findings.md`
-  (BUG-001…BUG-006; safety lane);
+- safety lane Alta restante: BUG-006 em `docs/product/bug-findings.md`
+  (BUG-002 aliviado para Média; fecha em B-094);
 - três ações R4 do GitHub permanecem em `operational-findings.md`.
 
 ## Gaps documentais e operacionais conhecidos

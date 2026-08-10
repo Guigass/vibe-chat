@@ -49,10 +49,10 @@ function installDomMocks(initialStorage: StorageMap = {}): {
     get() {
       return {
         get theme() {
-          return attributes['data-theme'] ?? attributes.theme;
+          return attributes['data-theme'] ?? attributes['theme'];
         },
         get density() {
-          return attributes['data-density'] ?? attributes.density;
+          return attributes['data-density'] ?? attributes['density'];
         },
       };
     },

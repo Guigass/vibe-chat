@@ -33,6 +33,8 @@ export class MessageStore {
   private readonly highlightMessageIdSignal = signal<string | null>(null);
   private highlightTimer: ReturnType<typeof setTimeout> | null = null;
   private gapFillInFlight = new Set<string>();
+  private readCursorTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingReadCursor: { channelId: string; seq: number } | null = null;
   private unsubCreated: (() => void) | null = null;
   private unsubEdited: (() => void) | null = null;
   private unsubDeleted: (() => void) | null = null;
@@ -107,6 +109,10 @@ export class MessageStore {
           const others = current.filter((m) => m.channelId !== channelId);
           return [...others, ...messages.map((m) => this.normalize(m))];
         });
+        const maxSeq = maxSeqForChannel(this.messagesSignal(), channelId);
+        if (maxSeq > 0) {
+          void this.persistReadCursor(channelId, maxSeq);
+        }
       }
     } catch {
       this.messagesSignal.update((current) => {
@@ -344,6 +350,7 @@ export class MessageStore {
     const mine = normalized.authorUserId === this.auth.profile()?.id;
     const remote: ChatMessage = { ...normalized, mine, status: 'persisted' };
     const existing = findMessageByCorrelators(this.messagesSignal(), remote);
+    const isActive = idsEqual(normalized.channelId, this.channels.activeChannelId());
 
     if (existing) {
       // Optimistic / HTTP ack already present — merge, never append a second bubble.
@@ -356,10 +363,18 @@ export class MessageStore {
       } else {
         this.messagesSignal.update((list) => upsertRemoteMessage(list, remote));
       }
+      if (isActive && (normalized.seq ?? 0) > 0) {
+        this.schedulePersistReadCursor(normalized.channelId, normalized.seq!);
+      }
       return;
     }
 
     this.messagesSignal.update((list) => upsertRemoteMessage(list, remote));
+
+    if (isActive && (normalized.seq ?? 0) > 0) {
+      this.schedulePersistReadCursor(normalized.channelId, normalized.seq!);
+      return;
+    }
 
     if (!mine) {
       if (normalized.mentionsMe) {
@@ -368,6 +383,37 @@ export class MessageStore {
         this.channels.bumpUnread(normalized.channelId);
       }
     }
+  }
+
+  /** BUG-002: persist read cursor so unread badges survive F5 (B-094 alívio). */
+  private async persistReadCursor(channelId: string, seq: number): Promise<void> {
+    if (!channelId || seq <= 0) return;
+    if (this.channels.isDemo() || this.auth.isOfflineDemo()) return;
+    try {
+      await this.api.upsertReadCursor(channelId, seq);
+    } catch {
+      // best-effort; next load/ingest can retry
+    }
+  }
+
+  private schedulePersistReadCursor(channelId: string, seq: number): void {
+    if (!channelId || seq <= 0) return;
+    if (this.channels.isDemo() || this.auth.isOfflineDemo()) return;
+
+    const pending = this.pendingReadCursor;
+    if (pending && pending.channelId === channelId) {
+      this.pendingReadCursor = { channelId, seq: Math.max(pending.seq, seq) };
+    } else {
+      this.pendingReadCursor = { channelId, seq };
+    }
+
+    if (this.readCursorTimer) clearTimeout(this.readCursorTimer);
+    this.readCursorTimer = setTimeout(() => {
+      const next = this.pendingReadCursor;
+      this.pendingReadCursor = null;
+      this.readCursorTimer = null;
+      if (next) void this.persistReadCursor(next.channelId, next.seq);
+    }, 500);
   }
 
   markThreadOpened(messageId: string, threadId: string): void {

@@ -46,7 +46,7 @@ e entram na **safety lane** do Build (antes de novas features de wave).
 | B-071 | Typing: ocultar indicador do próprio usuário | **Done (Wave 6)** — filtro no client + E2E; autor não vê o próprio “digitando…” |
 | B-072 | Scroll só no bloco da conversa | **Done (Wave 6)** — shell sem scroll da página; timeline com overflow interno + composer fixo |
 | BUG-001 | Mensagens duplicadas no envio | **Done** — lock composer + dedupe store + `clientMessageId` no hub |
-| BUG-002 | Unread/badges após reload | Aberto (Alta) — fecha em **B-094** (W9-7) |
+| BUG-002 | Unread/badges após reload | Aberto (Média) — alívio cursor; fecha em **B-094** (W9-7) |
 | BUG-003 | Upload de arquivo com erro | **Done** — presign no PublicEndpoint + CORS fail-closed + resolveContentType |
 | BUG-004 | Áudio do microfone não envia | **Done** — MIME base + erros visíveis + discard/onstop + regressão Vitest |
 | BUG-005 | `/admin` não entra (Member) | **Done** — shell com empty-state; Demo/Owner intactos |
@@ -179,8 +179,8 @@ deps `Done`, ausência de PR concorrente e gates R0–R3 de
 
 Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup → spaces → presence → reações → PWA. (B-020…B-031 já Done na Wave 4.)
 
-Pós-MVP: **P1.5** (B-070…B-072 Done; BUG-001…BUG-006 Alta na safety lane — ver
-`docs/product/bug-findings.md`), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done.
+Pós-MVP: **P1.5** (B-070…B-072 Done; safety lane: BUG-006 Alta; BUG-002 aliviado —
+ver `docs/product/bug-findings.md`), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done.
 
 Ordem daqui para frente: **safety lane** (`BUG-*` Alta) antes de inventar ou
 avançar feature de wave; depois **Sustentação** residual e **paridade de
