@@ -16,7 +16,8 @@ PR. Open at most one PR per run. Dependabot PRs are never Build work.
    `docs/architecture/` + `docs/adrs/`.
 2. Read `docs/agents/autonomia.md`, `docs/roadmap/estado-atual.md`,
    `docs/roadmap/roadmap.md`, `docs/roadmap/horizonte-ambicioso.md`,
-   `docs/roadmap/backlog.md`, `docs/roadmap/operational-findings.md` and
+   `docs/roadmap/backlog.md`, `docs/roadmap/operational-findings.md`,
+   `docs/product/bug-findings.md`, `docs/product/ux-findings.md` and
    `docs/roadmap/decisoes-pendentes.md`.
 3. Read Memories: last Wave/Backlog ID, open PR URLs, blockers.
 4. Inspect open PRs, active leases and the latest `main` checks. If another Build
@@ -24,15 +25,20 @@ PR. Open at most one PR per run. Dependabot PRs are never Build work.
 
 ## Step A — Safety lane
 
-Before product work, select exactly one operational finding with `Status: Open`
-when it is:
+Before product work, select exactly one open finding when it is:
 
-1. `Critical`, or `main` is red because of a confirmed regression;
-2. `High` security, cross-tenant, secret or data-integrity risk;
-3. an `Alta` UX finding that blocks the core login/send/read path.
+1. `Critical`, or `main` is red because of a confirmed regression
+   (`HOTFIX-*` / `OPS-*` / `SEC-*` in `docs/roadmap/operational-findings.md`);
+2. `High` security, cross-tenant, secret or data-integrity risk (same file);
+3. an `Alta` functional bug in `docs/product/bug-findings.md` (`BUG-*`) on the
+   core login/send/read/admin/realtime/attachments path;
+4. an `Alta` UX finding in `docs/product/ux-findings.md` that blocks the core
+   login/send/read path.
 
 The finding must have reproducible evidence and no open PR/lease. Use its
-`HOTFIX-*`, `SEC-*`, `OPS-*` or `UX-*` ID as the work item. Do not turn a vague
+`HOTFIX-*`, `SEC-*`, `OPS-*`, `BUG-*` or `UX-*` ID as the work item. If a
+`BUG-*` says it closes via an eligible `B-*` (deps Done + spec), select that
+`B-*` instead and mark the `BUG-*` `Done` in the same PR. Do not turn a vague
 audit suspicion into code. Lower-severity findings do not overtake roadmap work.
 `External action` and `Mitigated` entries are never Build work.
 
@@ -88,13 +94,14 @@ Only then look for a single improvement, in this priority:
 
 1. Broken / flaky test or clear regression in the vertical slice
 2. Multi-tenant / authZ / RLS hole already hinted in docs or QA nits
-3. Open **Alta** finding in `docs/product/ux-findings.md` (skip `External action`)
-4. Contract/docs drift vs code (small sync, not a rewrite)
-5. Obvious bug in an existing path (with a regression test)
-6. Open **Média** finding in `docs/product/ux-findings.md`
+3. Open **Alta** finding in `docs/product/bug-findings.md` (skip `External action`)
+4. Open **Alta** finding in `docs/product/ux-findings.md` (skip `External action`)
+5. Contract/docs drift vs code (small sync, not a rewrite)
+6. Obvious bug in an existing path (with a regression test)
+7. Open **Média** finding in `docs/product/bug-findings.md` or `ux-findings.md`
 
-When you close a `UX-<n>`, update it to `Resolved by this PR` and include the
-final status change in the same PR.
+When you close a `BUG-<n>` or `UX-<n>`, update it to `Done` / `Resolved by this
+PR` and include the final status change in the same PR.
 
 **Hard budget (anti-overengineering):**
 
@@ -110,7 +117,7 @@ final status change in the same PR.
 
 ## Guardrails
 
-- One `Work-Item` only, whether roadmap, gap, hotfix, security, ops or UX
+- One `Work-Item` only, whether roadmap, gap, hotfix, security, ops, bug or UX
 - Preserve `tenant_id` + authZ + RLS
 - Message mutations: idempotency + `seq` + outbox
 - No secrets; `.env.example` placeholders only
@@ -141,7 +148,7 @@ final status change in the same PR.
 Call **`open_git_pr`** to `main` from the **designated branch** with:
 
 ```text
-Work-Item: <B-*|GAP-*|HOTFIX-*|SEC-*|OPS-*|UX-*>
+Work-Item: <B-*|GAP-*|HOTFIX-*|SEC-*|OPS-*|BUG-*|UX-*>
 Wave: <W*-*|W11…W17|maintenance>
 Trilha: <A|B|C|D|E|F|G>
 Deps satisfeitas: <ids or —>

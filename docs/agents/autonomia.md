@@ -99,14 +99,18 @@ da classe de risco continuam obrigatórios.
 
 ## Seleção e reserva de trabalho
 
-1. Ler `roadmap.md` e depois `horizonte-ambicioso.md`.
-2. Escolher o primeiro `Planned` cujas dependências estejam `Done`.
-3. Confirmar que existe `B-NNN-*.md` e que a spec declara R0–R3.
-4. Não iniciar se já houver PR aberto com o mesmo ID.
-5. Um PR possui exatamente um Wave/Backlog ID.
-6. Trabalho paralelo é permitido apenas quando módulos/arquivos não se sobrepõem
+1. Resolver safety lane antes de produto: OPS/SEC Critical|High,
+   `BUG-*` Alta (`docs/product/bug-findings.md`) ou `UX-*` Alta no caminho
+   principal.
+2. Ler `roadmap.md` e depois `horizonte-ambicioso.md`.
+3. Escolher o primeiro `Planned` cujas dependências estejam `Done`.
+4. Confirmar que existe `B-NNN-*.md` e que a spec declara R0–R3.
+5. Não iniciar se já houver PR aberto com o mesmo ID.
+6. Um PR possui exatamente um Wave/Backlog ID (`B-*`, `GAP-*`, `BUG-*`, `UX-*`,
+   `HOTFIX-*`, `SEC-*`, `OPS-*` ou `DOCS-*`).
+7. Trabalho paralelo é permitido apenas quando módulos/arquivos não se sobrepõem
    materialmente e não existe dependência entre itens.
-7. Limite recomendado: até três PRs ativos, um por trilha independente.
+8. Limite recomendado: até três PRs ativos, um por trilha independente.
 
 ## ADR autônomo
 

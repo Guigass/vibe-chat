@@ -72,7 +72,9 @@ Build = 1. Segurança contra trabalho duplicado prevalece sobre velocidade.
 
 ## Seleção
 
-1. resolver safety lane Critical/High comprovada antes de produto;
+1. resolver safety lane comprovada antes de produto: OPS/SEC Critical|High,
+   `BUG-*` Alta em `docs/product/bug-findings.md`, ou `UX-*` Alta no caminho
+   principal;
 2. consumir `roadmap.md` até W10;
 3. consumir `horizonte-ambicioso.md` de W11 a W17;
 4. dentro da primeira wave não terminal, pegar a primeira linha elegível;
@@ -150,7 +152,7 @@ descrito ali e anexa o resultado ao PR.
 Todo PR registra:
 
 ```text
-Work-Item: <B-*|GAP-*|HOTFIX-*|SEC-*|OPS-*|UX-*|DOCS-*>
+Work-Item: <B-*|GAP-*|HOTFIX-*|SEC-*|OPS-*|BUG-*|UX-*|DOCS-*>
 Wave: <W*-*|W11…W17|maintenance|docs|recovery>
 Trilha: <A|B|C|D|E|F|G>
 Deps satisfeitas: <ids ou —>

@@ -95,6 +95,7 @@ determinístico, offline e executável em Windows/Linux.
 - `docs/roadmap/decisoes-pendentes.md`;
 - `docs/product/specs/`;
 - `docs/product/ux-findings.md`;
+- `docs/product/bug-findings.md`;
 - todos os arquivos Markdown/MDC para links.
 
 ### Falhas bloqueantes

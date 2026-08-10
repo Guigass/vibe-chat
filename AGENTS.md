@@ -12,7 +12,8 @@ técnicas reversíveis são feitas pelo agente e registradas em ADR quando neces
 1. Ler `docs/architecture/` (especialmente `visao-geral.md`, `contratos.md`, `diagrama-modulos.md`) e os ADRs relevantes em `docs/adrs/`.
 2. Identificar os módulos afetados (`modules/*`, `apps/*`, `src/*`, `infra/*`, `tests/*`).
 3. Planejar mudanças grandes antes de codar (escopo, contratos, testes, docs).
-4. Consultar `docs/product/glossario.md` e `docs/roadmap/decisoes-pendentes.md`.
+4. Consultar `docs/product/glossario.md`, `docs/roadmap/decisoes-pendentes.md` e
+   `docs/product/bug-findings.md` (safety lane de bugs funcionais Alta).
 
 ## Regras universais
 

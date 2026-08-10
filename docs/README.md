@@ -51,6 +51,7 @@ gap, não defendida apenas pelo texto.
 - [Benchmark de mensageria](product/benchmark-mensageria.md)
 - [Critérios da fatia vertical](product/criterios-aceite-fatia-vertical.md)
 - [Findings e checklist de UX](product/ux-findings.md)
+- [Bugs funcionais conhecidos](product/bug-findings.md)
 - [Specs de features](product/specs/README.md)
 - [Guias de uso](product/guias/README.md)
 - [Métricas e evidências](product/metricas-e-evidencias.md)
