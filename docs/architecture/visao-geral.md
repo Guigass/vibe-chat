@@ -70,6 +70,15 @@ Redis. Health, persistência, outbox processor e rate-limit ficam em
 `src/VibeChat.Infrastructure`; não constituem um módulo de negócio chamado
 “Platform”.
 
+### Expansão planejada de AI
+
+A Wave 18 transforma a porta de IA existente em uma plataforma de bots internos
+versionados, com skills, conhecimento e MCP. Isso **não** altera o runtime atual:
+Qdrant será dependência opcional/reconstruível e MCP continuará externo, ambos
+atrás de portas e feature flags. Contrato:
+[`plataforma-bots-ia.md`](plataforma-bots-ia.md) e
+[ADR-019](../adrs/ADR-019-qdrant-para-vetores-de-conhecimento.md).
+
 ## Fluxo de dados (resumo)
 
 1. Cliente autentica no Keycloak e obtém tokens.
@@ -113,3 +122,4 @@ Detalhes:
 - Elasticsearch/OpenSearch — ADR-016
 - Kubernetes — ADR-017
 - Banco por tenant físico (usamos RLS em DB compartilhado)
+- Qdrant e runtime de bots/MCP — planejados na Wave 18, off por default

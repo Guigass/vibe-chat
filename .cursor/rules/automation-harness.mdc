@@ -1,0 +1,21 @@
+---
+description: Contrato para editar prompts, hooks e ambiente das automações Cursor
+globs:
+  - .cursor/**
+  - docs/agents/**
+  - Taskfile.yml
+---
+
+# Automation Harness
+
+- Ler `docs/agents/loop-engineering.md` e `docs/agents/operacao-24x7.md`.
+- Cada automação tem trigger, entrada, saída, autoridade e stop reasons.
+- Um run e um PR tratam exatamente um Work-Item.
+- Git/PR/checks/roadmap são estado canônico; Memories são cache/lease.
+- Build, QA, Security e Docs preservam separação maker/checker.
+- Sem retry infinito: no-progress ou três abordagens encerram o run.
+- Prompt não substitui branch protection, scopes, sandbox ou hooks.
+- Hooks devem falhar fechado, ser offline e ter teste de falso positivo.
+- Rodar `task agent:check` ao alterar `.cursor`, `AGENTS.md` ou este contrato.
+- Prompts versionados só entram em produção após sincronização e Readiness `PASS`
+  no dashboard; depois disso o fluxo normal é 24/7 com auto-merge protegido.

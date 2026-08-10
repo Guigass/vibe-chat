@@ -154,6 +154,19 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-149 | [Transcrição e notas de reunião](B-149-notas-reuniao-ia.md) |
 | B-152 | [Canvas colaborativo](B-152-canvas-colaborativo.md) |
 
+### Wave 18 — Bots internos com IA
+
+| ID | Spec |
+|----|------|
+| B-155 | [Catálogo e versionamento de bots](B-155-catalogo-versionamento-bots-ia.md) |
+| B-156 | [Skills personalizadas para bots](B-156-skills-personalizadas-bots.md) |
+| B-157 | [Fontes de conhecimento e Qdrant](B-157-fontes-conhecimento-qdrant.md) |
+| B-158 | [Servidores MCP e grants](B-158-servidores-mcp-grants.md) |
+| B-159 | [Auditoria e observabilidade de bots](B-159-auditoria-observabilidade-bots.md) |
+| B-160 | [Guardrails e políticas para bots](B-160-guardrails-politicas-bots.md) |
+| B-161 | [Runtime conversacional de bots](B-161-runtime-conversacional-bots.md) |
+| B-162 | [Avaliação, publicação e templates](B-162-avaliacao-publicacao-templates-bots.md) |
+
 ## Template
 
 Toda spec nova segue esta estrutura. Seção vazia é sinal de spec incompleta —

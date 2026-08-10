@@ -24,6 +24,7 @@ original.
 | [016](ADR-016-quando-justificar-opensearch.md) | Gatilhos para OpenSearch | Accepted |
 | [017](ADR-017-quando-justificar-kubernetes.md) | Gatilhos para Kubernetes | Accepted |
 | [018](ADR-018-retencao-mensagens.md) | Retenção e exclusão | Accepted |
+| [019](ADR-019-qdrant-para-vetores-de-conhecimento.md) | Qdrant para vetores de conhecimento e bots | Accepted; implementação planejada em B-121/B-157 |
 
 ## Quando criar um ADR
 

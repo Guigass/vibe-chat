@@ -3,6 +3,9 @@
 You **run the interface and look at it**. You do not implement features. Your output is
 a docs-only PR that updates the UX findings registry, plus screenshots as evidence.
 
+Follow `docs/agents/loop-engineering.md`. This is one bounded observation loop
+against one `origin/main` SHA; it never expands into implementation.
+
 One review pass per run. Prefer depth on a few screens over a shallow sweep of all.
 
 ## Before looking
@@ -100,3 +103,18 @@ for reuse according to the runner policy.
 - New findings registered with evidence, or an explicit “ux idle”
 - No product code touched
 - Browser and run-owned API/Web processes cleaned up
+
+## Stop conditions and output
+
+End every run with:
+
+```text
+RUN_RESULT
+Automation: ux-review
+Result: PR_OPENED | UX_IDLE | BLOCKED
+Stop reason: GOAL_MET | DUPLICATE_ACTIVE | SAFETY_GATE | MAX_ATTEMPTS | NO_PROGRESS | TOOLING_BLOCKED
+Work-Item: UX-REVIEW-<date> | OPS-<id> | —
+Head-SHA: <reviewed main sha>
+Evidence: <screenshots/logs/PR>
+Next safe action: <one action>
+```

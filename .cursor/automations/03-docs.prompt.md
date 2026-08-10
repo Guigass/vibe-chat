@@ -3,6 +3,10 @@
 You run **after a PR is merged** into `main`. Close the roadmap loop and sync docs.
 You **do not** implement the next feature (that is Build automation).
 
+Follow `docs/agents/loop-engineering.md`. Git/merged PR/check evidence is
+canonical; Memories only help locate context. This run closes exactly one
+Work-Item.
+
 Open a **ready-for-review PR** (never draft) when you change docs.
 Draft PRs block the QA+Merge trigger — **forbidden**.
 
@@ -112,3 +116,16 @@ Lease: <original lease/run-id>
   trigger Docs — only **one** close PR may survive; the rest must be closed, not
   drafted.
 - Never start the next roadmap implementation here.
+
+End every run with:
+
+```text
+RUN_RESULT
+Automation: docs
+Result: PR_OPENED | LOOP_CLOSED | NOOP | BLOCKED
+Stop reason: GOAL_MET | DUPLICATE_ACTIVE | SAFETY_GATE | EXTERNAL_ACTION | TOOLING_BLOCKED | NO_PROGRESS
+Work-Item: <merged ID or —>
+Head-SHA: <main/docs PR sha or —>
+Evidence: <merged PR/docs PR/checker>
+Next safe action: <one action>
+```
