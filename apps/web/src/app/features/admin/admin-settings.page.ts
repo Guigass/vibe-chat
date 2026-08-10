@@ -69,7 +69,24 @@ export class AdminSettingsPage implements OnInit {
     }
 
     const form = event.target as HTMLFormElement;
+    // Include controls associated via form="admin-settings-form" (outside the anchor element).
     const data = new FormData(form);
+    for (const el of document.querySelectorAll<HTMLInputElement | HTMLSelectElement>(
+      '[form="admin-settings-form"]',
+    )) {
+      if (!el.name || el.disabled) {
+        continue;
+      }
+      if (el instanceof HTMLInputElement && el.type === 'checkbox') {
+        if (el.checked) {
+          data.set(el.name, 'on');
+        } else {
+          data.delete(el.name);
+        }
+        continue;
+      }
+      data.set(el.name, el.value);
+    }
     const workspaceEnabled = data.get('aiWorkspaceEnabled') === 'on';
     const provider = String(data.get('aiProvider') ?? current.ai.provider).trim();
     const emailEnabled = data.get('emailEnabled') === 'on';

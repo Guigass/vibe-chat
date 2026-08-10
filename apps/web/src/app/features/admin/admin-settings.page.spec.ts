@@ -128,12 +128,13 @@ describe('AdminSettingsPage', () => {
     expect(host.textContent).toContain('••••rd42');
     expect(host.textContent).not.toContain('sk-test');
     expect(host.textContent).toContain('Salvar configurações');
-    expect(host.textContent).toContain('Substituir chave AI');
+    expect(host.textContent).toContain('Substituir chave');
+    expect(host.textContent).toContain('Integrações');
   });
 
   it('saves non-secret settings and keeps credential inputs separate', async () => {
     const form = (fixture.nativeElement as HTMLElement).querySelector(
-      'form.settings__form',
+      '#admin-settings-form',
     ) as HTMLFormElement;
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await fixture.whenStable();
@@ -149,7 +150,7 @@ describe('AdminSettingsPage', () => {
 
   it('rotates openrouter credential and clears the password input', async () => {
     const form = (fixture.nativeElement as HTMLElement).querySelector(
-      'form.settings__cred-form',
+      'form.settings__cred',
     ) as HTMLFormElement;
     const input = form.querySelector('input[name="secret"]') as HTMLInputElement;
     input.value = 'sk-rotated-openrouter-key88';
@@ -168,7 +169,7 @@ describe('AdminSettingsPage', () => {
   it('surfaces 503 when encryption is unavailable', async () => {
     api.rotateAdminOpenRouterCredential.mockRejectedValueOnce({ status: 503 });
     const form = (fixture.nativeElement as HTMLElement).querySelector(
-      'form.settings__cred-form',
+      'form.settings__cred',
     ) as HTMLFormElement;
     const input = form.querySelector('input[name="secret"]') as HTMLInputElement;
     input.value = 'sk-rotated-openrouter-key88';
@@ -179,5 +180,17 @@ describe('AdminSettingsPage', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
       'Criptografia indisponível',
     );
+  });
+
+  it('groups sections in a sensible order', () => {
+    const titles = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.settings__section-title'),
+    ).map((el) => el.textContent?.trim());
+    expect(titles).toEqual([
+      'Integrações',
+      'Limites operacionais',
+      'Retenção e exportação',
+      'Criptografia',
+    ]);
   });
 });
