@@ -169,6 +169,12 @@ export class ChannelStore {
     );
   }
 
+  patchChannel(channelId: string, patch: Partial<Channel>): void {
+    this.channelsSignal.update((list) =>
+      list.map((c) => (c.id === channelId ? { ...c, ...patch } : c)),
+    );
+  }
+
   setPresence(userId: string, status: PresenceStatus): void {
     this.presenceSignal.update((current) => ({ ...current, [userId]: status }));
   }

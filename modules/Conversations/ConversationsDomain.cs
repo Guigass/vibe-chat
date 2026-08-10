@@ -18,6 +18,8 @@ public sealed class Channel : AggregateRoot
     public WorkspaceId WorkspaceId { get; set; }
     public Guid? SpaceId { get; set; }
     public string Name { get; set; } = string.Empty;
+    /// <summary>Optional channel topic/description (B-087 /topico). Max 250 chars.</summary>
+    public string? Topic { get; set; }
     public ChannelType Type { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public UserId CreatedBy { get; set; }

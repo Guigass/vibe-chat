@@ -135,7 +135,12 @@ describe('Composer audio submit (BUG-004)', () => {
         },
         {
           provide: ApiService,
-          useValue: { getChannelMembers: vi.fn().mockResolvedValue([]) },
+          useValue: {
+            getChannelMembers: vi.fn().mockResolvedValue([]),
+            getCommands: vi.fn().mockResolvedValue([
+              { name: 'ajuda', description: 'Lista', usage: '/ajuda' },
+            ]),
+          },
         },
         {
           provide: DraftStoreService,
@@ -202,5 +207,16 @@ describe('Composer audio submit (BUG-004)', () => {
 
     // reset is called once on successful send, not spuriously mid-flight from the effect.
     expect(reset).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not send unknown slash commands as messages (B-087)', async () => {
+    phase.set('idle');
+    composer.draft.set('/xpto');
+
+    await composer.onSubmit(new Event('submit'));
+
+    expect(send).not.toHaveBeenCalled();
+    expect(composer.slash.notice()?.kind).toBe('error');
+    expect(composer.draft()).toBe('/xpto');
   });
 });

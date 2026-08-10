@@ -32,13 +32,16 @@ Conjunto pequeno e útil, todos mapeando para capacidades que **já existem**:
 
 ## Contratos
 
-Sem endpoint novo: o cliente traduz o comando para as chamadas existentes. Isso mantém
-authZ e audit exatamente iguais aos do caminho por botão.
+Sem endpoint novo de *execução*: o cliente traduz o comando para as chamadas
+existentes. Isso mantém authZ e audit exatamente iguais aos do caminho por botão.
 
-Exceção: `GET /api/v1/workspaces/{workspaceId}/commands` devolve os comandos que o
-usuário pode usar, para que a lista respeite permissão sem lógica duplicada no cliente.
+Exceções (descoberta + gap de tópico):
 
-`contratos.md`: endpoint de descoberta e a tabela de comandos.
+- `GET /api/v1/workspaces/{workspaceId}/commands` — comandos que o usuário pode usar.
+- `PUT /api/v1/workspaces/{workspaceId}/channels/{channelId}/topic` — campo `Topic`
+  no canal (máx. 250), exigido por `/topico` (não existia superfície equivalente).
+
+`contratos.md`: endpoint de descoberta, topic e a tabela de comandos.
 
 ## UX
 
@@ -55,11 +58,11 @@ tenant. A lista vem do servidor para não induzir o usuário a tentar o que não
 
 ## Aceite
 
-- [ ] `/dm @bob` abre a DM com Bob
-- [ ] `/convidar` não aparece para quem não é admin, e falha com 403 se forçado
-- [ ] `/xpto` mostra erro inline e não vira mensagem
-- [ ] `/resumir` com IA desligada explica em vez de dar 503 cru
-- [ ] Lista navegável só por teclado
+- [x] `/dm @bob` abre a DM com Bob
+- [x] `/convidar` não aparece para quem não é admin, e falha com 403 se forçado
+- [x] `/xpto` mostra erro inline e não vira mensagem
+- [x] `/resumir` com IA desligada explica em vez de dar 503 cru
+- [x] Lista navegável só por teclado
 
 ## Testes
 

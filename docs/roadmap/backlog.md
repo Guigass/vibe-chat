@@ -109,7 +109,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-084 | Responder citando | **Done (W8-6)** — `replyTo` no history/hub; UI composer + bolha; Responder ≠ Abrir thread; BUG-009 realtime thread |
 | B-085 | Encaminhar mensagem | **Done (W8-7)** — `POST .../messages/{id}/forward`; anexos por referência + `ReferenceCount`; UI seletor ≤5; audit `message.forward` |
 | B-086 | Rascunho persistente | Done (W8-8) — só cliente, por implicação de retenção (D-03) |
-| B-087 | Comandos slash | Planned (W8-9) — lista vem do servidor; sem privilégio novo |
+| B-087 | Comandos slash | **Done (W8-9)** — discovery `GET …/commands`; `/topico` + campo Topic; autocomplete no composer |
 
 ### Wave 9 — Leitura da timeline
 
@@ -185,7 +185,7 @@ ver `docs/product/bug-findings.md`), Wave 6, B-048, B-045, B-046, B-047 e B-075 
 
 Ordem daqui para frente: **safety lane** (`BUG-*` Alta) antes de inventar ou
 avançar feature de wave; depois **paridade de mensageria** na ordem das
-waves — 8 (composição; próximo W8-9 / B-087), 9 (leitura; B-163 bubble + B-094 fecha
+waves — 8 (composição; W8-9 / B-087 Done), 9 (leitura; próximo W9-0 / B-163 bubble + B-094 fecha
 BUG-002 / não lidas persistentes), 10 (notificações, organização, acesso e
 núcleo de plugins: B-109 → B-108 → B-110). Depois seguir W11–W17; a trilha
 avançada de plugins continua em W15 com B-066 → B-111/B-136. Dentro de cada

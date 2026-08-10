@@ -195,8 +195,10 @@ Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out Signal
 |----------|-------|
 | `GET /api/v1/workspaces/{workspaceId}/spaces` | Lista spaces do workspace (membership obrigatória — D-07); ordenado por `order` |
 | `POST /api/v1/workspaces/{workspaceId}/spaces` | Body `{ name, order? }`; exige `channel.create` |
-| `GET /api/v1/workspaces/{workspaceId}/channels` | Channels do workspace; `spaceId` opcional no response |
+| `GET /api/v1/workspaces/{workspaceId}/channels` | Channels do workspace; `spaceId` e `topic` opcionais no response |
 | `POST /api/v1/workspaces/{workspaceId}/channels` | Body `{ name, type, spaceId? }`; exige `channel.create`; `spaceId` deve pertencer ao workspace |
+| `PUT /api/v1/workspaces/{workspaceId}/channels/{channelId}/topic` | Body `{ topic }` (máx. 250; vazio limpa); membership + `channel.create`; rejeita `Direct` (B-087 `/topico`) |
+| `GET /api/v1/workspaces/{workspaceId}/commands` | Descoberta de slash commands disponíveis ao ator (B-087); membership; filtrado por permissão — ver tabela abaixo |
 | `GET /api/v1/workspaces/{workspaceId}/members` | Membros do workspace (membership obrigatória — D-07); inclui `role` |
 | `GET /api/v1/workspaces/{workspaceId}/roles` | Papéis atribuíveis (`Member`, `Moderator`, `Auditor`, `Admin`); exige `workspace.admin` no workspace |
 | `POST /api/v1/workspaces/{workspaceId}/members` | Convite/provisionamento (B-068). Body `{ email, displayName?, role? }` (`role` default `Member`); exige `workspace.admin`; cria perfil stub `pending:{email}` se o usuário ainda não logou; 409 se já membro; rejeita `Guest`/`Bot`/owners; audit `member.invite`; e-mail opcional via outbox se `Email:Enabled`. Sem self-signup — IdP (Keycloak) continua responsável pela autenticação |
@@ -204,7 +206,18 @@ Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out Signal
 | `GET /api/v1/workspaces/{workspaceId}/presence` | Status `online`/`away`/`offline` dos membros (Redis TTL) |
 | `POST /api/v1/workspaces/{workspaceId}/dms` | Body `{ userId }`; get-or-create DM 1:1 (`ChannelType.Direct`) |
 
-`ChannelResponse` inclui `spaceId?` e, para DMs, `peerUserId` / `peerDisplayName`. Channels `Private`/`Direct`/`Group` só aparecem na listagem para membros do canal. Spaces agrupam channels na UI; DMs ficam fora de spaces.
+`ChannelResponse` inclui `spaceId?`, `topic?` e, para DMs, `peerUserId` / `peerDisplayName`. Channels `Private`/`Direct`/`Group` só aparecem na listagem para membros do canal. Spaces agrupam channels na UI; DMs ficam fora de spaces.
+
+Slash commands (B-087) — o cliente traduz o comando para as APIs existentes; a lista vem do servidor:
+
+| Comando | Usage | Permissão / condição | Endpoint alvo |
+|---------|-------|----------------------|---------------|
+| `dm` | `/dm @pessoa` | membership | `POST …/dms` |
+| `topico` | `/topico <texto>` | `channel.create` (+ canal não-DM) | `PUT …/channels/{id}/topic` |
+| `convidar` | `/convidar <email>` | `workspace.admin` | `POST …/members` |
+| `resumir` | `/resumir` | `ai.summarize` | `POST …/ai/summarize` |
+| `apagar` | `/apagar` | `message.delete.own` | `DELETE …/messages/{id}` |
+| `ajuda` | `/ajuda` | membership | UI local + esta lista |
 
 Papéis reutilizam `Role` + `RolePermissionCatalog` + `IPermissionChecker`. Guest permanece no enum/catálogo, mas **fora do fluxo de membership** (D-07).
 

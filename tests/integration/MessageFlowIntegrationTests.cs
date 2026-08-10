@@ -1234,6 +1234,57 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Slash_commands_discovery_filters_by_role_and_topic_updates()
+    {
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var aliceCommands = await alice.GetFromJsonAsync<SlashCommandDto[]>(
+            $"/api/v1/workspaces/{workspaceId}/commands",
+            JsonOptions);
+        aliceCommands.Should().NotBeNull();
+        aliceCommands!.Select(c => c.Name).Should().Contain(new[] { "dm", "topico", "resumir", "apagar", "ajuda" });
+        aliceCommands.Select(c => c.Name).Should().NotContain("convidar");
+
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var ownerCommands = await demo.GetFromJsonAsync<SlashCommandDto[]>(
+            $"/api/v1/workspaces/{workspaceId}/commands",
+            JsonOptions);
+        ownerCommands!.Select(c => c.Name).Should().Contain("convidar");
+
+        var topicText = $"tópico-{Guid.NewGuid():N}"[..24];
+        var topic = await alice.PutAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/channels/{DemoChannelId}/topic",
+            new UpdateChannelTopicRequestDto(topicText));
+        topic.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await topic.Content.ReadFromJsonAsync<ChannelDto>(JsonOptions);
+        updated!.Topic.Should().Be(topicText);
+
+        using var bob = factory.CreateClient();
+        bob.DefaultRequestHeaders.Add("X-Dev-User", "bob");
+        var dm = await bob.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/dms",
+            new { userId = SeedData.AliceUserId.Value });
+        dm.EnsureSuccessStatusCode();
+        var dmChannel = await dm.Content.ReadFromJsonAsync<ChannelDto>(JsonOptions);
+        dmChannel.Should().NotBeNull();
+
+        var dmTopic = await bob.PutAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/channels/{dmChannel!.Id}/topic",
+            new UpdateChannelTopicRequestDto("não deve"));
+        dmTopic.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var forbiddenInvite = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/members",
+            new InviteMemberRequestDto($"nope-{Guid.NewGuid():N}@vibechat.local"));
+        forbiddenInvite.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Health_checks_return_summary()
     {
         using var client = factory.CreateClient();
@@ -1777,8 +1828,11 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         string Type,
         Guid? PeerUserId,
         string? PeerDisplayName,
-        Guid? SpaceId = null);
+        Guid? SpaceId = null,
+        string? Topic = null);
 
+    private sealed record SlashCommandDto(string Name, string Description, string Usage, string? Permission);
+    private sealed record UpdateChannelTopicRequestDto(string Topic);
     private sealed record SpaceDto(Guid Id, Guid WorkspaceId, string Name, int Order);
     private sealed record CreateSpaceRequestDto(string Name);
     private sealed record CreateChannelRequestDto(string Name, string Type, Guid? SpaceId = null);

@@ -13,6 +13,13 @@ import {
   specialMentionToken,
   userMentionToken,
 } from '../../../shared/markdown/mention-tokens';
+import {
+  detectSlashQuery,
+  filterSlashCommands,
+  insertSlashCommand,
+  looksLikeSlashCommand,
+  SlashCommandDef,
+} from '../../../shared/markdown/slash-tokens';
 import { ApiService } from '../../../core/api/api.service';
 import { MessageStore } from '../../../core/services/message.store';
 import { replyPreviewText } from '../../../core/services/message-sync';
@@ -37,13 +44,15 @@ import { AudioRecorderService } from './audio-recorder.service';
 import { formatDuration } from './audio-recorder';
 import { drawAudioWaveform } from '../../../shared/utils/audio';
 import { MentionAutocomplete } from './mention-autocomplete';
+import { SlashAutocomplete } from './slash-autocomplete';
+import { SlashCommandsService } from './slash-commands.service';
 import { EmojiPicker } from '../../../shared/ui/emoji-picker/emoji-picker';
 import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
 
 @Component({
   selector: 'vc-composer',
   standalone: true,
-  imports: [Button, Textarea, MentionAutocomplete, EmojiPicker],
+  imports: [Button, Textarea, MentionAutocomplete, SlashAutocomplete, EmojiPicker],
   template: `
     <form class="composer" (submit)="onSubmit($event)">
       <div class="composer__main">
@@ -128,6 +137,36 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
           <p class="composer__validation" role="alert">{{ validationError() }}</p>
         }
 
+        @if (slash.notice(); as notice) {
+          <aside
+            class="composer__notice"
+            [class.composer__notice--error]="notice.kind === 'error'"
+            [attr.role]="notice.kind === 'error' ? 'alert' : 'status'"
+          >
+            <header>
+              <strong>
+                @switch (notice.kind) {
+                  @case ('help') { Ajuda }
+                  @case ('summary') { Resumo }
+                  @case ('error') { Comando }
+                  @default { Comando }
+                }
+              </strong>
+              <button type="button" class="ghost" aria-label="Fechar" (click)="slash.clearNotice()">
+                ×
+              </button>
+            </header>
+            <p>{{ notice.text }}</p>
+            @if (notice.lines?.length) {
+              <ul>
+                @for (line of notice.lines; track line) {
+                  <li>{{ line }}</li>
+                }
+              </ul>
+            }
+          </aside>
+        }
+
         <div class="composer__format" role="toolbar" aria-label="Formatação de texto">
           <button type="button" aria-label="Negrito" (click)="applyFormat('bold')"><strong>B</strong></button>
           <button type="button" aria-label="Itálico" (click)="applyFormat('italic')"><em>I</em></button>
@@ -166,6 +205,12 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
             [items]="mentionItems()"
             [activeIndex]="mentionActiveIndex()"
             (select)="applyMention($event)"
+          />
+          <vc-slash-autocomplete
+            [open]="slashOpen()"
+            [items]="slashItems()"
+            [activeIndex]="slashActiveIndex()"
+            (select)="applySlash($event)"
           />
         </div>
         @if (showCounter()) {
@@ -278,7 +323,8 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
       display: grid;
       gap: 0.35rem;
     }
-    .composer__input-wrap vc-mention-autocomplete {
+    .composer__input-wrap vc-mention-autocomplete,
+    .composer__input-wrap vc-slash-autocomplete {
       position: absolute;
       left: 0;
       right: 0;
@@ -378,6 +424,38 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
       font-size: 0.78rem;
       color: var(--vc-danger);
     }
+    .composer__notice {
+      padding: 0.55rem 0.7rem;
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-md);
+      background: var(--vc-surface-elevated);
+      animation: vc-fade-in-up var(--vc-dur-med, 180ms) var(--vc-ease-out, ease-out);
+    }
+    .composer__notice--error {
+      border-color: color-mix(in srgb, var(--vc-danger) 45%, var(--vc-border));
+    }
+    .composer__notice header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.25rem;
+    }
+    .composer__notice p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--vc-ink-muted);
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+    .composer__notice ul {
+      margin: 0.35rem 0 0;
+      padding-left: 1.1rem;
+      font-size: 0.8rem;
+      color: var(--vc-ink-muted);
+    }
+    .composer__notice--error p {
+      color: var(--vc-danger);
+    }
     .composer__file .ghost,
     .composer__attach,
     .ghost {
@@ -462,6 +540,7 @@ export class Composer {
   readonly channels = inject(ChannelStore);
   readonly attachments = inject(AttachmentQueueService);
   readonly audioRecorder = inject(AudioRecorderService);
+  readonly slash = inject(SlashCommandsService);
   private readonly hub = inject(ChatHubService);
   private readonly api = inject(ApiService);
   private readonly drafts = inject(DraftStoreService);
@@ -474,6 +553,10 @@ export class Composer {
   readonly mentionActiveIndex = signal(0);
   readonly mentionRemoteItems = signal<MentionAutocompleteItem[]>([]);
   readonly mentionContext = signal<{ query: string; atIndex: number } | null>(null);
+  readonly slashOpen = signal(false);
+  readonly slashActiveIndex = signal(0);
+  readonly slashCatalog = signal<SlashCommandDef[]>([]);
+  readonly slashContext = signal<{ query: string; slashIndex: number } | null>(null);
   readonly emojiPickerOpen = signal(false);
   readonly maxLength = MESSAGE_BODY_MAX_LENGTH;
   readonly bodyLength = computed(() => measureMessageBodyLength(this.draft()));
@@ -509,6 +592,11 @@ export class Composer {
       ...this.mentionRemoteItems(),
     ];
     return filterMentionItems(base, context.query);
+  });
+  readonly slashItems = computed(() => {
+    const context = this.slashContext();
+    if (!context) return [];
+    return filterSlashCommands(this.slashCatalog(), context.query);
   });
   /** Sync gate so Enter×2 cannot start two sends before `messages.sending` flips. */
   private readonly submitting = signal(false);
@@ -654,6 +742,11 @@ export class Composer {
     }
 
     const body = this.draft().trim();
+    if (looksLikeSlashCommand(body)) {
+      await this.runSlashCommand(body);
+      return;
+    }
+
     if (isMessageBodyTooLong(body)) return;
 
     this.submitting.set(true);
@@ -667,6 +760,7 @@ export class Composer {
       this.draft.set('');
       this.attachments.clear();
       this.validationError.set(null);
+      this.slash.clearNotice();
       if (channelId) {
         await this.drafts.remove(channelId);
       }
@@ -700,6 +794,7 @@ export class Composer {
     event.stopPropagation();
     this.emojiPickerOpen.update((open) => !open);
     this.closeMentionMenu();
+    this.closeSlashMenu();
   }
 
   insertEmoji(emoji: string): void {
@@ -721,10 +816,38 @@ export class Composer {
 
   onInput(event: Event): void {
     const textarea = event.target as HTMLTextAreaElement;
-    this.syncMentionContext(textarea.value, textarea.selectionStart ?? textarea.value.length);
+    const cursor = textarea.selectionStart ?? textarea.value.length;
+    this.syncComposerMenus(textarea.value, cursor);
   }
 
   onKeydown(event: KeyboardEvent): void {
+    if (this.slashOpen()) {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        const max = this.slashItems().length;
+        if (!max) return;
+        this.slashActiveIndex.update((index) => (index + 1) % max);
+        return;
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        const max = this.slashItems().length;
+        if (!max) return;
+        this.slashActiveIndex.update((index) => (index - 1 + max) % max);
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.closeSlashMenu();
+        return;
+      }
+      if ((event.key === 'Enter' || event.key === 'Tab') && this.slashItems().length) {
+        event.preventDefault();
+        this.applySlash(this.slashItems()[this.slashActiveIndex()]);
+        return;
+      }
+    }
+
     if (this.mentionOpen()) {
       if (event.key === 'ArrowDown') {
         event.preventDefault();
@@ -768,7 +891,7 @@ export class Composer {
     const textarea = this.composerTextarea()?.nativeElement();
     if (textarea) {
       queueMicrotask(() => {
-        this.syncMentionContext(textarea.value, textarea.selectionStart ?? textarea.value.length);
+        this.syncComposerMenus(textarea.value, textarea.selectionStart ?? textarea.value.length);
       });
     }
 
@@ -796,6 +919,15 @@ export class Composer {
     updateTextareaSelection(textarea, result.value, result.cursor, result.cursor);
   }
 
+  applySlash(item: SlashCommandDef): void {
+    const textarea = this.composerTextarea()?.nativeElement();
+    if (!textarea) return;
+    const result = insertSlashCommand(this.draft(), item.name);
+    this.draft.set(result.value);
+    this.closeSlashMenu();
+    updateTextareaSelection(textarea, result.value, result.cursor, result.cursor);
+  }
+
   private async onActiveChannelChanged(channelId: string | null): Promise<void> {
     const previousId = this.boundChannelId;
     if (previousId === channelId) return;
@@ -807,8 +939,11 @@ export class Composer {
     this.boundChannelId = channelId;
     this.audioRecorder.reset();
     this.validationError.set(null);
+    this.slash.clearNotice();
     this.messages.clearReplyTarget();
     this.closeMentionMenu();
+    this.closeSlashMenu();
+    void this.ensureSlashCatalog();
 
     if (!channelId) {
       this.restoringDraft = true;
@@ -863,6 +998,21 @@ export class Composer {
     });
   }
 
+  private syncComposerMenus(text: string, cursor: number): void {
+    const slash = detectSlashQuery(text, cursor);
+    if (slash) {
+      this.closeMentionMenu();
+      this.slashContext.set(slash);
+      this.slashOpen.set(true);
+      this.slashActiveIndex.set(0);
+      void this.ensureSlashCatalog();
+      return;
+    }
+
+    this.closeSlashMenu();
+    this.syncMentionContext(text, cursor);
+  }
+
   private syncMentionContext(text: string, cursor: number): void {
     const context = detectMentionQuery(text, cursor);
     if (!context) {
@@ -874,6 +1024,39 @@ export class Composer {
     this.mentionOpen.set(true);
     this.mentionActiveIndex.set(0);
     this.scheduleMentionFetch(context.query);
+  }
+
+  private async ensureSlashCatalog(): Promise<void> {
+    const workspace = this.channels.activeWorkspace();
+    if (!workspace) {
+      this.slashCatalog.set([]);
+      return;
+    }
+    try {
+      const commands = await this.slash.listCommands(workspace.id);
+      this.slashCatalog.set(commands);
+    } catch {
+      this.slashCatalog.set([]);
+    }
+  }
+
+  private async runSlashCommand(raw: string): Promise<void> {
+    if (this.submitting()) return;
+    this.submitting.set(true);
+    this.closeSlashMenu();
+    this.validationError.set(null);
+    try {
+      const result = await this.slash.execute(raw);
+      if (result.clearDraft) {
+        const channelId = this.boundChannelId;
+        this.draft.set('');
+        if (channelId) {
+          await this.drafts.remove(channelId);
+        }
+      }
+    } finally {
+      this.submitting.set(false);
+    }
   }
 
   private scheduleMentionFetch(query: string): void {
@@ -919,5 +1102,11 @@ export class Composer {
       clearTimeout(this.mentionFetchTimer);
       this.mentionFetchTimer = null;
     }
+  }
+
+  private closeSlashMenu(): void {
+    this.slashOpen.set(false);
+    this.slashContext.set(null);
+    this.slashActiveIndex.set(0);
   }
 }

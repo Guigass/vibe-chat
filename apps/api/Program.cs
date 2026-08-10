@@ -277,7 +277,8 @@ v1.MapGet("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, Ht
             x.Type.ToString(),
             peer?.UserId.Value,
             peer?.DisplayName,
-            x.SpaceId);
+            x.SpaceId,
+            x.Topic);
     }).ToArray();
     return Results.Ok(response);
 });
@@ -715,7 +716,7 @@ v1.MapPost("/workspaces/{workspaceId:guid}/dms", async (Guid workspaceId, OpenDi
     var existing = await FindDirectChannelAsync(workspace.Id, profile.Id, peerId, db, ct);
     if (existing is not null)
     {
-        return Results.Ok(new ChannelResponse(existing.Id.Value, existing.WorkspaceId.Value, peerProfile.DisplayName, existing.Type.ToString(), peerProfile.Id.Value, peerProfile.DisplayName));
+        return Results.Ok(new ChannelResponse(existing.Id.Value, existing.WorkspaceId.Value, peerProfile.DisplayName, existing.Type.ToString(), peerProfile.Id.Value, peerProfile.DisplayName, Topic: existing.Topic));
     }
 
     var channel = new Channel
@@ -796,7 +797,95 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, C
     await db.SaveChangesAsync(ct);
     return Results.Created(
         $"/api/v1/channels/{channel.Id.Value}",
-        new ChannelResponse(channel.Id.Value, channel.WorkspaceId.Value, channel.Name, channel.Type.ToString(), null, null, channel.SpaceId));
+        new ChannelResponse(channel.Id.Value, channel.WorkspaceId.Value, channel.Name, channel.Type.ToString(), null, null, channel.SpaceId, channel.Topic));
+});
+
+v1.MapPut("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/topic", async (
+    Guid workspaceId,
+    Guid channelId,
+    UpdateChannelTopicRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null || !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Channel.Create, ct))
+    {
+        return Results.Forbid();
+    }
+
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null || channel.WorkspaceId != workspace.Id)
+    {
+        return Results.Forbid();
+    }
+
+    if (channel.Type == ChannelType.Direct)
+    {
+        return Results.BadRequest(new { error = "Direct messages do not support a topic." });
+    }
+
+    var topic = (request.Topic ?? string.Empty).Trim();
+    if (topic.Length > 250)
+    {
+        return Results.BadRequest(new { error = "topic must be at most 250 characters." });
+    }
+
+    channel.Topic = string.IsNullOrEmpty(topic) ? null : topic;
+    await db.SaveChangesAsync(ct);
+
+    return Results.Ok(new ChannelResponse(
+        channel.Id.Value,
+        channel.WorkspaceId.Value,
+        channel.Name,
+        channel.Type.ToString(),
+        SpaceId: channel.SpaceId,
+        Topic: channel.Topic));
+});
+
+v1.MapGet("/workspaces/{workspaceId:guid}/commands", async (
+    Guid workspaceId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    var catalog = new (string Name, string Description, string Usage, string? Permission)[]
+    {
+        ("dm", "Abre ou cria uma DM", "/dm @pessoa", null),
+        ("topico", "Altera a descrição do canal", "/topico <texto>", Permissions.Channel.Create),
+        ("convidar", "Convida alguém para o workspace", "/convidar <email>", Permissions.Workspace.Admin),
+        ("resumir", "Resume as mensagens recentes do canal", "/resumir", Permissions.Ai.Summarize),
+        ("apagar", "Apaga a sua última mensagem neste canal", "/apagar", Permissions.Message.DeleteOwn),
+        ("ajuda", "Lista os comandos disponíveis", "/ajuda", null),
+    };
+
+    var allowed = new List<SlashCommandResponse>(catalog.Length);
+    foreach (var item in catalog)
+    {
+        if (item.Permission is not null
+            && !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, item.Permission, ct))
+        {
+            continue;
+        }
+
+        allowed.Add(new SlashCommandResponse(item.Name, item.Description, item.Usage, item.Permission));
+    }
+
+    return Results.Ok(allowed);
 });
 
 v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? after, int? limit, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
@@ -3863,12 +3952,14 @@ public sealed class DevAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> 
 public sealed record MeResponse(Guid UserId, string Subject, string Email, string DisplayName, string[] Roles);
 public sealed record WorkspaceResponse(Guid Id, string Name, string Slug, string Role);
 public sealed record SpaceResponse(Guid Id, Guid WorkspaceId, string Name, int Order);
-public sealed record ChannelResponse(Guid Id, Guid WorkspaceId, string Name, string Type, Guid? PeerUserId = null, string? PeerDisplayName = null, Guid? SpaceId = null);
+public sealed record ChannelResponse(Guid Id, Guid WorkspaceId, string Name, string Type, Guid? PeerUserId = null, string? PeerDisplayName = null, Guid? SpaceId = null, string? Topic = null);
 public sealed record WorkspaceMemberResponse(Guid UserId, string DisplayName, string Email, string Role);
 public sealed record ChannelMemberResponse(Guid UserId, string DisplayName, string Email);
 public sealed record WorkspaceRolesResponse(string[] AssignableRoles);
 public sealed record UpdateMemberRoleRequest(string Role);
 public sealed record InviteMemberRequest(string Email, string? DisplayName = null, string? Role = null);
+public sealed record UpdateChannelTopicRequest(string Topic);
+public sealed record SlashCommandResponse(string Name, string Description, string Usage, string? Permission = null);
 public sealed record PresenceResponse(Guid UserId, string Status);
 public sealed record OpenDirectMessageRequest(Guid UserId);
 public sealed record CreateSpaceRequest(string Name, int? Order = null);

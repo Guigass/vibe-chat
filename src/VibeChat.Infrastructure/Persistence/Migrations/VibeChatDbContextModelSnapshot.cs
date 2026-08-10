@@ -195,6 +195,10 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Topic")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(32)

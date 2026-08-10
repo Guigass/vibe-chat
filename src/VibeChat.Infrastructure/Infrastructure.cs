@@ -138,6 +138,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
             entity.Property(x => x.Type).HasConversion<string>().HasMaxLength(32);
             entity.Property(x => x.Name).HasMaxLength(120);
+            entity.Property(x => x.Topic).HasMaxLength(250);
             entity.HasIndex(x => new { x.WorkspaceId, x.Name }).IsUnique();
             entity.HasIndex(x => x.SpaceId);
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);

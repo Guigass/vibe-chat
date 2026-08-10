@@ -4,9 +4,9 @@ Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
 - **Data de corte:** 2026-08-10
-- **Fase:** Wave 8 — Paridade de composição (Wave 7 completa)
+- **Fase:** Wave 9 — Leitura e paridade de bolha (Wave 8 completa)
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165)
-- **Próximo item elegível:** W8-9 / B-087 (Slash commands); W8-8 / B-086 Done (rascunho persistente); BUG-002 fecha em B-094 quando W9-7 elegível; W8-7 / B-085 Done; W7-9 / B-165 Done
+- **Próximo item elegível:** W9-0 / B-163 (message bubble); W8-9 / B-087 Done (slash commands); W8-8 / B-086 Done (rascunho persistente); BUG-002 fecha em B-094 quando W9-7 elegível; W8-7 / B-085 Done; W7-9 / B-165 Done
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -25,7 +25,7 @@ O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
 2. Wave 7 completa (W7-9 / B-165 Done — versão do cliente web / cache PWA);
-3. avançar as Waves 8–10 de paridade de mensageria (próximo: W8-9 / B-087);
+3. avançar Wave 9 de leitura/paridade (próximo: W9-0 / B-163); Wave 8 completa (W8-9 / B-087 Done);
 4. consumir o roadmap autorizado W11–W17.
 
 ## Runtime e fronteiras
@@ -79,11 +79,12 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W8-9 | Slash commands (B-087); W8-8 / B-086 Done; safety lane Alta vazia |
-| 2 | W8-9+ | Demais itens Wave 8–9 Planned com spec |
+| 1 | W9-0 | Message bubble moderno (B-163); Wave 8 completa (W8-9 / B-087 Done); safety lane Alta vazia |
+| 2 | W9-0+ | Demais itens Wave 9 Planned com spec |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
+W8-9 / B-087 **Done** (slash commands + discovery + topic).
 
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W17. Ele não
 altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.

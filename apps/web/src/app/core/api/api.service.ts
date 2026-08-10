@@ -47,6 +47,14 @@ interface ChannelDto {
   spaceId?: string | null;
   peerUserId?: string | null;
   peerDisplayName?: string | null;
+  topic?: string | null;
+}
+
+interface SlashCommandDto {
+  name: string;
+  description: string;
+  usage: string;
+  permission?: string | null;
 }
 
 interface PresenceDto {
@@ -264,6 +272,35 @@ export class ApiService {
       }),
     });
     return this.mapChannel(dto);
+  }
+
+  async updateChannelTopic(
+    workspaceId: string,
+    channelId: string,
+    topic: string,
+  ): Promise<Channel> {
+    const dto = await this.request<ChannelDto>(
+      `/api/v1/workspaces/${workspaceId}/channels/${channelId}/topic`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ topic }),
+      },
+    );
+    return this.mapChannel(dto);
+  }
+
+  async getCommands(workspaceId: string): Promise<
+    { name: string; description: string; usage: string; permission?: string | null }[]
+  > {
+    const rows = await this.request<SlashCommandDto[]>(
+      `/api/v1/workspaces/${workspaceId}/commands`,
+    );
+    return rows.map((row) => ({
+      name: row.name,
+      description: row.description,
+      usage: row.usage,
+      permission: row.permission ?? null,
+    }));
   }
 
   async getMembers(workspaceId: string): Promise<WorkspaceMember[]> {
@@ -837,6 +874,7 @@ export class ApiService {
       id: c.id,
       workspaceId: c.workspaceId,
       name: c.name,
+      description: c.topic ?? undefined,
       unreadCount: 0,
       mentionCount: 0,
       type,
