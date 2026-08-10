@@ -20,7 +20,7 @@
 | R-14 | MinIO disco cheio | M | Alto | Alertas disco; retenção anexos | Ops |
 | R-15 | Design genérico (clone Slack) | M | Médio | design-system.md enforce em review | Frontend |
 | R-16 | Realtime degradado (só typing) | B | Alto | **Mitigado (B-070 Done)** — gap-fill + E2E dois usuários; monitorar métricas SignalR/outbox | Backend / Frontend |
-| R-17 | Secrets/webhooks expostos a membros | M | Crítico | **Mitigado (B-069/B-048)** — settings só `workspace.admin`; secret HMAC mascarado; nunca logar tokens | Security |
+| R-17 | Secrets/webhooks expostos a membros | M | Crítico | **Mitigado (B-069/B-048/ADR-020)** — settings só `workspace.admin`; envelopes AES-GCM; rotate dedicado; máscara sem plaintext; nunca logar tokens | Security |
 | R-18 | Auditoria de conversa (break-glass de leitura) | M | Alto | B-067 authZ `admin.dashboard` + escopo tenant; testes security; ver `modelo-ameacas.md` | Security |
 | R-19 | Dependência UI comercial (PrimeNG/PrimeUI) | A | Alto | **Mitigado (B-104 / #82)** — `primeng` removido; spartan/ui (MIT) + CDK + tokens; UX-002 Done; polish do console admin em **B-106** | Frontend |
 | R-20 | Drift entre `.env.example`, Compose e appsettings | A | Alto | B-105 + catálogo canônico; smoke do profile `apps`; declarar aliases sem efeito | Infra / Docs |

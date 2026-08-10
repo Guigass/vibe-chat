@@ -20,10 +20,10 @@ Guia de referência para operar uma instância self-hosted com o **mínimo de de
 
 | Camada | Quem configura | Onde | Exemplos |
 |--------|----------------|------|----------|
-| **Infra / plataforma** | Operador de infra | `.env` / secret manager | Postgres, Redis, Keycloak, MinIO, OIDC issuer, SMTP host, AI provider/key, kill switches de worker |
-| **Política por workspace** | `workspace.admin` | `/admin/settings` + DB | Habilitar AI no workspace, URL de webhook, dias de retenção, override de SMTP não-secreto |
+| **Infra / plataforma** | Operador de infra | `.env` / secret manager | Postgres, Redis, Keycloak, MinIO, OIDC issuer, kill switches, keyring AES-GCM, BaseUrl OpenRouter |
+| **Política + integrações** | `workspace.admin` | `/admin/settings` + DB | AI workspace, SMTP (incl. senha criptografada), webhook, retenção, Files, RateLimit |
 
-Regra já em vigor (B-069): **secrets de AI e SMTP não são graváveis pela API** — só via env/secret store. A UI admin mostra máscara (`configured` / `••••last4`) e toggles não-secretos.
+Regra (B-069 / ADR-020): PUT geral **não** aceita secrets. Rotação de OpenRouter/SMTP/webhook usa endpoints dedicados; valores ficam em envelope AES-GCM (chave mestra só no env). Flag `RuntimeSettings__DatabaseOverridesEnabled=false` por default — rollback = desligar a flag no mesmo binário.
 
 ## Escopo
 
@@ -93,9 +93,12 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 | `API_BASE_URL`, `WEB_BASE_URL` | — | web build | URLs públicas |
 | `SEED_ENABLED` | `Seed__Enabled` | api | `false` em prod |
 | `AI__Enabled`, `AI__Provider` | `Ai__*` | api | Off default (D-06) |
-| `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL` | `Ai__OpenRouter__*` | api | Secret; `CHANGE_ME`; SoT no `.env` (não duplicar `AI__OpenRouter__*`) |
-| `EMAIL__*` | `Email__*` | api | Injetado no profile `apps`; senha só via env (B-069) |
+| `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL` | `Ai__OpenRouter__*` | api | Fallback env; BaseUrl permanece env; key pode ir ao DB criptografada (ADR-020) |
+| `EMAIL__*` | `Email__*` | api | Injetado no profile `apps`; senha fallback env ou envelope DB |
 | `MessageRetention__*` | `MessageRetention__*` | worker | Injetado no profile `apps`; kill switch off default |
+| `RuntimeSettings__DatabaseOverridesEnabled` | `RuntimeSettings__DatabaseOverridesEnabled` | api, worker | Default `false`; liga overrides DB + rotação |
+| `RuntimeSettings__Encryption__ActiveKeyVersion` | idem | api, worker | Versão ativa do keyring AES-GCM |
+| `RuntimeSettings__Encryption__Keys__{n}` | idem | api, worker | Chave mestra base64 (32 bytes); **nunca** no DB |
 
 ### Variáveis do template fora das substituições do Compose
 
@@ -114,27 +117,27 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 | Roles PostgreSQL | `POSTGRES_APP_*`, `POSTGRES_MIGRATOR_*`, `POSTGRES_BACKUP_*` + `DATABASE_*_URL` | Entregue em `SEC-RLS-RUNTIME`; API/Worker usam app role |
 | Projeto Compose | `COMPOSE_PROJECT_NAME` | Consumida pelo Docker Compose CLI |
 
-### Chaves de aplicação sem contrato fechado
-
-Estes itens devem ser resolvidos ou documentados como intencionalmente fixos em B-105:
+### Chaves de aplicação — teto env vs admin
 
 | Seção appsettings | Chaves | Status |
 |-------------------|--------|--------|
-| `Files` | `MaxSizeBytes`, TTLs, `AllowedContentTypes` | Fixo no Compose (`Files__MaxSizeBytes`); demais defaults em appsettings/código |
-| `RateLimit` | `SendPerMinute`, `HubPerMinute` | Fixo em appsettings Development; não exposto — ajuste futuro exige spec |
+| `Files` | `MaxSizeBytes`, TTLs, `AllowedContentTypes`, `Audio:*` | Teto env (Compose injeta `Files__MaxSizeBytes`); override por tenant em `files.settings` (ADR-020) |
+| `RateLimit` | `SendPerMinute`, `HubPerMinute` | Teto env; override por tenant em `building_blocks.rate_limit_settings` |
 | `Cors` | `Origins` | Default em código; proxy TLS (profile `proxy`) cobre origem pública |
 | `Authentication` | `RequireHttpsMetadata` | `"false"` no Compose dev/self-host; produção com TLS usa proxy + issuer HTTPS |
 | `Minio` | `Endpoint`, `UseSsl` | Mapeado no Compose (`Minio__*`); rede interna `minio:9000`, público via `MINIO_ENDPOINT` |
 | `Observability` | `GrafanaUrl` | Default appsettings; profile `observability` expõe Grafana em `GRAFANA_PORT` |
+| `RuntimeSettings` | `DatabaseOverridesEnabled`, `Encryption:*` | Feature flag + keyring; off/default seguro |
 
 ### Só via admin UI (não entram no `.env` mínimo)
 
 | Área | Endpoint / tabela | Motivo |
 |------|-------------------|--------|
-| Webhooks | `PUT /admin/settings` → `integrations.webhook_endpoints` | URL e secret por workspace; HMAC compartilhado com consumidor (B-048) |
-| Retenção por tenant | `retention.*` em admin settings | Política de negócio por workspace (B-047) |
-| AI workspace toggle | `ai.workspaceEnabled` | Liga/desliga IA no workspace sem redeploy |
-| SMTP override não-secreto | `email.*` em DB | Host/port/from podem divergir do env por tenant |
+| Webhooks | `PUT` + `POST .../credentials/webhook/rotate` → `integrations.webhook_endpoints` | URL e secret criptografado (B-048 / ADR-020) |
+| Retenção por tenant | `retention.*` em admin settings | Política de negócio (B-047) |
+| AI workspace | `ai.workspaceEnabled` + rotate OpenRouter | Liga/desliga IA + key criptografada |
+| SMTP | `email.*` + rotate SMTP | Host/port/from + senha criptografada |
+| Files / RateLimit | `files.*` / `rateLimit.*` | Limites por tenant sob teto env |
 
 ## Critérios de aceite (B-105)
 

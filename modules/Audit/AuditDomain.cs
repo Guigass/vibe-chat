@@ -25,6 +25,9 @@ public static class AuditActions
     public const string MemberRoleChange = "member.role.change";
     public const string MemberInvite = "member.invite";
     public const string SettingsChange = "settings.change";
+    public const string SettingsCredentialRotate = "settings.credential.rotate";
+    public const string SettingsEncryptionReencrypt = "settings.encryption.reencrypt";
+    public const string SettingsLegacySecretMigrate = "settings.legacy-secret.migrate";
     public const string WorkspaceExport = "workspace.export";
     public const string MessagePurge = "message.purge";
     public const string AiTranscribe = "ai.transcribe";

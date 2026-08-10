@@ -779,7 +779,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         var workspaceId = SeedData.DemoWorkspaceId.Value;
         const string secret = "webhook-signing-secret-99";
 
-        var put = await demo.PutAsJsonAsync(
+        var secretPut = await demo.PutAsJsonAsync(
             "/api/v1/admin/settings",
             new
             {
@@ -789,6 +789,29 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
                     enabled = true,
                     url = "https://hooks.example.test/vibechat",
                     secret
+                }
+            });
+        secretPut.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var rotate = await demo.PostAsJsonAsync(
+            "/api/v1/admin/settings/credentials/webhook/rotate",
+            new { workspaceId, value = secret });
+        rotate.StatusCode.Should().Be(HttpStatusCode.OK);
+        var rotated = await rotate.Content.ReadFromJsonAsync<CredentialRotateDto>(JsonOptions);
+        rotated.Should().NotBeNull();
+        rotated!.Configured.Should().BeTrue();
+        rotated.Mask.Should().Be("••••t-99");
+        (await rotate.Content.ReadAsStringAsync()).Should().NotContain(secret);
+
+        var put = await demo.PutAsJsonAsync(
+            "/api/v1/admin/settings",
+            new
+            {
+                workspaceId,
+                webhooks = new
+                {
+                    enabled = true,
+                    url = "https://hooks.example.test/vibechat"
                 }
             });
         put.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -807,7 +830,18 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             var row = await db.OutboundWebhookEndpoints.IgnoreQueryFilters()
                 .SingleAsync(x => x.TenantId == SeedData.DemoTenantId);
             row.Enabled.Should().BeTrue();
-            row.Secret.Should().Be(secret);
+            row.Secret.Should().BeNull();
+            row.SigningSecret.IsPresent.Should().BeTrue();
+            row.SigningSecret.Ciphertext.Should().NotBeNull();
+            System.Text.Encoding.UTF8.GetString(row.SigningSecret.Ciphertext!).Should().NotContain(secret);
+
+            var rotateAudit = await db.AuditEvents.IgnoreQueryFilters()
+                .Where(x => x.TenantId == SeedData.DemoTenantId && x.Action == AuditActions.SettingsCredentialRotate)
+                .OrderByDescending(x => x.OccurredAt)
+                .FirstOrDefaultAsync();
+            rotateAudit.Should().NotBeNull();
+            rotateAudit!.MetadataJson.Should().Contain("webhook-signing-secret");
+            rotateAudit.MetadataJson.Should().NotContain(secret);
 
             var audit = await db.AuditEvents.IgnoreQueryFilters()
                 .Where(x => x.TenantId == SeedData.DemoTenantId && x.Action == AuditActions.SettingsChange)
@@ -839,6 +873,113 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
                 await db.SaveChangesAsync();
             }
         }
+    }
+
+    [Fact]
+    public async Task Admin_can_rotate_openrouter_and_smtp_credentials_encrypted()
+    {
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+        const string aiKey = "sk-rotated-openrouter-key88";
+        const string smtpPassword = "smtp-rotated-password77";
+
+        var rotateAi = await demo.PostAsJsonAsync(
+            "/api/v1/admin/settings/credentials/openrouter/rotate",
+            new { workspaceId, value = aiKey });
+        rotateAi.StatusCode.Should().Be(HttpStatusCode.OK);
+        var aiResult = await rotateAi.Content.ReadFromJsonAsync<CredentialRotateDto>(JsonOptions);
+        aiResult!.Mask.Should().Be("••••ey88");
+        (await rotateAi.Content.ReadAsStringAsync()).Should().NotContain(aiKey);
+
+        var rotateSmtp = await demo.PostAsJsonAsync(
+            "/api/v1/admin/settings/credentials/smtp/rotate",
+            new { workspaceId, value = smtpPassword });
+        rotateSmtp.StatusCode.Should().Be(HttpStatusCode.OK);
+        var smtpResult = await rotateSmtp.Content.ReadFromJsonAsync<CredentialRotateDto>(JsonOptions);
+        smtpResult!.Mask.Should().Be("••••rd77");
+        (await rotateSmtp.Content.ReadAsStringAsync()).Should().NotContain(smtpPassword);
+
+        var get = await demo.GetAsync($"/api/v1/admin/settings?workspaceId={workspaceId}");
+        get.StatusCode.Should().Be(HttpStatusCode.OK);
+        var settings = await get.Content.ReadFromJsonAsync<SensitiveSettingsDto>(JsonOptions);
+        settings!.Ai.ApiKeyMask.Should().Be("••••ey88");
+        settings.Ai.ApiKeySource.Should().Be("database");
+        settings.Email.SmtpPasswordMask.Should().Be("••••rd77");
+        settings.Email.SmtpPasswordSource.Should().Be("database");
+        settings.Files.Should().NotBeNull();
+        settings.RateLimit.Should().NotBeNull();
+        settings.Encryption.DatabaseOverridesEnabled.Should().BeTrue();
+        settings.Encryption.EncryptionAvailable.Should().BeTrue();
+
+        await using (var db = factory.CreateMigratorDbContext())
+        {
+            var ai = await db.AiSettings.IgnoreQueryFilters()
+                .SingleAsync(x => x.WorkspaceId == SeedData.DemoWorkspaceId);
+            ai.OpenRouterApiKey.IsPresent.Should().BeTrue();
+            System.Text.Encoding.UTF8.GetString(ai.OpenRouterApiKey.Ciphertext!).Should().NotContain(aiKey);
+
+            var email = await db.TenantEmailSettings.IgnoreQueryFilters()
+                .SingleAsync(x => x.TenantId == SeedData.DemoTenantId);
+            email.SmtpPassword.IsPresent.Should().BeTrue();
+            System.Text.Encoding.UTF8.GetString(email.SmtpPassword.Ciphertext!).Should().NotContain(smtpPassword);
+        }
+
+        var filesPut = await demo.PutAsJsonAsync(
+            "/api/v1/admin/settings",
+            new
+            {
+                workspaceId,
+                files = new { maxAttachmentsPerMessage = 1 },
+                // Keep send limit high enough for sibling tests sharing the Redis counter.
+                rateLimit = new { sendPerMinute = 120, hubPerMinute = 120 }
+            });
+        filesPut.StatusCode.Should().Be(HttpStatusCode.OK);
+        var limited = await filesPut.Content.ReadFromJsonAsync<SensitiveSettingsDto>(JsonOptions);
+        limited!.Files.MaxAttachmentsPerMessage.Should().Be(1);
+        limited.Files.Source.Should().Be("database");
+        // Env ceiling clamps the request — proves DB overrides + ceiling path.
+        limited.RateLimit.Source.Should().Be("database");
+        limited.RateLimit.SendPerMinute.Should().BeLessThanOrEqualTo(limited.RateLimit.CeilingSendPerMinute);
+
+        // Restore shared factory DB so sibling settings tests keep env-mask assumptions.
+        await using (var db = factory.CreateMigratorDbContext())
+        {
+            var ai = await db.AiSettings.IgnoreQueryFilters()
+                .SingleOrDefaultAsync(x => x.WorkspaceId == SeedData.DemoWorkspaceId);
+            if (ai is not null)
+            {
+                ai.OpenRouterApiKey.Clear();
+            }
+
+            var email = await db.TenantEmailSettings.IgnoreQueryFilters()
+                .SingleOrDefaultAsync(x => x.TenantId == SeedData.DemoTenantId);
+            if (email is not null)
+            {
+                db.TenantEmailSettings.Remove(email);
+            }
+
+            var files = await db.TenantFilesSettings.IgnoreQueryFilters()
+                .SingleOrDefaultAsync(x => x.TenantId == SeedData.DemoTenantId);
+            if (files is not null)
+            {
+                db.TenantFilesSettings.Remove(files);
+            }
+
+            var rate = await db.TenantRateLimitSettings.IgnoreQueryFilters()
+                .SingleOrDefaultAsync(x => x.TenantId == SeedData.DemoTenantId);
+            if (rate is not null)
+            {
+                db.TenantRateLimitSettings.Remove(rate);
+            }
+
+            await db.SaveChangesAsync();
+        }
+
+        // Drop resolver cache so later tests do not keep the tightened send/min ceiling.
+        factory.Services.GetRequiredService<IRuntimeSettingsCacheInvalidator>()
+            .InvalidateTenant(SeedData.DemoTenantId);
     }
 
     [Fact]
@@ -1532,7 +1673,10 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         AiSensitiveSettingsDto Ai,
         EmailSensitiveSettingsDto Email,
         WebhooksSensitiveSettingsDto Webhooks,
-        RetentionSensitiveSettingsDto Retention);
+        RetentionSensitiveSettingsDto Retention,
+        FilesSettingsDto Files,
+        RateLimitSettingsDto RateLimit,
+        EncryptionSettingsDto Encryption);
     private sealed record AiSensitiveSettingsDto(
         bool ProcessEnabled,
         string ProcessSource,
@@ -1540,6 +1684,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         string Provider,
         bool ApiKeyConfigured,
         string? ApiKeyMask,
+        string? ApiKeySource,
         bool SecretsWritable);
     private sealed record EmailSensitiveSettingsDto(
         bool Enabled,
@@ -1550,6 +1695,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         bool SmtpUsernameConfigured,
         bool SmtpPasswordConfigured,
         string? SmtpPasswordMask,
+        string? SmtpPasswordSource,
         string SmtpFrom,
         bool UseStartTls,
         bool SecretsWritable);
@@ -1569,6 +1715,26 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         int RetentionDays,
         int DefaultRetentionDays,
         string Message);
+    private sealed record FilesSettingsDto(
+        string Source,
+        long MaxSizeBytes,
+        int MaxAttachmentsPerMessage);
+    private sealed record RateLimitSettingsDto(
+        string Source,
+        int SendPerMinute,
+        int HubPerMinute,
+        int CeilingSendPerMinute,
+        int CeilingHubPerMinute);
+    private sealed record EncryptionSettingsDto(
+        bool DatabaseOverridesEnabled,
+        bool EncryptionAvailable,
+        int? ActiveKeyVersion,
+        int CredentialsUsingActiveKey);
+    private sealed record CredentialRotateDto(
+        bool Configured,
+        string? Mask,
+        int? KeyVersion,
+        DateTimeOffset? RotatedAt);
     private sealed record AdminConversationItemDto(Guid Id, Guid WorkspaceId, string Name, string Type);
     private sealed record AdminConversationsDto(AdminConversationItemDto[] Items);
     private sealed record AdminConversationMessageItemDto(

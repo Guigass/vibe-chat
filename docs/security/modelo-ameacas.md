@@ -80,11 +80,15 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Item | Controle |
 |------|----------|
 | Leitura | `GET /admin/settings` exige `workspace.admin`; membro/Auditor → 403 |
-| Escrita | `PUT /admin/settings` mesma authZ; rejeita `apiKey` / `smtpPassword` no body |
-| Resposta | Nunca retorna secret em claro; só máscara / `*Configured` |
-| SoT | Env / secret store para AI/SMTP; webhook HMAC secret no DB (admin-writable, B-048) |
-| Audit | `settings.change` em `audit.audit_events` (inclui `webhooks.*` sem valor do secret) |
+| Escrita | `PUT /admin/settings` mesma authZ; rejeita secrets no body (`SecretsNotWritable`) |
+| Rotação | `POST /admin/settings/credentials/{openrouter\|smtp\|webhook}/rotate` — `workspace.admin`; body `{ value }`; resposta só máscara/versão |
+| Re-encrypt | `POST /admin/settings/encryption/reencrypt` — regrava envelopes para `ActiveKeyVersion` |
+| Resposta | Nunca retorna secret em claro; só máscara / `*Configured` / `keyVersion` / `rotatedAt` |
+| SoT | Infra/kill switches em env; credenciais externas (OpenRouter, SMTP password, webhook HMAC) em envelope AES-GCM no DB (ADR-020) quando `RuntimeSettings:DatabaseOverridesEnabled`; chave mestra só no env |
+| Em repouso | AES-256-GCM + AAD tenant/workspace/kind; dual-read temporário do webhook plaintext legado |
+| Audit | `settings.change`, `settings.credential.rotate`, `settings.encryption.reencrypt` — sem valor/ciphertext/nonce/tag |
 | Webhooks | Delivery `MessageCreated` via outbox + HMAC; URL/secret só admin; mask no GET |
+| Flag | Off default; desligar a flag no mesmo binário é o rollback seguro |
 
 ### R-18 — Auditoria de conversa (break-glass de leitura)
 

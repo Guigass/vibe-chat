@@ -23,9 +23,13 @@ public sealed class AiSettings
     public TenantId TenantId { get; set; }
     public bool Enabled { get; set; }
     public string Provider { get; set; } = "Mock";
+
+    /// <summary>Encrypted OpenRouter API key (ADR-020). Never expose plaintext via API.</summary>
+    public EncryptedSecretEnvelope OpenRouterApiKey { get; set; } = new();
 }
 
-public sealed record AiCompletionRequest(string SystemPrompt, string UserPrompt);
+/// <param name="ApiKey">Optional per-call OpenRouter key (ADR-020). Never log.</param>
+public sealed record AiCompletionRequest(string SystemPrompt, string UserPrompt, string? ApiKey = null);
 public sealed record AiCompletionResponse(string Text, int PromptTokens, int CompletionTokens, int LatencyMs);
 
 /// <summary>Result of channel summarize. When Ok is false, Error is a stable code (e.g. AiDisabled, ProviderError).</summary>
@@ -84,15 +88,26 @@ public sealed class OpenRouterAiProvider(HttpClient httpClient) : IAiCompletionP
     public async Task<AiCompletionResponse> CompleteAsync(AiCompletionRequest request, CancellationToken cancellationToken)
     {
         var started = DateTimeOffset.UtcNow;
-        using var response = await httpClient.PostAsJsonAsync("/chat/completions", new
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, "/chat/completions")
         {
-            model = "openai/gpt-4o-mini",
-            messages = new[]
+            Content = JsonContent.Create(new
             {
-                new { role = "system", content = request.SystemPrompt },
-                new { role = "user", content = request.UserPrompt }
-            }
-        }, cancellationToken);
+                model = "openai/gpt-4o-mini",
+                messages = new[]
+                {
+                    new { role = "system", content = request.SystemPrompt },
+                    new { role = "user", content = request.UserPrompt }
+                }
+            })
+        };
+
+        if (!string.IsNullOrWhiteSpace(request.ApiKey))
+        {
+            httpRequest.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", request.ApiKey.Trim());
+        }
+
+        using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
         var latencyMs = (int)(DateTimeOffset.UtcNow - started).TotalMilliseconds;
         if (!response.IsSuccessStatusCode)

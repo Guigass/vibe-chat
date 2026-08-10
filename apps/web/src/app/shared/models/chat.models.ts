@@ -222,6 +222,9 @@ export interface SensitiveSettings {
     provider: string;
     apiKeyConfigured: boolean;
     apiKeyMask: string | null;
+    apiKeySource?: string;
+    apiKeyKeyVersion?: number | null;
+    apiKeyRotatedAt?: string | null;
     secretsWritable: boolean;
   };
   email: {
@@ -233,6 +236,9 @@ export interface SensitiveSettings {
     smtpUsernameConfigured: boolean;
     smtpPasswordConfigured: boolean;
     smtpPasswordMask: string | null;
+    smtpPasswordSource?: string;
+    smtpPasswordKeyVersion?: number | null;
+    smtpPasswordRotatedAt?: string | null;
     smtpFrom: string;
     useStartTls: boolean;
     secretsWritable: boolean;
@@ -244,6 +250,9 @@ export interface SensitiveSettings {
     urlConfigured: boolean;
     secretConfigured: boolean;
     secretMask: string | null;
+    secretSource?: string;
+    secretKeyVersion?: number | null;
+    secretRotatedAt?: string | null;
     secretsWritable: boolean;
     message: string;
   };
@@ -254,6 +263,31 @@ export interface SensitiveSettings {
     retentionDays: number;
     defaultRetentionDays: number;
     message: string;
+  };
+  files: {
+    source: string;
+    maxSizeBytes: number;
+    maxAttachmentsPerMessage: number;
+    presignUploadTtlSeconds: number;
+    presignDownloadTtlSeconds: number;
+    allowedContentTypes: string[];
+    audioMaxSizeBytes: number;
+    audioMaxDurationMs: number;
+    ceilingMaxSizeBytes: number;
+    ceilingMaxAttachmentsPerMessage: number;
+  };
+  rateLimit: {
+    source: string;
+    sendPerMinute: number;
+    hubPerMinute: number;
+    ceilingSendPerMinute: number;
+    ceilingHubPerMinute: number;
+  };
+  encryption: {
+    databaseOverridesEnabled: boolean;
+    encryptionAvailable: boolean;
+    activeKeyVersion: number | null;
+    credentialsUsingActiveKey: number;
   };
 }
 
@@ -274,12 +308,41 @@ export interface UpdateSensitiveSettingsInput {
   webhooks?: {
     enabled?: boolean;
     url?: string;
-    secret?: string;
   };
   retention?: {
     enabled?: boolean;
     retentionDays?: number;
   };
+  files?: {
+    maxSizeBytes?: number;
+    maxAttachmentsPerMessage?: number;
+    presignUploadTtlSeconds?: number;
+    presignDownloadTtlSeconds?: number;
+    allowedContentTypes?: string[];
+    audioMaxSizeBytes?: number;
+    audioMaxDurationMs?: number;
+  };
+  rateLimit?: {
+    sendPerMinute?: number;
+    hubPerMinute?: number;
+  };
+}
+
+export interface RotateCredentialInput {
+  workspaceId?: string;
+  value: string;
+}
+
+export interface CredentialRotateResult {
+  configured: boolean;
+  mask: string | null;
+  keyVersion: number | null;
+  rotatedAt: string | null;
+}
+
+export interface ReencryptSettingsResult {
+  reencrypted: number;
+  settings: SensitiveSettings;
 }
 
 export interface AiSummaryResult {

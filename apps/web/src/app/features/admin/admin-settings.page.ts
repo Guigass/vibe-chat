@@ -4,6 +4,8 @@ import { SensitiveSettings } from '../../shared/models/chat.models';
 import { AdminContextService } from './admin-context.service';
 import { AdminAreaId } from './admin-permissions';
 
+type CredentialKind = 'openrouter' | 'smtp' | 'webhook';
+
 @Component({
   selector: 'vc-admin-settings',
   standalone: true,
@@ -22,6 +24,10 @@ export class AdminSettingsPage implements OnInit {
   readonly settingsBusy = signal(false);
   readonly settingsFeedback = signal<string | null>(null);
   readonly settingsErrorMessage = signal<string | null>(null);
+  readonly credentialBusy = signal<CredentialKind | null>(null);
+  readonly credentialFeedback = signal<string | null>(null);
+  readonly credentialError = signal<string | null>(null);
+  readonly reencryptBusy = signal(false);
   readonly exportBusy = signal(false);
   readonly exportFeedback = signal<string | null>(null);
   readonly exportError = signal<string | null>(null);
@@ -74,9 +80,14 @@ export class AdminSettingsPage implements OnInit {
     const useStartTls = data.get('useStartTls') === 'on';
     const webhookEnabled = data.get('webhookEnabled') === 'on';
     const webhookUrl = String(data.get('webhookUrl') ?? '').trim();
-    const webhookSecret = String(data.get('webhookSecret') ?? '').trim();
     const retentionEnabled = data.get('retentionEnabled') === 'on';
     const retentionDays = Number(data.get('retentionDays') ?? current.retention.retentionDays);
+    const maxSizeBytes = Number(data.get('maxSizeBytes') ?? current.files.maxSizeBytes);
+    const maxAttachmentsPerMessage = Number(
+      data.get('maxAttachmentsPerMessage') ?? current.files.maxAttachmentsPerMessage,
+    );
+    const sendPerMinute = Number(data.get('sendPerMinute') ?? current.rateLimit.sendPerMinute);
+    const hubPerMinute = Number(data.get('hubPerMinute') ?? current.rateLimit.hubPerMinute);
 
     this.settingsBusy.set(true);
     this.settingsFeedback.set(null);
@@ -96,7 +107,6 @@ export class AdminSettingsPage implements OnInit {
         webhooks: {
           enabled: webhookEnabled,
           url: webhookUrl,
-          ...(webhookSecret ? { secret: webhookSecret } : {}),
         },
         retention: {
           enabled: retentionEnabled,
@@ -104,24 +114,117 @@ export class AdminSettingsPage implements OnInit {
             ? retentionDays
             : current.retention.retentionDays,
         },
+        files: {
+          maxSizeBytes: Number.isFinite(maxSizeBytes) ? maxSizeBytes : current.files.maxSizeBytes,
+          maxAttachmentsPerMessage: Number.isFinite(maxAttachmentsPerMessage)
+            ? maxAttachmentsPerMessage
+            : current.files.maxAttachmentsPerMessage,
+        },
+        rateLimit: {
+          sendPerMinute: Number.isFinite(sendPerMinute)
+            ? sendPerMinute
+            : current.rateLimit.sendPerMinute,
+          hubPerMinute: Number.isFinite(hubPerMinute)
+            ? hubPerMinute
+            : current.rateLimit.hubPerMinute,
+        },
       });
       this.settings.set(updated);
       this.settingsFeedback.set(
-        'Configurações atualizadas (AI/SMTP secrets só via env; webhook secret só mascarado; retenção exige kill switch no worker).',
+        'Configurações atualizadas. Credenciais usam “Substituir” — nunca voltam em claro.',
       );
-      const secretInput = form.elements.namedItem('webhookSecret') as HTMLInputElement | null;
-      if (secretInput) {
-        secretInput.value = '';
-      }
     } catch (err) {
       const status = (err as { status?: number } | null)?.status;
       this.settingsErrorMessage.set(
         status === 403
           ? 'Sem permissão para alterar settings sensíveis.'
-          : 'Não foi possível salvar as configurações.',
+          : status === 503
+            ? 'Overrides de runtime indisponíveis (flag/keyring).'
+            : 'Não foi possível salvar as configurações.',
       );
     } finally {
       this.settingsBusy.set(false);
+    }
+  }
+
+  async rotateCredential(kind: CredentialKind, event: Event): Promise<void> {
+    event.preventDefault();
+    const current = this.settings();
+    const workspaceId = this.ctx.workspace()?.id ?? current?.workspaceId;
+    if (!workspaceId || this.credentialBusy()) {
+      return;
+    }
+
+    const form = event.target as HTMLFormElement;
+    const data = new FormData(form);
+    const value = String(data.get('secret') ?? '').trim();
+    if (!value) {
+      this.credentialError.set('Informe a nova credencial.');
+      return;
+    }
+
+    this.credentialBusy.set(kind);
+    this.credentialFeedback.set(null);
+    this.credentialError.set(null);
+    try {
+      const result =
+        kind === 'openrouter'
+          ? await this.api.rotateAdminOpenRouterCredential({ workspaceId, value })
+          : kind === 'smtp'
+            ? await this.api.rotateAdminSmtpCredential({ workspaceId, value })
+            : await this.api.rotateAdminWebhookCredential({ workspaceId, value });
+
+      const secretInput = form.elements.namedItem('secret') as HTMLInputElement | null;
+      if (secretInput) {
+        secretInput.value = '';
+      }
+
+      await this.loadSettings();
+      this.credentialFeedback.set(
+        `Credencial ${kind} substituída${result.mask ? ` (${result.mask})` : ''}.`,
+      );
+    } catch (err) {
+      const status = (err as { status?: number } | null)?.status;
+      this.credentialError.set(
+        status === 403
+          ? 'Sem permissão para rotacionar credenciais.'
+          : status === 503
+            ? 'Criptografia indisponível (RuntimeSettings desligado ou keyring ausente).'
+            : 'Falha ao substituir a credencial.',
+      );
+    } finally {
+      this.credentialBusy.set(null);
+    }
+  }
+
+  async reencryptCredentials(): Promise<void> {
+    const workspaceId = this.ctx.workspace()?.id ?? this.settings()?.workspaceId;
+    if (!workspaceId || this.reencryptBusy()) {
+      return;
+    }
+
+    this.reencryptBusy.set(true);
+    this.credentialFeedback.set(null);
+    this.credentialError.set(null);
+    try {
+      const result = await this.api.reencryptAdminSettings(workspaceId);
+      this.settings.set(result.settings);
+      this.credentialFeedback.set(
+        result.reencrypted > 0
+          ? `${result.reencrypted} credencial(is) re-encriptada(s) na versão ativa.`
+          : 'Nenhuma credencial precisava de re-encriptação.',
+      );
+    } catch (err) {
+      const status = (err as { status?: number } | null)?.status;
+      this.credentialError.set(
+        status === 403
+          ? 'Sem permissão para re-encriptar.'
+          : status === 503
+            ? 'Criptografia indisponível (RuntimeSettings desligado ou keyring ausente).'
+            : 'Falha ao re-encriptar credenciais.',
+      );
+    } finally {
+      this.reencryptBusy.set(false);
     }
   }
 

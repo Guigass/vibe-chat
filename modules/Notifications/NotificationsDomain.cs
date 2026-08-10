@@ -12,8 +12,8 @@ public sealed class NotificationPreference
 }
 
 /// <summary>
-/// Tenant-level email/SMTP non-secret overrides (B-069). Password/API secrets stay in env.
-/// When a row exists, Enabled/Host/Port/Username/From/UseStartTls override IConfiguration.
+/// Tenant-level email/SMTP settings (B-069 / ADR-020).
+/// Non-secrets override IConfiguration; password may be env fallback or AES-GCM envelope.
 /// </summary>
 public sealed class TenantEmailSettings
 {
@@ -25,6 +25,9 @@ public sealed class TenantEmailSettings
     public string From { get; set; } = "noreply@localhost";
     public bool UseStartTls { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+
+    /// <summary>Encrypted SMTP password (ADR-020). Never expose plaintext via API.</summary>
+    public EncryptedSecretEnvelope SmtpPassword { get; set; } = new();
 }
 
 public sealed record EmailMessage(

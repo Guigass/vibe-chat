@@ -195,6 +195,16 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
                 retention = new { enabled = true, retentionDays = 90 }
             });
         retentionPut.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var rotate = await alice.PostAsJsonAsync(
+            "/api/v1/admin/settings/credentials/openrouter/rotate",
+            new { workspaceId = SeedData.DemoWorkspaceId.Value, value = "member-cannot-rotate" });
+        rotate.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var reencrypt = await alice.PostAsJsonAsync(
+            "/api/v1/admin/settings/encryption/reencrypt",
+            new { workspaceId = SeedData.DemoWorkspaceId.Value });
+        reencrypt.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact]
@@ -228,6 +238,16 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
                     ai = new { workspaceEnabled = true, provider = "Mock" }
                 });
             put.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+            var rotate = await alice.PostAsJsonAsync(
+                "/api/v1/admin/settings/credentials/smtp/rotate",
+                new { workspaceId = SeedData.DemoWorkspaceId.Value, value = "auditor-cannot-rotate" });
+            rotate.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+            var reencrypt = await alice.PostAsJsonAsync(
+                "/api/v1/admin/settings/encryption/reencrypt",
+                new { workspaceId = SeedData.DemoWorkspaceId.Value });
+            reencrypt.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }
         finally
         {
@@ -257,6 +277,16 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
                 email = new { enabled = true }
             });
         put.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var rotate = await alice.PostAsJsonAsync(
+            "/api/v1/admin/settings/credentials/webhook/rotate",
+            new { workspaceId = foreignWorkspaceId, value = "cross-tenant-secret" });
+        rotate.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var reencrypt = await alice.PostAsJsonAsync(
+            "/api/v1/admin/settings/encryption/reencrypt",
+            new { workspaceId = foreignWorkspaceId });
+        reencrypt.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact]

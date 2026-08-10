@@ -873,7 +873,8 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
     ITenantContext tenant,
     IMessageWriter writer,
     IRateLimiter rateLimiter,
-    IConfiguration config,
+    RateLimitSettingsResolver rateLimits,
+    FilesSettingsResolver filesSettings,
     IClock clock,
     CancellationToken ct) =>
 {
@@ -884,10 +885,10 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
         return Results.Forbid();
     }
 
-    var sendLimit = config.GetValue("RateLimit:SendPerMinute", RateLimitPolicies.DefaultSendPerMinute);
+    var rate = await rateLimits.ResolveAsync(channel.TenantId, ct);
     var allowed = await rateLimiter.TryAcquireAsync(
         RateLimitKeys.SendMessage(channel.TenantId, profile.Id),
-        sendLimit,
+        rate.SendPerMinute,
         TimeSpan.FromMinutes(1),
         ct);
     if (!allowed)
@@ -912,9 +913,8 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
         return Results.BadRequest(MessageBodyPolicies.TooLongPayload());
     }
 
-    var maxAttachments = config.GetValue(
-        "Files:MaxAttachmentsPerMessage",
-        AttachmentPolicies.DefaultMaxAttachmentsPerMessage);
+    var files = await filesSettings.ResolveAsync(channel.TenantId, ct);
+    var maxAttachments = files.MaxAttachmentsPerMessage;
     var attachmentCount = request.AttachmentIds?.Length ?? 0;
     if (!AttachmentPolicies.IsWithinAttachmentCount(attachmentCount, maxAttachments))
     {
@@ -1216,7 +1216,8 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
     ITenantContext tenant,
     IMessageWriter writer,
     IRateLimiter rateLimiter,
-    IConfiguration config,
+    RateLimitSettingsResolver rateLimits,
+    FilesSettingsResolver filesSettings,
     IClock clock,
     CancellationToken ct) =>
 {
@@ -1234,10 +1235,10 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
         return Results.Forbid();
     }
 
-    var sendLimit = config.GetValue("RateLimit:SendPerMinute", RateLimitPolicies.DefaultSendPerMinute);
+    var rate = await rateLimits.ResolveAsync(channel.TenantId, ct);
     var allowed = await rateLimiter.TryAcquireAsync(
         RateLimitKeys.SendMessage(channel.TenantId, profile.Id),
-        sendLimit,
+        rate.SendPerMinute,
         TimeSpan.FromMinutes(1),
         ct);
     if (!allowed)
@@ -1262,9 +1263,8 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
         return Results.BadRequest(MessageBodyPolicies.TooLongPayload());
     }
 
-    var maxAttachments = config.GetValue(
-        "Files:MaxAttachmentsPerMessage",
-        AttachmentPolicies.DefaultMaxAttachmentsPerMessage);
+    var files = await filesSettings.ResolveAsync(channel.TenantId, ct);
+    var maxAttachments = files.MaxAttachmentsPerMessage;
     var attachmentCount = request.AttachmentIds?.Length ?? 0;
     if (!AttachmentPolicies.IsWithinAttachmentCount(attachmentCount, maxAttachments))
     {
@@ -1350,7 +1350,7 @@ v1.MapPost("/channels/{channelId:guid}/attachments", async (
     ITenantContext tenant,
     IPermissionChecker permissions,
     IObjectStorage storage,
-    IConfiguration config,
+    FilesSettingsResolver filesSettings,
     IAuditWriter audit,
     IClock clock,
     CancellationToken ct) =>
@@ -1368,9 +1368,10 @@ v1.MapPost("/channels/{channelId:guid}/attachments", async (
         return Results.Forbid();
     }
 
-    var maxSize = config.GetValue("Files:MaxSizeBytes", AttachmentPolicies.DefaultMaxSizeBytes);
-    var allowed = config.GetSection("Files:AllowedContentTypes").Get<string[]>() ?? AttachmentPolicies.DefaultAllowedContentTypes.ToArray();
-    var uploadTtl = TimeSpan.FromSeconds(config.GetValue("Files:PresignUploadTtlSeconds", AttachmentPolicies.DefaultUploadTtlSeconds));
+    var files = await filesSettings.ResolveAsync(channel.TenantId, ct);
+    var maxSize = files.MaxSizeBytes;
+    var allowed = files.AllowedContentTypes.ToArray();
+    var uploadTtl = TimeSpan.FromSeconds(files.PresignUploadTtlSeconds);
     var kind = Enum.TryParse<AttachmentKind>(request.Kind, ignoreCase: true, out var parsedKind)
         ? parsedKind
         : AttachmentKind.File;
@@ -1383,8 +1384,8 @@ v1.MapPost("/channels/{channelId:guid}/attachments", async (
     int[]? waveform = null;
     if (kind == AttachmentKind.Audio)
     {
-        maxSize = config.GetValue("Files:Audio:MaxSizeBytes", AttachmentPolicies.DefaultAudioMaxSizeBytes);
-        var maxDurationMs = config.GetValue("Files:Audio:MaxDurationMs", AttachmentPolicies.DefaultAudioMaxDurationMs);
+        maxSize = files.AudioMaxSizeBytes;
+        var maxDurationMs = files.AudioMaxDurationMs;
         if (!AttachmentPolicies.IsAllowedAudioContentType(request.ContentType))
         {
             return Results.BadRequest(new { error = "Audio content type is not allowed." });
@@ -1471,7 +1472,7 @@ v1.MapPost("/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete"
     ITenantContext tenant,
     IPermissionChecker permissions,
     IObjectStorage storage,
-    IConfiguration config,
+    FilesSettingsResolver filesSettings,
     IOutboxWriter outbox,
     IClock clock,
     CancellationToken ct) =>
@@ -1512,9 +1513,10 @@ v1.MapPost("/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete"
         return Results.BadRequest(new { error = "Uploaded object was not found in storage." });
     }
 
+    var files = await filesSettings.ResolveAsync(channel.TenantId, ct);
     var maxSize = attachment.Kind == AttachmentKind.Audio
-        ? config.GetValue("Files:Audio:MaxSizeBytes", AttachmentPolicies.DefaultAudioMaxSizeBytes)
-        : config.GetValue("Files:MaxSizeBytes", AttachmentPolicies.DefaultMaxSizeBytes);
+        ? files.AudioMaxSizeBytes
+        : files.MaxSizeBytes;
     if (stat.SizeBytes > maxSize || stat.SizeBytes > attachment.SizeBytes)
     {
         attachment.Status = AttachmentStatus.Failed;
@@ -1554,7 +1556,7 @@ v1.MapGet("/channels/{channelId:guid}/attachments/{attachmentId:guid}/download",
     ITenantContext tenant,
     IPermissionChecker permissions,
     IObjectStorage storage,
-    IConfiguration config,
+    FilesSettingsResolver filesSettings,
     IClock clock,
     CancellationToken ct) =>
 {
@@ -1578,7 +1580,8 @@ v1.MapGet("/channels/{channelId:guid}/attachments/{attachmentId:guid}/download",
         return Results.NotFound();
     }
 
-    var downloadTtl = TimeSpan.FromSeconds(config.GetValue("Files:PresignDownloadTtlSeconds", AttachmentPolicies.DefaultDownloadTtlSeconds));
+    var files = await filesSettings.ResolveAsync(channel.TenantId, ct);
+    var downloadTtl = TimeSpan.FromSeconds(files.PresignDownloadTtlSeconds);
     var download = await storage.CreateDownloadUrlAsync(attachment.StorageKey, attachment.FileName, downloadTtl, ct);
     return Results.Ok(new AttachmentDownloadResponse(
         attachment.Id,
@@ -2322,15 +2325,14 @@ v1.MapGet("/admin/threads/{threadId:guid}/messages", async (
     return Results.Ok(new AdminConversationMessagesResponse(items));
 });
 
-// B-069: sensitive integration settings — admin-only, secrets always masked.
+// B-069 / ADR-020: sensitive integration settings — admin-only, secrets always masked.
 v1.MapGet("/admin/settings", async (
     Guid? workspaceId,
     HttpContext http,
     VibeChatDbContext db,
     ITenantContext tenant,
     IPermissionChecker permissions,
-    IConfiguration config,
-    EmailSettingsResolver emailSettings,
+    RuntimeSettingsAdminService settingsAdmin,
     IClock clock,
     CancellationToken ct) =>
 {
@@ -2341,7 +2343,7 @@ v1.MapGet("/admin/settings", async (
     }
 
     var (_, workspace) = access.Value;
-    return Results.Ok(await BuildSensitiveSettingsResponseAsync(workspace, db, config, emailSettings, ct));
+    return Results.Ok(await settingsAdmin.BuildResponseAsync(workspace, ct));
 });
 
 v1.MapPut("/admin/settings", async (
@@ -2353,6 +2355,8 @@ v1.MapPut("/admin/settings", async (
     IConfiguration config,
     IAuditWriter audit,
     EmailSettingsResolver emailSettings,
+    RuntimeSettingsAdminService settingsAdmin,
+    IRuntimeSettingsCacheInvalidator cacheInvalidator,
     IClock clock,
     CancellationToken ct) =>
 {
@@ -2365,14 +2369,15 @@ v1.MapPut("/admin/settings", async (
 
     var (profile, workspace) = access.Value;
 
-    // AI/SMTP secrets are env/secret-store only (ADR-012 / B-069).
-    // Webhook signing secret is the exception (B-048): shared with the consumer via admin API.
-    if (request.Ai?.ApiKey is not null || request.Email?.SmtpPassword is not null)
+    // ADR-020: secrets never via general PUT — use dedicated rotate endpoints.
+    if (request.Ai?.ApiKey is not null
+        || request.Email?.SmtpPassword is not null
+        || request.Webhooks?.Secret is not null)
     {
         return Results.BadRequest(new
         {
             error = "SecretsNotWritable",
-            message = "API keys and SMTP passwords are configured via environment / secret store only."
+            message = "Use POST /admin/settings/credentials/{openrouter|smtp|webhook}/rotate to rotate secrets."
         });
     }
 
@@ -2532,7 +2537,7 @@ v1.MapPut("/admin/settings", async (
                 TenantId = workspace.TenantId,
                 Enabled = false,
                 Url = string.Empty,
-                Secret = string.Empty,
+                Secret = null,
                 UpdatedAt = clock.UtcNow
             };
             db.OutboundWebhookEndpoints.Add(webhookRow);
@@ -2564,36 +2569,17 @@ v1.MapPut("/admin/settings", async (
             }
         }
 
-        if (request.Webhooks.Secret is not null)
-        {
-            var secret = request.Webhooks.Secret.Trim();
-            if (secret.Length > 512)
-            {
-                return Results.BadRequest(new { error = "InvalidWebhookSecret", message = "Secret exceeds 512 characters." });
-            }
-
-            if (secret.Length > 0 && secret.Length < 8)
-            {
-                return Results.BadRequest(new { error = "InvalidWebhookSecret", message = "Secret must be at least 8 characters." });
-            }
-
-            // Empty string means "keep existing"; only rotate when a non-empty value is provided.
-            if (secret.Length > 0 && !string.Equals(webhookRow.Secret, secret, StringComparison.Ordinal))
-            {
-                webhookRow.Secret = secret;
-                changes.Add("webhooks.secret");
-            }
-        }
-
         if (request.Webhooks.Enabled is { } webhookEnabled && webhookRow.Enabled != webhookEnabled)
         {
+            var secretConfigured = webhookRow.SigningSecret.IsPresent
+                || SecretMasking.IsConfigured(webhookRow.Secret);
             if (webhookEnabled
-                && (!SecretMasking.IsConfigured(webhookRow.Url) || !SecretMasking.IsConfigured(webhookRow.Secret)))
+                && (!SecretMasking.IsConfigured(webhookRow.Url) || !secretConfigured))
             {
                 return Results.BadRequest(new
                 {
                     error = "WebhookIncomplete",
-                    message = "Enable requires a valid URL and signing secret."
+                    message = "Enable requires a valid URL and signing secret (rotate via credentials/webhook/rotate)."
                 });
             }
 
@@ -2664,6 +2650,9 @@ v1.MapPut("/admin/settings", async (
         }
     }
 
+    await settingsAdmin.ApplyFilesAsync(workspace, request.Files, changes, ct);
+    await settingsAdmin.ApplyRateLimitAsync(workspace, request.RateLimit, changes, ct);
+
     if (changes.Count > 0)
     {
         audit.Add(new AuditEvent
@@ -2680,9 +2669,114 @@ v1.MapPut("/admin/settings", async (
             })
         });
         await db.SaveChangesAsync(ct);
+        cacheInvalidator.InvalidateTenant(workspace.TenantId);
+        cacheInvalidator.InvalidateWorkspace(workspace.TenantId, workspace.Id);
     }
 
-    return Results.Ok(await BuildSensitiveSettingsResponseAsync(workspace, db, config, emailSettings, ct));
+    return Results.Ok(await settingsAdmin.BuildResponseAsync(workspace, ct));
+});
+
+v1.MapPost("/admin/settings/credentials/openrouter/rotate", async (
+    RotateCredentialRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    RuntimeSettingsAdminService settingsAdmin,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var access = await ResolveSensitiveSettingsAccessAsync(
+        http, db, tenant, permissions, request.WorkspaceId, clock, ct);
+    if (access is null)
+    {
+        return Results.Forbid();
+    }
+
+    var (profile, workspace) = access.Value;
+    var result = await settingsAdmin.RotateAsync(
+        workspace, profile.Id, RuntimeSecretKinds.OpenRouterApiKey, request.Value ?? string.Empty, ct);
+    return result.Ok
+        ? Results.Ok(new { configured = result.Configured, mask = result.Mask, keyVersion = result.KeyVersion, rotatedAt = result.RotatedAt })
+        : Results.Json(new { error = result.Error, message = result.Message }, statusCode: result.StatusCode);
+});
+
+v1.MapPost("/admin/settings/credentials/smtp/rotate", async (
+    RotateCredentialRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    RuntimeSettingsAdminService settingsAdmin,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var access = await ResolveSensitiveSettingsAccessAsync(
+        http, db, tenant, permissions, request.WorkspaceId, clock, ct);
+    if (access is null)
+    {
+        return Results.Forbid();
+    }
+
+    var (profile, workspace) = access.Value;
+    var result = await settingsAdmin.RotateAsync(
+        workspace, profile.Id, RuntimeSecretKinds.SmtpPassword, request.Value ?? string.Empty, ct);
+    return result.Ok
+        ? Results.Ok(new { configured = result.Configured, mask = result.Mask, keyVersion = result.KeyVersion, rotatedAt = result.RotatedAt })
+        : Results.Json(new { error = result.Error, message = result.Message }, statusCode: result.StatusCode);
+});
+
+v1.MapPost("/admin/settings/credentials/webhook/rotate", async (
+    RotateCredentialRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    RuntimeSettingsAdminService settingsAdmin,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var access = await ResolveSensitiveSettingsAccessAsync(
+        http, db, tenant, permissions, request.WorkspaceId, clock, ct);
+    if (access is null)
+    {
+        return Results.Forbid();
+    }
+
+    var (profile, workspace) = access.Value;
+    var result = await settingsAdmin.RotateAsync(
+        workspace, profile.Id, RuntimeSecretKinds.WebhookSigningSecret, request.Value ?? string.Empty, ct);
+    return result.Ok
+        ? Results.Ok(new { configured = result.Configured, mask = result.Mask, keyVersion = result.KeyVersion, rotatedAt = result.RotatedAt })
+        : Results.Json(new { error = result.Error, message = result.Message }, statusCode: result.StatusCode);
+});
+
+v1.MapPost("/admin/settings/encryption/reencrypt", async (
+    RotateCredentialRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    RuntimeSettingsAdminService settingsAdmin,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var access = await ResolveSensitiveSettingsAccessAsync(
+        http, db, tenant, permissions, request.WorkspaceId, clock, ct);
+    if (access is null)
+    {
+        return Results.Forbid();
+    }
+
+    var (profile, workspace) = access.Value;
+    var (ok, status, error, message, reencrypted) = await settingsAdmin.ReencryptAsync(workspace, profile.Id, ct);
+    if (!ok)
+    {
+        return Results.Json(new { error, message }, statusCode: status);
+    }
+
+    var payload = await settingsAdmin.BuildResponseAsync(workspace, ct);
+    return Results.Ok(new { reencrypted, settings = payload });
 });
 
 // B-046: workspace compliance export (ZIP of JSON) — workspace.admin only (not Auditor).
@@ -3141,90 +3235,6 @@ static async Task WriteZipJsonEntryAsync<T>(
     var entry = zip.CreateEntry(entryName, CompressionLevel.Optimal);
     await using var stream = entry.Open();
     await JsonSerializer.SerializeAsync(stream, payload, jsonOptions, ct);
-}
-
-static async Task<SensitiveSettingsResponse> BuildSensitiveSettingsResponseAsync(
-    Workspace workspace,
-    VibeChatDbContext db,
-    IConfiguration config,
-    EmailSettingsResolver emailSettings,
-    CancellationToken ct)
-{
-    var processAiEnabled = config.GetValue("Ai:Enabled", false);
-    var processAiProvider = config["Ai:Provider"] ?? "Mock";
-    var apiKey = config["Ai:OpenRouter:ApiKey"] ?? config["OPENROUTER_API_KEY"];
-    var aiWorkspace = await db.AiSettings.AsNoTracking()
-        .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId && x.WorkspaceId == workspace.Id, ct);
-
-    var smtp = await emailSettings.ResolveAsync(workspace.TenantId, ct);
-    var envPassword = config["Email:Smtp:Password"] ?? config["SMTP_PASSWORD"];
-
-    var webhook = await db.OutboundWebhookEndpoints.AsNoTracking()
-        .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
-    var webhookUrl = webhook?.Url ?? string.Empty;
-    var webhookSecret = webhook?.Secret ?? string.Empty;
-    var webhookUrlConfigured = SecretMasking.IsConfigured(webhookUrl);
-    var webhookSecretConfigured = SecretMasking.IsConfigured(webhookSecret);
-    var webhookEnabled = webhook?.Enabled ?? false;
-    var webhookStatus = WebhooksSettingsStatus.Resolve(webhookEnabled, webhookUrlConfigured, webhookSecretConfigured);
-
-    var processRetentionEnabled = config.GetValue("MessageRetention:Enabled", false);
-    var defaultRetentionDays = config.GetValue(
-        "MessageRetention:DefaultRetentionDays",
-        MessageRetentionSettings.DefaultRetentionDays);
-    if (defaultRetentionDays is < MessageRetentionSettings.MinRetentionDays or > MessageRetentionSettings.MaxRetentionDays)
-    {
-        defaultRetentionDays = MessageRetentionSettings.DefaultRetentionDays;
-    }
-
-    var retention = await db.MessageRetentionSettings.AsNoTracking()
-        .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
-    var retentionEnabled = retention?.Enabled ?? false;
-    var retentionDays = retention?.RetentionDays > 0 ? retention.RetentionDays : defaultRetentionDays;
-    var retentionMessage = !processRetentionEnabled
-        ? "Purge desligado no processo (MessageRetention:Enabled=false). Política do tenant é gravável, mas o worker não hard-deleta."
-        : retentionEnabled
-            ? $"Purge ativo: soft-deletes com mais de {retentionDays} dias serão hard-deleted pelo worker."
-            : "Purge do tenant desligado — soft-deletes permanecem até habilitar.";
-
-    return new SensitiveSettingsResponse(
-        workspace.Id.Value,
-        new AiSensitiveSettingsResponse(
-            processAiEnabled,
-            "env",
-            aiWorkspace?.Enabled ?? false,
-            aiWorkspace?.Provider ?? processAiProvider,
-            SecretMasking.IsConfigured(apiKey),
-            SecretMasking.Mask(apiKey),
-            SecretsWritable: false),
-        new EmailSensitiveSettingsResponse(
-            smtp.Enabled,
-            smtp.Source,
-            smtp.Host,
-            smtp.Port,
-            smtp.Username,
-            SecretMasking.IsConfigured(smtp.Username),
-            SecretMasking.IsConfigured(envPassword),
-            SecretMasking.Mask(envPassword),
-            smtp.From,
-            smtp.UseStartTls,
-            SecretsWritable: false),
-        new WebhooksSensitiveSettingsResponse(
-            webhookStatus,
-            webhookEnabled,
-            webhookUrlConfigured ? webhookUrl.Trim() : string.Empty,
-            webhookUrlConfigured,
-            webhookSecretConfigured,
-            SecretMasking.Mask(webhookSecret),
-            SecretsWritable: true,
-            WebhooksSettingsStatus.MessageFor(webhookStatus)),
-        new RetentionSensitiveSettingsResponse(
-            processRetentionEnabled,
-            "env",
-            retentionEnabled,
-            retentionDays,
-            defaultRetentionDays,
-            retentionMessage));
 }
 
 static async Task<UserProfile> EnsureProfileAsync(ClaimsPrincipal principal, VibeChatDbContext db, IClock clock, CancellationToken ct)
@@ -3793,48 +3803,6 @@ public sealed record AdminDashboardResponse(
     AdminHealthResponse Health,
     string AppVersion,
     string GrafanaUrl);
-public sealed record AiSensitiveSettingsResponse(
-    bool ProcessEnabled,
-    string ProcessSource,
-    bool WorkspaceEnabled,
-    string Provider,
-    bool ApiKeyConfigured,
-    string? ApiKeyMask,
-    bool SecretsWritable);
-public sealed record EmailSensitiveSettingsResponse(
-    bool Enabled,
-    string Source,
-    string SmtpHost,
-    int SmtpPort,
-    string SmtpUsername,
-    bool SmtpUsernameConfigured,
-    bool SmtpPasswordConfigured,
-    string? SmtpPasswordMask,
-    string SmtpFrom,
-    bool UseStartTls,
-    bool SecretsWritable);
-public sealed record WebhooksSensitiveSettingsResponse(
-    string Status,
-    bool Enabled,
-    string Url,
-    bool UrlConfigured,
-    bool SecretConfigured,
-    string? SecretMask,
-    bool SecretsWritable,
-    string Message);
-public sealed record RetentionSensitiveSettingsResponse(
-    bool ProcessEnabled,
-    string ProcessSource,
-    bool Enabled,
-    int RetentionDays,
-    int DefaultRetentionDays,
-    string Message);
-public sealed record SensitiveSettingsResponse(
-    Guid WorkspaceId,
-    AiSensitiveSettingsResponse Ai,
-    EmailSensitiveSettingsResponse Email,
-    WebhooksSensitiveSettingsResponse Webhooks,
-    RetentionSensitiveSettingsResponse Retention);
 public sealed record UpdateAiSensitiveSettingsRequest(
     bool? WorkspaceEnabled = null,
     string? Provider = null,
@@ -3859,6 +3827,11 @@ public sealed record UpdateSensitiveSettingsRequest(
     UpdateAiSensitiveSettingsRequest? Ai = null,
     UpdateEmailSensitiveSettingsRequest? Email = null,
     UpdateWebhooksSensitiveSettingsRequest? Webhooks = null,
-    UpdateRetentionSensitiveSettingsRequest? Retention = null);
+    UpdateRetentionSensitiveSettingsRequest? Retention = null,
+    UpdateFilesSettingsRequest? Files = null,
+    UpdateRateLimitSettingsRequest? RateLimit = null);
+public sealed record RotateCredentialRequest(
+    Guid? WorkspaceId = null,
+    string? Value = null);
 
 public partial class Program;

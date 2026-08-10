@@ -71,7 +71,7 @@ W10-10, com spec — ver *Paridade de mensageria*.
 | B-049 | Temas light/dark polish | **Done (Wave 5)** — `color-scheme`, segue OS até pin do usuário, transição sutil |
 | B-067 | Auditoria completa de conversas (ADMIN) | **Done (Wave 6)** — `GET /admin/conversations*` + threads; body soft-delete visível; authZ `admin.dashboard`; distinto de `audit_events` (B-042) |
 | B-068 | Cadastro de usuário + diretivas (clareza + fluxo) | **Done (Wave 6)** — invite admin + claim pending no login; glossário Cadastro/Diretiva; sem self-signup |
-| B-069 | Configurações sensíveis só admin | **Done (Wave 6)** — `GET/PUT /admin/settings` mascarado; exige `workspace.admin` (não Auditor); AI/SMTP em env; webhook secret gravável (B-048) |
+| B-069 | Configurações sensíveis só admin | **Done (Wave 6)** + **ADR-020** — `GET/PUT /admin/settings` tipado (AI/SMTP/webhook/retenção/Files/RateLimit); secrets só via `credentials/*/rotate` (AES-GCM); exige `workspace.admin` |
 | B-073 | UI polish com PrimeNG | **Done (Wave 6)** — histórico; emenda ADR-002 da época Accepted; PrimeNG 22 no `/admin`. **Superseded por D-15 / B-104** (sair do PrimeNG) |
 | B-074 | API + Web (+ Worker) no Compose | **Done (Wave 6)** — profile `apps` caminho oficial (`task apps`); healthchecks api/web/worker; OIDC Authority + MetadataAddress; `GET /ready`; ops/README/`.env.example`; `task dev` só DX hot-reload |
 

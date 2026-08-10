@@ -19,11 +19,21 @@ IAiCompletionProvider → NullAiProvider (default, Ai:Enabled=false)
 - Feature flags por tenant
 - Contexto enviado ao modelo **somente** com dados já autorizados ao usuário
 - Sem AI no caminho crítico de envio de mensagem
-- Segredos de API só em variáveis de ambiente / secret store
+- Segredos de API: env/secret store **ou** envelope AES-GCM por workspace no
+  PostgreSQL (ADR-020), com chave mestra só no env; API admin nunca devolve
+  plaintext — só máscara + rotação dedicada
+- `Ai:Enabled` permanece kill switch global de processo (SoT env)
+- `OpenRouter:BaseUrl` permanece no env (sem URL arbitrária na UI)
 - Logs sem prompts completos por padrão (redação)
 - Documentar como adicionar features em `docs/operations/adicionar-feature-ia.md`
 
 OpenRouter é o adapter inicial (múltiplos modelos); outros providers implementam a mesma interface.
+
+### Emenda (ADR-020, 2026-08-10)
+
+A decisão original “só env” é emendada para permitir a API key OpenRouter
+criptografada em `ai.settings` quando `RuntimeSettings:DatabaseOverridesEnabled=true`.
+Infraestrutura (Postgres, OIDC, MinIO) e o kill switch `Ai:Enabled` **não** mudam.
 
 ## Alternativas consideradas
 

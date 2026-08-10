@@ -338,13 +338,13 @@ public interface IObjectStorage
 | `GET /api/v1/channels/{channelId}/attachments/{id}/download` | URL pré-assinada GET; exige membership + `file.download` |
 | `POST /api/v1/workspaces/{workspaceId}/channels/{channelId}/messages/{messageId}/attachments/{attachmentId}/transcribe` | membership + `ai.transcribe`; `{ text, language, provider }` efêmero (não persiste); `503 AiDisabled` se IA off |
 
-Regras: keys prefixadas por tenant (`tenants/{tenantId}/…`); MIME/tamanho via `Files:*`; body da mensagem pode ser vazio se houver `AttachmentIds` prontos no `SendMessage`.
+Regras: keys prefixadas por tenant (`tenants/{tenantId}/…`); MIME/tamanho via resolver efetivo (`Files:*` env como teto + `files.settings` por tenant quando ADR-020 habilitado); body da mensagem pode ser vazio se houver `AttachmentIds` prontos no `SendMessage`.
 
-Limites (config `Files:*`, default entre parênteses):
+Limites (config `Files:*` / override tenant, default entre parênteses):
 
 | Chave | Default | Validação |
 |-------|---------|-----------|
-| `MaxSizeBytes` | `10485760` (10 MiB) | Por arquivo no `initiate` |
+| `MaxSizeBytes` | `10485760` (10 MiB) | Por arquivo no `initiate`; tenant ≤ teto env |
 | `MaxAttachmentsPerMessage` | `10` | Contagem de `attachmentIds` no `SendMessage`; excedente → `400` `{ error: "TooManyAttachments", max }` |
 
 ---
@@ -387,8 +387,12 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 | `GET /api/v1/admin/conversations?workspaceId=&limit=` | Lista canais/DMs do tenant para auditoria (B-067); exige `admin.dashboard`; **não** exige `channel_members`; `limit` 1–200 (default 100) |
 | `GET /api/v1/admin/conversations/{channelId}/messages?after=&limit=` | Histórico admin do canal/DM (root); body **visível** mesmo com soft-delete; inclui `deletedBy` / anexos; exige `admin.dashboard`; canal fora do tenant → 403 |
 | `GET /api/v1/admin/threads/{threadId}/messages?after=&limit=` | Histórico admin de replies da thread; mesma authZ e semântica de body |
-| `GET /api/v1/admin/settings?workspaceId=` | Settings sensíveis mascarados (B-069); exige `workspace.admin` (Auditor com só `admin.dashboard` → 403); `workspaceId` opcional (default: primeiro workspace do actor) |
-| `PUT /api/v1/admin/settings` | Atualiza flags não-secretas; mesma authZ; rejeita body com `ai.apiKey` / `email.smtpPassword` (`SecretsNotWritable`); audit `settings.change` |
+| `GET /api/v1/admin/settings?workspaceId=` | Settings sensíveis mascarados (B-069 / ADR-020); exige `workspace.admin` (Auditor com só `admin.dashboard` → 403); `workspaceId` opcional (default: primeiro workspace do actor) |
+| `PUT /api/v1/admin/settings` | Atualiza flags não-secretas (AI/email/webhooks/retention/files/rateLimit); mesma authZ; rejeita secrets no body (`SecretsNotWritable`); audit `settings.change` |
+| `POST /api/v1/admin/settings/credentials/openrouter/rotate` | Rotaciona API key OpenRouter (envelope AES-GCM em `ai.settings`); body `{ workspaceId?, value }`; resposta `{ configured, mask, keyVersion, rotatedAt }`; `503` se keyring indisponível |
+| `POST /api/v1/admin/settings/credentials/smtp/rotate` | Rotaciona senha SMTP do tenant (envelope em `notifications.email_settings`); mesma forma de resposta |
+| `POST /api/v1/admin/settings/credentials/webhook/rotate` | Rotaciona signing secret do webhook (envelope em `integrations.webhook_endpoints`); mesma forma |
+| `POST /api/v1/admin/settings/encryption/reencrypt` | Regrava envelopes do workspace/tenant para `ActiveKeyVersion`; migra plaintext legado de webhook; audit `settings.encryption.reencrypt` |
 | `GET /api/v1/admin/workspaces/{workspaceId}/export` | Export compliance do workspace (B-046); ZIP `application/zip` com JSON (`manifest`, `workspace`, `members`, `spaces`, `channels`, `threads`, `messages`, `attachments` metadata); corpos soft-deleted incluídos (paridade B-067); **sem** binários MinIO; exige `workspace.admin` (Auditor → 403); audit `workspace.export`; workspace fora do tenant/membership → 403 |
 
 `AuditEventResponse`: `id`, `action`, `entityType`, `entityId`, `actorUserId`, `occurredAt`, `metadataJson`.
@@ -397,7 +401,7 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 
 `AdminConversationMessageResponse`: `id`, `channelId`, `conversationId`, `sequence`, `authorId`, `authorName`, `body` (sempre o valor persistido), `createdAt`, `editedAt`, `deletedAt`, `deletedBy`, `deletedByName`, `threadId`, `replyToMessageId`, `replyCount`, `attachments`.
 
-Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `settings.change`, `workspace.export`, `message.purge`.
+Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `settings.change`, `settings.credential.rotate`, `settings.encryption.reencrypt`, `workspace.export`, `message.purge`.
 
 ### Export de workspace (B-046)
 
@@ -407,7 +411,7 @@ Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send
 - Anexos: metadados apenas (`fileName`, `contentType`, `sizeBytes`, `checksumSha256`, `status`) — sem `storageKey` nem bytes
 - Tenant do actor; nunca aceitar `tenantId` do body
 
-### Settings sensíveis (B-069)
+### Settings sensíveis (B-069 / ADR-020)
 
 `SensitiveSettingsResponse`:
 
@@ -415,26 +419,30 @@ Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send
 |-------|-------|
 | `workspaceId` | Workspace alvo (AI workspace settings) |
 | `ai.processEnabled` / `processSource` | Flag de processo (`Ai:Enabled`) — SoT env; somente leitura |
-| `ai.workspaceEnabled` / `provider` | `ai.settings` do workspace — gravável |
-| `ai.apiKeyConfigured` / `apiKeyMask` | Máscara `••••last4` ou `configured: false`; **nunca** valor em claro |
-| `email.*` | Enabled/host/port/user/from/startTls (override tenant em `notifications.email_settings` ou env); senha só `smtpPasswordConfigured` + `smtpPasswordMask` |
+| `ai.workspaceEnabled` / `provider` | `ai.settings` do workspace — gravável via PUT |
+| `ai.apiKeyConfigured` / `apiKeyMask` / `apiKeyKeyVersion` / `apiKeyRotatedAt` / `apiKeySource` | Máscara `••••last4`; **nunca** valor em claro; rotação via endpoint dedicado |
+| `email.*` | Enabled/host/port/user/from/startTls (override tenant); senha só máscara/versão/fonte |
 | `webhooks.status` | `unconfigured` \| `disabled` \| `active` (B-048) |
-| `webhooks.enabled` / `url` / `urlConfigured` | Endpoint HTTP do tenant; URL gravável |
-| `webhooks.secretConfigured` / `secretMask` | HMAC secret mascarado (`••••last4`); **nunca** em claro |
-| `webhooks.secretsWritable` | `true` — secret pode ser rotacionado via PUT (omitir/vazio = manter) |
+| `webhooks.enabled` / `url` / `urlConfigured` | Endpoint HTTP do tenant; URL gravável via PUT |
+| `webhooks.secretConfigured` / `secretMask` / `secretKeyVersion` / `secretRotatedAt` / `secretSource` | HMAC secret mascarado; rotação via endpoint dedicado |
 | `webhooks.message` | Texto de status para UI admin |
 | `retention.processEnabled` / `processSource` | Kill switch de processo (`MessageRetention:Enabled`) — SoT env; somente leitura |
 | `retention.enabled` / `retentionDays` | Política do tenant em `messaging.message_retention_settings` — gravável |
 | `retention.defaultRetentionDays` | Default operacional (sugerido 90; ADR-018 / D-03) |
 | `retention.message` | Texto de status para UI admin |
+| `files.*` | Limites por tenant (`files.settings`); teto = env/`AttachmentPolicies`; gravável |
+| `rateLimit.sendPerMinute` / `hubPerMinute` | Limites por tenant; efetivo = `min(DB, env)`; gravável |
+| `encryption.activeKeyVersion` / `credentialsUsingActiveKey` / `databaseOverridesEnabled` | Metadata do keyring (sem nomes de variáveis com valor) |
 
 Regras:
 
-- Secrets de OpenRouter / SMTP password **só** via env / secret store (ADR-012)
-- Secret de webhook é a exceção (B-048): gravável via admin API; resposta só máscara
-- Membro comum e Auditor (sem `workspace.admin`) → `403` em GET/PUT
+- Credenciais externas (OpenRouter, SMTP password, webhook HMAC) em envelope AES-GCM no DB quando `RuntimeSettings:DatabaseOverridesEnabled` (ADR-020); chave mestra só no env
+- Fallback env para AI/SMTP enquanto não houver envelope; envelope inválido falha fechado
+- PUT geral **nunca** aceita secrets (`SecretsNotWritable`); usar `POST .../credentials/*/rotate`
+- Membro comum e Auditor (sem `workspace.admin`) → `403` em GET/PUT/rotate/reencrypt
 - Tenant do actor; nunca aceitar `tenantId` do body
 - Retenção (B-047): `retentionDays` entre 1 e 3650; purge hard-delete só com **processo** `MessageRetention:Enabled=true` **e** `retention.enabled=true` no tenant; job no worker; audit `message.purge`
+- Files/RateLimit: admin pode restringir, não ultrapassar teto do env
 
 ### Retenção / purge (B-047)
 
@@ -446,7 +454,7 @@ Regras:
 
 ### Webhooks outbound (B-048)
 
-- Tabela `integrations.webhook_endpoints` (1 endpoint por tenant): `Enabled`, `Url`, `Secret`
+- Tabela `integrations.webhook_endpoints` (1 endpoint por tenant): `Enabled`, `Url`, envelope AES-GCM do signing secret (+ coluna `Secret` legado em dual-read até migration contract)
 - Delivery best-effort no `OutboxProcessor` **após** realtime, apenas `MessageCreated`
 - `POST` do payload JSON do outbox; headers:
   - `X-VibeChat-Event: MessageCreated`
@@ -473,7 +481,7 @@ public interface IEmailSender
 ```
 
 - Implementações: `NullEmailSender` (lab), `SmtpEmailSender` (SMTP genérico; Mailpit em dev — D-10; no-op se efetivamente desligado)
-- Off by default; senha só via env (`EMAIL__*` / `SMTP_*`); host/user/from/enabled podem ter override por tenant (`notifications.email_settings`, B-069)
+- Off by default; host/user/from/enabled override por tenant (`notifications.email_settings`); senha via env **ou** envelope AES-GCM no DB (ADR-020 / B-069)
 - Caso inicial: e-mail ao alterar papel de membro (`MemberRoleChangedEmailEvent` no outbox — fora do hot path de `SendMessage`)
 
 ## AI
@@ -540,7 +548,7 @@ public interface IRateLimiter
 }
 ```
 
-Fase 1: Redis fixed-window (`INCR` + `EXPIRE`). Keys: `t:{tenantId}:rl:send:{userId}`, `t:{tenantId}:rl:hub:{userId}`. Aplicado em `POST .../messages` (429) e hub `JoinChannel`/`SendTyping` (`HubException`). Config: `RateLimit:SendPerMinute`, `RateLimit:HubPerMinute`. Sem Redis configurado: fail-open.
+Fase 1: Redis fixed-window (`INCR` + `EXPIRE`). Keys: `t:{tenantId}:rl:send:{userId}`, `t:{tenantId}:rl:hub:{userId}`. Aplicado em `POST .../messages` (429) e hub `JoinChannel`/`SendTyping`/`Heartbeat`/`SetAway` (`HubException`). Config efetiva: `min(tenant DB, RateLimit:* env)` (ADR-020). Sem Redis configurado: fail-open.
 
 ---
 

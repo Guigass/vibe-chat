@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -73,6 +74,8 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<TenantEmailSettings> TenantEmailSettings => Set<TenantEmailSettings>();
     public DbSet<OutboundWebhookEndpoint> OutboundWebhookEndpoints => Set<OutboundWebhookEndpoint>();
     public DbSet<MessageRetentionSettings> MessageRetentionSettings => Set<MessageRetentionSettings>();
+    public DbSet<TenantFilesSettings> TenantFilesSettings => Set<TenantFilesSettings>();
+    public DbSet<TenantRateLimitSettings> TenantRateLimitSettings => Set<TenantRateLimitSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -298,6 +301,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.Property(x => x.Provider).HasMaxLength(60);
+            MapEncryptedSecret(entity.OwnsOne(x => x.OpenRouterApiKey), "OpenRouterApiKey");
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -318,6 +322,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Host).HasMaxLength(256);
             entity.Property(x => x.Username).HasMaxLength(256);
             entity.Property(x => x.From).HasMaxLength(320);
+            MapEncryptedSecret(entity.OwnsOne(x => x.SmtpPassword), "SmtpPassword");
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -327,7 +332,8 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.HasKey(x => x.TenantId);
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.Property(x => x.Url).HasMaxLength(2048);
-            entity.Property(x => x.Secret).HasMaxLength(512);
+            entity.Property(x => x.Secret).HasMaxLength(512).IsRequired(false);
+            MapEncryptedSecret(entity.OwnsOne(x => x.SigningSecret), "SigningSecret");
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -338,6 +344,37 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
+
+        modelBuilder.Entity<TenantFilesSettings>(entity =>
+        {
+            entity.ToTable("settings", "files");
+            entity.HasKey(x => x.TenantId).HasName("PK_files_settings");
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.AllowedContentTypes).HasColumnType("text[]");
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<TenantRateLimitSettings>(entity =>
+        {
+            entity.ToTable("rate_limit_settings", "building_blocks");
+            entity.HasKey(x => x.TenantId);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+    }
+
+    private static void MapEncryptedSecret<TEntity>(
+        OwnedNavigationBuilder<TEntity, EncryptedSecretEnvelope> owned,
+        string prefix)
+        where TEntity : class
+    {
+        owned.Property(x => x.Ciphertext).HasColumnName($"{prefix}Ciphertext");
+        owned.Property(x => x.Nonce).HasColumnName($"{prefix}Nonce");
+        owned.Property(x => x.Tag).HasColumnName($"{prefix}Tag");
+        owned.Property(x => x.KeyVersion).HasColumnName($"{prefix}KeyVersion");
+        owned.Property(x => x.FormatVersion).HasColumnName($"{prefix}FormatVersion");
+        owned.Property(x => x.MaskSuffix).HasColumnName($"{prefix}MaskSuffix").HasMaxLength(8);
+        owned.Property(x => x.RotatedAt).HasColumnName($"{prefix}RotatedAt");
     }
 
     private static void ConfigureShared(ModelBuilder modelBuilder)
@@ -485,7 +522,7 @@ public sealed class MessageWriter(
     IPermissionChecker permissions,
     IChannelMembershipReader channels,
     IPresenceService presence,
-    IConfiguration configuration) : IMessageWriter
+    FilesSettingsResolver filesSettings) : IMessageWriter
 {
     public async Task<MessageSendResult> SendAsync(SendMessageCommand command, CancellationToken cancellationToken)
     {
@@ -582,9 +619,8 @@ public sealed class MessageWriter(
             throw new ArgumentException("MessageBodyTooLong");
         }
 
-        var maxAttachments = configuration.GetValue(
-            "Files:MaxAttachmentsPerMessage",
-            AttachmentPolicies.DefaultMaxAttachmentsPerMessage);
+        var files = await filesSettings.ResolveAsync(command.TenantId, cancellationToken);
+        var maxAttachments = files.MaxAttachmentsPerMessage;
         if (!AttachmentPolicies.IsWithinAttachmentCount(attachmentIds.Length, maxAttachments))
         {
             throw new ArgumentException("TooManyAttachments");
@@ -918,24 +954,28 @@ public sealed class DashboardQuery(VibeChatDbContext dbContext) : IDashboardQuer
 
 public sealed class SummarizeChannelFeature(
     VibeChatDbContext dbContext,
-    IAiCompletionProvider provider,
-    IClock clock,
-    IConfiguration configuration) : ISummarizeChannelFeature
+    OpenRouterAiProvider openRouter,
+    AiSettingsResolver aiSettings,
+    IClock clock) : ISummarizeChannelFeature
 {
     public async Task<SummarizeChannelResult> SummarizeAsync(TenantId tenantId, WorkspaceId workspaceId, ChannelId channelId, CancellationToken cancellationToken)
     {
-        // D-06 / ADR-012: external AI and summarize stay off unless explicitly enabled.
-        if (!configuration.GetValue("Ai:Enabled", false) || provider is NullAiProvider)
+        var runtime = await aiSettings.ResolveAsync(tenantId, workspaceId, cancellationToken);
+        // D-06 / ADR-012: process kill switch evaluated per call.
+        if (!runtime.ProcessEnabled || !runtime.WorkspaceEnabled)
         {
             return new SummarizeChannelResult(false, "AI is disabled.", "AiDisabled");
         }
 
-        var settings = await dbContext.AiSettings.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.TenantId == tenantId && x.WorkspaceId == workspaceId, cancellationToken);
-
-        if (settings is null || !settings.Enabled)
+        if (string.Equals(runtime.ApiKeySource, "unavailable", StringComparison.Ordinal))
         {
-            return new SummarizeChannelResult(false, "AI is disabled for this workspace.", "AiDisabled");
+            return new SummarizeChannelResult(false, "AI credential unavailable.", "ProviderError");
+        }
+
+        var activeProvider = WorkspaceAiRuntime.SelectProvider(openRouter, runtime);
+        if (activeProvider is null)
+        {
+            return new SummarizeChannelResult(false, "AI is disabled.", "AiDisabled");
         }
 
         var recent = await dbContext.Messages.AsNoTracking()
@@ -947,11 +987,14 @@ public sealed class SummarizeChannelFeature(
             .ToArrayAsync(cancellationToken);
 
         var prompt = string.Join('\n', recent.Select(x => $"#{x.Sequence}: {x.Body}"));
-        var response = await provider.CompleteAsync(
-            new AiCompletionRequest("Summarize recent channel messages without exposing sensitive details.", prompt),
+        var response = await activeProvider.CompleteAsync(
+            new AiCompletionRequest(
+                "Summarize recent channel messages without exposing sensitive details.",
+                prompt,
+                runtime.ApiKey),
             cancellationToken);
 
-        if (string.Equals(provider.Name, "OpenRouter", StringComparison.OrdinalIgnoreCase)
+        if (string.Equals(activeProvider.Name, "OpenRouter", StringComparison.OrdinalIgnoreCase)
             && response.Text.Contains("provider is unavailable", StringComparison.OrdinalIgnoreCase))
         {
             return new SummarizeChannelResult(false, response.Text, "ProviderError");
@@ -962,7 +1005,7 @@ public sealed class SummarizeChannelFeature(
             Id = Guid.NewGuid(),
             TenantId = tenantId,
             WorkspaceId = workspaceId,
-            Provider = provider.Name,
+            Provider = activeProvider.Name,
             PromptTokens = response.PromptTokens,
             CompletionTokens = response.CompletionTokens,
             CostUsd = 0m,
@@ -974,26 +1017,42 @@ public sealed class SummarizeChannelFeature(
     }
 }
 
+internal static class WorkspaceAiRuntime
+{
+    public static IAiCompletionProvider? SelectProvider(OpenRouterAiProvider openRouter, EffectiveAiRuntime runtime)
+    {
+        if (string.Equals(runtime.Provider, "OpenRouter", StringComparison.OrdinalIgnoreCase))
+        {
+            return SecretMasking.IsConfigured(runtime.ApiKey) ? openRouter : null;
+        }
+
+        return new MockAiProvider();
+    }
+}
+
 public sealed class SuggestChannelReplyFeature(
     VibeChatDbContext dbContext,
-    IAiCompletionProvider provider,
-    IClock clock,
-    IConfiguration configuration) : ISuggestChannelReplyFeature
+    OpenRouterAiProvider openRouter,
+    AiSettingsResolver aiSettings,
+    IClock clock) : ISuggestChannelReplyFeature
 {
     public async Task<SuggestChannelReplyResult> SuggestAsync(TenantId tenantId, WorkspaceId workspaceId, ChannelId channelId, CancellationToken cancellationToken)
     {
-        // D-06 / ADR-012: suggest-reply stays off unless explicitly enabled; never on SendMessage hot path.
-        if (!configuration.GetValue("Ai:Enabled", false) || provider is NullAiProvider)
+        var runtime = await aiSettings.ResolveAsync(tenantId, workspaceId, cancellationToken);
+        if (!runtime.ProcessEnabled || !runtime.WorkspaceEnabled)
         {
             return new SuggestChannelReplyResult(false, "AI is disabled.", "AiDisabled");
         }
 
-        var settings = await dbContext.AiSettings.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.TenantId == tenantId && x.WorkspaceId == workspaceId, cancellationToken);
-
-        if (settings is null || !settings.Enabled)
+        if (string.Equals(runtime.ApiKeySource, "unavailable", StringComparison.Ordinal))
         {
-            return new SuggestChannelReplyResult(false, "AI is disabled for this workspace.", "AiDisabled");
+            return new SuggestChannelReplyResult(false, "AI credential unavailable.", "ProviderError");
+        }
+
+        var activeProvider = WorkspaceAiRuntime.SelectProvider(openRouter, runtime);
+        if (activeProvider is null)
+        {
+            return new SuggestChannelReplyResult(false, "AI is disabled.", "AiDisabled");
         }
 
         var recent = await dbContext.Messages.AsNoTracking()
@@ -1005,13 +1064,14 @@ public sealed class SuggestChannelReplyFeature(
             .ToArrayAsync(cancellationToken);
 
         var prompt = string.Join('\n', recent.Select(x => $"#{x.Sequence}: {x.Body}"));
-        var response = await provider.CompleteAsync(
+        var response = await activeProvider.CompleteAsync(
             new AiCompletionRequest(
                 "Suggest one short, professional reply to the recent channel messages without exposing sensitive details.",
-                prompt),
+                prompt,
+                runtime.ApiKey),
             cancellationToken);
 
-        if (string.Equals(provider.Name, "OpenRouter", StringComparison.OrdinalIgnoreCase)
+        if (string.Equals(activeProvider.Name, "OpenRouter", StringComparison.OrdinalIgnoreCase)
             && response.Text.Contains("provider is unavailable", StringComparison.OrdinalIgnoreCase))
         {
             return new SuggestChannelReplyResult(false, response.Text, "ProviderError");
@@ -1022,7 +1082,7 @@ public sealed class SuggestChannelReplyFeature(
             Id = Guid.NewGuid(),
             TenantId = tenantId,
             WorkspaceId = workspaceId,
-            Provider = provider.Name,
+            Provider = activeProvider.Name,
             PromptTokens = response.PromptTokens,
             CompletionTokens = response.CompletionTokens,
             CostUsd = 0m,
@@ -1036,9 +1096,9 @@ public sealed class SuggestChannelReplyFeature(
 
 public sealed class TranscribeAttachmentFeature(
     VibeChatDbContext dbContext,
-    IAiCompletionProvider provider,
-    IClock clock,
-    IConfiguration configuration) : ITranscribeAttachmentFeature
+    OpenRouterAiProvider openRouter,
+    AiSettingsResolver aiSettings,
+    IClock clock) : ITranscribeAttachmentFeature
 {
     public async Task<TranscribeAttachmentResult> TranscribeAsync(
         TenantId tenantId,
@@ -1048,15 +1108,19 @@ public sealed class TranscribeAttachmentFeature(
         Guid attachmentId,
         CancellationToken cancellationToken)
     {
-        if (!configuration.GetValue("Ai:Enabled", false) || provider is NullAiProvider)
+        var runtime = await aiSettings.ResolveAsync(tenantId, workspaceId, cancellationToken);
+        if (!runtime.ProcessEnabled || !runtime.WorkspaceEnabled)
         {
             return new TranscribeAttachmentResult(false, string.Empty, null, null, "AiDisabled");
         }
 
-        var settings = await dbContext.AiSettings.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.TenantId == tenantId && x.WorkspaceId == workspaceId, cancellationToken);
+        if (string.Equals(runtime.ApiKeySource, "unavailable", StringComparison.Ordinal))
+        {
+            return new TranscribeAttachmentResult(false, string.Empty, null, null, "ProviderError");
+        }
 
-        if (settings is null || !settings.Enabled)
+        var activeProvider = WorkspaceAiRuntime.SelectProvider(openRouter, runtime);
+        if (activeProvider is null)
         {
             return new TranscribeAttachmentResult(false, string.Empty, null, null, "AiDisabled");
         }
@@ -1084,13 +1148,14 @@ public sealed class TranscribeAttachmentFeature(
             ? Math.Round(attachment.DurationMs.Value / 1000.0, 1)
             : 0;
         var prompt = $"Audio attachment {attachment.FileName}; duration {durationSec}s; content-type {attachment.ContentType}.";
-        var response = await provider.CompleteAsync(
+        var response = await activeProvider.CompleteAsync(
             new AiCompletionRequest(
                 "Transcribe the described audio attachment without exposing sensitive details. Return plain text only.",
-                prompt),
+                prompt,
+                runtime.ApiKey),
             cancellationToken);
 
-        if (string.Equals(provider.Name, "OpenRouter", StringComparison.OrdinalIgnoreCase)
+        if (string.Equals(activeProvider.Name, "OpenRouter", StringComparison.OrdinalIgnoreCase)
             && response.Text.Contains("provider is unavailable", StringComparison.OrdinalIgnoreCase))
         {
             return new TranscribeAttachmentResult(false, string.Empty, null, null, "ProviderError");
@@ -1101,7 +1166,7 @@ public sealed class TranscribeAttachmentFeature(
             Id = Guid.NewGuid(),
             TenantId = tenantId,
             WorkspaceId = workspaceId,
-            Provider = provider.Name,
+            Provider = activeProvider.Name,
             PromptTokens = response.PromptTokens,
             CompletionTokens = response.CompletionTokens,
             CostUsd = 0m,
@@ -1109,7 +1174,7 @@ public sealed class TranscribeAttachmentFeature(
             CreatedAt = clock.UtcNow
         });
         await dbContext.SaveChangesAsync(cancellationToken);
-        return new TranscribeAttachmentResult(true, response.Text, "und", provider.Name);
+        return new TranscribeAttachmentResult(true, response.Text, "und", activeProvider.Name);
     }
 }
 
@@ -1670,8 +1735,12 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
     }
 }
 
-/// <summary>Resolves effective email/SMTP settings: tenant DB overrides non-secrets; password always from env (B-069).</summary>
-public sealed class EmailSettingsResolver(VibeChatDbContext dbContext, IConfiguration configuration)
+/// <summary>Resolves effective email/SMTP settings (B-069 / ADR-020): DB non-secrets + password from envelope or env.</summary>
+public sealed class EmailSettingsResolver(
+    VibeChatDbContext dbContext,
+    IConfiguration configuration,
+    RuntimeSecretProtector protector,
+    ILogger<EmailSettingsResolver> logger)
 {
     public async Task<bool> IsEnabledAsync(TenantId tenantId, CancellationToken cancellationToken)
     {
@@ -1700,7 +1769,45 @@ public sealed class EmailSettingsResolver(VibeChatDbContext dbContext, IConfigur
 
         if (row is null)
         {
-            return new EffectiveSmtpSettings(envEnabled, envHost, envPort, envUser, envPassword, envFrom, envTls, Source: "env");
+            return new EffectiveSmtpSettings(
+                envEnabled, envHost, envPort, envUser, envPassword, envFrom, envTls,
+                Source: "env",
+                PasswordSource: SecretMasking.IsConfigured(envPassword) ? "env" : "none",
+                PasswordKeyVersion: null,
+                PasswordRotatedAt: null,
+                PasswordMask: SecretMasking.Mask(envPassword));
+        }
+
+        var password = envPassword;
+        var passwordSource = SecretMasking.IsConfigured(envPassword) ? "env" : "none";
+        int? passwordKeyVersion = null;
+        DateTimeOffset? passwordRotatedAt = null;
+        string? passwordMask = SecretMasking.Mask(envPassword);
+
+        if (row.SmtpPassword.IsPresent)
+        {
+            try
+            {
+                password = protector.Unprotect(
+                    row.SmtpPassword,
+                    RuntimeSecretKinds.SmtpPassword,
+                    tenantId,
+                    workspaceId: null,
+                    tenantId.Value.ToString("D"));
+                passwordSource = "database";
+                passwordKeyVersion = row.SmtpPassword.KeyVersion;
+                passwordRotatedAt = row.SmtpPassword.RotatedAt;
+                passwordMask = SecretMasking.MaskFromSuffix(row.SmtpPassword.MaskSuffix);
+            }
+            catch (CryptographicException ex)
+            {
+                logger.LogWarning(ex, "Failed to decrypt SMTP password for tenant {TenantId}", tenantId.Value);
+                password = string.Empty;
+                passwordSource = "unavailable";
+                passwordMask = SecretMasking.MaskFromSuffix(row.SmtpPassword.MaskSuffix);
+                passwordKeyVersion = row.SmtpPassword.KeyVersion;
+                passwordRotatedAt = row.SmtpPassword.RotatedAt;
+            }
         }
 
         return new EffectiveSmtpSettings(
@@ -1708,10 +1815,14 @@ public sealed class EmailSettingsResolver(VibeChatDbContext dbContext, IConfigur
             string.IsNullOrWhiteSpace(row.Host) ? envHost : row.Host,
             row.Port > 0 ? row.Port : envPort,
             string.IsNullOrWhiteSpace(row.Username) ? envUser : row.Username,
-            envPassword,
+            password,
             string.IsNullOrWhiteSpace(row.From) ? envFrom : row.From,
             row.UseStartTls,
-            Source: "tenant");
+            Source: "tenant",
+            PasswordSource: passwordSource,
+            PasswordKeyVersion: passwordKeyVersion,
+            PasswordRotatedAt: passwordRotatedAt,
+            PasswordMask: passwordMask);
     }
 }
 
@@ -1723,7 +1834,11 @@ public sealed record EffectiveSmtpSettings(
     string Password,
     string From,
     bool UseStartTls,
-    string Source);
+    string Source,
+    string PasswordSource = "none",
+    int? PasswordKeyVersion = null,
+    DateTimeOffset? PasswordRotatedAt = null,
+    string? PasswordMask = null);
 
 public sealed class SmtpEmailSender(
     IConfiguration configuration,
@@ -1792,9 +1907,9 @@ public sealed class SmtpEmailSender(
     }
 }
 
-/// <summary>HTTP POST outbound webhooks with HMAC-SHA256 (B-048). Failures are logged, never thrown.</summary>
+/// <summary>HTTP POST outbound webhooks with HMAC-SHA256 (B-048 / ADR-020). Failures are logged, never thrown.</summary>
 public sealed class OutboundWebhookDispatcher(
-    VibeChatDbContext dbContext,
+    WebhookEndpointResolver webhookResolver,
     IHttpClientFactory httpClientFactory,
     ILogger<OutboundWebhookDispatcher> logger) : IOutboundWebhookDispatcher
 {
@@ -1809,12 +1924,11 @@ public sealed class OutboundWebhookDispatcher(
     {
         try
         {
-            var endpoint = await dbContext.OutboundWebhookEndpoints.AsNoTracking()
-                .FirstOrDefaultAsync(x => x.TenantId == tenantId, cancellationToken);
+            var endpoint = await webhookResolver.ResolveAsync(tenantId, cancellationToken);
             if (endpoint is null
                 || !endpoint.Enabled
                 || !SecretMasking.IsConfigured(endpoint.Url)
-                || !SecretMasking.IsConfigured(endpoint.Secret)
+                || !SecretMasking.IsConfigured(endpoint.SigningSecret)
                 || !WebhookDelivery.IsValidHttpsUrl(endpoint.Url))
             {
                 return;
@@ -1829,7 +1943,7 @@ public sealed class OutboundWebhookDispatcher(
             request.Headers.TryAddWithoutValidation(WebhookDelivery.DeliveryIdHeader, deliveryId.ToString("D"));
             request.Headers.TryAddWithoutValidation(
                 WebhookDelivery.SignatureHeader,
-                WebhookDelivery.ComputeSignature(endpoint.Secret.Trim(), payloadJson));
+                WebhookDelivery.ComputeSignature(endpoint.SigningSecret!.Trim(), payloadJson));
 
             using var response = await client.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
@@ -2040,7 +2154,7 @@ public sealed class ChatHub(
     IChannelMembershipReader channels,
     IWorkspaceMembershipReader workspaces,
     IRateLimiter rateLimiter,
-    IConfiguration configuration,
+    RateLimitSettingsResolver rateLimits,
     ITenantContext tenantContext,
     VibeChatDbContext dbContext) : Hub
 {
@@ -2176,10 +2290,10 @@ public sealed class ChatHub(
 
     private async Task EnsureHubRateLimitAsync(TenantId tenantId, UserId userId)
     {
-        var limit = configuration.GetValue("RateLimit:HubPerMinute", RateLimitPolicies.DefaultHubPerMinute);
+        var limits = await rateLimits.ResolveAsync(tenantId, Context.ConnectionAborted);
         var allowed = await rateLimiter.TryAcquireAsync(
             RateLimitKeys.Hub(tenantId, userId),
-            limit,
+            limits.HubPerMinute,
             TimeSpan.FromMinutes(1),
             Context.ConnectionAborted);
         if (!allowed)
@@ -2381,6 +2495,15 @@ public static class DependencyInjection
         services.AddHostedService<OutboxDispatcher>();
         // B-047: processor shared; hosted purge loop is registered only in apps/worker.
         services.Configure<MessageRetentionOptions>(configuration.GetSection(MessageRetentionOptions.SectionName));
+        services.Configure<RuntimeSettingsOptions>(configuration.GetSection(RuntimeSettingsOptions.SectionName));
+        services.AddMemoryCache();
+        services.AddSingleton<RuntimeSecretProtector>();
+        services.AddSingleton<IRuntimeSettingsCacheInvalidator, RuntimeSettingsCacheInvalidator>();
+        services.AddScoped<AiSettingsResolver>();
+        services.AddScoped<FilesSettingsResolver>();
+        services.AddScoped<RateLimitSettingsResolver>();
+        services.AddScoped<WebhookEndpointResolver>();
+        services.AddScoped<RuntimeSettingsAdminService>();
         services.AddSingleton<MessageRetentionPurgeProcessor>();
         services.AddScoped<SeedData>();
 
@@ -2399,21 +2522,17 @@ public static class DependencyInjection
         });
         services.AddScoped<IObjectStorage, MinioObjectStorage>();
 
+        // ADR-020: never capture API key in DefaultRequestHeaders — set per HttpRequestMessage.
         services.AddHttpClient<OpenRouterAiProvider>((sp, client) =>
         {
             var cfg = sp.GetRequiredService<IConfiguration>();
             client.BaseAddress = new Uri(cfg["Ai:OpenRouter:BaseUrl"] ?? "https://openrouter.ai/api/v1");
-            var apiKey = cfg["Ai:OpenRouter:ApiKey"];
-            if (!string.IsNullOrWhiteSpace(apiKey))
-            {
-                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
-            }
         });
 
         services.AddScoped<IAiCompletionProvider>(sp =>
         {
             var cfg = sp.GetRequiredService<IConfiguration>();
-            // D-06: AI off by default; OpenRouter only when Enabled + Provider=OpenRouter + key.
+            // D-06: AI off by default; OpenRouter only when Enabled + Provider=OpenRouter + key (env fallback).
             if (!cfg.GetValue("Ai:Enabled", false))
             {
                 return new NullAiProvider();
@@ -2433,8 +2552,7 @@ public static class DependencyInjection
             return new MockAiProvider();
         });
 
-        // D-10 / B-043 / B-069: email off by default; runtime tenant overrides via EmailSettingsResolver.
-        // Always register SmtpEmailSender — it no-ops when effectively disabled (env or tenant).
+        // D-10 / B-043 / B-069 / ADR-020: email off by default; runtime tenant overrides via EmailSettingsResolver.
         services.AddScoped<EmailSettingsResolver>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
 
@@ -2442,6 +2560,11 @@ public static class DependencyInjection
         services.AddHttpClient(OutboundWebhookDispatcher.HttpClientName, client =>
         {
             client.Timeout = TimeSpan.FromSeconds(5);
+            client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "VibeChat-Webhooks/1.0");
+        })
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            AllowAutoRedirect = false
         });
         services.AddScoped<IOutboundWebhookDispatcher, OutboundWebhookDispatcher>();
 

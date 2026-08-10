@@ -73,7 +73,9 @@ public sealed class ArchitectureRulesTests
             "ai.settings",
             "notifications.preferences",
             "notifications.email_settings",
-            "integrations.webhook_endpoints"
+            "integrations.webhook_endpoints",
+            "files.settings",
+            "building_blocks.rate_limit_settings"
         ];
 
         foreach (var table in tenantTables)

@@ -280,4 +280,15 @@ public static class RateLimitPolicies
 {
     public const int DefaultSendPerMinute = 60;
     public const int DefaultHubPerMinute = 120;
+    public const int MinPerMinute = 1;
+    public const int MaxPerMinute = 10_000;
+}
+
+/// <summary>Tenant-level rate limits (ADR-020). Effective = min(DB, env ceiling).</summary>
+public sealed class TenantRateLimitSettings
+{
+    public TenantId TenantId { get; set; }
+    public int SendPerMinute { get; set; } = RateLimitPolicies.DefaultSendPerMinute;
+    public int HubPerMinute { get; set; } = RateLimitPolicies.DefaultHubPerMinute;
+    public DateTimeOffset UpdatedAt { get; set; }
 }

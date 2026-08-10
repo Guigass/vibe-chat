@@ -1,4 +1,6 @@
+using System.Security.Cryptography;
 using FluentAssertions;
+using Microsoft.Extensions.Options;
 using VibeChat.Administration;
 using VibeChat.AI;
 using VibeChat.BuildingBlocks;
@@ -372,5 +374,120 @@ public sealed class BackendUnitTests
     {
         var json = """{"choices":[{"message":{"role":"assistant","content":"Hello summary"}}]}""";
         OpenRouterAiProvider.ExtractChatCompletionText(json).Should().Be("Hello summary");
+    }
+
+    [Fact]
+    public void Runtime_secret_protector_round_trips_and_uses_fresh_nonce()
+    {
+        var protector = CreateTestProtector();
+        var tenantId = TenantId.New();
+        var workspaceId = WorkspaceId.New();
+        var now = DateTimeOffset.UtcNow;
+
+        var first = protector.Protect(
+            "sk-test-secret-key99",
+            RuntimeSecretKinds.OpenRouterApiKey,
+            tenantId,
+            workspaceId,
+            workspaceId.Value.ToString("D"),
+            now);
+        var second = protector.Protect(
+            "sk-test-secret-key99",
+            RuntimeSecretKinds.OpenRouterApiKey,
+            tenantId,
+            workspaceId,
+            workspaceId.Value.ToString("D"),
+            now);
+
+        first.Nonce.Should().NotBeEquivalentTo(second.Nonce);
+        first.Ciphertext.Should().NotBeEquivalentTo(second.Ciphertext);
+        first.MaskSuffix.Should().Be("ey99");
+        first.KeyVersion.Should().Be(1);
+
+        var plain = protector.Unprotect(
+            first,
+            RuntimeSecretKinds.OpenRouterApiKey,
+            tenantId,
+            workspaceId,
+            workspaceId.Value.ToString("D"));
+        plain.Should().Be("sk-test-secret-key99");
+    }
+
+    [Fact]
+    public void Runtime_secret_protector_fails_closed_on_aad_or_missing_key()
+    {
+        var protector = CreateTestProtector();
+        var tenantId = TenantId.New();
+        var workspaceId = WorkspaceId.New();
+        var envelope = protector.Protect(
+            "smtp-test-password42",
+            RuntimeSecretKinds.SmtpPassword,
+            tenantId,
+            workspaceId: null,
+            tenantId.Value.ToString("D"),
+            DateTimeOffset.UtcNow);
+
+        var actWrongAad = () => protector.Unprotect(
+            envelope,
+            RuntimeSecretKinds.OpenRouterApiKey,
+            tenantId,
+            workspaceId: null,
+            tenantId.Value.ToString("D"));
+        actWrongAad.Should().Throw<CryptographicException>();
+
+        var tampered = new EncryptedSecretEnvelope
+        {
+            Ciphertext = envelope.Ciphertext!.ToArray(),
+            Nonce = envelope.Nonce!.ToArray(),
+            Tag = envelope.Tag!.ToArray(),
+            KeyVersion = envelope.KeyVersion,
+            FormatVersion = envelope.FormatVersion,
+            MaskSuffix = envelope.MaskSuffix,
+            RotatedAt = envelope.RotatedAt
+        };
+        tampered.Ciphertext![0] ^= 0xFF;
+        var actTamper = () => protector.Unprotect(
+            tampered,
+            RuntimeSecretKinds.SmtpPassword,
+            tenantId,
+            workspaceId: null,
+            tenantId.Value.ToString("D"));
+        actTamper.Should().Throw<CryptographicException>();
+
+        var missingKey = new RuntimeSecretProtector(Options.Create(new RuntimeSettingsOptions
+        {
+            DatabaseOverridesEnabled = true,
+            Encryption = new RuntimeEncryptionOptions
+            {
+                ActiveKeyVersion = 9,
+                Keys = new Dictionary<string, string>(StringComparer.Ordinal)
+            }
+        }));
+        missingKey.IsEncryptionAvailable.Should().BeFalse();
+        var actMissing = () => missingKey.Protect(
+            "webhook-signing-secret-99",
+            RuntimeSecretKinds.WebhookSigningSecret,
+            tenantId,
+            workspaceId: null,
+            tenantId.Value.ToString("D"),
+            DateTimeOffset.UtcNow);
+        actMissing.Should().Throw<CryptographicException>();
+    }
+
+    private static RuntimeSecretProtector CreateTestProtector(int activeVersion = 1)
+    {
+        var key = Convert.ToBase64String(new byte[32]);
+        return new RuntimeSecretProtector(Options.Create(new RuntimeSettingsOptions
+        {
+            DatabaseOverridesEnabled = true,
+            Encryption = new RuntimeEncryptionOptions
+            {
+                ActiveKeyVersion = activeVersion,
+                Keys = new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    [activeVersion.ToString()] = key
+                }
+            }
+        }));
     }
 }

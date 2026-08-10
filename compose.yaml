@@ -380,6 +380,9 @@ services:
       Email__Smtp__Password: ${EMAIL__Smtp__Password:-}
       Email__Smtp__From: ${EMAIL__Smtp__From:-noreply@vibechat.local}
       Email__Smtp__UseStartTls: ${EMAIL__Smtp__UseStartTls:-false}
+      RuntimeSettings__DatabaseOverridesEnabled: ${RuntimeSettings__DatabaseOverridesEnabled:-false}
+      RuntimeSettings__Encryption__ActiveKeyVersion: ${RuntimeSettings__Encryption__ActiveKeyVersion:-1}
+      RuntimeSettings__Encryption__Keys__1: ${RuntimeSettings__Encryption__Keys__1:-}
       Seed__Enabled: ${SEED_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     ports:
@@ -451,6 +454,9 @@ services:
       MessageRetention__DefaultRetentionDays: ${MessageRetention__DefaultRetentionDays:-90}
       MessageRetention__BatchSize: ${MessageRetention__BatchSize:-500}
       MessageRetention__IntervalMinutes: ${MessageRetention__IntervalMinutes:-60}
+      RuntimeSettings__DatabaseOverridesEnabled: ${RuntimeSettings__DatabaseOverridesEnabled:-false}
+      RuntimeSettings__Encryption__ActiveKeyVersion: ${RuntimeSettings__Encryption__ActiveKeyVersion:-1}
+      RuntimeSettings__Encryption__Keys__1: ${RuntimeSettings__Encryption__Keys__1:-}
     networks:
       - vibechat-net
       - vibechat-observability

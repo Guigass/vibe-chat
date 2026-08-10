@@ -49,6 +49,20 @@ public interface IObjectStorage
     Task<ObjectStat?> StatObjectAsync(string storageKey, CancellationToken cancellationToken);
 }
 
+/// <summary>Tenant-level file/attachment limits (ADR-020). Env values act as security ceiling.</summary>
+public sealed class TenantFilesSettings
+{
+    public TenantId TenantId { get; set; }
+    public long MaxSizeBytes { get; set; } = AttachmentPolicies.DefaultMaxSizeBytes;
+    public int MaxAttachmentsPerMessage { get; set; } = AttachmentPolicies.DefaultMaxAttachmentsPerMessage;
+    public int PresignUploadTtlSeconds { get; set; } = AttachmentPolicies.DefaultUploadTtlSeconds;
+    public int PresignDownloadTtlSeconds { get; set; } = AttachmentPolicies.DefaultDownloadTtlSeconds;
+    public string[] AllowedContentTypes { get; set; } = AttachmentPolicies.DefaultAllowedContentTypes.ToArray();
+    public long AudioMaxSizeBytes { get; set; } = AttachmentPolicies.DefaultAudioMaxSizeBytes;
+    public int AudioMaxDurationMs { get; set; } = AttachmentPolicies.DefaultAudioMaxDurationMs;
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
 public static class AttachmentPolicies
 {
     public const long DefaultMaxSizeBytes = 10 * 1024 * 1024;

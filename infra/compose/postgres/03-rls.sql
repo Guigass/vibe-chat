@@ -79,6 +79,10 @@ ALTER TABLE IF EXISTS notifications.email_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.email_settings FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS integrations.webhook_endpoints ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS integrations.webhook_endpoints FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS files.settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS files.settings FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS building_blocks.rate_limit_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS building_blocks.rate_limit_settings FORCE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
 -- Policies: USING + WITH CHECK (writes require tenant context)
@@ -244,6 +248,16 @@ CREATE POLICY tenant_isolation_email_settings ON notifications.email_settings
 
 DROP POLICY IF EXISTS tenant_isolation_webhook_endpoints ON integrations.webhook_endpoints;
 CREATE POLICY tenant_isolation_webhook_endpoints ON integrations.webhook_endpoints
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_files_settings ON files.settings;
+CREATE POLICY tenant_isolation_files_settings ON files.settings
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_rate_limit_settings ON building_blocks.rate_limit_settings;
+CREATE POLICY tenant_isolation_rate_limit_settings ON building_blocks.rate_limit_settings
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

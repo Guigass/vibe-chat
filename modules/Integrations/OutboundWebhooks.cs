@@ -5,7 +5,8 @@ using VibeChat.SharedKernel;
 namespace VibeChat.Integrations;
 
 /// <summary>
-/// Tenant outbound webhook endpoint (B-048). Signing secret is stored for HMAC delivery;
+/// Tenant outbound webhook endpoint (B-048 / ADR-020). Signing secret prefers AES-GCM envelope;
+/// legacy plaintext <see cref="Secret"/> remains for dual-read until contract migration.
 /// API responses never return the clear value (masked via <see cref="SecretMasking"/>).
 /// </summary>
 public sealed class OutboundWebhookEndpoint
@@ -13,7 +14,11 @@ public sealed class OutboundWebhookEndpoint
     public TenantId TenantId { get; set; }
     public bool Enabled { get; set; }
     public string Url { get; set; } = string.Empty;
-    public string Secret { get; set; } = string.Empty;
+
+    /// <summary>Legacy plaintext secret — nullable during expand; cleared after envelope migration.</summary>
+    public string? Secret { get; set; }
+
+    public EncryptedSecretEnvelope SigningSecret { get; set; } = new();
     public DateTimeOffset UpdatedAt { get; set; }
 }
 

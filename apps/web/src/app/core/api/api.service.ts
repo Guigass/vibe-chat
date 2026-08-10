@@ -14,6 +14,9 @@ import {
   MessageAttachment,
   PresenceStatus,
   ReactionSummary,
+  CredentialRotateResult,
+  ReencryptSettingsResult,
+  RotateCredentialInput,
   SearchMessagesResult,
   SensitiveSettings,
   Space,
@@ -688,6 +691,34 @@ export class ApiService {
     return this.request<SensitiveSettings>('/api/v1/admin/settings', {
       method: 'PUT',
       body: JSON.stringify(input),
+    });
+  }
+
+  async rotateAdminOpenRouterCredential(input: RotateCredentialInput): Promise<CredentialRotateResult> {
+    return this.request<CredentialRotateResult>('/api/v1/admin/settings/credentials/openrouter/rotate', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async rotateAdminSmtpCredential(input: RotateCredentialInput): Promise<CredentialRotateResult> {
+    return this.request<CredentialRotateResult>('/api/v1/admin/settings/credentials/smtp/rotate', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async rotateAdminWebhookCredential(input: RotateCredentialInput): Promise<CredentialRotateResult> {
+    return this.request<CredentialRotateResult>('/api/v1/admin/settings/credentials/webhook/rotate', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async reencryptAdminSettings(workspaceId?: string): Promise<ReencryptSettingsResult> {
+    return this.request<ReencryptSettingsResult>('/api/v1/admin/settings/encryption/reencrypt', {
+      method: 'POST',
+      body: JSON.stringify({ workspaceId }),
     });
   }
 

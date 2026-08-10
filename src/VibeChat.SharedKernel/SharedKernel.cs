@@ -113,6 +113,65 @@ public static class SecretMasking
         var trimmed = value!.Trim();
         return trimmed.Length <= 4 ? "••••" : $"••••{trimmed[^4..]}";
     }
+
+    public static string Suffix(string? value)
+    {
+        if (!IsConfigured(value))
+        {
+            return string.Empty;
+        }
+
+        var trimmed = value!.Trim();
+        return trimmed.Length <= 4 ? trimmed : trimmed[^4..];
+    }
+
+    public static string? MaskFromSuffix(string? suffix) =>
+        string.IsNullOrWhiteSpace(suffix) ? null : $"••••{suffix.Trim()}";
+}
+
+/// <summary>AES-GCM envelope for external credentials at rest (ADR-020). Never log these bytes.</summary>
+public sealed class EncryptedSecretEnvelope
+{
+    public const short CurrentFormatVersion = 1;
+    public const int NonceLength = 12;
+    public const int TagLength = 16;
+
+    public byte[]? Ciphertext { get; set; }
+    public byte[]? Nonce { get; set; }
+    public byte[]? Tag { get; set; }
+    public int? KeyVersion { get; set; }
+    public short? FormatVersion { get; set; }
+    public string? MaskSuffix { get; set; }
+    public DateTimeOffset? RotatedAt { get; set; }
+
+    public bool IsPresent =>
+        Ciphertext is { Length: > 0 }
+        && Nonce is { Length: NonceLength }
+        && Tag is { Length: TagLength }
+        && KeyVersion is > 0
+        && FormatVersion is > 0;
+
+    public void Clear()
+    {
+        Ciphertext = null;
+        Nonce = null;
+        Tag = null;
+        KeyVersion = null;
+        FormatVersion = null;
+        MaskSuffix = null;
+        RotatedAt = null;
+    }
+
+    public void CopyFrom(EncryptedSecretEnvelope source)
+    {
+        Ciphertext = source.Ciphertext is null ? null : source.Ciphertext.ToArray();
+        Nonce = source.Nonce is null ? null : source.Nonce.ToArray();
+        Tag = source.Tag is null ? null : source.Tag.ToArray();
+        KeyVersion = source.KeyVersion;
+        FormatVersion = source.FormatVersion;
+        MaskSuffix = source.MaskSuffix;
+        RotatedAt = source.RotatedAt;
+    }
 }
 
 public static class Permissions
