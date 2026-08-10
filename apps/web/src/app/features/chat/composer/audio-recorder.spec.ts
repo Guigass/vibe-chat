@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import {
   AUDIO_MAX_DURATION_MS,
   downsampleWaveform,
@@ -76,6 +76,121 @@ describe('AudioRecorderService.buildRecordedAudio', () => {
       }
     ).onRecorderStop('audio/webm');
 
+    expect(service.phase()).toBe('idle');
+    expect(service.previewBlob()).toBeNull();
+  });
+});
+
+describe('AudioRecorderService MediaRecorder lifecycle', () => {
+  class FakeMediaRecorder {
+    state: 'inactive' | 'recording' | 'paused' = 'inactive';
+    ondataavailable: ((event: { data: Blob }) => void) | null = null;
+    onstop: (() => void) | null = null;
+
+    constructor(
+      _stream: MediaStream,
+      _options?: MediaRecorderOptions,
+    ) {}
+
+    start(_timeslice?: number): void {
+      this.state = 'recording';
+      queueMicrotask(() => {
+        this.ondataavailable?.({
+          data: new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'audio/webm' }),
+        });
+      });
+    }
+
+    stop(): void {
+      // Real MediaRecorder stays "recording" until onstop runs.
+      queueMicrotask(() => {
+        this.state = 'inactive';
+        this.ondataavailable?.({
+          data: new Blob([new Uint8Array([5, 6])], { type: 'audio/webm' }),
+        });
+        this.onstop?.();
+      });
+    }
+  }
+
+  beforeEach(() => {
+    vi.stubGlobal('isSecureContext', true);
+    vi.stubGlobal('MediaRecorder', Object.assign(FakeMediaRecorder, {
+      isTypeSupported: (mime: string) => mime.startsWith('audio/webm'),
+    }));
+
+    const track = { stop: vi.fn() };
+    vi.stubGlobal('navigator', {
+      mediaDevices: {
+        getUserMedia: vi.fn().mockResolvedValue({
+          getTracks: () => [track],
+        }),
+      },
+    });
+
+    vi.stubGlobal(
+      'AudioContext',
+      class {
+        state = 'running';
+        createMediaStreamSource() {
+          return { connect: vi.fn() };
+        }
+        createAnalyser() {
+          return {
+            fftSize: 256,
+            getByteTimeDomainData: (data: Uint8Array) => {
+              data.fill(128);
+            },
+          };
+        }
+        close() {
+          this.state = 'closed';
+          return Promise.resolve();
+        }
+      },
+    );
+
+    vi.stubGlobal('URL', {
+      createObjectURL: vi.fn(() => 'blob:audio-preview'),
+      revokeObjectURL: vi.fn(),
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('stop() resolves with recorded audio from onstop (send-while-recording path)', async () => {
+    const service = new AudioRecorderService();
+    const startError = await service.start();
+    expect(startError).toBeNull();
+    expect(service.phase()).toBe('recording');
+
+    // Let the initial dataavailable land.
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const recorded = await service.stop();
+
+    expect(recorded).not.toBeNull();
+    expect(recorded!.blob.size).toBeGreaterThan(0);
+    expect(recorded!.mimeType).toBe('audio/webm');
+    expect(service.phase()).toBe('preview');
+    expect(service.previewUrl()).toBe('blob:audio-preview');
+  });
+
+  it('discard during recording settles stop waiters with null and returns to idle', async () => {
+    const service = new AudioRecorderService();
+    await service.start();
+    await Promise.resolve();
+
+    const stopPromise = service.stop();
+    // Concurrent discard while stop is waiting on onstop.
+    service.discard();
+    const recorded = await stopPromise;
+
+    expect(recorded).toBeNull();
     expect(service.phase()).toBe('idle');
     expect(service.previewBlob()).toBeNull();
   });

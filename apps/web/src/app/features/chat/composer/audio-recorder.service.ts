@@ -33,6 +33,7 @@ export class AudioRecorderService {
   private chunks: Blob[] = [];
   private stopTimer: number | null = null;
   private discardOnStop = false;
+  private stopWaiters: Array<(value: RecordedAudio | null) => void> = [];
 
   readonly phase = signal<AudioRecorderPhase>('idle');
   readonly elapsedMs = signal(0);
@@ -99,28 +100,53 @@ export class AudioRecorderService {
       const elapsed = Date.now() - this.startedAt;
       this.elapsedMs.set(elapsed);
       if (elapsed >= AUDIO_MAX_DURATION_MS) {
-        this.stop();
+        void this.stop();
       }
     }, 100);
 
-    this.stopTimer = window.setTimeout(() => this.stop(), AUDIO_MAX_DURATION_MS);
+    this.stopTimer = window.setTimeout(() => void this.stop(), AUDIO_MAX_DURATION_MS);
     return null;
   }
 
-  stop(): void {
-    const recorder = this.mediaRecorder;
-    if (!recorder) return;
-    if (recorder.state === 'recording' || recorder.state === 'paused') {
-      recorder.stop();
+  /**
+   * Stops an in-progress recording and resolves with the captured audio when
+   * MediaRecorder.onstop finishes. Already in preview returns the current take.
+   */
+  stop(): Promise<RecordedAudio | null> {
+    if (this.phase() === 'preview') {
+      return this.buildRecordedAudio();
     }
+
+    const recorder = this.mediaRecorder;
+    if (!recorder) {
+      return Promise.resolve(null);
+    }
+
+    if (recorder.state !== 'recording' && recorder.state !== 'paused') {
+      // Stop already in flight — join waiters instead of calling stop() again.
+      if (this.stopWaiters.length > 0) {
+        return new Promise<RecordedAudio | null>((resolve) => {
+          this.stopWaiters.push(resolve);
+        });
+      }
+      return Promise.resolve(null);
+    }
+
+    return new Promise<RecordedAudio | null>((resolve) => {
+      const shouldStop = this.stopWaiters.length === 0;
+      this.stopWaiters.push(resolve);
+      if (shouldStop) {
+        recorder.stop();
+      }
+    });
   }
 
   discard(): void {
-    if (this.mediaRecorder?.state === 'recording') {
+    if (this.mediaRecorder?.state === 'recording' || this.mediaRecorder?.state === 'paused') {
       // Keep discardOnStop until onstop; resetInternal would clear the flag too early
       // and let onstop build an empty preview from already-cleared chunks.
       this.discardOnStop = true;
-      this.stop();
+      void this.stop();
       return;
     }
     this.resetInternal(true);
@@ -160,34 +186,63 @@ export class AudioRecorderService {
     this.resetInternal(true);
   }
 
+  private settleStopWaiters(value: RecordedAudio | null): void {
+    const waiters = this.stopWaiters;
+    this.stopWaiters = [];
+    for (const resolve of waiters) {
+      resolve(value);
+    }
+  }
+
   private async onRecorderStop(mimeType: string): Promise<void> {
     this.clearTimers();
+
+    // Snapshot chunks before any teardown can clear them.
+    const chunks = this.chunks.slice();
+    const startedAt = this.startedAt;
+    const waveformSamples = this.waveformSamples.slice();
+
     if (this.discardOnStop) {
       this.discardOnStop = false;
       if (this.phase() !== 'idle') {
         this.resetInternal(true);
       }
+      this.settleStopWaiters(null);
       return;
     }
 
     // Channel switch / reset already left recording; do not resurrect a preview.
     if (this.phase() !== 'recording') {
+      this.settleStopWaiters(null);
       return;
     }
 
-    const blob = new Blob(this.chunks, { type: mimeType });
+    const blob = new Blob(chunks, { type: mimeType });
     if (blob.size > AUDIO_MAX_SIZE_BYTES) {
       this.errorMessage.set('Áudio excede 10 MB.');
       this.resetInternal(true);
+      this.settleStopWaiters(null);
+      return;
+    }
+
+    if (blob.size <= 0) {
+      this.errorMessage.set('Áudio inválido ou vazio. Grave novamente.');
+      this.resetInternal(true);
+      this.settleStopWaiters(null);
       return;
     }
 
     const url = URL.createObjectURL(blob);
     this.previewBlob.set(blob);
     this.previewUrl.set(url);
-    this.elapsedMs.set(Date.now() - this.startedAt);
+    const durationMs = Math.max(1, Date.now() - startedAt);
+    this.elapsedMs.set(durationMs);
+    this.waveformSamples = waveformSamples;
     this.phase.set('preview');
     await this.teardownStream();
+
+    const recorded = await this.buildRecordedAudio();
+    this.settleStopWaiters(recorded);
   }
 
   private resetInternal(revokePreview: boolean): void {
@@ -203,6 +258,7 @@ export class AudioRecorderService {
     this.elapsedMs.set(0);
     this.errorMessage.set(null);
     this.phase.set('idle');
+    this.settleStopWaiters(null);
     void this.teardownStream();
   }
 

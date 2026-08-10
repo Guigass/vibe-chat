@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { Button, Textarea } from '../../../shared/ui';
 import {
   applyMarkdownWrap,
@@ -525,12 +525,16 @@ export class Composer {
     effect(() => {
       // Depend only on the id signal. Reading `activeChannel()` would re-run on every
       // channels list refresh (unread/presence) and abort an in-progress mic recording.
+      // Side effects must be untracked: reset() reads previewUrl and would otherwise
+      // re-run this effect as soon as onstop builds a preview (BUG-004).
       this.channels.activeChannelId();
-      this.attachments.clear();
-      this.audioRecorder.reset();
-      this.validationError.set(null);
-      this.messages.clearReplyTarget();
-      this.closeMentionMenu();
+      untracked(() => {
+        this.attachments.clear();
+        this.audioRecorder.reset();
+        this.validationError.set(null);
+        this.messages.clearReplyTarget();
+        this.closeMentionMenu();
+      });
     });
 
     effect(() => {
@@ -577,7 +581,7 @@ export class Composer {
   }
 
   stopRecording(): void {
-    this.audioRecorder.stop();
+    void this.audioRecorder.stop();
   }
 
   discardRecording(): void {
@@ -613,22 +617,6 @@ export class Composer {
     this.validationError.set('Não foi possível enviar o áudio. Tente novamente.');
   }
 
-  /** Stop an in-progress take and wait until preview (or idle) is ready. */
-  private async waitForRecordingPreview(timeoutMs = 5_000): Promise<boolean> {
-    if (this.audioRecorder.phase() === 'preview') return true;
-    if (this.audioRecorder.phase() !== 'recording') return false;
-
-    this.audioRecorder.stop();
-    const deadline = Date.now() + timeoutMs;
-    while (Date.now() < deadline) {
-      const phase = this.audioRecorder.phase();
-      if (phase === 'preview') return true;
-      if (phase === 'idle') return false;
-      await new Promise((resolve) => setTimeout(resolve, 40));
-    }
-    return this.audioRecorder.phase() === 'preview';
-  }
-
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
     if (this.submitting() || this.sendingAudio()) return;
@@ -638,8 +626,8 @@ export class Composer {
       this.sendingAudio.set(true);
       try {
         if (phase === 'recording') {
-          const ready = await this.waitForRecordingPreview();
-          if (!ready) {
+          const recorded = await this.audioRecorder.stop();
+          if (!recorded) {
             this.validationError.set(
               this.audioRecorder.errorMessage() ?? 'Não foi possível finalizar a gravação.',
             );

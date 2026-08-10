@@ -27,7 +27,7 @@ Regras do registro:
 
 | ID      | Área             | Achado                                                                | Severidade | Status                      |
 | ------- | ---------------- | --------------------------------------------------------------------- | ---------- | --------------------------- |
-| BUG-002 | Sidebar / unread | Badges de novas mensagens não limpam de forma persistente após reload | Alta       | Aberto — fecha em **B-094** |
+| BUG-002 | Sidebar / unread | Badges de novas mensagens não limpam de forma persistente após reload | Média      | Aberto — alívio aplicado; fecha em **B-094** |
 | BUG-006 | Realtime         | Conexão em tempo real caindo com frequência                           | Alta       | Aberto — safety lane        |
 | BUG-008 | Presence         | Minimizar a janela marca ausente na hora                              | Média      | Aberto                      |
 
@@ -59,14 +59,17 @@ Regras do registro:
 
 ### BUG-002 — Unread / notificações após reload
 
-- Status: **Aberto** — fecha em **B-094**
+- Status: **Aberto** — alívio safety lane aplicado; fecha em **B-094**
   ([spec](specs/B-094-recibos-de-leitura.md)).
+- Severidade: **Média** (sintoma F5 do caminho principal mitigado; escopo
+  completo de recibos/DM/mark-unread permanece em B-094).
 - Observado em: sidebar com badges após F5 / novo load; probe Playwright
   2026-08-10 em `localhost:4200` (badges presentes pós-login).
 - Hipótese: `ApiService.upsertReadCursor` existe e **não é chamado**;
   `selectChannel` zera badge só em memória; `refreshUnreads` reidrata contagens
   do servidor com `lastReadSeq` antigo.
-- Arquivos: `apps/web/src/app/core/services/channel.store.ts`,
+- Arquivos: `apps/web/src/app/core/services/message.store.ts`,
+  `apps/web/src/app/core/services/channel.store.ts`,
   `apps/web/src/app/core/api/api.service.ts`, endpoints `read-cursor` /
   `unread-count` na API.
 - Resultado esperado: abrir/ler canal persiste cursor; F5 e multi-device
@@ -75,9 +78,11 @@ Regras do registro:
 - Owner automático: Messaging (C) + Frontend (D).
 - Critério de resolução: B-094 Done + este finding `Done` no mesmo PR (ou PR
   seguinte de docs se o merge de B-094 já fechou o sintoma).
-- Próxima ação: quando W9-7 / B-094 for elegível, implementar a spec; se safety
-  lane exigir alívio antes e couber no budget, fix mínimo do cursor no caminho
-  principal sem substituir B-094.
+- Alívio (2026-08-10): `MessageStore.loadChannel` e `ingestRemote` (canal ativo)
+  chamam `upsertReadCursor`; PUT monotônico com `Math.Max` na API; regressão
+  `message.store.read-cursor.spec.ts`. Não substitui B-094 (debounce de scroll,
+  DM “visto”, mark-unread, privacy, endpoint agregado).
+- Próxima ação: quando W9-7 / B-094 for elegível, implementar a spec.
 
 ### BUG-003 — Upload de arquivo com erro
 
@@ -104,28 +109,31 @@ Regras do registro:
 
 ### BUG-004 — Áudio do microfone não envia
 
-- Status: **Done**
-- Observado em: relato de produto; feature B-080 entregue no código; depende do
-  mesmo path MinIO que BUG-003.
-- Hipótese: falha em `getUserMedia` / contexto inseguro / MIME do `MediaRecorder`,
-  ou upload do blob de áudio via `uploadRecordedAudio` (mesmo presign MinIO).
-  Picker de arquivo rejeita áudio pela allowlist — só o fluxo Mic é válido.
-- Arquivos: `apps/web/src/app/features/chat/composer/audio-recorder.ts`,
-  `audio-recorder.service.ts`, `composer.ts` (`sendRecording`),
-  `attachment-queue.service.ts`.
-- Resultado esperado: gravar → enviar cria mensagem com anexo `Audio` e
-  waveform/metadados conforme B-080.
+- Status: **Done** (reaberto e corrigido de novo em 2026-08-10)
+- Observado em: relato de produto + repro ao vivo em `localhost:4200` (Compose
+  `apps`), 2026-08-10 — grava, clica **Enviar áudio** (ou Parar) e cai em
+  “Não foi possível finalizar a gravação.” / sem prévia.
+- Hipótese (confirmada): o `effect` de troca de canal no `Composer` chama
+  `audioRecorder.reset()`, e `reset()` lê o signal `previewUrl`. Quando
+  `onstop` monta a prévia, o effect re-dispara e zera a gravação. O hand-off
+  por polling de `phase()` em `waitForRecordingPreview` perde a corrida e
+  reporta falha. Fixes parciais anteriores (MinIO, `activeChannelId`) não
+  cobriam esse caminho.
+- Arquivos: `apps/web/src/app/features/chat/composer/composer.ts`,
+  `audio-recorder.service.ts`, specs `composer.spec.ts` /
+  `audio-recorder.spec.ts`.
+- Resultado esperado: gravar → Parar mostra prévia estável; gravar → Enviar
+  áudio (sem Parar) finaliza, faz upload e cria mensagem `Audio`.
 - Risk class: R2.
 - Owner automático: Frontend (D) + Files (C).
-- Critério de resolução: caminho Mic → mensagem persistida com teste de
-  regressão; erros de permissão/MIME visíveis ao usuário.
-- Resolução: path MinIO herdado de BUG-003; `normalizeAudioContentType` no
-  initiate/File; erros explícitos em blob inválido e falha de `messages.send`;
-  `discard()` não zera `discardOnStop` antes do `onstop`; clear da fila após
-  envio ok; regressão Vitest (`audio-recorder.spec`, `attachment-queue.audio.spec`).
-  Follow-up (2026-08-10): composer `effect` lia `activeChannel()` e dava
-  `reset()` a cada refresh de unread — gravação começava mas Parar/Enviar
-  sumiam; passou a depender só de `activeChannelId`.
+- Critério de resolução: `stop()` resolve `Promise<RecordedAudio|null>` no
+  `onstop`; effect de canal usa `untracked` nos side-effects; regressão
+  Vitest do ciclo MediaRecorder + `onSubmit` com `phase===recording`.
+- Resolução: `untracked` no effect de canal; `AudioRecorderService.stop()`
+  retorna Promise resolvida no `onstop`; `onSubmit` faz `await stop()` em
+  vez de polling; regressão Vitest (`composer.spec`, lifecycle
+  MediaRecorder em `audio-recorder.spec`); validado ao vivo Parar→prévia→
+  Enviar e Enviar-durante-gravação.
 
 ### BUG-005 — Página admin não entra
 
@@ -171,32 +179,35 @@ Regras do registro:
 - Próxima ação: monitorar eventos SignalR no browser + logs API/Redis durante
   idle e troca de canal; validar WS via proxy se aplicável.
 
-### BUG-007 — Modo escuro não funciona
+### BUG-007 — Modo escuro / layout sem tokens
 
-- Status: **Done**
-- Observado em: relato de produto, 2026-08-10 — toggle / preferência de tema
-  escuro não aplica (ou não persiste) a UI esperada.
-- Hipótese: `ThemeService` altera `html[data-theme]` / `colorScheme`, mas o
-  caminho de bootstrap (`App` inject), o toggle (`theme-toggle`) ou tokens
-  `[data-theme='dark']` / variante Tailwind `dark` não reagem de ponta a
-  ponta; possível race com `data-theme="light"` fixo em `index.html` ou
-  estilos hardcoded que ignoram o atributo.
-- Arquivos: `apps/web/src/app/core/services/theme.service.ts`,
-  `apps/web/src/app/app.ts`,
-  `apps/web/src/app/shared/ui/theme-toggle/theme-toggle.ts`,
+- Status: **Done** (reaberto e corrigido de novo em 2026-08-10)
+- Observado em: relato de produto + repro ao vivo em `localhost:4200` (imagem
+  `vibechat-web:local` pós-commits de tema), 2026-08-10 — UI “estranha”,
+  superfícies sem fundo/borda; `getComputedStyle(html)` retorna `--vc-*`
+  vazio em light e dark.
+- Hipótese (confirmada): build production do Angular
+  (`optimization.styles.inlineCritical`, default on) emite
+  `<link rel="stylesheet" href="styles-*.css" media="print"
+  onload="this.media='all'">`. O CSP em
+  `infra/nginx/security-headers.conf` tem `script-src 'self'` (sem
+  `'unsafe-inline'`), então o `onload` nunca roda e o CSS global fica preso
+  em `media=print`. Forçar `link.media='all'` via DevTools restaura o layout.
+  Ajustes de seletor/`ThemeService` sozinhos não bastam.
+- Arquivos: `apps/web/angular.json`, `infra/nginx/security-headers.conf`,
   `apps/web/src/styles.scss`, `apps/web/src/styles/_tokens.scss`,
-  `apps/web/src/index.html`.
-- Resultado esperado: ativar tema escuro troca tokens/`data-theme` de forma
-  visível e persistente (`vc.theme`); reload mantém a escolha do usuário.
+  E2E `tests/e2e/specs/theme-tokens.spec.ts`.
+- Resultado esperado: após load, `--vc-ink` / `--vc-brand` / `--vc-surface`
+  preenchidos; toggle dark/light troca a superfície de forma visível e
+  persistente; stylesheet com `media=all` (ou equivalente efetivo).
 - Risk class: R1.
-- Owner automático: Frontend (D).
-- Critério de resolução: toggle dark/light altera `data-theme` e a superfície
-  principal; preferência sobrevive a F5; regressão unit/componente no
-  `ThemeService` / toggle.
-- Resolução: layout estrutural em `:root`; cores light em
-  `html:not([data-theme='dark'])`; cores dark em `html[data-theme='dark']`
-  (mutuamente exclusivas); `ThemeService` aplica `data-theme` + classe `.dark`;
-  variant Tailwind cobre ambos; regressão `theme.service.spec.ts`.
+- Owner automático: Frontend (D) + Infra (A) se CSP.
+- Critério de resolução: `inlineCritical: false` na config production;
+  rebuild da imagem web; E2E/smoke que falha se `--vc-ink` vier vazio.
+- Resolução: `optimization.styles.inlineCritical: false` em
+  `apps/web/angular.json` (production); CSP intacto; index deixa de emitir
+  `media=print`/`onload`; E2E `theme-tokens.spec.ts`; validado ao vivo
+  `--vc-ink` preenchido em light e dark.
 
 ### BUG-008 — Ausente imediato ao minimizar
 
@@ -252,7 +263,7 @@ Regras do registro:
 | ------- | ------------------- | ------------------------------------------------- | ---------- | ------ |
 | BUG-001 | Composer / timeline | Mensagens aparecem duplicadas ao enviar           | Alta       | Done   |
 | BUG-003 | Anexos              | Upload de arquivo falha com erro                  | Alta       | Done   |
-| BUG-004 | Composer / áudio    | Áudio do microfone não envia                      | Alta       | Done   |
+| BUG-004 | Composer / áudio    | Áudio do microfone não envia / prévia some        | Alta       | Done   |
 | BUG-005 | Admin               | Página `/admin` “não entra” (Member sem feedback) | Alta       | Done   |
-| BUG-007 | Theme               | Modo escuro não funciona                          | Alta       | Done   |
+| BUG-007 | Theme / layout      | Layout quebrado — CSS global bloqueado pelo CSP   | Alta       | Done   |
 | BUG-009 | Threads / realtime  | Reply de thread sem update em tempo real          | Alta       | Done   |
