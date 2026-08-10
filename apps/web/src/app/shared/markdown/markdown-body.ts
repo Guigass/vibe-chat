@@ -8,7 +8,7 @@ import { MarkdownBlocks } from './markdown-blocks';
   imports: [MarkdownBlocks],
   template: `
     <div class="vc-md" (copy)="onCopy($event)">
-      <vc-markdown-blocks [blocks]="document().blocks" />
+      <vc-markdown-blocks [blocks]="document().blocks" [mentionLabels]="mentionLabels()" />
     </div>
   `,
   styles: `
@@ -113,6 +113,7 @@ import { MarkdownBlocks } from './markdown-blocks';
 })
 export class MarkdownBody {
   readonly source = input.required<string>();
+  readonly mentionLabels = input<Record<string, string>>({});
   readonly document = computed<MarkdownDocument>(() => parseRestrictedMarkdown(this.source()));
 
   @HostListener('copy', ['$event'])

@@ -82,6 +82,19 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Channel_members_autocomplete_cross_tenant_returns_forbidden()
+    {
+        var (foreignTenantId, foreignChannelId) = await SeedCrossTenantChannelAsync();
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var get = await client.GetAsync(
+            $"/api/v1/workspaces/{foreignTenantId}/channels/{foreignChannelId}/members?query=al");
+        get.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Member_cannot_read_admin_audit_events()
     {
         using var alice = factory.CreateClient();

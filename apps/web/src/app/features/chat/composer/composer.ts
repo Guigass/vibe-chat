@@ -5,6 +5,15 @@ import {
   handleMarkdownShortcut,
   updateTextareaSelection,
 } from '../../../shared/markdown/markdown-format';
+import {
+  detectMentionQuery,
+  filterMentionItems,
+  insertMentionToken,
+  MentionAutocompleteItem,
+  specialMentionToken,
+  userMentionToken,
+} from '../../../shared/markdown/mention-tokens';
+import { ApiService } from '../../../core/api/api.service';
 import { MessageStore } from '../../../core/services/message.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { ChannelStore } from '../../../core/services/channel.store';
@@ -24,11 +33,12 @@ import {
 import { AudioRecorderService } from './audio-recorder.service';
 import { formatDuration } from './audio-recorder';
 import { drawAudioWaveform } from '../../../shared/utils/audio';
+import { MentionAutocomplete } from './mention-autocomplete';
 
 @Component({
   selector: 'vc-composer',
   standalone: true,
-  imports: [Button, Textarea],
+  imports: [Button, Textarea, MentionAutocomplete],
   template: `
     <form class="composer" (submit)="onSubmit($event)">
       <div class="composer__main">
@@ -104,14 +114,23 @@ import { drawAudioWaveform } from '../../../shared/utils/audio';
           <button type="button" aria-label="Código inline" (click)="applyFormat('code')">&lt;/&gt;</button>
         </div>
 
-        <vc-textarea
-          #composerTextarea
-          [(value)]="draft"
-          [placeholder]="'Mensagem em #' + (channels.activeChannel()?.name || 'channel')"
-          [label]="''"
-          (keydown)="onKeydown($event)"
-          (paste)="onPaste($event)"
-        />
+        <div class="composer__input-wrap">
+          <vc-textarea
+            #composerTextarea
+            [(value)]="draft"
+            [placeholder]="'Mensagem em #' + (channels.activeChannel()?.name || 'channel')"
+            [label]="''"
+            (keydown)="onKeydown($event)"
+            (input)="onInput($event)"
+            (paste)="onPaste($event)"
+          />
+          <vc-mention-autocomplete
+            [open]="mentionOpen()"
+            [items]="mentionItems()"
+            [activeIndex]="mentionActiveIndex()"
+            (select)="applyMention($event)"
+          />
+        </div>
         @if (showCounter()) {
           <p
             class="composer__counter"
@@ -191,6 +210,18 @@ import { drawAudioWaveform } from '../../../shared/utils/audio';
     .composer__main {
       display: grid;
       gap: 0.45rem;
+    }
+    .composer__input-wrap {
+      position: relative;
+      display: grid;
+      gap: 0.35rem;
+    }
+    .composer__input-wrap vc-mention-autocomplete {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: calc(100% + 0.35rem);
+      z-index: 4;
     }
     .composer__format {
       display: flex;
@@ -356,11 +387,16 @@ export class Composer {
   readonly attachments = inject(AttachmentQueueService);
   readonly audioRecorder = inject(AudioRecorderService);
   private readonly hub = inject(ChatHubService);
+  private readonly api = inject(ApiService);
 
   readonly formatDuration = formatDuration;
 
   readonly draft = signal('');
   readonly validationError = signal<string | null>(null);
+  readonly mentionOpen = signal(false);
+  readonly mentionActiveIndex = signal(0);
+  readonly mentionRemoteItems = signal<MentionAutocompleteItem[]>([]);
+  readonly mentionContext = signal<{ query: string; atIndex: number } | null>(null);
   readonly maxLength = MESSAGE_BODY_MAX_LENGTH;
   readonly bodyLength = computed(() => measureMessageBodyLength(this.draft()));
   readonly bodyTooLong = computed(() => isMessageBodyTooLong(this.draft()));
@@ -377,7 +413,18 @@ export class Composer {
       this.attachments.submitBlocked()
     );
   });
+  readonly mentionItems = computed(() => {
+    const context = this.mentionContext();
+    if (!context) return [];
+    const base: MentionAutocompleteItem[] = [
+      { kind: 'here', displayName: '@aqui', subtitle: 'Notifica quem está online' },
+      { kind: 'channel', displayName: '@canal', subtitle: 'Notifica todos os membros' },
+      ...this.mentionRemoteItems(),
+    ];
+    return filterMentionItems(base, context.query);
+  });
   private lastTyping = 0;
+  private mentionFetchTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     effect(() => {
@@ -394,6 +441,7 @@ export class Composer {
       this.attachments.clear();
       this.audioRecorder.reset();
       this.validationError.set(null);
+      this.closeMentionMenu();
     });
 
     effect(() => {
@@ -496,7 +544,39 @@ export class Composer {
     updateTextareaSelection(textarea, result.value, result.selectionStart, result.selectionEnd);
   }
 
+  onInput(event: Event): void {
+    const textarea = event.target as HTMLTextAreaElement;
+    this.syncMentionContext(textarea.value, textarea.selectionStart ?? textarea.value.length);
+  }
+
   onKeydown(event: KeyboardEvent): void {
+    if (this.mentionOpen()) {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        const max = this.mentionItems().length;
+        if (!max) return;
+        this.mentionActiveIndex.update((index) => (index + 1) % max);
+        return;
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        const max = this.mentionItems().length;
+        if (!max) return;
+        this.mentionActiveIndex.update((index) => (index - 1 + max) % max);
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.closeMentionMenu();
+        return;
+      }
+      if ((event.key === 'Enter' || event.key === 'Tab') && this.mentionItems().length) {
+        event.preventDefault();
+        this.applyMention(this.mentionItems()[this.mentionActiveIndex()]);
+        return;
+      }
+    }
+
     const shortcut = handleMarkdownShortcut(event);
     if (shortcut) {
       event.preventDefault();
@@ -510,12 +590,92 @@ export class Composer {
       return;
     }
 
+    const textarea = this.composerTextarea()?.nativeElement();
+    if (textarea) {
+      queueMicrotask(() => {
+        this.syncMentionContext(textarea.value, textarea.selectionStart ?? textarea.value.length);
+      });
+    }
+
     const channelId = this.channels.activeChannel()?.id;
     if (!channelId) return;
     const now = Date.now();
     if (now - this.lastTyping > 1500) {
       this.lastTyping = now;
       void this.hub.sendTyping(channelId);
+    }
+  }
+
+  applyMention(item: MentionAutocompleteItem): void {
+    const context = this.mentionContext();
+    const textarea = this.composerTextarea()?.nativeElement();
+    if (!context || !textarea) return;
+
+    const token =
+      item.kind === 'user' && item.userId
+        ? userMentionToken(item.userId)
+        : specialMentionToken(item.kind === 'here' ? 'here' : 'channel');
+    const result = insertMentionToken(this.draft(), context.atIndex, context.query.length, token);
+    this.draft.set(result.value);
+    this.closeMentionMenu();
+    updateTextareaSelection(textarea, result.value, result.cursor, result.cursor);
+  }
+
+  private syncMentionContext(text: string, cursor: number): void {
+    const context = detectMentionQuery(text, cursor);
+    if (!context) {
+      this.closeMentionMenu();
+      return;
+    }
+
+    this.mentionContext.set(context);
+    this.mentionOpen.set(true);
+    this.mentionActiveIndex.set(0);
+    this.scheduleMentionFetch(context.query);
+  }
+
+  private scheduleMentionFetch(query: string): void {
+    if (this.mentionFetchTimer) {
+      clearTimeout(this.mentionFetchTimer);
+    }
+
+    const workspace = this.channels.activeWorkspace();
+    const channel = this.channels.activeChannel();
+    if (!workspace || !channel || this.channels.isDemo()) {
+      this.mentionRemoteItems.set(
+        this.channels.members().map((member) => ({
+          kind: 'user' as const,
+          userId: member.userId,
+          displayName: member.displayName,
+          email: member.email,
+        })),
+      );
+      return;
+    }
+
+    this.mentionFetchTimer = setTimeout(() => {
+      void this.api.getChannelMembers(workspace.id, channel.id, query).then((members) => {
+        this.mentionRemoteItems.set(
+          members.map((member) => ({
+            kind: 'user' as const,
+            userId: member.userId,
+            displayName: member.displayName,
+            email: member.email,
+          })),
+        );
+      }).catch(() => {
+        this.mentionRemoteItems.set([]);
+      });
+    }, 200);
+  }
+
+  private closeMentionMenu(): void {
+    this.mentionOpen.set(false);
+    this.mentionContext.set(null);
+    this.mentionActiveIndex.set(0);
+    if (this.mentionFetchTimer) {
+      clearTimeout(this.mentionFetchTimer);
+      this.mentionFetchTimer = null;
     }
   }
 }

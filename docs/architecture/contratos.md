@@ -113,6 +113,18 @@ Validação ocorre em `POST .../messages`, `POST .../threads/{threadId}/messages
 
 `MessageDto.reactions`: `{ emoji, count, me }[]` (agregado no history/thread). Outbox `ReactionChangedEvent` → hub `ReactionChanged` no grupo do canal pai (`messageId`, `emoji`, `userId`, `added`, `reactions`).
 
+### Menções (B-082)
+
+| Artefato | Contrato |
+|----------|----------|
+| Corpo | Tokens estáveis `<@userId>`, `<@here>`, `<@channel>` |
+| Tabela | `messaging.message_mentions` (`TenantId`, `MessageId`, `ChannelId`, `MentionedUserId?`, `Kind`: `User`/`Here`/`Channel`) |
+| Escrita | Mesma transação de `SendMessage` |
+| Autocomplete | `GET /api/v1/workspaces/{workspaceId}/channels/{channelId}/members?query=` — membership do canal; até 8 resultados |
+| Unread | `GET /api/v1/channels/{channelId}/unread-count` → `{ unreadCount, mentionCount }` |
+| Permissão | `@canal` exige `channel.mention_all` (default: quem pode postar) |
+| Hub `MessageCreated` | `mentionedUserIds: uuid[]`, `mentionKinds: string[]`; cada cliente deriva `mentionsMe` localmente |
+
 ### Threads
 
 | Endpoint | Notas |

@@ -5,6 +5,7 @@ export type MarkdownInline =
   | { kind: 'del'; children: MarkdownInline[] }
   | { kind: 'code'; text: string }
   | { kind: 'link'; href: string; text: string }
+  | { kind: 'mention'; userId?: string; special?: 'here' | 'channel' }
   | { kind: 'br' };
 
 export type MarkdownBlock =
@@ -142,6 +143,20 @@ function parseInlines(text: string): MarkdownInline[] {
       continue;
     }
 
+    const mentionMatch = slice.match(/^<@([0-9a-fA-F-]{36}|here|channel)>/i);
+    if (mentionMatch) {
+      const value = mentionMatch[1].toLowerCase();
+      if (value === 'here') {
+        nodes.push({ kind: 'mention', special: 'here' });
+      } else if (value === 'channel') {
+        nodes.push({ kind: 'mention', special: 'channel' });
+      } else {
+        nodes.push({ kind: 'mention', userId: mentionMatch[1] });
+      }
+      cursor += mentionMatch[0].length;
+      continue;
+    }
+
     const boldMatch = slice.match(/^\*\*([^*\n]+)\*\*/);
     if (boldMatch) {
       nodes.push({ kind: 'strong', children: parseInlines(boldMatch[1]) });
@@ -187,7 +202,7 @@ function parseInlines(text: string): MarkdownInline[] {
 }
 
 function findNextSpecialIndex(text: string): number {
-  const markers = ['`', '**', '~~', 'http://', 'https://'];
+  const markers = ['`', '**', '~~', '<@', 'http://', 'https://'];
   let earliest = -1;
   for (const marker of markers) {
     const index = text.indexOf(marker);

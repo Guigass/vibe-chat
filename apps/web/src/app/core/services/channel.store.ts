@@ -120,8 +120,8 @@ export class ChannelStore {
     const updated = await Promise.all(
       channels.map(async (channel) => {
         try {
-          const unreadCount = await this.api.getUnreadCount(channel.id);
-          return { ...channel, unreadCount };
+          const counts = await this.api.getUnreadCount(channel.id);
+          return { ...channel, unreadCount: counts.unreadCount, mentionCount: counts.mentionCount };
         } catch {
           return channel;
         }
@@ -163,7 +163,7 @@ export class ChannelStore {
   selectChannel(channelId: string): void {
     this.activeChannelId.set(channelId);
     this.channelsSignal.update((list) =>
-      list.map((c) => (c.id === channelId ? { ...c, unreadCount: 0 } : c)),
+      list.map((c) => (c.id === channelId ? { ...c, unreadCount: 0, mentionCount: 0 } : c)),
     );
   }
 
@@ -282,6 +282,21 @@ export class ChannelStore {
         c.id === channelId ? { ...c, unreadCount: c.unreadCount + 1 } : c,
       ),
     );
+  }
+
+  bumpMention(channelId: string): void {
+    if (channelId === this.activeChannelId()) return;
+    this.channelsSignal.update((list) =>
+      list.map((c) =>
+        c.id === channelId
+          ? { ...c, mentionCount: (c.mentionCount ?? 0) + 1, unreadCount: c.unreadCount + 1 }
+          : c,
+      ),
+    );
+  }
+
+  mentionLabels(): Record<string, string> {
+    return Object.fromEntries(this.membersSignal().map((m) => [m.userId, m.displayName]));
   }
 
   private seedDemo(): void {

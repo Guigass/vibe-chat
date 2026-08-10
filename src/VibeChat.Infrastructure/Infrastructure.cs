@@ -61,6 +61,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<MessageThread> MessageThreads => Set<MessageThread>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Reaction> Reactions => Set<Reaction>();
+    public DbSet<MessageMention> MessageMentions => Set<MessageMention>();
     public DbSet<ReadCursor> ReadCursors => Set<ReadCursor>();
     public DbSet<ConversationSequence> ConversationSequences => Set<ConversationSequence>();
     public DbSet<IdempotencyEntry> IdempotencyEntries => Set<IdempotencyEntry>();
@@ -209,6 +210,22 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
             entity.Property(x => x.Emoji).HasMaxLength(32);
             entity.HasIndex(x => new { x.TenantId, x.MessageId, x.UserId, x.Emoji }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<MessageMention>(entity =>
+        {
+            entity.ToTable("message_mentions", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.MessageId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.MentionedUserId).HasConversion(
+                v => v.HasValue ? v.Value.Value : (Guid?)null,
+                v => v.HasValue ? new UserId(v.Value) : null);
+            entity.Property(x => x.Kind).HasConversion<string>().HasMaxLength(16);
+            entity.HasIndex(x => new { x.TenantId, x.MessageId });
+            entity.HasIndex(x => new { x.TenantId, x.ChannelId, x.MentionedUserId });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -467,6 +484,7 @@ public sealed class MessageWriter(
     IClock clock,
     IPermissionChecker permissions,
     IChannelMembershipReader channels,
+    IPresenceService presence,
     IConfiguration configuration) : IMessageWriter
 {
     public async Task<MessageSendResult> SendAsync(SendMessageCommand command, CancellationToken cancellationToken)
@@ -583,6 +601,15 @@ public sealed class MessageWriter(
             attachment.MessageId = message.Id;
         }
 
+        var mentionContext = await BuildMentionsAsync(
+            command.TenantId,
+            parentChannelId,
+            message.Id,
+            command.UserId,
+            body,
+            now,
+            cancellationToken);
+
         var result = new MessageSendResult(message.Id, message.Sequence, message.CreatedAt, false);
 
         var authorName = await dbContext.UserProfiles.AsNoTracking()
@@ -607,6 +634,8 @@ public sealed class MessageWriter(
                 sequence,
                 body,
                 createdAt = now,
+                mentionedUserIds = mentionContext.MentionedUserIds,
+                mentionKinds = mentionContext.MentionKinds,
                 attachments = attachments.Select(x => new
                 {
                     id = x.Id,
@@ -642,6 +671,169 @@ public sealed class MessageWriter(
         // RLS txn + SET LOCAL are committed by HTTP middleware / hub filter / worker batch Commit.
         VibeChatMetrics.MessagesSent.Add(1);
         return result;
+    }
+
+    private sealed record MentionBuildResult(
+        IReadOnlyList<Guid> MentionedUserIds,
+        IReadOnlyList<string> MentionKinds);
+
+    private async Task<MentionBuildResult> BuildMentionsAsync(
+        TenantId tenantId,
+        ChannelId channelId,
+        MessageId messageId,
+        UserId authorId,
+        string body,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var parsedTokens = MentionTokens.ParseBody(body);
+        if (parsedTokens.Count == 0)
+        {
+            return new MentionBuildResult([], []);
+        }
+
+        var memberIds = await dbContext.ChannelMembers.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.ChannelId == channelId)
+            .Select(x => x.UserId)
+            .ToArrayAsync(cancellationToken);
+        var memberSet = memberIds.ToHashSet();
+
+        var publicChannel = await dbContext.Channels.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.Id == channelId)
+            .Select(x => x.Type)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (publicChannel is ChannelType.Public or ChannelType.Announcement)
+        {
+            var workspaceMembers = await dbContext.WorkspaceMembers.AsNoTracking()
+                .Where(x => x.TenantId == tenantId)
+                .Join(
+                    dbContext.Channels.AsNoTracking().Where(c => c.Id == channelId),
+                    wm => wm.WorkspaceId,
+                    ch => ch.WorkspaceId,
+                    (wm, _) => wm.UserId)
+                .Distinct()
+                .ToArrayAsync(cancellationToken);
+            memberSet = workspaceMembers.ToHashSet();
+        }
+
+        var mentionedUsers = new HashSet<UserId>();
+        var mentionKinds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var rows = new List<MessageMention>();
+
+        foreach (var token in parsedTokens)
+        {
+            switch (token.Kind)
+            {
+                case MentionKind.User when token.UserId is { } userId:
+                    if (!memberSet.Contains(userId) || userId == authorId)
+                    {
+                        continue;
+                    }
+
+                    mentionKinds.Add(nameof(MentionKind.User));
+                    mentionedUsers.Add(userId);
+                    rows.Add(new MessageMention
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = tenantId,
+                        MessageId = messageId,
+                        ChannelId = channelId,
+                        MentionedUserId = userId,
+                        Kind = MentionKind.User,
+                        CreatedAt = now
+                    });
+                    break;
+
+                case MentionKind.Here:
+                    mentionKinds.Add(nameof(MentionKind.Here));
+                    rows.Add(new MessageMention
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = tenantId,
+                        MessageId = messageId,
+                        ChannelId = channelId,
+                        MentionedUserId = null,
+                        Kind = MentionKind.Here,
+                        CreatedAt = now
+                    });
+
+                    var online = await presence.GetStatusesAsync(tenantId, memberIds, cancellationToken);
+                    foreach (var memberId in memberIds)
+                    {
+                        if (memberId == authorId)
+                        {
+                            continue;
+                        }
+
+                        if (online.TryGetValue(memberId, out var status)
+                            && status is PresenceStatus.Online or PresenceStatus.Away
+                            && mentionedUsers.Add(memberId))
+                        {
+                            rows.Add(new MessageMention
+                            {
+                                Id = Guid.NewGuid(),
+                                TenantId = tenantId,
+                                MessageId = messageId,
+                                ChannelId = channelId,
+                                MentionedUserId = memberId,
+                                Kind = MentionKind.User,
+                                CreatedAt = now
+                            });
+                        }
+                    }
+                    break;
+
+                case MentionKind.Channel:
+                    if (!await permissions.HasPermissionAsync(tenantId, authorId, Permissions.Channel.MentionAll, cancellationToken))
+                    {
+                        throw new MentionAllForbiddenException();
+                    }
+
+                    mentionKinds.Add(nameof(MentionKind.Channel));
+                    rows.Add(new MessageMention
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = tenantId,
+                        MessageId = messageId,
+                        ChannelId = channelId,
+                        MentionedUserId = null,
+                        Kind = MentionKind.Channel,
+                        CreatedAt = now
+                    });
+
+                    foreach (var memberId in memberIds)
+                    {
+                        if (memberId == authorId)
+                        {
+                            continue;
+                        }
+
+                        if (mentionedUsers.Add(memberId))
+                        {
+                            rows.Add(new MessageMention
+                            {
+                                Id = Guid.NewGuid(),
+                                TenantId = tenantId,
+                                MessageId = messageId,
+                                ChannelId = channelId,
+                                MentionedUserId = memberId,
+                                Kind = MentionKind.User,
+                                CreatedAt = now
+                            });
+                        }
+                    }
+                    break;
+            }
+        }
+
+        if (rows.Count > 0)
+        {
+            dbContext.MessageMentions.AddRange(rows);
+        }
+
+        return new MentionBuildResult(
+            mentionedUsers.Select(x => x.Value).ToArray(),
+            mentionKinds.ToArray());
     }
 
     private static string ComputeHash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
@@ -1666,6 +1858,14 @@ public sealed class MessageRetentionPurgeProcessor(
             if (reactions.Count > 0)
             {
                 db.Reactions.RemoveRange(reactions);
+            }
+
+            var mentions = await db.MessageMentions.IgnoreQueryFilters()
+                .Where(x => x.TenantId == policy.TenantId && messageIds.Contains(x.MessageId))
+                .ToListAsync(cancellationToken);
+            if (mentions.Count > 0)
+            {
+                db.MessageMentions.RemoveRange(mentions);
             }
 
             // Keep attachment metadata for compliance; detach from purged message rows.

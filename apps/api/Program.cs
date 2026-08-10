@@ -351,6 +351,58 @@ v1.MapGet("/workspaces/{workspaceId:guid}/members", async (Guid workspaceId, Htt
     return Results.Ok(members);
 });
 
+v1.MapGet("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/members", async (
+    Guid workspaceId,
+    Guid channelId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null || channel.WorkspaceId != new WorkspaceId(workspaceId))
+    {
+        return Results.Forbid();
+    }
+
+    var query = http.Request.Query["query"].ToString().Trim();
+    var queryLower = query.ToLowerInvariant();
+
+    var members = channel.Type is ChannelType.Public or ChannelType.Announcement
+        ? await (
+            from m in db.WorkspaceMembers.AsNoTracking()
+            where m.WorkspaceId == channel.WorkspaceId
+            join u in db.UserProfiles.AsNoTracking() on m.UserId equals u.Id
+            orderby u.DisplayName
+            select new ChannelMemberResponse(u.Id.Value, u.DisplayName, u.Email)
+        ).ToArrayAsync(ct)
+        : await (
+            from cm in db.ChannelMembers.AsNoTracking()
+            where cm.ChannelId == channel.Id
+            join u in db.UserProfiles.AsNoTracking() on cm.UserId equals u.Id
+            orderby u.DisplayName
+            select new ChannelMemberResponse(u.Id.Value, u.DisplayName, u.Email)
+        ).ToArrayAsync(ct);
+
+    if (!string.IsNullOrWhiteSpace(queryLower))
+    {
+        members = members
+            .Where(x =>
+                x.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase)
+                || x.Email.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .Take(8)
+            .ToArray();
+    }
+    else
+    {
+        members = members.Take(8).ToArray();
+    }
+
+    return Results.Ok(members);
+});
+
 v1.MapGet("/workspaces/{workspaceId:guid}/roles", async (Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
@@ -911,6 +963,12 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
     {
         return Results.BadRequest(new { error = ex.Message });
     }
+    catch (UnauthorizedAccessException ex) when (ex is MentionAllForbiddenException)
+    {
+        return Results.Json(
+            new { error = "MentionAllForbidden", message = "Você não pode usar @canal neste canal." },
+            statusCode: StatusCodes.Status403Forbidden);
+    }
     catch (UnauthorizedAccessException)
     {
         return Results.Forbid();
@@ -1241,6 +1299,12 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
     catch (InvalidOperationException ex)
     {
         return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (UnauthorizedAccessException ex) when (ex is MentionAllForbiddenException)
+    {
+        return Results.Json(
+            new { error = "MentionAllForbidden", message = "Você não pode usar @canal neste canal." },
+            statusCode: StatusCodes.Status403Forbidden);
     }
     catch (UnauthorizedAccessException)
     {
@@ -1827,7 +1891,16 @@ v1.MapGet("/channels/{channelId:guid}/unread-count", async (Guid channelId, Http
 
     var lastRead = await db.ReadCursors.Where(x => x.ChannelId == channel.Id && x.UserId == profile.Id).Select(x => (long?)x.LastReadSequence).FirstOrDefaultAsync(ct) ?? 0;
     var count = await db.Messages.CountAsync(x => x.ConversationId == channel.Id && x.Sequence > lastRead && x.DeletedAt == null, ct);
-    return Results.Ok(new { channelId, unreadCount = count });
+    var mentionCount = await (
+        from mention in db.MessageMentions.AsNoTracking()
+        join message in db.Messages.AsNoTracking() on mention.MessageId equals message.Id
+        where mention.ChannelId == channel.Id
+            && mention.MentionedUserId == profile.Id
+            && message.Sequence > lastRead
+            && message.DeletedAt == null
+        select mention.MessageId
+    ).Distinct().CountAsync(ct);
+    return Results.Ok(new { channelId, unreadCount = count, mentionCount });
 });
 
 v1.MapGet("/admin/dashboard", async (HttpContext http, VibeChatDbContext db, ITenantContext tenant, IDashboardQuery dashboard, IPresenceService presence, HealthCheckService health, IConfiguration config, IClock clock, CancellationToken ct) =>
@@ -3415,6 +3488,7 @@ public sealed record WorkspaceResponse(Guid Id, string Name, string Slug, string
 public sealed record SpaceResponse(Guid Id, Guid WorkspaceId, string Name, int Order);
 public sealed record ChannelResponse(Guid Id, Guid WorkspaceId, string Name, string Type, Guid? PeerUserId = null, string? PeerDisplayName = null, Guid? SpaceId = null);
 public sealed record WorkspaceMemberResponse(Guid UserId, string DisplayName, string Email, string Role);
+public sealed record ChannelMemberResponse(Guid UserId, string DisplayName, string Email);
 public sealed record WorkspaceRolesResponse(string[] AssignableRoles);
 public sealed record UpdateMemberRoleRequest(string Role);
 public sealed record InviteMemberRequest(string Email, string? DisplayName = null, string? Role = null);
