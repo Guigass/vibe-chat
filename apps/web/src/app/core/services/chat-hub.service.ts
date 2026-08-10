@@ -127,7 +127,12 @@ export class ChatHubService {
   private readonly auth = inject(AuthService);
   private readonly tenant = inject(TenantContext);
   private connection: HubConnection | null = null;
-  private joinedChannelId: string | null = null;
+  /**
+   * Channels this client is subscribed to (SignalR groups). Unlike a single
+   * "active channel" tracker, we keep every visited channel joined so unread
+   * badges can bump live for channels the user isn't currently viewing (B-088).
+   */
+  private readonly joinedChannelIds = new Set<string>();
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private visibilityHandler: (() => void) | null = null;
   private onlineHandler: (() => void) | null = null;
@@ -188,9 +193,7 @@ export class ChatHubService {
       this.manualRetryCount = 0;
       this.statusSignal.set('connected');
       await this.heartbeat();
-      if (this.joinedChannelId) {
-        await this.joinChannel(this.joinedChannelId);
-      }
+      await this.rejoinAllChannels();
       this.startPresenceLoop();
     } catch {
       this.statusSignal.set('disconnected');
@@ -223,9 +226,7 @@ export class ChatHubService {
       this.statusSignal.set('connected');
       try {
         await this.heartbeat();
-        if (this.joinedChannelId) {
-          await this.joinChannel(this.joinedChannelId);
-        }
+        await this.rejoinAllChannels();
         await this.notifyReconnected();
       } catch {
         // banner already reflects connection; next user action can retry join
@@ -449,34 +450,40 @@ export class ChatHubService {
     this.statusSignal.set('disconnected');
   }
 
+  /** Join (and stay joined to) a channel's SignalR group; safe to call repeatedly. */
   async joinChannel(channelId: string): Promise<void> {
-    if (!this.connection || this.connection.state !== HubConnectionState.Connected) {
-      this.joinedChannelId = channelId;
-      return;
-    }
+    this.joinedChannelIds.add(channelId);
+    if (!this.connection || this.connection.state !== HubConnectionState.Connected) return;
     const tenantId = this.tenant.snapshot().tenantId;
     if (!tenantId) return;
-
-    if (this.joinedChannelId && this.joinedChannelId !== channelId) {
-      try {
-        await this.connection.invoke('LeaveChannel', tenantId, this.joinedChannelId);
-      } catch {
-        // ignore leave failures; join still proceeds
-      }
-    }
-
-    this.joinedChannelId = channelId;
     await this.connection.invoke('JoinChannel', tenantId, channelId);
   }
 
+  /** Join every given channel not already joined (e.g. all channels/DMs in the workspace). */
+  async joinChannels(channelIds: readonly string[]): Promise<void> {
+    const pending = channelIds.filter((id) => !this.joinedChannelIds.has(id));
+    await Promise.all(pending.map((id) => this.joinChannel(id)));
+  }
+
   async leaveChannel(channelId: string): Promise<void> {
-    if (this.joinedChannelId === channelId) {
-      this.joinedChannelId = null;
-    }
+    this.joinedChannelIds.delete(channelId);
     if (!this.connection || this.connection.state !== HubConnectionState.Connected) return;
     const tenantId = this.tenant.snapshot().tenantId;
     if (!tenantId) return;
     await this.connection.invoke('LeaveChannel', tenantId, channelId);
+  }
+
+  private async rejoinAllChannels(): Promise<void> {
+    if (!this.connection || this.connection.state !== HubConnectionState.Connected) return;
+    const tenantId = this.tenant.snapshot().tenantId;
+    if (!tenantId) return;
+    for (const channelId of this.joinedChannelIds) {
+      try {
+        await this.connection.invoke('JoinChannel', tenantId, channelId);
+      } catch {
+        // next reconnect/heartbeat can retry
+      }
+    }
   }
 
   async sendTyping(channelId: string): Promise<void> {

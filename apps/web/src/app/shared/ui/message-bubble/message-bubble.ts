@@ -59,10 +59,16 @@ import { environment } from '../../../../environments/environment';
     <article
       class="vc-msg vc-anim-fade-in"
       [class.vc-msg--mine]="message().mine"
+      [class.vc-msg--plain]="surface() === 'plain'"
+      [class.vc-msg--group-start]="groupRole() === 'start'"
+      [class.vc-msg--group-middle]="groupRole() === 'middle'"
+      [class.vc-msg--group-end]="groupRole() === 'end'"
+      [class.vc-msg--grouped]="groupRole() === 'middle' || groupRole() === 'end'"
       [class.vc-msg--mentioned]="message().mentionsMe"
       [class.vc-msg--deleted]="!!message().deletedAt"
       [class.vc-msg--highlight]="highlighted()"
       [attr.data-status]="message().status"
+      [attr.data-group]="groupRole()"
       [attr.data-message-id]="message().id"
       [cdkContextMenuTriggerFor]="actionsMenu"
       [cdkContextMenuDisabled]="!hasMenu()"
@@ -73,28 +79,37 @@ import { environment } from '../../../../environments/environment';
       (touchmove)="onTouchEnd()"
       (touchcancel)="onTouchEnd()"
     >
-      @if (!message().mine) {
+      @if (!message().mine && surface() !== 'plain') {
         <div class="vc-msg__avatar-slot">
-          <vc-avatar [name]="message().authorName" [size]="avatarSize()" />
+          @if (showAvatar()) {
+            <vc-avatar [name]="message().authorName" [size]="avatarSize()" />
+          }
         </div>
       }
 
       <div class="vc-msg__column">
         <div class="vc-msg__body">
-          <header class="vc-msg__meta">
-            <strong>{{ message().authorName }}</strong>
-            <time [attr.datetime]="message().createdAt">{{ message().createdAt | date: 'shortTime' }}</time>
-            @if (message().editedAt && !message().deletedAt) {
-              <span class="vc-msg__status">editada</span>
-            }
-            @if (message().status === 'sending') {
-              <span class="vc-msg__status">enviando…</span>
-            } @else if (message().status === 'sent') {
-              <span class="vc-msg__status">enviada</span>
-            } @else if (message().status === 'failed') {
-              <span class="vc-msg__status vc-msg__status--fail">falhou</span>
-            }
-          </header>
+          @if (!showMeta()) {
+            <time class="vc-msg__hover-time" [attr.datetime]="message().createdAt">
+              {{ message().createdAt | date: 'shortTime' }}
+            </time>
+          }
+          @if (showMeta()) {
+            <header class="vc-msg__meta">
+              <strong>{{ message().authorName }}</strong>
+              <time [attr.datetime]="message().createdAt">{{ message().createdAt | date: 'shortTime' }}</time>
+              @if (message().editedAt && !message().deletedAt) {
+                <span class="vc-msg__status">editada</span>
+              }
+              @if (message().status === 'sending') {
+                <span class="vc-msg__status">enviando…</span>
+              } @else if (message().status === 'sent') {
+                <span class="vc-msg__status">enviada</span>
+              } @else if (message().status === 'failed') {
+                <span class="vc-msg__status vc-msg__status--fail">falhou</span>
+              }
+            </header>
+          }
 
           <div class="vc-msg__content">
             @if (message().deletedAt) {
@@ -267,6 +282,11 @@ import { environment } from '../../../../environments/environment';
     />
   `,
   styles: `
+    :host {
+      display: block;
+      max-width: 100%;
+      min-width: 0;
+    }
     .vc-msg {
       --vc-msg-max: min(36rem, 100%);
       display: grid;
@@ -282,9 +302,20 @@ import { environment } from '../../../../environments/environment';
       margin-left: auto;
       grid-template-columns: minmax(0, var(--vc-msg-max));
     }
+    .vc-msg--plain {
+      width: 100%;
+      max-width: none;
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .vc-msg--plain.vc-msg--mine {
+      margin-left: 0;
+    }
+    .vc-msg--plain .vc-msg__column {
+      max-width: none;
+      overflow: visible;
+    }
     .vc-msg__avatar-slot {
       width: var(--vc-msg-avatar);
-      min-height: var(--vc-msg-avatar);
       flex-shrink: 0;
     }
     .vc-msg__column {
@@ -311,6 +342,7 @@ import { environment } from '../../../../environments/environment';
       border: 1px solid var(--vc-border);
       min-width: 0;
       width: 100%;
+      position: relative;
     }
     .vc-msg--mine .vc-msg__body {
       background: var(--vc-msg-mine);
@@ -318,6 +350,55 @@ import { environment } from '../../../../environments/environment';
     }
     .vc-msg--deleted .vc-msg__body {
       opacity: 0.72;
+    }
+    /* Plain surface: chrome lives on the timeline stack bubble (B-088). */
+    .vc-msg--plain .vc-msg__body {
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      width: 100%;
+    }
+    .vc-msg--plain.vc-msg--group-start .vc-msg__body,
+    .vc-msg--plain.vc-msg--group-middle .vc-msg__body {
+      padding-bottom: calc(var(--vc-msg-pad-block) * 0.35);
+    }
+    .vc-msg--plain.vc-msg--group-middle .vc-msg__body,
+    .vc-msg--plain.vc-msg--group-end .vc-msg__body {
+      padding-top: calc(var(--vc-msg-pad-block) * 0.35);
+    }
+    .vc-msg--plain.vc-msg--mentioned:not(.vc-msg--mine) .vc-msg__body {
+      border-left: 3px solid var(--vc-brand);
+      padding-left: 0.55rem;
+      background: color-mix(in srgb, var(--vc-brand) 8%, transparent);
+    }
+    .vc-msg__hover-time {
+      position: absolute;
+      top: 0.4rem;
+      right: 0.6rem;
+      font-size: 0.68rem;
+      color: var(--vc-ink-subtle);
+      background: color-mix(in srgb, var(--vc-msg-theirs) 85%, transparent);
+      padding: 0.05rem 0.35rem;
+      border-radius: var(--vc-radius-sm);
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 1;
+    }
+    .vc-msg--mine .vc-msg__hover-time {
+      background: color-mix(in srgb, var(--vc-msg-mine) 85%, transparent);
+    }
+    .vc-msg--plain .vc-msg__hover-time {
+      background: color-mix(in srgb, var(--vc-surface) 72%, transparent);
+    }
+    .vc-msg:hover .vc-msg__hover-time,
+    .vc-msg:focus-within .vc-msg__hover-time {
+      opacity: 1;
+    }
+    @media (hover: none) {
+      .vc-msg__hover-time {
+        opacity: 1;
+      }
     }
     .vc-msg--highlight .vc-msg__body {
       outline: 2px solid color-mix(in srgb, var(--vc-brand) 55%, transparent);
@@ -438,11 +519,16 @@ import { environment } from '../../../../environments/environment';
       background: color-mix(in srgb, var(--vc-brand) 16%, var(--vc-surface));
     }
     .vc-msg__toolbar {
+      position: absolute;
+      top: -0.45rem;
+      right: 0.35rem;
+      z-index: 5;
       display: inline-flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
       gap: 0.2rem;
-      align-self: flex-start;
+      width: max-content;
+      max-width: none;
       padding: 0.15rem 0.25rem;
       border: 1px solid var(--vc-border);
       border-radius: var(--vc-radius-md);
@@ -453,9 +539,22 @@ import { environment } from '../../../../environments/environment';
       transition:
         opacity var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease),
         transform var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease);
+      box-shadow: var(--vc-shadow-soft, 0 4px 12px rgba(15, 23, 42, 0.1));
     }
-    .vc-msg--mine .vc-msg__toolbar {
-      align-self: flex-end;
+    .vc-msg:not(.vc-msg--mine) .vc-msg__toolbar {
+      right: 0.35rem;
+      left: auto;
+    }
+    /* Float outside the shared stack bubble so it is never squeezed. */
+    .vc-msg--plain .vc-msg__toolbar {
+      top: 0.35rem;
+      right: 0;
+      transform: translate(0.35rem, -100%);
+    }
+    .vc-msg--plain:hover .vc-msg__toolbar,
+    .vc-msg--plain:focus-within .vc-msg__toolbar,
+    .vc-msg--plain .vc-msg__toolbar--pinned {
+      transform: translate(0.35rem, calc(-100% - 0.2rem));
     }
     .vc-msg:hover .vc-msg__toolbar,
     .vc-msg:focus-within .vc-msg__toolbar,
@@ -469,6 +568,9 @@ import { environment } from '../../../../environments/environment';
         opacity: 1;
         pointer-events: auto;
         transform: none;
+      }
+      .vc-msg--plain .vc-msg__toolbar {
+        transform: translate(0.35rem, calc(-100% - 0.2rem));
       }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -588,6 +690,12 @@ export class MessageBubble {
   private readonly contextMenu = viewChild(CdkContextMenuTrigger);
 
   readonly message = input.required<ChatMessage>();
+  readonly showMeta = input(true);
+  readonly showAvatar = input(true);
+  /** Role inside an author/time group (B-088). */
+  readonly groupRole = input<'start' | 'middle' | 'end' | 'single'>('single');
+  /** `plain` = content only; outer chrome comes from timeline stack bubble. */
+  readonly surface = input<'bubble' | 'plain'>('bubble');
   readonly showThreadAction = input(false);
   readonly showReplyAction = input(false);
   readonly showForwardAction = input(false);

@@ -176,4 +176,35 @@ describe('MessageBubble (B-163)', () => {
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).not.toMatch(/\bsalva\b/);
   });
+
+  it('hides header and avatar when grouping continuation inputs are off', async () => {
+    const { fixture } = await setup(baseMessage({ mine: false, authorName: 'Alice Mendes' }), {
+      showMeta: false,
+      showAvatar: false,
+      groupRole: 'end',
+    });
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.vc-msg__meta')).toBeNull();
+    expect(root.querySelector('vc-avatar')).toBeNull();
+    expect(root.querySelector('.vc-msg--grouped')).toBeTruthy();
+    expect(root.querySelector('.vc-msg--group-end')).toBeTruthy();
+    expect(root.querySelector('.vc-msg__hover-time')).toBeTruthy();
+  });
+
+  it('applies plain surface styles for stack-embedded messages', async () => {
+    const { fixture } = await setup(baseMessage({ mine: false }), {
+      groupRole: 'middle',
+      showMeta: false,
+      showAvatar: false,
+      surface: 'plain',
+    });
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.vc-msg--plain')).toBeTruthy();
+    expect(root.querySelector('.vc-msg__avatar-slot')).toBeNull();
+
+    const cmp = MessageBubble as unknown as { ɵcmp: { styles: string[] } };
+    const css = cmp.ɵcmp.styles.join('\n');
+    expect(css).toMatch(/vc-msg--plain/);
+    expect(css).toMatch(/background:\s*transparent/);
+  });
 });

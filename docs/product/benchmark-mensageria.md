@@ -69,10 +69,10 @@ sobre o `<input type="file">` que já existe, nunca como caminho único.
 
 | Capacidade | Slack | Teams | Discord | WhatsApp | VibeChat |
 |---|---|---|---|---|---|
-| Agrupamento de mensagens do mesmo autor | sim | sim | sim | sim | **Falta** — B-088 |
-| Separador de data | sim | sim | sim | sim | **Falta** — B-088 |
-| Divisor de não lidas | sim | sim | sim | sim | **Falta** — B-088 |
-| Botão “ir para a mais recente” | sim | sim | sim | sim | **Falta** — B-088 |
+| Agrupamento de mensagens do mesmo autor | sim | sim | sim | sim | **Temos** (B-088, janela 5 min) |
+| Separador de data | sim | sim | sim | sim | **Temos** (B-088, sticky) |
+| Divisor de não lidas | sim | sim | sim | sim | **Temos** (B-088; âncora persistente em B-094) |
+| Botão “ir para a mais recente” | sim | sim | sim | sim | **Temos** (B-088) |
 | Carregar histórico antigo (scroll) | sim | sim | sim | sim | **Falta** — B-089 |
 | Pular para a mensagem a partir da busca | sim | sim | sim | sim | **Falta** — B-089 |
 | Preview inline de imagem | sim | sim | sim | sim | **Falta** — B-090 |

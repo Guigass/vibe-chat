@@ -88,7 +88,7 @@ export class ShellPage implements OnInit, OnDestroy {
     this.bindNarrowViewport();
 
     effect(() => {
-      const channelId = this.channels.activeChannel()?.id ?? null;
+      const channelId = this.channels.activeChannelId() ?? null;
       if (this.lastChannelId !== null && this.lastChannelId !== channelId) {
         this.threads.close();
         // Narrow overlay: free the timeline after a channel/DM pick.

@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../api/api.service';
 import { AuthService } from '../auth/auth.service';
+import { ChatHubService } from './chat-hub.service';
 import {
   Channel,
   PresenceStatus,
@@ -9,11 +10,13 @@ import {
   Workspace,
   WorkspaceMember,
 } from '../../shared/models/chat.models';
+import { idsEqual } from './message-sync';
 
 @Injectable({ providedIn: 'root' })
 export class ChannelStore {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly hub = inject(ChatHubService);
 
   private readonly workspacesSignal = signal<Workspace[]>([]);
   private readonly spacesSignal = signal<Space[]>([]);
@@ -22,6 +25,7 @@ export class ChannelStore {
   private readonly presenceSignal = signal<Record<string, PresenceStatus>>({});
   private readonly activeWorkspaceId = signal<string | null>(null);
   private readonly activeChannelIdSignal = signal<string | null>(null);
+  private readonly openedUnreadCountSignal = signal(0);
   private readonly loadingSignal = signal(false);
   private readonly errorSignal = signal<string | null>(null);
   private readonly usingDemo = signal(false);
@@ -34,11 +38,13 @@ export class ChannelStore {
   readonly presence = this.presenceSignal.asReadonly();
   /** Stable id signal — prefer this over `activeChannel()?.id` in effects that must not re-run on channel list refresh. */
   readonly activeChannelId = this.activeChannelIdSignal.asReadonly();
+  /** Unread count snapshotted when the channel was opened (B-088 local divider until B-094). */
+  readonly openedUnreadCount = this.openedUnreadCountSignal.asReadonly();
   readonly activeWorkspace = computed(
     () => this.workspacesSignal().find((w) => w.id === this.activeWorkspaceId()) ?? null,
   );
   readonly activeChannel = computed(
-    () => this.channelsSignal().find((c) => c.id === this.activeChannelIdSignal()) ?? null,
+    () => this.channelsSignal().find((c) => idsEqual(c.id, this.activeChannelIdSignal())) ?? null,
   );
   readonly publicChannels = computed(() =>
     this.channelsSignal().filter((c) => !c.isDirect),
@@ -119,6 +125,7 @@ export class ChannelStore {
   async refreshUnreads(): Promise<void> {
     if (this.usingDemo()) return;
     const channels = this.channelsSignal();
+    const activeId = this.activeChannelIdSignal();
     const updated = await Promise.all(
       channels.map(async (channel) => {
         try {
@@ -129,7 +136,17 @@ export class ChannelStore {
         }
       }),
     );
-    this.channelsSignal.set(updated);
+    const active = activeId ? updated.find((c) => idsEqual(c.id, activeId)) : undefined;
+    if (active && this.openedUnreadCountSignal() === 0 && active.unreadCount > 0) {
+      this.openedUnreadCountSignal.set(active.unreadCount);
+    }
+    this.channelsSignal.set(
+      updated.map((channel) =>
+        activeId && idsEqual(channel.id, activeId)
+          ? { ...channel, unreadCount: 0, mentionCount: 0 }
+          : channel,
+      ),
+    );
   }
 
   async selectWorkspace(workspaceId: string): Promise<void> {
@@ -154,19 +171,42 @@ export class ChannelStore {
         this.channelsSignal.set(channels);
         this.membersSignal.set(members);
         this.presenceSignal.set(presence);
+        this.joinAllChannels();
       }
       const first = this.channelsSignal()[0];
-      this.activeChannelIdSignal.set(first?.id ?? null);
+      if (first) this.selectChannel(first.id);
+      else this.setActiveChannel(null);
     } catch (err) {
       this.errorSignal.set(err instanceof Error ? err.message : 'Falha ao carregar channels');
     }
   }
 
   selectChannel(channelId: string): void {
-    this.activeChannelIdSignal.set(channelId);
+    this.setActiveChannel(channelId);
     this.channelsSignal.update((list) =>
-      list.map((c) => (c.id === channelId ? { ...c, unreadCount: 0, mentionCount: 0 } : c)),
+      list.map((c) =>
+        idsEqual(c.id, channelId) ? { ...c, unreadCount: 0, mentionCount: 0 } : c,
+      ),
     );
+  }
+
+  private setActiveChannel(channelId: string | null): void {
+    if (!channelId) {
+      this.activeChannelIdSignal.set(null);
+      this.openedUnreadCountSignal.set(0);
+      return;
+    }
+    if (!idsEqual(channelId, this.activeChannelIdSignal())) {
+      const current = this.channelsSignal().find((c) => idsEqual(c.id, channelId));
+      this.openedUnreadCountSignal.set(current?.unreadCount ?? 0);
+    }
+    this.activeChannelIdSignal.set(channelId);
+  }
+
+  /** Keep every channel/DM joined so unread badges can bump live (B-088). */
+  private joinAllChannels(): void {
+    if (this.usingDemo()) return;
+    void this.hub.joinChannels(this.channelsSignal().map((c) => c.id));
   }
 
   patchChannel(channelId: string, patch: Partial<Channel>): void {
@@ -242,6 +282,7 @@ export class ChannelStore {
       spaceId,
     });
     this.channelsSignal.update((list) => [...list, channel]);
+    void this.hub.joinChannel(channel.id);
     this.selectChannel(channel.id);
     return channel;
   }
@@ -279,24 +320,23 @@ export class ChannelStore {
       }
       return [...list, channel];
     });
+    void this.hub.joinChannel(channel.id);
     this.selectChannel(channel.id);
     return channel;
   }
 
   bumpUnread(channelId: string): void {
-    if (channelId === this.activeChannelId()) return;
     this.channelsSignal.update((list) =>
       list.map((c) =>
-        c.id === channelId ? { ...c, unreadCount: c.unreadCount + 1 } : c,
+        idsEqual(c.id, channelId) ? { ...c, unreadCount: c.unreadCount + 1 } : c,
       ),
     );
   }
 
   bumpMention(channelId: string): void {
-    if (channelId === this.activeChannelId()) return;
     this.channelsSignal.update((list) =>
       list.map((c) =>
-        c.id === channelId
+        idsEqual(c.id, channelId)
           ? { ...c, mentionCount: (c.mentionCount ?? 0) + 1, unreadCount: c.unreadCount + 1 }
           : c,
       ),
@@ -323,7 +363,7 @@ export class ChannelStore {
       'u-alice': 'online',
       'u-bob': 'away',
     });
-    this.activeChannelIdSignal.set('ch-general');
+    this.selectChannel('ch-general');
   }
 
   private demoMembers(): WorkspaceMember[] {

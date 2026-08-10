@@ -29,6 +29,8 @@ Regras do registro:
 | ------- | ---------------- | --------------------------------------------------------------------- | ---------- | --------------------------- |
 | BUG-002 | Sidebar / unread | Badges de novas mensagens não limpam de forma persistente após reload | Média      | Aberto — alívio aplicado; fecha em **B-094** |
 | BUG-008 | Presence         | Minimizar a janela marca ausente na hora                              | Média      | Aberto                      |
+| BUG-010 | Timeline / scroll | Ao abrir a conversa não rola até as mensagens mais recentes          | Média      | Aberto                      |
+| BUG-011 | Admin / shell    | Membros não veem o botão Admin                                        | Média      | Aberto                      |
 
 ## Detalhamento
 
@@ -259,6 +261,57 @@ Regras do registro:
 - Resolução: `bumpChannelParentForThreadReply` + `parentMessageId` no hub;
   `idsEqual` no `ThreadStore`; gap-fill da thread aberta no reconnect; B-084
   no mesmo trabalho.
+
+### BUG-010 — Abrir conversa sem scroll para o fim
+
+- Status: **Aberto**
+- Observado em: relato de produto, 2026-08-10 — ao abrir um canal/conversa a
+  timeline **não** posiciona nas mensagens mais recentes; o usuário vê
+  histórico antigo (topo) e precisa rolar manualmente até o fim.
+- Hipótese: `Timeline.afterChannelOpen` chama `scrollToBottom` (ou
+  `scrollIntoView` no divisor de não lidas) em `queueMicrotask`, antes do
+  layout/altura final da lista (imagens, agrupamento B-088, sticky de data) —
+  `scrollHeight` ainda está baixo e o `scrollTop` fica no topo; o rAF único
+  em `scrollToBottom` não cobre carga assíncrona posterior.
+- Arquivos: `apps/web/src/app/features/chat/timeline/timeline.ts`
+  (`afterChannelOpen`, `scrollToBottom`), possivelmente
+  `timeline-items.ts` / shell flex que define a altura do scroller.
+- Resultado esperado: abrir canal (sem unread divisor, ou após dismiss) deixa
+  a viewport no fim (mensagens mais recentes + composer); com divisor “Novas
+  mensagens”, ancora no divisor como B-088, sem deixar o scroll no topo por
+  engano.
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: regressão E2E/unit que abre canal com histórico
+  maior que a viewport e afirma `scrollTop` perto do fim; finding `Done`.
+- Próxima ação: reancorar scroll após paint/layout estável no open (e após
+  mutação de altura se necessário); cobrir no E2E de timeline/shell.
+
+### BUG-011 — Membros não veem o botão Admin
+
+- Status: **Aberto**
+- Observado em: relato de produto, 2026-08-10 — usuário com papel **Member**
+  (ex.: DevAuth Alice/Bob) **não vê** o botão/link **Admin** no shell; só
+  consegue chegar ao admin com conta Owner/Admin (ex.: Demo) ou URL direta.
+- Hipótese: entrada Admin no footer da sidebar fica fora da viewport (lista
+  de canais / viewport estreita / sidebar recolhida no narrow) ou o ator
+  Member não encontra o link e interpreta como “não existe”; distinto de
+  **BUG-005** (Done — redirect silencioso em `/admin`), que corrigiu feedback
+  na rota mas não garante descoberta do botão. Spec B-106 prevê Member sem
+  áreas admin; landing explicativa ainda depende do link ser visível.
+- Arquivos: `apps/web/src/app/layout/shell.page.html` (footer Admin),
+  `shell.page.scss` (`.shell__sidebar` / `.shell__sidebar-footer`),
+  `apps/web/src/app/features/admin/admin.guard.ts`, seed de papéis.
+- Resultado esperado: Member vê o link Admin (ou alternativa clara no shell)
+  e, ao abrir, recebe o empty-state/explicação de BUG-005 sem sumir o
+  ponto de entrada; Owner/Admin/Auditor seguem com acesso às áreas.
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: sessão Member mostra o controle Admin no shell
+  (desktop e narrow com sidebar aberta); regressão E2E/smoke; finding `Done`.
+- Próxima ação: confirmar se o footer está clipado/oculto no layout; se o
+  produto quiser esconder Admin de Member, documentar e alinhar B-106 —
+  senão garantir visibilidade do link + empty-state.
 
 ## Fechados
 

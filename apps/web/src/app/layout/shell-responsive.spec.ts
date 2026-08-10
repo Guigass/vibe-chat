@@ -75,6 +75,7 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
           provide: ChannelStore,
           useValue: {
             activeChannel: activeChannel.asReadonly(),
+            activeChannelId: () => activeChannel()?.id ?? null,
             activeWorkspace: () => ({ id: 'ws-1', name: 'Acme' }),
             workspaces: () => [{ id: 'ws-1', name: 'Acme' }],
             error: () => null,

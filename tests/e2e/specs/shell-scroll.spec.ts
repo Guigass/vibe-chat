@@ -33,6 +33,7 @@ test.describe(`shell scroll container (${AUTH_MODE})`, () => {
         bodyScrollTop: document.documentElement.scrollTop + document.body.scrollTop,
         timelineScrollable: !!timeline && timeline.scrollHeight > timeline.clientHeight + 2,
         timelineOverflowY: timeline ? getComputedStyle(timeline).overflowY : '',
+        timelineOverflowX: timeline ? timeline.scrollWidth > timeline.clientWidth + 2 : false,
         shellMaxHeight: shell ? getComputedStyle(shell).maxHeight : '',
       };
     });
@@ -41,6 +42,7 @@ test.describe(`shell scroll container (${AUTH_MODE})`, () => {
       true,
     );
     expect(metrics.timelineScrollable).toBe(true);
+    expect(metrics.timelineOverflowX).toBe(false);
     expect(metrics.docOverflows).toBe(false);
     expect(metrics.bodyScrollTop).toBe(0);
 

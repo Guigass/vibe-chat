@@ -46,17 +46,33 @@ export class MessageStore {
   readonly sending = this.sendingSignal.asReadonly();
   readonly replyTarget = this.replyTargetSignal.asReadonly();
   readonly highlightMessageId = this.highlightMessageIdSignal.asReadonly();
+  private readonly viewingLatestSignal = signal(true);
+
   readonly forActiveChannel = computed(() => {
-    const channelId = this.channels.activeChannel()?.id;
+    const channelId = this.channels.activeChannelId();
     if (!channelId) return [];
     return this.messagesSignal()
       .filter(
         (m) =>
-          m.channelId === channelId &&
-          (!m.threadId || m.conversationId === channelId || m.conversationId === m.channelId),
+          idsEqual(m.channelId, channelId) &&
+          (!m.threadId ||
+            idsEqual(m.conversationId, channelId) ||
+            idsEqual(m.conversationId, m.channelId)),
       )
       .sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0) || a.createdAt.localeCompare(b.createdAt));
   });
+
+  setViewingLatest(value: boolean): void {
+    this.viewingLatestSignal.set(value);
+  }
+
+  markViewedLatest(): void {
+    this.viewingLatestSignal.set(true);
+    const channelId = this.channels.activeChannelId();
+    if (!channelId) return;
+    const maxSeq = maxSeqForChannel(this.messagesSignal(), channelId);
+    if (maxSeq > 0) this.schedulePersistReadCursor(channelId, maxSeq);
+  }
 
   constructor() {
     this.unsubCreated = this.hub.onMessage((message) => this.ingestRemote(message));
@@ -364,7 +380,7 @@ export class MessageStore {
       } else {
         this.messagesSignal.update((list) => upsertRemoteMessage(list, remote));
       }
-      if (isActive && (normalized.seq ?? 0) > 0) {
+      if (isActive && this.viewingLatestSignal() && (normalized.seq ?? 0) > 0) {
         this.schedulePersistReadCursor(normalized.channelId, normalized.seq!);
       }
       return;
@@ -372,7 +388,7 @@ export class MessageStore {
 
     this.messagesSignal.update((list) => upsertRemoteMessage(list, remote));
 
-    if (isActive && (normalized.seq ?? 0) > 0) {
+    if (isActive && this.viewingLatestSignal() && (normalized.seq ?? 0) > 0) {
       this.schedulePersistReadCursor(normalized.channelId, normalized.seq!);
       return;
     }

@@ -15,6 +15,7 @@ describe('MessageStore read cursor (BUG-002)', () => {
   let getMessages: ReturnType<typeof vi.fn>;
   let messageHandler: ((message: ChatMessage) => void) | null;
   let activeChannelId: ReturnType<typeof signal<string | null>>;
+  let bumpUnread: ReturnType<typeof vi.fn>;
   let store: MessageStore;
 
   beforeEach(() => {
@@ -44,6 +45,7 @@ describe('MessageStore read cursor (BUG-002)', () => {
     ]);
     messageHandler = null;
     activeChannelId = signal<string | null>(channelId);
+    bumpUnread = vi.fn();
 
     const injector = Injector.create({
       providers: [
@@ -90,7 +92,7 @@ describe('MessageStore read cursor (BUG-002)', () => {
               name: 'geral',
               unreadCount: 0,
             }),
-            bumpUnread: vi.fn(),
+            bumpUnread,
             bumpMention: vi.fn(),
           },
         },
@@ -173,5 +175,39 @@ describe('MessageStore read cursor (BUG-002)', () => {
     await vi.advanceTimersByTimeAsync(500);
 
     expect(upsertReadCursor).not.toHaveBeenCalled();
+  });
+
+  it('bumps unread and skips read cursor when viewer is in history', async () => {
+    store.setViewingLatest(false);
+    expect(messageHandler).toBeTruthy();
+
+    messageHandler!({
+      id: 'm-history',
+      conversationId: channelId,
+      channelId,
+      authorUserId: 'u-bob',
+      authorName: 'Bob',
+      body: 'enquanto lia',
+      createdAt: '2026-08-10T12:04:00.000Z',
+      status: 'persisted',
+      mine: false,
+      seq: 21,
+    });
+
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(upsertReadCursor).not.toHaveBeenCalled();
+    expect(bumpUnread).toHaveBeenCalledWith(channelId);
+  });
+
+  it('persists max seq when markViewedLatest is called', async () => {
+    store.setViewingLatest(false);
+    await store.loadChannel(channelId);
+    upsertReadCursor.mockClear();
+
+    store.markViewedLatest();
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(upsertReadCursor).toHaveBeenCalledWith(channelId, 12);
   });
 });

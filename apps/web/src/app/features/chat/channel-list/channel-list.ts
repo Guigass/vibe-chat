@@ -23,7 +23,7 @@ import { SidebarNav, Skeleton } from '../../../shared/ui';
           [directs]="channels.directChannels()"
           [members]="channels.peerCandidates()"
           [presence]="channels.presence()"
-          [activeId]="channels.activeChannel()?.id ?? null"
+          [activeId]="channels.activeChannelId() ?? null"
           [draftIds]="drafts.draftConversationIds()"
           [canCreate]="channels.canCreateChannel()"
           (select)="onSelect($event)"

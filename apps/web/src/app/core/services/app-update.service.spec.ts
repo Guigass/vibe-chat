@@ -16,7 +16,7 @@ describe('AppUpdateService (B-165)', () => {
     checkForUpdate: ReturnType<typeof vi.fn>;
     activateUpdate: ReturnType<typeof vi.fn>;
   };
-  let reloadMock: ReturnType<typeof vi.fn>;
+  let reloadMock: ReturnType<typeof vi.fn<() => void>>;
 
   beforeEach(() => {
     versionUpdates$ = new Subject();
@@ -26,7 +26,7 @@ describe('AppUpdateService (B-165)', () => {
       checkForUpdate: vi.fn().mockResolvedValue(true),
       activateUpdate: vi.fn().mockResolvedValue(true),
     };
-    reloadMock = vi.fn();
+    reloadMock = vi.fn<() => void>();
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({

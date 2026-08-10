@@ -45,12 +45,12 @@ Nada novo — é apresentação de dados já autorizados.
 
 ## Aceite
 
-- [ ] Três mensagens seguidas da Alice em 1 min viram um bloco com um cabeçalho
-- [ ] Mensagem 6 min depois abre bloco novo
-- [ ] Separador de data aparece na virada e gruda no topo ao rolar
-- [ ] Abrir canal com 5 não lidas mostra o divisor na posição certa
-- [ ] Rolando para o histórico, mensagem nova **não** arrasta a viewport
-- [ ] Botão de ir para a última mostra a contagem e funciona
+- [x] Três mensagens seguidas da Alice em 1 min viram um bloco com um cabeçalho
+- [x] Mensagem 6 min depois abre bloco novo
+- [x] Separador de data aparece na virada e gruda no topo ao rolar
+- [x] Abrir canal com 5 não lidas mostra o divisor na posição certa
+- [x] Rolando para o histórico, mensagem nova **não** arrasta a viewport
+- [x] Botão de ir para a última mostra a contagem e funciona
 
 ## Testes
 
