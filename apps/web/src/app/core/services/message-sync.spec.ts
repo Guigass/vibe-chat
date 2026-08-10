@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { ChatMessage } from '../../shared/models/chat.models';
 import {
+  bumpChannelParentForThreadReply,
   findMessageByCorrelators,
   gapFillAfterSeq,
   hasSeqGap,
   idsEqual,
+  markReplyQuotesDeleted,
   maxSeqForChannel,
   mergeMessagesById,
+  replyPreviewText,
   upsertRemoteMessage,
 } from './message-sync';
 
@@ -169,5 +172,62 @@ describe('message-sync', () => {
       mine: true,
     });
     expect(upsertRemoteMessage([optimistic], fromHubWithClientId)).toHaveLength(1);
+  });
+
+  it('bumpChannelParentForThreadReply sets threadId and bumps when parent had no threadId (BUG-009)', () => {
+    const parentId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+    const threadId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+    const channelId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+    const current = [
+      msg({
+        id: parentId,
+        channelId,
+        conversationId: channelId,
+        body: 'parent',
+        replyCount: 0,
+        threadId: null,
+      }),
+    ];
+
+    const bumped = bumpChannelParentForThreadReply(current, {
+      threadId,
+      parentMessageId: parentId,
+      replyToMessageId: parentId,
+    });
+
+    expect(bumped[0].threadId).toBe(threadId);
+    expect(bumped[0].replyCount).toBe(1);
+
+    const again = bumpChannelParentForThreadReply(bumped, {
+      threadId: threadId.toUpperCase(),
+      parentMessageId: null,
+      replyToMessageId: 'other',
+    });
+    expect(again[0].replyCount).toBe(2);
+  });
+
+  it('replyPreviewText flattens and truncates', () => {
+    expect(replyPreviewText('  hello\nworld  ')).toBe('hello world');
+    expect(replyPreviewText('x'.repeat(200)).length).toBe(140);
+    expect(replyPreviewText('x'.repeat(200)).endsWith('…')).toBe(true);
+  });
+
+  it('markReplyQuotesDeleted marks cite previews', () => {
+    const deletedId = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+    const current = [
+      msg({
+        id: '1',
+        channelId: 'c1',
+        replyTo: {
+          messageId: deletedId,
+          authorName: 'Alice',
+          preview: 'hi',
+          deleted: false,
+        },
+      }),
+    ];
+    const next = markReplyQuotesDeleted(current, deletedId);
+    expect(next[0].replyTo?.deleted).toBe(true);
+    expect(next[0].replyTo?.preview).toBe('');
   });
 });

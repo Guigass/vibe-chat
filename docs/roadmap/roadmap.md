@@ -233,7 +233,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W8-3 | C/D | Formatação de texto (B-081) | — | [B-081](../product/specs/B-081-formatacao-de-texto.md) | Done |
 | W8-4 | B/C/D | Menções (B-082) | W8-3 | [B-082](../product/specs/B-082-mencoes.md) | Done |
 | W8-5 | C/D | Emoji picker e reações livres (B-083) | B-024 | [B-083](../product/specs/B-083-emoji-e-reacoes-livres.md) | Done |
-| W8-6 | C/D | Responder citando (B-084) | — | [B-084](../product/specs/B-084-responder-citando.md) | Planned |
+| W8-6 | C/D | Responder citando (B-084) | — | [B-084](../product/specs/B-084-responder-citando.md) | Done |
 | W8-7 | C/D | Encaminhar mensagem (B-085) | W8-6 | [B-085](../product/specs/B-085-encaminhar-mensagem.md) | Planned |
 | W8-8 | D | Rascunho persistente (B-086) | — | [B-086](../product/specs/B-086-rascunho-persistente.md) | Planned |
 | W8-9 | C/D | Comandos slash (B-087) | W8-4 | [B-087](../product/specs/B-087-comandos-slash.md) | Planned |
@@ -242,6 +242,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
+| W9-0 | D | Message bubble moderno — ações discretas + context menu (B-163) | B-023, B-024, B-083 | [B-163](../product/specs/B-163-message-bubble-context-menu.md) | Planned |
 | W9-1 | D | Agrupamento, separadores e não lidas (B-088) | — | [B-088](../product/specs/B-088-timeline-agrupamento-separadores.md) | Planned |
 | W9-2 | C/D | Histórico paginado e pular para a mensagem (B-089) | W9-1 | [B-089](../product/specs/B-089-historico-paginado.md) | Planned |
 | W9-3 | C/D | Preview de anexos (B-090) | W8-1 | [B-090](../product/specs/B-090-preview-de-anexos.md) | Planned |
@@ -325,7 +326,7 @@ Agent-Infra     → W0-1, W0-2, W0-6, W5-*, W6-8, W7-7
 Agent-Backend   → W0-3, W1-*, W2-1..W2-4, W3-1, W3-3, W4-*, W6-1, W6-2, W6-4..W6-6,
                   W8-4, W9-4, W10-1, W10-7, W10-11, W10-12, W10-13, W10-14
 Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7, W6-1..W6-3, W6-7, W7-6, W7-8,
-                  W8-1..W8-3, W8-5..W8-8, W9-1..W9-3, W9-7, W10-5, W10-6
+                  W8-1..W8-3, W8-5..W8-8, W9-0..W9-3, W9-7, W10-5, W10-6
 Agent-QA        → W0-7, W1-5, W2-6, W2-7, W3-2, W3-5, W5-3, W6-1 E2E, W6-8 smoke, W7-1
 Agent-Security  → W3-1/W3-2 review, W6-5/W6-6 authZ + threat model, W7-3..W7-5,
                   W9-4 (SSRF), W10-9, W10-10 (guests), W10-13 (integration tokens),

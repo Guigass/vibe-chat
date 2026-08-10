@@ -1,8 +1,11 @@
 import { Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { ThreadStore } from '../../../core/services/thread.store';
+import { replyPreviewText } from '../../../core/services/message-sync';
+import { MessageStore } from '../../../core/services/message.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { Button, EmptyState, IconButton, MessageBubble, Skeleton, Textarea } from '../../../shared/ui';
 import {
+  ChatMessage,
   isMessageBodyTooLong,
   measureMessageBodyLength,
   MESSAGE_BODY_COUNTER_THRESHOLD,
@@ -36,7 +39,14 @@ import {
         } @else if (threads.active(); as active) {
           @if (active.parentMessage; as parent) {
             <div class="thread__parent">
-              <vc-message-bubble [message]="parent" (react)="onReact(parent.id, $event)" />
+              <vc-message-bubble
+                [message]="parent"
+                [showReplyAction]="true"
+                [highlighted]="messages.highlightMessageId() === parent.id"
+                (reply)="onReply(parent)"
+                (quoteClick)="onQuoteClick($event)"
+                (react)="onReact(parent.id, $event)"
+              />
             </div>
           }
 
@@ -48,7 +58,14 @@ import {
           } @else {
             <div class="thread__list">
               @for (message of threads.sortedMessages(); track message.id) {
-                <vc-message-bubble [message]="message" (react)="onReact(message.id, $event)" />
+                <vc-message-bubble
+                  [message]="message"
+                  [showReplyAction]="true"
+                  [highlighted]="messages.highlightMessageId() === message.id"
+                  (reply)="onReply(message)"
+                  (quoteClick)="onQuoteClick($event)"
+                  (react)="onReact(message.id, $event)"
+                />
               }
             </div>
           }
@@ -56,6 +73,22 @@ import {
       </div>
 
       <form class="thread__composer" (submit)="onSubmit($event)">
+        @if (threads.replyTarget(); as cite) {
+          <div class="thread__reply" role="status">
+            <div class="thread__reply-meta">
+              <strong>Respondendo a {{ cite.authorName }}</strong>
+              <span>{{ citePreview(cite.body) }}</span>
+            </div>
+            <button
+              type="button"
+              class="ghost"
+              aria-label="Cancelar citação"
+              (click)="threads.clearReplyTarget()"
+            >
+              ×
+            </button>
+          </div>
+        }
         <vc-textarea
           [(value)]="draft"
           placeholder="Responder na thread…"
@@ -137,6 +170,42 @@ import {
       padding: var(--vc-space-4);
       border-top: 1px solid var(--vc-border);
     }
+    .thread__reply {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.55rem;
+      align-items: start;
+      padding: 0.45rem 0.6rem;
+      border-left: 3px solid var(--vc-brand);
+      border-radius: 0 var(--vc-radius-sm) var(--vc-radius-sm) 0;
+      background: color-mix(in srgb, var(--vc-brand) 8%, transparent);
+    }
+    .thread__reply-meta {
+      display: grid;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+    .thread__reply-meta strong {
+      font-size: 0.8rem;
+      color: var(--vc-brand);
+    }
+    .thread__reply-meta span {
+      font-size: 0.78rem;
+      color: var(--vc-ink-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .thread__reply .ghost {
+      border: 0;
+      background: transparent;
+      color: var(--vc-brand);
+      cursor: pointer;
+      font: inherit;
+      font-size: 1.1rem;
+      line-height: 1;
+      padding: 0;
+    }
     .thread__counter {
       margin: 0;
       font-size: 0.75rem;
@@ -160,6 +229,7 @@ import {
 })
 export class ThreadPanel {
   readonly threads = inject(ThreadStore);
+  readonly messages = inject(MessageStore);
   private readonly hub = inject(ChatHubService);
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
   readonly draft = signal('');
@@ -186,6 +256,18 @@ export class ThreadPanel {
         if (el) el.scrollTop = el.scrollHeight;
       });
     });
+  }
+
+  citePreview(body: string): string {
+    return replyPreviewText(body);
+  }
+
+  onReply(message: ChatMessage): void {
+    this.threads.setReplyTarget(message);
+  }
+
+  onQuoteClick(messageId: string): void {
+    this.messages.jumpToMessage(messageId);
   }
 
   async onSubmit(event: Event): Promise<void> {

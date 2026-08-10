@@ -15,6 +15,7 @@ import {
 } from '../../../shared/markdown/mention-tokens';
 import { ApiService } from '../../../core/api/api.service';
 import { MessageStore } from '../../../core/services/message.store';
+import { replyPreviewText } from '../../../core/services/message-sync';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import {
@@ -44,6 +45,22 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
   template: `
     <form class="composer" (submit)="onSubmit($event)">
       <div class="composer__main">
+        @if (messages.replyTarget(); as cite) {
+          <div class="composer__reply" role="status">
+            <div class="composer__reply-meta">
+              <strong>Respondendo a {{ cite.authorName }}</strong>
+              <span>{{ citePreview(cite.body) }}</span>
+            </div>
+            <button
+              type="button"
+              class="ghost"
+              aria-label="Cancelar citação"
+              (click)="messages.clearReplyTarget()"
+            >
+              ×
+            </button>
+          </div>
+        }
         @if (attachments.items().length) {
           <ul class="composer__attachments" aria-label="Anexos pendentes">
             @for (item of attachments.items(); track item.localId) {
@@ -228,6 +245,32 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
     .composer__main {
       display: grid;
       gap: 0.45rem;
+    }
+    .composer__reply {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.55rem;
+      align-items: start;
+      padding: 0.45rem 0.6rem;
+      border-left: 3px solid var(--vc-brand);
+      border-radius: 0 var(--vc-radius-sm) var(--vc-radius-sm) 0;
+      background: color-mix(in srgb, var(--vc-brand) 8%, transparent);
+    }
+    .composer__reply-meta {
+      display: grid;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+    .composer__reply-meta strong {
+      font-size: 0.8rem;
+      color: var(--vc-brand);
+    }
+    .composer__reply-meta span {
+      font-size: 0.78rem;
+      color: var(--vc-ink-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .composer__input-wrap {
       position: relative;
@@ -473,6 +516,7 @@ export class Composer {
       this.attachments.clear();
       this.audioRecorder.reset();
       this.validationError.set(null);
+      this.messages.clearReplyTarget();
       this.closeMentionMenu();
     });
 
@@ -481,6 +525,10 @@ export class Composer {
       const canvas = document.querySelector('.composer__audio-panel canvas');
       drawAudioWaveform(canvas as HTMLCanvasElement | null, this.audioRecorder.liveWaveform());
     });
+  }
+
+  citePreview(body: string): string {
+    return replyPreviewText(body);
   }
 
   iconFor(file: File): string {

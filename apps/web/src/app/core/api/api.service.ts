@@ -75,6 +75,13 @@ interface ReactionSummaryDto {
   me: boolean;
 }
 
+interface ReplyToDto {
+  messageId: string;
+  authorName: string;
+  preview: string;
+  deleted: boolean;
+}
+
 interface MessageDto {
   id: string;
   channelId: string;
@@ -89,6 +96,7 @@ interface MessageDto {
   attachments?: AttachmentDto[] | null;
   threadId?: string | null;
   replyToMessageId?: string | null;
+  replyTo?: ReplyToDto | null;
   replyCount?: number;
   reactions?: ReactionSummaryDto[] | null;
 }
@@ -339,6 +347,7 @@ export class ApiService {
     clientMessageId: string;
     idempotencyKey: string;
     attachmentIds?: string[];
+    replyToMessageId?: string;
   }): Promise<ChatMessage> {
     const dto = await this.request<MessageDto>(`/api/v1/channels/${input.channelId}/messages`, {
       method: 'POST',
@@ -347,6 +356,7 @@ export class ApiService {
         idempotencyKey: input.idempotencyKey,
         body: input.body,
         attachmentIds: input.attachmentIds ?? [],
+        replyToMessageId: input.replyToMessageId ?? null,
       }),
     });
     return this.mapMessage(dto, this.auth.profile()?.id);
@@ -801,6 +811,14 @@ export class ApiService {
       attachments: (m.attachments ?? []).map((a) => this.mapAttachment(a)),
       threadId: m.threadId ?? null,
       replyToMessageId: m.replyToMessageId ?? null,
+      replyTo: m.replyTo
+        ? {
+            messageId: String(m.replyTo.messageId),
+            authorName: m.replyTo.authorName ?? '',
+            preview: m.replyTo.preview ?? '',
+            deleted: !!m.replyTo.deleted,
+          }
+        : null,
       replyCount: m.replyCount ?? 0,
       reactions: (m.reactions ?? []).map((r) => ({
         emoji: r.emoji,

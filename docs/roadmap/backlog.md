@@ -104,7 +104,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-081 | Formatação de texto | Done (W8-3) — Markdown restrito; `body` continua Markdown no banco |
 | B-082 | Menções | Done (W8-4) — token `<@userId>`, `message_mentions`, badge separado |
 | B-083 | Emoji picker e reações livres | Done (W8-5) — picker compartilhado, validação Unicode no servidor, tooltip de quem reagiu |
-| B-084 | Responder citando | Planned (W8-6) — `ReplyToMessageId` já existe e nunca é usado |
+| B-084 | Responder citando | **Done (W8-6)** — `replyTo` no history/hub; UI composer + bolha; Responder ≠ Abrir thread; BUG-009 realtime thread |
 | B-085 | Encaminhar mensagem | Planned (W8-7) — anexo por referência, contagem para o purge de B-047 |
 | B-086 | Rascunho persistente | Planned (W8-8) — só cliente, por implicação de retenção (D-03) |
 | B-087 | Comandos slash | Planned (W8-9) — lista vem do servidor; sem privilégio novo |
@@ -113,6 +113,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 
 | ID | Item | Notas |
 |----|------|-------|
+| B-163 | Message bubble moderno (ações discretas + context menu) | Planned (W9-0) — toolbar só no hover/focus; opções no menu (CDK/spartan); base antes de pin/salvos/encaminhar; [spec](../product/specs/B-163-message-bubble-context-menu.md) |
 | B-088 | Agrupamento, separadores e não lidas | Planned (W9-1) |
 | B-089 | Histórico paginado e pular para a mensagem | Planned (W9-2) — hoje janela fixa de 50 |
 | B-090 | Preview de anexos | Planned (W9-3) — miniatura no worker; purge remove junto |
@@ -182,7 +183,7 @@ Pós-MVP: **P1.5** (B-070…B-072 Done; BUG-001…BUG-006 Alta na safety lane �
 
 Ordem daqui para frente: **safety lane** (`BUG-*` Alta) antes de inventar ou
 avançar feature de wave; depois **Sustentação** residual e **paridade de
-mensageria** na ordem das waves — 8 (composição), 9 (leitura; B-094 fecha
+mensageria** na ordem das waves — 8 (composição), 9 (leitura; B-163 bubble + B-094 fecha
 BUG-002 / não lidas persistentes), 10 (notificações, organização, acesso e
 núcleo de plugins: B-109 → B-108 → B-110). Depois seguir W11–W17; a trilha
 avançada de plugins continua em W15 com B-066 → B-111/B-136. Dentro de cada

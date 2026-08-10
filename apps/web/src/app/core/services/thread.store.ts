@@ -6,7 +6,11 @@ import { ChannelStore } from './channel.store';
 import { ChatMessage, ChatThread } from '../../shared/models/chat.models';
 import {
   findMessageByCorrelators,
+  gapFillAfterSeq,
   idsEqual,
+  markReplyQuotesDeleted,
+  mergeMessagesById,
+  replyPreviewText,
   upsertRemoteMessage,
 } from './message-sync';
 
@@ -22,12 +26,15 @@ export class ThreadStore {
   private readonly loadingSignal = signal(false);
   private readonly sendingSignal = signal(false);
   private readonly openSignal = signal(false);
+  private readonly replyTargetSignal = signal<ChatMessage | null>(null);
+  private gapFillInFlight = false;
 
   readonly active = this.activeSignal.asReadonly();
   readonly messages = this.messagesSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
   readonly sending = this.sendingSignal.asReadonly();
   readonly open = this.openSignal.asReadonly();
+  readonly replyTarget = this.replyTargetSignal.asReadonly();
   readonly sortedMessages = computed(() =>
     [...this.messagesSignal()].sort(
       (a, b) => (a.seq ?? 0) - (b.seq ?? 0) || a.createdAt.localeCompare(b.createdAt),
@@ -36,12 +43,14 @@ export class ThreadStore {
 
   constructor() {
     this.hub.onMessage((message) => this.ingestRemote(message));
+    this.hub.onMessageDeleted((patch) => this.applyDelete(patch.id));
     this.hub.onReactionChanged((event) => this.applyReactions(event.messageId, event.reactions));
   }
 
   async openFromMessage(channelId: string, messageId: string): Promise<void> {
     this.openSignal.set(true);
     this.loadingSignal.set(true);
+    this.replyTargetSignal.set(null);
     try {
       if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
         const demo = this.demoThread(channelId, messageId);
@@ -67,12 +76,59 @@ export class ThreadStore {
     this.openSignal.set(false);
     this.activeSignal.set(null);
     this.messagesSignal.set([]);
+    this.replyTargetSignal.set(null);
+  }
+
+  setReplyTarget(message: ChatMessage | null): void {
+    if (!message || message.deletedAt) {
+      this.replyTargetSignal.set(null);
+      return;
+    }
+    this.replyTargetSignal.set(message);
+  }
+
+  clearReplyTarget(): void {
+    this.replyTargetSignal.set(null);
   }
 
   bumpReplyCount(threadId: string): void {
     const active = this.activeSignal();
-    if (active?.id === threadId) {
+    if (active && idsEqual(active.id, threadId)) {
       this.activeSignal.set({ ...active, replyCount: (active.replyCount ?? 0) + 1 });
+    }
+  }
+
+  /** History reconcile after SignalR reconnect while a thread panel is open (BUG-009). */
+  async gapFillActive(): Promise<void> {
+    const thread = this.activeSignal();
+    if (!thread || !this.openSignal() || this.channels.isDemo() || this.auth.isOfflineDemo()) {
+      return;
+    }
+    if (this.gapFillInFlight) return;
+    this.gapFillInFlight = true;
+    try {
+      let maxSeq = 0;
+      for (const message of this.messagesSignal()) {
+        const seq = message.seq ?? 0;
+        if (seq > maxSeq) maxSeq = seq;
+      }
+      const after = gapFillAfterSeq(maxSeq);
+      const messages = await this.api.getThreadMessages(thread.id, 100);
+      const incoming = after > 0 ? messages.filter((m) => (m.seq ?? 0) > after) : messages;
+      const mergeSource = incoming.length ? incoming : messages;
+      if (!mergeSource.length) return;
+      this.messagesSignal.update((current) =>
+        mergeMessagesById(
+          current,
+          mergeSource.map((m) => this.normalize(m)),
+        ),
+      );
+      const detailed = await this.api.getThread(thread.id);
+      this.activeSignal.set(detailed);
+    } catch {
+      // best-effort
+    } finally {
+      this.gapFillInFlight = false;
     }
   }
 
@@ -95,6 +151,32 @@ export class ThreadStore {
     const text = body.trim();
     if (!thread || !text) return false;
 
+    const replyTarget = this.replyTargetSignal();
+    const replyToMessageId = replyTarget?.id ?? thread.parentMessageId;
+    const replyTo =
+      replyTarget && !replyTarget.deletedAt
+        ? {
+            messageId: replyTarget.id,
+            authorName: replyTarget.authorName,
+            preview: replyPreviewText(replyTarget.body),
+            deleted: false,
+          }
+        : replyTarget
+          ? null
+          : thread.parentMessage && !thread.parentMessage.deletedAt
+            ? {
+                messageId: thread.parentMessageId,
+                authorName: thread.parentMessage.authorName,
+                preview: replyPreviewText(thread.parentMessage.body),
+                deleted: false,
+              }
+            : {
+                messageId: thread.parentMessageId,
+                authorName: '',
+                preview: '',
+                deleted: false,
+              };
+
     const clientMessageId = crypto.randomUUID();
     const idempotencyKey = crypto.randomUUID();
     const optimistic: ChatMessage = {
@@ -109,10 +191,13 @@ export class ThreadStore {
       status: 'sending',
       mine: true,
       threadId: thread.id,
-      replyToMessageId: thread.parentMessageId,
+      replyToMessageId,
+      replyTo,
+      parentMessageId: thread.parentMessageId,
     };
 
     this.messagesSignal.update((list) => [...list, optimistic]);
+    this.replyTargetSignal.set(null);
     this.sendingSignal.set(true);
 
     try {
@@ -132,7 +217,7 @@ export class ThreadStore {
         body: text,
         clientMessageId,
         idempotencyKey,
-        replyToMessageId: thread.parentMessageId,
+        replyToMessageId,
       });
 
       this.patchByClientId(clientMessageId, {
@@ -153,8 +238,8 @@ export class ThreadStore {
 
   private ingestRemote(message: ChatMessage): void {
     const active = this.activeSignal();
-    if (!active || !message.threadId || message.threadId !== active.id) return;
-    if (message.conversationId === message.channelId) return;
+    if (!active || !message.threadId || !idsEqual(message.threadId, active.id)) return;
+    if (idsEqual(message.conversationId, message.channelId)) return;
 
     const normalized = this.normalize(message);
     const mine = normalized.authorUserId === this.auth.profile()?.id;
@@ -173,6 +258,28 @@ export class ThreadStore {
     this.messagesSignal.update((list) => upsertRemoteMessage(list, remote));
   }
 
+  private applyDelete(messageId: string): void {
+    this.messagesSignal.update((list) => {
+      const deleted = list.map((m) =>
+        idsEqual(m.id, messageId)
+          ? { ...m, body: '', deletedAt: m.deletedAt ?? new Date().toISOString() }
+          : m,
+      );
+      return markReplyQuotesDeleted(deleted, messageId);
+    });
+    const active = this.activeSignal();
+    if (active?.parentMessage && idsEqual(active.parentMessage.id, messageId)) {
+      this.activeSignal.set({
+        ...active,
+        parentMessage: {
+          ...active.parentMessage,
+          body: '',
+          deletedAt: active.parentMessage.deletedAt ?? new Date().toISOString(),
+        },
+      });
+    }
+  }
+
   private patchByClientId(clientMessageId: string, patch: Partial<ChatMessage>): void {
     this.messagesSignal.update((list) =>
       list.map((m) => (idsEqual(m.clientMessageId, clientMessageId) ? { ...m, ...patch } : m)),
@@ -184,10 +291,10 @@ export class ThreadStore {
     reactions: Array<{ emoji: string; count: number; me: boolean }>,
   ): void {
     this.messagesSignal.update((list) =>
-      list.map((m) => (m.id === messageId ? { ...m, reactions: [...reactions] } : m)),
+      list.map((m) => (idsEqual(m.id, messageId) ? { ...m, reactions: [...reactions] } : m)),
     );
     const active = this.activeSignal();
-    if (active?.parentMessage?.id === messageId) {
+    if (active?.parentMessage && idsEqual(active.parentMessage.id, messageId)) {
       this.activeSignal.set({
         ...active,
         parentMessage: { ...active.parentMessage, reactions: [...reactions] },
@@ -198,7 +305,7 @@ export class ThreadStore {
   private applyReactionsLocal(messageId: string, emoji: string): void {
     const toggle = (list: ChatMessage[]): ChatMessage[] =>
       list.map((m) => {
-        if (m.id !== messageId) return m;
+        if (!idsEqual(m.id, messageId)) return m;
         const current = [...(m.reactions ?? [])];
         const idx = current.findIndex((r) => r.emoji === emoji);
         if (idx >= 0) {
@@ -217,7 +324,7 @@ export class ThreadStore {
 
     this.messagesSignal.update(toggle);
     const active = this.activeSignal();
-    if (active?.parentMessage?.id === messageId) {
+    if (active?.parentMessage && idsEqual(active.parentMessage.id, messageId)) {
       const [updated] = toggle([active.parentMessage]);
       this.activeSignal.set({ ...active, parentMessage: updated });
     }
@@ -232,6 +339,7 @@ export class ThreadStore {
       authorName: message.authorName || 'Membro',
       body: message.deletedAt ? '' : message.body,
       reactions: message.reactions ?? [],
+      replyTo: message.replyTo ?? null,
     };
   }
 

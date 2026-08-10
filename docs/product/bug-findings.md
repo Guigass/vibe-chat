@@ -32,6 +32,8 @@ Regras do registro:
 | BUG-004 | Composer / áudio | Áudio do microfone não envia | Alta | Aberto — safety lane |
 | BUG-005 | Admin | Página `/admin` “não entra” (Member redireciona sem feedback) | Alta | Aberto — safety lane |
 | BUG-006 | Realtime | Conexão em tempo real caindo com frequência | Alta | Aberto — safety lane |
+| BUG-007 | Theme | Modo escuro não funciona | Alta | Aberto — safety lane |
+| BUG-008 | Presence | Minimizar a janela marca ausente na hora | Média | Aberto |
 
 ## Detalhamento
 
@@ -164,8 +166,83 @@ Regras do registro:
 - Próxima ação: monitorar eventos SignalR no browser + logs API/Redis durante
   idle e troca de canal; validar WS via proxy se aplicável.
 
+### BUG-007 — Modo escuro não funciona
+
+- Status: **Aberto**
+- Observado em: relato de produto, 2026-08-10 — toggle / preferência de tema
+  escuro não aplica (ou não persiste) a UI esperada.
+- Hipótese: `ThemeService` altera `html[data-theme]` / `colorScheme`, mas o
+  caminho de bootstrap (`App` inject), o toggle (`theme-toggle`) ou tokens
+  `[data-theme='dark']` / variante Tailwind `dark` não reagem de ponta a
+  ponta; possível race com `data-theme="light"` fixo em `index.html` ou
+  estilos hardcoded que ignoram o atributo.
+- Arquivos: `apps/web/src/app/core/services/theme.service.ts`,
+  `apps/web/src/app/app.ts`,
+  `apps/web/src/app/shared/ui/theme-toggle/theme-toggle.ts`,
+  `apps/web/src/styles.scss`, `apps/web/src/styles/_tokens.scss`,
+  `apps/web/src/index.html`.
+- Resultado esperado: ativar tema escuro troca tokens/`data-theme` de forma
+  visível e persistente (`vc.theme`); reload mantém a escolha do usuário.
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: toggle dark/light altera `data-theme` e a superfície
+  principal; preferência sobrevive a F5; regressão unit/componente no
+  `ThemeService` / toggle.
+- Próxima ação: reproduzir no lab (`localhost:4200`), inspecionar
+  `document.documentElement.dataset.theme` após o toggle e mapear superfícies
+  que não leem `[data-theme='dark']`.
+
+### BUG-008 — Ausente imediato ao minimizar
+
+- Status: **Aberto**
+- Observado em: relato de produto, 2026-08-10 — ao minimizar a janela/aba o
+  usuário passa a **ausente** imediatamente; esperado só após idle prolongado
+  ou quando a sessão/máquina fica bloqueada (não por minimize/troca de foco
+  breve).
+- Hipótese: `ChatHubService` escuta `visibilitychange` e chama `SetAway` no
+  mesmo instante em que `document.visibilityState === 'hidden'` (minimize,
+  troca de aba, etc.), sem debounce/grace period nem distinção de lock de
+  tela / inatividade real.
+- Arquivos: `apps/web/src/app/core/services/chat-hub.service.ts`
+  (`visibilityHandler` / `setAway`), hub `SetAway` /
+  `Heartbeat`, presence Redis (B-026).
+- Resultado esperado: minimize/troca de aba curta mantém **online**; **away**
+  só após threshold de idle (ex.: minutos sem interação) e/ou sinal de
+  bloqueio de tela / sessão; voltar a focar cancela o timer e restaura online
+  via heartbeat.
+- Risk class: R1.
+- Owner automático: Frontend (D) + Realtime (C).
+- Critério de resolução: minimizar não marca away na hora; after timer (ou
+  lock) marca away; regressão cobrindo o grace period do visibility handler.
+- Próxima ação: introduzir debounce/idle timer no handler de visibility;
+  avaliar `navigator.userActivation` / eventos de input + APIs de lock quando
+  disponíveis; alinhar copy/contrato de presence se o threshold for produto.
+
+### BUG-009 — Reply de thread sem update em tempo real
+
+- Status: **Done**
+- Observado em: relato de produto + inspeção de código, 2026-08-10 — ao
+  responder numa thread o peer não vê a reply nem o contador na timeline sem F5.
+- Hipótese: `MessageStore.ingestRemote` só faz bump de `replyCount` quando o
+  pai local já tem `threadId`; peers que não abriram a thread ficam com pai
+  `threadId: null`. `ThreadStore.ingestRemote` usa `===` em vez de `idsEqual`
+  e só injeta com o painel aberto; abrir thread não publica evento hub.
+- Arquivos: `apps/web/src/app/core/services/message.store.ts`,
+  `thread.store.ts`, `message-sync.ts`; outbox `MessageCreated` com
+  `parentMessageId`.
+- Resultado esperado: replyCount sobe no peer sem abrir a thread; com painel
+  aberto a reply aparece via hub; reconnect faz gap-fill da thread aberta.
+- Risk class: R2.
+- Owner automático: Frontend (D) + Messaging/Realtime (C).
+- Critério de resolução: unit do bump por `parentMessageId`/`replyToMessageId`;
+  E2E ou integração cobrindo fan-out; finding `Done`.
+- Resolução: `bumpChannelParentForThreadReply` + `parentMessageId` no hub;
+  `idsEqual` no `ThreadStore`; gap-fill da thread aberta no reconnect; B-084
+  no mesmo trabalho.
+
 ## Fechados
 
 | ID | Área | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
 | BUG-001 | Composer / timeline | Mensagens aparecem duplicadas ao enviar | Alta | Done |
+| BUG-009 | Threads / realtime | Reply de thread sem update em tempo real | Alta | Done |

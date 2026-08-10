@@ -80,6 +80,13 @@ export interface ReactionSummary {
   me: boolean;
 }
 
+export interface MessageReplyTo {
+  messageId: string;
+  authorName: string;
+  preview: string;
+  deleted: boolean;
+}
+
 export const REACTION_EMOJI_OPTIONS = ['👍', '❤️', '😂', '🎉', '👀', '✅'] as const;
 
 export interface ChatMessage {
@@ -99,6 +106,10 @@ export interface ChatMessage {
   attachments?: MessageAttachment[];
   threadId?: string | null;
   replyToMessageId?: string | null;
+  /** Resolved cite preview (B-084); prefer over raw replyToMessageId in UI. */
+  replyTo?: MessageReplyTo | null;
+  /** Thread anchor id when this MessageCreated is a thread reply (hub). */
+  parentMessageId?: string | null;
   replyCount?: number;
   reactions?: ReactionSummary[];
   mentionsMe?: boolean;

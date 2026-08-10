@@ -113,3 +113,61 @@ export function gapFillAfterSeq(localMaxSeq: number, overlap = 50): number {
   if (localMaxSeq <= 0) return 0;
   return Math.max(0, localMaxSeq - overlap);
 }
+
+/**
+ * On a thread reply fan-out: locate the channel parent (by threadId and/or parentMessageId),
+ * attach threadId if missing, and increment replyCount (BUG-009).
+ */
+export function bumpChannelParentForThreadReply(
+  messages: readonly ChatMessage[],
+  reply: {
+    threadId: string;
+    parentMessageId?: string | null;
+    replyToMessageId?: string | null;
+  },
+): ChatMessage[] {
+  const threadId = reply.threadId;
+  const parentHint = reply.parentMessageId || reply.replyToMessageId || null;
+
+  return messages.map((m) => {
+    const isChannelMessage =
+      !!m.channelId && (m.conversationId === m.channelId || !m.conversationId);
+    if (!isChannelMessage) return m;
+
+    const matchByThread = !!m.threadId && idsEqual(m.threadId, threadId);
+    const matchByParentHint = !!parentHint && idsEqual(m.id, parentHint);
+    if (!matchByThread && !matchByParentHint) return m;
+
+    return {
+      ...m,
+      threadId: m.threadId ?? threadId,
+      replyCount: (m.replyCount ?? 0) + 1,
+    };
+  });
+}
+
+/** Mark reply-quote previews as deleted when the cited message is soft-deleted. */
+export function markReplyQuotesDeleted(
+  messages: readonly ChatMessage[],
+  deletedMessageId: string,
+): ChatMessage[] {
+  return messages.map((m) => {
+    if (!m.replyTo || !idsEqual(m.replyTo.messageId, deletedMessageId)) return m;
+    if (m.replyTo.deleted) return m;
+    return {
+      ...m,
+      replyTo: {
+        ...m.replyTo,
+        preview: '',
+        deleted: true,
+      },
+    };
+  });
+}
+
+/** Plain-text preview for composer quote bar (max 140 chars). */
+export function replyPreviewText(body: string, max = 140): string {
+  const flat = body.replace(/\s+/g, ' ').trim();
+  if (flat.length <= max) return flat;
+  return `${flat.slice(0, max - 1)}…`;
+}

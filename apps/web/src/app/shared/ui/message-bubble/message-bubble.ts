@@ -28,7 +28,9 @@ import { environment } from '../../../../environments/environment';
       [class.vc-msg--mine]="message().mine"
       [class.vc-msg--mentioned]="message().mentionsMe"
       [class.vc-msg--deleted]="!!message().deletedAt"
+      [class.vc-msg--highlight]="highlighted()"
       [attr.data-status]="message().status"
+      [attr.data-message-id]="message().id"
     >
       @if (!message().mine) {
         <vc-avatar [name]="message().authorName" [size]="34" />
@@ -76,6 +78,20 @@ import { environment } from '../../../../environments/environment';
             </div>
           </div>
         } @else {
+          @if (message().replyTo; as cite) {
+            @if (cite.deleted) {
+              <div class="vc-msg__quote vc-msg__quote--deleted">Mensagem removida</div>
+            } @else {
+              <button
+                type="button"
+                class="vc-msg__quote"
+                (click)="quoteClick.emit(cite.messageId)"
+              >
+                <strong>{{ cite.authorName }}</strong>
+                <span>{{ cite.preview }}</span>
+              </button>
+            }
+          }
           @if (message().body) {
             <vc-markdown-body [source]="message().body" [mentionLabels]="mentionLabels()" />
           }
@@ -154,12 +170,16 @@ import { environment } from '../../../../environments/environment';
                 />
               </div>
             </div>
+            @if (showReplyAction()) {
+              <button type="button" (click)="reply.emit()">Responder</button>
+            }
             @if (showThreadAction()) {
               <button type="button" (click)="openThread.emit()">
                 @if (message().replyCount) {
-                  {{ message().replyCount }} {{ message().replyCount === 1 ? 'resposta' : 'respostas' }}
+                  {{ message().replyCount }}
+                  {{ message().replyCount === 1 ? 'resposta' : 'respostas' }}
                 } @else {
-                  Responder
+                  Abrir thread
                 }
               </button>
             }
@@ -202,6 +222,43 @@ import { environment } from '../../../../environments/environment';
     }
     .vc-msg--deleted .vc-msg__body {
       opacity: 0.72;
+    }
+    .vc-msg--highlight .vc-msg__body {
+      outline: 2px solid color-mix(in srgb, var(--vc-brand) 55%, transparent);
+      outline-offset: 2px;
+      transition: outline-color 200ms ease;
+    }
+    .vc-msg__quote {
+      display: grid;
+      gap: 0.1rem;
+      width: 100%;
+      margin: 0 0 0.45rem;
+      padding: 0.35rem 0.55rem;
+      border: 0;
+      border-left: 3px solid var(--vc-brand);
+      border-radius: 0 var(--vc-radius-sm) var(--vc-radius-sm) 0;
+      background: color-mix(in srgb, var(--vc-brand) 8%, transparent);
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .vc-msg__quote strong {
+      font-size: 0.78rem;
+      color: var(--vc-brand);
+    }
+    .vc-msg__quote span {
+      font-size: 0.8rem;
+      color: var(--vc-ink-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .vc-msg__quote--deleted {
+      cursor: default;
+      font-style: italic;
+      color: var(--vc-ink-subtle);
+      font-size: 0.8rem;
     }
     header {
       display: flex;
@@ -371,9 +428,13 @@ export class MessageBubble {
 
   readonly message = input.required<ChatMessage>();
   readonly showThreadAction = input(false);
+  readonly showReplyAction = input(false);
+  readonly highlighted = input(false);
   readonly edit = output<string>();
   readonly delete = output<void>();
   readonly openThread = output<void>();
+  readonly reply = output<void>();
+  readonly quoteClick = output<string>();
   readonly react = output<string>();
 
   readonly editing = signal(false);

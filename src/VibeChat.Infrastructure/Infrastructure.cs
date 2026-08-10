@@ -496,6 +496,7 @@ public sealed class MessageWriter(
         var parentChannelId = command.ChannelId;
         var conversationId = command.ChannelId;
         Guid? threadId = command.ThreadId;
+        Guid? threadParentMessageId = null;
 
         if (threadId is Guid resolvedThreadId)
         {
@@ -509,6 +510,7 @@ public sealed class MessageWriter(
 
             parentChannelId = thread.ChannelId;
             conversationId = new ChannelId(thread.Id);
+            threadParentMessageId = thread.ParentMessageId.Value;
             if (command.ChannelId != ChannelId.Empty && command.ChannelId != parentChannelId)
             {
                 VibeChatMetrics.MessagesRejected.Add(1);
@@ -521,6 +523,48 @@ public sealed class MessageWriter(
         {
             VibeChatMetrics.MessagesRejected.Add(1);
             throw new UnauthorizedAccessException("User cannot send messages to this channel.");
+        }
+
+        object? replyToPayload = null;
+        if (command.ReplyToMessageId is MessageId replyToId)
+        {
+            var replyTarget = await (
+                from m in dbContext.Messages.AsNoTracking()
+                where m.Id == replyToId && m.TenantId == command.TenantId
+                join u in dbContext.UserProfiles on m.AuthorId equals u.Id into authors
+                from u in authors.DefaultIfEmpty()
+                select new
+                {
+                    Message = m,
+                    AuthorName = u != null ? u.DisplayName : m.AuthorId.Value.ToString()
+                }).FirstOrDefaultAsync(cancellationToken);
+
+            if (replyTarget is null)
+            {
+                throw new ArgumentException("ReplyToNotFound");
+            }
+
+            var target = replyTarget.Message;
+            var sameChannelConversation = target.ConversationId == parentChannelId;
+            var sameThreadConversation = threadId is not null && target.ConversationId == conversationId;
+            var isThreadParent = threadParentMessageId is Guid parentId
+                && target.Id.Value == parentId
+                && target.ConversationId == parentChannelId;
+
+            if (!sameChannelConversation && !sameThreadConversation && !isThreadParent)
+            {
+                throw new ArgumentException("ReplyToDifferentChannel");
+            }
+
+            replyToPayload = new
+            {
+                messageId = target.Id.Value,
+                authorName = target.DeletedAt is null ? replyTarget.AuthorName : string.Empty,
+                preview = target.DeletedAt is null
+                    ? TruncateReplyPreview(target.Body)
+                    : string.Empty,
+                deleted = target.DeletedAt is not null
+            };
         }
 
         var attachmentIds = (command.AttachmentIds ?? [])
@@ -627,10 +671,12 @@ public sealed class MessageWriter(
                 channelId = parentChannelId.Value,
                 conversationId = conversationId.Value,
                 threadId,
+                parentMessageId = threadParentMessageId,
                 messageId = command.MessageId.Value,
                 // Same UUID the client sent as messageId — reconciles optimistic UI (BUG-001).
                 clientMessageId = command.MessageId.Value,
                 replyToMessageId = command.ReplyToMessageId?.Value,
+                replyTo = replyToPayload,
                 authorId = command.UserId.Value,
                 authorName,
                 sequence,
@@ -839,6 +885,22 @@ public sealed class MessageWriter(
     }
 
     private static string ComputeHash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
+
+    private static string TruncateReplyPreview(string body, int maxLength = 140)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return string.Empty;
+        }
+
+        var flat = string.Join(' ', body.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        if (flat.Length <= maxLength)
+        {
+            return flat;
+        }
+
+        return flat[..(maxLength - 1)] + "…";
+    }
 }
 
 public sealed class DashboardQuery(VibeChatDbContext dbContext) : IDashboardQuery

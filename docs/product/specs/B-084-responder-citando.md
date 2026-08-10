@@ -48,11 +48,11 @@ impossível pela validação de canal, e há teste negativo para isso.
 
 ## Aceite
 
-- [ ] Responder mostra a citação no composer e na bolha enviada
-- [ ] Clicar na citação rola e destaca a original
-- [ ] Apagar a original transforma a citação em “Mensagem removida”
-- [ ] `replyToMessageId` de outro canal → 400
-- [ ] Citação também funciona dentro de thread
+- [x] Responder mostra a citação no composer e na bolha enviada
+- [x] Clicar na citação rola e destaca a original
+- [x] Apagar a original transforma a citação em “Mensagem removida”
+- [x] `replyToMessageId` de outro canal → 400
+- [x] Citação também funciona dentro de thread
 
 ## Testes
 

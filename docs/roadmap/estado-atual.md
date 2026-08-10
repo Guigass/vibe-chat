@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-10
 - **Fase:** Wave 7 — Sustentação / paridade (W8+)
 - **Safety lane obrigatória:** BUG-001…BUG-006 Alta abertos em [`bug-findings.md`](../product/bug-findings.md) (UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done)
-- **Próximo item elegível:** safety lane `BUG-*` Alta (W8-5 / B-083 Done neste PR); BUG-002 fecha em B-094 quando W9-7 elegível; depois W8-6 (B-084)
+- **Próximo item elegível:** safety lane `BUG-*` Alta restantes; BUG-002 fecha em B-094 quando W9-7 elegível; W8-6 / B-084 Done (responder citando + BUG-009)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -78,8 +78,8 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | BUG-001…006 | Safety lane Alta — ver [`bug-findings.md`](../product/bug-findings.md) |
-| 2 | W8-6 | Responder citando (B-084); W8-5 / B-083 Done (#117) |
+| 1 | BUG-002…007 | Safety lane Alta — ver [`bug-findings.md`](../product/bug-findings.md) |
+| 2 | W8-7 | Encaminhar (B-085); W8-6 / B-084 Done (citar + BUG-009) |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 

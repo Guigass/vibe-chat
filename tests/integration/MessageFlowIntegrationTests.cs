@@ -375,7 +375,68 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         outbox.Should().Contain(x =>
             x.Payload.Contains(replyId.ToString(), StringComparison.OrdinalIgnoreCase)
             && x.Payload.Contains(thread1.Id.ToString(), StringComparison.OrdinalIgnoreCase)
-            && x.Payload.Contains(DemoChannelId.ToString(), StringComparison.OrdinalIgnoreCase));
+            && x.Payload.Contains(DemoChannelId.ToString(), StringComparison.OrdinalIgnoreCase)
+            && x.Payload.Contains("parentMessageId", StringComparison.OrdinalIgnoreCase)
+            && x.Payload.Contains(parentId.ToString(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task Reply_citing_returns_replyTo_preview_and_rejects_other_channel()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var parentId = Guid.NewGuid();
+        var parentBody = $"cite-parent-{parentId:N}";
+        var parentCreate = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(parentId, $"idem-cite-parent-{parentId:N}", parentBody, null, null));
+        parentCreate.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var replyId = Guid.NewGuid();
+        var replyBody = $"cite-reply-{replyId:N}";
+        var reply = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(replyId, $"idem-cite-reply-{replyId:N}", replyBody, parentId, null));
+        reply.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var replyDto = await reply.Content.ReadFromJsonAsync<MessageDto>(JsonOptions);
+        replyDto.Should().NotBeNull();
+        replyDto!.ReplyToMessageId.Should().Be(parentId);
+        replyDto.ReplyTo.Should().NotBeNull();
+        replyDto.ReplyTo!.MessageId.Should().Be(parentId);
+        replyDto.ReplyTo.Deleted.Should().BeFalse();
+        replyDto.ReplyTo.Preview.Should().Contain("cite-parent");
+
+        var history = await client.GetFromJsonAsync<MessageDto[]>(
+            $"/api/v1/channels/{DemoChannelId}/messages?after=0&limit=100",
+            JsonOptions);
+        history.Should().NotBeNull();
+        var fromHistory = history!.Single(m => m.Id == replyId);
+        fromHistory.ReplyTo.Should().NotBeNull();
+        fromHistory.ReplyTo!.MessageId.Should().Be(parentId);
+
+        await using var db = factory.CreateMigratorDbContext();
+        var outbox = await db.OutboxMessages.IgnoreQueryFilters()
+            .Where(x => x.Type == nameof(MessageCreatedEvent))
+            .OrderByDescending(x => x.OccurredAt)
+            .Take(20)
+            .ToListAsync();
+        outbox.Should().Contain(x =>
+            x.Payload.Contains(replyId.ToString(), StringComparison.OrdinalIgnoreCase)
+            && x.Payload.Contains("\"replyTo\"", StringComparison.OrdinalIgnoreCase));
+
+        var foreignChannel = Guid.NewGuid();
+        var bad = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(
+                Guid.NewGuid(),
+                $"idem-cite-bad-{Guid.NewGuid():N}",
+                "should fail",
+                foreignChannel,
+                null));
+        bad.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var err = await bad.Content.ReadAsStringAsync();
+        err.Should().Contain("ReplyTo");
     }
 
     [Fact]
@@ -1398,6 +1459,12 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         bool Added,
         ReactionSummaryDto[] Reactions);
 
+    private sealed record ReplyToDto(
+        Guid MessageId,
+        string AuthorName,
+        string Preview,
+        bool Deleted);
+
     private sealed record MessageDto(
         Guid Id,
         Guid ChannelId,
@@ -1412,7 +1479,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         Guid? ReplyToMessageId = null,
         int ReplyCount = 0,
         Guid? ConversationId = null,
-        ReactionSummaryDto[]? Reactions = null);
+        ReactionSummaryDto[]? Reactions = null,
+        ReplyToDto? ReplyTo = null);
 
     private sealed record ThreadDto(
         Guid Id,

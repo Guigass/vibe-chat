@@ -570,6 +570,31 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Cross_tenant_replyTo_is_rejected_without_leaking_preview()
+    {
+        // Foreign/unknown message id must 400 without embedding a replyTo preview.
+        // (RLS + tenant filter make other-tenant rows invisible → ReplyToNotFound.)
+        var foreignMessageId = Guid.NewGuid();
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var send = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{SeedData.DemoChannelId.Value}/messages",
+            new SendMessageRequest(
+                Guid.NewGuid(),
+                $"sec-replyto-{Guid.NewGuid():N}",
+                "should not cite foreign",
+                foreignMessageId,
+                null));
+        send.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await send.Content.ReadAsStringAsync();
+        body.Should().Contain("ReplyToNotFound");
+        body.Should().NotContain("\"preview\"");
+        _ = foreignMessageId;
+    }
+
+    [Fact]
     public async Task Cross_tenant_hub_join_and_typing_are_rejected()
     {
         // T3 — hub subscribe / typing must not succeed for a foreign tenant channel (W3-2).

@@ -835,6 +835,7 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
 
     var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, channel.Id, messageIds, ct);
     var reactionsByMessage = await LoadReactionSummariesByMessageAsync(db, messageIds, profile.Id, ct);
+    var replyToById = await LoadReplyToByIdsAsync(db, rows.Select(x => x.ReplyToMessageId), ct);
     var messages = rows.Select(x => new MessageResponse(
         x.Id.Value,
         x.ChannelId.Value,
@@ -850,7 +851,8 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
         x.ReplyToMessageId?.Value,
         x.ThreadId is Guid tid && replyCounts.TryGetValue(tid, out var count) ? count : 0,
         x.ChannelId.Value,
-        x.DeletedAt == null && reactionsByMessage.TryGetValue(x.Id.Value, out var rx) ? rx : [])).ToArray();
+        x.DeletedAt == null && reactionsByMessage.TryGetValue(x.Id.Value, out var rx) ? rx : [],
+        x.ReplyToMessageId is MessageId rtid && replyToById.TryGetValue(rtid.Value, out var replyTo) ? replyTo : null)).ToArray();
     return Results.Ok(messages);
 });
 
@@ -937,6 +939,10 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
                 x.Waveform))
             .ToArrayAsync(ct);
 
+        var replyToId = request.ReplyToMessageId is Guid rid ? new MessageId(rid) : (MessageId?)null;
+        var replyToById = await LoadReplyToByIdsAsync(db, [replyToId], ct);
+        replyToById.TryGetValue(request.ReplyToMessageId ?? Guid.Empty, out var replyTo);
+
         return Results.Accepted(
             $"/api/v1/channels/{channel.Id.Value}/messages?after={result.Sequence - 1}",
             new MessageResponse(
@@ -953,7 +959,9 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
                 request.ThreadId,
                 request.ReplyToMessageId,
                 0,
-                channel.Id.Value));
+                channel.Id.Value,
+                null,
+                replyTo));
     }
     catch (ArgumentException ex)
     {
@@ -1086,6 +1094,7 @@ v1.MapGet("/threads/{threadId:guid}", async (
     {
         var attachments = await LoadAttachmentsByMessageAsync(db, channel.Id, [parent.Message.Id], ct);
         var reactions = await LoadReactionSummariesByMessageAsync(db, [parent.Message.Id], profile.Id, ct);
+        var parentReplyTo = await LoadReplyToByIdsAsync(db, [parent.Message.ReplyToMessageId], ct);
         parentResponse = new MessageResponse(
             parent.Message.Id.Value,
             channel.Id.Value,
@@ -1101,7 +1110,11 @@ v1.MapGet("/threads/{threadId:guid}", async (
             parent.Message.ReplyToMessageId?.Value,
             replyCount,
             channel.Id.Value,
-            parent.Message.DeletedAt == null && reactions.TryGetValue(parent.Message.Id.Value, out var rx) ? rx : []);
+            parent.Message.DeletedAt == null && reactions.TryGetValue(parent.Message.Id.Value, out var rx) ? rx : [],
+            parent.Message.ReplyToMessageId is MessageId prtid
+                && parentReplyTo.TryGetValue(prtid.Value, out var replyTo)
+                ? replyTo
+                : null);
     }
 
     return Results.Ok(new ThreadResponse(
@@ -1165,6 +1178,7 @@ v1.MapGet("/threads/{threadId:guid}/messages", async (
     var messageIds = rows.Select(x => x.Id).ToArray();
     var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, channel.Id, messageIds, ct);
     var reactionsByMessage = await LoadReactionSummariesByMessageAsync(db, messageIds, profile.Id, ct);
+    var replyToById = await LoadReplyToByIdsAsync(db, rows.Select(x => x.ReplyToMessageId), ct);
     var messages = rows.Select(x => new MessageResponse(
         x.Id.Value,
         channel.Id.Value,
@@ -1180,7 +1194,8 @@ v1.MapGet("/threads/{threadId:guid}/messages", async (
         x.ReplyToMessageId?.Value,
         0,
         thread.Id,
-        x.DeletedAt == null && reactionsByMessage.TryGetValue(x.Id.Value, out var rx) ? rx : [])).ToArray();
+        x.DeletedAt == null && reactionsByMessage.TryGetValue(x.Id.Value, out var rx) ? rx : [],
+        x.ReplyToMessageId is MessageId rtid && replyToById.TryGetValue(rtid.Value, out var replyTo) ? replyTo : null)).ToArray();
     return Results.Ok(messages);
 });
 
@@ -1274,6 +1289,10 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
                 x.Waveform))
             .ToArrayAsync(ct);
 
+        var effectiveReplyTo = request.ReplyToMessageId ?? thread.ParentMessageId.Value;
+        var replyToById = await LoadReplyToByIdsAsync(db, [new MessageId(effectiveReplyTo)], ct);
+        replyToById.TryGetValue(effectiveReplyTo, out var replyTo);
+
         return Results.Accepted(
             $"/api/v1/threads/{thread.Id}/messages?after={result.Sequence - 1}",
             new MessageResponse(
@@ -1288,9 +1307,11 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
                 profile.DisplayName,
                 attachments,
                 thread.Id,
-                request.ReplyToMessageId ?? thread.ParentMessageId.Value,
+                effectiveReplyTo,
                 0,
-                thread.Id));
+                thread.Id,
+                null,
+                replyTo));
     }
     catch (ArgumentException ex)
     {
@@ -3384,6 +3405,59 @@ static async Task<Message?> FindMessageInChannelAsync(
     return belongs ? message : null;
 }
 
+static string TruncateReplyPreview(string body, int maxLength = 140)
+{
+    if (string.IsNullOrWhiteSpace(body))
+    {
+        return string.Empty;
+    }
+
+    var flat = string.Join(' ', body.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+    if (flat.Length <= maxLength)
+    {
+        return flat;
+    }
+
+    return flat[..(maxLength - 1)] + "…";
+}
+
+static async Task<Dictionary<Guid, ReplyToResponse>> LoadReplyToByIdsAsync(
+    VibeChatDbContext db,
+    IEnumerable<MessageId?> replyToIds,
+    CancellationToken ct)
+{
+    var ids = replyToIds
+        .Where(x => x is not null)
+        .Select(x => x!.Value)
+        .Distinct()
+        .ToArray();
+    if (ids.Length == 0)
+    {
+        return new Dictionary<Guid, ReplyToResponse>();
+    }
+
+    var rows = await (
+        from m in db.Messages.AsNoTracking()
+        where ids.Contains(m.Id)
+        join u in db.UserProfiles on m.AuthorId equals u.Id into authors
+        from u in authors.DefaultIfEmpty()
+        select new
+        {
+            m.Id,
+            m.Body,
+            m.DeletedAt,
+            AuthorName = u != null ? u.DisplayName : m.AuthorId.Value.ToString()
+        }).ToArrayAsync(ct);
+
+    return rows.ToDictionary(
+        x => x.Id.Value,
+        x => new ReplyToResponse(
+            x.Id.Value,
+            x.DeletedAt is null ? x.AuthorName : string.Empty,
+            x.DeletedAt is null ? TruncateReplyPreview(x.Body) : string.Empty,
+            x.DeletedAt is not null));
+}
+
 static async Task<Dictionary<Guid, AttachmentResponse[]>> LoadAttachmentsByMessageAsync(
     VibeChatDbContext db,
     ChannelId channelId,
@@ -3611,6 +3685,12 @@ public sealed record ToggleReactionResponse(
     string Emoji,
     bool Added,
     ReactionSummaryResponse[] Reactions);
+public sealed record ReplyToResponse(
+    Guid MessageId,
+    string AuthorName,
+    string Preview,
+    bool Deleted);
+
 public sealed record MessageResponse(
     Guid Id,
     Guid ChannelId,
@@ -3626,7 +3706,8 @@ public sealed record MessageResponse(
     Guid? ReplyToMessageId = null,
     int ReplyCount = 0,
     Guid? ConversationId = null,
-    ReactionSummaryResponse[]? Reactions = null);
+    ReactionSummaryResponse[]? Reactions = null,
+    ReplyToResponse? ReplyTo = null);
 public sealed record ThreadResponse(
     Guid Id,
     Guid ChannelId,

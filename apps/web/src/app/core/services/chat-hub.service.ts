@@ -32,7 +32,14 @@ interface MessageCreatedPayload {
   channelId: string;
   conversationId?: string;
   threadId?: string | null;
+  parentMessageId?: string | null;
   replyToMessageId?: string | null;
+  replyTo?: {
+    messageId?: string;
+    authorName?: string;
+    preview?: string;
+    deleted?: boolean;
+  } | null;
   sequence?: number;
   authorId?: string;
   authorName?: string;
@@ -461,7 +468,16 @@ export class ChatHubService {
       mine: !!me && me === String(payload.authorId ?? ''),
       mentionsMe,
       threadId: payload.threadId ? String(payload.threadId) : null,
+      parentMessageId: payload.parentMessageId ? String(payload.parentMessageId) : null,
       replyToMessageId: payload.replyToMessageId ? String(payload.replyToMessageId) : null,
+      replyTo: payload.replyTo?.messageId
+        ? {
+            messageId: String(payload.replyTo.messageId),
+            authorName: payload.replyTo.authorName ?? '',
+            preview: payload.replyTo.preview ?? '',
+            deleted: !!payload.replyTo.deleted,
+          }
+        : null,
       attachments: (payload.attachments ?? []).map((a) => ({
         id: String(a.id),
         fileName: a.fileName,

@@ -75,10 +75,13 @@ public interface IMembershipQuery
 | EditedAt | DateTimeOffset? |
 | DeletedAt | DateTimeOffset? |
 | ThreadId | Guid? | Presente em pai (após abrir thread) e replies |
-| ReplyToMessageId | Guid? | |
+| ReplyToMessageId | Guid? | Citação inline (B-084); validado no mesmo canal/thread |
+| ReplyTo | `{ messageId, authorName, preview, deleted }`? | Prévia resolvida no servidor (até 140 chars); history + Accepted + hub |
 | ReplyCount | int | Contagem de replies (timeline do canal) |
 | Attachments | AttachmentDto[] | Metadados prontos (sem URL) |
 | Reactions | ReactionSummaryDto[] | `{ emoji, count, me }` agregado |
+
+`ReplyToMessageId` de outro canal → 400 `ReplyToDifferentChannel`. Inexistente → 400 `ReplyToNotFound`. Soft-delete da original: `replyTo.deleted = true`, preview vazio (UI: “Mensagem removida”).
 
 ### EditMessage
 
@@ -135,7 +138,7 @@ Validação ocorre em `POST .../messages`, `POST .../threads/{threadId}/messages
 | `GET /api/v1/threads/{threadId}/messages` | Histórico da conversa da thread (`seq` próprio) |
 | `POST /api/v1/threads/{threadId}/messages` | Reply; idempotência + seq + outbox; `threadId` no evento hub |
 
-Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out SignalR continua no grupo do **canal pai**, com `threadId` / `conversationId` no payload.
+Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out SignalR continua no grupo do **canal pai**, com `threadId` / `conversationId` / `parentMessageId` (âncora da thread) no payload.
 
 ### Directory — spaces, channels, members & DMs
 
@@ -261,7 +264,7 @@ Nomes de eventos hub (cliente):
 
 | Evento | Quando |
 |--------|--------|
-| `MessageCreated` | Nova mensagem — payload inclui `messageId`, `clientMessageId` (mesmo UUID do `messageId` do comando), `channelId`, `conversationId`, `sequence`, `authorId`, `body`, menções/anexos |
+| `MessageCreated` | Nova mensagem — payload inclui `messageId`, `clientMessageId` (mesmo UUID do `messageId` do comando), `channelId`, `conversationId`, `threadId?`, `parentMessageId?`, `replyToMessageId?`, `replyTo?`, `sequence`, `authorId`, `body`, menções/anexos |
 | `MessageEdited` | Edição |
 | `MessageDeleted` | Soft delete |
 | `ReactionChanged` | Toggle de reação (payload com resumo agregado) |

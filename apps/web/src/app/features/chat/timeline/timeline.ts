@@ -5,6 +5,7 @@ import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { ThreadStore } from '../../../core/services/thread.store';
 import { withoutSelfTyping } from '../../../core/services/typing-filter';
+import { ChatMessage } from '../../../shared/models/chat.models';
 import { EmptyState, MessageBubble, Skeleton, TypingIndicator } from '../../../shared/ui';
 
 @Component({
@@ -29,10 +30,14 @@ import { EmptyState, MessageBubble, Skeleton, TypingIndicator } from '../../../s
           @for (message of messages.forActiveChannel(); track message.id) {
             <vc-message-bubble
               [message]="message"
+              [showReplyAction]="true"
               [showThreadAction]="true"
+              [highlighted]="messages.highlightMessageId() === message.id"
               (edit)="onEdit(message.id, $event)"
               (delete)="onDelete(message.id)"
+              (reply)="onReply(message)"
               (openThread)="onOpenThread(message.id)"
+              (quoteClick)="onQuoteClick($event)"
               (react)="onReact(message.id, $event)"
             />
           }
@@ -103,6 +108,14 @@ export class Timeline {
 
   async onDelete(messageId: string): Promise<void> {
     await this.messages.remove(messageId);
+  }
+
+  onReply(message: ChatMessage): void {
+    this.messages.setReplyTarget(message);
+  }
+
+  onQuoteClick(messageId: string): void {
+    this.messages.jumpToMessage(messageId);
   }
 
   async onOpenThread(messageId: string): Promise<void> {

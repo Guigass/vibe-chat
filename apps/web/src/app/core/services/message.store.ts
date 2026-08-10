@@ -6,12 +6,15 @@ import { ChannelStore } from './channel.store';
 import { ThreadStore } from './thread.store';
 import { ChatMessage } from '../../shared/models/chat.models';
 import {
+  bumpChannelParentForThreadReply,
   findMessageByCorrelators,
   gapFillAfterSeq,
   hasSeqGap,
   idsEqual,
+  markReplyQuotesDeleted,
   maxSeqForChannel,
   mergeMessagesById,
+  replyPreviewText,
   upsertRemoteMessage,
 } from './message-sync';
 
@@ -26,6 +29,9 @@ export class MessageStore {
   private readonly messagesSignal = signal<ChatMessage[]>([]);
   private readonly loadingSignal = signal(false);
   private readonly sendingSignal = signal(false);
+  private readonly replyTargetSignal = signal<ChatMessage | null>(null);
+  private readonly highlightMessageIdSignal = signal<string | null>(null);
+  private highlightTimer: ReturnType<typeof setTimeout> | null = null;
   private gapFillInFlight = new Set<string>();
   private unsubCreated: (() => void) | null = null;
   private unsubEdited: (() => void) | null = null;
@@ -36,6 +42,8 @@ export class MessageStore {
   readonly messages = this.messagesSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
   readonly sending = this.sendingSignal.asReadonly();
+  readonly replyTarget = this.replyTargetSignal.asReadonly();
+  readonly highlightMessageId = this.highlightMessageIdSignal.asReadonly();
   readonly forActiveChannel = computed(() => {
     const channelId = this.channels.activeChannel()?.id;
     if (!channelId) return [];
@@ -55,7 +63,36 @@ export class MessageStore {
     this.unsubReactions = this.hub.onReactionChanged((event) =>
       this.applyReactions(event.messageId, event.reactions),
     );
-    this.unsubReconnected = this.hub.onReconnected(() => this.gapFillActiveChannel());
+    this.unsubReconnected = this.hub.onReconnected(() => {
+      void this.gapFillActiveChannel();
+      void this.threads.gapFillActive();
+    });
+  }
+
+  setReplyTarget(message: ChatMessage | null): void {
+    if (!message || message.deletedAt) {
+      this.replyTargetSignal.set(null);
+      return;
+    }
+    this.replyTargetSignal.set(message);
+  }
+
+  clearReplyTarget(): void {
+    this.replyTargetSignal.set(null);
+  }
+
+  jumpToMessage(messageId: string): void {
+    if (!messageId) return;
+    const el = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (el instanceof HTMLElement) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    if (this.highlightTimer) clearTimeout(this.highlightTimer);
+    this.highlightMessageIdSignal.set(messageId);
+    this.highlightTimer = setTimeout(() => {
+      this.highlightMessageIdSignal.set(null);
+      this.highlightTimer = null;
+    }, 2000);
   }
 
   async loadChannel(channelId: string): Promise<void> {
@@ -118,6 +155,18 @@ export class MessageStore {
     const hasAttachments = attachmentIds.length > 0;
     if (!channel || (!text && !hasAttachments)) return false;
 
+    const replyTarget = this.replyTargetSignal();
+    const replyToMessageId = replyTarget?.id ?? null;
+    const replyTo =
+      replyTarget && !replyTarget.deletedAt
+        ? {
+            messageId: replyTarget.id,
+            authorName: replyTarget.authorName,
+            preview: replyPreviewText(replyTarget.body),
+            deleted: false,
+          }
+        : null;
+
     const clientMessageId = crypto.randomUUID();
     const idempotencyKey = crypto.randomUUID();
     const optimistic: ChatMessage = {
@@ -131,6 +180,8 @@ export class MessageStore {
       createdAt: new Date().toISOString(),
       status: 'sending',
       mine: true,
+      replyToMessageId,
+      replyTo,
       attachments: hasAttachments
         ? attachmentIds.map((id) => ({
             id,
@@ -143,6 +194,7 @@ export class MessageStore {
     };
 
     this.messagesSignal.update((list) => [...list, optimistic]);
+    this.replyTargetSignal.set(null);
     this.sendingSignal.set(true);
 
     try {
@@ -170,6 +222,7 @@ export class MessageStore {
         clientMessageId,
         idempotencyKey,
         attachmentIds,
+        replyToMessageId: replyToMessageId ?? undefined,
       });
 
       this.patchByClientId(clientMessageId, {
@@ -181,6 +234,7 @@ export class MessageStore {
       return true;
     } catch {
       this.patchByClientId(clientMessageId, { status: 'failed' });
+      if (replyTarget) this.replyTargetSignal.set(replyTarget);
       return false;
     } finally {
       this.sendingSignal.set(false);
@@ -269,10 +323,16 @@ export class MessageStore {
     const isThreadReply =
       !!normalized.threadId &&
       normalized.conversationId !== normalized.channelId &&
-      normalized.conversationId === normalized.threadId;
+      idsEqual(normalized.conversationId, normalized.threadId);
 
     if (isThreadReply) {
-      this.bumpParentReplyCount(normalized.threadId!);
+      this.messagesSignal.update((list) =>
+        bumpChannelParentForThreadReply(list, {
+          threadId: normalized.threadId!,
+          parentMessageId: normalized.parentMessageId,
+          replyToMessageId: normalized.replyToMessageId,
+        }),
+      );
       this.threads.bumpReplyCount(normalized.threadId!);
       return;
     }
@@ -310,20 +370,10 @@ export class MessageStore {
     }
   }
 
-  private bumpParentReplyCount(threadId: string): void {
-    this.messagesSignal.update((list) =>
-      list.map((m) =>
-        m.threadId === threadId && m.conversationId === m.channelId
-          ? { ...m, replyCount: (m.replyCount ?? 0) + 1 }
-          : m,
-      ),
-    );
-  }
-
   markThreadOpened(messageId: string, threadId: string): void {
     this.messagesSignal.update((list) =>
       list.map((m) =>
-        m.id === messageId ? { ...m, threadId, replyCount: m.replyCount ?? 0 } : m,
+        idsEqual(m.id, messageId) ? { ...m, threadId, replyCount: m.replyCount ?? 0 } : m,
       ),
     );
   }
@@ -351,9 +401,9 @@ export class MessageStore {
   }
 
   private applyDelete(patch: { id: string; channelId: string; deletedAt: string; seq?: number }): void {
-    this.messagesSignal.update((list) =>
-      list.map((m) =>
-        m.id === patch.id
+    this.messagesSignal.update((list) => {
+      const deleted = list.map((m) =>
+        idsEqual(m.id, patch.id)
           ? {
               ...m,
               body: '',
@@ -361,8 +411,9 @@ export class MessageStore {
               seq: patch.seq ?? m.seq,
             }
           : m,
-      ),
-    );
+      );
+      return markReplyQuotesDeleted(deleted, patch.id);
+    });
   }
 
   private applyReactions(
@@ -396,6 +447,7 @@ export class MessageStore {
       body: message.deletedAt ? '' : message.body,
       replyCount: message.replyCount ?? 0,
       reactions: message.reactions ?? [],
+      replyTo: message.replyTo ?? null,
     };
   }
 

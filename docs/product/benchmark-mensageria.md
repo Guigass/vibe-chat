@@ -47,7 +47,7 @@ com gesto “Follow thread” e uma visão agregada de threads seguidas. Discord
 | Mensagem de áudio | Clips | gravação | mensagens de voz | sim (central) | **Falta** — B-080 |
 | Transcrição de áudio | sim | sim | — | sim (on-device) | **Falta** — B-080 (flag) |
 | Clipe de vídeo curto | Clips | sim | — | sim | Fora de escopo fase 2 |
-| Responder citando (inline) | sim | sim | sim | sim | **Falta** — B-084 |
+| Responder citando (inline) | sim | sim | sim | sim | **Done** — B-084 |
 | Encaminhar mensagem | sim | sim | sim | sim | **Falta** — B-085 |
 | Rascunho persistente por conversa | sim | sim | sim | sim | **Falta** — B-086 |
 | Agendar envio | sim | sim | — | — | Fora de escopo fase 2 |
