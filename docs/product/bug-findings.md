@@ -31,6 +31,7 @@ Regras do registro:
 | BUG-008 | Presence         | Minimizar a janela marca ausente na hora                              | Média      | Aberto                      |
 | BUG-010 | Timeline / scroll | Ao abrir a conversa não rola até as mensagens mais recentes          | Média      | Aberto                      |
 | BUG-011 | Admin / shell    | Membros não veem o botão Admin                                        | Média      | Aberto                      |
+| BUG-012 | Timeline / bolha | Toolbar de ações no hover mal posicionada em mensagens curtas agrupadas | Média      | Aberto                      |
 
 ## Detalhamento
 
@@ -312,6 +313,46 @@ Regras do registro:
 - Próxima ação: confirmar se o footer está clipado/oculto no layout; se o
   produto quiser esconder Admin de Member, documentar e alinhar B-106 —
   senão garantir visibilidade do link + empty-state.
+
+### BUG-012 — Toolbar de hover desalinhada em bolhas agrupadas
+
+- Status: **Aberto**
+- Observado em: relato de produto, 2026-08-10 — ao passar o mouse sobre
+  mensagens **curtas** dentro de um **stack agrupado** (B-088), a toolbar de
+  reações/responder/⋯ aparece longe do texto ou sobrepondo a linha anterior;
+  pior em `groupRole` `middle`/`end`, onde o padding vertical é reduzido.
+- Hipótese: em `surface='plain'` (timeline stack) a toolbar usa
+  `position: absolute` com `top: 0.35rem; right: 0; transform: translate(0.35rem, -100%)`
+  ancorada ao `.vc-msg__column`, que herda a largura do stack
+  (`timeline__stack-body` com `width: max-content`). Em mensagem curta num
+  bloco mais largo, o `right: 0` cola a barra na borda direita do stack — não
+  ao fim do texto. O deslocamento `-100%` para cima, somado ao padding
+  comprimido entre linhas agrupadas, faz a barra invadir a mensagem de cima ou
+  flutuar no vazio acima da linha.
+- Arquivos: `apps/web/src/app/shared/ui/message-bubble/message-bubble.ts`
+  (`.vc-msg__toolbar`, variantes `--plain` / `--grouped`),
+  `apps/web/src/app/features/chat/timeline/timeline.ts`
+  (`.timeline__stack-body`), `timeline-items.ts` (agrupamento B-088).
+- Resultado esperado: hover/focus revela toolbar **adjacente** ao conteúdo da
+  linha (inline-end do texto ou canto superior direito da bolha visível), sem
+  sobrepor outras mensagens do mesmo stack; comportamento estável em mine/theirs,
+  mensagem curta/longa e touch (long-press / ⋯).
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: regressão visual/unit ou E2E cobrindo stack com linha
+  curta após linha longa; toolbar não sobrepõe linha vizinha; finding `Done`.
+- Próxima ação (direções de solução, escolher uma ou combinar):
+  1. **Ancorar à largura do conteúdo** — coluna da bolha com `width: fit-content`
+     / `max-width: 100%` por linha, ou toolbar posicionada em relação a
+     `.vc-msg__body` (não à coluna do stack inteiro).
+  2. **Toolbar no nível do stack** — uma barra por entrada do stack no hover da
+     linha ativa, evitando N toolbars absolutas com `translateY(-100%)`.
+  3. **Posicionamento adaptativo** — CDK overlay / `position: fixed` com flip
+     (acima · ao lado · abaixo) conforme espaço e altura da linha; fallback
+     lateral para mensagens de uma palavra.
+  4. **Agrupadas `middle`/`end`** — preferir deslocamento horizontal
+     (`inline-end` da linha) em vez de flutuar acima quando a linha é mais baixa
+     que a toolbar.
 
 ## Fechados
 
