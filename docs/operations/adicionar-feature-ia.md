@@ -3,7 +3,7 @@
 ## Princípios (ADR-012)
 
 1. IA é **opcional** — default off
-2. Sempre atrás de `IAiAssistant` (ou especializações estreitas)
+2. Sempre atrás de `IAiCompletionProvider` e/ou features estreitas (`ISummarizeChannelFeature`, `ISuggestChannelReplyFeature`, `ITranscribeAttachmentFeature`)
 3. Nunca no caminho crítico síncrono de `SendMessage` sem fila
 4. Contexto **só** com dados autorizados ao usuário/tenant
 5. Sem vazamento cross-tenant em batches/caches de prompt

@@ -80,6 +80,7 @@ Seed cria workspace demo, canal `#geral` e memberships para alice/bob.
 | `task test:architecture` | Fronteiras de módulo |
 | `task test:security` | Isolamento multi-tenant |
 | `task verify` | lint + todos os testes relevantes |
+| `task agent:check` | Valida harness Cursor (hooks, prompts, contratos de automação) |
 | `task proxy:certs` | Certs self-signed para profile `proxy` (W5-2) |
 | `task load:smoke` | k6 smoke DevAuth (W5-3) |
 | `task migrate` | EF Core `database update` |

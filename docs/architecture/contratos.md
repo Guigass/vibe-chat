@@ -2,7 +2,13 @@
 
 ## Objetivo
 
-Definir as interfaces, DTOs e eventos que permitem colaboração entre módulos **sem** acoplamento às implementações. Pacote canônico: `VibeChat.Contracts`.
+Definir as interfaces, DTOs e eventos que permitem colaboração entre módulos **sem** acoplamento às implementações.
+
+**Onde vivem os contratos (estado atual):** não há assembly `VibeChat.Contracts`. Interfaces técnicas
+compartilhadas ficam em `modules/BuildingBlocks` (`VibeChat.BuildingBlocks`); contratos de domínio
+ficam no módulo dono (ex.: `IChannelMembershipReader` em Conversations, `IWorkspaceMembershipReader`
+em Tenancy, features de IA em `modules/AI`). Implementações de persistência/adapters ficam em
+`src/VibeChat.Infrastructure` e o composition root em `apps/api` / `apps/worker`.
 
 ## Princípios
 
@@ -18,32 +24,57 @@ Definir as interfaces, DTOs e eventos que permitem colaboração entre módulos 
 ## Contexto de tenancy
 
 ```csharp
-// Conceito — não é código de produção obrigatório neste doc
+// Em VibeChat.BuildingBlocks — forma real
 public interface ITenantContext
 {
-    Guid TenantId { get; }
-    Guid UserId { get; }
-    IReadOnlyCollection<string> Roles { get; }
-    bool IsAuthenticated { get; }
+    TenantId TenantId { get; }
+    bool HasTenant { get; }
+    void SetTenant(TenantId tenantId);
+    UserId UserId { get; }
+    bool HasUser { get; }
+    void SetUser(UserId userId);
+    string? JobRole { get; }
+    void SetJobRole(string? jobRole);
 }
 ```
 
-`TenantId` e `UserId` vêm exclusivamente do token/contexto autenticado.
+`TenantId` e `UserId` vêm exclusivamente do token/contexto autenticado (`ICurrentUser` carrega identity/roles do principal).
 Tipos de principal, sessão, device e delegação seguem
 [`modelo-identidade-principals.md`](modelo-identidade-principals.md).
 
 ---
 
-## Directory → outros módulos
+## Membership e autorização entre módulos
+
+Não existe `IMembershipQuery` monolítico. AuthZ combina:
+
+1. **Membership** — leitores de domínio por bounded context
+2. **Permissões** — `IPermissionChecker` + `RolePermissionCatalog` em BuildingBlocks
 
 ```csharp
-public interface IMembershipQuery
+// modules/Tenancy
+public interface IWorkspaceMembershipReader
 {
-    Task<bool> CanAccessChannelAsync(Guid tenantId, Guid userId, Guid channelId, CancellationToken ct);
-    Task<bool> CanPostAsync(Guid tenantId, Guid userId, Guid channelId, CancellationToken ct);
-    Task<IReadOnlyList<Guid>> ListChannelMemberIdsAsync(Guid tenantId, Guid channelId, CancellationToken ct);
+    Task<bool> IsMemberAsync(TenantId tenantId, WorkspaceId workspaceId, UserId userId, CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<Role>> GetRolesAsync(TenantId tenantId, UserId userId, CancellationToken cancellationToken);
+}
+
+// modules/Conversations
+public interface IChannelMembershipReader
+{
+    Task<bool> CanAccessAsync(TenantId tenantId, ChannelId channelId, UserId userId, CancellationToken cancellationToken);
+}
+
+// modules/BuildingBlocks
+public interface IPermissionChecker
+{
+    Task<bool> HasPermissionAsync(TenantId tenantId, UserId userId, string permission, CancellationToken cancellationToken);
 }
 ```
+
+Implementação concreta: `PermissionChecker` em Infrastructure também satisfaz os leitores de
+membership. Endpoints tipicamente checam membership + `HasPermissionAsync` (ex.:
+`Permissions.Message.Send`) no composition root — não há `CanPostAsync` como porta separada.
 
 ---
 

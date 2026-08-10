@@ -59,10 +59,10 @@ fronteiras de domínio silenciosamente.
 | **Search** | Indexação leve / FTS PostgreSQL |
 | **Notifications** | Preferências e entregas assíncronas (fase inicial mínima) |
 | **Audit** | Trilha de ações sensíveis |
-| **AI** | Interface `IAiAssistant`; provedor opcional (OpenRouter) |
+| **AI** | Porta `IAiCompletionProvider` + features (`ISummarizeChannelFeature`, `ISuggestChannelReplyFeature`, `ITranscribeAttachmentFeature`); provedor opcional (OpenRouter/Mock/Null) |
 | **Administration** | Dashboard, settings, export e leitura administrativa |
 | **Integrations** | Webhooks outbound e futuras integrações autorizadas |
-| **Moderation** | Fronteira reservada; ainda sem domínio material no snapshot de 2026-07-27 |
+| **Moderation** | Fronteira reservada; ainda sem domínio material no snapshot de 2026-08-10 |
 | **BuildingBlocks** | Tipos e contratos técnicos compartilhados |
 
 Presence/typing pertencem hoje à fronteira **Realtime** com estado efêmero no

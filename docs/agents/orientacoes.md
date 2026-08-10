@@ -32,7 +32,7 @@ Este documento guia agentes de código (backend, frontend, infra, QA, security, 
 
 ### Fazer
 
-- Trabalhar em módulos com fronteiras; contratos em `VibeChat.Contracts`
+- Trabalhar em módulos com fronteiras; contratos técnicos em `VibeChat.BuildingBlocks`, contratos de domínio no módulo dono (ver `docs/architecture/contratos.md`)
 - Composition root só em `apps/api` e `apps/worker`
 - Setar `TenantContext` / `app.tenant_id` em toda unit of work
 - Publicar efeitos via outbox

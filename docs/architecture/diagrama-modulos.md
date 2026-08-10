@@ -1,6 +1,6 @@
 # Diagrama de Módulos — VibeChat
 
-Snapshot das fronteiras existentes em 2026-07-27. O diagrama mostra dependência
+Snapshot das fronteiras existentes em 2026-08-10. O diagrama mostra dependência
 de composição, não autoriza módulos de domínio a conhecer internals uns dos
 outros.
 
@@ -118,6 +118,7 @@ src/
   VibeChat.SharedKernel/
 tests/
   architecture/ integration/ security/ unit/ e2e/ load/
+  VibeChat.TestHost/
 ```
 
 ## Testes de arquitetura atuais e evolução
