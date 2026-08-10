@@ -85,6 +85,7 @@ export interface ReactionChangedEvent {
   userId: string;
   added: boolean;
   reactions: ReactionSummary[];
+  topUsers?: string[];
 }
 
 interface ReactionChangedPayload {
@@ -93,6 +94,7 @@ interface ReactionChangedPayload {
   emoji?: string;
   userId?: string;
   added?: boolean;
+  topUsers?: string[];
   reactions?: Array<{ emoji: string; count: number; userIds?: string[]; me?: boolean }>;
 }
 
@@ -206,6 +208,7 @@ export class ChatHubService {
         emoji: payload.emoji,
         userId: String(payload.userId ?? ''),
         added: !!payload.added,
+        topUsers: payload.topUsers?.map(String),
         reactions: (payload.reactions ?? []).map((r) => {
           const userIds = (r.userIds ?? []).map(String);
           return {

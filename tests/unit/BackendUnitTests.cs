@@ -187,12 +187,15 @@ public sealed class BackendUnitTests
     }
 
     [Fact]
-    public void Reaction_emoji_allowlist_accepts_mvp_set()
+    public void Emoji_validator_accepts_unicode_emoji_and_rejects_text()
     {
-        ReactionEmojis.IsAllowed("👍").Should().BeTrue();
-        ReactionEmojis.IsAllowed("❤️").Should().BeTrue();
-        ReactionEmojis.IsAllowed("🚀").Should().BeFalse();
-        ReactionEmojis.IsAllowed(" ").Should().BeFalse();
+        EmojiValidator.IsValid("👍").Should().BeTrue();
+        EmojiValidator.IsValid("❤️").Should().BeTrue();
+        EmojiValidator.IsValid("🚀").Should().BeTrue();
+        EmojiValidator.IsValid("👨‍👩‍👧").Should().BeTrue();
+        EmojiValidator.IsValid(":)").Should().BeFalse();
+        EmojiValidator.IsValid(" ").Should().BeFalse();
+        EmojiValidator.IsValid("hello").Should().BeFalse();
         RolePermissionCatalog.For(Role.Guest).Should().NotContain(Permissions.Message.React);
     }
 

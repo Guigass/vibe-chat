@@ -109,9 +109,10 @@ Validação ocorre em `POST .../messages`, `POST .../threads/{threadId}/messages
 
 | Endpoint | Notas |
 |----------|-------|
-| `PUT /api/v1/channels/{channelId}/messages/{messageId}/reactions` | Toggle (`{ emoji }`); membership + `message.react`; allowlist `👍 ❤️ 😂 🎉 👀 ✅`; unique `(tenant, message, user, emoji)` |
+| `PUT /api/v1/channels/{channelId}/messages/{messageId}/reactions` | Toggle (`{ emoji }`); membership + `message.react`; emoji Unicode válido (até 8 code points, sem texto); unique `(tenant, message, user, emoji)` |
+| `GET /api/v1/channels/{channelId}/messages/{messageId}/reactions/{emoji}/users` | Quem reagiu com o emoji; membership + `message.react`; `{ emoji, users: [{ userId, displayName }], total }` |
 
-`MessageDto.reactions`: `{ emoji, count, me }[]` (agregado no history/thread). Outbox `ReactionChangedEvent` → hub `ReactionChanged` no grupo do canal pai (`messageId`, `emoji`, `userId`, `added`, `reactions`).
+`MessageDto.reactions`: `{ emoji, count, me }[]` (agregado no history/thread). Outbox `ReactionChangedEvent` → hub `ReactionChanged` no grupo do canal pai (`messageId`, `emoji`, `userId`, `added`, `topUsers`, `reactions`).
 
 ### Menções (B-082)
 
@@ -221,6 +222,7 @@ Envelope comum:
   "userId": "…",
   "emoji": "👍",
   "added": true,
+  "topUsers": ["Alice", "Bob"],
   "reactions": [{ "emoji": "👍", "count": 1, "userIds": ["…"] }]
 }
 ```

@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-06
 - **Fase:** Wave 7 — Sustentação
 - **Safety lane obrigatória:** nenhuma Alta aberta (UX-001/#74, UX-002/#82, UX-003/#80 Done)
-- **Próximo item elegível:** W8-5 — emoji picker (B-083)
+- **Próximo item elegível:** W8-6 — responder citando (B-084)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -77,7 +77,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W8-5 | Emoji picker (B-083) |
+| 1 | W8-6 | Responder citando (B-084) |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 
