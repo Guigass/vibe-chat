@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { MessageBubble } from './message-bubble';
 import { ApiService } from '../../../core/api/api.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { ThemeService } from '../../../core/services/theme.service';
 import type { ChatMessage } from '../../models/chat.models';
 
 function baseMessage(overrides: Partial<ChatMessage> = {}): ChatMessage {
@@ -49,6 +50,13 @@ describe('MessageBubble (B-163)', () => {
             mentionLabels: () => ({}),
             activeWorkspace: () => ({ id: 'w1' }),
             isDemo: () => true,
+          },
+        },
+        {
+          provide: ThemeService,
+          useValue: {
+            density: () => 'comfortable' as const,
+            theme: () => 'light' as const,
           },
         },
       ],

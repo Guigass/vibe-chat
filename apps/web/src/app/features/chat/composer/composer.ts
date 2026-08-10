@@ -370,7 +370,7 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
       flex: 0 0 auto;
     }
     .composer {
-      padding: var(--vc-space-3);
+      padding: var(--vc-composer-pad);
       border-top: 1px solid var(--vc-border);
       background: color-mix(in srgb, var(--vc-surface-elevated) 88%, transparent);
     }
@@ -491,10 +491,8 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
       position: relative;
     }
     .composer__emoji vc-emoji-picker {
-      position: absolute;
-      left: 0;
-      bottom: calc(100% + 0.35rem);
-      z-index: 5;
+      /* Anchored by CDK overlay; host only marks the origin box. */
+      z-index: 0;
     }
     .composer__attachments {
       list-style: none;

@@ -154,4 +154,39 @@ describe('ThemeService (BUG-007)', () => {
     expect(root.dataset.density).toBe('comfortable');
     expect(storage[DENSITY_KEY]).toBe('comfortable');
   });
+
+  it('applies data-density synchronously on construct from storage', () => {
+    const { root, storage } = installDomMocks({ [DENSITY_KEY]: 'compact' });
+    const service = createService();
+
+    expect(service.density()).toBe('compact');
+    expect(root.dataset.density).toBe('compact');
+    expect(storage[DENSITY_KEY]).toBe('compact');
+  });
+
+  it('setDensity pins compact mode on the document and in localStorage', () => {
+    const { storage, root } = installDomMocks();
+    const service = createService();
+    service.setDensity('compact');
+
+    expect(service.density()).toBe('compact');
+    expect(root.dataset.density).toBe('compact');
+    expect(storage[DENSITY_KEY]).toBe('compact');
+  });
+
+  it('toggleDensity switches compact and comfortable and persists the pin', () => {
+    const { storage, root } = installDomMocks();
+    const service = createService();
+    expect(service.density()).toBe('comfortable');
+
+    service.toggleDensity();
+    expect(service.density()).toBe('compact');
+    expect(root.dataset.density).toBe('compact');
+    expect(storage[DENSITY_KEY]).toBe('compact');
+
+    service.toggleDensity();
+    expect(service.density()).toBe('comfortable');
+    expect(root.dataset.density).toBe('comfortable');
+    expect(storage[DENSITY_KEY]).toBe('comfortable');
+  });
 });

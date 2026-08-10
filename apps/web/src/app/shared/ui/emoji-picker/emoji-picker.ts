@@ -9,6 +9,12 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import {
+  CdkConnectedOverlay,
+  CdkOverlayOrigin,
+  Overlay,
+  type ConnectedPosition,
+} from '@angular/cdk/overlay';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import {
   categoryLabel,
@@ -24,11 +30,23 @@ import {
 @Component({
   selector: 'vc-emoji-picker',
   standalone: true,
-  imports: [ScrollingModule],
+  imports: [ScrollingModule, CdkConnectedOverlay, CdkOverlayOrigin],
   template: `
-    @if (open()) {
+    <span class="emoji-picker__origin" cdkOverlayOrigin #origin="cdkOverlayOrigin"></span>
+    <ng-template
+      cdkConnectedOverlay
+      [cdkConnectedOverlayOrigin]="origin"
+      [cdkConnectedOverlayOpen]="open()"
+      [cdkConnectedOverlayPositions]="positions"
+      [cdkConnectedOverlayPush]="true"
+      [cdkConnectedOverlayViewportMargin]="8"
+      [cdkConnectedOverlayScrollStrategy]="scrollStrategy"
+      [cdkConnectedOverlayHasBackdrop]="true"
+      [cdkConnectedOverlayBackdropClass]="'cdk-overlay-transparent-backdrop'"
+      (backdropClick)="closed.emit()"
+      (detach)="onDetach()"
+    >
       <div
-        #panel
         class="emoji-picker"
         role="dialog"
         aria-modal="true"
@@ -111,9 +129,20 @@ import {
           </div>
         }
       </div>
-    }
+    </ng-template>
   `,
   styles: `
+    :host {
+      position: absolute;
+      inset: 0;
+      display: block;
+      pointer-events: none;
+    }
+    .emoji-picker__origin {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
     .emoji-picker {
       width: min(20rem, 92vw);
       border: 1px solid var(--vc-border);
@@ -188,7 +217,8 @@ import {
   `,
 })
 export class EmojiPicker {
-  private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly overlay = inject(Overlay);
+  readonly scrollStrategy = this.overlay.scrollStrategies.reposition();
 
   readonly open = input(false);
   readonly locale = input<EmojiLocale>('pt');
@@ -201,8 +231,38 @@ export class EmojiPicker {
   readonly activeEmoji = signal<string | null>(null);
   readonly recentEmojis = signal<string[]>(readRecentEmojis());
 
+  readonly positions: ConnectedPosition[] = [
+    {
+      originX: 'start',
+      originY: 'top',
+      overlayX: 'start',
+      overlayY: 'bottom',
+      offsetY: -6,
+    },
+    {
+      originX: 'start',
+      originY: 'bottom',
+      overlayX: 'start',
+      overlayY: 'top',
+      offsetY: 6,
+    },
+    {
+      originX: 'end',
+      originY: 'top',
+      overlayX: 'end',
+      overlayY: 'bottom',
+      offsetY: -6,
+    },
+    {
+      originX: 'end',
+      originY: 'bottom',
+      overlayX: 'end',
+      overlayY: 'top',
+      offsetY: 6,
+    },
+  ];
+
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
-  private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
 
   readonly categories = computed(() => this.catalog()?.categories ?? []);
   readonly searchResults = computed(() => {
@@ -243,17 +303,12 @@ export class EmojiPicker {
       }
       queueMicrotask(() => this.searchInput()?.nativeElement.focus());
     });
+  }
 
-    effect(() => {
-      if (!this.open()) return;
-      const onDocClick = (event: MouseEvent) => {
-        const target = event.target as Node | null;
-        if (!target || this.host.nativeElement.contains(target)) return;
-        this.closed.emit();
-      };
-      document.addEventListener('mousedown', onDocClick);
-      return () => document.removeEventListener('mousedown', onDocClick);
-    });
+  onDetach(): void {
+    if (this.open()) {
+      this.closed.emit();
+    }
   }
 
   labelFor(category: EmojiCategory): string {

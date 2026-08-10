@@ -37,7 +37,7 @@ import { Badge } from '../badge/badge';
       display: grid;
       grid-template-columns: auto 1fr auto;
       align-items: center;
-      gap: 0.55rem;
+      gap: var(--vc-space-row);
       min-height: var(--vc-density-row);
       padding: 0 0.7rem;
       border: 0;

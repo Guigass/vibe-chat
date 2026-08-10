@@ -71,15 +71,15 @@ import { ForwardDialog } from '../forward-dialog/forward-dialog';
       min-height: 0;
       overflow: auto;
       overscroll-behavior: contain;
-      padding: var(--vc-space-4);
+      padding: var(--vc-timeline-pad);
       display: flex;
       flex-direction: column;
-      gap: var(--vc-space-3);
+      gap: var(--vc-timeline-gap);
     }
     .timeline__list {
       display: flex;
       flex-direction: column;
-      gap: var(--vc-space-3);
+      gap: var(--vc-timeline-gap);
       margin-top: auto;
     }
     .timeline__loading {

@@ -110,6 +110,50 @@ Suportar **light** e **dark** desde o início via `data-theme="light|dark"` no `
 }
 ```
 
+### Densidade
+
+Suportar **comfortable** e **compact** via `data-density="comfortable|compact"` no `html`
+(persistido em `localStorage` como `vc.density`). O default é `comfortable`.
+
+A densidade **não** altera a escala global `--vc-space-1…8`; só tokens da
+superfície do chat (sidebar rows, timeline, bolhas, composer).
+
+```css
+:root,
+html[data-density="comfortable"] {
+  --vc-density-row: 2.75rem;
+  --vc-space-row: 0.55rem;
+  --vc-timeline-pad: var(--vc-space-4);
+  --vc-timeline-gap: var(--vc-space-3);
+  --vc-msg-pad-block: 0.65rem;
+  --vc-msg-pad-inline: 0.85rem;
+  --vc-msg-gap: 0.7rem;
+  --vc-msg-avatar: 2.125rem;
+  --vc-composer-pad: var(--vc-space-3);
+}
+
+html[data-density="compact"] {
+  --vc-density-row: 2rem;
+  --vc-space-row: 0.35rem;
+  --vc-timeline-pad: var(--vc-space-2);
+  --vc-timeline-gap: 0.4rem;
+  --vc-msg-pad-block: 0.4rem;
+  --vc-msg-pad-inline: 0.6rem;
+  --vc-msg-gap: 0.45rem;
+  --vc-msg-avatar: 1.75rem;
+  --vc-composer-pad: var(--vc-space-2);
+}
+```
+
+| Token | Uso |
+|-------|-----|
+| `--vc-density-row` | Altura mínima de linhas da sidebar (channels/membros) |
+| `--vc-space-row` | Gap interno do channel-item |
+| `--vc-timeline-pad` / `--vc-timeline-gap` | Padding e gap da timeline |
+| `--vc-msg-pad-block` / `--vc-msg-pad-inline` | Padding da bolha |
+| `--vc-msg-gap` / `--vc-msg-avatar` | Gap avatar↔coluna e tamanho do slot |
+| `--vc-composer-pad` | Padding externo do composer |
+
 ### Evitar (vieses comuns de UI gerada)
 
 - Roxo / indigo como marca

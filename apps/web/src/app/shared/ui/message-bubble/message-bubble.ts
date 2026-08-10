@@ -35,6 +35,7 @@ import { ImageLightbox, type LightboxImage } from '../image-lightbox/image-light
 import { MarkdownBody } from '../../markdown/markdown-body';
 import { ApiService } from '../../../core/api/api.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { ThemeService } from '../../../core/services/theme.service';
 import { EmojiPicker } from '../emoji-picker/emoji-picker';
 import { rememberRecentEmoji } from '../../emoji/emoji-data';
 import { environment } from '../../../../environments/environment';
@@ -74,7 +75,7 @@ import { environment } from '../../../../environments/environment';
     >
       @if (!message().mine) {
         <div class="vc-msg__avatar-slot">
-          <vc-avatar [name]="message().authorName" [size]="34" />
+          <vc-avatar [name]="message().authorName" [size]="avatarSize()" />
         </div>
       }
 
@@ -269,8 +270,8 @@ import { environment } from '../../../../environments/environment';
     .vc-msg {
       --vc-msg-max: min(36rem, 100%);
       display: grid;
-      grid-template-columns: 2.125rem minmax(0, var(--vc-msg-max));
-      gap: 0.7rem;
+      grid-template-columns: var(--vc-msg-avatar) minmax(0, var(--vc-msg-max));
+      gap: var(--vc-msg-gap);
       align-items: flex-start;
       width: fit-content;
       max-width: 100%;
@@ -282,8 +283,8 @@ import { environment } from '../../../../environments/environment';
       grid-template-columns: minmax(0, var(--vc-msg-max));
     }
     .vc-msg__avatar-slot {
-      width: 2.125rem;
-      min-height: 2.125rem;
+      width: var(--vc-msg-avatar);
+      min-height: var(--vc-msg-avatar);
       flex-shrink: 0;
     }
     .vc-msg__column {
@@ -304,7 +305,7 @@ import { environment } from '../../../../environments/environment';
       display: flex;
       flex-direction: column;
       gap: 0.35rem;
-      padding: 0.65rem 0.85rem;
+      padding: var(--vc-msg-pad-block) var(--vc-msg-pad-inline);
       border-radius: var(--vc-radius-md);
       background: var(--vc-msg-theirs);
       border: 1px solid var(--vc-border);
@@ -484,10 +485,8 @@ import { environment } from '../../../../environments/environment';
       position: relative;
     }
     .vc-msg__react-more vc-emoji-picker {
-      position: absolute;
-      left: 0;
-      bottom: calc(100% + 0.35rem);
-      z-index: 5;
+      /* Anchored by CDK overlay; host only marks the origin box. */
+      z-index: 0;
     }
     .vc-msg__react-picker button,
     .vc-msg__toolbar-btn {
@@ -585,6 +584,7 @@ import { environment } from '../../../../environments/environment';
 export class MessageBubble {
   private readonly api = inject(ApiService);
   private readonly channels = inject(ChannelStore);
+  private readonly theme = inject(ThemeService);
   private readonly contextMenu = viewChild(CdkContextMenuTrigger);
 
   readonly message = input.required<ChatMessage>();
@@ -611,6 +611,7 @@ export class MessageBubble {
   readonly lightboxOpen = signal(false);
   readonly lightboxStartId = signal<string | null>(null);
   readonly maxLength = MESSAGE_BODY_MAX_LENGTH;
+  readonly avatarSize = computed(() => (this.theme.density() === 'compact' ? 28 : 34));
   readonly editLength = computed(() => measureMessageBodyLength(this.draft()));
   readonly editTooLong = computed(() => isMessageBodyTooLong(this.draft()));
   readonly showEditCounter = computed(() => this.editLength() >= MESSAGE_BODY_COUNTER_THRESHOLD);
