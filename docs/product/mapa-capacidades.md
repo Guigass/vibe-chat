@@ -14,7 +14,7 @@ organiza. Estados:
 |------------|--------|---------------|
 | Channels, spaces, DM 1:1, threads | Atual | Qualidade contínua |
 | Timeline rica, menções, anexos múltiplos, áudio | Committed | Waves 8–9 |
-| Message bubble moderno (layout tipado + ações + preview) | Committed | B-163 / W9-0 |
+| Message bubble moderno (layout tipado + ações + preview) | Done | B-163 / W9-0 |
 | Não lidas, notificações, DM em grupo, guests | Committed | Waves 9–10 |
 | Anúncios e canais somente leitura | Planned | B-112 / W11 |
 | Agendar mensagem e lembrete | Planned | B-113 / W11 |

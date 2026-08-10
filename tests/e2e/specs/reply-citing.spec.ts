@@ -4,6 +4,7 @@ import {
   openUserSession,
   selectChannelGeral,
 } from '../helpers/auth';
+import { clickMessageToolbarButton } from '../helpers/message-actions';
 
 /**
  * B-084 — Bob cites Alice; Alice sees the quote without F5 (devauth/oidc).
@@ -37,7 +38,7 @@ test.describe(`reply citing (${AUTH_MODE})`, () => {
     await expect(bob.page.getByText(parentBody)).toBeVisible({ timeout: 30_000 });
 
     const parentBubble = bob.page.locator('article.vc-msg', { hasText: parentBody }).first();
-    await parentBubble.getByRole('button', { name: /^Responder$/i }).click();
+    await clickMessageToolbarButton(parentBubble, /^Responder$/i);
     await expect(bob.page.getByText(/Respondendo a/i)).toBeVisible();
 
     const bobComposer = bob.page.locator('textarea').first();

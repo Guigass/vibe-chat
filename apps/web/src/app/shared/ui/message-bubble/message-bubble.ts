@@ -1,5 +1,20 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import {
+  CdkContextMenuTrigger,
+  CdkMenu,
+  CdkMenuItem,
+  CdkMenuTrigger,
+} from '@angular/cdk/menu';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import {
   ChatMessage,
   MessageAttachment,
@@ -9,8 +24,13 @@ import {
   MESSAGE_BODY_COUNTER_THRESHOLD,
   MESSAGE_BODY_MAX_LENGTH,
 } from '../../models/chat.models';
+import {
+  classifyAttachmentPreview,
+  menuActionsForMessage,
+} from '../../attachments/attachment-preview';
 import { Avatar } from '../avatar/avatar';
-import { AudioMessage } from '../audio-message/audio-message';
+import { AttachmentPreview } from '../attachment-preview/attachment-preview';
+import { ImageLightbox, type LightboxImage } from '../image-lightbox/image-lightbox';
 import { MarkdownBody } from '../../markdown/markdown-body';
 import { ApiService } from '../../../core/api/api.service';
 import { ChannelStore } from '../../../core/services/channel.store';
@@ -21,7 +41,18 @@ import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'vc-message-bubble',
   standalone: true,
-  imports: [Avatar, DatePipe, AudioMessage, MarkdownBody, EmojiPicker],
+  imports: [
+    Avatar,
+    DatePipe,
+    AttachmentPreview,
+    ImageLightbox,
+    MarkdownBody,
+    EmojiPicker,
+    CdkContextMenuTrigger,
+    CdkMenuTrigger,
+    CdkMenu,
+    CdkMenuItem,
+  ],
   template: `
     <article
       class="vc-msg vc-anim-fade-in"
@@ -31,130 +62,139 @@ import { environment } from '../../../../environments/environment';
       [class.vc-msg--highlight]="highlighted()"
       [attr.data-status]="message().status"
       [attr.data-message-id]="message().id"
+      [cdkContextMenuTriggerFor]="actionsMenu"
+      [cdkContextMenuDisabled]="!hasMenu()"
+      (cdkContextMenuOpened)="menuOpen.set(true)"
+      (cdkContextMenuClosed)="menuOpen.set(false)"
+      (touchstart)="onTouchStart($event)"
+      (touchend)="onTouchEnd()"
+      (touchmove)="onTouchEnd()"
+      (touchcancel)="onTouchEnd()"
     >
       @if (!message().mine) {
-        <vc-avatar [name]="message().authorName" [size]="34" />
+        <div class="vc-msg__avatar-slot">
+          <vc-avatar [name]="message().authorName" [size]="34" />
+        </div>
       }
-      <div class="vc-msg__body">
-        <header>
-          <strong>{{ message().authorName }}</strong>
-          <time [attr.datetime]="message().createdAt">{{ message().createdAt | date: 'shortTime' }}</time>
-          @if (message().editedAt && !message().deletedAt) {
-            <span class="vc-msg__status">editada</span>
-          }
-          @if (message().status === 'sending') {
-            <span class="vc-msg__status">enviando…</span>
-          } @else if (message().status === 'sent') {
-            <span class="vc-msg__status">enviada</span>
-          } @else if (message().status === 'failed') {
-            <span class="vc-msg__status vc-msg__status--fail">falhou</span>
-          } @else if (message().status === 'persisted' && !message().editedAt && !message().deletedAt) {
-            <span class="vc-msg__status">salva</span>
-          }
-        </header>
 
-        @if (message().deletedAt) {
-          <p class="vc-msg__deleted">Mensagem removida</p>
-        } @else if (editing()) {
-          <div class="vc-msg__edit">
-            <textarea
-              [value]="draft()"
-              (input)="draft.set(($any($event.target).value))"
-              rows="3"
-              aria-label="Editar mensagem"
-            ></textarea>
-            @if (showEditCounter()) {
-              <p
-                class="vc-msg__edit-counter"
-                [class.vc-msg__edit-counter--over]="editTooLong()"
-                aria-live="polite"
-              >
-                {{ editLength() }} / {{ maxLength }}
-              </p>
+      <div class="vc-msg__column">
+        <div class="vc-msg__body">
+          <header class="vc-msg__meta">
+            <strong>{{ message().authorName }}</strong>
+            <time [attr.datetime]="message().createdAt">{{ message().createdAt | date: 'shortTime' }}</time>
+            @if (message().editedAt && !message().deletedAt) {
+              <span class="vc-msg__status">editada</span>
             }
-            <div class="vc-msg__edit-actions">
-              <button type="button" [disabled]="editSaveDisabled()" (click)="saveEdit()">Salvar</button>
-              <button type="button" class="ghost" (click)="cancelEdit()">Cancelar</button>
-            </div>
-          </div>
-        } @else {
-          @if (message().forwardedFrom; as origin) {
-            <p class="vc-msg__forwarded">
-              Encaminhada de
-              {{ origin.channelName.startsWith('#') || origin.channelName === 'DM' ? origin.channelName : ('#' + origin.channelName) }}
-              · {{ origin.authorName }}
-              · {{ origin.createdAt | date: 'shortDate' }}
-            </p>
-          }
-          @if (message().replyTo; as cite) {
-            @if (cite.deleted) {
-              <div class="vc-msg__quote vc-msg__quote--deleted">Mensagem removida</div>
+            @if (message().status === 'sending') {
+              <span class="vc-msg__status">enviando…</span>
+            } @else if (message().status === 'sent') {
+              <span class="vc-msg__status">enviada</span>
+            } @else if (message().status === 'failed') {
+              <span class="vc-msg__status vc-msg__status--fail">falhou</span>
+            }
+          </header>
+
+          <div class="vc-msg__content">
+            @if (message().deletedAt) {
+              <p class="vc-msg__deleted">Mensagem removida</p>
+            } @else if (editing()) {
+              <div class="vc-msg__edit">
+                <textarea
+                  [value]="draft()"
+                  (input)="draft.set(($any($event.target).value))"
+                  rows="3"
+                  aria-label="Editar mensagem"
+                ></textarea>
+                @if (showEditCounter()) {
+                  <p
+                    class="vc-msg__edit-counter"
+                    [class.vc-msg__edit-counter--over]="editTooLong()"
+                    aria-live="polite"
+                  >
+                    {{ editLength() }} / {{ maxLength }}
+                  </p>
+                }
+                <div class="vc-msg__edit-actions">
+                  <button type="button" [disabled]="editSaveDisabled()" (click)="saveEdit()">Salvar</button>
+                  <button type="button" class="ghost" (click)="cancelEdit()">Cancelar</button>
+                </div>
+              </div>
             } @else {
-              <button
-                type="button"
-                class="vc-msg__quote"
-                (click)="quoteClick.emit(cite.messageId)"
-              >
-                <strong>{{ cite.authorName }}</strong>
-                <span>{{ cite.preview }}</span>
-              </button>
-            }
-          }
-          @if (message().body) {
-            <vc-markdown-body [source]="message().body" [mentionLabels]="mentionLabels()" />
-          }
-          @if (message().attachments?.length) {
-            <ul class="vc-msg__attachments">
-              @for (attachment of message().attachments; track attachment.id) {
-                <li>
-                  @if (attachment.kind === 'Audio') {
-                    <vc-audio-message
-                      [attachment]="attachment"
-                      [downloadUrl]="downloadUrls()[attachment.id] ?? null"
-                    />
-                    @if (transcribeEnabled()) {
-                      <button type="button" class="vc-msg__transcribe" (click)="transcribe(attachment)">
-                        Transcrever
-                      </button>
-                    }
-                  } @else {
-                    <button type="button" (click)="download(attachment)">
-                      {{ attachment.fileName }}
-                      <span>{{ formatSize(attachment.sizeBytes) }}</span>
-                    </button>
-                  }
-                </li>
+              @if (message().forwardedFrom; as origin) {
+                <p class="vc-msg__forwarded">
+                  Encaminhada de
+                  {{ origin.channelName.startsWith('#') || origin.channelName === 'DM' ? origin.channelName : ('#' + origin.channelName) }}
+                  · {{ origin.authorName }}
+                  · {{ origin.createdAt | date: 'shortDate' }}
+                </p>
               }
-            </ul>
-            @if (transcript()) {
-              <p class="vc-msg__transcript">{{ transcript() }}</p>
-            }
-          }
-          @if (message().reactions?.length) {
-            <ul class="vc-msg__reactions" aria-label="Reações">
-              @for (reaction of message().reactions; track reaction.emoji) {
-                <li>
+              @if (message().replyTo; as cite) {
+                @if (cite.deleted) {
+                  <div class="vc-msg__quote vc-msg__quote--deleted">Mensagem removida</div>
+                } @else {
                   <button
                     type="button"
-                    [class.active]="reaction.me"
-                    [attr.aria-pressed]="reaction.me"
-                    [attr.aria-label]="reactionTooltip(reaction.emoji) || ('Reação ' + reaction.emoji)"
-                    [title]="reactionTooltip(reaction.emoji)"
-                    (mouseenter)="loadReactionTooltip(reaction.emoji)"
-                    (focus)="loadReactionTooltip(reaction.emoji)"
-                    (click)="react.emit(reaction.emoji)"
+                    class="vc-msg__quote"
+                    (click)="quoteClick.emit(cite.messageId)"
                   >
-                    <span aria-hidden="true">{{ reaction.emoji }}</span>
-                    <span>{{ reaction.count }}</span>
+                    <strong>{{ cite.authorName }}</strong>
+                    <span>{{ cite.preview }}</span>
                   </button>
-                </li>
+                }
               }
-            </ul>
-          }
-        }
+              @if (message().body) {
+                <vc-markdown-body [source]="message().body" [mentionLabels]="mentionLabels()" />
+              }
+              @if (message().attachments?.length) {
+                <ul class="vc-msg__attachments">
+                  @for (attachment of message().attachments; track attachment.id) {
+                    <li>
+                      <vc-attachment-preview
+                        [attachment]="attachment"
+                        [downloadUrl]="downloadUrls()[attachment.id] ?? null"
+                        [showTranscribe]="attachment.kind === 'Audio' && transcribeEnabled()"
+                        (imageOpen)="openLightbox($event)"
+                        (fileOpen)="download(attachment)"
+                        (transcribe)="transcribe(attachment)"
+                      />
+                    </li>
+                  }
+                </ul>
+                @if (transcript()) {
+                  <p class="vc-msg__transcript">{{ transcript() }}</p>
+                }
+              }
+              @if (message().reactions?.length) {
+                <ul class="vc-msg__reactions" aria-label="Reações">
+                  @for (reaction of message().reactions; track reaction.emoji) {
+                    <li>
+                      <button
+                        type="button"
+                        [class.active]="reaction.me"
+                        [attr.aria-pressed]="reaction.me"
+                        [attr.aria-label]="reactionTooltip(reaction.emoji) || ('Reação ' + reaction.emoji)"
+                        [title]="reactionTooltip(reaction.emoji)"
+                        (mouseenter)="loadReactionTooltip(reaction.emoji)"
+                        (focus)="loadReactionTooltip(reaction.emoji)"
+                        (click)="react.emit(reaction.emoji)"
+                      >
+                        <span aria-hidden="true">{{ reaction.emoji }}</span>
+                        <span>{{ reaction.count }}</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            }
+          </div>
+        </div>
 
-        @if (!message().deletedAt && !editing() && message().status === 'persisted') {
-          <div class="vc-msg__actions">
+        @if (showActions()) {
+          <div
+            class="vc-msg__toolbar"
+            data-testid="msg-toolbar"
+            [class.vc-msg__toolbar--pinned]="menuOpen() || reactionPickerOpen()"
+          >
             <div class="vc-msg__react-picker" role="group" aria-label="Adicionar reação">
               @for (emoji of emojiOptions; track emoji) {
                 <button type="button" [attr.aria-label]="'Reagir com ' + emoji" (click)="onQuickReact(emoji)">
@@ -169,7 +209,7 @@ import { environment } from '../../../../environments/environment';
                   [attr.aria-expanded]="reactionPickerOpen()"
                   (click)="toggleReactionPicker($event)"
                 >
-                  ⋯
+                  🙂
                 </button>
                 <vc-emoji-picker
                   [open]="reactionPickerOpen()"
@@ -179,53 +219,96 @@ import { environment } from '../../../../environments/environment';
               </div>
             </div>
             @if (showReplyAction()) {
-              <button type="button" (click)="reply.emit()">Responder</button>
-            }
-            @if (showForwardAction()) {
-              <button type="button" (click)="forward.emit()">Encaminhar</button>
-            }
-            @if (showThreadAction()) {
-              <button type="button" (click)="openThread.emit()">
-                @if (message().replyCount) {
-                  {{ message().replyCount }}
-                  {{ message().replyCount === 1 ? 'resposta' : 'respostas' }}
-                } @else {
-                  Abrir thread
-                }
+              <button type="button" class="vc-msg__toolbar-btn" (click)="reply.emit()" aria-label="Responder">
+                Responder
               </button>
             }
-            @if (message().mine) {
-              <button type="button" (click)="startEdit()">Editar</button>
-              <button type="button" class="danger" (click)="delete.emit()">Apagar</button>
+            @if (hasMenu()) {
+              <button
+                type="button"
+                class="vc-msg__toolbar-btn vc-msg__more"
+                aria-label="Mais opções"
+                aria-haspopup="menu"
+                [cdkMenuTriggerFor]="actionsMenu"
+                (cdkMenuOpened)="menuOpen.set(true)"
+                (cdkMenuClosed)="menuOpen.set(false)"
+              >
+                ⋯
+              </button>
             }
           </div>
         }
       </div>
     </article>
+
+    <ng-template #actionsMenu>
+      <div class="vc-msg-menu" cdkMenu>
+        @for (item of menuItems(); track item.id) {
+          <button
+            type="button"
+            cdkMenuItem
+            class="vc-msg-menu__item"
+            [class.vc-msg-menu__item--danger]="item.danger"
+            (click)="onMenuAction(item.id)"
+          >
+            {{ item.label }}
+          </button>
+        }
+      </div>
+    </ng-template>
+
+    <vc-image-lightbox
+      [open]="lightboxOpen()"
+      [images]="lightboxImages()"
+      [startId]="lightboxStartId()"
+      (close)="closeLightbox()"
+    />
   `,
   styles: `
     .vc-msg {
-      display: flex;
+      --vc-msg-max: min(36rem, 100%);
+      display: grid;
+      grid-template-columns: 2.125rem minmax(0, var(--vc-msg-max));
       gap: 0.7rem;
       align-items: flex-start;
-      max-width: min(720px, 100%);
+      width: fit-content;
+      max-width: 100%;
+      position: relative;
+      -webkit-touch-callout: none;
     }
     .vc-msg--mine {
       margin-left: auto;
-      flex-direction: row-reverse;
+      grid-template-columns: minmax(0, var(--vc-msg-max));
+    }
+    .vc-msg__avatar-slot {
+      width: 2.125rem;
+      min-height: 2.125rem;
+      flex-shrink: 0;
+    }
+    .vc-msg__column {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      min-width: 0;
+      width: 100%;
+      max-width: var(--vc-msg-max);
+      position: relative;
     }
     .vc-msg--mentioned:not(.vc-msg--mine) .vc-msg__body {
       border-left: 3px solid var(--vc-brand);
       padding-left: 0.55rem;
-      background: color-mix(in srgb, var(--vc-brand) 8%, transparent);
-      border-radius: var(--vc-radius-md);
+      background: color-mix(in srgb, var(--vc-brand) 8%, var(--vc-msg-theirs));
     }
     .vc-msg__body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
       padding: 0.65rem 0.85rem;
       border-radius: var(--vc-radius-md);
       background: var(--vc-msg-theirs);
       border: 1px solid var(--vc-border);
-      min-width: 12rem;
+      min-width: 0;
+      width: 100%;
     }
     .vc-msg--mine .vc-msg__body {
       background: var(--vc-msg-mine);
@@ -237,10 +320,16 @@ import { environment } from '../../../../environments/environment';
     .vc-msg--highlight .vc-msg__body {
       outline: 2px solid color-mix(in srgb, var(--vc-brand) 55%, transparent);
       outline-offset: 2px;
-      transition: outline-color 200ms ease;
+      transition: outline-color var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease);
+    }
+    .vc-msg__content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      min-width: 0;
     }
     .vc-msg__forwarded {
-      margin: 0 0 0.4rem;
+      margin: 0;
       font-size: 0.78rem;
       color: var(--vc-ink-muted);
     }
@@ -248,7 +337,7 @@ import { environment } from '../../../../environments/environment';
       display: grid;
       gap: 0.1rem;
       width: 100%;
-      margin: 0 0 0.45rem;
+      margin: 0;
       padding: 0.35rem 0.55rem;
       border: 0;
       border-left: 3px solid var(--vc-brand);
@@ -276,14 +365,13 @@ import { environment } from '../../../../environments/environment';
       color: var(--vc-ink-subtle);
       font-size: 0.8rem;
     }
-    header {
+    .vc-msg__meta {
       display: flex;
       flex-wrap: wrap;
       gap: 0.45rem;
       align-items: baseline;
-      margin-bottom: 0.25rem;
     }
-    strong {
+    .vc-msg__meta strong {
       font-size: 0.88rem;
       font-family: var(--vc-font-display);
     }
@@ -307,41 +395,22 @@ import { environment } from '../../../../environments/environment';
     }
     .vc-msg__attachments {
       list-style: none;
-      margin: 0.45rem 0 0;
+      margin: 0;
       padding: 0;
       display: grid;
-      gap: 0.3rem;
-    }
-    .vc-msg__attachments button {
-      border: 0;
-      background: transparent;
-      color: var(--vc-brand);
-      cursor: pointer;
-      font: inherit;
-      font-size: 0.84rem;
-      padding: 0;
-      display: inline-flex;
-      gap: 0.45rem;
-      align-items: baseline;
-    }
-    .vc-msg__transcribe {
-      margin-top: 0.25rem;
-      font-size: 0.72rem;
+      gap: 0.4rem;
+      width: 100%;
     }
     .vc-msg__transcript {
-      margin-top: 0.35rem;
+      margin: 0;
       font-size: 0.82rem;
       color: var(--vc-ink-muted);
       border-left: 2px solid var(--vc-border);
       padding-left: 0.55rem;
     }
-    .vc-msg__attachments span {
-      color: var(--vc-ink-subtle);
-      font-size: 0.72rem;
-    }
     .vc-msg__reactions {
       list-style: none;
-      margin: 0.5rem 0 0;
+      margin: 0;
       padding: 0;
       display: flex;
       flex-wrap: wrap;
@@ -364,18 +433,48 @@ import { environment } from '../../../../environments/environment';
       border-color: color-mix(in srgb, var(--vc-brand) 45%, var(--vc-border));
       background: color-mix(in srgb, var(--vc-brand) 16%, var(--vc-surface));
     }
-    .vc-msg__actions,
-    .vc-msg__edit-actions {
-      display: flex;
+    .vc-msg__toolbar {
+      display: inline-flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
       align-items: center;
-      margin-top: 0.45rem;
+      gap: 0.2rem;
+      align-self: flex-start;
+      padding: 0.15rem 0.25rem;
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-md);
+      background: var(--vc-surface);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(0.15rem);
+      transition:
+        opacity var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease),
+        transform var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease);
+    }
+    .vc-msg--mine .vc-msg__toolbar {
+      align-self: flex-end;
+    }
+    .vc-msg:hover .vc-msg__toolbar,
+    .vc-msg:focus-within .vc-msg__toolbar,
+    .vc-msg__toolbar--pinned {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    @media (hover: none) {
+      .vc-msg__toolbar {
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .vc-msg__toolbar {
+        transition: none;
+      }
     }
     .vc-msg__react-picker {
       display: inline-flex;
-      gap: 0.15rem;
-      margin-right: 0.25rem;
+      gap: 0.1rem;
       position: relative;
     }
     .vc-msg__react-more {
@@ -387,20 +486,37 @@ import { environment } from '../../../../environments/environment';
       bottom: calc(100% + 0.35rem);
       z-index: 5;
     }
-    .vc-msg__react-picker button {
+    .vc-msg__react-picker button,
+    .vc-msg__toolbar-btn {
       border: 0;
       background: transparent;
-      font-size: 0.9rem;
+      color: var(--vc-ink-muted);
+      font: inherit;
+      font-size: 0.8rem;
       line-height: 1;
       cursor: pointer;
-      padding: 0.1rem;
-      opacity: 0.55;
+      padding: 0.25rem 0.35rem;
+      border-radius: var(--vc-radius-sm);
     }
     .vc-msg__react-picker button:hover,
-    .vc-msg__react-picker button:focus-visible {
-      opacity: 1;
+    .vc-msg__react-picker button:focus-visible,
+    .vc-msg__toolbar-btn:hover,
+    .vc-msg__toolbar-btn:focus-visible {
+      color: var(--vc-ink);
+      background: color-mix(in srgb, var(--vc-brand) 10%, transparent);
     }
-    .vc-msg__actions button,
+    .vc-msg__more {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+    .vc-msg__edit-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin-top: 0.45rem;
+    }
     .vc-msg__edit-actions button {
       border: 0;
       background: transparent;
@@ -409,12 +525,8 @@ import { environment } from '../../../../environments/environment';
       cursor: pointer;
       padding: 0;
     }
-    .vc-msg__actions > button:hover,
     .vc-msg__edit-actions button:hover {
       color: var(--vc-ink);
-    }
-    .vc-msg__actions .danger {
-      color: var(--vc-danger);
     }
     .vc-msg__edit textarea {
       width: 100%;
@@ -436,11 +548,41 @@ import { environment } from '../../../../environments/environment';
     .vc-msg__edit-counter--over {
       color: var(--vc-danger);
     }
+    .vc-msg-menu {
+      display: flex;
+      flex-direction: column;
+      min-width: 10.5rem;
+      padding: 0.3rem;
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-md);
+      background: var(--vc-surface);
+      box-shadow: var(--vc-shadow-md, 0 8px 24px color-mix(in srgb, var(--vc-ink) 18%, transparent));
+    }
+    .vc-msg-menu__item {
+      border: 0;
+      background: transparent;
+      color: var(--vc-ink);
+      font: inherit;
+      font-size: 0.84rem;
+      text-align: left;
+      padding: 0.45rem 0.65rem;
+      border-radius: var(--vc-radius-sm);
+      cursor: pointer;
+    }
+    .vc-msg-menu__item:hover,
+    .vc-msg-menu__item:focus-visible {
+      background: color-mix(in srgb, var(--vc-brand) 12%, transparent);
+      outline: none;
+    }
+    .vc-msg-menu__item--danger {
+      color: var(--vc-danger);
+    }
   `,
 })
 export class MessageBubble {
   private readonly api = inject(ApiService);
   private readonly channels = inject(ChannelStore);
+  private readonly contextMenu = viewChild(CdkContextMenuTrigger);
 
   readonly message = input.required<ChatMessage>();
   readonly showThreadAction = input(false);
@@ -461,7 +603,10 @@ export class MessageBubble {
   readonly downloadUrls = signal<Record<string, string>>({});
   readonly emojiOptions = REACTION_EMOJI_OPTIONS;
   readonly reactionPickerOpen = signal(false);
+  readonly menuOpen = signal(false);
   readonly reactionTooltips = signal<Record<string, string>>({});
+  readonly lightboxOpen = signal(false);
+  readonly lightboxStartId = signal<string | null>(null);
   readonly maxLength = MESSAGE_BODY_MAX_LENGTH;
   readonly editLength = computed(() => measureMessageBodyLength(this.draft()));
   readonly editTooLong = computed(() => isMessageBodyTooLong(this.draft()));
@@ -473,14 +618,35 @@ export class MessageBubble {
     () => environment.aiTranscribeEnabled && environment.aiSummarizeEnabled,
   );
   readonly mentionLabels = computed(() => this.channels.mentionLabels());
+  readonly showActions = computed(
+    () => !this.message().deletedAt && !this.editing() && this.message().status === 'persisted',
+  );
+  readonly menuItems = computed(() =>
+    menuActionsForMessage({
+      mine: this.message().mine,
+      showForward: this.showForwardAction(),
+      showThread: this.showThreadAction(),
+      replyCount: this.message().replyCount,
+    }),
+  );
+  readonly hasMenu = computed(() => this.menuItems().length > 0);
+  readonly lightboxImages = computed<LightboxImage[]>(() => {
+    const urls = this.downloadUrls();
+    return (this.message().attachments ?? [])
+      .filter((a) => classifyAttachmentPreview(a.contentType, a.kind) === 'image' && urls[a.id])
+      .map((a) => ({ id: a.id, url: urls[a.id], alt: a.fileName }));
+  });
+
+  private longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  private longPressPoint: { x: number; y: number } | null = null;
 
   constructor() {
     effect(() => {
       const attachments = this.message().attachments ?? [];
       const channelId = this.message().channelId;
       for (const attachment of attachments) {
-        if (attachment.kind !== 'Audio' || this.downloadUrls()[attachment.id]) continue;
-        void this.loadAudioUrl(channelId, attachment.id);
+        if (this.downloadUrls()[attachment.id]) continue;
+        void this.loadDownloadUrl(channelId, attachment.id);
       }
     });
   }
@@ -506,7 +672,12 @@ export class MessageBubble {
     const channelId = this.message().channelId;
     if (!channelId) return;
     try {
+      // Always fetch a fresh presigned URL — cached preview URLs expire (TTL ~300s).
       const result = await this.api.getAttachmentDownload(channelId, attachment.id);
+      this.downloadUrls.update((current) => ({
+        ...current,
+        [attachment.id]: result.downloadUrl,
+      }));
       window.open(result.downloadUrl, '_blank', 'noopener,noreferrer');
     } catch {
       // keep UI quiet; connection banner / toast stack not present in MVP shell
@@ -529,12 +700,6 @@ export class MessageBubble {
     } catch {
       this.transcript.set('Transcrição indisponível.');
     }
-  }
-
-  formatSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   toggleReactionPicker(event: Event): void {
@@ -568,12 +733,64 @@ export class MessageBubble {
     }
   }
 
-  private async loadAudioUrl(channelId: string, attachmentId: string): Promise<void> {
+  onMenuAction(id: 'forward' | 'thread' | 'edit' | 'delete'): void {
+    switch (id) {
+      case 'forward':
+        this.forward.emit();
+        break;
+      case 'thread':
+        this.openThread.emit();
+        break;
+      case 'edit':
+        this.startEdit();
+        break;
+      case 'delete':
+        this.delete.emit();
+        break;
+    }
+  }
+
+  openLightbox(attachmentId: string): void {
+    this.lightboxStartId.set(attachmentId);
+    this.lightboxOpen.set(true);
+  }
+
+  closeLightbox(): void {
+    this.lightboxOpen.set(false);
+    this.lightboxStartId.set(null);
+  }
+
+  onTouchStart(event: TouchEvent): void {
+    if (!this.showActions() || event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    this.longPressPoint = { x: touch.clientX, y: touch.clientY };
+    this.clearLongPress();
+    this.longPressTimer = setTimeout(() => {
+      const point = this.longPressPoint;
+      const trigger = this.contextMenu();
+      if (!point || !trigger) return;
+      event.preventDefault();
+      trigger.open(point);
+    }, 480);
+  }
+
+  onTouchEnd(): void {
+    this.clearLongPress();
+  }
+
+  private clearLongPress(): void {
+    if (this.longPressTimer) {
+      clearTimeout(this.longPressTimer);
+      this.longPressTimer = null;
+    }
+  }
+
+  private async loadDownloadUrl(channelId: string, attachmentId: string): Promise<void> {
     try {
       const result = await this.api.getAttachmentDownload(channelId, attachmentId);
       this.downloadUrls.update((current) => ({ ...current, [attachmentId]: result.downloadUrl }));
     } catch {
-      // playback stays disabled until URL resolves
+      // preview stays on file card until URL resolves
     }
   }
 }

@@ -5,6 +5,7 @@
 @import 'tailwindcss/preflight.css' layer(base);
 @import 'tailwindcss/utilities.css';
 @import '@spartan-ng/brain/hlm-tailwind-preset.css';
+@import '@angular/cdk/overlay-prebuilt.css';
 
 /* ThemeService sets html[data-theme] (+ .dark class for Tailwind dark: utilities). */
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *, .dark, .dark *));
@@ -126,4 +127,38 @@ html[data-theme='dark'] {
 .conv-audit__picker hlm-select-trigger button,
 .roles__table hlm-select-trigger button {
   width: 100%;
+}
+
+/* B-163: CDK menu overlay sits outside component encapsulation. */
+.vc-msg-menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 10.5rem;
+  padding: 0.3rem;
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-md);
+  background: var(--vc-surface);
+  box-shadow: var(--vc-shadow-md, 0 8px 24px color-mix(in srgb, var(--vc-ink) 18%, transparent));
+}
+
+.vc-msg-menu__item {
+  border: 0;
+  background: transparent;
+  color: var(--vc-ink);
+  font: inherit;
+  font-size: 0.84rem;
+  text-align: left;
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--vc-radius-sm);
+  cursor: pointer;
+}
+
+.vc-msg-menu__item:hover,
+.vc-msg-menu__item:focus-visible {
+  background: color-mix(in srgb, var(--vc-brand) 12%, transparent);
+  outline: none;
+}
+
+.vc-msg-menu__item--danger {
+  color: var(--vc-danger);
 }

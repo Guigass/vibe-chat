@@ -118,24 +118,24 @@ menu só aparecem se o cliente já teria mostrado o botão (ex.: Editar/Apagar s
 
 ### Ações
 
-- [ ] Bolha sem hover/focus não mostra barra de reações rápidas nem Editar/Apagar
-- [ ] Hover ou focus revela toolbar compacta com reagir + responder + “mais”
-- [ ] Clique direito / long-press / “mais” abre o mesmo menu de opções
-- [ ] Editar, apagar, reagir, responder e abrir thread continuam funcionando
-- [ ] Menu e toolbar navegáveis só por teclado; `Esc` fecha
-- [ ] Touch: long-press abre o menu sem selecionar texto por engano
+- [x] Bolha sem hover/focus não mostra barra de reações rápidas nem Editar/Apagar
+- [x] Hover ou focus revela toolbar compacta com reagir + responder + “mais”
+- [x] Clique direito / long-press / “mais” abre o mesmo menu de opções
+- [x] Editar, apagar, reagir, responder e abrir thread continuam funcionando
+- [x] Menu e toolbar navegáveis só por teclado; `Esc` fecha
+- [x] Touch: long-press abre o menu sem selecionar texto por engano
 
 ### Layout e preview
 
-- [ ] Texto, citação, áudio, imagem, PDF, vídeo e arquivo “genérico” alinham na
+- [x] Texto, citação, áudio, imagem, PDF, vídeo e arquivo “genérico” alinham na
       mesma coluna mine/theirs (mesma `max-width` / padding)
-- [ ] Mensagem só-imagem e só-áudio não deslocam avatar/meta em relação à de texto
-- [ ] PNG/JPEG/WebP/GIF mostram preview inline; clique abre lightbox; `Esc` fecha
-- [ ] PDF mostra cartão tipado; clique abre visualização / download sem quebrar a bolha
-- [ ] Áudio continua no player B-080
-- [ ] Vídeo tem cartão/player tipado no clique (sem transcode)
-- [ ] Tipo desconhecido ou falha de carga → cartão de arquivo estável
-- [ ] Várias imagens na mesma mensagem: lightbox com navegação entre elas
+- [x] Mensagem só-imagem e só-áudio não deslocam avatar/meta em relação à de texto
+- [x] PNG/JPEG/WebP/GIF mostram preview inline; clique abre lightbox; `Esc` fecha
+- [x] PDF mostra cartão tipado; clique abre visualização / download sem quebrar a bolha
+- [x] Áudio continua no player B-080
+- [x] Vídeo tem cartão/player tipado no clique (sem transcode)
+- [x] Tipo desconhecido ou falha de carga → cartão de arquivo estável
+- [x] Várias imagens na mesma mensagem: lightbox com navegação entre elas
 
 ## Testes
 

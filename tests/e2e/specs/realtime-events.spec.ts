@@ -4,6 +4,11 @@ import {
   openUserSession,
   selectChannelGeral,
 } from '../helpers/auth';
+import {
+  clickMessageMenuItem,
+  clickMessageToolbarButton,
+  openMessageMoreMenu,
+} from '../helpers/message-actions';
 
 /**
  * B-070: MessageCreated / edit / delete / reactions cross-session without reload.
@@ -31,7 +36,8 @@ test.describe(`realtime events (${AUTH_MODE})`, () => {
     await expect(bob.page.getByText(body)).toBeVisible({ timeout: 30_000 });
 
     const aliceBubble = alice.page.locator('article.vc-msg', { hasText: body }).last();
-    await aliceBubble.getByRole('button', { name: /^Editar$/i }).click();
+    await openMessageMoreMenu(aliceBubble, alice.page);
+    await clickMessageMenuItem(alice.page, /^Editar$/i);
     // Edit mode replaces the <p> body; locate the textarea on the page (not via hasText).
     const editBox = alice.page.getByRole('textbox', { name: /Editar mensagem/i });
     await expect(editBox).toBeVisible({ timeout: 5_000 });
@@ -45,7 +51,7 @@ test.describe(`realtime events (${AUTH_MODE})`, () => {
     ).toBeVisible({ timeout: 15_000 });
 
     const bobBubble = bob.page.locator('article.vc-msg', { hasText: edited }).last();
-    await bobBubble.getByRole('button', { name: /Reagir com 👍/i }).click();
+    await clickMessageToolbarButton(bobBubble, /Reagir com 👍/i);
 
     await expect(
       alice.page.locator('article.vc-msg', { hasText: edited }).getByLabel(/Reação 👍/i),
@@ -54,11 +60,9 @@ test.describe(`realtime events (${AUTH_MODE})`, () => {
       bob.page.locator('article.vc-msg', { hasText: edited }).getByLabel(/Reação 👍/i),
     ).toBeVisible({ timeout: 15_000 });
 
-    await alice.page
-      .locator('article.vc-msg', { hasText: edited })
-      .last()
-      .getByRole('button', { name: /^Apagar$/i })
-      .click();
+    const aliceEditedBubble = alice.page.locator('article.vc-msg', { hasText: edited }).last();
+    await openMessageMoreMenu(aliceEditedBubble, alice.page);
+    await clickMessageMenuItem(alice.page, /^Apagar$/i);
 
     await expect(
       alice.page.locator('article.vc-msg', { hasText: /Mensagem removida/i }).last(),
