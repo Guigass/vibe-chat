@@ -29,7 +29,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 
 | Categoria | Exemplos | Controles |
 |-----------|----------|-----------|
-| **Spoofing** | Roubo de token; JWT forjado | OIDC Keycloak; validar issuer/aud/exp; HTTPS; rotação de chaves |
+| **Spoofing** | Roubo de token; JWT forjado; IdP broker mal configurado; linking por e-mail | OIDC Keycloak; validar issuer/aud/exp; HTTPS; rotação de chaves; app rejeita tokens do IdP externo; linking só com política explícita (B-164) |
 | **Tampering** | Alterar messageId/seq; forjar tenant_id | Constraints DB; tenant só do contexto; assinatura não necessária se SoT é DB |
 | **Repudiation** | Negar ação admin | Audit log; correlation ids |
 | **Information Disclosure** | Cross-tenant read; IDOR channel | RLS + membership checks; testes security |
@@ -41,7 +41,9 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 1. **HTTP API** — IDOR, mass assignment, injection
 2. **SignalR hub** — join em grupos sem authZ; message spoofing
 3. **Uploads MinIO** — MIME spoofing, zip bombs, URLs pré-assinadas vazadas
-4. **Keycloak** — realm misconfig, clients públicos mal configurados
+4. **Keycloak** — realm misconfig, clients públicos mal configurados;
+   Identity Brokering OIDC/SAML (ACS/redirect, audience, certificado,
+   account linking) — B-164
 5. **Postgres** — conexão sem RLS context; app como owner/superuser/`BYPASSRLS`;
    policy sem `FORCE`/`WITH CHECK`
 6. **Redis** — sem AUTH em rede exposta; flush

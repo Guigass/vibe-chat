@@ -1,6 +1,6 @@
 # B-128 — SCIM 2.0 e sincronização de grupos
 
-> Wave 13 · Trilha B/D/E · Deps: B-041, B-106, D-23 · Risco R3
+> Wave 13 · Trilha B/D/E · Deps: B-041, B-106, B-164, D-23 · Risco R3
 > Requisitos comuns: [Waves 11–17](long-term-common.md)
 
 ## Problema

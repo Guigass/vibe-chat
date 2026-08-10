@@ -353,7 +353,8 @@ Obrigatório: budget, rate limit, audit de uso, classificação do dado, timeout
 ```text
 Escolha: baseline LGPD/GDPR e controles técnicos alinhados a SOC 2/ISO 27001.
 O produto não declara certificação sem auditoria externa.
-Entram: SCIM, legal hold, eDiscovery, DLP, SIEM e cadeia de custódia.
+Entram: SSO federado (OIDC/SAML via Keycloak, B-164), SCIM, legal hold,
+  eDiscovery, DLP, SIEM e cadeia de custódia.
 Precedência: legal hold válido suspende purge apenas no escopo registrado; toda
   aplicação/remoção é segregada e auditada.
 ```

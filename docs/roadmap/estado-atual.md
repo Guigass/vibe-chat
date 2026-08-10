@@ -37,7 +37,7 @@ O trabalho aberto concentra-se em:
 | Dados | PostgreSQL 16 + migrations + RLS | `compose.yaml`, `src/VibeChat.Infrastructure/Persistence/` |
 | Tempo real | SignalR + Redis backplane | módulo Realtime + infraestrutura |
 | Arquivos | MinIO/S3-compatible | módulo Files + Compose |
-| Identidade | Keycloak OIDC; DevAuth apenas em Development | realm versionado + API |
+| Identidade | Keycloak OIDC; DevAuth apenas em Development; SSO corporativo OIDC/SAML planejado (B-164) | realm versionado + API |
 | Deploy fase 1 | Docker Compose, profile `apps`; proxy/obs opcionais | `compose.yaml`, ADR-017 |
 
 ## Módulos existentes

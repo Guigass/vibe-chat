@@ -165,7 +165,7 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 |-------|------|--------|
 | B-112…B-118, B-153/B-154 | Organização, onboarding, migração, diagnóstico, inbox e tópicos | Planned — W11 |
 | B-119…B-124 | Conhecimento, decisões, RAG, tarefas e formulários | Planned — W12 |
-| B-125…B-128, B-131, B-139 | Automações, incidentes, conectores e contratos | Planned — W13 |
+| B-125…B-128, B-131, B-139, B-164 | Automações, incidentes, conectores, SSO e contratos | Planned — W13 |
 | B-129/B-130/B-132…B-134/B-146 | Segurança enterprise, SIEM, policies e capacidade | Planned — W14 |
 | B-135…B-138, B-140/B-141, B-063/B-066/B-111 | Plataforma, registry, bridges, branding e clients | Planned — W15 |
 | B-143…B-145 + B-064/B-065 | Offline, HA, storage, federação e E2EE | Planned — W16 |
@@ -192,8 +192,9 @@ wave, seguir a ordem da tabela; itens sem dependência entre si podem ir em
 paralelo por trilhas diferentes.
 
 Depois disso, usar a sequência de validação do horizonte ambicioso: comunicação
-organizada → conhecimento/ações → automação/governança → plataforma → apostas
-arquiteturais. Abrir no máximo uma aposta arquitetural por vez.
+organizada → conhecimento/ações → automação/governança (W13: B-164 SSO antes de
+B-128 SCIM) → plataforma → apostas arquiteturais. Abrir no máximo uma aposta
+arquitetural por vez.
 
 ## Itens explicitamente rejeitados na fase 1
 

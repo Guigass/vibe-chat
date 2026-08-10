@@ -93,7 +93,8 @@ da conversa.
 | B-125 | B/C/D | Automation builder com triggers, condições e ações | B-108, B-110, B-124 | [B-125](../product/specs/B-125-automation-builder.md) | Planned |
 | B-126 | B/C/D/E | Incident rooms, timeline e playbooks operacionais | B-112, B-119, B-125 | [B-126](../product/specs/B-126-incident-rooms-playbooks.md) | Planned |
 | B-127 | B/C/D/E | Conectores bidirecionais GitHub/GitLab/Jira/calendário | B-108, B-125 | [B-127](../product/specs/B-127-conectores-bidirecionais.md) | Planned |
-| B-128 | B/D/E | SCIM 2.0, grupos e deprovisioning | B-041, B-106, D-23 | [B-128](../product/specs/B-128-scim-grupos.md) | Planned |
+| B-164 | A/B/D/E | SSO corporativo via OIDC/SAML (Keycloak brokering; rótulo customizável) | B-002, ADR-007 | [B-164](../product/specs/B-164-sso-oidc-saml.md) | Planned |
+| B-128 | B/D/E | SCIM 2.0, grupos e deprovisioning | B-041, B-106, B-164, D-23 | [B-128](../product/specs/B-128-scim-grupos.md) | Planned |
 | B-131 | C/E/A | Malware scanning, quarentena e política de download | B-090 | [B-131](../product/specs/B-131-malware-quarentena.md) | Planned |
 | B-139 | B/C/E/G | Versionamento formal de eventos e schema registry | B-108, B-109 | [B-139](../product/specs/B-139-eventos-versionados.md) | Planned |
 
@@ -101,6 +102,7 @@ da conversa.
 
 - automações são idempotentes, auditáveis e limitadas;
 - conectores têm secrets mascarados, rotação e circuit breaker;
+- SSO corporativo via brokering OIDC/SAML no Keycloak; app permanece OIDC-only;
 - deprovisioning define ownership e sessões;
 - schema de eventos tem compatibilidade e depreciação testadas.
 
