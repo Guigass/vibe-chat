@@ -28,7 +28,6 @@ Regras do registro:
 | ID | Área | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
 | BUG-002 | Sidebar / unread | Badges de novas mensagens não limpam de forma persistente após reload | Alta | Aberto — fecha em **B-094** |
-| BUG-004 | Composer / áudio | Áudio do microfone não envia | Alta | Aberto — safety lane |
 | BUG-005 | Admin | Página `/admin` “não entra” (Member redireciona sem feedback) | Alta | Aberto — safety lane |
 | BUG-006 | Realtime | Conexão em tempo real caindo com frequência | Alta | Aberto — safety lane |
 | BUG-007 | Theme | Modo escuro não funciona | Alta | Aberto — safety lane |
@@ -107,7 +106,7 @@ Regras do registro:
 
 ### BUG-004 — Áudio do microfone não envia
 
-- Status: **Aberto**
+- Status: **Done**
 - Observado em: relato de produto; feature B-080 entregue no código; depende do
   mesmo path MinIO que BUG-003.
 - Hipótese: falha em `getUserMedia` / contexto inseguro / MIME do `MediaRecorder`,
@@ -122,8 +121,10 @@ Regras do registro:
 - Owner automático: Frontend (D) + Files (C).
 - Critério de resolução: caminho Mic → mensagem persistida com teste de
   regressão; erros de permissão/MIME visíveis ao usuário.
-- Próxima ação: reproduzir em secure context; se PUT falhar, tratar junto de
-  BUG-003.
+- Resolução: path MinIO herdado de BUG-003; `normalizeAudioContentType` no
+  initiate/File; erros explícitos em blob inválido e falha de `messages.send`;
+  `discard()` não zera `discardOnStop` antes do `onstop`; clear da fila após
+  envio ok; regressão Vitest (`audio-recorder.spec`, `attachment-queue.audio.spec`).
 
 ### BUG-005 — Página admin não entra
 
@@ -247,4 +248,5 @@ Regras do registro:
 |----|------|--------|------------|--------|
 | BUG-001 | Composer / timeline | Mensagens aparecem duplicadas ao enviar | Alta | Done |
 | BUG-003 | Anexos | Upload de arquivo falha com erro | Alta | Done |
+| BUG-004 | Composer / áudio | Áudio do microfone não envia | Alta | Done |
 | BUG-009 | Threads / realtime | Reply de thread sem update em tempo real | Alta | Done |

@@ -37,6 +37,14 @@ export function extensionForMime(mime: string): string {
   return 'webm';
 }
 
+/** Strip codec parameters so initiate/PUT use a stable base type (e.g. audio/webm). */
+export function normalizeAudioContentType(mime: string): string {
+  const trimmed = mime.trim();
+  if (!trimmed) return 'audio/webm';
+  const base = trimmed.split(';', 1)[0]?.trim().toLowerCase();
+  return base || 'audio/webm';
+}
+
 export function formatDuration(ms: number): string {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
   const minutes = Math.floor(totalSec / 60);

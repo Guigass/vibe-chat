@@ -6,6 +6,7 @@ import {
   downsampleWaveform,
   extensionForMime,
   isAudioRecordingSupported,
+  normalizeAudioContentType,
   resolveAudioMimeType,
 } from './audio-recorder';
 
@@ -113,18 +114,29 @@ export class AudioRecorderService {
   }
 
   discard(): void {
-    this.discardOnStop = true;
-    this.stop();
+    if (this.mediaRecorder?.state === 'recording') {
+      // Keep discardOnStop until onstop; resetInternal would clear the flag too early
+      // and let onstop build an empty preview from already-cleared chunks.
+      this.discardOnStop = true;
+      this.stop();
+      return;
+    }
     this.resetInternal(true);
   }
 
   async buildRecordedAudio(): Promise<RecordedAudio | null> {
     const blob = this.previewBlob();
-    if (!blob) return null;
+    if (!blob) {
+      this.errorMessage.set('Nenhum áudio gravado para enviar.');
+      return null;
+    }
 
-    const mimeType = blob.type || resolveAudioMimeType() || 'audio/webm';
+    const mimeType = normalizeAudioContentType(
+      blob.type || resolveAudioMimeType() || 'audio/webm',
+    );
     const durationMs = this.elapsedMs();
     if (durationMs <= 0 || blob.size <= 0) {
+      this.errorMessage.set('Áudio inválido ou vazio. Grave novamente.');
       return null;
     }
 
@@ -150,6 +162,7 @@ export class AudioRecorderService {
     this.clearTimers();
     if (this.discardOnStop) {
       this.discardOnStop = false;
+      this.resetInternal(true);
       return;
     }
 

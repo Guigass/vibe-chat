@@ -8,6 +8,7 @@ import {
   resolveContentType,
   validateAttachmentFile,
 } from './attachment-upload';
+import { normalizeAudioContentType } from './audio-recorder';
 import { RecordedAudio } from './audio-recorder.service';
 
 @Injectable({ providedIn: 'root' })
@@ -132,8 +133,9 @@ export class AttachmentQueueService {
       return { error: `No máximo ${MAX_ATTACHMENTS_PER_MESSAGE} anexos por mensagem.` };
     }
 
+    const contentType = normalizeAudioContentType(recorded.mimeType);
     const localId = crypto.randomUUID();
-    const file = new File([recorded.blob], recorded.fileName, { type: recorded.mimeType });
+    const file = new File([recorded.blob], recorded.fileName, { type: contentType });
     this.itemsSignal.update((list) => [
       ...list,
       {
@@ -148,7 +150,7 @@ export class AttachmentQueueService {
       const initiated = await this.api.initiateAttachmentUpload({
         channelId,
         fileName: recorded.fileName,
-        contentType: recorded.mimeType,
+        contentType,
         sizeBytes: recorded.blob.size,
         kind: 'Audio',
         durationMs: recorded.durationMs,

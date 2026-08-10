@@ -576,7 +576,9 @@ export class Composer {
     if (!channelId) return;
     const recorded = await this.audioRecorder.buildRecordedAudio();
     if (!recorded) {
-      this.validationError.set(this.audioRecorder.errorMessage());
+      this.validationError.set(
+        this.audioRecorder.errorMessage() ?? 'Não foi possível preparar o áudio.',
+      );
       return;
     }
 
@@ -589,8 +591,12 @@ export class Composer {
     const ok = await this.messages.send('', result.attachmentId ? [result.attachmentId] : []);
     if (ok) {
       this.audioRecorder.reset();
+      this.attachments.clear();
       this.validationError.set(null);
+      return;
     }
+
+    this.validationError.set('Não foi possível enviar o áudio. Tente novamente.');
   }
 
   async onSubmit(event: Event): Promise<void> {

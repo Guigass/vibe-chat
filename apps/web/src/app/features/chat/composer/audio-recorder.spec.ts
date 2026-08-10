@@ -3,8 +3,10 @@ import {
   AUDIO_MAX_DURATION_MS,
   downsampleWaveform,
   extensionForMime,
+  normalizeAudioContentType,
   resolveAudioMimeType,
 } from './audio-recorder';
+import { AudioRecorderService } from './audio-recorder.service';
 
 describe('audio-recorder utilities', () => {
   it('selects the first supported MIME type', () => {
@@ -28,7 +30,40 @@ describe('audio-recorder utilities', () => {
     expect(extensionForMime('audio/webm')).toBe('webm');
   });
 
+  it('normalizes audio content types by stripping codec parameters', () => {
+    expect(normalizeAudioContentType('audio/webm;codecs=opus')).toBe('audio/webm');
+    expect(normalizeAudioContentType('audio/ogg;codecs=opus')).toBe('audio/ogg');
+    expect(normalizeAudioContentType('  audio/mp4  ')).toBe('audio/mp4');
+    expect(normalizeAudioContentType('')).toBe('audio/webm');
+  });
+
   it('exposes the five minute client limit', () => {
     expect(AUDIO_MAX_DURATION_MS).toBe(300_000);
+  });
+});
+
+describe('AudioRecorderService.buildRecordedAudio', () => {
+  it('returns null with an error when the preview blob is empty', async () => {
+    const service = new AudioRecorderService();
+    service.previewBlob.set(new Blob([], { type: 'audio/webm;codecs=opus' }));
+    service.elapsedMs.set(1_500);
+
+    const result = await service.buildRecordedAudio();
+
+    expect(result).toBeNull();
+    expect(service.errorMessage()).toContain('inválido ou vazio');
+  });
+
+  it('normalizes mime type for a valid preview blob', async () => {
+    const service = new AudioRecorderService();
+    service.previewBlob.set(new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'audio/webm;codecs=opus' }));
+    service.elapsedMs.set(1_500);
+
+    const result = await service.buildRecordedAudio();
+
+    expect(result).not.toBeNull();
+    expect(result?.mimeType).toBe('audio/webm');
+    expect(result?.durationMs).toBe(1_500);
+    expect(result?.fileName).toMatch(/\.webm$/);
   });
 });
