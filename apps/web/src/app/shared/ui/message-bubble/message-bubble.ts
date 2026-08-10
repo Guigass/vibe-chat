@@ -18,6 +18,7 @@ import {
 import {
   ChatMessage,
   MessageAttachment,
+  MessageForwardedFrom,
   REACTION_EMOJI_OPTIONS,
   isMessageBodyTooLong,
   measureMessageBodyLength,
@@ -123,7 +124,7 @@ import { environment } from '../../../../environments/environment';
               @if (message().forwardedFrom; as origin) {
                 <p class="vc-msg__forwarded">
                   Encaminhada de
-                  {{ origin.channelName.startsWith('#') || origin.channelName === 'DM' ? origin.channelName : ('#' + origin.channelName) }}
+                  {{ formatForwardOrigin(origin) }}
                   · {{ origin.authorName }}
                   · {{ origin.createdAt | date: 'shortDate' }}
                 </p>
@@ -330,8 +331,10 @@ import { environment } from '../../../../environments/environment';
     }
     .vc-msg__forwarded {
       margin: 0;
+      min-width: 0;
       font-size: 0.78rem;
       color: var(--vc-ink-muted);
+      overflow-wrap: anywhere;
     }
     .vc-msg__quote {
       display: grid;
@@ -649,6 +652,19 @@ export class MessageBubble {
         void this.loadDownloadUrl(channelId, attachment.id);
       }
     });
+  }
+
+  formatForwardOrigin(origin: MessageForwardedFrom): string {
+    const raw = (origin.channelName ?? '').trim();
+    const looksLikeDmSlug = /^dm:/i.test(raw);
+    const isDirect = origin.isDirect === true || looksLikeDmSlug || raw === 'DM';
+    if (isDirect) {
+      if (!raw || raw === 'DM' || looksLikeDmSlug) return 'DM';
+      return raw.startsWith('@') ? raw : `@${raw}`;
+    }
+    if (!raw) return '#';
+    if (raw.startsWith('#') || raw.startsWith('@')) return raw;
+    return `#${raw}`;
   }
 
   startEdit(): void {

@@ -521,7 +521,9 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         history!.Should().Contain(m =>
             m.ForwardedFromMessageId == sourceId
             && m.ForwardedFrom != null
-            && m.ForwardedFrom.ChannelId == DemoChannelId);
+            && m.ForwardedFrom.ChannelId == DemoChannelId
+            && !m.ForwardedFrom.IsDirect
+            && !m.ForwardedFrom.ChannelName.StartsWith("dm:", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -547,6 +549,51 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         var created = await db.Messages.IgnoreQueryFilters()
             .CountAsync(x => x.ForwardedFromMessageId == new MessageId(sourceId));
         created.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Forward_from_dm_resolves_peer_display_name_not_internal_slug()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+        var openDm = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/dms",
+            new OpenDirectMessageRequest(SeedData.BobUserId.Value));
+        openDm.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Created);
+        var dm = await openDm.Content.ReadFromJsonAsync<ChannelDto>(JsonOptions);
+        dm.Should().NotBeNull();
+
+        var sourceId = Guid.NewGuid();
+        var send = await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{dm!.Id}/messages",
+            new SendMessageRequest(sourceId, $"idem-fwd-dm-src-{sourceId:N}", "dm origin", null, null));
+        send.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var forward = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/messages/{sourceId}/forward",
+            new ForwardMessageRequest([DemoChannelId], null, $"idem-fwd-dm-{sourceId:N}"));
+        forward.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var forwarded = await forward.Content.ReadFromJsonAsync<ForwardMessageResponseDto>(JsonOptions);
+        forwarded.Should().NotBeNull();
+        forwarded!.Messages.Should().ContainSingle();
+        var header = forwarded.Messages[0].ForwardedFrom;
+        header.Should().NotBeNull();
+        header!.IsDirect.Should().BeTrue();
+        header.ChannelId.Should().Be(dm.Id);
+        header.ChannelName.Should().Be("Bob");
+        header.ChannelName.Should().NotContain("dm:");
+
+        var history = await alice.GetFromJsonAsync<MessageDto[]>(
+            $"/api/v1/channels/{DemoChannelId}/messages?after=0&limit=100",
+            JsonOptions);
+        history.Should().Contain(m =>
+            m.ForwardedFromMessageId == sourceId
+            && m.ForwardedFrom != null
+            && m.ForwardedFrom.IsDirect
+            && m.ForwardedFrom.ChannelName == "Bob"
+            && !m.ForwardedFrom.ChannelName.Contains("dm:", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -1776,7 +1823,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         Guid ChannelId,
         string ChannelName,
         string AuthorName,
-        DateTimeOffset CreatedAt);
+        DateTimeOffset CreatedAt,
+        bool IsDirect = false);
 
     private sealed record MessageDto(
         Guid Id,

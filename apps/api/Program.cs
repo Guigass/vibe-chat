@@ -939,6 +939,7 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
     var forwardedFromById = await LoadForwardedFromByIdsAsync(
         db,
         rows.Select(x => (x.ForwardedFromMessageId, x.ForwardedFromChannelId)),
+        profile.Id,
         ct);
     var messages = rows.Select(x => new MessageResponse(
         x.Id.Value,
@@ -1182,6 +1183,7 @@ v1.MapPost("/workspaces/{workspaceId:guid}/messages/{messageId:guid}/forward", a
         var forwardedFromById = await LoadForwardedFromByIdsAsync(
             db,
             createdRows.Select(x => (x.ForwardedFromMessageId, x.ForwardedFromChannelId)),
+            profile.Id,
             ct);
 
         var responses = result.Messages.Select(m =>
@@ -1426,6 +1428,7 @@ v1.MapGet("/threads/{threadId:guid}/messages", async (
     var forwardedFromById = await LoadForwardedFromByIdsAsync(
         db,
         rows.Select(x => (x.ForwardedFromMessageId, x.ForwardedFromChannelId)),
+        profile.Id,
         ct);
     var messages = rows.Select(x => new MessageResponse(
         x.Id.Value,
@@ -3723,6 +3726,7 @@ static async Task<Dictionary<Guid, ReplyToResponse>> LoadReplyToByIdsAsync(
 static async Task<Dictionary<Guid, ForwardedFromResponse>> LoadForwardedFromByIdsAsync(
     VibeChatDbContext db,
     IEnumerable<(MessageId? MessageId, ChannelId? ChannelId)> pairs,
+    UserId currentUserId,
     CancellationToken ct)
 {
     var list = pairs
@@ -3753,26 +3757,39 @@ static async Task<Dictionary<Guid, ForwardedFromResponse>> LoadForwardedFromById
 
     var channels = await db.Channels.AsNoTracking().IgnoreQueryFilters()
         .Where(c => channelIds.Contains(c.Id))
-        .Select(c => new { c.Id, c.Name, c.Type })
-        .ToDictionaryAsync(c => c.Id.Value, ct);
+        .ToListAsync(ct);
+    var channelById = channels.ToDictionary(c => c.Id.Value);
+    var peerByChannel = await ResolveDirectPeersAsync(channels, currentUserId, db, ct);
 
     var result = new Dictionary<Guid, ForwardedFromResponse>();
     foreach (var item in list)
     {
         messages.TryGetValue(item.MessageId.Value, out var msg);
-        channels.TryGetValue(item.ChannelId.Value, out var channel);
-        var channelName = channel is null
-            ? item.ChannelId.Value.ToString()
-            : channel.Type == ChannelType.Direct
-                ? (string.IsNullOrWhiteSpace(channel.Name) ? "DM" : channel.Name)
-                : channel.Name;
+        channelById.TryGetValue(item.ChannelId.Value, out var channel);
+        var isDirect = channel?.Type == ChannelType.Direct;
+        string channelName;
+        if (channel is null)
+        {
+            channelName = item.ChannelId.Value.ToString();
+        }
+        else if (isDirect)
+        {
+            channelName = peerByChannel.TryGetValue(channel.Id, out var peer)
+                ? peer.DisplayName
+                : "DM";
+        }
+        else
+        {
+            channelName = channel.Name;
+        }
 
         result[item.MessageId.Value] = new ForwardedFromResponse(
             item.MessageId.Value,
             item.ChannelId.Value,
             channelName,
             msg?.AuthorName ?? string.Empty,
-            msg?.CreatedAt ?? default);
+            msg?.CreatedAt ?? default,
+            isDirect);
     }
 
     return result;
@@ -4018,7 +4035,8 @@ public sealed record ForwardedFromResponse(
     Guid ChannelId,
     string ChannelName,
     string AuthorName,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    bool IsDirect = false);
 
 public sealed record MessageResponse(
     Guid Id,

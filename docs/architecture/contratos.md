@@ -110,7 +110,7 @@ membership. Endpoints tipicamente checam membership + `HasPermissionAsync` (ex.:
 | ReplyTo | `{ messageId, authorName, preview, deleted }`? | Prévia resolvida no servidor (até 140 chars); history + Accepted + hub |
 | ForwardedFromMessageId | Guid? | Origem do encaminhamento (B-085); cabeçalho histórico |
 | ForwardedFromChannelId | Guid? | Canal de origem do encaminhamento |
-| ForwardedFrom | `{ messageId, channelId, channelName, authorName, createdAt }`? | Cabeçalho resolvido (permanece se a origem for apagada depois) |
+| ForwardedFrom | `{ messageId, channelId, channelName, authorName, createdAt, isDirect }`? | Cabeçalho resolvido (permanece se a origem for apagada depois); em DM, `channelName` é o display name do peer (nunca o slug `dm:guid:guid`) e `isDirect = true` |
 | ReplyCount | int | Contagem de replies (timeline do canal) |
 | Attachments | AttachmentDto[] | Metadados prontos (sem URL) |
 | Reactions | ReactionSummaryDto[] | `{ emoji, count, me }` agregado |

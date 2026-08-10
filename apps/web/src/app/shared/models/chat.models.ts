@@ -93,6 +93,7 @@ export interface MessageForwardedFrom {
   channelName: string;
   authorName: string;
   createdAt: string;
+  isDirect?: boolean;
 }
 
 export const REACTION_EMOJI_OPTIONS = ['👍', '❤️', '😂', '🎉', '👀', '✅'] as const;

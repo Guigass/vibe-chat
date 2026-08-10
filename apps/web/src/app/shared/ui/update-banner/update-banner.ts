@@ -10,7 +10,15 @@ import { Button } from '../button/button';
     @if (updates.updateAvailable()) {
       <div class="vc-update" role="status">
         <span class="vc-update__text">Nova versão disponível</span>
-        <vc-button type="button" variant="primary" (click)="onUpdate()">Atualizar</vc-button>
+        <vc-button
+          type="button"
+          variant="primary"
+          [loading]="updates.applying()"
+          [disabled]="updates.applying()"
+          (click)="onUpdate()"
+        >
+          Atualizar
+        </vc-button>
       </div>
     }
   `,

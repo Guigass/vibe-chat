@@ -39,11 +39,6 @@ describe('AppUpdateService (B-165)', () => {
       }),
     );
 
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: { reload: reloadMock },
-    });
-
     injector = Injector.create({
       providers: [
         { provide: DestroyRef, useValue: { onDestroy: vi.fn() } },
@@ -56,10 +51,13 @@ describe('AppUpdateService (B-165)', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   function createService(): AppUpdateService {
-    return injector.get(AppUpdateService);
+    const service = injector.get(AppUpdateService);
+    service.reloadWindow = reloadMock;
+    return service;
   }
 
   it('marks update available when SwUpdate emits VERSION_READY', () => {
@@ -116,5 +114,31 @@ describe('AppUpdateService (B-165)', () => {
     await service.applyUpdate();
     expect(swUpdate.activateUpdate).toHaveBeenCalled();
     expect(reloadMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('reloads even when activateUpdate hangs (version.json path)', async () => {
+    vi.useFakeTimers();
+    swUpdate.activateUpdate = vi.fn().mockReturnValue(new Promise(() => undefined));
+    const unregister = vi.fn().mockResolvedValue(true);
+    const deleteCache = vi.fn().mockResolvedValue(true);
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        getRegistrations: vi.fn().mockResolvedValue([{ unregister }]),
+      },
+    });
+    vi.stubGlobal('caches', {
+      keys: vi.fn().mockResolvedValue(['ngsw:a']),
+      delete: deleteCache,
+    });
+
+    const service = createService();
+    const applyPromise = service.applyUpdate();
+    await vi.advanceTimersByTimeAsync(2600);
+    await applyPromise;
+
+    expect(reloadMock).toHaveBeenCalledTimes(1);
+    expect(unregister).toHaveBeenCalled();
+    expect(deleteCache).toHaveBeenCalledWith('ngsw:a');
+    expect(service.applying()).toBe(false);
   });
 });

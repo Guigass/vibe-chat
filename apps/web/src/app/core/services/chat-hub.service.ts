@@ -53,6 +53,7 @@ interface MessageCreatedPayload {
     channelName?: string;
     authorName?: string;
     createdAt?: string;
+    isDirect?: boolean;
   } | null;
   sequence?: number;
   authorId?: string;
@@ -630,6 +631,7 @@ export class ChatHubService {
             channelName: payload.forwardedFrom.channelName ?? '',
             authorName: payload.forwardedFrom.authorName ?? '',
             createdAt: payload.forwardedFrom.createdAt ?? new Date().toISOString(),
+            isDirect: !!payload.forwardedFrom.isDirect,
           }
         : null,
       attachments: (payload.attachments ?? []).map((a) => ({

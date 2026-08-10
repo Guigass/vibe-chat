@@ -870,9 +870,24 @@ public sealed class MessageWriter(
             .Select(x => x.DisplayName)
             .FirstOrDefaultAsync(cancellationToken) ?? source.AuthorId.Value.ToString();
 
-        var sourceChannelName = sourceChannel.Type == ChannelType.Direct
-            ? (string.IsNullOrWhiteSpace(sourceChannel.Name) ? "DM" : sourceChannel.Name)
-            : sourceChannel.Name;
+        var isDirect = sourceChannel.Type == ChannelType.Direct;
+        string sourceChannelName;
+        if (isDirect)
+        {
+            var peerName = await dbContext.ChannelMembers.AsNoTracking()
+                .Where(x => x.ChannelId == sourceChannelId && x.UserId != command.UserId)
+                .Join(
+                    dbContext.UserProfiles.AsNoTracking(),
+                    m => m.UserId,
+                    u => u.Id,
+                    (_, u) => u.DisplayName)
+                .FirstOrDefaultAsync(cancellationToken);
+            sourceChannelName = string.IsNullOrWhiteSpace(peerName) ? "DM" : peerName;
+        }
+        else
+        {
+            sourceChannelName = sourceChannel.Name;
+        }
 
         var forwardedFromPayload = new
         {
@@ -880,7 +895,8 @@ public sealed class MessageWriter(
             channelId = sourceChannelId.Value,
             channelName = sourceChannelName,
             authorName = sourceAuthorName,
-            createdAt = source.CreatedAt
+            createdAt = source.CreatedAt,
+            isDirect
         };
 
         var now = clock.UtcNow;

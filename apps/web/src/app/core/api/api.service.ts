@@ -99,6 +99,7 @@ interface ForwardedFromDto {
   channelName: string;
   authorName: string;
   createdAt: string;
+  isDirect?: boolean;
 }
 
 interface MessageDto {
@@ -934,6 +935,7 @@ export class ApiService {
             channelName: m.forwardedFrom.channelName ?? '',
             authorName: m.forwardedFrom.authorName ?? '',
             createdAt: m.forwardedFrom.createdAt,
+            isDirect: !!m.forwardedFrom.isDirect,
           }
         : null,
       replyCount: m.replyCount ?? 0,

@@ -11,8 +11,27 @@ export type WebVersionInfo = {
 /** Interval between light /version.json checks (boot + focus also trigger). */
 const VERSION_POLL_MS = 45 * 60 * 1000;
 
+/** SW message channel can hang when there is no pending worker — never block the CTA. */
+const SW_ACTIVATE_TIMEOUT_MS = 2500;
+
 function isVersionReady(event: { type: string }): event is VersionReadyEvent {
   return event.type === 'VERSION_READY';
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | 'timeout'> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => resolve('timeout'), ms);
+    promise.then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (err: unknown) => {
+        window.clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
 }
 
 @Injectable({ providedIn: 'root' })
@@ -22,12 +41,13 @@ export class AppUpdateService {
 
   private readonly updateAvailableSignal = signal(false);
   private readonly remoteBuildIdSignal = signal<string | null>(null);
+  private readonly applyingSignal = signal(false);
   private started = false;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
-  private applying = false;
 
   readonly updateAvailable = this.updateAvailableSignal.asReadonly();
   readonly remoteBuildId = this.remoteBuildIdSignal.asReadonly();
+  readonly applying = this.applyingSignal.asReadonly();
   readonly embeddedBuildId = environment.buildId;
 
   /** Call once from the app root; idempotent. */
@@ -104,21 +124,57 @@ export class AppUpdateService {
 
   /** Activate pending SW (if any) and reload. Only invoke from an explicit user CTA. */
   async applyUpdate(): Promise<void> {
-    if (this.applying) {
+    if (this.applyingSignal()) {
       return;
     }
-    this.applying = true;
+    this.applyingSignal.set(true);
     try {
+      let activated = false;
       if (this.swUpdate?.isEnabled) {
         try {
-          await this.swUpdate.activateUpdate();
+          const result = await withTimeout(
+            this.swUpdate.activateUpdate(),
+            SW_ACTIVATE_TIMEOUT_MS,
+          );
+          activated = result === true;
         } catch {
           /* still reload — mismatch path does not need SW activate */
         }
       }
-      window.location.reload();
+
+      // version.json mismatch often has no waiting SW; drop stale SW/caches so reload
+      // fetches the new shell instead of replaying the old ngsw assets.
+      if (!activated) {
+        await this.clearStaleClientCaches();
+      }
+
+      this.reloadWindow();
     } finally {
-      this.applying = false;
+      this.applyingSignal.set(false);
+    }
+  }
+
+  /** Test seam — override in unit tests instead of stubbing window.location. */
+  reloadWindow(): void {
+    window.location.reload();
+  }
+
+  private async clearStaleClientCaches(): Promise<void> {
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((reg) => reg.unregister()));
+      } catch {
+        /* ignore */
+      }
+    }
+    if (typeof caches !== 'undefined') {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((key) => caches.delete(key)));
+      } catch {
+        /* ignore */
+      }
     }
   }
 }
