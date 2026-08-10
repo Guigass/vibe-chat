@@ -28,7 +28,6 @@ Regras do registro:
 | ID | Área | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
 | BUG-002 | Sidebar / unread | Badges de novas mensagens não limpam de forma persistente após reload | Alta | Aberto — fecha em **B-094** |
-| BUG-003 | Anexos | Upload de arquivo falha com erro | Alta | Aberto — safety lane |
 | BUG-004 | Composer / áudio | Áudio do microfone não envia | Alta | Aberto — safety lane |
 | BUG-005 | Admin | Página `/admin` “não entra” (Member redireciona sem feedback) | Alta | Aberto — safety lane |
 | BUG-006 | Realtime | Conexão em tempo real caindo com frequência | Alta | Aberto — safety lane |
@@ -85,7 +84,7 @@ Regras do registro:
 
 ### BUG-003 — Upload de arquivo com erro
 
-- Status: **Aberto**
+- Status: **Done**
 - Observado em: relato de produto no lab Compose; stack MinIO healthy em
   2026-08-10; logs recentes da API sem exceção clara de attachment (ruído de
   outbox).
@@ -101,8 +100,10 @@ Regras do registro:
 - Owner automático: Files (C) + Frontend (D) + Infra (A) se CORS/endpoint.
 - Critério de resolução: upload E2E ou integração verde; erro de UI específico
   se falhar; doc/env coerente com endpoint público.
-- Próxima ação: reproduzir PUT no browser (Network); validar
-  `Minio__PublicEndpoint` e CORS para `http://localhost:4200`.
+- Resolução: presign/download assinam com `MinioPresignClient` no
+  `PublicEndpoint` (sem rewrite pós-assinatura); CORS do `createbucket`
+  falha-fechado; `resolveContentType` no initiate da fila; TestHost
+  Endpoint=`127.0.0.1` / PublicEndpoint=`localhost` + assert de host/PUT.
 
 ### BUG-004 — Áudio do microfone não envia
 
@@ -245,4 +246,5 @@ Regras do registro:
 | ID | Área | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
 | BUG-001 | Composer / timeline | Mensagens aparecem duplicadas ao enviar | Alta | Done |
+| BUG-003 | Anexos | Upload de arquivo falha com erro | Alta | Done |
 | BUG-009 | Threads / realtime | Reply de thread sem update em tempo real | Alta | Done |

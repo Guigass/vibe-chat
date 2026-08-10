@@ -5,6 +5,7 @@ import {
   MAX_ATTACHMENTS_PER_MESSAGE,
   PendingAttachment,
   UPLOAD_CONCURRENCY,
+  resolveContentType,
   validateAttachmentFile,
 } from './attachment-upload';
 import { RecordedAudio } from './audio-recorder.service';
@@ -199,7 +200,7 @@ export class AttachmentQueueService {
     this.patch(localId, { status: 'uploading', progress: 0, error: undefined });
 
     try {
-      const contentType = item.file.type || 'application/octet-stream';
+      const contentType = resolveContentType(item.file);
       const initiated = await this.api.initiateAttachmentUpload({
         channelId,
         fileName: item.file.name,

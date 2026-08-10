@@ -163,8 +163,13 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("POSTGRES_BACKUP_USER", BackupUser);
         builder.UseSetting("POSTGRES_BACKUP_PASSWORD", BackupPassword);
         builder.UseSetting("ConnectionStrings:Redis", _redisConnection);
-        builder.UseSetting("Minio:Endpoint", _minioEndpoint);
-        builder.UseSetting("Minio:PublicEndpoint", $"http://{_minioEndpoint}");
+        // Dual-host on purpose (BUG-003): internal ops via 127.0.0.1, browser URLs via
+        // localhost. Rewriting a URL signed for one host to the other breaks SigV4.
+        var minioPort = _minioEndpoint.Contains(':', StringComparison.Ordinal)
+            ? _minioEndpoint[(_minioEndpoint.LastIndexOf(':') + 1)..]
+            : "9000";
+        builder.UseSetting("Minio:Endpoint", $"127.0.0.1:{minioPort}");
+        builder.UseSetting("Minio:PublicEndpoint", $"http://localhost:{minioPort}");
         builder.UseSetting("Minio:AccessKey", MinioUser);
         builder.UseSetting("Minio:SecretKey", MinioPassword);
         builder.UseSetting("Minio:Bucket", MinioBucket);

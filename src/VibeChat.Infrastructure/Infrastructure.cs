@@ -1336,7 +1336,19 @@ public sealed class PresenceService(RedisConnection redis, IClock clock) : IPres
     private static string UsersKey(TenantId tenantId) => RedisKeys.PresenceUsers(tenantId);
 }
 
-public sealed class MinioObjectStorage(IMinioClient minioClient, IConfiguration configuration) : IObjectStorage
+/// <summary>
+/// MinIO client configured with <c>Minio:PublicEndpoint</c> for browser-facing
+/// presigned URLs. Must sign the public host — rewriting after signing breaks SigV4.
+/// </summary>
+public sealed class MinioPresignClient(IMinioClient Client)
+{
+    public IMinioClient Client { get; } = Client;
+}
+
+public sealed class MinioObjectStorage(
+    IMinioClient minioClient,
+    MinioPresignClient presignClient,
+    IConfiguration configuration) : IObjectStorage
 {
     public async Task<bool> IsHealthyAsync(CancellationToken cancellationToken)
     {
@@ -1355,13 +1367,14 @@ public sealed class MinioObjectStorage(IMinioClient minioClient, IConfiguration 
     {
         _ = contentType;
         var expiry = Math.Clamp((int)ttl.TotalSeconds, 60, 3600);
-        var url = await minioClient.PresignedPutObjectAsync(new Minio.DataModel.Args.PresignedPutObjectArgs()
+        // Sign with the public host so browser PUTs match SigV4 (BUG-003).
+        var url = await presignClient.Client.PresignedPutObjectAsync(new Minio.DataModel.Args.PresignedPutObjectArgs()
             .WithBucket(Bucket())
             .WithObject(storageKey)
             .WithExpiry(expiry));
         // Keep required headers empty — signed PUT URLs reject unsigned Content-Type headers.
         return new PresignedUpload(
-            new Uri(RewritePublicUrl(url)),
+            new Uri(url),
             DateTimeOffset.UtcNow.AddSeconds(expiry),
             new Dictionary<string, string>());
     }
@@ -1370,11 +1383,11 @@ public sealed class MinioObjectStorage(IMinioClient minioClient, IConfiguration 
     {
         _ = fileName;
         var expiry = Math.Clamp((int)ttl.TotalSeconds, 60, 3600);
-        var url = await minioClient.PresignedGetObjectAsync(new Minio.DataModel.Args.PresignedGetObjectArgs()
+        var url = await presignClient.Client.PresignedGetObjectAsync(new Minio.DataModel.Args.PresignedGetObjectArgs()
             .WithBucket(Bucket())
             .WithObject(storageKey)
             .WithExpiry(expiry));
-        return new PresignedDownload(new Uri(RewritePublicUrl(url)), DateTimeOffset.UtcNow.AddSeconds(expiry));
+        return new PresignedDownload(new Uri(url), DateTimeOffset.UtcNow.AddSeconds(expiry));
     }
 
     public async Task<ObjectStat?> StatObjectAsync(string storageKey, CancellationToken cancellationToken)
@@ -1397,35 +1410,54 @@ public sealed class MinioObjectStorage(IMinioClient minioClient, IConfiguration 
     }
 
     private string Bucket() => configuration["Minio:Bucket"] ?? "vibechat";
+}
 
-    private string RewritePublicUrl(string url)
+internal static class MinioEndpoint
+{
+    public static IMinioClient CreateClient(IConfiguration cfg, string endpoint)
     {
-        var publicEndpoint = configuration["Minio:PublicEndpoint"];
-        if (string.IsNullOrWhiteSpace(publicEndpoint))
+        var (host, port, useSsl) = Parse(endpoint, cfg);
+        return new MinioClient()
+            .WithEndpoint(host, port)
+            .WithCredentials(
+                cfg["Minio:AccessKey"] ?? "minioadmin",
+                cfg["Minio:SecretKey"] ?? "minioadmin_dev_password_change_me")
+            .WithSSL(useSsl)
+            .Build();
+    }
+
+    public static string ResolveInternalEndpoint(IConfiguration cfg) =>
+        cfg["Minio:Endpoint"] ?? "localhost:9000";
+
+    public static string ResolvePublicEndpoint(IConfiguration cfg)
+    {
+        var publicEndpoint = cfg["Minio:PublicEndpoint"];
+        return string.IsNullOrWhiteSpace(publicEndpoint)
+            ? ResolveInternalEndpoint(cfg)
+            : publicEndpoint;
+    }
+
+    private static (string Host, int Port, bool UseSsl) Parse(string endpoint, IConfiguration cfg)
+    {
+        var useSsl = bool.TryParse(cfg["Minio:UseSsl"], out var configuredSsl) && configuredSsl;
+        var trimmed = endpoint.Trim();
+        if (trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
-            return url;
+            useSsl = true;
+            trimmed = trimmed["https://".Length..];
+        }
+        else if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+        {
+            useSsl = false;
+            trimmed = trimmed["http://".Length..];
         }
 
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var original))
-        {
-            return url;
-        }
-
-        var publicBase = publicEndpoint.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-            ? publicEndpoint
-            : $"http://{publicEndpoint}";
-        if (!Uri.TryCreate(publicBase, UriKind.Absolute, out var publicUri))
-        {
-            return url;
-        }
-
-        var builder = new UriBuilder(original)
-        {
-            Scheme = publicUri.Scheme,
-            Host = publicUri.Host,
-            Port = publicUri.IsDefaultPort ? -1 : publicUri.Port
-        };
-        return builder.Uri.ToString();
+        var parts = trimmed.Split(':', 2);
+        var host = parts[0];
+        var port = parts.Length > 1 && int.TryParse(parts[1], out var parsedPort)
+            ? parsedPort
+            : useSsl ? 443 : 9000;
+        return (host, port, useSsl);
     }
 }
 
@@ -2353,20 +2385,17 @@ public static class DependencyInjection
         services.AddScoped<SeedData>();
 
         // Resolve MinIO from IConfiguration at runtime so WebApplicationFactory overrides apply.
+        // Internal client (Endpoint) for health/Stat; presign client (PublicEndpoint) for browser URLs.
         services.AddSingleton<IMinioClient>(sp =>
         {
             var cfg = sp.GetRequiredService<IConfiguration>();
-            var endpoint = cfg["Minio:Endpoint"] ?? "localhost:9000";
-            var parts = endpoint.Replace("http://", string.Empty, StringComparison.OrdinalIgnoreCase)
-                .Replace("https://", string.Empty, StringComparison.OrdinalIgnoreCase)
-                .Split(':', 2);
-            var host = parts[0];
-            var port = parts.Length > 1 && int.TryParse(parts[1], out var parsedPort) ? parsedPort : 9000;
-            return new MinioClient()
-                .WithEndpoint(host, port)
-                .WithCredentials(cfg["Minio:AccessKey"] ?? "minioadmin", cfg["Minio:SecretKey"] ?? "minioadmin_dev_password_change_me")
-                .WithSSL(bool.TryParse(cfg["Minio:UseSsl"], out var ssl) && ssl)
-                .Build();
+            return MinioEndpoint.CreateClient(cfg, MinioEndpoint.ResolveInternalEndpoint(cfg));
+        });
+        services.AddSingleton(sp =>
+        {
+            var cfg = sp.GetRequiredService<IConfiguration>();
+            var client = MinioEndpoint.CreateClient(cfg, MinioEndpoint.ResolvePublicEndpoint(cfg));
+            return new MinioPresignClient(client);
         });
         services.AddScoped<IObjectStorage, MinioObjectStorage>();
 

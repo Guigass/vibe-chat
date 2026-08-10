@@ -1028,6 +1028,10 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         var upload = await initiate.Content.ReadFromJsonAsync<AttachmentUploadDto>(JsonOptions);
         upload.Should().NotBeNull();
         upload!.UploadUrl.Should().NotBeNullOrWhiteSpace();
+        // BUG-003: factory uses Endpoint=127.0.0.1 and PublicEndpoint=localhost — URL must
+        // be signed for the public host (rewrite-after-sign yields SignatureDoesNotMatch).
+        var uploadUri = new Uri(upload.UploadUrl);
+        uploadUri.Host.Should().Be("localhost");
 
         using var putRequest = new HttpRequestMessage(HttpMethod.Put, upload.UploadUrl)
         {

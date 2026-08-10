@@ -3,10 +3,17 @@ import {
   MAX_ATTACHMENTS_PER_MESSAGE,
   MAX_ATTACHMENT_SIZE_BYTES,
   collectFilesFromDataTransfer,
+  resolveContentType,
   validateAttachmentFile,
 } from './attachment-upload';
 
 describe('attachment-upload validation', () => {
+  it('resolves content type from extension when file.type is empty', () => {
+    const file = new File(['x'], 'photo.PNG', { type: '' });
+    expect(resolveContentType(file)).toBe('image/png');
+    expect(validateAttachmentFile(file)).toBeNull();
+  });
+
   it('accepts allowed types within size limit', () => {
     const file = new File(['hello'], 'notes.txt', { type: 'text/plain' });
     expect(validateAttachmentFile(file)).toBeNull();
