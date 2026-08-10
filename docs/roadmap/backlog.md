@@ -36,13 +36,21 @@ Prioridade: **P0** (fatia vertical) → **P1** (MVP usável) → **P2** (diferen
 
 ## P1.5 — Polish pós-MVP (bugs / UX reportados)
 
-Corrigir antes de novas features de diferenciação. Ordem sugerida: realtime → typing self → scroll → UI.
+Itens B-070…B-072 da Wave 6 estão **Done**. Bugs funcionais abertos do caminho
+principal ficam em [`docs/product/bug-findings.md`](../product/bug-findings.md)
+e entram na **safety lane** do Build (antes de novas features de wave).
 
 | ID | Item | Notas |
 |----|------|-------|
 | B-070 | Realtime: mensagens/eventos ao vivo | **Done (Wave 6)** — ingest hub `MessageCreated`/edit/delete/`ReactionChanged` (payload JsonNode) + gap-fill por `seq` no reconnect/overlap; E2E dois usuários |
 | B-071 | Typing: ocultar indicador do próprio usuário | **Done (Wave 6)** — filtro no client + E2E; autor não vê o próprio “digitando…” |
 | B-072 | Scroll só no bloco da conversa | **Done (Wave 6)** — shell sem scroll da página; timeline com overflow interno + composer fixo |
+| BUG-001 | Mensagens duplicadas no envio | Aberto (Alta) — race optimistic ↔ hub |
+| BUG-002 | Unread/badges após reload | Aberto (Alta) — fecha em **B-094** (W9-7) |
+| BUG-003 | Upload de arquivo com erro | Aberto (Alta) — presign/MinIO |
+| BUG-004 | Áudio do microfone não envia | Aberto (Alta) — Mic + upload |
+| BUG-005 | `/admin` não entra (Member) | Aberto (Alta) — redirect silencioso; Demo OK |
+| BUG-006 | Realtime caindo com frequência | Aberto (Alta) — SignalR/reconnect |
 
 ## P2 — Diferenciação e admin
 
@@ -169,15 +177,17 @@ deps `Done`, ausência de PR concorrente e gates R0–R3 de
 
 Sempre esvaziar **P0** antes de P1. Em P1, preferir: editar/delete → DMs → anexos → busca → threads → rate-limit → dashboards → backup → spaces → presence → reações → PWA. (B-020…B-031 já Done na Wave 4.)
 
-Pós-MVP: **P1.5** (B-070…B-072), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done.
+Pós-MVP: **P1.5** (B-070…B-072 Done; BUG-001…BUG-006 Alta na safety lane — ver
+`docs/product/bug-findings.md`), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done.
 
-Ordem daqui para frente: **Sustentação** (B-104/B-076 Done → B-077 → B-078 → B-105 Done →
-B-106) e depois **paridade de mensageria** na ordem das waves — 8 (composição), 9
-(leitura; B-094 fecha não lidas persistentes), 10 (notificações, organização,
-acesso e núcleo de plugins: B-109 → B-108 → B-110). Depois seguir W11–W17; a
-trilha avançada de plugins continua em W15 com B-066 → B-111/B-136. Dentro de
-cada wave, seguir a ordem da tabela; itens sem dependência entre si
-podem ir em paralelo por trilhas diferentes.
+Ordem daqui para frente: **safety lane** (`BUG-*` Alta) antes de inventar ou
+avançar feature de wave; depois **Sustentação** residual e **paridade de
+mensageria** na ordem das waves — 8 (composição), 9 (leitura; B-094 fecha
+BUG-002 / não lidas persistentes), 10 (notificações, organização, acesso e
+núcleo de plugins: B-109 → B-108 → B-110). Depois seguir W11–W17; a trilha
+avançada de plugins continua em W15 com B-066 → B-111/B-136. Dentro de cada
+wave, seguir a ordem da tabela; itens sem dependência entre si podem ir em
+paralelo por trilhas diferentes.
 
 Depois disso, usar a sequência de validação do horizonte ambicioso: comunicação
 organizada → conhecimento/ações → automação/governança → plataforma → apostas

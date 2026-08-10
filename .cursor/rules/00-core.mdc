@@ -16,6 +16,8 @@ alwaysApply: true
 - Sem dependências proprietárias; sem secrets em logs/commits.
 - Atualizar docs; PRs pequenos; apresentar evidência de funcionamento.
 - PT-BR em docs humanas; inglês em código (tipos, APIs, ids).
+- Safety lane (`BUG-*` Alta, UX Alta, OPS Critical|High) antes de feature nova;
+  ver `docs/product/bug-findings.md`.
 - O primeiro item elegível do roadmap tem prioridade sobre trabalho inventado.
 - Usar a classe de risco R0–R3 da spec; R3 começa em
   `docs/architecture/pacotes-decisao-r3.md` e exige ADR, threat model e rollback.

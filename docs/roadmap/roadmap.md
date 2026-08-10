@@ -165,12 +165,22 @@ Fila explícita para a automação de Build depois da Wave 6. Enquanto houver li
 - AuthZ de API intacta (`workspace.admin` / `admin.dashboard`); tokens `--vc-*`
 - Sem lib de UI comercial; B-104 já mergeado (sem PrimeNG)
 
+### Safety lane (bugs funcionais)
+
+Antes de consumir a próxima linha `Planned`, o Build resolve findings **Alta**
+abertos em [`docs/product/bug-findings.md`](../product/bug-findings.md) (IDs
+`BUG-*`), no mesmo espírito de UX Alta / OPS Critical|High. Catálogo corrente:
+BUG-001…BUG-006 (P1.5 no [`backlog.md`](backlog.md)). Se o finding aponta um
+`B-*` (ex.: BUG-002 → B-094), preferir o item de roadmap quando elegível e
+fechar o `BUG-*` no mesmo PR.
+
 ### Modo manutenção (sem item `Planned`)
 
 Quando **toda** linha de wave estiver `Done` ou `Blocked`, o Build entra no Step B do
 `01-build.prompt.md`: uma lacuna pequena por run, com ID `GAP-<curto>`. Isso é
 esperado, não é falha — mas o resultado tem que aparecer no **Registro de GAPs**
-abaixo, senão o trabalho fica invisível no roadmap.
+abaixo, senão o trabalho fica invisível no roadmap. Findings `BUG-*` Alta ainda
+abertos continuam na safety lane mesmo com roadmap terminal.
 
 ## Programa documental transversal
 

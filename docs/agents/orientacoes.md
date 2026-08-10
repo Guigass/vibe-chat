@@ -18,7 +18,9 @@ Este documento guia agentes de código (backend, frontend, infra, QA, security, 
 5. **Não inventar termos** fora do glossário — se precisar, atualizar `glossario.md`
 6. **Não criar arquivos de exemplo de código em `/docs`** — só documentação
 7. Respeitar **decisoes-pendentes.md**; decisões D-01…D-28 já fechadas não devem ser reabertas por dificuldade técnica
-8. Preferir o primeiro item elegível do roadmap a qualquer feature não planejada
+8. Preferir safety lane (`BUG-*` / UX Alta / OPS Critical|High) e depois o
+   primeiro item elegível do roadmap a qualquer feature não planejada; ver
+   [`bug-findings.md`](../product/bug-findings.md)
 9. Toda mutação de mensagem: **idempotência + seq + outbox**
 10. Todo dado de negócio: **tenant_id + authZ + RLS**
 11. Usar a classe R0–R3 declarada na spec; R3 começa pelo pacote em

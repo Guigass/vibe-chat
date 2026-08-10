@@ -20,8 +20,9 @@ RLS do projeto e não depende de caminhos internos da Cursor. O check preferido 
 A automação 4 **roda a interface de verdade** (`task ux:stack`), navega pelo percurso
 de `docs/product/ux-review-checklist.md` e registra o que observou em
 `docs/product/ux-findings.md`. Ela não corrige nada — quem corrige é o Build, que
-consome UX `Alta` do caminho principal pela safety lane e os demais no modo
-manutenção.
+consome UX `Alta` e bugs funcionais `BUG-*` Alta
+(`docs/product/bug-findings.md`) do caminho principal pela safety lane e os
+demais no modo manutenção.
 
 ## Novas automações adicionadas na revisão
 
