@@ -139,6 +139,8 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin_dev_password_change_me}
+      # Bucket CORS (mc cors set) is AIStor-only; community MinIO uses global CORS.
+      MINIO_API_CORS_ALLOW_ORIGIN: ${MINIO_API_CORS_ALLOW_ORIGIN:-http://localhost:4200,https://localhost:4200,*}
     ports:
       - "${MINIO_API_PORT:-9000}:9000"
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
@@ -169,8 +171,6 @@ services:
         sleep 2;
       done;
       mc mb --ignore-existing local/$${MINIO_BUCKET:-vibechat};
-      printf '%s' '{\"CORSRules\":[{\"AllowedOrigins\":[\"http://localhost:4200\",\"https://localhost:4200\",\"*\"],\"AllowedMethods\":[\"GET\",\"PUT\",\"HEAD\"],\"AllowedHeaders\":[\"*\"],\"ExposeHeaders\":[\"ETag\",\"Content-Length\"],\"MaxAgeSeconds\":3600}]}' >/tmp/cors.json;
-      mc cors set local/$${MINIO_BUCKET:-vibechat} /tmp/cors.json;
       echo 'MinIO bucket ready: $${MINIO_BUCKET:-vibechat}';
       "
     environment:

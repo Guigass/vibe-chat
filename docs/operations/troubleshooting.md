@@ -108,7 +108,8 @@
 
 ### Sintoma: upload falha CORS
 
-- CORS do bucket MinIO para origem do web
+- CORS global do MinIO (`MINIO_API_CORS_ALLOW_ORIGIN`) inclui a origem do web
+  (CORS por bucket / `mc cors set` é só AIStor)
 - Clock skew em presign
 
 ### Sintoma: 403 no download
