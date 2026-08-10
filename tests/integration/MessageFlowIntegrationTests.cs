@@ -1260,6 +1260,52 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Send_message_with_two_mentions_persists_two_rows_in_same_transaction()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var messageId = Guid.NewGuid();
+        var body = $"mention-{messageId:N} {MentionTokens.UserBodyToken(SeedData.BobUserId)} {MentionTokens.UserBodyToken(SeedData.DemoUserId)}";
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-mentions-{messageId:N}", body, null, null));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        await using var db = factory.CreateMigratorDbContext();
+        var rows = await db.MessageMentions.IgnoreQueryFilters()
+            .Where(x => x.MessageId == new MessageId(messageId))
+            .ToListAsync();
+        rows.Should().HaveCountGreaterThanOrEqualTo(2);
+        rows.Should().Contain(x => x.MentionedUserId == SeedData.BobUserId);
+        rows.Should().Contain(x => x.MentionedUserId == SeedData.DemoUserId);
+
+        var outbox = (await db.OutboxMessages.IgnoreQueryFilters()
+            .Where(x => x.Type == nameof(MessageCreatedEvent))
+            .OrderByDescending(x => x.OccurredAt)
+            .Take(20)
+            .ToListAsync())
+            .First(x => x.Payload.Contains(messageId.ToString(), StringComparison.OrdinalIgnoreCase));
+        outbox.Payload.Should().Contain("mentionedUserIds");
+        outbox.Payload.Should().Contain(SeedData.BobUserId.Value.ToString());
+    }
+
+    [Fact]
+    public async Task Channel_members_autocomplete_is_scoped_to_channel()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var members = await client.GetFromJsonAsync<ChannelMemberDto[]>(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/channels/{DemoChannelId}/members?query=bo",
+            JsonOptions);
+        members.Should().NotBeNull();
+        members!.Select(x => x.UserId).Should().Contain(SeedData.BobUserId.Value);
+        members.Select(x => x.UserId).Should().NotContain(SeedData.AliceUserId.Value);
+    }
+
+    [Fact]
     public async Task Tenant_isolation_attempt_is_denied()
     {
         var foreignChannelId = await SeedForeignTenantChannelAsync();
@@ -1464,4 +1510,6 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         double Rank);
 
     private sealed record SearchMessagesDto(string Query, int Limit, SearchMessageHitDto[] Items);
+
+    private sealed record ChannelMemberDto(Guid UserId, string DisplayName, string Email);
 }

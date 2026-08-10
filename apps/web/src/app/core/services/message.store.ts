@@ -302,7 +302,11 @@ export class MessageStore {
     });
 
     if (!mine) {
-      this.channels.bumpUnread(normalized.channelId);
+      if (normalized.mentionsMe) {
+        this.channels.bumpMention(normalized.channelId);
+      } else {
+        this.channels.bumpUnread(normalized.channelId);
+      }
     }
   }
 
@@ -377,12 +381,17 @@ export class MessageStore {
   }
 
   private normalize(message: ChatMessage): ChatMessage {
+    const me = this.auth.profile()?.id;
+    const mentionsMe =
+      message.mentionsMe ??
+      (!!me && !!message.body && message.body.includes(`<@${me}>`));
     return {
       ...message,
       channelId: message.channelId || message.conversationId,
       conversationId: message.conversationId || message.channelId,
       status: message.status ?? 'persisted',
-      mine: message.mine ?? message.authorUserId === this.auth.profile()?.id,
+      mine: message.mine ?? message.authorUserId === me,
+      mentionsMe,
       authorName: message.authorName || 'Membro',
       body: message.deletedAt ? '' : message.body,
       replyCount: message.replyCount ?? 0,

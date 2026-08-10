@@ -19,7 +19,9 @@ import { Badge } from '../badge/badge';
         <span class="vc-channel__hash" aria-hidden="true">{{ prefix() }}</span>
       }
       <span class="vc-channel__name">{{ channel().name }}</span>
-      @if (channel().unreadCount > 0) {
+      @if (channel().mentionCount && channel().mentionCount! > 0) {
+        <vc-badge tone="warn">{{ channel().mentionCount }}</vc-badge>
+      } @else if (channel().unreadCount > 0) {
         <vc-badge tone="accent">{{ channel().unreadCount }}</vc-badge>
       }
     </button>

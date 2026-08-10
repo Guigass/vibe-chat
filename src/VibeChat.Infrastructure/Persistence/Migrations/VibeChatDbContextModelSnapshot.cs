@@ -521,6 +521,41 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("reactions", "messaging");
                 });
 
+            modelBuilder.Entity("VibeChat.Messaging.MessageMention", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChannelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid?>("MentionedUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "ChannelId", "MentionedUserId");
+
+                    b.HasIndex("TenantId", "MessageId");
+
+                    b.ToTable("message_mentions", "messaging");
+                });
+
             modelBuilder.Entity("VibeChat.Messaging.ReadCursor", b =>
                 {
                     b.Property<Guid>("Id")

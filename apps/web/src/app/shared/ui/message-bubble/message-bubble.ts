@@ -24,6 +24,7 @@ import { environment } from '../../../../environments/environment';
     <article
       class="vc-msg vc-anim-fade-in"
       [class.vc-msg--mine]="message().mine"
+      [class.vc-msg--mentioned]="message().mentionsMe"
       [class.vc-msg--deleted]="!!message().deletedAt"
       [attr.data-status]="message().status"
     >
@@ -74,7 +75,7 @@ import { environment } from '../../../../environments/environment';
           </div>
         } @else {
           @if (message().body) {
-            <vc-markdown-body [source]="message().body" />
+            <vc-markdown-body [source]="message().body" [mentionLabels]="mentionLabels()" />
           }
           @if (message().attachments?.length) {
             <ul class="vc-msg__attachments">
@@ -160,6 +161,12 @@ import { environment } from '../../../../environments/environment';
     .vc-msg--mine {
       margin-left: auto;
       flex-direction: row-reverse;
+    }
+    .vc-msg--mentioned:not(.vc-msg--mine) .vc-msg__body {
+      border-left: 3px solid var(--vc-brand);
+      padding-left: 0.55rem;
+      background: color-mix(in srgb, var(--vc-brand) 8%, transparent);
+      border-radius: var(--vc-radius-md);
     }
     .vc-msg__body {
       padding: 0.65rem 0.85rem;
@@ -353,6 +360,7 @@ export class MessageBubble {
   readonly transcribeEnabled = computed(
     () => environment.aiTranscribeEnabled && environment.aiSummarizeEnabled,
   );
+  readonly mentionLabels = computed(() => this.channels.mentionLabels());
 
   constructor() {
     effect(() => {

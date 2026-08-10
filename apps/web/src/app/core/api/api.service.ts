@@ -525,11 +525,26 @@ export class ApiService {
     });
   }
 
-  async getUnreadCount(channelId: string): Promise<number> {
-    const result = await this.request<{ unreadCount: number }>(
+  async getUnreadCount(channelId: string): Promise<{ unreadCount: number; mentionCount: number }> {
+    return this.request<{ unreadCount: number; mentionCount: number }>(
       `/api/v1/channels/${channelId}/unread-count`,
     );
-    return result.unreadCount;
+  }
+
+  async getChannelMembers(
+    workspaceId: string,
+    channelId: string,
+    query = '',
+  ): Promise<Array<{ userId: string; displayName: string; email: string }>> {
+    const params = query ? `?query=${encodeURIComponent(query)}` : '';
+    const rows = await this.request<Array<{ userId: string; displayName: string; email: string }>>(
+      `/api/v1/workspaces/${workspaceId}/channels/${channelId}/members${params}`,
+    );
+    return rows.map((row) => ({
+      userId: String(row.userId),
+      displayName: row.displayName,
+      email: row.email,
+    }));
   }
 
   async searchMessages(input: {
@@ -723,6 +738,7 @@ export class ApiService {
       workspaceId: c.workspaceId,
       name: c.name,
       unreadCount: 0,
+      mentionCount: 0,
       type,
       spaceId: c.spaceId ?? null,
       isPrivate: type === 'private',

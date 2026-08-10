@@ -223,6 +223,25 @@ public sealed class BackendUnitTests
     }
 
     [Fact]
+    public void Mention_tokens_parse_user_here_and_channel()
+    {
+        var userId = UserId.New();
+        var body = $"Hi {MentionTokens.UserBodyToken(userId)} {MentionTokens.HereBodyToken} {MentionTokens.ChannelBodyToken}";
+        var tokens = MentionTokens.ParseBody(body);
+        tokens.Should().HaveCount(3);
+        tokens.Should().Contain(x => x.Kind == MentionKind.User && x.UserId == userId);
+        tokens.Should().Contain(x => x.Kind == MentionKind.Here);
+        tokens.Should().Contain(x => x.Kind == MentionKind.Channel);
+    }
+
+    [Fact]
+    public void Permission_catalog_grants_mention_all_to_member()
+    {
+        RolePermissionCatalog.For(Role.Member).Should().Contain(Permissions.Channel.MentionAll);
+        RolePermissionCatalog.For(Role.Guest).Should().NotContain(Permissions.Channel.MentionAll);
+    }
+
+    [Fact]
     public async Task Null_email_sender_is_disabled_by_default()
     {
         var sender = new NullEmailSender();

@@ -36,6 +36,8 @@ interface MessageCreatedPayload {
   authorName?: string;
   body?: string;
   createdAt?: string;
+  mentionedUserIds?: string[];
+  mentionKinds?: string[];
   attachments?: Array<{
     id: string;
     fileName: string;
@@ -435,6 +437,8 @@ export class ChatHubService {
     const me = this.auth.profile()?.id;
     const conversationId = String(payload.conversationId || payload.channelId);
     const channelId = String(payload.channelId);
+    const mentionedUserIds = (payload.mentionedUserIds ?? []).map(String);
+    const mentionsMe = !!me && mentionedUserIds.includes(me);
     return {
       id: String(id),
       conversationId,
@@ -446,6 +450,7 @@ export class ChatHubService {
       seq: payload.sequence,
       status: 'persisted',
       mine: !!me && me === String(payload.authorId ?? ''),
+      mentionsMe,
       threadId: payload.threadId ? String(payload.threadId) : null,
       replyToMessageId: payload.replyToMessageId ? String(payload.replyToMessageId) : null,
       attachments: (payload.attachments ?? []).map((a) => ({

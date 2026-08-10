@@ -35,6 +35,7 @@ export interface Channel {
   name: string;
   description?: string;
   unreadCount: number;
+  mentionCount?: number;
   isPrivate?: boolean;
   isDirect?: boolean;
   type?: string;
@@ -100,6 +101,7 @@ export interface ChatMessage {
   replyToMessageId?: string | null;
   replyCount?: number;
   reactions?: ReactionSummary[];
+  mentionsMe?: boolean;
 }
 
 export interface ChatThread {

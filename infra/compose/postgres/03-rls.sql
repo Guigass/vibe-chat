@@ -55,6 +55,8 @@ ALTER TABLE IF EXISTS files.attachments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS files.attachments FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.reactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.reactions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.message_mentions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.message_mentions FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.read_cursors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.read_cursors FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.conversation_sequences ENABLE ROW LEVEL SECURITY;
@@ -173,6 +175,11 @@ CREATE POLICY tenant_isolation_attachments ON files.attachments
 
 DROP POLICY IF EXISTS tenant_isolation_reactions ON messaging.reactions;
 CREATE POLICY tenant_isolation_reactions ON messaging.reactions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_message_mentions ON messaging.message_mentions;
+CREATE POLICY tenant_isolation_message_mentions ON messaging.message_mentions
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

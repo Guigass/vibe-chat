@@ -2,6 +2,7 @@ using VibeChat.BuildingBlocks;
 using VibeChat.SharedKernel;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace VibeChat.Messaging;
 
@@ -44,6 +45,74 @@ public sealed class Reaction
     public UserId UserId { get; set; }
     public string Emoji { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; }
+}
+
+public enum MentionKind
+{
+    User = 0,
+    Here = 1,
+    Channel = 2
+}
+
+public sealed class MessageMention
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public MessageId MessageId { get; set; }
+    public ChannelId ChannelId { get; set; }
+    public UserId? MentionedUserId { get; set; }
+    public MentionKind Kind { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public sealed class MentionAllForbiddenException : UnauthorizedAccessException
+{
+    public MentionAllForbiddenException() : base("MentionAllForbidden") { }
+}
+
+public static partial class MentionTokens
+{
+    public const string HereBodyToken = "<@here>";
+    public const string ChannelBodyToken = "<@channel>";
+
+    public static string UserBodyToken(UserId userId) => $"<@{userId.Value}>";
+
+    public sealed record ParsedToken(MentionKind Kind, UserId? UserId, string BodyToken);
+
+    public static IReadOnlyList<ParsedToken> ParseBody(string body)
+    {
+        if (string.IsNullOrEmpty(body))
+        {
+            return [];
+        }
+
+        var tokens = new List<ParsedToken>();
+        foreach (Match match in UserTokenRegex().Matches(body))
+        {
+            var raw = match.Groups[1].Value;
+            if (string.Equals(raw, "here", StringComparison.OrdinalIgnoreCase))
+            {
+                tokens.Add(new ParsedToken(MentionKind.Here, null, HereBodyToken));
+                continue;
+            }
+
+            if (string.Equals(raw, "channel", StringComparison.OrdinalIgnoreCase))
+            {
+                tokens.Add(new ParsedToken(MentionKind.Channel, null, ChannelBodyToken));
+                continue;
+            }
+
+            if (Guid.TryParse(raw, out var userId) && userId != Guid.Empty)
+            {
+                tokens.Add(new ParsedToken(MentionKind.User, new UserId(userId), UserBodyToken(new UserId(userId))));
+            }
+        }
+
+        return tokens;
+    }
+
+    [GeneratedRegex(@"<@([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|here|channel)>", RegexOptions.CultureInvariant)]
+    private static partial Regex UserTokenRegex();
 }
 
 public static class ReactionEmojis

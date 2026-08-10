@@ -143,7 +143,7 @@ public static class RolePermissionCatalog
     private static readonly HashSet<string> AdminPermissions =
     [
         Permissions.Workspace.Read, Permissions.Workspace.Manage, Permissions.Workspace.Admin,
-        Permissions.Channel.Read, Permissions.Channel.Create, Permissions.Channel.Manage,
+        Permissions.Channel.Read, Permissions.Channel.Create, Permissions.Channel.Manage, Permissions.Channel.MentionAll,
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
@@ -152,7 +152,7 @@ public static class RolePermissionCatalog
 
     private static readonly HashSet<string> ModeratorPermissions =
     [
-        Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Channel.Create,
+        Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Channel.Create, Permissions.Channel.MentionAll,
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
@@ -167,7 +167,7 @@ public static class RolePermissionCatalog
 
     private static readonly HashSet<string> MemberPermissions =
     [
-        Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Channel.Create,
+        Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Channel.Create, Permissions.Channel.MentionAll,
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
@@ -181,7 +181,8 @@ public static class RolePermissionCatalog
 
     private static readonly HashSet<string> BotPermissions =
     [
-        Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React,
+        Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Channel.MentionAll,
+        Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
         Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe

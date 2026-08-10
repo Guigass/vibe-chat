@@ -129,6 +129,7 @@ public static class Permissions
         public const string Read = "channel.read";
         public const string Create = "channel.create";
         public const string Manage = "channel.manage";
+        public const string MentionAll = "channel.mention_all";
     }
 
     public static class Message

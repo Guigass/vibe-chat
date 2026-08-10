@@ -62,6 +62,7 @@ public sealed class ArchitectureRulesTests
             "messaging.threads",
             "files.attachments",
             "messaging.reactions",
+            "messaging.message_mentions",
             "messaging.read_cursors",
             "messaging.conversation_sequences",
             "messaging.idempotency",
