@@ -1706,15 +1706,15 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}/reactions", asyn
 
     var snapshot = await BuildReactionSnapshotAsync(db, message.Id, profile.Id, emoji, added, ct);
     var toggledUserIds = snapshot.FirstOrDefault(x => x.Emoji == emoji)?.UserIds ?? [];
-    var topUserIds = toggledUserIds.Take(3).ToArray();
+    var topUserIds = toggledUserIds.Take(3).Select(id => new UserId(id)).ToArray();
     var topProfiles = topUserIds.Length == 0
         ? []
         : await db.UserProfiles.AsNoTracking()
-            .Where(u => topUserIds.Contains(u.Id.Value))
+            .Where(u => topUserIds.Contains(u.Id))
             .Select(u => new { u.Id, u.DisplayName })
             .ToListAsync(ct);
     var topUsers = topUserIds
-        .Select(id => topProfiles.FirstOrDefault(p => p.Id.Value == id)?.DisplayName ?? "Membro")
+        .Select(id => topProfiles.FirstOrDefault(p => p.Id == id)?.DisplayName ?? "Membro")
         .ToArray();
 
     outbox.Add(new OutboxMessage
