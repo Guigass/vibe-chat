@@ -14,12 +14,14 @@ import { AudioMessage } from '../audio-message/audio-message';
 import { MarkdownBody } from '../../markdown/markdown-body';
 import { ApiService } from '../../../core/api/api.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { EmojiPicker } from '../emoji-picker/emoji-picker';
+import { rememberRecentEmoji } from '../../emoji/emoji-data';
 import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'vc-message-bubble',
   standalone: true,
-  imports: [Avatar, DatePipe, AudioMessage, MarkdownBody],
+  imports: [Avatar, DatePipe, AudioMessage, MarkdownBody, EmojiPicker],
   template: `
     <article
       class="vc-msg vc-anim-fade-in"
@@ -112,7 +114,10 @@ import { environment } from '../../../../environments/environment';
                     type="button"
                     [class.active]="reaction.me"
                     [attr.aria-pressed]="reaction.me"
-                    [attr.aria-label]="'Reação ' + reaction.emoji"
+                    [attr.aria-label]="reactionTooltip(reaction.emoji) || ('Reação ' + reaction.emoji)"
+                    [title]="reactionTooltip(reaction.emoji)"
+                    (mouseenter)="loadReactionTooltip(reaction.emoji)"
+                    (focus)="loadReactionTooltip(reaction.emoji)"
                     (click)="react.emit(reaction.emoji)"
                   >
                     <span aria-hidden="true">{{ reaction.emoji }}</span>
@@ -128,10 +133,26 @@ import { environment } from '../../../../environments/environment';
           <div class="vc-msg__actions">
             <div class="vc-msg__react-picker" role="group" aria-label="Adicionar reação">
               @for (emoji of emojiOptions; track emoji) {
-                <button type="button" [attr.aria-label]="'Reagir com ' + emoji" (click)="react.emit(emoji)">
+                <button type="button" [attr.aria-label]="'Reagir com ' + emoji" (click)="onQuickReact(emoji)">
                   {{ emoji }}
                 </button>
               }
+              <div class="vc-msg__react-more">
+                <button
+                  type="button"
+                  aria-label="Mais emojis"
+                  aria-haspopup="dialog"
+                  [attr.aria-expanded]="reactionPickerOpen()"
+                  (click)="toggleReactionPicker($event)"
+                >
+                  ⋯
+                </button>
+                <vc-emoji-picker
+                  [open]="reactionPickerOpen()"
+                  (select)="onQuickReact($event)"
+                  (closed)="reactionPickerOpen.set(false)"
+                />
+              </div>
             </div>
             @if (showThreadAction()) {
               <button type="button" (click)="openThread.emit()">
@@ -282,6 +303,16 @@ import { environment } from '../../../../environments/environment';
       display: inline-flex;
       gap: 0.15rem;
       margin-right: 0.25rem;
+      position: relative;
+    }
+    .vc-msg__react-more {
+      position: relative;
+    }
+    .vc-msg__react-more vc-emoji-picker {
+      position: absolute;
+      left: 0;
+      bottom: calc(100% + 0.35rem);
+      z-index: 5;
     }
     .vc-msg__react-picker button {
       border: 0;
@@ -350,6 +381,8 @@ export class MessageBubble {
   readonly transcript = signal<string | null>(null);
   readonly downloadUrls = signal<Record<string, string>>({});
   readonly emojiOptions = REACTION_EMOJI_OPTIONS;
+  readonly reactionPickerOpen = signal(false);
+  readonly reactionTooltips = signal<Record<string, string>>({});
   readonly maxLength = MESSAGE_BODY_MAX_LENGTH;
   readonly editLength = computed(() => measureMessageBodyLength(this.draft()));
   readonly editTooLong = computed(() => isMessageBodyTooLong(this.draft()));
@@ -423,6 +456,37 @@ export class MessageBubble {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  toggleReactionPicker(event: Event): void {
+    event.stopPropagation();
+    this.reactionPickerOpen.update((open) => !open);
+  }
+
+  onQuickReact(emoji: string): void {
+    rememberRecentEmoji(emoji);
+    this.reactionPickerOpen.set(false);
+    this.react.emit(emoji);
+  }
+
+  reactionTooltip(emoji: string): string {
+    return this.reactionTooltips()[emoji] ?? '';
+  }
+
+  async loadReactionTooltip(emoji: string): Promise<void> {
+    if (this.reactionTooltips()[emoji]) return;
+    const channelId = this.message().channelId;
+    if (!channelId || this.channels.isDemo()) return;
+
+    try {
+      const result = await this.api.getReactionUsers(channelId, this.message().id, emoji);
+      const names = result.users.slice(0, 10).map((user) => user.displayName);
+      const extra = result.total > names.length ? ` e mais ${result.total - names.length}` : '';
+      const text = names.length ? `${names.join(', ')}${extra}` : '';
+      this.reactionTooltips.update((current) => ({ ...current, [emoji]: text }));
+    } catch {
+      // tooltip stays empty
+    }
   }
 
   private async loadAudioUrl(channelId: string, attachmentId: string): Promise<void> {

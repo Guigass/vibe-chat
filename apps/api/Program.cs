@@ -1671,9 +1671,9 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}/reactions", asyn
     }
 
     var emoji = request.Emoji?.Trim() ?? string.Empty;
-    if (!ReactionEmojis.IsAllowed(emoji))
+    if (!EmojiValidator.IsValid(emoji))
     {
-        return Results.BadRequest(new { error = "emoji is not allowed." });
+        return Results.BadRequest(new { error = "InvalidEmoji", message = "Emoji inválido ou não suportado." });
     }
 
     var message = await FindMessageInChannelAsync(db, channel.Id, new MessageId(messageId), ct);
@@ -1705,6 +1705,18 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}/reactions", asyn
     }
 
     var snapshot = await BuildReactionSnapshotAsync(db, message.Id, profile.Id, emoji, added, ct);
+    var toggledUserIds = snapshot.FirstOrDefault(x => x.Emoji == emoji)?.UserIds ?? [];
+    var topUserIds = toggledUserIds.Take(3).Select(id => new UserId(id)).ToArray();
+    var topProfiles = topUserIds.Length == 0
+        ? []
+        : await db.UserProfiles.AsNoTracking()
+            .Where(u => topUserIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.DisplayName })
+            .ToListAsync(ct);
+    var topUsers = topUserIds
+        .Select(id => topProfiles.FirstOrDefault(p => p.Id == id)?.DisplayName ?? "Membro")
+        .ToArray();
+
     outbox.Add(new OutboxMessage
     {
         TenantId = channel.TenantId,
@@ -1720,6 +1732,7 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}/reactions", asyn
             emoji,
             added,
             occurredAt = clock.UtcNow,
+            topUsers,
             reactions = snapshot.Select(x => new
             {
                 emoji = x.Emoji,
@@ -1734,6 +1747,65 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}/reactions", asyn
         .Select(x => new ReactionSummaryResponse(x.Emoji, x.Count, x.UserIds.Contains(profile.Id.Value)))
         .ToArray();
     return Results.Ok(new ToggleReactionResponse(messageId, channelId, emoji, added, summaries));
+});
+
+v1.MapGet("/channels/{channelId:guid}/messages/{messageId:guid}/reactions/{emoji}/users", async (
+    Guid channelId,
+    Guid messageId,
+    string emoji,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.React, ct))
+    {
+        return Results.Forbid();
+    }
+
+    var normalizedEmoji = Uri.UnescapeDataString(emoji).Trim();
+    if (!EmojiValidator.IsValid(normalizedEmoji))
+    {
+        return Results.BadRequest(new { error = "InvalidEmoji", message = "Emoji inválido ou não suportado." });
+    }
+
+    var message = await FindMessageInChannelAsync(db, channel.Id, new MessageId(messageId), ct);
+    if (message is null || message.DeletedAt is not null)
+    {
+        return Results.NotFound();
+    }
+
+    var reactorIds = await db.Reactions.AsNoTracking()
+        .Where(x => x.MessageId == message.Id && x.Emoji == normalizedEmoji)
+        .OrderBy(x => x.CreatedAt)
+        .Select(x => x.UserId)
+        .ToListAsync(ct);
+
+    var profiles = reactorIds.Count == 0
+        ? []
+        : await db.UserProfiles.AsNoTracking()
+            .Where(u => reactorIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.DisplayName })
+            .ToListAsync(ct);
+
+    var users = reactorIds
+        .Select(id =>
+        {
+            var found = profiles.FirstOrDefault(p => p.Id == id);
+            return new ReactionUserResponse(id.Value, found?.DisplayName ?? "Membro");
+        })
+        .ToArray();
+
+    return Results.Ok(new ReactionUsersResponse(normalizedEmoji, users, users.Length));
 });
 
 v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IAuditWriter audit, IClock clock, CancellationToken ct) =>
@@ -3530,6 +3602,8 @@ public sealed record AttachmentDownloadResponse(
     string ContentType,
     long SizeBytes);
 public sealed record ReactionSummaryResponse(string Emoji, int Count, bool Me);
+public sealed record ReactionUserResponse(Guid UserId, string DisplayName);
+public sealed record ReactionUsersResponse(string Emoji, ReactionUserResponse[] Users, int Total);
 public sealed record ToggleReactionRequest(string Emoji);
 public sealed record ToggleReactionResponse(
     Guid MessageId,

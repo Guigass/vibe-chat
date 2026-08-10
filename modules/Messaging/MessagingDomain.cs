@@ -1,5 +1,6 @@
 using VibeChat.BuildingBlocks;
 using VibeChat.SharedKernel;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -115,15 +116,98 @@ public static partial class MentionTokens
     private static partial Regex UserTokenRegex();
 }
 
-public static class ReactionEmojis
+/// <summary>
+/// Validates Unicode emoji sequences for reactions (B-083). Accepts ZWJ chains, modifiers and flags.
+/// </summary>
+public static class EmojiValidator
 {
-    public static readonly IReadOnlySet<string> Allowed = new HashSet<string>(StringComparer.Ordinal)
-    {
-        "👍", "❤️", "😂", "🎉", "👀", "✅"
-    };
+    public const int MaxCodePoints = 8;
 
-    public static bool IsAllowed(string? emoji) =>
-        !string.IsNullOrWhiteSpace(emoji) && Allowed.Contains(emoji.Trim());
+    public static bool IsValid(string? emoji)
+    {
+        if (string.IsNullOrWhiteSpace(emoji))
+        {
+            return false;
+        }
+
+        var value = emoji.Trim();
+        if (value.Length == 0)
+        {
+            return false;
+        }
+
+        var runes = value.EnumerateRunes().ToArray();
+        if (runes.Length == 0 || runes.Length > MaxCodePoints)
+        {
+            return false;
+        }
+
+        var hasEmoji = false;
+        foreach (var rune in runes)
+        {
+            if (IsJoinerOrModifier(rune))
+            {
+                continue;
+            }
+
+            if (IsRegionalIndicator(rune))
+            {
+                hasEmoji = true;
+                continue;
+            }
+
+            if (IsEmojiRune(rune))
+            {
+                hasEmoji = true;
+                continue;
+            }
+
+            return false;
+        }
+
+        return hasEmoji;
+    }
+
+    private static bool IsJoinerOrModifier(Rune rune) =>
+        rune.Value is 0x200D or 0xFE0F or 0xFE0E or 0x20E3
+        || rune.Value is >= 0x1F3FB and <= 0x1F3FF;
+
+    private static bool IsRegionalIndicator(Rune rune) =>
+        rune.Value is >= 0x1F1E6 and <= 0x1F1FF;
+
+    private static bool IsEmojiRune(Rune rune)
+    {
+        var category = Rune.GetUnicodeCategory(rune);
+        if (category is UnicodeCategory.UppercaseLetter
+            or UnicodeCategory.LowercaseLetter
+            or UnicodeCategory.TitlecaseLetter
+            or UnicodeCategory.ModifierLetter
+            or UnicodeCategory.OtherLetter
+            or UnicodeCategory.DecimalDigitNumber
+            or UnicodeCategory.LetterNumber
+            or UnicodeCategory.OtherNumber
+            or UnicodeCategory.SpaceSeparator
+            or UnicodeCategory.LineSeparator
+            or UnicodeCategory.ParagraphSeparator
+            or UnicodeCategory.DashPunctuation
+            or UnicodeCategory.OpenPunctuation
+            or UnicodeCategory.ClosePunctuation
+            or UnicodeCategory.InitialQuotePunctuation
+            or UnicodeCategory.FinalQuotePunctuation
+            or UnicodeCategory.ConnectorPunctuation
+            or UnicodeCategory.OtherPunctuation
+            or UnicodeCategory.MathSymbol
+            or UnicodeCategory.CurrencySymbol)
+        {
+            return false;
+        }
+
+        var value = rune.Value;
+        return category is UnicodeCategory.OtherSymbol or UnicodeCategory.ModifierSymbol
+            || value is >= 0x1F000 and <= 0x1FAFF
+            or >= 0x2600 and <= 0x27BF
+            or >= 0x2300 and <= 0x23FF;
+    }
 }
 
 public sealed class ReadCursor

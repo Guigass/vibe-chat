@@ -518,6 +518,28 @@ export class ApiService {
     };
   }
 
+  async getReactionUsers(
+    channelId: string,
+    messageId: string,
+    emoji: string,
+  ): Promise<{ emoji: string; users: Array<{ userId: string; displayName: string }>; total: number }> {
+    const dto = await this.request<{
+      emoji: string;
+      users: Array<{ userId: string; displayName: string }>;
+      total: number;
+    }>(
+      `/api/v1/channels/${channelId}/messages/${messageId}/reactions/${encodeURIComponent(emoji)}/users`,
+    );
+    return {
+      emoji: dto.emoji,
+      users: (dto.users ?? []).map((user) => ({
+        userId: String(user.userId),
+        displayName: user.displayName,
+      })),
+      total: dto.total ?? dto.users?.length ?? 0,
+    };
+  }
+
   async upsertReadCursor(channelId: string, lastReadSequence: number): Promise<void> {
     await this.request(`/api/v1/channels/${channelId}/read-cursor`, {
       method: 'PUT',

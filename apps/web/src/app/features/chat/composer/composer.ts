@@ -34,11 +34,13 @@ import { AudioRecorderService } from './audio-recorder.service';
 import { formatDuration } from './audio-recorder';
 import { drawAudioWaveform } from '../../../shared/utils/audio';
 import { MentionAutocomplete } from './mention-autocomplete';
+import { EmojiPicker } from '../../../shared/ui/emoji-picker/emoji-picker';
+import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
 
 @Component({
   selector: 'vc-composer',
   standalone: true,
-  imports: [Button, Textarea, MentionAutocomplete],
+  imports: [Button, Textarea, MentionAutocomplete, EmojiPicker],
   template: `
     <form class="composer" (submit)="onSubmit($event)">
       <div class="composer__main">
@@ -112,6 +114,22 @@ import { MentionAutocomplete } from './mention-autocomplete';
           <button type="button" aria-label="Itálico" (click)="applyFormat('italic')"><em>I</em></button>
           <button type="button" aria-label="Riscado" (click)="applyFormat('strike')"><s>S</s></button>
           <button type="button" aria-label="Código inline" (click)="applyFormat('code')">&lt;/&gt;</button>
+          <div class="composer__emoji">
+            <button
+              type="button"
+              aria-label="Inserir emoji"
+              aria-haspopup="dialog"
+              [attr.aria-expanded]="emojiPickerOpen()"
+              (click)="toggleEmojiPicker($event)"
+            >
+              😀
+            </button>
+            <vc-emoji-picker
+              [open]="emojiPickerOpen()"
+              (select)="insertEmoji($event)"
+              (closed)="emojiPickerOpen.set(false)"
+            />
+          </div>
         </div>
 
         <div class="composer__input-wrap">
@@ -227,6 +245,16 @@ import { MentionAutocomplete } from './mention-autocomplete';
       display: flex;
       gap: 0.25rem;
       align-items: center;
+      position: relative;
+    }
+    .composer__emoji {
+      position: relative;
+    }
+    .composer__emoji vc-emoji-picker {
+      position: absolute;
+      left: 0;
+      bottom: calc(100% + 0.35rem);
+      z-index: 5;
     }
     .composer__format button {
       border: 1px solid var(--vc-border);
@@ -397,6 +425,7 @@ export class Composer {
   readonly mentionActiveIndex = signal(0);
   readonly mentionRemoteItems = signal<MentionAutocompleteItem[]>([]);
   readonly mentionContext = signal<{ query: string; atIndex: number } | null>(null);
+  readonly emojiPickerOpen = signal(false);
   readonly maxLength = MESSAGE_BODY_MAX_LENGTH;
   readonly bodyLength = computed(() => measureMessageBodyLength(this.draft()));
   readonly bodyTooLong = computed(() => isMessageBodyTooLong(this.draft()));
@@ -542,6 +571,29 @@ export class Composer {
     );
     this.draft.set(result.value);
     updateTextareaSelection(textarea, result.value, result.selectionStart, result.selectionEnd);
+  }
+
+  toggleEmojiPicker(event: Event): void {
+    event.stopPropagation();
+    this.emojiPickerOpen.update((open) => !open);
+    this.closeMentionMenu();
+  }
+
+  insertEmoji(emoji: string): void {
+    const textarea = this.composerTextarea()?.nativeElement();
+    rememberRecentEmoji(emoji);
+    this.emojiPickerOpen.set(false);
+
+    const current = this.draft();
+    const start = textarea?.selectionStart ?? current.length;
+    const end = textarea?.selectionEnd ?? start;
+    const next = `${current.slice(0, start)}${emoji}${current.slice(end)}`;
+    this.draft.set(next);
+
+    if (textarea) {
+      const cursor = start + emoji.length;
+      updateTextareaSelection(textarea, next, cursor, cursor);
+    }
   }
 
   onInput(event: Event): void {

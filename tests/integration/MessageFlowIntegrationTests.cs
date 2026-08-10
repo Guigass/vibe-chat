@@ -125,8 +125,23 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
 
         var bad = await client.PutAsJsonAsync(
             $"/api/v1/channels/{DemoChannelId}/messages/{messageId}/reactions",
-            new ToggleReactionRequestDto("🚀"));
+            new ToggleReactionRequestDto(":)"));
         bad.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var rocket = await client.PutAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages/{messageId}/reactions",
+            new ToggleReactionRequestDto("🚀"));
+        rocket.StatusCode.Should().Be(HttpStatusCode.OK);
+        var rocketAdded = await rocket.Content.ReadFromJsonAsync<ToggleReactionResponseDto>(JsonOptions);
+        rocketAdded!.Added.Should().BeTrue();
+        rocketAdded.Reactions.Should().ContainSingle(r => r.Emoji == "🚀" && r.Count == 1 && r.Me);
+
+        var users = await client.GetFromJsonAsync<ReactionUsersResponseDto>(
+            $"/api/v1/channels/{DemoChannelId}/messages/{messageId}/reactions/{Uri.EscapeDataString("🚀")}/users",
+            JsonOptions);
+        users.Should().NotBeNull();
+        users!.Emoji.Should().Be("🚀");
+        users.Users.Should().ContainSingle(u => u.DisplayName == "Alice");
 
         await using var db = factory.CreateMigratorDbContext();
         var outbox = await db.OutboxMessages.IgnoreQueryFilters()
@@ -137,10 +152,10 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         outbox.Should().Contain(x =>
             x.Payload.Contains(messageId.ToString(), StringComparison.OrdinalIgnoreCase)
             && x.Payload.Contains("\"added\":true", StringComparison.Ordinal)
-            && (x.Payload.Contains("👍", StringComparison.Ordinal)
-                || x.Payload.Contains("\\uD83D\\uDC4D", StringComparison.Ordinal)));
+            && (x.Payload.Contains("🚀", StringComparison.Ordinal)
+                || x.Payload.Contains("\\uD83D\\uDE80", StringComparison.Ordinal)));
         (await db.Reactions.IgnoreQueryFilters().CountAsync(x => x.MessageId == new MessageId(messageId)))
-            .Should().Be(0);
+            .Should().Be(1);
     }
 
     [Fact]
@@ -1371,6 +1386,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     private sealed record AiTranscribeDto(string Text, string Language, string Provider);
     private sealed record AiSuggestReplyDto(string Suggestion);
     private sealed record ReactionSummaryDto(string Emoji, int Count, bool Me);
+    private sealed record ReactionUserDto(Guid UserId, string DisplayName);
+    private sealed record ReactionUsersResponseDto(string Emoji, ReactionUserDto[] Users, int Total);
     private sealed record ToggleReactionRequestDto(string Emoji);
     private sealed record ToggleReactionResponseDto(
         Guid MessageId,

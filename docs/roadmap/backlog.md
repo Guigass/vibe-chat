@@ -103,7 +103,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-080 | Mensagem de áudio | Done (W8-2) — MIME negociado no cliente, waveform nos metadados, transcrição opt-in (D-12 / D-06) |
 | B-081 | Formatação de texto | Done (W8-3) — Markdown restrito; `body` continua Markdown no banco |
 | B-082 | Menções | Done (W8-4) — token `<@userId>`, `message_mentions`, badge separado |
-| B-083 | Emoji picker e reações livres | Planned (W8-5) — hoje 6 emojis fixos; validação por forma no servidor |
+| B-083 | Emoji picker e reações livres | Done (W8-5) — picker compartilhado, validação Unicode no servidor, tooltip de quem reagiu |
 | B-084 | Responder citando | Planned (W8-6) — `ReplyToMessageId` já existe e nunca é usado |
 | B-085 | Encaminhar mensagem | Planned (W8-7) — anexo por referência, contagem para o purge de B-047 |
 | B-086 | Rascunho persistente | Planned (W8-8) — só cliente, por implicação de retenção (D-03) |

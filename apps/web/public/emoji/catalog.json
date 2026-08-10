@@ -1,0 +1,167 @@
+{
+  "categories": [
+    {
+      "id": "smileys",
+      "labelPt": "Smileys",
+      "labelEn": "Smileys",
+      "emojis": [
+        "😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊",
+        "😋", "😎", "😍", "😘", "🥰", "😗", "😙", "😚", "🙂", "🤗",
+        "🤩", "🤔", "🤨", "😐", "😑", "😶", "🙄", "😏", "😣", "😥",
+        "😮", "🤐", "😯", "😪", "😫", "🥱", "😴", "😌", "😛", "😜",
+        "😝", "🤤", "😒", "😓", "😔", "😕", "🙃", "🤑", "😲", "☹️",
+        "🙁", "😖", "😞", "😟", "😤", "😢", "😭", "😦", "😧", "😨",
+        "😩", "🤯", "😬", "😰", "😱", "🥵", "🥶", "😳", "🤪", "😵",
+        "🥴", "😠", "😡", "🤬", "😷", "🤒", "🤕", "🤢", "🤮", "🤧",
+        "🥳", "🥺", "🤠", "🤡", "🤥", "🤫", "🤭", "🧐", "🤓", "😈",
+        "👿", "👹", "👺", "💀", "👻", "👽", "🤖", "💩"
+      ]
+    },
+    {
+      "id": "gestures",
+      "labelPt": "Gestos",
+      "labelEn": "Gestures",
+      "emojis": [
+        "👍", "👎", "👊", "✊", "🤛", "🤜", "🤞", "✌️", "🤟", "🤘",
+        "👌", "🤌", "🤏", "👈", "👉", "👆", "👇", "☝️", "✋", "🤚",
+        "🖐️", "🖖", "👋", "🤙", "💪", "🦾", "🖕", "✍️", "🙏", "🤝",
+        "👏", "🙌", "👐", "🤲", "🤜", "🤛", "👀", "👁️", "👅", "👄"
+      ]
+    },
+    {
+      "id": "hearts",
+      "labelPt": "Corações",
+      "labelEn": "Hearts",
+      "emojis": [
+        "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔",
+        "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟"
+      ]
+    },
+    {
+      "id": "animals",
+      "labelPt": "Animais",
+      "labelEn": "Animals",
+      "emojis": [
+        "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯",
+        "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🦆",
+        "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🪲", "🦋",
+        "🐌", "🐛", "🐜", "🐢", "🐍", "🦎", "🐙", "🦑", "🦐", "🐠",
+        "🐟", "🐬", "🐳", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🐘"
+      ]
+    },
+    {
+      "id": "food",
+      "labelPt": "Comida",
+      "labelEn": "Food",
+      "emojis": [
+        "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍈",
+        "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🥑", "🍆", "🥔",
+        "🥕", "🌽", "🌶️", "🥒", "🥬", "🥦", "🧄", "🧅", "🍄", "🥜",
+        "🍞", "🥐", "🥖", "🥨", "🧀", "🥚", "🍳", "🥞", "🧇", "🥓",
+        "🍔", "🍟", "🍕", "🌭", "🥪", "🌮", "🌯", "🥗", "🍝", "🍜",
+        "🍣", "🍱", "🍛", "🍲", "🥘", "🍿", "🧁", "🍰", "🎂", "🍩",
+        "☕", "🍵", "🧃", "🥤", "🍺", "🍻", "🥂", "🍷", "🍸", "🍹"
+      ]
+    },
+    {
+      "id": "activities",
+      "labelPt": "Atividades",
+      "labelEn": "Activities",
+      "emojis": [
+        "⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🏉", "🎱", "🏓", "🏸",
+        "🥅", "🏒", "🏑", "🥊", "🥋", "🎽", "⛳", "🏹", "🎣", "🤿",
+        "🥌", "🎿", "⛷️", "🏂", "🪂", "🏋️", "🤸", "⛹️", "🤺", "🏇",
+        "🧘", "🏄", "🏊", "🚣", "🧗", "🚵", "🚴", "🏆", "🥇", "🥈",
+        "🥉", "🏅", "🎖️", "🎗️", "🎫", "🎟️", "🎪", "🎭", "🎨", "🎬",
+        "🎤", "🎧", "🎼", "🎹", "🥁", "🎷", "🎺", "🎸", "🎻", "🎲",
+        "🎯", "🎳", "🎮", "🕹️", "🎰"
+      ]
+    },
+    {
+      "id": "travel",
+      "labelPt": "Viagem",
+      "labelEn": "Travel",
+      "emojis": [
+        "🚗", "🚕", "🚙", "🚌", "🚎", "🏎️", "🚓", "🚑", "🚒", "🚐",
+        "🚚", "🚛", "🚜", "🛴", "🚲", "🛵", "🏍️", "🚨", "🚔", "🚍",
+        "🚘", "🚖", "🚡", "🚠", "🚟", "🚃", "🚋", "🚞", "🚝", "🚄",
+        "🚅", "🚈", "🚂", "🚆", "🚇", "🚊", "🚉", "✈️", "🛫", "🛬",
+        "🚀", "🛸", "🚁", "🛶", "⛵", "🚤", "🛥️", "🛳️", "⛴️", "🚢",
+        "⚓", "🗺️", "🏔️", "⛰️", "🌋", "🗻", "🏕️", "🏖️", "🏜️", "🏝️",
+        "🏞️", "🏟️", "🏛️", "🏗️", "🌁", "🌃", "🌆", "🌇", "🌉", "🎠"
+      ]
+    },
+    {
+      "id": "objects",
+      "labelPt": "Objetos",
+      "labelEn": "Objects",
+      "emojis": [
+        "⌚", "📱", "💻", "⌨️", "🖥️", "🖨️", "🖱️", "💽", "💾", "💿",
+        "📀", "📷", "📸", "📹", "🎥", "📽️", "📞", "☎️", "📟", "📠",
+        "📺", "📻", "🎙️", "⏰", "⏱️", "⏲️", "🕰️", "⌛", "⏳", "📡",
+        "🔋", "🔌", "💡", "🔦", "🕯️", "🧯", "🛢️", "💸", "💵", "💴",
+        "💶", "💷", "💰", "💳", "💎", "⚖️", "🔧", "🔨", "⚒️", "🛠️",
+        "⛏️", "🔩", "⚙️", "🧰", "🧲", "🔫", "💣", "🧨", "🔪", "🗡️",
+        "📎", "🖇️", "📐", "📏", "📌", "📍", "✂️", "🖊️", "🖋️", "✒️",
+        "📝", "📁", "📂", "🗂️", "📅", "📆", "🗒️", "🗓️", "📇", "📈"
+      ]
+    },
+    {
+      "id": "symbols",
+      "labelPt": "Símbolos",
+      "labelEn": "Symbols",
+      "emojis": [
+        "✅", "❌", "❓", "❗", "‼️", "⁉️", "💯", "🔔", "🔕", "📣",
+        "📢", "💬", "💭", "🗯️", "♠️", "♣️", "♥️", "♦️", "🃏", "🎴",
+        "🀄", "🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "⚫", "⚪", "🟤",
+        "🔶", "🔷", "🔸", "🔹", "🔺", "🔻", "💠", "🔘", "🔳", "🔲",
+        "🏁", "🚩", "🎌", "🏴", "🏳️", "⭐", "🌟", "✨", "⚡", "🔥",
+        "💥", "🌈", "☀️", "🌤️", "⛅", "🌥️", "☁️", "🌦️", "🌧️", "⛈️",
+        "🌩️", "🌨️", "❄️", "☃️", "⛄", "🌬️", "💨", "🌊", "🎉", "🎊",
+        "🎈", "🎁", "🎀", "🏆", "🥳", "🔒", "🔓", "🔑", "🛡️", "⚠️"
+      ]
+    }
+  ],
+  "names": {
+    "😀": { "pt": ["sorriso", "feliz", "rosto"], "en": ["grin", "happy", "smile"] },
+    "😂": { "pt": ["risada", "chorando", "engraçado"], "en": ["joy", "laugh", "tears"] },
+    "😍": { "pt": ["amor", "apaixonado", "coracao"], "en": ["heart eyes", "love"] },
+    "😎": { "pt": ["legal", "oculos", "sol"], "en": ["cool", "sunglasses"] },
+    "😢": { "pt": ["triste", "chorando"], "en": ["cry", "sad", "tear"] },
+    "😭": { "pt": ["chorando", "muito", "triste"], "en": ["sob", "crying"] },
+    "😡": { "pt": ["raiva", "bravo", "irritado"], "en": ["angry", "mad", "rage"] },
+    "🤔": { "pt": ["pensando", "duvida", "hmm"], "en": ["thinking", "hmm"] },
+    "👍": { "pt": ["joinha", "positivo", "ok", "legal"], "en": ["thumbs up", "ok", "yes"] },
+    "👎": { "pt": ["negativo", "nao", "ruim"], "en": ["thumbs down", "no"] },
+    "👀": { "pt": ["olhos", "olhando", "ver"], "en": ["eyes", "looking", "see"] },
+    "👏": { "pt": ["palmas", "aplauso", "parabens"], "en": ["clap", "applause"] },
+    "🙏": { "pt": ["obrigado", "reza", "por favor"], "en": ["pray", "thanks", "please"] },
+    "❤️": { "pt": ["coracao", "amor", "vermelho"], "en": ["heart", "love", "red"] },
+    "🔥": { "pt": ["fogo", "quente", "incendio"], "en": ["fire", "hot", "flame"] },
+    "✅": { "pt": ["check", "feito", "certo", "ok"], "en": ["check", "done", "yes"] },
+    "❌": { "pt": ["errado", "nao", "x"], "en": ["cross", "no", "wrong"] },
+    "🎉": { "pt": ["festa", "parabens", "celebracao"], "en": ["party", "tada", "celebration"] },
+    "🚀": { "pt": ["foguete", "espaco", "lancamento", "subir"], "en": ["rocket", "space", "launch"] },
+    "💻": { "pt": ["computador", "laptop", "codigo"], "en": ["computer", "laptop", "code"] },
+    "☕": { "pt": ["cafe", "bebida"], "en": ["coffee", "drink"] },
+    "🍕": { "pt": ["pizza", "comida"], "en": ["pizza", "food"] },
+    "🐶": { "pt": ["cachorro", "cao", "pet"], "en": ["dog", "puppy", "pet"] },
+    "🐱": { "pt": ["gato", "pet"], "en": ["cat", "pet"] },
+    "⚽": { "pt": ["futebol", "bola", "esporte"], "en": ["soccer", "football", "ball"] },
+    "🏀": { "pt": ["basquete", "bola"], "en": ["basketball", "ball"] },
+    "✈️": { "pt": ["aviao", "viagem", "voar"], "en": ["airplane", "travel", "fly"] },
+    "🌈": { "pt": ["arco iris", "cores"], "en": ["rainbow", "colors"] },
+    "⭐": { "pt": ["estrela", "favorito"], "en": ["star", "favorite"] },
+    "💯": { "pt": ["cem", "perfeito", "nota"], "en": ["hundred", "perfect", "score"] },
+    "🤣": { "pt": ["risada", "rolando"], "en": ["rofl", "laugh"] },
+    "🥳": { "pt": ["festa", "comemoracao"], "en": ["party", "celebrate"] },
+    "😅": { "pt": ["suor", "nervoso", "ops"], "en": ["sweat", "nervous", "oops"] },
+    "🤗": { "pt": ["abraco", "carinho"], "en": ["hug", "hugging"] },
+    "😴": { "pt": ["dormindo", "sono", "cansado"], "en": ["sleep", "tired", "zzz"] },
+    "🤯": { "pt": ["explodindo", "surpreso", "mente"], "en": ["mind blown", "exploding"] },
+    "💡": { "pt": ["ideia", "lampada", "luz"], "en": ["idea", "bulb", "light"] },
+    "📌": { "pt": ["pin", "fixar", "importante"], "en": ["pin", "pushpin"] },
+    "🔒": { "pt": ["cadeado", "seguro", "privado"], "en": ["lock", "secure", "private"] },
+    "⚠️": { "pt": ["aviso", "atencao", "cuidado"], "en": ["warning", "alert", "caution"] }
+  }
+}
