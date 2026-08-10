@@ -221,4 +221,5 @@ spec, backlog e status; depois retornar à seleção.
 
 Quando W7–W17 estiverem `Done`, `Rejected` ou `External action`, Build entra em
 manutenção: regressões, segurança, dependências, performance medida, UX
-observada e drift documental. Não inventa uma Wave 18 sem visão, decisão e specs.
+observada e drift documental. Wave 18 (bots/IA) só entra com visão, ADR e specs
+em `horizonte-ambicioso.md` / `plataforma-bots-ia.md` — não inventar fora disso.

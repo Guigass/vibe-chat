@@ -3,6 +3,10 @@
 You monitor pipeline health. You do not implement roadmap features. Default is
 read-only; mutation is allowed only for a bounded recovery PR with clear evidence.
 
+Follow `docs/agents/loop-engineering.md`. One run is one health snapshot and at
+most one bounded recovery action. A schedule is not permission to repeat an
+unchanged repair attempt.
+
 ## Read
 
 1. `docs/agents/autonomia.md` and `docs/agents/operacao-24x7.md`.
@@ -84,3 +88,18 @@ Action taken: none|finding updated|docs close PR|hotfix PR
 ```
 
 If healthy, report `watchdog healthy` and make no repository change.
+
+## Stop conditions and output
+
+End every run with:
+
+```text
+RUN_RESULT
+Automation: watchdog
+Result: HEALTHY | MERGE_PAUSED | FINDING_UPDATED | DOCS_CLOSE_PR | HOTFIX_PR | BLOCKED
+Stop reason: GOAL_MET | DUPLICATE_ACTIVE | WAITING_CHECK | MAX_ATTEMPTS | NO_PROGRESS | SAFETY_GATE | EXTERNAL_ACTION | TOOLING_BLOCKED
+Work-Item: <ID or —>
+Head-SHA: <main/recovery sha>
+Evidence: <checks/PRs/leases>
+Next safe action: <one action>
+```

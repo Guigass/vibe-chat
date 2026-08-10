@@ -108,6 +108,20 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **AI Feature** | Capacidade opcional (resumo, sugestão, busca semântica futura) desligada por padrão. |
 | **Prompt Context** | Contexto permitido (mensagens/canais com ACL) enviado ao provedor — nunca cruzar tenants. |
 | **RAG** | Retrieval-Augmented Generation: recuperação de fontes autorizadas para fundamentar uma resposta de IA; embeddings e citações também obedecem ACL e retenção. |
+| **Bot de IA** | `Principal.Bot` visível na conversa, ligado a uma definição/version publicada que combina personalidade, model binding, skills, knowledge grants, MCP grants e guardrails. Nome/persona não concede acesso. |
+| **BotVersion** | Snapshot imutável de uma publicação do bot. Fixa versões/hashes de prompt, modelo, skills, grants e policy para execução, audit e rollback reproduzíveis. |
+| **System prompt** | Instrução de maior precedência configurável na versão do bot, abaixo apenas das invariantes/policies obrigatórias da plataforma. Não contém secret nem concede capability. |
+| **Model binding** | Referência governada a provider/modelo, parâmetros allowlisted, classe de dados, timeout, fallback e budget. Chave do provider fica no secret store/env. |
+| **Skill de bot** | Pacote declarativo e versionado de instruções, schema e exemplos reutilizáveis. Não executa código, não contém credencial e só referencia grants já concedidos. |
+| **Knowledge source** | Arquivo, página ou snapshot de URL com owner, classificação, ACL, versão, hash, retention e estado de ingestão. |
+| **Knowledge collection / grant** | Agrupamento de fontes e autorização explícita que permite a uma versão de bot usar esse conteúdo; continua subordinado à ACL atual do solicitante. |
+| **Chunk / Embedding** | Trecho versionado derivado de uma fonte e sua representação vetorial. Herda lifecycle/ACL; é projeção reconstruível, não fonte canônica. |
+| **Índice Qdrant** | Serviço vetorial opcional da Wave 18. Guarda vetores e metadata mínima; PostgreSQL continua SoT e revalida ACL antes de devolver conteúdo. |
+| **MCP server** | Serviço externo compatível com Model Context Protocol que expõe prompts, resources ou tools. Registro no VibeChat é tenant/workspace-scoped, com endpoint/auth/egress governados. |
+| **MCP tool / grant** | Função exposta por servidor MCP e a concessão local que limita qual bot pode chamá-la, sob quais scopes, classificação, quota e aprovação. Descrição do servidor não substitui policy local. |
+| **BotRun** | Execução imutavelmente ligada a uma BotVersion, ator/delegador, conversa, sources/tools, decisions, custo e stop reason. Não persiste chain-of-thought. |
+| **Guardrail** | Policy versionada aplicada ao input, contexto, tools e output para limitar dados, custo, ações e destinos. Falha de guardrail não autoriza tool/egress. |
+| **Approval de tool** | Confirmação humana vinculada a run, tool, schema, target, argumentos hash e expiração. Alterar argumentos ou revogar acesso invalida a aprovação. |
 
 ## Observabilidade
 

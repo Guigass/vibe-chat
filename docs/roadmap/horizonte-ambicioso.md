@@ -186,13 +186,49 @@ Objetivo: apostas transformadoras, intencionalmente por último.
 - notas de IA têm fonte, consentimento e retenção;
 - canvas tem modelo de permissão, export e conflito antes de escolher CRDT/OT.
 
+## Wave 18 — Bots internos com IA
+
+Objetivo: permitir múltiplos bots corporativos especializados, com personalidade,
+modelo, skills, conhecimento e tools diferentes, sem ampliar ACL nem transformar
+o modelo em autoridade implícita.
+
+Arquitetura canônica:
+[`plataforma-bots-ia.md`](../architecture/plataforma-bots-ia.md). Qdrant é
+projeção opcional conforme
+[ADR-019](../adrs/ADR-019-qdrant-para-vetores-de-conhecimento.md).
+
+| ID | Trilha | Tarefa | Deps | Spec | Status |
+|----|--------|--------|------|------|--------|
+| B-155 | B/C/D/E | Catálogo e versionamento de bots: system prompt, modelo, escopos e publicação | B-109, B-110, B-121, D-22 | [B-155](../product/specs/B-155-catalogo-versionamento-bots-ia.md) | Planned |
+| B-156 | B/C/D/E | Skills personalizadas, declarativas e versionadas | B-155 | [B-156](../product/specs/B-156-skills-personalizadas-bots.md) | Planned |
+| B-157 | A/B/C/D/E/AI | Fontes por arquivo/URL/página, ingestão e vetores no Qdrant | B-120, B-121, B-131, B-155 | [B-157](../product/specs/B-157-fontes-conhecimento-qdrant.md) | Planned |
+| B-158 | B/C/D/E/AI | Registro de servidores MCP, catálogo de tools e grants mínimos | B-066, B-111, B-127, B-139, B-155 | [B-158](../product/specs/B-158-servidores-mcp-grants.md) | Planned |
+| B-159 | B/C/D/E/F/AI | Auditoria, custos e observabilidade de configuração/runs/tools | B-132, B-139, B-155, B-157, B-158 | [B-159](../product/specs/B-159-auditoria-observabilidade-bots.md) | Planned |
+| B-160 | B/C/D/E/AI | Guardrails, policy, budgets e aprovação de ações | B-130, B-133, B-155, B-158, B-159 | [B-160](../product/specs/B-160-guardrails-politicas-bots.md) | Planned |
+| B-161 | B/C/D/E/AI | Runtime conversacional por DM/menção com RAG, skills e MCP | B-156, B-157, B-158, B-159, B-160 | [B-161](../product/specs/B-161-runtime-conversacional-bots.md) | Planned |
+| B-162 | B/C/D/E/G/AI | Avaliação, canary/rollback e templates Oráculo/ERP/Treinador/Geral | B-161 | [B-162](../product/specs/B-162-avaliacao-publicacao-templates-bots.md) | Planned |
+
+### Critérios de saída
+
+- múltiplos bots possuem versões reproduzíveis de system prompt, model binding,
+  skills, knowledge grants, MCP grants e guardrails;
+- fontes em arquivo/URL respeitam scan, SSRF, ACL, retenção, citações e delete
+  propagation; Qdrant pode ser reconstruído sem afetar o domínio;
+- autoridade efetiva é a interseção usuário + bot + fonte/tool + policy atual;
+- tool MCP read-only funciona com menor privilégio; escrita/egress exige policy
+  e aprovação explícita quando aplicável;
+- logs/audit não armazenam secret, chain-of-thought ou prompt integral por
+  default, mas explicam versão, fontes, tools, decisões e custo;
+- evals adversariais, staged rollout e rollback bloqueiam publicação insegura;
+- chat continua operacional com IA, Qdrant ou MCP indisponíveis.
+
 ## Portfólio por natureza
 
 | Evolução natural | Diferenciação forte | Aposta arquitetural |
 |------------------|---------------------|---------------------|
 | Anúncios, agendamento, inbox, status | Decisões, digests, playbooks, policy packs | Live media |
 | Histórico, templates, malware scan | Developer portal, SDK, automation builder | Federação |
-| Audit SIEM, quotas, lifecycle | RAG autorizado, incident rooms | E2EE |
+| Audit SIEM, quotas, lifecycle | RAG autorizado, bots internos e MCP governado | E2EE |
 | Capacity model | Enterprise governance | Canvas CRDT |
 | | Plugins/bridges governados | Mobile/offline completo |
 
@@ -202,5 +238,6 @@ Objetivo: apostas transformadoras, intencionalmente por último.
 2. Executar W11 → W12 → W13 → W14.
 3. Estabilizar contratos antes de SDK/registry/bridges.
 4. Medir porte real antes de HA, bus, OpenSearch ou Kubernetes.
-5. Executar W15 → W16 → W17, respeitando dependências.
-6. Abrir no máximo **uma aposta arquitetural** por vez.
+5. Executar W15 → W16 → W17 → W18, respeitando dependências.
+6. Publicar bots somente após audit, guardrails e evals da própria Wave 18.
+7. Abrir no máximo **uma aposta arquitetural** por vez.

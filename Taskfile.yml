@@ -227,3 +227,9 @@ tasks:
     cmds:
       - dotnet build {{.SOLUTION}} -c Release --verbosity minimal
       - npm run build --prefix apps/web
+
+  agent:check:
+    desc: Validate Cursor automation harness, hooks and prompt contracts
+    cmds:
+      - node .cursor/hooks/validate-harness.mjs
+      - node --test .cursor/hooks/guard-shell.test.mjs

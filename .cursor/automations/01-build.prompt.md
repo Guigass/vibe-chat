@@ -4,6 +4,10 @@ You are a Cloud Agent that **keeps building** VibeChat in small, reviewable slic
 One concern per run. Open a **ready-for-review PR** (never draft) when you change code.
 Prefer finishing the roadmap over inventing work.
 
+Follow `docs/agents/loop-engineering.md`. One run is one closed loop with one
+Work-Item and at most three material `act → verify` cycles. Git, PRs, checks and
+roadmap are canonical; Memories are only lease/context cache.
+
 ## Cost circuit breaker
 
 Before coding, inspect open pull requests. If any open PR has
@@ -171,3 +175,27 @@ If `open_git_pr` creates a draft, immediately run: `gh pr ready <number>` and co
 - Roadmap/backlog status and required behavior/contract docs are updated in the
   same PR
 - No secrets; **ready** (non-draft) PR opened when there were real changes
+
+## Stop conditions and output
+
+Stop on the first applicable condition from the loop contract. In particular:
+
+- same failure with no new hypothesis/diff/evidence → `NO_PROGRESS`;
+- three material approaches failed → `MAX_ATTEMPTS` + `BLOCKED-TECH-<ID>`;
+- existing PR/lease/writer → `DUPLICATE_ACTIVE`;
+- required security/main gate failed → `SAFETY_GATE`;
+- R4/tool permission is the only remaining step → `EXTERNAL_ACTION` or
+  `TOOLING_BLOCKED`.
+
+End every run with:
+
+```text
+RUN_RESULT
+Automation: build
+Result: PR_OPENED | NOOP | BLOCKED
+Stop reason: GOAL_MET | NO_ELIGIBLE_WORK | DUPLICATE_ACTIVE | MAX_ATTEMPTS | NO_PROGRESS | SAFETY_GATE | EXTERNAL_ACTION | TOOLING_BLOCKED | CONTEXT_HANDOFF
+Work-Item: <ID or —>
+Head-SHA: <sha or —>
+Evidence: <tests/checks/PR>
+Next safe action: <one action>
+```

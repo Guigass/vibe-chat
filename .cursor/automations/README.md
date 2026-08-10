@@ -6,12 +6,32 @@ canônicos estão nesta pasta; copie o conteúdo para
 
 | # | Arquivo | Automação (dashboard) | Trigger sugerido | Ferramentas |
 |---|---------|----------------------|------------------|-------------|
+| 0 | `00-readiness.prompt.md` | **Readiness / Preflight** | Manual; após mudança crítica do harness | Read-only |
 | 1 | `01-build.prompt.md` | **Build / Melhorias** | A cada 12 h; concorrência 1 | Open PR, Memories |
 | 2 | `02-qa-merge.prompt.md` | **QA + Merge** | Somente PR opened; 1 run por PR | Comment, Approve/Merge, Memories |
 | 3 | `03-docs.prompt.md` | **Docs / Close** | **Inativa**; Build fecha roadmap/docs no mesmo PR | — |
 | 4 | `04-ux-review.prompt.md` | **UX Review** | **Inativa** durante construção do roadmap | — |
 | 5 | `05-security-review.prompt.md` | **VibeChat Security Review** | **Inativa**; CI + revisão humana final | — |
 | 6 | `06-watchdog-recovery.prompt.md` | **Watchdog / Recovery** | Diário às 09:00 BRT | Read, Memories, recovery PR |
+| 7 | `07-harness-retrospective.prompt.md` | **Harness Retrospective** | **Inativa** por padrão; semanal se habilitada | Read, Memories, R0 harness PR |
+| 8 | `08-pr-repair.prompt.md` | **PR Repair** | **Inativa** por padrão; QA changes requested | Push no PR existente, Memories |
+
+Todos os prompts seguem [`docs/agents/loop-engineering.md`](../../docs/agents/loop-engineering.md)
+(`RUN_RESULT` + stop reason). Enforcement versionado:
+
+| Arquivo | Função |
+|---------|--------|
+| `.cursor/hooks.json` | Registra hooks do projeto |
+| `.cursor/hooks/guard-shell.mjs` | Bloqueia force push, push em `main`, descarte forçado, volumes e SQL destrutivo |
+| `.cursor/hooks/stop-check.mjs` | Checker ao encerrar; no máximo um follow-up corretivo |
+| `.cursor/hooks/validate-harness.mjs` | Valida ambiente, prompts e wiring offline |
+| `.cursor/hooks/guard-shell.test.mjs` | Casos permitidos/bloqueados (incl. BOM UTF-8 no stdin) |
+
+```bash
+task agent:check
+# ou: node .cursor/hooks/validate-harness.mjs && node --test .cursor/hooks/guard-shell.test.mjs
+```
+
 
 A automação 5 substitui o template genérico: usa EF Core/Npgsql/Angular, as regras
 RLS do projeto e não depende de caminhos internos da Cursor. O check preferido é
@@ -60,7 +80,7 @@ humana cobre segurança profunda, UX e testes exploratórios.
 
 O contrato de autoridade, classes R0–R4, gates e prevenção de loops está em
 [`docs/agents/autonomia.md`](../../docs/agents/autonomia.md). Build consome
-Waves 7–10 em `roadmap.md` e depois Waves 11–17 em
+Waves 7–10 em `roadmap.md` e depois Waves 11–18 em
 `horizonte-ambicioso.md`; escolhas técnicas reversíveis não pausam o pipeline.
 Cadência, lease, concorrência, watchdog e recuperação estão no
 [`runbook 24/7`](../../docs/agents/operacao-24x7.md).

@@ -1,6 +1,6 @@
 {
   "name": "VibeChat",
   "install": "bash infra/scripts/agent-setup.sh",
-  "start": "task dev",
+  "start": "bash infra/scripts/agent-setup.sh",
   "terminals": []
 }

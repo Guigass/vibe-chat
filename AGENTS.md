@@ -9,11 +9,17 @@ técnicas reversíveis são feitas pelo agente e registradas em ADR quando neces
 
 ## Antes de editar
 
-1. Ler `docs/architecture/` (especialmente `visao-geral.md`, `contratos.md`, `diagrama-modulos.md`) e os ADRs relevantes em `docs/adrs/`.
-2. Identificar os módulos afetados (`modules/*`, `apps/*`, `src/*`, `infra/*`, `tests/*`).
-3. Planejar mudanças grandes antes de codar (escopo, contratos, testes, docs).
-4. Consultar `docs/product/glossario.md`, `docs/roadmap/decisoes-pendentes.md` e
+1. Ler o núcleo: `docs/architecture/visao-geral.md`,
+   `docs/architecture/contratos.md`, `docs/architecture/diagrama-modulos.md`,
+   `docs/product/glossario.md`, `docs/roadmap/decisoes-pendentes.md` e
    `docs/product/bug-findings.md` (safety lane de bugs funcionais Alta).
+2. Identificar os módulos afetados (`modules/*`, `apps/*`, `src/*`, `infra/*`,
+   `tests/*`) e então ler somente os documentos de `docs/architecture/` e ADRs
+   relevantes à superfície tocada.
+3. Planejar mudanças grandes antes de codar (escopo, contratos, testes, docs).
+4. Em automações/long-running work, seguir
+   `docs/agents/loop-engineering.md`: um Work-Item, estado durável, verificação e
+   stop reason explícito.
 
 ## Regras universais
 
@@ -31,6 +37,8 @@ técnicas reversíveis são feitas pelo agente e registradas em ADR quando neces
   pacote correspondente em `docs/architecture/pacotes-decisao-r3.md`.
 - **PRs pequenos e revisáveis** — uma intenção clara por mudança.
 - **Apresentar evidência de funcionamento** — saída de `task verify` / testes, screenshots ou traces quando fizer sentido.
+- **Validar o harness ao tocá-lo** — mudanças em `.cursor`, `AGENTS.md` ou nos
+  contratos de agentes executam `task agent:check`.
 
 ## Coordenação
 
