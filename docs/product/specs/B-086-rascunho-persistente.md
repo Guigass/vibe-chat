@@ -40,12 +40,12 @@ rascunhos daquele usuário — máquina compartilhada não pode vazar texto entr
 
 ## Aceite
 
-- [ ] Digitar, trocar de canal, voltar → texto preservado
-- [ ] F5 preserva o rascunho
-- [ ] Enviar limpa o rascunho e o indicador da sidebar
-- [ ] Logout apaga os rascunhos do usuário
-- [ ] Dois tenants no mesmo navegador não compartilham rascunho
-- [ ] Sem IndexedDB, o fallback funciona
+- [x] Digitar, trocar de canal, voltar → texto preservado
+- [x] F5 preserva o rascunho
+- [x] Enviar limpa o rascunho e o indicador da sidebar
+- [x] Logout apaga os rascunhos do usuário
+- [x] Dois tenants no mesmo navegador não compartilham rascunho
+- [x] Sem IndexedDB, o fallback funciona
 
 ## Testes
 

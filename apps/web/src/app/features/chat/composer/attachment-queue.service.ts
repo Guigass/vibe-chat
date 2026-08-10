@@ -10,6 +10,7 @@ import {
 } from './attachment-upload';
 import { normalizeAudioContentType } from './audio-recorder';
 import { RecordedAudio } from './audio-recorder.service';
+import type { DraftAttachmentMeta } from '../../../core/services/draft-storage';
 
 @Injectable({ providedIn: 'root' })
 export class AttachmentQueueService {
@@ -116,6 +117,36 @@ export class AttachmentQueueService {
     }
     this.abortControllers.clear();
     this.itemsSignal.set([]);
+  }
+
+  /** Snapshot of ready uploads for draft persistence (ids + display metadata, not bytes). */
+  readyAttachmentMetas(): DraftAttachmentMeta[] {
+    return this.itemsSignal()
+      .filter((item) => item.status === 'ready' && item.attachmentId)
+      .map((item) => ({
+        attachmentId: item.attachmentId!,
+        fileName: item.file.name,
+        sizeBytes: item.restoredSizeBytes ?? item.file.size,
+        contentType: resolveContentType(item.file),
+      }));
+  }
+
+  /** Rehydrate ready attachments from a persisted draft (by server id). */
+  restoreReady(metas: DraftAttachmentMeta[]): void {
+    this.clear();
+    if (!metas.length) return;
+    const next: PendingAttachment[] = metas.slice(0, MAX_ATTACHMENTS_PER_MESSAGE).map((meta) => {
+      const file = new File([], meta.fileName, { type: meta.contentType || 'application/octet-stream' });
+      return {
+        localId: crypto.randomUUID(),
+        file,
+        status: 'ready' as const,
+        progress: 100,
+        attachmentId: meta.attachmentId,
+        restoredSizeBytes: meta.sizeBytes,
+      };
+    });
+    this.itemsSignal.set(next);
   }
 
   async waitForReady(): Promise<string[]> {

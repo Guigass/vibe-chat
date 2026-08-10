@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../../core/api/api.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
+import { DraftStoreService } from '../../../core/services/draft-store.service';
 import { MessageStore } from '../../../core/services/message.store';
 import { AttachmentQueueService } from './attachment-queue.service';
 import { AudioRecorderService, RecordedAudio } from './audio-recorder.service';
@@ -23,6 +24,11 @@ describe('Composer audio submit (BUG-004)', () => {
   const send = vi.fn();
   const clearAttachments = vi.fn();
   const clearReplyTarget = vi.fn();
+  const restoreReady = vi.fn();
+  const draftGet = vi.fn().mockResolvedValue(null);
+  const draftSaveNow = vi.fn().mockResolvedValue(undefined);
+  const draftRemove = vi.fn().mockResolvedValue(undefined);
+  const draftScheduleSave = vi.fn();
 
   let fixture: ComponentFixture<Composer>;
   let composer: Composer;
@@ -48,6 +54,11 @@ describe('Composer audio submit (BUG-004)', () => {
     send.mockReset();
     clearAttachments.mockReset();
     clearReplyTarget.mockReset();
+    restoreReady.mockReset();
+    draftGet.mockReset().mockResolvedValue(null);
+    draftSaveNow.mockReset().mockResolvedValue(undefined);
+    draftRemove.mockReset().mockResolvedValue(undefined);
+    draftScheduleSave.mockReset();
 
     stop.mockImplementation(async () => {
       phase.set('preview');
@@ -83,10 +94,12 @@ describe('Composer audio submit (BUG-004)', () => {
             items: signal([]).asReadonly(),
             liveAnnouncement: signal(null).asReadonly(),
             readyAttachmentIds: () => [],
+            readyAttachmentMetas: () => [],
             hasActiveUploads: () => false,
             canAcceptMore: () => true,
             submitBlocked: () => false,
             clear: clearAttachments,
+            restoreReady,
             uploadRecordedAudio,
             waitForReady: async () => [],
             addFiles: () => null,
@@ -123,6 +136,17 @@ describe('Composer audio submit (BUG-004)', () => {
         {
           provide: ApiService,
           useValue: { getChannelMembers: vi.fn().mockResolvedValue([]) },
+        },
+        {
+          provide: DraftStoreService,
+          useValue: {
+            get: draftGet,
+            saveNow: draftSaveNow,
+            scheduleSave: draftScheduleSave,
+            remove: draftRemove,
+            hasDraft: () => false,
+            draftConversationIds: signal(new Set()).asReadonly(),
+          },
         },
       ],
     }).compileComponents();

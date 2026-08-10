@@ -18,6 +18,7 @@ import { MessageStore } from '../../../core/services/message.store';
 import { replyPreviewText } from '../../../core/services/message-sync';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { DraftStoreService } from '../../../core/services/draft-store.service';
 import {
   isMessageBodyTooLong,
   measureMessageBodyLength,
@@ -31,6 +32,7 @@ import {
   formatFileSize,
   resolveContentType,
 } from './attachment-upload';
+import type { PendingAttachment } from './attachment-upload';
 import { AudioRecorderService } from './audio-recorder.service';
 import { formatDuration } from './audio-recorder';
 import { drawAudioWaveform } from '../../../shared/utils/audio';
@@ -70,7 +72,7 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
                 </span>
                 <div class="composer__attachment-meta">
                   <span class="composer__attachment-name">{{ item.file.name }}</span>
-                  <span class="composer__attachment-size">{{ sizeFor(item.file.size) }}</span>
+                  <span class="composer__attachment-size">{{ sizeFor(item) }}</span>
                   @if (item.status === 'uploading' || item.status === 'queued') {
                     <progress
                       class="composer__attachment-progress"
@@ -462,6 +464,7 @@ export class Composer {
   readonly audioRecorder = inject(AudioRecorderService);
   private readonly hub = inject(ChatHubService);
   private readonly api = inject(ApiService);
+  private readonly drafts = inject(DraftStoreService);
 
   readonly formatDuration = formatDuration;
 
@@ -511,6 +514,8 @@ export class Composer {
   private readonly submitting = signal(false);
   private lastTyping = 0;
   private mentionFetchTimer: ReturnType<typeof setTimeout> | null = null;
+  private boundChannelId: string | null = null;
+  private restoringDraft = false;
 
   constructor() {
     effect(() => {
@@ -519,6 +524,7 @@ export class Composer {
       const text = this.channels.consumeComposerPrefill();
       if (text) {
         this.draft.set(text);
+        this.persistDraftSoon();
       }
     });
 
@@ -527,14 +533,19 @@ export class Composer {
       // channels list refresh (unread/presence) and abort an in-progress mic recording.
       // Side effects must be untracked: reset() reads previewUrl and would otherwise
       // re-run this effect as soon as onstop builds a preview (BUG-004).
-      this.channels.activeChannelId();
+      const channelId = this.channels.activeChannelId();
       untracked(() => {
-        this.attachments.clear();
-        this.audioRecorder.reset();
-        this.validationError.set(null);
-        this.messages.clearReplyTarget();
-        this.closeMentionMenu();
+        void this.onActiveChannelChanged(channelId);
       });
+    });
+
+    effect(() => {
+      this.draft();
+      this.attachments.items();
+      if (this.restoringDraft) return;
+      const channelId = untracked(() => this.boundChannelId);
+      if (!channelId) return;
+      this.persistDraftSoon();
     });
 
     effect(() => {
@@ -552,8 +563,8 @@ export class Composer {
     return attachmentIcon(resolveContentType(file));
   }
 
-  sizeFor(bytes: number): string {
-    return formatFileSize(bytes);
+  sizeFor(item: PendingAttachment): string {
+    return formatFileSize(item.restoredSizeBytes ?? item.file.size);
   }
 
   onFileSelected(event: Event): void {
@@ -611,6 +622,7 @@ export class Composer {
       this.audioRecorder.reset();
       this.attachments.clear();
       this.validationError.set(null);
+      await this.drafts.remove(channelId);
       return;
     }
 
@@ -649,14 +661,20 @@ export class Composer {
       const attachmentIds = await this.attachments.waitForReady();
       if (!body && attachmentIds.length === 0) return;
 
+      const channelId = this.boundChannelId;
+
       // Clear before await send so a second Enter cannot resubmit the same draft.
       this.draft.set('');
       this.attachments.clear();
       this.validationError.set(null);
+      if (channelId) {
+        await this.drafts.remove(channelId);
+      }
 
       const ok = await this.messages.send(body, attachmentIds);
       if (!ok) {
         this.draft.set(body);
+        this.persistDraftSoon();
       }
     } finally {
       this.submitting.set(false);
@@ -776,6 +794,73 @@ export class Composer {
     this.draft.set(result.value);
     this.closeMentionMenu();
     updateTextareaSelection(textarea, result.value, result.cursor, result.cursor);
+  }
+
+  private async onActiveChannelChanged(channelId: string | null): Promise<void> {
+    const previousId = this.boundChannelId;
+    if (previousId === channelId) return;
+
+    if (previousId) {
+      await this.persistDraftNow(previousId);
+    }
+
+    this.boundChannelId = channelId;
+    this.audioRecorder.reset();
+    this.validationError.set(null);
+    this.messages.clearReplyTarget();
+    this.closeMentionMenu();
+
+    if (!channelId) {
+      this.restoringDraft = true;
+      this.draft.set('');
+      this.attachments.clear();
+      this.restoringDraft = false;
+      return;
+    }
+
+    await this.restoreDraft(channelId);
+  }
+
+  private async restoreDraft(channelId: string): Promise<void> {
+    this.restoringDraft = true;
+    try {
+      const saved = await this.drafts.get(channelId);
+      this.draft.set(saved?.body ?? '');
+      this.attachments.restoreReady(saved?.attachments ?? []);
+      if (saved && (saved.selectionStart != null || saved.selectionEnd != null)) {
+        queueMicrotask(() => {
+          const textarea = this.composerTextarea()?.nativeElement();
+          if (!textarea) return;
+          const start = saved.selectionStart ?? saved.body.length;
+          const end = saved.selectionEnd ?? start;
+          updateTextareaSelection(textarea, saved.body, start, end);
+        });
+      }
+    } finally {
+      this.restoringDraft = false;
+    }
+  }
+
+  private persistDraftSoon(): void {
+    const channelId = this.boundChannelId;
+    if (!channelId || this.restoringDraft) return;
+    const textarea = this.composerTextarea()?.nativeElement();
+    this.drafts.scheduleSave(channelId, {
+      body: this.draft(),
+      attachments: this.attachments.readyAttachmentMetas(),
+      selectionStart: textarea?.selectionStart,
+      selectionEnd: textarea?.selectionEnd,
+    });
+  }
+
+  private async persistDraftNow(channelId: string): Promise<void> {
+    const textarea = this.composerTextarea()?.nativeElement();
+    await this.drafts.saveNow(channelId, {
+      body: this.draft(),
+      attachments: this.attachments.readyAttachmentMetas(),
+      selectionStart: textarea?.selectionStart,
+      selectionEnd: textarea?.selectionEnd,
+    });
   }
 
   private syncMentionContext(text: string, cursor: number): void {

@@ -18,7 +18,12 @@ import { Badge } from '../badge/badge';
       } @else {
         <span class="vc-channel__hash" aria-hidden="true">{{ prefix() }}</span>
       }
-      <span class="vc-channel__name">{{ channel().name }}</span>
+      <span class="vc-channel__main">
+        <span class="vc-channel__name">{{ channel().name }}</span>
+        @if (hasDraft()) {
+          <span class="vc-channel__draft">Rascunho</span>
+        }
+      </span>
       @if (channel().mentionCount && channel().mentionCount! > 0) {
         <vc-badge tone="warn">{{ channel().mentionCount }}</vc-badge>
       } @else if (channel().unreadCount > 0) {
@@ -81,17 +86,32 @@ import { Badge } from '../badge/badge';
     .vc-channel__presence[data-status='away'] {
       background: var(--vc-presence-away);
     }
+    .vc-channel__main {
+      display: grid;
+      gap: 0.05rem;
+      min-width: 0;
+    }
     .vc-channel__name {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       font-weight: 500;
     }
+    .vc-channel__draft {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.72rem;
+      font-style: italic;
+      color: var(--vc-ink-subtle);
+      font-weight: 400;
+    }
   `,
 })
 export class ChannelItem {
   readonly channel = input.required<Channel>();
   readonly active = input(false);
+  readonly hasDraft = input(false);
   readonly presence = input<PresenceStatus | null>(null);
   readonly select = output<void>();
 

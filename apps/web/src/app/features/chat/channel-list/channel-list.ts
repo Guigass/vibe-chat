@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { DraftStoreService } from '../../../core/services/draft-store.service';
 import { MessageStore } from '../../../core/services/message.store';
 import { SidebarNav, Skeleton } from '../../../shared/ui';
 
@@ -23,6 +24,7 @@ import { SidebarNav, Skeleton } from '../../../shared/ui';
           [members]="channels.peerCandidates()"
           [presence]="channels.presence()"
           [activeId]="channels.activeChannel()?.id ?? null"
+          [draftIds]="drafts.draftConversationIds()"
           [canCreate]="channels.canCreateChannel()"
           (select)="onSelect($event)"
           (openDm)="onOpenDm($event)"
@@ -52,6 +54,7 @@ import { SidebarNav, Skeleton } from '../../../shared/ui';
 })
 export class ChannelList {
   readonly channels = inject(ChannelStore);
+  readonly drafts = inject(DraftStoreService);
   private readonly messages = inject(MessageStore);
 
   async onSelect(channelId: string): Promise<void> {

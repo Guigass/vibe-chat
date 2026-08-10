@@ -25,6 +25,8 @@ export interface PendingAttachment {
   progress: number;
   error?: string;
   attachmentId?: string;
+  /** Display size when restoring a ready attachment by id (no bytes on disk). */
+  restoredSizeBytes?: number;
 }
 
 export interface AttachmentValidationError {

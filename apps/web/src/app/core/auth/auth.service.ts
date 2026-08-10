@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { User, UserManager, WebStorageStateStore } from 'oidc-client-ts';
 import { environment } from '../../../environments/environment';
+import { DraftStoreService } from '../services/draft-store.service';
 import { TenantContext } from '../tenant/tenant-context';
 
 export interface AuthProfile {
@@ -43,6 +44,7 @@ const DEV_PROFILES: Record<DevUserName, AuthProfile> = {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly tenant = inject(TenantContext);
+  private readonly drafts = inject(DraftStoreService);
   private readonly userManager = new UserManager({
     authority: environment.keycloak.authority,
     client_id: environment.keycloak.clientId,
@@ -184,6 +186,12 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
+    const tenantId = this.tenant.tenantId();
+    const userId = this.tenant.userId();
+    if (tenantId && userId) {
+      await this.drafts.clearUser(tenantId, userId);
+    }
+
     if (this.devProfile() || this.offlineDemo()) {
       localStorage.removeItem(DEV_KEY);
       localStorage.removeItem(DEMO_KEY);

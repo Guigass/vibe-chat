@@ -25,6 +25,7 @@ import { Input } from '../input/input';
                 <vc-channel-item
                   [channel]="channel"
                   [active]="channel.id === activeId()"
+                  [hasDraft]="draftIds().has(channel.id)"
                   (select)="select.emit(channel.id)"
                 />
               </li>
@@ -91,6 +92,7 @@ import { Input } from '../input/input';
             <vc-channel-item
               [channel]="channel"
               [active]="channel.id === activeId()"
+              [hasDraft]="draftIds().has(channel.id)"
               [presence]="presenceOf(channel.peerUserId)"
               (select)="select.emit(channel.id)"
             />
@@ -235,6 +237,7 @@ export class SidebarNav {
   readonly members = input<WorkspaceMember[]>([]);
   readonly presence = input<Record<string, PresenceStatus>>({});
   readonly activeId = input<string | null>(null);
+  readonly draftIds = input<ReadonlySet<string>>(new Set());
   readonly canCreate = input(false);
   readonly select = output<string>();
   readonly openDm = output<string>();

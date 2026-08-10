@@ -1,8 +1,10 @@
-import { Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, signal, untracked, viewChild } from '@angular/core';
 import { ThreadStore } from '../../../core/services/thread.store';
 import { replyPreviewText } from '../../../core/services/message-sync';
 import { MessageStore } from '../../../core/services/message.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
+import { DraftStoreService } from '../../../core/services/draft-store.service';
+import { threadConversationId } from '../../../core/services/draft-storage';
 import { Button, EmptyState, IconButton, MessageBubble, Skeleton, Textarea } from '../../../shared/ui';
 import {
   ChatMessage,
@@ -11,6 +13,7 @@ import {
   MESSAGE_BODY_COUNTER_THRESHOLD,
   MESSAGE_BODY_MAX_LENGTH,
 } from '../../../shared/models/chat.models';
+import { updateTextareaSelection } from '../../../shared/markdown/markdown-format';
 
 @Component({
   selector: 'vc-thread-panel',
@@ -90,6 +93,7 @@ import {
           </div>
         }
         <vc-textarea
+          #threadTextarea
           [(value)]="draft"
           placeholder="Responder na thread…"
           [label]="''"
@@ -231,7 +235,9 @@ export class ThreadPanel {
   readonly threads = inject(ThreadStore);
   readonly messages = inject(MessageStore);
   private readonly hub = inject(ChatHubService);
+  private readonly drafts = inject(DraftStoreService);
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
+  private readonly threadTextarea = viewChild<Textarea>('threadTextarea');
   readonly draft = signal('');
   readonly maxLength = MESSAGE_BODY_MAX_LENGTH;
   readonly bodyLength = computed(() => measureMessageBodyLength(this.draft()));
@@ -247,6 +253,8 @@ export class ThreadPanel {
   /** Sync gate so Enter×2 cannot start two sends before `threads.sending` flips. */
   private readonly submitting = signal(false);
   private lastTyping = 0;
+  private boundConversationId: string | null = null;
+  private restoringDraft = false;
 
   constructor() {
     effect(() => {
@@ -255,6 +263,21 @@ export class ThreadPanel {
         const el = this.scroller()?.nativeElement;
         if (el) el.scrollTop = el.scrollHeight;
       });
+    });
+
+    effect(() => {
+      const threadId = this.threads.active()?.id ?? null;
+      untracked(() => {
+        void this.onActiveThreadChanged(threadId);
+      });
+    });
+
+    effect(() => {
+      this.draft();
+      if (this.restoringDraft) return;
+      const conversationId = untracked(() => this.boundConversationId);
+      if (!conversationId) return;
+      this.persistDraftSoon();
     });
   }
 
@@ -280,10 +303,15 @@ export class ThreadPanel {
     this.submitting.set(true);
     // Clear before await send so a second Enter cannot resubmit the same draft.
     this.draft.set('');
+    const conversationId = this.boundConversationId;
+    if (conversationId) {
+      await this.drafts.remove(conversationId);
+    }
     try {
       const ok = await this.threads.send(body);
       if (!ok) {
         this.draft.set(body);
+        this.persistDraftSoon();
       }
     } finally {
       this.submitting.set(false);
@@ -308,5 +336,66 @@ export class ThreadPanel {
       this.lastTyping = now;
       void this.hub.sendTyping(channelId);
     }
+  }
+
+  private async onActiveThreadChanged(threadId: string | null): Promise<void> {
+    const conversationId = threadId ? threadConversationId(threadId) : null;
+    const previousId = this.boundConversationId;
+    if (previousId === conversationId) return;
+
+    if (previousId) {
+      await this.persistDraftNow(previousId);
+    }
+
+    this.boundConversationId = conversationId;
+    this.threads.clearReplyTarget();
+
+    if (!conversationId) {
+      this.restoringDraft = true;
+      this.draft.set('');
+      this.restoringDraft = false;
+      return;
+    }
+
+    await this.restoreDraft(conversationId);
+  }
+
+  private async restoreDraft(conversationId: string): Promise<void> {
+    this.restoringDraft = true;
+    try {
+      const saved = await this.drafts.get(conversationId);
+      this.draft.set(saved?.body ?? '');
+      if (saved && (saved.selectionStart != null || saved.selectionEnd != null)) {
+        queueMicrotask(() => {
+          const textarea = this.threadTextarea()?.nativeElement();
+          if (!textarea) return;
+          const start = saved.selectionStart ?? saved.body.length;
+          const end = saved.selectionEnd ?? start;
+          updateTextareaSelection(textarea, saved.body, start, end);
+        });
+      }
+    } finally {
+      this.restoringDraft = false;
+    }
+  }
+
+  private persistDraftSoon(): void {
+    const conversationId = this.boundConversationId;
+    if (!conversationId || this.restoringDraft) return;
+    const textarea = this.threadTextarea()?.nativeElement();
+    this.drafts.scheduleSave(conversationId, {
+      body: this.draft(),
+      selectionStart: textarea?.selectionStart,
+      selectionEnd: textarea?.selectionEnd,
+    });
+  }
+
+  private async persistDraftNow(conversationId: string): Promise<void> {
+    const textarea = this.threadTextarea()?.nativeElement();
+    await this.drafts.saveNow(conversationId, {
+      body: this.draft(),
+      selectionStart: textarea?.selectionStart,
+      selectionEnd: textarea?.selectionEnd,
+    });
   }
 }

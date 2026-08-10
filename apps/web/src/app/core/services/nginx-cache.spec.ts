@@ -25,5 +25,7 @@ describe('web nginx cache headers (B-165)', () => {
 
   it('keeps immutable cache for content-hashed assets', () => {
     expect(conf).toMatch(/max-age=31536000, immutable/);
+    // Braces in the regex must be quoted or nginx treats `{8,}` as a block.
+    expect(conf).toMatch(/location ~\* "\\\.\[0-9a-f\]\{8,\}\\\.\(js\|css\)\$"/);
   });
 });
