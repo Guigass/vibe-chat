@@ -55,6 +55,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | Termo | Definição |
 |-------|-----------|
 | **User** | Perfil humano local estável usado como ator. Autenticação vem de External Identity no IdP; memberships e papéis continuam no VibeChat. |
+| **Perfil público** | Ficha do membro no workspace (displayName, cargo/função, sobre, mensagem de destaque, avatar), editável pelo dono e legível por membros autorizados do mesmo workspace — não é exposição na internet aberta (B-167). Distinto de status temporário (B-116) e de preferências pessoais (locale/DND/read receipts). |
 | **Person** | Pessoa natural, quando conhecida. Não é credencial, sessão, membership nem identificador de autorização. |
 | **External Identity** | Vínculo autenticado `(issuer, subject)` vindo de IdP. E-mail é atributo mutável, não chave canônica. |
 | **Principal** | Ator autorizável: User, Guest, Bot, Service Account ou Automation. Papel pertence ao vínculo/escopo, não globalmente ao principal. |

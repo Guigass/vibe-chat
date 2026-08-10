@@ -99,7 +99,8 @@ organiza. Estados:
 | Emoji/reactions livres e a11y | Committed | Waves 8–10 |
 | Status personalizado e agenda | Planned | B-116 / W11 |
 | Emojis/stickers da organização | Later | Reavaliar depois de B-083 |
-| Perfis ricos e diretório de expertise | Later | Reavaliar depois de B-128 |
+| Perfis ricos (cargo, sobre, destaque, avatar) | Planned | B-167 / W11 |
+| Diretório de expertise / skills | Later | Reavaliar depois de B-167 e B-128 |
 | Temas/branding por tenant | Planned | B-140 / W15 |
 
 ## Dependências estruturais

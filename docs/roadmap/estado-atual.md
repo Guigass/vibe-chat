@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-10
 - **Fase:** Wave 9 — Leitura e paridade de bolha (Wave 8 completa)
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165)
-- **Próximo item elegível:** W9-1 / B-088 (agrupamento/separadores); W9-0 / B-163 Done (message bubble); W8-9 / B-087 Done; BUG-002 fecha em B-094 quando W9-7 elegível
+- **Próximo item elegível:** W9-2 / B-089 (histórico paginado); W9-1 / B-088 Done; W9-0 / B-163 Done; W9-3 / B-090 e W9-4 / B-091 paralelos; BUG-002 fecha em B-094 quando W9-7 elegível
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -25,7 +25,7 @@ O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
 2. Wave 7 completa (W7-9 / B-165 Done — versão do cliente web / cache PWA);
-3. avançar Wave 9 de leitura/paridade (W9-0 / B-163 Done; próximo: W9-1 / B-088); Wave 8 completa;
+3. avançar Wave 9 de leitura/paridade (W9-0 / B-163 e W9-1 / B-088 Done; próximo: W9-2 / B-089); Wave 8 completa;
 4. consumir o roadmap autorizado W11–W17.
 
 ## Runtime e fronteiras
@@ -52,7 +52,7 @@ O trabalho aberto concentra-se em:
 | Conversations | Conversations, channels, threads e ordenação |
 | Directory | Workspaces, spaces, memberships e papéis |
 | Files | Metadados e políticas de anexos |
-| Identity | Perfis e integração de identidade |
+| Identity | Perfis e integração de identidade (perfil público rico: B-167 Planned) |
 | Integrations | Webhooks outbound |
 | Messaging | Mensagens, reações, idempotência, sequência e outbox |
 | Moderation | Fronteira reservada; sem domínio material observado no snapshot |
@@ -79,8 +79,8 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W9-1 | Agrupamento, separadores e não lidas (B-088); W9-0 / B-163 Done; safety lane Alta vazia |
-| 2 | W9-1+ | Demais itens Wave 9 Planned com spec (W9-4 / B-091 paralelo; W9-3 após W9-0) |
+| 1 | W9-2 | Histórico paginado e pular para a mensagem (B-089); W9-1 / B-088 Done; safety lane Alta vazia |
+| 2 | W9-2+ | Demais itens Wave 9 Planned com spec (W9-3 / B-090 e W9-4 / B-091 paralelos) |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
@@ -91,8 +91,8 @@ altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
 
 ## Baseline de planejamento
 
-- 81 itens `Planned` entre W7–W17 (B-104/W7-6 Done via #82; B-076/W7-3 Done via #84;
-  B-165/W7-9 Done 2026-08-10);
+- 82 itens `Planned` entre W7–W17 (B-104/W7-6 Done via #82; B-076/W7-3 Done via #84;
+  B-165/W7-9 Done 2026-08-10; B-088/W9-1 Done; B-167 catalogado em W11);
 - specs em correspondência 1:1 com itens Planned;
 - classes R0–R3 declaradas nas specs;
 - nenhuma decisão D-* aberta;
