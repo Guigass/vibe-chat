@@ -14,6 +14,11 @@ import {
   ReactionSummary,
   TypingState,
 } from '../../shared/models/chat.models';
+import {
+  HUB_KEEP_ALIVE_MS,
+  HUB_SERVER_TIMEOUT_MS,
+  nextHubRetryDelayMs,
+} from './chat-hub-reconnect';
 import { withoutSelfTyping } from './typing-filter';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
@@ -115,6 +120,13 @@ export class ChatHubService {
   private joinedChannelId: string | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private visibilityHandler: (() => void) | null = null;
+  private onlineHandler: (() => void) | null = null;
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
+  private manualRetryCount = 0;
+  /** True while the shell wants a live hub (until explicit disconnect). */
+  private wantConnected = false;
+  private connectInFlight: Promise<void> | null = null;
+  private visibilityRetryHandler: (() => void) | null = null;
 
   private readonly statusSignal = signal<ConnectionStatus>('disconnected');
   private readonly typingSignal = signal<TypingState[]>([]);
@@ -130,27 +142,74 @@ export class ChatHubService {
 
   async connect(): Promise<void> {
     if (this.auth.isOfflineDemo()) return;
-    if (this.connection?.state === HubConnectionState.Connected) return;
+    this.wantConnected = true;
+    this.ensureNetworkListeners();
 
+    if (this.connection?.state === HubConnectionState.Connected) return;
+    if (
+      this.connection?.state === HubConnectionState.Connecting ||
+      this.connection?.state === HubConnectionState.Reconnecting
+    ) {
+      return;
+    }
+    if (this.connectInFlight) {
+      await this.connectInFlight;
+      return;
+    }
+
+    this.connectInFlight = this.startConnection();
+    try {
+      await this.connectInFlight;
+    } finally {
+      this.connectInFlight = null;
+    }
+  }
+
+  private async startConnection(): Promise<void> {
+    this.clearManualRetry();
     this.statusSignal.set('connecting');
+
+    if (!this.connection) {
+      this.connection = this.buildConnection();
+    }
+
+    try {
+      await this.connection.start();
+      this.manualRetryCount = 0;
+      this.statusSignal.set('connected');
+      await this.heartbeat();
+      if (this.joinedChannelId) {
+        await this.joinChannel(this.joinedChannelId);
+      }
+      this.startPresenceLoop();
+    } catch {
+      this.statusSignal.set('disconnected');
+      this.scheduleManualRetry();
+    }
+  }
+
+  private buildConnection(): HubConnection {
     const devUser = this.auth.devUser();
     const hubUrl = devUser
       ? `${environment.hubUrl}?devUser=${encodeURIComponent(devUser)}`
       : environment.hubUrl;
 
-    this.connection = new HubConnectionBuilder()
+    const connection = new HubConnectionBuilder()
       .withUrl(hubUrl, {
         accessTokenFactory: async () => (await this.auth.getAccessToken()) ?? '',
       })
       .withAutomaticReconnect({
-        nextRetryDelayInMilliseconds: (ctx) =>
-          Math.min(10000, (ctx.previousRetryCount + 1) * 1000),
+        nextRetryDelayInMilliseconds: (ctx) => nextHubRetryDelayMs(ctx.previousRetryCount),
       })
       .configureLogging(environment.production ? LogLevel.Warning : LogLevel.Information)
       .build();
 
-    this.connection.onreconnecting(() => this.statusSignal.set('reconnecting'));
-    this.connection.onreconnected(async () => {
+    connection.keepAliveIntervalInMilliseconds = HUB_KEEP_ALIVE_MS;
+    connection.serverTimeoutInMilliseconds = HUB_SERVER_TIMEOUT_MS;
+
+    connection.onreconnecting(() => this.statusSignal.set('reconnecting'));
+    connection.onreconnected(async () => {
+      this.manualRetryCount = 0;
       this.statusSignal.set('connected');
       try {
         await this.heartbeat();
@@ -162,9 +221,21 @@ export class ChatHubService {
         // banner already reflects connection; next user action can retry join
       }
     });
-    this.connection.onclose(() => this.statusSignal.set('disconnected'));
+    connection.onclose(() => {
+      this.stopPresenceLoop();
+      this.statusSignal.set('disconnected');
+      // Automatic reconnect only arms after a successful start(); cover the rest.
+      if (this.wantConnected) {
+        this.scheduleManualRetry();
+      }
+    });
 
-    this.connection.on('MessageCreated', (raw: MessageCreatedPayload | string) => {
+    this.bindHubHandlers(connection);
+    return connection;
+  }
+
+  private bindHubHandlers(connection: HubConnection): void {
+    connection.on('MessageCreated', (raw: MessageCreatedPayload | string) => {
       const payload = this.coercePayload<MessageCreatedPayload>(raw);
       if (!payload) return;
       const message = this.mapPayload(payload);
@@ -174,7 +245,7 @@ export class ChatHubService {
       }
     });
 
-    this.connection.on('MessageEdited', (raw: MessageEditedPayload | string) => {
+    connection.on('MessageEdited', (raw: MessageEditedPayload | string) => {
       const payload = this.coercePayload<MessageEditedPayload>(raw);
       if (!payload) return;
       const id = payload.messageId ?? payload.id;
@@ -191,7 +262,7 @@ export class ChatHubService {
       }
     });
 
-    this.connection.on('MessageDeleted', (raw: MessageDeletedPayload | string) => {
+    connection.on('MessageDeleted', (raw: MessageDeletedPayload | string) => {
       const payload = this.coercePayload<MessageDeletedPayload>(raw);
       if (!payload) return;
       const id = payload.messageId ?? payload.id;
@@ -207,7 +278,7 @@ export class ChatHubService {
       }
     });
 
-    this.connection.on('ReactionChanged', (raw: ReactionChangedPayload | string) => {
+    connection.on('ReactionChanged', (raw: ReactionChangedPayload | string) => {
       const payload = this.coercePayload<ReactionChangedPayload>(raw);
       if (!payload?.messageId || !payload.channelId || !payload.emoji) return;
       const me = this.auth.profile()?.id;
@@ -232,7 +303,7 @@ export class ChatHubService {
       }
     });
 
-    this.connection.on('Typing', (raw: {
+    connection.on('Typing', (raw: {
       channelId: string;
       userId: string;
       displayName: string;
@@ -266,7 +337,7 @@ export class ChatHubService {
       }, 3000);
     });
 
-    this.connection.on('PresenceChanged', (raw: {
+    connection.on('PresenceChanged', (raw: {
       tenantId?: string;
       userId: string;
       status: string;
@@ -287,23 +358,82 @@ export class ChatHubService {
         handler(event);
       }
     });
+  }
 
-    try {
-      await this.connection.start();
-      this.statusSignal.set('connected');
-      await this.heartbeat();
-      if (this.joinedChannelId) {
-        await this.joinChannel(this.joinedChannelId);
+  private scheduleManualRetry(): void {
+    if (!this.wantConnected || this.retryTimer) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      // wait for window 'online' listener
+      return;
+    }
+    const delay = nextHubRetryDelayMs(this.manualRetryCount);
+    this.manualRetryCount += 1;
+    this.statusSignal.set('reconnecting');
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null;
+      // Drop dead connection so the next start rebuilds cleanly.
+      if (this.connection?.state === HubConnectionState.Disconnected) {
+        this.connection = null;
       }
-      this.startPresenceLoop();
-    } catch {
-      this.statusSignal.set('disconnected');
+      void this.connect();
+    }, delay);
+  }
+
+  private clearManualRetry(): void {
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+  }
+
+  private ensureNetworkListeners(): void {
+    if (typeof window === 'undefined') return;
+    if (!this.onlineHandler) {
+      this.onlineHandler = () => {
+        if (this.wantConnected && this.statusSignal() !== 'connected') {
+          this.manualRetryCount = 0;
+          this.clearManualRetry();
+          void this.connect();
+        }
+      };
+      window.addEventListener('online', this.onlineHandler);
+    }
+    if (!this.visibilityRetryHandler && typeof document !== 'undefined') {
+      this.visibilityRetryHandler = () => {
+        if (
+          document.visibilityState === 'visible' &&
+          this.wantConnected &&
+          this.statusSignal() !== 'connected'
+        ) {
+          this.manualRetryCount = 0;
+          this.clearManualRetry();
+          void this.connect();
+        }
+      };
+      document.addEventListener('visibilitychange', this.visibilityRetryHandler);
+    }
+  }
+
+  private removeNetworkListeners(): void {
+    if (typeof window !== 'undefined' && this.onlineHandler) {
+      window.removeEventListener('online', this.onlineHandler);
+      this.onlineHandler = null;
+    }
+    if (typeof document !== 'undefined' && this.visibilityRetryHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityRetryHandler);
+      this.visibilityRetryHandler = null;
     }
   }
 
   async disconnect(): Promise<void> {
+    this.wantConnected = false;
+    this.clearManualRetry();
+    this.removeNetworkListeners();
     this.stopPresenceLoop();
-    if (!this.connection) return;
+    if (!this.connection) {
+      this.statusSignal.set('disconnected');
+      return;
+    }
     await this.connection.stop();
     this.connection = null;
     this.statusSignal.set('disconnected');

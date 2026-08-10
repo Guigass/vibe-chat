@@ -125,7 +125,16 @@ builder.Services.AddScoped<ICurrentUser>(sp =>
 
 builder.Services.AddVibeChatInfrastructure(builder.Configuration);
 
-var signalR = builder.Services.AddSignalR().AddMessagePackProtocol();
+// BUG-006: keep-alive 15s + client timeout 90s tolerates brief idle/background
+// without premature disconnect; client serverTimeout aligns to 90s.
+var signalR = builder.Services
+    .AddSignalR(options =>
+    {
+        options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+        options.ClientTimeoutInterval = TimeSpan.FromSeconds(90);
+        options.HandshakeTimeout = TimeSpan.FromSeconds(15);
+    })
+    .AddMessagePackProtocol();
 var redisConnection = builder.Configuration.GetConnectionString("Redis");
 if (!string.IsNullOrWhiteSpace(redisConnection))
 {

@@ -50,7 +50,7 @@ e entram na **safety lane** do Build (antes de novas features de wave).
 | BUG-003 | Upload de arquivo com erro | **Done** — presign no PublicEndpoint + CORS fail-closed + resolveContentType |
 | BUG-004 | Áudio do microfone não envia | **Done** — MIME base + erros visíveis + discard/onstop + regressão Vitest |
 | BUG-005 | `/admin` não entra (Member) | **Done** — shell com empty-state; Demo/Owner intactos |
-| BUG-006 | Realtime caindo com frequência | Aberto (Alta) — SignalR/reconnect |
+| BUG-006 | Realtime caindo com frequência | **Done** — timeouts SignalR + retry pós-start/`onclose` + jitter |
 | BUG-007 | Modo escuro não funciona | **Done** — seletores `:root[data-theme]` + apply síncrono + Vitest |
 
 ## P2 — Diferenciação e admin

@@ -28,7 +28,6 @@ Regras do registro:
 | ID      | Área             | Achado                                                                | Severidade | Status                      |
 | ------- | ---------------- | --------------------------------------------------------------------- | ---------- | --------------------------- |
 | BUG-002 | Sidebar / unread | Badges de novas mensagens não limpam de forma persistente após reload | Média      | Aberto — alívio aplicado; fecha em **B-094** |
-| BUG-006 | Realtime         | Conexão em tempo real caindo com frequência                           | Alta       | Aberto — safety lane        |
 | BUG-008 | Presence         | Minimizar a janela marca ausente na hora                              | Média      | Aberto                      |
 
 ## Detalhamento
@@ -160,7 +159,7 @@ Regras do registro:
 
 ### BUG-006 — Conexão em tempo real caindo com frequência
 
-- Status: **Aberto**
+- Status: **Done**
 - Observado em: relato de produto; cliente tem `withAutomaticReconnect` +
   gap-fill (B-070). Console do lab também reporta CSP bloqueando inline
   handlers (possível correlato a UI/eventos, não necessariamente ao hub).
@@ -176,8 +175,12 @@ Regras do registro:
 - Owner automático: Realtime (C) + Frontend (D) + Infra (A) se proxy.
 - Critério de resolução: evidência de sessão estável (logs/trace) + regressão
   de reconnect; sem storm de disconnect no caminho oficial `task apps`.
-- Próxima ação: monitorar eventos SignalR no browser + logs API/Redis durante
-  idle e troca de canal; validar WS via proxy se aplicável.
+- Resolução: timeouts SignalR explícitos na API (`KeepAlive` 15s /
+  `ClientTimeout` 90s) alinhados no cliente; backoff com jitter;
+  retry manual após falha de `start()` / `onclose` (antes ficava
+  `disconnected` até F5); retry em `online` e ao voltar a aba visível;
+  proxy `/hubs/` já tinha Upgrade + timeout 3600s; regressão
+  `chat-hub-reconnect.spec.ts`.
 
 ### BUG-007 — Modo escuro / layout sem tokens
 
