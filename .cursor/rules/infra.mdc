@@ -12,9 +12,11 @@ globs:
 
 # Infra
 
-- Compose na raiz (`compose.yaml`) é a fonte da verdade local.
+- Compose na raiz (`compose.yaml`) é a fonte da verdade; runtime sempre em Docker
+  (ver regra `docker-runtime`).
 - Healthchecks obrigatórios nos serviços críticos; scripts idempotentes.
-- `task setup` / `task dev` / `task reset` são o contrato de DX.
+- `task setup` / `task apps` / `task reset` são o contrato de DX; `task dev`
+  (hot reload no host) não é o caminho padrão de execução.
 - `.env.example` completo com placeholders; nunca secrets reais.
 - Realm Keycloak versionado em `infra/keycloak/`.
 - Profiles: default (data plane), `tools`, `observability`, `apps` (api/web/worker — caminho oficial self-host, B-074).

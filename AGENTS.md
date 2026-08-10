@@ -132,26 +132,16 @@ não óbvios de execução. Comandos padrão estão no `README.md` e `Taskfile.y
   ~10 s na primeira vez, ~0 s depois. Se `docker info` falhar no meio de uma
   sessão, rode o script de novo em vez de repetir os passos à mão. Log:
   `/var/log/vibechat/dockerd.log`.
-- **Data plane**: `docker compose up -d postgres redis keycloak minio createbucket`.
-  O `compose.override.yaml` usa `network_mode: host`, então tudo escuta em
-  `localhost` (5432/6379/8080/9000). Keycloak leva ~40s para ficar healthy.
-- **Node/Angular**: `apps/web` `engines.node` é piso (`>=22.22.3`); o Angular CLI
-  aceita só `^22.22.3 || ^24.15 || >=26` — 23.x / 24.0–24.14 passam no
-  `engines` e falham no `ng serve`. O `node` do sistema (`/exec-daemon/node`) é
-  mais antigo e o nvm da VM pode estar desatualizado — não assuma que
-  `v22.22.3` já está instalado. `npm ci` roda com o Node do sistema; só
-  `ng serve`/`ng build` exigem range compatível. `infra/scripts/ci-e2e.sh`
-  resolve isso (`ensure_web_node` pina `WEB_NODE_MIN=22.22.3` via nvm quando o
-  PATH é incompatível), então prefira `task ux:stack` / `task test:e2e:ci` a
-  subir o web na mão.
-- **`task dev` NÃO funciona** neste ambiente: o interpretador do go-task (gosh)
-  não suporta `trap ... INT/TERM` nem o builtin `kill 0` da recipe. Rode API e
-  Web diretamente (dois processos, ex.: em tmux):
-  - API: `cd apps/api && dotnet run --no-launch-profile` com
-    `ASPNETCORE_ENVIRONMENT=Development`, `ASPNETCORE_URLS=http://localhost:5080`
-    e `ConnectionStrings__Database` = valor de `DATABASE_URL` do `.env`
-    (`set -a; source .env; set +a`). Escuta em `:5080`, `/health` deve dar `Healthy`.
-  - Web: `cd apps/web && npm start` (ng serve em `:4200`).
+- **Runtime sempre em Docker** — data plane e apps via Compose (`compose.yaml`);
+  não subir API/Web/Worker no host. Preferir `task apps` ou
+  `docker compose -f compose.yaml --profile apps up -d --build`. Keycloak leva
+  ~40s para ficar healthy.
+- **`task dev` NÃO é o caminho neste ambiente** (e o interpretador do go-task /
+  gosh não suporta `trap`/`kill 0` da recipe). Use Compose profile `apps`.
+- **Node/Angular no host** só para build/testes locais/CI (`npm ci`, `ng build`,
+  E2E). `infra/scripts/ci-e2e.sh` resolve Node incompatível via
+  `ensure_web_node` (`WEB_NODE_MIN=22.22.3`); prefira `task ux:stack` /
+  `task test:e2e:ci` a improvisar serve no host.
 - **Seed automático**: com `Seed:Enabled=true` (Development, já em
   `appsettings.Development.json`) a API aplica migrations e cria o tenant demo +
   `#geral` + alice/bob no startup. `task seed` só é necessário para re-seedar.
@@ -159,8 +149,8 @@ não óbvios de execução. Comandos padrão estão no `README.md` e `Taskfile.y
   (Alice/Bob/Demo) ou o header `X-Dev-User: alice|bob|demo`. É o caminho mais
   simples para exercitar envio de mensagem ponta a ponta (persiste em
   `messaging.messages`).
-- **Redis**: a app espera `localhost:6379` (formato StackExchange.Redis), não
-  `redis://...`. Falha de Redis é não-fatal (degrada presença/typing).
+- **Redis**: no Compose, a app usa o serviço `redis` da rede; falha de Redis é
+  não-fatal (degrada presença/typing).
 - **CRLF / `.env`**: scripts shell de infra e `DATABASE_URL` precisam de LF e de
   aspas, respectivamente (corrigido nesta branch). Se o Keycloak entrar em
   crash-loop com `role "keycloak" does not exist`, ou o migrate falhar com

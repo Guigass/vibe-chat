@@ -1,0 +1,20 @@
+---
+description: Runtime obrigatório via Docker Compose — não rodar stack no host
+alwaysApply: true
+---
+
+# Docker Runtime — VibeChat
+
+Este projeto **sempre** roda em Docker. Compose na raiz é a fonte da verdade.
+
+- Subir e operar via `docker compose` / tasks (`task setup`, `task apps`,
+  `task stop`, profiles `apps` / `tools` / `observability` / `proxy`).
+- Preferir profile `apps` (api + web + worker) para stack completa; data plane
+  (`postgres`, `redis`, `keycloak`, `minio`) sempre em containers.
+- Não orientar `dotnet run`, `npm start` / `ng serve` ou processos soltos no
+  host como caminho de execução — use containers.
+- `compose.override.yaml` é opcional de DX; o caminho oficial usa `compose.yaml`.
+- Healthchecks e `.env` / `.env.example` do Compose; sem secrets reais.
+- Se Docker estiver indisponível, instalar/iniciar o daemon (ex.:
+  `infra/scripts/agent-setup.sh` em Cloud) e seguir em Compose — não improvisar
+  runtime no host.
