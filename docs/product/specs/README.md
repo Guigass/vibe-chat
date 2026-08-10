@@ -4,8 +4,8 @@ Uma spec por item de backlog elegível ao Build (Waves 7–17). A automação de
 Build **só** implementa item que tenha
 spec aqui; sem spec, o item não é elegível.
 
-Baseline de 2026-07-27: **81 itens Planned, 81 specs, 81 classes R0–R3 e zero
-ID órfão/duplicado**. Regras de auditoria:
+Baseline atualizada em 2026-08-10: itens `Planned` W7–W17 com specs 1:1
+(incluindo B-165 / W7-9). Regras de auditoria:
 [`roadmap/qualidade-documental.md`](../../roadmap/qualidade-documental.md).
 
 Waves 11–17 estão autorizadas por D-16…D-28 e possuem specs executáveis. Todas
@@ -28,6 +28,7 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-104 | [Remover PrimeNG (spartan/ui + CDK)](B-104-remover-primeng.md) |
 | B-105 | [Catálogo de configuração self-host](B-105-catalogo-configuracao.md) |
 | B-106 | [Admin shell — nav, filtros e visibilidade por papel](B-106-admin-shell.md) |
+| B-165 | [Controle de versão do cliente web (cache / PWA)](B-165-controle-versao-cliente-web.md) |
 
 ### Wave 8 — Composição de mensagem
 

@@ -28,6 +28,10 @@ Compose-first (D-05). Sem Helm/K8s obrigatório.
 backup → migrate → worker → api → web → (proxy)
 ```
 
+Após o web subir, clientes com PWA/`ngsw` podem permanecer em shell antigo até
+reload. Com **B-165** entregue, o app deve oferecer CTA de atualização; até lá,
+hard refresh ou limpar dados do site é o workaround operacional.
+
 ## Verificação pós-upgrade
 
 - [ ] `GET /health` e `GET /ready` Healthy

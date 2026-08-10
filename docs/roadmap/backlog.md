@@ -90,6 +90,7 @@ backlog ficam no **Registro de GAPs** (`roadmap.md`).
 | B-078 | Limite de tamanho de body no envio | **Done (W7-5)** — `MessageBodyPolicies` (8000 UTF-16); 400 `MessageBodyTooLong`; contador no composer/thread/edit |
 | B-105 | Catálogo de configuração admin mínima no `.env` | **Done (W7-7)** — EMAIL__* injetado no api; retenção no worker; alias OpenRouter unificado; testes `ComposeConfigCatalogTests`; [spec](../product/specs/B-105-catalogo-configuracao.md) |
 | B-106 | Admin shell (nav, toolbars, listagens, filtros, visibilidade por papel) | Done (W7-8) — shell `/admin/*`, hide por claim (UX-005); matriz Admin/Auditor/Member; spec `docs/product/specs/B-106-admin-shell.md` |
+| B-165 | Controle de versão do cliente web (cache / PWA) | Planned (W7-9) — buildId + detecção SW/update + headers anti-cache no `index.html`; evita shell stale pós-deploy; fecha UX-007; [spec](../product/specs/B-165-controle-versao-cliente-web.md) |
 
 ## Paridade de mensageria — Waves 8 a 10
 
@@ -183,8 +184,9 @@ Pós-MVP: **P1.5** (B-070…B-072 Done; safety lane: BUG-006 Alta; BUG-002 alivi
 ver `docs/product/bug-findings.md`), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done.
 
 Ordem daqui para frente: **safety lane** (`BUG-*` Alta) antes de inventar ou
-avançar feature de wave; depois **Sustentação** residual e **paridade de
-mensageria** na ordem das waves — 8 (composição), 9 (leitura; B-163 bubble + B-094 fecha
+avançar feature de wave; depois residual de **Sustentação** (**W7-9 / B-165** —
+versão do cliente web / cache PWA) e **paridade de mensageria** na ordem das
+waves — 8 (composição), 9 (leitura; B-163 bubble + B-094 fecha
 BUG-002 / não lidas persistentes), 10 (notificações, organização, acesso e
 núcleo de plugins: B-109 → B-108 → B-110). Depois seguir W11–W17; a trilha
 avançada de plugins continua em W15 com B-066 → B-111/B-136. Dentro de cada

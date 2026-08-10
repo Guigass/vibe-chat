@@ -11,13 +11,13 @@ Snapshot de 2026-07-27, após D-28:
 | Controle | Resultado |
 |----------|-----------|
 | Decisões de produto | D-01…D-28, 28 IDs únicos, nenhuma aberta |
-| Itens de produto `Planned` | 81 entre W7 e W17 |
-| Specs de itens `Planned` | 81 arquivos, correspondência 1:1 |
+| Itens de produto `Planned` | 82 entre W7 e W17 (baseline 81 + B-165 em 2026-08-10) |
+| Specs de itens `Planned` | correspondência 1:1 (inclui B-165) |
 | IDs `Planned` sem spec | 0 |
 | Specs sem item `Planned` | 0 |
 | IDs `Planned` duplicados | 0 |
-| Specs com classe R0–R3 | 81 de 81 |
-| Seções obrigatórias por spec | 81 de 81 |
+| Specs com classe R0–R3 | 1:1 com Planned |
+| Seções obrigatórias por spec | 1:1 com Planned |
 | Findings UX abertos sem rota | 0 |
 | Links locais | 446 verificados em 170 arquivos Markdown/MDC; 0 quebrados |
 | `docker compose config --quiet` com `.env.example` | válido; profiles `apps`, `observability`, `proxy`, `tools` |

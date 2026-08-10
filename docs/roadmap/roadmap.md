@@ -135,7 +135,8 @@ Fila explícita para a automação de Build depois da Wave 6. Enquanto houver li
 `Planned` aqui, o Build pega dela. **W7-6 (B-104) Done** via [#82](https://github.com/Guigass/vibe-chat/pull/82)
 (spartan/ui + CDK; fecha UX-002). **W7-3 (B-076) Done** via [#84](https://github.com/Guigass/vibe-chat/pull/84)
 (Dependabot + `dependencias.md`). **W7-4 (CSP) Done**; **W7-5 (limite de body) Done**;
-**W7-8 (admin shell) Done**. Próximo elegível na Wave 7: W8 (paridade composição).
+**W7-8 (admin shell) Done**. Residual Planned: **W7-9 / B-165** (versão do
+cliente web / cache PWA). Depois disso, W8 (paridade composição).
 
 | ID | Trilha | Tarefa | Deps | Spec/evidência | Status |
 |----|--------|--------|------|----------------|--------|
@@ -147,6 +148,7 @@ Fila explícita para a automação de Build depois da Wave 6. Enquanto houver li
 | W7-5 | C/E | Limite de tamanho de body no envio; limite atual existe só na coluna | W2-1 | [B-078](../product/specs/B-078-limite-body-mensagem.md) | Done |
 | W7-7 | A/G | Catálogo de configuração admin mínima no `.env`; Compose/template alinhados | W6-8, W0-2 | [B-105](../product/specs/B-105-catalogo-configuracao.md) | Done |
 | W7-8 | D/G | Admin shell — nav, toolbars, listagens, filtros e hide por papel; após saída do PrimeNG | W7-6 | [B-106](../product/specs/B-106-admin-shell.md) | Done |
+| W7-9 | D/A | Controle de versão do cliente web — buildId, update SW e anti-cache (B-165; fecha UX-007) | W4-7, W6-8 | [B-165](../product/specs/B-165-controle-versao-cliente-web.md) | Planned |
 
 ### Critérios de aceite W7-7 (resumo)
 
@@ -164,6 +166,14 @@ Fila explícita para a automação de Build depois da Wave 6. Enquanto houver li
 - Sem banners “Sem permissão…” (UX-005 fechado); deep-link sem claim → área permitida
 - AuthZ de API intacta (`workspace.admin` / `admin.dashboard`); tokens `--vc-*`
 - Sem lib de UI comercial; B-104 já mergeado (sem PrimeNG)
+
+### Critérios de aceite W7-9 (resumo)
+
+- Build do web embute `version` + `buildId`; artefato/versão pública sem auth/PII
+- Pós-deploy com SW, o cliente oferece “Atualizar” sem limpar cache à mão
+- `index.html` / manifesto SW / version sem cache longo no nginx de referência
+- Reload só após CTA do usuário (preserva rascunho em digitação)
+- UX-007 fechado; runbook de upgrade cobre o fluxo
 
 ### Safety lane (bugs funcionais)
 
@@ -322,10 +332,10 @@ escreve aqui em vez de espalhar notas soltas pelas seções.
 ## Parallelismo sugerido por time de agentes
 
 ```text
-Agent-Infra     → W0-1, W0-2, W0-6, W5-*, W6-8, W7-7
+Agent-Infra     → W0-1, W0-2, W0-6, W5-*, W6-8, W7-7, W7-9 (headers cache web)
 Agent-Backend   → W0-3, W1-*, W2-1..W2-4, W3-1, W3-3, W4-*, W6-1, W6-2, W6-4..W6-6,
                   W8-4, W9-4, W10-1, W10-7, W10-11, W10-12, W10-13, W10-14
-Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7, W6-1..W6-3, W6-7, W7-6, W7-8,
+Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7, W6-1..W6-3, W6-7, W7-6, W7-8, W7-9,
                   W8-1..W8-3, W8-5..W8-8, W9-0..W9-3, W9-7, W10-5, W10-6
 Agent-QA        → W0-7, W1-5, W2-6, W2-7, W3-2, W3-5, W5-3, W6-1 E2E, W6-8 smoke, W7-1
 Agent-Security  → W3-1/W3-2 review, W6-5/W6-6 authZ + threat model, W7-3..W7-5,

@@ -19,6 +19,7 @@ Regras do registro:
 |----|------|--------|------------|--------|
 | UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de contraste |
 | UX-006 | Header | Botões de ícone (buscar, tema, densidade, painel) sem estado de hover/foco perceptível | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de foco |
+| UX-007 | Shell / PWA | Após deploy, o cliente fica em JS/shell antigos (cache / service worker) até limpar cache manualmente | Média | Aberto — fecha em **B-165** (W7-9) |
 
 ## Detalhamento
 
@@ -99,6 +100,15 @@ primeira área permitida, sem banner laranja/vermelho.
 
 Os ícones do cabeçalho não deixam claro que são clicáveis. Relacionado a B-103
 (indicador de foco visível), mas o hover é polimento independente.
+
+### UX-007 — Cliente web preso em versão antiga (cache / PWA)
+
+Observado após rebuild/redeploy do web: o browser continua servindo shell e
+bundles antigos via cache/`ngsw` até limpeza manual. UI e API ficam
+desencontradas; workaround atual é hard refresh ou apagar site data.
+
+Execução: **B-165** (W7-9) — buildId, detecção de update do SW, headers
+anti-cache em `index.html`/version e CTA de reload.
 
 ## Fechados
 
