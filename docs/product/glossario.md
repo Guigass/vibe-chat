@@ -10,12 +10,13 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Workspace** | Espaço de trabalho colaborativo dentro de um tenant. Agrupa people, spaces e configurações. Um tenant pode ter um ou mais workspaces. |
 | **Membership** | Vínculo usuário ↔ workspace (ou space/channel), com papéis e permissões. |
 | **Role / Permissão** | Papel (ex.: owner, admin, member, guest) e claims que autorizam ações. |
+| **Contact group / Grupo de contatos** | Agrupamento da **lista de pessoas** do workspace para navegação (B-166). Kind `department` (departamento compartilhado, ex.: Vendas, Estoque, TI; admin) ou `personal` (só o dono). **Não** é Space, **não** concede acesso a canal/DM e **não** substitui membership de autorização nem grupos SCIM (B-128). |
 
 ## Estrutura de conversa
 
 | Termo | Definição |
 |-------|-----------|
-| **Space** | Agrupamento organizacional dentro de um workspace (ex.: departamento, projeto, área). Contém canais. |
+| **Space** | Agrupamento organizacional de **canais** dentro de um workspace (ex.: área, projeto). Não organiza a lista de contatos — isso é Contact group (B-166). |
 | **Channel** | Canal de mensagens (público, privado ou DM). Unidade principal de conversa. |
 | **DM (Direct Message)** | Canal especial 1:1 ou grupo pequeno, sem Space obrigatório. |
 | **Thread** | Subconversa ancorada em uma mensagem pai dentro de um channel. |

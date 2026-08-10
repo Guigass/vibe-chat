@@ -116,7 +116,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | ID | Item | Notas |
 |----|------|-------|
 | B-163 | Message bubble moderno (layout tipado + ações + preview) | **Done** (W9-0) — alinhamento mine/theirs p/ todos os tipos; preview Image/PDF/Audio/Video; toolbar só no hover/focus + context menu; base antes de pin/salvos; [spec](../product/specs/B-163-message-bubble-context-menu.md) |
-| B-088 | Agrupamento, separadores e não lidas | Planned (W9-1) |
+| B-088 | Agrupamento, separadores e não lidas | **Done (W9-1)** — agrupamento 5 min, sticky de data, divisor local, jump + auto-scroll só no fim |
 | B-089 | Histórico paginado e pular para a mensagem | Planned (W9-2) — hoje janela fixa de 50 |
 | B-090 | Preview de anexos | Planned (W9-3) — miniatura no worker; UI tipada em B-163; purge remove junto |
 | B-091 | Link preview | Planned (W9-4) — **exige guarda de SSRF**; sem ela não passa |
@@ -164,7 +164,7 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 
 | Faixa | Tema | Estado |
 |-------|------|--------|
-| B-112…B-118, B-153/B-154 | Organização, onboarding, migração, diagnóstico, inbox e tópicos | Planned — W11 |
+| B-112…B-118, B-153/B-154, B-166 | Organização, onboarding, contatos, migração, diagnóstico, inbox e tópicos | Planned — W11 |
 | B-119…B-124 | Conhecimento, decisões, RAG, tarefas e formulários | Planned — W12 |
 | B-125…B-128, B-131, B-139, B-164 | Automações, incidentes, conectores, SSO e contratos | Planned — W13 |
 | B-129/B-130/B-132…B-134/B-146 | Segurança enterprise, SIEM, policies e capacidade | Planned — W14 |
@@ -185,7 +185,7 @@ ver `docs/product/bug-findings.md`), Wave 6, B-048, B-045, B-046, B-047 e B-075 
 
 Ordem daqui para frente: **safety lane** (`BUG-*` Alta) antes de inventar ou
 avançar feature de wave; depois **paridade de mensageria** na ordem das
-waves — 8 (composição; W8-9 / B-087 Done), 9 (leitura; W9-0 / B-163 Done; próximo W9-1 / B-088 + B-094 fecha
+waves — 8 (composição; W8-9 / B-087 Done), 9 (leitura; W9-0 / B-163 Done; W9-1 / B-088 Done; B-094 fecha
 BUG-002 / não lidas persistentes), 10 (notificações, organização, acesso e
 núcleo de plugins: B-109 → B-108 → B-110). Depois seguir W11–W17; a trilha
 avançada de plugins continua em W15 com B-066 → B-111/B-136. Dentro de cada

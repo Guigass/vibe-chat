@@ -11,7 +11,7 @@ Snapshot de 2026-07-27, após D-28:
 | Controle | Resultado |
 |----------|-----------|
 | Decisões de produto | D-01…D-28, 28 IDs únicos, nenhuma aberta |
-| Itens de produto `Planned` | 81 entre W7 e W17 (B-165/W7-9 Done em 2026-08-10) |
+| Itens de produto `Planned` | 82 entre W7 e W17 (B-166 catalogado em W11; B-165/W7-9 Done em 2026-08-10) |
 | Specs de itens `Planned` | correspondência 1:1 |
 | IDs `Planned` sem spec | 0 |
 | Specs sem item `Planned` | 0 |

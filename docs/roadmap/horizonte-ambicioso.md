@@ -47,6 +47,7 @@ completamente novas.
 | B-113 | C/D | Agendar mensagem, lembrete pessoal e “lembrar deste item” | W9-7, B-093 | [B-113](../product/specs/B-113-agendamento-lembretes.md) | Planned |
 | B-114 | C/D/E | Histórico de edição e movimentação de mensagens | B-107, B-089 | [B-114](../product/specs/B-114-historico-edicao-movimentacao.md) | Planned |
 | B-115 | B/D | Templates de workspace/channel e onboarding guiado | B-106 | [B-115](../product/specs/B-115-templates-onboarding.md) | Planned |
+| B-166 | B/D | Grupos na lista de contatos (departamentos + grupos pessoais) | B-021 | [B-166](../product/specs/B-166-grupos-contatos.md) | Planned |
 | B-153 | B/C/D/E/G | Migração/importação assistida de usuários, estrutura e histórico | B-089, B-115, B-046 | [B-153](../product/specs/B-153-migracao-importacao.md) | Planned |
 | B-154 | A/B/D/E/G | Diagnóstico administrativo e support bundle sanitizado | B-105, B-106, B-115 | [B-154](../product/specs/B-154-diagnostico-support-bundle.md) | Planned |
 | B-116 | B/D | Status personalizado, disponibilidade e agenda resumida | B-097 | [B-116](../product/specs/B-116-status-disponibilidade.md) | Planned |
@@ -61,6 +62,7 @@ completamente novas.
 - topics reutilizam Conversation/Thread ou justificam mudança por ADR.
 - migração usa dry-run, staging e adapters versionados sem criar credenciais;
 - diagnóstico/support bundle usa allowlist e não inclui conteúdo ou secrets.
+- lista de contatos agrupa departamentos (shared) e grupos pessoais sem alterar ACL.
 
 ## Wave 12 — Conhecimento e foco
 
