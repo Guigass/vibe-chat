@@ -596,6 +596,27 @@ public interface IOutboxProcessor
 - Renomear `EventType` só com dual-publish temporário
 - Contratos C#: mudanças breaking exigem atualização coordenada Api + Worker na mesma release (monólito facilita)
 
+### Cliente web — `GET /version.json` (B-165)
+
+Artefato estático público servido pelo container/nginx do web (não pela API).
+Sem autenticação, sem `tenant_id`, sem secret.
+
+| Campo | Tipo | Notas |
+|-------|------|-------|
+| `name` | string | Fixo `VibeChat.Web` |
+| `version` | string | SemVer do pacote web (ex.: `0.1.0`) |
+| `buildId` | string | Identificador curto do build (git SHA truncado ou equivalente CI) |
+
+O cliente embute o mesmo `version`/`buildId` no bootstrap e compara com
+`/version.json` (boot, focus/visibility, intervalo longo) e com
+`SwUpdate.versionUpdates` quando o service worker está ativo. Reload só após
+CTA explícito do usuário. `GET /api/v1/admin/version` permanece admin e descreve
+a API — não é dependência do caminho de update do PWA.
+
+Nginx de referência (`apps/web/nginx.conf`): `index.html`, `ngsw.json` e
+`version.json` usam `Cache-Control: no-cache, no-store, must-revalidate`;
+bundles com hash de conteúdo podem ser imutáveis.
+
 ## Anti-padrões
 
 - Passar entidades EF entre módulos

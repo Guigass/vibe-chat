@@ -42,6 +42,7 @@
     <article class="meta admin-panel">
       <h2>Versão</h2>
       <p class="mono">{{ s.appVersion }}</p>
+      <p class="mono admin-build-id">build {{ webBuildId }}</p>
       <a [href]="s.grafanaUrl" target="_blank" rel="noopener noreferrer">Abrir Grafana ↗</a>
     </article>
   </div>
@@ -119,6 +120,12 @@
 
   .health em[data-state='down'] {
     color: var(--vc-danger);
+  }
+
+  .admin-build-id {
+    margin: 0.35rem 0 0.85rem;
+    color: var(--vc-ink-muted);
+    font-size: 0.8rem;
   }
 
   @media (max-width: 720px) {

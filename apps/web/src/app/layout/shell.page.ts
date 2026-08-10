@@ -28,6 +28,7 @@ import {
   IconButton,
   Input,
   ThemeToggle,
+  UpdateBanner,
 } from '../shared/ui';
 import { AttachmentQueueService } from '../features/chat/composer/attachment-queue.service';
 import { collectFilesFromDataTransfer } from '../features/chat/composer/attachment-upload';
@@ -46,6 +47,7 @@ import { defaultSidebarOpen, SHELL_NARROW_MEDIA_QUERY } from './shell-viewport';
     SummarizeButton,
     SuggestReplyButton,
     ConnectionBanner,
+    UpdateBanner,
     ThemeToggle,
     DensityControl,
     IconButton,

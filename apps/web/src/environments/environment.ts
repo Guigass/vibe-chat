@@ -1,3 +1,5 @@
+import { webVersion } from './version.generated';
+
 export const environment = {
   production: true,
   apiUrl: 'http://localhost:5080',
@@ -14,5 +16,6 @@ export const environment = {
   // D-06: UI opt-in; production builds keep summarize hidden unless explicitly enabled.
   aiSummarizeEnabled: false,
   aiTranscribeEnabled: false,
-  appVersion: '0.1.0',
+  appVersion: webVersion.version,
+  buildId: webVersion.buildId,
 };

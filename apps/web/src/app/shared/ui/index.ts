@@ -13,5 +13,6 @@ export { EmojiPicker } from './emoji-picker/emoji-picker';
 export { MessageBubble } from './message-bubble/message-bubble';
 export { TypingIndicator } from './typing-indicator/typing-indicator';
 export { ConnectionBanner } from './connection-banner/connection-banner';
+export { UpdateBanner } from './update-banner/update-banner';
 export { ThemeToggle } from './theme-toggle/theme-toggle';
 export { DensityControl } from './density-control/density-control';

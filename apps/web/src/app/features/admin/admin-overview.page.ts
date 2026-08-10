@@ -15,6 +15,7 @@ import { AdminAreaId } from './admin-permissions';
 })
 export class AdminOverviewPage implements OnInit {
   readonly areaId: AdminAreaId = 'overview';
+  readonly webBuildId = environment.buildId;
 
   private readonly api = inject(ApiService);
   readonly ctx = inject(AdminContextService);

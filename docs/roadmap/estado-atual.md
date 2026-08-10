@@ -4,9 +4,9 @@ Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
 - **Data de corte:** 2026-08-10
-- **Fase:** Wave 7 — Sustentação / paridade (W8+)
-- **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 (cache web stale) fecha em **B-165**
-- **Próximo item elegível:** W7-9 / B-165 (controle de versão do cliente web); depois W8-8 / B-086 (Rascunho persistente); BUG-002 fecha em B-094 quando W9-7 elegível; W8-7 / B-085 Done (encaminhar mensagem)
+- **Fase:** Wave 8 — Paridade de composição (Wave 7 completa)
+- **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165)
+- **Próximo item elegível:** W8-8 / B-086 (Rascunho persistente); BUG-002 fecha em B-094 quando W9-7 elegível; W8-7 / B-085 Done (encaminhar mensagem); W7-9 / B-165 Done
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -24,8 +24,8 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
-2. fechar residual Wave 7: W7-9 / B-165 (versão do cliente web / cache PWA);
-3. avançar as Waves 8–10 de paridade de mensageria (depois: W8-8 / B-086);
+2. Wave 7 completa (W7-9 / B-165 Done — versão do cliente web / cache PWA);
+3. avançar as Waves 8–10 de paridade de mensageria (próximo: W8-8 / B-086);
 4. consumir o roadmap autorizado W11–W17.
 
 ## Runtime e fronteiras
@@ -79,20 +79,20 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W7-9 | Controle de versão do cliente web (B-165); residual Wave 7; evita shell/PWA stale |
-| 2 | W8-8 | Rascunho persistente (B-086); safety lane Alta vazia; B-085 Done |
-| 3 | W8-9+ | Demais itens Wave 8–9 Planned com spec |
+| 1 | W8-8 | Rascunho persistente (B-086); safety lane Alta vazia; Wave 7 Done |
+| 2 | W8-9+ | Demais itens Wave 8–9 Planned com spec |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
+W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
 
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W17. Ele não
 altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
 
 ## Baseline de planejamento
 
-- 82 itens `Planned` entre W7–W17 (B-104/W7-6 Done via #82; B-076/W7-3 Done via #84;
-  B-165/W7-9 adicionado 2026-08-10);
-- specs em correspondência 1:1 com itens Planned (inclui B-165);
+- 81 itens `Planned` entre W7–W17 (B-104/W7-6 Done via #82; B-076/W7-3 Done via #84;
+  B-165/W7-9 Done 2026-08-10);
+- specs em correspondência 1:1 com itens Planned;
 - classes R0–R3 declaradas nas specs;
 - nenhuma decisão D-* aberta;
 - pacotes R3, release/support, catálogo de contratos/flags, manuais e métricas
@@ -113,7 +113,7 @@ altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
 | CSP ausente no proxy/web | **Fechado** — `infra/nginx/security-headers.conf` (B-077) | B-077 Done |
 | Limite de mensagem só no banco | Registrado no roadmap | B-078 |
 | Dependências sem bot de atualização | **Fechado** (#84) — Dependabot ativo; triagem em `dependencias.md` | B-076 Done |
-| Cliente web preso em cache/PWA stale pós-deploy | Registrado — UX-007 / B-165 | W7-9 Planned |
+| Cliente web preso em cache/PWA stale pós-deploy | **Fechado** — UX-007 / B-165 | W7-9 Done |
 | `Moderation` é fronteira vazia | Assembly existe sem domínio material | Manter explícito; preencher só com feature autorizada |
 
 ## Decisões e limites vigentes

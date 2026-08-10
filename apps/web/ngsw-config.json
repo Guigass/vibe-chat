@@ -25,5 +25,17 @@
       }
     }
   ],
+  "dataGroups": [
+    {
+      "name": "web-version",
+      "urls": ["/version.json"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 1,
+        "maxAge": "0u",
+        "timeout": "5s"
+      }
+    }
+  ],
   "navigationUrls": ["/**", "!/**/*.*", "!/**/*__*", "!/**/*__*/**"]
 }

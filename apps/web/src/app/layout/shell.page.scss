@@ -122,6 +122,7 @@
 
 /* Angular hosts between flex children — keep header/banner fixed, timeline fills */
 .shell__main > vc-connection-banner,
+.shell__main > vc-update-banner,
 .shell__main > .shell__header,
 .shell__main > .shell__hint {
   flex: 0 0 auto;

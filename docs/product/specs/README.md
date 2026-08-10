@@ -5,7 +5,7 @@ Build **só** implementa item que tenha
 spec aqui; sem spec, o item não é elegível.
 
 Baseline atualizada em 2026-08-10: itens `Planned` W7–W17 com specs 1:1
-(incluindo B-165 / W7-9). Regras de auditoria:
+(W7-9 / B-165 Done). Regras de auditoria:
 [`roadmap/qualidade-documental.md`](../../roadmap/qualidade-documental.md).
 
 Waves 11–17 estão autorizadas por D-16…D-28 e possuem specs executáveis. Todas

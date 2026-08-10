@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { AppUpdateService } from './core/services/app-update.service';
 import { ThemeService } from './core/services/theme.service';
 
 @Component({
@@ -17,4 +18,9 @@ import { ThemeService } from './core/services/theme.service';
 export class App {
   /** Field inject applies data-theme synchronously on bootstrap. */
   private readonly theme = inject(ThemeService);
+  private readonly updates = inject(AppUpdateService);
+
+  constructor() {
+    this.updates.start();
+  }
 }

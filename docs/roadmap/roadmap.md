@@ -135,8 +135,8 @@ Fila explícita para a automação de Build depois da Wave 6. Enquanto houver li
 `Planned` aqui, o Build pega dela. **W7-6 (B-104) Done** via [#82](https://github.com/Guigass/vibe-chat/pull/82)
 (spartan/ui + CDK; fecha UX-002). **W7-3 (B-076) Done** via [#84](https://github.com/Guigass/vibe-chat/pull/84)
 (Dependabot + `dependencias.md`). **W7-4 (CSP) Done**; **W7-5 (limite de body) Done**;
-**W7-8 (admin shell) Done**. Residual Planned: **W7-9 / B-165** (versão do
-cliente web / cache PWA). Depois disso, W8 (paridade composição).
+**W7-8 (admin shell) Done**. **W7-9 / B-165 Done** (versão do cliente web /
+cache PWA; fecha UX-007). Wave 7 completa — seguir W8 (paridade composição).
 
 | ID | Trilha | Tarefa | Deps | Spec/evidência | Status |
 |----|--------|--------|------|----------------|--------|
@@ -148,7 +148,7 @@ cliente web / cache PWA). Depois disso, W8 (paridade composição).
 | W7-5 | C/E | Limite de tamanho de body no envio; limite atual existe só na coluna | W2-1 | [B-078](../product/specs/B-078-limite-body-mensagem.md) | Done |
 | W7-7 | A/G | Catálogo de configuração admin mínima no `.env`; Compose/template alinhados | W6-8, W0-2 | [B-105](../product/specs/B-105-catalogo-configuracao.md) | Done |
 | W7-8 | D/G | Admin shell — nav, toolbars, listagens, filtros e hide por papel; após saída do PrimeNG | W7-6 | [B-106](../product/specs/B-106-admin-shell.md) | Done |
-| W7-9 | D/A | Controle de versão do cliente web — buildId, update SW e anti-cache (B-165; fecha UX-007) | W4-7, W6-8 | [B-165](../product/specs/B-165-controle-versao-cliente-web.md) | Planned |
+| W7-9 | D/A | Controle de versão do cliente web — buildId, update SW e anti-cache (B-165; fecha UX-007) | W4-7, W6-8 | [B-165](../product/specs/B-165-controle-versao-cliente-web.md) | **Done** |
 
 ### Critérios de aceite W7-7 (resumo)
 

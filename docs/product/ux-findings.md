@@ -19,7 +19,6 @@ Regras do registro:
 |----|------|--------|------------|--------|
 | UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de contraste |
 | UX-006 | Header | Botões de ícone (buscar, tema, densidade, painel) sem estado de hover/foco perceptível | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de foco |
-| UX-007 | Shell / PWA | Após deploy, o cliente fica em JS/shell antigos (cache / service worker) até limpar cache manualmente | Média | Aberto — fecha em **B-165** (W7-9) |
 
 ## Detalhamento
 
@@ -110,6 +109,9 @@ desencontradas; workaround atual é hard refresh ou apagar site data.
 Execução: **B-165** (W7-9) — buildId, detecção de update do SW, headers
 anti-cache em `index.html`/version e CTA de reload.
 
+**Done** — `version.json` público + `buildId` embutido; `AppUpdateService` /
+`vc-update-banner`; nginx `no-cache` em shell/SW/version; runbook de upgrade.
+
 ## Fechados
 
 | ID | Tela | Achado | Severidade | Status |
@@ -117,3 +119,4 @@ anti-cache em `index.html`/version e CTA de reload.
 | UX-001 | Login | Os três botões DevAuth (Alice/Bob/Demo) renderizam como retângulos vazios, sem rótulo visível | Alta | **Done** — [#74](https://github.com/Guigass/vibe-chat/pull/74); hero fixa tokens invertidos; `.vc-btn` com `color` base |
 | UX-002 | Todas | Banner vermelho fixo “Invalid PrimeUI License” no canto inferior direito, **cobrindo “Anexar” e “Enviar”** do composer | Alta | **Done** — [#82](https://github.com/Guigass/vibe-chat/pull/82); B-104 remove `primeng`; spartan/ui + tabelas HTML |
 | UX-003 | Shell | Em viewport estreito (~400 px) a sidebar continua ocupando quase metade da largura; não há colapso nem botão de alternar | Alta | **Done** — [#80](https://github.com/Guigass/vibe-chat/pull/80); auto-collapse ≤960px + overlay/backdrop/Escape |
+| UX-007 | Shell / PWA | Após deploy, cliente fica em JS/shell antigos (cache / service worker) | Média | **Done** — B-165 / W7-9; `version.json` + SwUpdate + CTA “Atualizar” |

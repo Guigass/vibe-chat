@@ -68,16 +68,16 @@ nem sinal público de build para o cliente comparar.
 
 ## Aceite
 
-- [ ] Build do web embute `version` + `buildId` distintos entre dois deploys.
-- [ ] Artefato/endpoint público de versão responde sem autenticação e sem PII.
-- [ ] Com SW ativo, publicar build novo faz o cliente oferecer atualização sem
+- [x] Build do web embute `version` + `buildId` distintos entre dois deploys.
+- [x] Artefato/endpoint público de versão responde sem autenticação e sem PII.
+- [x] Com SW ativo, publicar build novo faz o cliente oferecer atualização sem
       limpeza manual de cache.
-- [ ] `index.html` (e manifesto SW / version) não ficam com cache longo no nginx
+- [x] `index.html` (e manifesto SW / version) não ficam com cache longo no nginx
       de referência.
-- [ ] Reload só ocorre após ação do usuário (ou política documentada equivalente
+- [x] Reload só ocorre após ação do usuário (ou política documentada equivalente
       que preserve rascunho).
-- [ ] Runbook/upgrade menciona o fluxo de cache do web.
-- [ ] Fecha **UX-007** quando o achado estiver registrado.
+- [x] Runbook/upgrade menciona o fluxo de cache do web.
+- [x] Fecha **UX-007** quando o achado estiver registrado.
 
 ## Testes
 

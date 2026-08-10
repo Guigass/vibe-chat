@@ -28,9 +28,18 @@ Compose-first (D-05). Sem Helm/K8s obrigatório.
 backup → migrate → worker → api → web → (proxy)
 ```
 
-Após o web subir, clientes com PWA/`ngsw` podem permanecer em shell antigo até
-reload. Com **B-165** entregue, o app deve oferecer CTA de atualização; até lá,
-hard refresh ou limpar dados do site é o workaround operacional.
+Após o web subir, clientes com PWA/`ngsw` podem detectar shell antigo.
+
+**Com B-165:** o app embute `version`/`buildId`, publica `/version.json` e,
+quando o service worker ou o `buildId` remoto diverge, mostra o banner
+“Nova versão disponível” com CTA **Atualizar**. O reload só ocorre após o
+clique (não apaga rascunho em digitação silenciosamente). Em lab (`ng serve`,
+SW desligado), a checagem de `/version.json` ainda funciona se o artefato
+estático for servido; no Compose/prod o SW (`ngsw`) participa do caminho.
+Operadores com CDN/proxy à frente do nginx de referência devem espelhar
+`Cache-Control: no-cache` em `index.html`, `ngsw.json` e `version.json`.
+
+Workaround legado (pré-B-165): hard refresh ou limpar dados do site.
 
 ## Verificação pós-upgrade
 
