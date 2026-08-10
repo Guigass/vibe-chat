@@ -1065,10 +1065,14 @@ v1.MapPost("/workspaces/{workspaceId:guid}/messages/{messageId:guid}/forward", a
             normalizedComment), ct);
 
         var messageIds = result.Messages.Select(x => x.MessageId).ToArray();
-        var attachments = await db.Attachments.AsNoTracking()
-            .Where(x => x.MessageId != null && messageIds.Contains(x.MessageId.Value))
+        var messageIdGuids = messageIds.Select(x => x.Value).ToHashSet();
+        var attachmentCandidates = await db.Attachments.AsNoTracking()
+            .Where(x => x.MessageId != null)
             .OrderBy(x => x.CreatedAt)
             .ToArrayAsync(ct);
+        var attachments = attachmentCandidates
+            .Where(x => x.MessageId is { } mid && messageIdGuids.Contains(mid.Value))
+            .ToArray();
         var attachmentsByMessage = attachments
             .GroupBy(x => x.MessageId!.Value.Value)
             .ToDictionary(

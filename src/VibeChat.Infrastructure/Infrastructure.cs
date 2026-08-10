@@ -169,6 +169,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Body).HasMaxLength(8000);
             entity.HasIndex(x => new { x.ConversationId, x.Sequence }).IsUnique();
             entity.HasIndex(x => x.ThreadId);
+            entity.HasIndex(x => x.ForwardedFromMessageId);
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

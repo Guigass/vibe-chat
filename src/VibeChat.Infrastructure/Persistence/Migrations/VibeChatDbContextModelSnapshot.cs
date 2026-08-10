@@ -324,6 +324,11 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<int>("ReferenceCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
 
@@ -335,8 +340,7 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StorageKey")
-                        .IsUnique();
+                    b.HasIndex("StorageKey");
 
                     b.HasIndex("TenantId", "ChannelId", "MessageId");
 
@@ -517,6 +521,12 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("EditedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("ForwardedFromChannelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ForwardedFromMessageId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("ReplyToMessageId")
                         .HasColumnType("uuid");
 
@@ -530,6 +540,8 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ForwardedFromMessageId");
 
                     b.HasIndex("ThreadId");
 
