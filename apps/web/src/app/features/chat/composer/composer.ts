@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
-import { Button, Textarea } from '../../../shared/ui';
+import { Button, IconButton, Textarea } from '../../../shared/ui';
 import {
   applyMarkdownWrap,
   handleMarkdownShortcut,
@@ -34,12 +34,12 @@ import {
 } from '../../../shared/models/chat.models';
 import { AttachmentQueueService } from './attachment-queue.service';
 import {
-  attachmentIcon,
+  attachmentIconKind,
   collectFilesFromClipboard,
   formatFileSize,
   resolveContentType,
 } from './attachment-upload';
-import type { PendingAttachment } from './attachment-upload';
+import type { AttachmentIconKind, PendingAttachment } from './attachment-upload';
 import { AudioRecorderService } from './audio-recorder.service';
 import { formatDuration } from './audio-recorder';
 import { drawAudioWaveform } from '../../../shared/utils/audio';
@@ -52,7 +52,7 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
 @Component({
   selector: 'vc-composer',
   standalone: true,
-  imports: [Button, Textarea, MentionAutocomplete, SlashAutocomplete, EmojiPicker],
+  imports: [Button, IconButton, Textarea, MentionAutocomplete, SlashAutocomplete, EmojiPicker],
   template: `
     <form class="composer" (submit)="onSubmit($event)">
       <div class="composer__main">
@@ -77,7 +77,39 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
             @for (item of attachments.items(); track item.localId) {
               <li class="composer__attachment" [class.is-failed]="item.status === 'failed'">
                 <span class="composer__attachment-icon" aria-hidden="true">
-                  {{ iconFor(item.file) }}
+                  @switch (iconKindFor(item.file)) {
+                    @case ('image') {
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                        <circle cx="9" cy="9" r="2" />
+                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                      </svg>
+                    }
+                    @case ('pdf') {
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
+                        <path d="M14 2v5a1 1 0 0 0 1 1h5" />
+                        <path d="M10 9H8" />
+                        <path d="M16 13H8" />
+                        <path d="M16 17H8" />
+                      </svg>
+                    }
+                    @case ('text') {
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
+                        <path d="M14 2v5a1 1 0 0 0 1 1h5" />
+                        <path d="M10 9H8" />
+                        <path d="M16 13H8" />
+                        <path d="M16 17H8" />
+                      </svg>
+                    }
+                    @default {
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
+                        <path d="M14 2v5a1 1 0 0 0 1 1h5" />
+                      </svg>
+                    }
+                  }
                 </span>
                 <div class="composer__attachment-meta">
                   <span class="composer__attachment-name">{{ item.file.name }}</span>
@@ -167,51 +199,158 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
           </aside>
         }
 
-        <div class="composer__format" role="toolbar" aria-label="Formatação de texto">
-          <button type="button" aria-label="Negrito" (click)="applyFormat('bold')"><strong>B</strong></button>
-          <button type="button" aria-label="Itálico" (click)="applyFormat('italic')"><em>I</em></button>
-          <button type="button" aria-label="Riscado" (click)="applyFormat('strike')"><s>S</s></button>
-          <button type="button" aria-label="Código inline" (click)="applyFormat('code')">&lt;/&gt;</button>
-          <div class="composer__emoji">
-            <button
-              type="button"
-              aria-label="Inserir emoji"
-              aria-haspopup="dialog"
-              [attr.aria-expanded]="emojiPickerOpen()"
-              (click)="toggleEmojiPicker($event)"
-            >
-              😀
-            </button>
-            <vc-emoji-picker
-              [open]="emojiPickerOpen()"
-              (select)="insertEmoji($event)"
-              (closed)="emojiPickerOpen.set(false)"
+        <div class="composer__shell">
+          <div class="composer__format" role="toolbar" aria-label="Formatação de texto">
+            <vc-icon-button label="Negrito" (click)="applyFormat('bold')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8" />
+              </svg>
+            </vc-icon-button>
+            <vc-icon-button label="Itálico" (click)="applyFormat('italic')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="19" x2="10" y1="4" y2="4" />
+                <line x1="14" x2="5" y1="20" y2="20" />
+                <line x1="15" x2="9" y1="4" y2="20" />
+              </svg>
+            </vc-icon-button>
+            <vc-icon-button label="Riscado" (click)="applyFormat('strike')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16 4H9a3 3 0 0 0-2.83 4" />
+                <path d="M14 12a4 4 0 0 1 0 8H6" />
+                <line x1="4" x2="20" y1="12" y2="12" />
+              </svg>
+            </vc-icon-button>
+            <vc-icon-button label="Código inline" (click)="applyFormat('code')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m16 18 6-6-6-6" />
+                <path d="m8 6-6 6 6 6" />
+              </svg>
+            </vc-icon-button>
+            <div class="composer__emoji">
+              <button
+                type="button"
+                class="composer__icon-btn"
+                aria-label="Inserir emoji"
+                aria-haspopup="dialog"
+                [attr.aria-expanded]="emojiPickerOpen()"
+                (click)="toggleEmojiPicker($event)"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M22 11v1a10 10 0 1 1-9-10" />
+                  <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                  <line x1="9" x2="9.01" y1="9" y2="9" />
+                  <line x1="15" x2="15.01" y1="9" y2="9" />
+                  <path d="M16 5h6" />
+                  <path d="M19 2v6" />
+                </svg>
+              </button>
+              <vc-emoji-picker
+                [open]="emojiPickerOpen()"
+                (select)="insertEmoji($event)"
+                (closed)="emojiPickerOpen.set(false)"
+              />
+            </div>
+          </div>
+
+          <div class="composer__input-wrap">
+            <vc-textarea
+              #composerTextarea
+              [(value)]="draft"
+              [placeholder]="'Mensagem em #' + (channels.activeChannel()?.name || 'channel')"
+              [label]="''"
+              (keydown)="onKeydown($event)"
+              (input)="onInput($event)"
+              (paste)="onPaste($event)"
+            />
+            <vc-mention-autocomplete
+              [open]="mentionOpen()"
+              [items]="mentionItems()"
+              [activeIndex]="mentionActiveIndex()"
+              (select)="applyMention($event)"
+            />
+            <vc-slash-autocomplete
+              [open]="slashOpen()"
+              [items]="slashItems()"
+              [activeIndex]="slashActiveIndex()"
+              (select)="applySlash($event)"
             />
           </div>
-        </div>
 
-        <div class="composer__input-wrap">
-          <vc-textarea
-            #composerTextarea
-            [(value)]="draft"
-            [placeholder]="'Mensagem em #' + (channels.activeChannel()?.name || 'channel')"
-            [label]="''"
-            (keydown)="onKeydown($event)"
-            (input)="onInput($event)"
-            (paste)="onPaste($event)"
-          />
-          <vc-mention-autocomplete
-            [open]="mentionOpen()"
-            [items]="mentionItems()"
-            [activeIndex]="mentionActiveIndex()"
-            (select)="applyMention($event)"
-          />
-          <vc-slash-autocomplete
-            [open]="slashOpen()"
-            [items]="slashItems()"
-            [activeIndex]="slashActiveIndex()"
-            (select)="applySlash($event)"
-          />
+          <div class="composer__actions">
+            <label class="composer__attach">
+              <input
+                type="file"
+                multiple
+                [disabled]="messages.sending() || !attachments.canAcceptMore()"
+                (change)="onFileSelected($event)"
+                accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain"
+                aria-label="Anexar arquivo"
+              />
+              <span class="composer__attach-face" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551" />
+                </svg>
+              </span>
+            </label>
+            @if (audioRecorder.supported) {
+              @if (audioRecorder.phase() === 'idle') {
+                <vc-icon-button
+                  label="Gravar áudio"
+                  [disabled]="messages.sending() || !attachments.canAcceptMore()"
+                  (click)="startRecording()"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 19v3" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <rect x="9" y="2" width="6" height="13" rx="3" />
+                  </svg>
+                </vc-icon-button>
+              } @else if (audioRecorder.phase() === 'recording') {
+                <div class="composer__audio-panel" aria-live="polite">
+                  <span class="composer__audio-timer">{{ formatDuration(audioRecorder.elapsedMs()) }}</span>
+                  <canvas #liveWave width="120" height="28" aria-hidden="true"></canvas>
+                  <button type="button" class="composer__audio-btn" (click)="stopRecording()" aria-label="Parar gravação">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect width="18" height="18" x="3" y="3" rx="2" />
+                      </svg>
+                      Parar
+                    </button>
+                  <button type="button" class="composer__audio-btn" (click)="discardRecording()" aria-label="Descartar gravação">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M10 11v6" />
+                      <path d="M14 11v6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                      <path d="M3 6h18" />
+                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                    Descartar
+                  </button>
+                </div>
+              } @else if (audioRecorder.phase() === 'preview') {
+                <div class="composer__audio-panel">
+                  @if (audioRecorder.previewUrl(); as previewUrl) {
+                    <audio [src]="previewUrl" controls aria-label="Prévia do áudio"></audio>
+                  }
+                  <button type="button" class="composer__audio-btn" (click)="discardRecording()" aria-label="Regravar áudio">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                      <path d="M3 3v5h5" />
+                    </svg>
+                    Regravar
+                  </button>
+                </div>
+              }
+            } @else {
+              <span class="composer__mic-hint" title="Use o anexo para enviar áudio">Mic indisponível</span>
+            }
+            <vc-button
+              type="submit"
+              [disabled]="submitDisabled()"
+              [loading]="messages.sending() || attachments.hasActiveUploads() || sendingAudio()"
+            >
+              {{ audioSubmitLabel() }}
+            </vc-button>
+          </div>
         </div>
         @if (showCounter()) {
           <p
@@ -223,55 +362,6 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
           </p>
         }
       </div>
-      <div class="composer__actions">
-        <label class="composer__attach">
-          <input
-            type="file"
-            multiple
-            [disabled]="messages.sending() || !attachments.canAcceptMore()"
-            (change)="onFileSelected($event)"
-            accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain"
-            aria-label="Anexar arquivo"
-          />
-          Anexar
-        </label>
-        @if (audioRecorder.supported) {
-          @if (audioRecorder.phase() === 'idle') {
-            <button
-              type="button"
-              class="composer__mic"
-              [disabled]="messages.sending() || !attachments.canAcceptMore()"
-              (click)="startRecording()"
-              aria-label="Gravar áudio"
-            >
-              Mic
-            </button>
-          } @else if (audioRecorder.phase() === 'recording') {
-            <div class="composer__audio-panel" aria-live="polite">
-              <span>{{ formatDuration(audioRecorder.elapsedMs()) }}</span>
-              <canvas #liveWave width="120" height="28" aria-hidden="true"></canvas>
-              <button type="button" class="ghost" (click)="stopRecording()">Parar</button>
-              <button type="button" class="ghost" (click)="discardRecording()">Descartar</button>
-            </div>
-          } @else if (audioRecorder.phase() === 'preview') {
-            <div class="composer__audio-panel">
-              @if (audioRecorder.previewUrl(); as previewUrl) {
-                <audio [src]="previewUrl" controls aria-label="Prévia do áudio"></audio>
-              }
-              <button type="button" class="ghost" (click)="discardRecording()">Regravar</button>
-            </div>
-          }
-        } @else {
-          <span class="composer__mic-hint" title="Use Anexar para enviar áudio">Mic indisponível</span>
-        }
-        <vc-button
-          type="submit"
-          [disabled]="submitDisabled()"
-          [loading]="messages.sending() || attachments.hasActiveUploads() || sendingAudio()"
-        >
-          {{ audioSubmitLabel() }}
-        </vc-button>
-      </div>
     </form>
   `,
   styles: `
@@ -280,24 +370,20 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
       flex: 0 0 auto;
     }
     .composer {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 0.75rem;
-      align-items: end;
-      padding: var(--vc-space-4);
+      padding: var(--vc-space-3);
       border-top: 1px solid var(--vc-border);
       background: color-mix(in srgb, var(--vc-surface-elevated) 88%, transparent);
     }
     .composer__main {
       display: grid;
-      gap: 0.45rem;
+      gap: var(--vc-space-2);
     }
     .composer__reply {
       display: grid;
       grid-template-columns: 1fr auto;
-      gap: 0.55rem;
+      gap: 0.45rem;
       align-items: start;
-      padding: 0.45rem 0.6rem;
+      padding: 0.35rem 0.5rem;
       border-left: 3px solid var(--vc-brand);
       border-radius: 0 var(--vc-radius-sm) var(--vc-radius-sm) 0;
       background: color-mix(in srgb, var(--vc-brand) 8%, transparent);
@@ -308,20 +394,57 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
       min-width: 0;
     }
     .composer__reply-meta strong {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--vc-brand);
     }
     .composer__reply-meta span {
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       color: var(--vc-ink-muted);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .composer__shell {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+      gap: 0.15rem 0.35rem;
+      padding: 0.3rem 0.4rem 0.35rem;
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-md);
+      background: var(--vc-composer-bg);
+      overflow: hidden;
+      transition:
+        border-color var(--vc-dur-fast) var(--vc-ease-out),
+        box-shadow var(--vc-dur-fast) var(--vc-ease-out);
+    }
+    .composer__shell:focus-within {
+      border-color: color-mix(in srgb, var(--vc-brand) 55%, var(--vc-border));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--vc-brand) 22%, transparent);
+    }
     .composer__input-wrap {
       position: relative;
       display: grid;
-      gap: 0.35rem;
+      gap: 0.25rem;
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+    .composer__input-wrap ::ng-deep .vc-field__control {
+      border: 0;
+      background: transparent;
+      min-height: 1.85rem;
+      max-height: 8rem;
+      padding: 0.2rem 0.35rem;
+      line-height: 1.4;
+      font-size: 0.92rem;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .composer__input-wrap ::ng-deep .vc-field__control:focus,
+    .composer__input-wrap ::ng-deep .vc-field__control:focus-visible {
+      outline: none;
+      border: 0;
+      box-shadow: none;
     }
     .composer__input-wrap vc-mention-autocomplete,
     .composer__input-wrap vc-slash-autocomplete {
@@ -333,9 +456,36 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
     }
     .composer__format {
       display: flex;
-      gap: 0.25rem;
+      gap: 0;
       align-items: center;
       position: relative;
+      grid-column: 1;
+      grid-row: 2;
+      min-width: 0;
+    }
+    .composer__format ::ng-deep .vc-icon-btn,
+    .composer__icon-btn,
+    .composer__actions ::ng-deep .vc-icon-btn {
+      width: 1.7rem;
+      height: 1.7rem;
+    }
+    .composer__icon-btn {
+      display: inline-grid;
+      place-items: center;
+      border: 1px solid transparent;
+      border-radius: var(--vc-radius-sm);
+      background: transparent;
+      color: var(--vc-ink-muted);
+      cursor: pointer;
+      padding: 0;
+      transition:
+        color var(--vc-dur-fast) var(--vc-ease-out),
+        background var(--vc-dur-fast) var(--vc-ease-out);
+    }
+    .composer__icon-btn:hover,
+    .composer__icon-btn:focus-visible {
+      color: var(--vc-ink);
+      background: color-mix(in srgb, var(--vc-brand) 12%, transparent);
     }
     .composer__emoji {
       position: relative;
@@ -346,48 +496,37 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
       bottom: calc(100% + 0.35rem);
       z-index: 5;
     }
-    .composer__format button {
-      border: 1px solid var(--vc-border);
-      background: var(--vc-surface);
-      color: var(--vc-ink-muted);
-      border-radius: var(--vc-radius-sm);
-      font: inherit;
-      font-size: 0.78rem;
-      line-height: 1;
-      min-width: 1.75rem;
-      min-height: 1.75rem;
-      cursor: pointer;
-      padding: 0.2rem 0.35rem;
-    }
-    .composer__format button:hover,
-    .composer__format button:focus-visible {
-      color: var(--vc-ink);
-      border-color: color-mix(in srgb, var(--vc-brand) 35%, var(--vc-border));
-    }
     .composer__attachments {
       list-style: none;
       margin: 0;
       padding: 0;
       display: grid;
-      gap: 0.45rem;
+      gap: 0.35rem;
     }
     .composer__attachment {
       display: grid;
       grid-template-columns: auto 1fr auto;
-      gap: 0.55rem;
+      gap: 0.45rem;
       align-items: center;
-      padding: 0.45rem 0.55rem;
+      padding: 0.35rem 0.45rem;
       border: 1px solid var(--vc-border);
       border-radius: var(--vc-radius-sm);
       background: color-mix(in srgb, var(--vc-surface) 92%, transparent);
-      font-size: 0.82rem;
+      font-size: 0.78rem;
     }
     .composer__attachment.is-failed {
       border-color: color-mix(in srgb, var(--vc-danger) 45%, var(--vc-border));
     }
+    .composer__attachment-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      color: var(--vc-ink-muted);
+    }
     .composer__attachment-meta {
       display: grid;
-      gap: 0.15rem;
+      gap: 0.1rem;
       min-width: 0;
     }
     .composer__attachment-name {
@@ -399,33 +538,33 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
     .composer__attachment-size,
     .composer__attachment-ready {
       color: var(--vc-ink-muted);
-      font-size: 0.75rem;
+      font-size: 0.7rem;
     }
     .composer__attachment-error {
       color: var(--vc-danger);
-      font-size: 0.75rem;
+      font-size: 0.7rem;
     }
     .composer__attachment-progress {
       width: 100%;
-      height: 0.35rem;
+      height: 0.3rem;
       accent-color: var(--vc-brand);
     }
     .composer__attachment-actions {
       display: flex;
-      gap: 0.35rem;
+      gap: 0.3rem;
       align-items: center;
     }
     .composer__attachment-remove {
-      font-size: 1.1rem;
+      font-size: 1rem;
       line-height: 1;
     }
     .composer__validation {
       margin: 0;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       color: var(--vc-danger);
     }
     .composer__notice {
-      padding: 0.55rem 0.7rem;
+      padding: 0.45rem 0.6rem;
       border: 1px solid var(--vc-border);
       border-radius: var(--vc-radius-md);
       background: var(--vc-surface-elevated);
@@ -438,26 +577,24 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.2rem;
     }
     .composer__notice p {
       margin: 0;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: var(--vc-ink-muted);
-      line-height: 1.4;
+      line-height: 1.35;
       white-space: pre-wrap;
     }
     .composer__notice ul {
-      margin: 0.35rem 0 0;
+      margin: 0.3rem 0 0;
       padding-left: 1.1rem;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--vc-ink-muted);
     }
     .composer__notice--error p {
       color: var(--vc-danger);
     }
-    .composer__file .ghost,
-    .composer__attach,
     .ghost {
       border: 0;
       background: transparent;
@@ -468,14 +605,43 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
     }
     .composer__actions {
       display: flex;
-      gap: 0.65rem;
+      gap: 0.15rem;
       align-items: center;
+      flex-wrap: wrap;
+      grid-column: 2;
+      grid-row: 2;
+      justify-self: end;
+    }
+    .composer__actions ::ng-deep .vc-btn {
+      min-height: 1.85rem;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.82rem;
     }
     .composer__attach {
       position: relative;
       overflow: hidden;
-      font-size: 0.9rem;
-      white-space: nowrap;
+      display: inline-grid;
+      place-items: center;
+      width: 1.7rem;
+      height: 1.7rem;
+      border-radius: var(--vc-radius-sm);
+      color: var(--vc-ink-muted);
+      cursor: pointer;
+      transition:
+        color var(--vc-dur-fast) var(--vc-ease-out),
+        background var(--vc-dur-fast) var(--vc-ease-out);
+    }
+    .composer__attach:hover {
+      color: var(--vc-ink);
+      background: color-mix(in srgb, var(--vc-brand) 12%, transparent);
+    }
+    .composer__attach:has(input:disabled) {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .composer__attach:has(input:disabled):hover {
+      color: var(--vc-ink-muted);
+      background: transparent;
     }
     .composer__attach input {
       position: absolute;
@@ -483,40 +649,61 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
       opacity: 0;
       cursor: pointer;
     }
-    .composer__mic,
-    .composer__mic-hint {
-      border: 0;
-      background: transparent;
-      color: var(--vc-brand);
-      font: inherit;
-      font-size: 0.82rem;
-      cursor: pointer;
-      padding: 0.35rem 0.5rem;
+    .composer__attach:has(input:disabled) input {
+      cursor: not-allowed;
+    }
+    .composer__attach-face {
+      display: inline-grid;
+      place-items: center;
+      pointer-events: none;
     }
     .composer__mic-hint {
       color: var(--vc-ink-subtle);
       cursor: help;
-      font-size: 0.72rem;
+      font-size: 0.68rem;
+      padding: 0.2rem 0.35rem;
     }
     .composer__audio-panel {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.45rem;
+      gap: 0.35rem;
       align-items: center;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       color: var(--vc-ink-muted);
+      flex: 1 1 auto;
+      min-width: 0;
     }
-    .composer__audio-panel .ghost {
-      padding: 0.25rem 0.4rem;
+    .composer__audio-timer {
+      font-variant-numeric: tabular-nums;
       font-weight: 600;
+      color: var(--vc-brand);
+    }
+    .composer__audio-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      border: 0;
+      background: transparent;
+      color: var(--vc-brand);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15rem 0.3rem;
+      border-radius: var(--vc-radius-sm);
+    }
+    .composer__audio-btn:hover,
+    .composer__audio-btn:focus-visible {
+      background: color-mix(in srgb, var(--vc-brand) 12%, transparent);
+      color: var(--vc-ink);
     }
     .composer__audio-panel audio {
-      max-width: 12rem;
-      height: 1.8rem;
+      max-width: 10rem;
+      height: 1.6rem;
     }
     .composer__counter {
       margin: 0;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: var(--vc-ink-subtle);
       text-align: right;
     }
@@ -524,11 +711,19 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
       color: var(--vc-danger);
     }
     @media (max-width: 720px) {
-      .composer {
+      .composer__shell {
         grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+      }
+      .composer__format {
+        grid-column: 1;
+        grid-row: 2;
       }
       .composer__actions {
-        justify-content: space-between;
+        grid-column: 1;
+        grid-row: 3;
+        justify-self: stretch;
+        justify-content: flex-end;
       }
     }
   `,
@@ -647,8 +842,8 @@ export class Composer {
     return replyPreviewText(body);
   }
 
-  iconFor(file: File): string {
-    return attachmentIcon(resolveContentType(file));
+  iconKindFor(file: File): AttachmentIconKind {
+    return attachmentIconKind(resolveContentType(file));
   }
 
   sizeFor(item: PendingAttachment): string {

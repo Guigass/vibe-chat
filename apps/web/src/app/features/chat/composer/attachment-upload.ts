@@ -96,9 +96,11 @@ export function collectFilesFromClipboard(dataTransfer: DataTransfer | null): Fi
   return files;
 }
 
-export function attachmentIcon(contentType: string): string {
-  if (contentType.startsWith('image/')) return '🖼';
-  if (contentType === 'application/pdf') return '📄';
-  if (contentType.startsWith('text/')) return '📝';
-  return '📎';
+export type AttachmentIconKind = 'image' | 'pdf' | 'text' | 'file';
+
+export function attachmentIconKind(contentType: string): AttachmentIconKind {
+  if (contentType.startsWith('image/')) return 'image';
+  if (contentType === 'application/pdf') return 'pdf';
+  if (contentType.startsWith('text/')) return 'text';
+  return 'file';
 }
