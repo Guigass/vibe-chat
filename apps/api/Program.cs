@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.IO.Compression;
 using System.Security.Claims;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -2260,6 +2262,325 @@ v1.MapGet("/channels/{channelId:guid}/pins", async (
     return Results.Ok(new ChannelPinsResponse(rows, rows.Length, PinPolicies.MaxPinnedPerChannel));
 });
 
+v1.MapPost("/workspaces/{workspaceId:guid}/saved", async (
+    Guid workspaceId,
+    SaveMessageRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    var noteError = ValidateSavedNote(request.Note, out var note);
+    if (noteError is not null)
+    {
+        return Results.BadRequest(noteError);
+    }
+
+    var resolved = await ResolveReadableMessageAsync(db, tenant, workspace, profile.Id, new MessageId(request.MessageId), ct);
+    if (resolved is null)
+    {
+        return Results.Forbid();
+    }
+
+    var (message, channel) = resolved.Value;
+    if (message.DeletedAt is not null)
+    {
+        return Results.NotFound();
+    }
+
+    var existing = await db.SavedMessages.FirstOrDefaultAsync(
+        x => x.UserId == profile.Id && x.MessageId == message.Id,
+        ct);
+    if (existing is not null)
+    {
+        if (note is not null && !string.Equals(existing.Note, note, StringComparison.Ordinal))
+        {
+            existing.Note = note;
+            await db.SaveChangesAsync(ct);
+        }
+
+        return Results.Ok(await ToSavedMessageResponseAsync(db, existing, message, channel, profile.Id, ct));
+    }
+
+    var saved = new SavedMessage
+    {
+        Id = Guid.NewGuid(),
+        TenantId = workspace.TenantId,
+        UserId = profile.Id,
+        MessageId = message.Id,
+        ChannelId = channel.Id,
+        Note = note,
+        CompletedAt = null,
+        CreatedAt = clock.UtcNow
+    };
+    db.SavedMessages.Add(saved);
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(await ToSavedMessageResponseAsync(db, saved, message, channel, profile.Id, ct));
+});
+
+v1.MapPatch("/workspaces/{workspaceId:guid}/saved/{messageId:guid}", async (
+    Guid workspaceId,
+    Guid messageId,
+    PatchSavedMessageRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    var saved = await db.SavedMessages.FirstOrDefaultAsync(
+        x => x.UserId == profile.Id && x.MessageId == new MessageId(messageId),
+        ct);
+    if (saved is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (request.Note is not null)
+    {
+        var noteError = ValidateSavedNote(request.Note, out var note);
+        if (noteError is not null)
+        {
+            return Results.BadRequest(noteError);
+        }
+
+        saved.Note = note;
+    }
+
+    if (request.Completed.HasValue)
+    {
+        saved.CompletedAt = request.Completed.Value ? (saved.CompletedAt ?? clock.UtcNow) : null;
+    }
+
+    await db.SaveChangesAsync(ct);
+
+    var message = await db.Messages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == saved.MessageId, ct);
+    var channel = await db.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == saved.ChannelId, ct);
+    if (message is null || channel is null)
+    {
+        var fallbackName = channel is null
+            ? string.Empty
+            : await ResolveSavedChannelDisplayNameAsync(db, channel, profile.Id, ct);
+        return Results.Ok(new SavedMessageResponse(
+            saved.MessageId.Value,
+            saved.ChannelId.Value,
+            fallbackName,
+            channel?.Type.ToString() ?? "Public",
+            0,
+            Guid.Empty,
+            string.Empty,
+            "Mensagem removida",
+            saved.Note,
+            saved.CompletedAt,
+            saved.CreatedAt,
+            MessageRemoved: true));
+    }
+
+    return Results.Ok(await ToSavedMessageResponseAsync(db, saved, message, channel, profile.Id, ct));
+});
+
+v1.MapDelete("/workspaces/{workspaceId:guid}/saved/{messageId:guid}", async (
+    Guid workspaceId,
+    Guid messageId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    var saved = await db.SavedMessages.FirstOrDefaultAsync(
+        x => x.UserId == profile.Id && x.MessageId == new MessageId(messageId),
+        ct);
+    if (saved is null)
+    {
+        return Results.NoContent();
+    }
+
+    db.SavedMessages.Remove(saved);
+    await db.SaveChangesAsync(ct);
+    return Results.NoContent();
+});
+
+v1.MapGet("/workspaces/{workspaceId:guid}/saved", async (
+    Guid workspaceId,
+    bool? completed,
+    int? limit,
+    string? cursor,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    var pageSize = Math.Clamp(limit ?? SavedMessagePolicies.DefaultPageSize, 1, SavedMessagePolicies.MaxPageSize);
+    var wantCompleted = completed == true;
+    if (!TryParseSavedCursor(cursor, out var cursorCreatedAt, out var cursorId))
+    {
+        return Results.BadRequest(new { error = "InvalidCursor" });
+    }
+
+    var pendingCount = await (
+        from saved in db.SavedMessages.AsNoTracking()
+        join channel in db.Channels.AsNoTracking() on saved.ChannelId equals channel.Id
+        where saved.UserId == profile.Id
+            && saved.CompletedAt == null
+            && channel.WorkspaceId == workspace.Id
+            && (
+                (
+                    (channel.Type == ChannelType.Public || channel.Type == ChannelType.Announcement)
+                    && db.WorkspaceMembers.Any(wm =>
+                        wm.TenantId == workspace.TenantId
+                        && wm.WorkspaceId == channel.WorkspaceId
+                        && wm.UserId == profile.Id)
+                )
+                || (
+                    channel.Type != ChannelType.Public
+                    && channel.Type != ChannelType.Announcement
+                    && db.ChannelMembers.Any(cm =>
+                        cm.TenantId == workspace.TenantId
+                        && cm.ChannelId == channel.Id
+                        && cm.UserId == profile.Id)
+                )
+            )
+        select saved.Id).CountAsync(ct);
+
+    var query =
+        from saved in db.SavedMessages.AsNoTracking()
+        join msg in db.Messages.AsNoTracking() on saved.MessageId equals msg.Id into msgJoin
+        from msg in msgJoin.DefaultIfEmpty()
+        join channel in db.Channels.AsNoTracking() on saved.ChannelId equals channel.Id into channelJoin
+        from channel in channelJoin.DefaultIfEmpty()
+        join author in db.UserProfiles.AsNoTracking() on msg.AuthorId equals author.Id into authorJoin
+        from author in authorJoin.DefaultIfEmpty()
+        where saved.UserId == profile.Id
+            && (wantCompleted ? saved.CompletedAt != null : saved.CompletedAt == null)
+            && channel != null
+            && channel.WorkspaceId == workspace.Id
+            && (
+                (
+                    (channel.Type == ChannelType.Public || channel.Type == ChannelType.Announcement)
+                    && db.WorkspaceMembers.Any(wm =>
+                        wm.TenantId == workspace.TenantId
+                        && wm.WorkspaceId == channel.WorkspaceId
+                        && wm.UserId == profile.Id)
+                )
+                || (
+                    channel.Type != ChannelType.Public
+                    && channel.Type != ChannelType.Announcement
+                    && db.ChannelMembers.Any(cm =>
+                        cm.TenantId == workspace.TenantId
+                        && cm.ChannelId == channel.Id
+                        && cm.UserId == profile.Id)
+                )
+            )
+        select new
+        {
+            saved.Id,
+            saved.MessageId,
+            saved.ChannelId,
+            ChannelName = channel.Name,
+            ChannelType = channel.Type,
+            Sequence = msg != null ? msg.Sequence : 0L,
+            AuthorId = msg != null ? msg.AuthorId : default(UserId),
+            AuthorName = author != null ? author.DisplayName : string.Empty,
+            Body = msg != null ? msg.Body : string.Empty,
+            Deleted = msg == null || msg.DeletedAt != null,
+            saved.Note,
+            saved.CompletedAt,
+            saved.CreatedAt
+        };
+
+    if (cursorCreatedAt is not null && cursorId is not null)
+    {
+        var cAt = cursorCreatedAt.Value;
+        var cId = cursorId.Value;
+        query = query.Where(x =>
+            x.CreatedAt < cAt || (x.CreatedAt == cAt && x.Id < cId));
+    }
+
+    var rawRows = await query
+        .OrderByDescending(x => x.CreatedAt)
+        .ThenByDescending(x => x.Id)
+        .Take(pageSize + 1)
+        .ToListAsync(ct);
+
+    string? nextCursor = null;
+    if (rawRows.Count > pageSize)
+    {
+        var last = rawRows[pageSize - 1];
+        nextCursor = EncodeSavedCursor(last.CreatedAt, last.Id);
+        rawRows = rawRows.Take(pageSize).ToList();
+    }
+
+    var channelStubs = rawRows
+        .GroupBy(x => x.ChannelId.Value)
+        .Select(g =>
+        {
+            var first = g.First();
+            return new Channel { Id = first.ChannelId, Type = first.ChannelType, Name = first.ChannelName };
+        })
+        .ToArray();
+    var peers = await ResolveDirectPeersAsync(channelStubs, profile.Id, db, ct);
+
+    var items = rawRows
+        .Select(x =>
+        {
+            var channelName = x.ChannelName;
+            if (x.ChannelType == ChannelType.Direct)
+            {
+                channelName = peers.TryGetValue(x.ChannelId, out var peer) && !string.IsNullOrWhiteSpace(peer.DisplayName)
+                    ? peer.DisplayName
+                    : "DM";
+            }
+
+            return new SavedMessageResponse(
+                x.MessageId.Value,
+                x.ChannelId.Value,
+                channelName,
+                x.ChannelType.ToString(),
+                x.Sequence,
+                x.AuthorId.Value,
+                x.AuthorName,
+                x.Deleted ? "Mensagem removida" : TruncateReplyPreview(x.Body),
+                x.Note,
+                x.CompletedAt,
+                x.CreatedAt,
+                x.Deleted);
+        })
+        .ToArray();
+
+    return Results.Ok(new SavedMessagesPageResponse(items, nextCursor, pendingCount));
+});
+
 v1.MapGet("/channels/{channelId:guid}/messages/{messageId:guid}/reactions/{emoji}/users", async (
     Guid channelId,
     Guid messageId,
@@ -4033,6 +4354,162 @@ static async Task<Message?> FindDirectChannelMessageAsync(
 static Task<int> CountPinsAsync(VibeChatDbContext db, ChannelId channelId, CancellationToken ct) =>
     db.PinnedMessages.CountAsync(x => x.ChannelId == channelId, ct);
 
+static object? ValidateSavedNote(string? note, out string? normalized)
+{
+    normalized = null;
+    if (note is null)
+    {
+        return null;
+    }
+
+    var trimmed = note.Trim();
+    if (trimmed.Length == 0)
+    {
+        normalized = null;
+        return null;
+    }
+
+    if (trimmed.Length > SavedMessagePolicies.MaxNoteLength)
+    {
+        return new
+        {
+            error = "NoteTooLong",
+            message = $"Nota pode ter no máximo {SavedMessagePolicies.MaxNoteLength} caracteres.",
+            max = SavedMessagePolicies.MaxNoteLength
+        };
+    }
+
+    normalized = trimmed;
+    return null;
+}
+
+static bool TryParseSavedCursor(string? cursor, out DateTimeOffset? createdAt, out Guid? id)
+{
+    createdAt = null;
+    id = null;
+    if (string.IsNullOrWhiteSpace(cursor))
+    {
+        return true;
+    }
+
+    try
+    {
+        var raw = Encoding.UTF8.GetString(Convert.FromBase64String(cursor));
+        var parts = raw.Split('|', 2);
+        if (parts.Length != 2
+            || !DateTimeOffset.TryParse(parts[0], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
+            || !Guid.TryParse(parts[1], out var guid))
+        {
+            return false;
+        }
+
+        createdAt = at;
+        id = guid;
+        return true;
+    }
+    catch (FormatException)
+    {
+        return false;
+    }
+}
+
+static string EncodeSavedCursor(DateTimeOffset createdAt, Guid id) =>
+    Convert.ToBase64String(Encoding.UTF8.GetBytes($"{createdAt.ToString("O", CultureInfo.InvariantCulture)}|{id:D}"));
+
+static async Task<(Message Message, Channel Channel)?> ResolveReadableMessageAsync(
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    Workspace workspace,
+    UserId userId,
+    MessageId messageId,
+    CancellationToken ct)
+{
+    var message = await db.Messages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == messageId, ct);
+    if (message is null || message.TenantId != workspace.TenantId)
+    {
+        return null;
+    }
+
+    ChannelId channelId;
+    if (message.ThreadId is Guid threadId)
+    {
+        var thread = await db.MessageThreads.AsNoTracking().FirstOrDefaultAsync(x => x.Id == threadId, ct);
+        if (thread is null)
+        {
+            return null;
+        }
+
+        channelId = thread.ChannelId;
+    }
+    else
+    {
+        channelId = message.ConversationId;
+    }
+
+    var channel = await ResolveChannelAsync(channelId, userId, db, tenant, ct);
+    if (channel is null || channel.WorkspaceId != workspace.Id)
+    {
+        return null;
+    }
+
+    return (message, channel);
+}
+
+static async Task<SavedMessageResponse> ToSavedMessageResponseAsync(
+    VibeChatDbContext db,
+    SavedMessage saved,
+    Message message,
+    Channel channel,
+    UserId viewerId,
+    CancellationToken ct)
+{
+    var removed = message.DeletedAt is not null;
+    var authorName = string.Empty;
+    if (!removed)
+    {
+        authorName = await db.UserProfiles.AsNoTracking()
+            .Where(x => x.Id == message.AuthorId)
+            .Select(x => x.DisplayName)
+            .FirstOrDefaultAsync(ct) ?? string.Empty;
+    }
+
+    var channelName = await ResolveSavedChannelDisplayNameAsync(db, channel, viewerId, ct);
+
+    return new SavedMessageResponse(
+        saved.MessageId.Value,
+        saved.ChannelId.Value,
+        channelName,
+        channel.Type.ToString(),
+        message.Sequence,
+        message.AuthorId.Value,
+        authorName,
+        removed ? "Mensagem removida" : TruncateReplyPreview(message.Body),
+        saved.Note,
+        saved.CompletedAt,
+        saved.CreatedAt,
+        removed);
+}
+
+static async Task<string> ResolveSavedChannelDisplayNameAsync(
+    VibeChatDbContext db,
+    Channel channel,
+    UserId viewerId,
+    CancellationToken ct)
+{
+    if (channel.Type != ChannelType.Direct)
+    {
+        return channel.Name;
+    }
+
+    var peers = await ResolveDirectPeersAsync([channel], viewerId, db, ct);
+    if (peers.TryGetValue(channel.Id, out var peer) && !string.IsNullOrWhiteSpace(peer.DisplayName))
+    {
+        return peer.DisplayName;
+    }
+
+    return "DM";
+}
+
 static Task EmitPinChangedAsync(
     IOutboxWriter outbox,
     TenantId tenantId,
@@ -4786,6 +5263,26 @@ public sealed record ChannelPinsResponse(
     PinnedMessageResponse[] Pins,
     int Count,
     int Limit);
+
+public sealed record SaveMessageRequest(Guid MessageId, string? Note = null);
+public sealed record PatchSavedMessageRequest(string? Note = null, bool? Completed = null);
+public sealed record SavedMessageResponse(
+    Guid MessageId,
+    Guid ChannelId,
+    string ChannelName,
+    string ChannelType,
+    long Sequence,
+    Guid AuthorUserId,
+    string AuthorName,
+    string BodyPreview,
+    string? Note,
+    DateTimeOffset? CompletedAt,
+    DateTimeOffset CreatedAt,
+    bool MessageRemoved = false);
+public sealed record SavedMessagesPageResponse(
+    SavedMessageResponse[] Items,
+    string? NextCursor,
+    int PendingCount);
 
 public sealed record LinkPreviewResponse(
     Guid Id,

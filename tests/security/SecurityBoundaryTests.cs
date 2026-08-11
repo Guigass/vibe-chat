@@ -745,6 +745,79 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Cross_tenant_cannot_save_foreign_message()
+    {
+        var (foreignWorkspaceId, foreignChannelId) = await SeedCrossTenantWorkspaceWithMessageAsync();
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        await using var db = factory.CreateMigratorDbContext();
+        var foreignMessageId = await db.Messages.IgnoreQueryFilters()
+            .Where(x => x.ConversationId == new ChannelId(foreignChannelId))
+            .Select(x => x.Id.Value)
+            .FirstAsync();
+
+        var saveForeignWorkspace = await client.PostAsJsonAsync(
+            $"/api/v1/workspaces/{foreignWorkspaceId}/saved",
+            new { messageId = foreignMessageId });
+        saveForeignWorkspace.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var saveLocalWorkspace = await client.PostAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/saved",
+            new { messageId = foreignMessageId });
+        saveLocalWorkspace.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var list = await client.GetAsync($"/api/v1/workspaces/{foreignWorkspaceId}/saved");
+        list.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Saved_message_soft_hides_when_private_channel_membership_lost()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+
+        var channelName = $"saved-priv-{Guid.NewGuid():N}"[..20];
+        var createChannel = await client.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/channels",
+            new { name = channelName, type = "Private", spaceId = (Guid?)null });
+        createChannel.EnsureSuccessStatusCode();
+        var channel = await createChannel.Content.ReadFromJsonAsync<ChannelDto>();
+        channel.Should().NotBeNull();
+
+        var messageId = Guid.NewGuid();
+        var create = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{channel!.Id}/messages",
+            new SendMessageRequest(messageId, $"sec-saved-{messageId:N}", "private-save", null, null));
+        create.EnsureSuccessStatusCode();
+
+        var save = await client.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/saved",
+            new { messageId });
+        save.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var before = await client.GetFromJsonAsync<SavedMessagesPageDto>(
+            $"/api/v1/workspaces/{workspaceId}/saved?completed=false&limit=50");
+        before!.Items.Should().Contain(x => x.MessageId == messageId);
+
+        await using var db = factory.CreateMigratorDbContext();
+        var membership = await db.ChannelMembers.IgnoreQueryFilters()
+            .SingleAsync(x => x.ChannelId == new ChannelId(channel.Id) && x.UserId == SeedData.AliceUserId);
+        db.ChannelMembers.Remove(membership);
+        await db.SaveChangesAsync();
+
+        var after = await client.GetFromJsonAsync<SavedMessagesPageDto>(
+            $"/api/v1/workspaces/{workspaceId}/saved?completed=false&limit=50");
+        after!.Items.Should().NotContain(x => x.MessageId == messageId);
+
+        var rowStillExists = await db.SavedMessages.IgnoreQueryFilters()
+            .AnyAsync(x => x.UserId == SeedData.AliceUserId && x.MessageId == new MessageId(messageId));
+        rowStillExists.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Direct_message_is_hidden_from_non_members()
     {
         using var alice = factory.CreateClient();
@@ -778,6 +851,8 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     private sealed record AttachmentUploadDto(Guid AttachmentId, string UploadUrl);
     private sealed record SearchMessageHitDto(Guid MessageId, Guid ChannelId, string BodyPreview);
     private sealed record SearchMessagesDto(string Query, int Limit, SearchMessageHitDto[] Items);
+    private sealed record SavedMessageResponseDto(Guid MessageId, Guid ChannelId, string BodyPreview);
+    private sealed record SavedMessagesPageDto(SavedMessageResponseDto[] Items, string? NextCursor, int PendingCount);
     private sealed record AuditEventItemDto(Guid Id, string Action, string EntityType, string? EntityId, Guid? ActorUserId, DateTimeOffset OccurredAt, string MetadataJson);
     private sealed record AuditEventsDto(AuditEventItemDto[] Items);
     private sealed record AdminConversationItemDto(Guid Id, Guid WorkspaceId, string Name, string Type);

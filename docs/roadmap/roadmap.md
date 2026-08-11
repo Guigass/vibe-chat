@@ -258,7 +258,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W9-3 | C/D | Preview de anexos — miniaturas no worker (B-090) | W8-1, W9-0 | [B-090](../product/specs/B-090-preview-de-anexos.md) | Done |
 | W9-4 | C/D | Link preview (B-091) | — | [B-091](../product/specs/B-091-link-preview.md) | **Done** |
 | W9-5 | C/D | Fixar mensagem (B-092) | W9-2 | [B-092](../product/specs/B-092-fixar-mensagem.md) | **Done** |
-| W9-6 | C/D | Salvos (B-093) | W9-2 | [B-093](../product/specs/B-093-salvos.md) | Planned |
+| W9-6 | C/D | Salvos (B-093) | W9-2 | [B-093](../product/specs/B-093-salvos.md) | **Done** |
 | W9-7 | C/D | Recibos de leitura e não lidas persistentes (B-094) | W9-1 | [B-094](../product/specs/B-094-recibos-de-leitura.md) | Planned |
 | W9-8 | C/D | Anexo de vídeo — aceite, preview e visualização no chat (B-168) | W8-1, W9-0 | [B-168](../product/specs/B-168-anexo-de-video.md) | Planned |
 

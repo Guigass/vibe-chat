@@ -25,6 +25,7 @@ import {
   WorkspaceMember,
   MessageLinkPreview,
   PinnedMessageItem,
+  SavedMessageItem,
 } from '../../shared/models/chat.models';
 
 interface WorkspaceDto {
@@ -708,6 +709,64 @@ export class ApiService {
     };
   }
 
+  async saveMessage(
+    workspaceId: string,
+    messageId: string,
+    note?: string | null,
+  ): Promise<SavedMessageItem> {
+    const dto = await this.request<SavedMessageDto>(
+      `/api/v1/workspaces/${workspaceId}/saved`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ messageId, note: note ?? null }),
+      },
+    );
+    return mapSavedMessage(dto);
+  }
+
+  async patchSavedMessage(
+    workspaceId: string,
+    messageId: string,
+    patch: { note?: string | null; completed?: boolean },
+  ): Promise<SavedMessageItem> {
+    const dto = await this.request<SavedMessageDto>(
+      `/api/v1/workspaces/${workspaceId}/saved/${messageId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      },
+    );
+    return mapSavedMessage(dto);
+  }
+
+  async unsaveMessage(workspaceId: string, messageId: string): Promise<void> {
+    await this.request(`/api/v1/workspaces/${workspaceId}/saved/${messageId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getSavedMessages(
+    workspaceId: string,
+    options?: { completed?: boolean; limit?: number; cursor?: string | null },
+  ): Promise<{ items: SavedMessageItem[]; nextCursor: string | null; pendingCount: number }> {
+    const params = new URLSearchParams();
+    if (options?.completed === true) params.set('completed', 'true');
+    if (options?.completed === false) params.set('completed', 'false');
+    if (options?.limit) params.set('limit', String(options.limit));
+    if (options?.cursor) params.set('cursor', options.cursor);
+    const qs = params.toString();
+    const dto = await this.request<{
+      items: SavedMessageDto[];
+      nextCursor?: string | null;
+      pendingCount: number;
+    }>(`/api/v1/workspaces/${workspaceId}/saved${qs ? `?${qs}` : ''}`);
+    return {
+      items: (dto.items ?? []).map(mapSavedMessage),
+      nextCursor: dto.nextCursor ?? null,
+      pendingCount: dto.pendingCount ?? 0,
+    };
+  }
+
   async toggleReaction(
     channelId: string,
     messageId: string,
@@ -1169,3 +1228,36 @@ export class ApiService {
     return (await response.json()) as T;
   }
 }
+
+interface SavedMessageDto {
+  messageId: string;
+  channelId: string;
+  channelName: string;
+  channelType: string;
+  sequence: number;
+  authorUserId: string;
+  authorName: string;
+  bodyPreview: string;
+  note?: string | null;
+  completedAt?: string | null;
+  createdAt: string;
+  messageRemoved?: boolean;
+}
+
+function mapSavedMessage(dto: SavedMessageDto): SavedMessageItem {
+  return {
+    messageId: String(dto.messageId),
+    channelId: String(dto.channelId),
+    channelName: dto.channelName ?? '',
+    channelType: dto.channelType ?? 'Public',
+    sequence: dto.sequence ?? 0,
+    authorUserId: String(dto.authorUserId ?? ''),
+    authorName: dto.authorName ?? '',
+    bodyPreview: dto.bodyPreview ?? '',
+    note: dto.note ?? null,
+    completedAt: dto.completedAt ?? null,
+    createdAt: dto.createdAt,
+    messageRemoved: !!dto.messageRemoved,
+  };
+}
+

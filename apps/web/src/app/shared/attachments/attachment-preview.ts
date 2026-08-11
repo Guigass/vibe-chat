@@ -48,7 +48,9 @@ export type MessageMenuActionId =
   | 'remove-link-preview'
   | 'delete'
   | 'pin'
-  | 'unpin';
+  | 'unpin'
+  | 'save'
+  | 'unsave';
 
 export function menuActionsForMessage(options: {
   mine: boolean;
@@ -56,6 +58,8 @@ export function menuActionsForMessage(options: {
   showThread: boolean;
   showPin?: boolean;
   isPinned?: boolean;
+  showSave?: boolean;
+  isSaved?: boolean;
   replyCount?: number;
   hasLinkPreview?: boolean;
 }): Array<{ id: MessageMenuActionId; label: string; danger?: boolean }> {
@@ -81,6 +85,12 @@ export function menuActionsForMessage(options: {
     items.push({
       id: options.isPinned ? 'unpin' : 'pin',
       label: options.isPinned ? 'Desafixar' : 'Fixar',
+    });
+  }
+  if (options.showSave) {
+    items.push({
+      id: options.isSaved ? 'unsave' : 'save',
+      label: options.isSaved ? 'Remover dos salvos' : 'Salvar',
     });
   }
   if (options.mine) {

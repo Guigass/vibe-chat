@@ -146,6 +146,8 @@ export interface ChatMessage {
   linkPreview?: MessageLinkPreview | null;
   /** B-092 pinned marker in channel. */
   isPinned?: boolean;
+  /** B-093 personal saved marker. */
+  isSaved?: boolean;
 }
 
 export interface PinnedMessageItem {
@@ -158,6 +160,21 @@ export interface PinnedMessageItem {
   pinnedByName: string;
   pinnedAt: string;
   limit?: number;
+}
+
+export interface SavedMessageItem {
+  messageId: string;
+  channelId: string;
+  channelName: string;
+  channelType: string;
+  sequence: number;
+  authorUserId: string;
+  authorName: string;
+  bodyPreview: string;
+  note: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  messageRemoved: boolean;
 }
 
 export interface ChatThread {

@@ -779,6 +779,44 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("pinned_messages", "messaging");
                 });
 
+            modelBuilder.Entity("VibeChat.Messaging.SavedMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChannelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(280)
+                        .HasColumnType("character varying(280)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "UserId", "CompletedAt", "CreatedAt");
+
+                    b.HasIndex("TenantId", "UserId", "MessageId")
+                        .IsUnique();
+
+                    b.ToTable("saved_messages", "messaging");
+                });
+
             modelBuilder.Entity("VibeChat.Messaging.Reaction", b =>
                 {
                     b.Property<Guid>("Id")

@@ -2,7 +2,7 @@
   class="shell"
   [class.shell--sidebar-collapsed]="!sidebarOpen()"
   [class.shell--narrow]="narrowViewport()"
-  [class.shell--context-open]="contextOpen() || pins.panelOpen()"
+  [class.shell--context-open]="contextOpen() || pins.panelOpen() || saved.panelOpen()"
   [class.shell--thread-open]="threads.open()"
 >
   @if (narrowViewport() && sidebarOpen()) {
@@ -152,6 +152,10 @@
 
   @if (threads.open()) {
     <vc-thread-panel />
+  } @else if (saved.panelOpen()) {
+    <aside class="shell__context vc-anim-sidebar" aria-label="Mensagens salvas">
+      <vc-saved-panel />
+    </aside>
   } @else if (pins.panelOpen()) {
     <aside class="shell__context vc-anim-sidebar" aria-label="Mensagens fixadas">
       <vc-pins-panel

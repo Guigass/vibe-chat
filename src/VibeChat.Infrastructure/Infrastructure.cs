@@ -80,6 +80,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<MessageLinkPreview> MessageLinkPreviews => Set<MessageLinkPreview>();
     public DbSet<TenantLinkPreviewSettings> TenantLinkPreviewSettings => Set<TenantLinkPreviewSettings>();
     public DbSet<PinnedMessage> PinnedMessages => Set<PinnedMessage>();
+    public DbSet<SavedMessage> SavedMessages => Set<SavedMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -240,6 +241,20 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.PinnedByUserId).HasConversion(v => v.Value, v => new UserId(v));
             entity.HasIndex(x => new { x.TenantId, x.ChannelId, x.MessageId }).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.ChannelId });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<SavedMessage>(entity =>
+        {
+            entity.ToTable("saved_messages", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.MessageId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.Note).HasMaxLength(SavedMessagePolicies.MaxNoteLength);
+            entity.HasIndex(x => new { x.TenantId, x.UserId, x.MessageId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.UserId, x.CompletedAt, x.CreatedAt });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -2566,6 +2581,14 @@ public sealed class MessageRetentionPurgeProcessor(
             if (pins.Count > 0)
             {
                 db.PinnedMessages.RemoveRange(pins);
+            }
+
+            var saved = await db.SavedMessages.IgnoreQueryFilters()
+                .Where(x => x.TenantId == policy.TenantId && messageIds.Contains(x.MessageId))
+                .ToListAsync(cancellationToken);
+            if (saved.Count > 0)
+            {
+                db.SavedMessages.RemoveRange(saved);
             }
 
             var mentions = await db.MessageMentions.IgnoreQueryFilters()

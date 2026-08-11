@@ -305,6 +305,94 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Saved_messages_crud_uniqueness_completed_filter_and_cursor()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+
+        var messageId = Guid.NewGuid();
+        var create = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-saved-{messageId:N}", $"save-me-{messageId:N}", null, null));
+        create.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var save = await client.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/saved",
+            new { messageId, note = "voltar depois" });
+        save.StatusCode.Should().Be(HttpStatusCode.OK);
+        var saved = await save.Content.ReadFromJsonAsync<SavedMessageResponseDto>(JsonOptions);
+        saved.Should().NotBeNull();
+        saved!.MessageId.Should().Be(messageId);
+        saved.Note.Should().Be("voltar depois");
+        saved.CompletedAt.Should().BeNull();
+
+        var dup = await client.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/saved",
+            new { messageId, note = (string?)null });
+        dup.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var openList = await client.GetFromJsonAsync<SavedMessagesPageDto>(
+            $"/api/v1/workspaces/{workspaceId}/saved?completed=false&limit=50",
+            JsonOptions);
+        openList.Should().NotBeNull();
+        openList!.Items.Should().Contain(x => x.MessageId == messageId);
+        openList.PendingCount.Should().BeGreaterThanOrEqualTo(1);
+
+        var complete = await client.PatchAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/saved/{messageId}",
+            new { completed = true, note = "feito" });
+        complete.StatusCode.Should().Be(HttpStatusCode.OK);
+        var completedItem = await complete.Content.ReadFromJsonAsync<SavedMessageResponseDto>(JsonOptions);
+        completedItem!.CompletedAt.Should().NotBeNull();
+        completedItem.Note.Should().Be("feito");
+
+        var stillOpen = await client.GetFromJsonAsync<SavedMessagesPageDto>(
+            $"/api/v1/workspaces/{workspaceId}/saved?completed=false&limit=50",
+            JsonOptions);
+        stillOpen!.Items.Should().NotContain(x => x.MessageId == messageId);
+
+        var completedList = await client.GetFromJsonAsync<SavedMessagesPageDto>(
+            $"/api/v1/workspaces/{workspaceId}/saved?completed=true&limit=50",
+            JsonOptions);
+        completedList!.Items.Should().Contain(x => x.MessageId == messageId);
+
+        for (var i = 0; i < 3; i++)
+        {
+            var extraId = Guid.NewGuid();
+            var extraCreate = await client.PostAsJsonAsync(
+                $"/api/v1/channels/{DemoChannelId}/messages",
+                new SendMessageRequest(extraId, $"idem-saved-page-{extraId:N}", $"page-{i}", null, null));
+            extraCreate.EnsureSuccessStatusCode();
+            var extraSave = await client.PostAsJsonAsync(
+                $"/api/v1/workspaces/{workspaceId}/saved",
+                new { messageId = extraId });
+            extraSave.EnsureSuccessStatusCode();
+        }
+
+        var page1 = await client.GetFromJsonAsync<SavedMessagesPageDto>(
+            $"/api/v1/workspaces/{workspaceId}/saved?completed=false&limit=2",
+            JsonOptions);
+        page1!.Items.Should().HaveCount(2);
+        page1.NextCursor.Should().NotBeNullOrWhiteSpace();
+
+        var page2 = await client.GetFromJsonAsync<SavedMessagesPageDto>(
+            $"/api/v1/workspaces/{workspaceId}/saved?completed=false&limit=2&cursor={Uri.EscapeDataString(page1.NextCursor!)}",
+            JsonOptions);
+        page2!.Items.Should().NotBeEmpty();
+        page2.Items.Select(x => x.MessageId)
+            .Intersect(page1.Items.Select(x => x.MessageId))
+            .Should().BeEmpty();
+
+        var remove = await client.DeleteAsync($"/api/v1/workspaces/{workspaceId}/saved/{messageId}");
+        remove.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var afterDelete = await client.GetFromJsonAsync<SavedMessagesPageDto>(
+            $"/api/v1/workspaces/{workspaceId}/saved?completed=true&limit=50",
+            JsonOptions);
+        afterDelete!.Items.Should().NotContain(x => x.MessageId == messageId);
+    }
+
+    [Fact]
     public async Task Edit_message_updates_body_and_edited_at()
     {
         using var client = factory.CreateClient();
@@ -2109,6 +2197,25 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         PinnedMessageResponseDto[] Pins,
         int Count,
         int Limit);
+
+    private sealed record SavedMessageResponseDto(
+        Guid MessageId,
+        Guid ChannelId,
+        string ChannelName,
+        string ChannelType,
+        long Sequence,
+        Guid AuthorUserId,
+        string AuthorName,
+        string BodyPreview,
+        string? Note,
+        DateTimeOffset? CompletedAt,
+        DateTimeOffset CreatedAt,
+        bool MessageRemoved = false);
+
+    private sealed record SavedMessagesPageDto(
+        SavedMessageResponseDto[] Items,
+        string? NextCursor,
+        int PendingCount);
 
     private sealed record ForwardMessageResponseDto(MessageDto[] Messages);
 

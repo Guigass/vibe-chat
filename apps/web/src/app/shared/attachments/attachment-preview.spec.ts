@@ -66,6 +66,26 @@ describe('attachment preview helpers', () => {
       }).map((item) => item.id),
     ).toEqual(['edit', 'remove-link-preview', 'delete']);
 
+    expect(
+      menuActionsForMessage({
+        mine: false,
+        showForward: false,
+        showThread: false,
+        showSave: true,
+        isSaved: false,
+      }).map((item) => item.id),
+    ).toEqual(['save']);
+
+    expect(
+      menuActionsForMessage({
+        mine: false,
+        showForward: false,
+        showThread: false,
+        showSave: true,
+        isSaved: true,
+      }).map((item) => item.id),
+    ).toEqual(['unsave']);
+
     const deleteItem = menuActionsForMessage({
       mine: true,
       showForward: false,

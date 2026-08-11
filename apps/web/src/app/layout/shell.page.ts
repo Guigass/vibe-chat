@@ -16,10 +16,12 @@ import { ChatHubService } from '../core/services/chat-hub.service';
 import { MessageStore } from '../core/services/message.store';
 import { ThreadStore } from '../core/services/thread.store';
 import { PinStore } from '../core/services/pin.store';
+import { SavedStore } from '../core/services/saved.store';
 import { ChannelList } from '../features/chat/channel-list/channel-list';
 import { Composer } from '../features/chat/composer/composer';
 import { Timeline } from '../features/chat/timeline/timeline';
 import { PinsPanel } from '../features/chat/pins-panel/pins-panel';
+import { SavedPanel } from '../features/chat/saved-panel/saved-panel';
 import { ThreadPanel } from '../features/chat/thread-panel/thread-panel';
 import { SuggestReplyButton } from '../features/ai/suggest-reply-button';
 import { SummarizeButton } from '../features/ai/summarize-button';
@@ -47,6 +49,7 @@ import { defaultSidebarOpen, SHELL_NARROW_MEDIA_QUERY } from './shell-viewport';
     Composer,
     ThreadPanel,
     PinsPanel,
+    SavedPanel,
     SummarizeButton,
     SuggestReplyButton,
     ConnectionBanner,
@@ -65,6 +68,7 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly messages = inject(MessageStore);
   readonly threads = inject(ThreadStore);
   readonly pins = inject(PinStore);
+  readonly saved = inject(SavedStore);
   readonly hub = inject(ChatHubService);
   private readonly api = inject(ApiService);
   private readonly attachments = inject(AttachmentQueueService);
@@ -96,6 +100,7 @@ export class ShellPage implements OnInit, OnDestroy {
       if (this.lastChannelId !== null && this.lastChannelId !== channelId) {
         this.threads.close();
         this.pins.closePanel();
+        this.saved.closePanel();
         // Narrow overlay: free the timeline after a channel/DM pick.
         if (this.narrowViewport()) {
           this.sidebarOpen.set(false);
@@ -105,6 +110,11 @@ export class ShellPage implements OnInit, OnDestroy {
       if (channelId) {
         void this.pins.loadForChannel(channelId);
       }
+    });
+
+    effect(() => {
+      const workspaceId = this.channels.activeWorkspace()?.id ?? null;
+      void this.saved.loadForWorkspace(workspaceId);
     });
 
     effect(() => {
@@ -167,6 +177,10 @@ export class ShellPage implements OnInit, OnDestroy {
         this.threads.close();
         return;
       }
+      if (this.saved.panelOpen()) {
+        this.saved.closePanel();
+        return;
+      }
       if (this.pins.panelOpen()) {
         this.pins.closePanel();
         return;
@@ -221,12 +235,20 @@ export class ShellPage implements OnInit, OnDestroy {
 
   toggleContext(): void {
     this.pins.closePanel();
+    this.saved.closePanel();
     this.contextOpen.update((v) => !v);
   }
 
   openPinsPanel(): void {
     this.contextOpen.set(false);
+    this.saved.closePanel();
     this.pins.openPanel();
+  }
+
+  openSavedPanel(): void {
+    this.contextOpen.set(false);
+    this.pins.closePanel();
+    this.saved.openPanel();
   }
 
   async onUnpinFromPanel(messageId: string): Promise<void> {

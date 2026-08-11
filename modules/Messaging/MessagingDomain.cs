@@ -65,6 +65,26 @@ public static class PinPolicies
     public const int MaxPinnedPerChannel = 20;
 }
 
+/// <summary>Personal bookmark (B-093); not shared with the channel.</summary>
+public sealed class SavedMessage
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public UserId UserId { get; set; }
+    public MessageId MessageId { get; set; }
+    public ChannelId ChannelId { get; set; }
+    public string? Note { get; set; }
+    public DateTimeOffset? CompletedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public static class SavedMessagePolicies
+{
+    public const int MaxNoteLength = 280;
+    public const int DefaultPageSize = 30;
+    public const int MaxPageSize = 100;
+}
+
 public static class SystemEventTokens
 {
     public const string PinPrefix = "<system:pin:";

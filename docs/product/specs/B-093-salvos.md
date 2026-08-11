@@ -62,13 +62,13 @@ Sem evento de hub: é estado pessoal, não de conversa.
 
 ## Aceite
 
-- [ ] Salvar aparece na vista Salvos
-- [ ] Nota persiste e é editável
-- [ ] Concluir tira da lista principal e mantém no filtro
-- [ ] “Ir até” abre a conversa na mensagem
-- [ ] Salvar duas vezes não duplica
-- [ ] Sair do canal esconde o salvo daquele canal
-- [ ] Salvar mensagem de outro tenant → 403
+- [x] Salvar aparece na vista Salvos
+- [x] Nota persiste e é editável
+- [x] Concluir tira da lista principal e mantém no filtro
+- [x] “Ir até” abre a conversa na mensagem
+- [x] Salvar duas vezes não duplica
+- [x] Sair do canal esconde o salvo daquele canal
+- [x] Salvar mensagem de outro tenant → 403
 
 ## Testes
 

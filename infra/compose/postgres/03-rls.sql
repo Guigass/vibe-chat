@@ -196,6 +196,14 @@ CREATE POLICY tenant_isolation_pinned_messages ON messaging.pinned_messages
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS messaging.saved_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.saved_messages FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_saved_messages ON messaging.saved_messages;
+CREATE POLICY tenant_isolation_saved_messages ON messaging.saved_messages
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 DROP POLICY IF EXISTS tenant_isolation_message_mentions ON messaging.message_mentions;
 CREATE POLICY tenant_isolation_message_mentions ON messaging.message_mentions
     USING ("TenantId" = app.current_tenant_id())

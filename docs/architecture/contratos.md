@@ -212,6 +212,18 @@ Validação ocorre em `POST .../messages`, `POST .../threads/{threadId}/messages
 
 Permissão `message.pin` (default: Member, Moderator, Admin, Bot — não Guest/Auditor).
 
+### Salvos pessoais (B-093)
+
+| Artefato | Contrato |
+|----------|----------|
+| Tabela | `messaging.saved_messages` (`TenantId`, `UserId`, `MessageId`, `ChannelId`, `Note?`, `CompletedAt?`, `CreatedAt`); unique `(TenantId, UserId, MessageId)` |
+| `POST /api/v1/workspaces/{workspaceId}/saved` | Body `{ messageId, note? }`; mensagem legível agora; nota ≤280; idempotente (não duplica) |
+| `PATCH /api/v1/workspaces/{workspaceId}/saved/{messageId}` | Body `{ note?, completed? }`; só o dono |
+| `DELETE /api/v1/workspaces/{workspaceId}/saved/{messageId}` | **204** se removido ou já ausente |
+| `GET /api/v1/workspaces/{workspaceId}/saved?completed=&limit=&cursor=` | Só itens do usuário; revalida membership (omite sem apagar); mensagem soft-deleted → `bodyPreview: "Mensagem removida"`, `messageRemoved: true`; em DM `channelName` é o display name do peer (não o slug `dm:…`); resposta `{ items, nextCursor, pendingCount }` |
+| Hub | Nenhum (estado pessoal) |
+| AuthZ | Nenhum admin lê salvos de terceiros; cross-tenant → **403** |
+
 ### Menções (B-082)
 
 | Artefato | Contrato |

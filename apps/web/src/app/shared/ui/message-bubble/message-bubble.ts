@@ -108,6 +108,9 @@ import { environment } from '../../../../environments/environment';
               @if (message().isPinned && !message().deletedAt) {
                 <span class="vc-msg__status vc-msg__status--pin" aria-label="Mensagem fixada">fixada</span>
               }
+              @if (message().isSaved && !message().deletedAt) {
+                <span class="vc-msg__status vc-msg__status--saved" aria-label="Mensagem salva">salva</span>
+              }
               @if (message().status === 'sending') {
                 <span class="vc-msg__status">enviando…</span>
               } @else if (message().status === 'sent') {
@@ -828,6 +831,7 @@ export class MessageBubble {
   readonly showReplyAction = input(false);
   readonly showForwardAction = input(false);
   readonly showPinAction = input(false);
+  readonly showSaveAction = input(false);
   readonly highlighted = input(false);
   readonly edit = output<string>();
   readonly delete = output<void>();
@@ -839,6 +843,8 @@ export class MessageBubble {
   readonly react = output<string>();
   readonly pin = output<void>();
   readonly unpin = output<void>();
+  readonly save = output<void>();
+  readonly unsave = output<void>();
 
   readonly editing = signal(false);
   readonly draft = signal('');
@@ -874,6 +880,8 @@ export class MessageBubble {
       showThread: this.showThreadAction(),
       showPin: this.showPinAction(),
       isPinned: !!this.message().isPinned,
+      showSave: this.showSaveAction(),
+      isSaved: !!this.message().isSaved,
       replyCount: this.message().replyCount,
       hasLinkPreview: !!this.visibleLinkPreview(),
     }),
@@ -1082,6 +1090,12 @@ export class MessageBubble {
         break;
       case 'unpin':
         this.unpin.emit();
+        break;
+      case 'save':
+        this.save.emit();
+        break;
+      case 'unsave':
+        this.unsave.emit();
         break;
     }
   }

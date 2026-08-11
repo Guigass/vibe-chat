@@ -11,6 +11,7 @@ import { ChatMessage } from '../../../shared/models/chat.models';
 import { Avatar, EmptyState, MessageBubble, Skeleton, TypingIndicator } from '../../../shared/ui';
 import { ForwardDialog } from '../forward-dialog/forward-dialog';
 import { PinStore } from '../../../core/services/pin.store';
+import { SavedStore } from '../../../core/services/saved.store';
 import { buildTimelineItems, type TimelineItem } from './timeline-items';
 
 const NEAR_BOTTOM_PX = 80;
@@ -99,6 +100,7 @@ const NEAR_TOP_PX = 120;
                         [showForwardAction]="true"
                         [showThreadAction]="true"
                         [showPinAction]="true"
+                        [showSaveAction]="true"
                         [highlighted]="messages.highlightMessageId() === entry.message.id"
                         (edit)="onEdit(entry.message.id, $event)"
                         (delete)="onDelete(entry.message.id)"
@@ -110,6 +112,8 @@ const NEAR_TOP_PX = 120;
                         (react)="onReact(entry.message.id, $event)"
                         (pin)="onPin(entry.message.id)"
                         (unpin)="onUnpin(entry.message.id)"
+                        (save)="onSave(entry.message.id)"
+                        (unsave)="onUnsave(entry.message.id)"
                       />
                     }
                   </div>
@@ -333,6 +337,7 @@ export class Timeline {
   readonly messages = inject(MessageStore);
   readonly channels = inject(ChannelStore);
   private readonly pins = inject(PinStore);
+  private readonly saved = inject(SavedStore);
   private readonly threads = inject(ThreadStore);
   private readonly hub = inject(ChatHubService);
   private readonly auth = inject(AuthService);
@@ -558,6 +563,14 @@ export class Timeline {
     const channelId = this.channels.activeChannelId();
     if (!channelId) return;
     await this.pins.unpinMessage(channelId, messageId);
+  }
+
+  async onSave(messageId: string): Promise<void> {
+    await this.saved.saveMessage(messageId);
+  }
+
+  async onUnsave(messageId: string): Promise<void> {
+    await this.saved.unsaveMessage(messageId);
   }
 
   private afterChannelOpen(): void {

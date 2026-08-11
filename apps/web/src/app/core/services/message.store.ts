@@ -733,6 +733,7 @@ export class MessageStore {
       reactions: message.reactions ?? [],
       replyTo: message.replyTo ?? null,
       isPinned: message.isPinned ?? false,
+      isSaved: message.isSaved ?? false,
     };
   }
 
@@ -750,6 +751,19 @@ export class MessageStore {
       current.map((m) =>
         m.channelId === channelId ? { ...m, isPinned: pinned.has(m.id) } : m,
       ),
+    );
+  }
+
+  setSaved(messageId: string, saved: boolean): void {
+    this.messagesSignal.update((current) =>
+      current.map((m) => (m.id === messageId ? { ...m, isSaved: saved } : m)),
+    );
+  }
+
+  applySavedFlags(messageIds: readonly string[]): void {
+    const saved = new Set(messageIds);
+    this.messagesSignal.update((current) =>
+      current.map((m) => ({ ...m, isSaved: saved.has(m.id) })),
     );
   }
 
