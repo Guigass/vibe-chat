@@ -24,7 +24,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-DOC-CHECKER | Integridade documental | Contrato e baseline DOC-006 existem, mas a CI ainda não executa checker offline | Medium | Open | Implementar as regras de `qualidade-documental.md` sem alterar prioridade das waves |
 | OPS-PR-DRAFT | Tooling de PR | `open_git_pr` pode criar draft | Medium | Mitigated | Prompts convertem imediatamente para ready; monitorar |
 | OPS-DOCS-RACE | Corrida Docs | Merges #72+#73 (~20s) abriram Docs #76+#77; #77 foi re-draftado e ficou CONFLICTING | High | External action | Colar prompts 03/06 atualizados no dashboard (repo já em #78) |
-| OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` — reação 👍 não visível em alice após bob reagir; 5+ runs consecutivos falhando em main desde ~2026-08-10T18:08Z; último green completo `ecb147c` (2026-08-10T17:07Z) | Critical | Open | Build: corrigir regressão E2E/SignalR de reações; incident SHA `654f68d` |
+| OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` — `aria-label` da chip virava só o tooltip (`Bob`) e quebrava `getByLabel(/Reação 👍/i)`; SignalR ok | Critical | Open | Fix em #123 (`reactionAriaLabel`); aguardar E2E verde ≥2× em main |
 
 ## Resolvidos
 
@@ -71,7 +71,8 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 ### OPS-E2E-REALTIME
 
-- Status: **Open** — main RED desde ~2026-08-10T18:08Z; Watchdog 2026-08-11T12:04Z.
+- Status: **Open** — causa raiz corrigida em [#123](https://github.com/Guigass/vibe-chat/pull/123);
+  aguarda E2E verde ≥2× em `main` para fechar.
 - Observado em: CI `E2E (Playwright)` em
   [`realtime-events.spec.ts`](../../tests/e2e/specs/realtime-events.spec.ts) linha 66
   (`getByLabel(/Reação 👍/i)` em alice após bob reagir).
@@ -80,10 +81,16 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   [#31488977720](https://github.com/Guigass/vibe-chat/actions/runs/31488977720)).
 - Reprodução: CI em `main` — 10 passed, 1 failed; falha persiste em retry interno
   do Playwright e em docs-only merges (#119, #121).
-- Resultado esperado: reação propagada via SignalR visível em ambas as sessões.
-- Resultado atual: elemento `Reação 👍` ausente na sessão alice após 30s.
+- Causa raiz: `aria-label` da chip usava
+  `reactionTooltip(emoji) || ('Reação ' + emoji)`; após `mouseenter` o tooltip
+  (`Bob`) substituía o nome acessível e o locator do E2E falhava — a reação
+  chegava via SignalR (visível na a11y tree como botão `"Bob"`).
+- Resultado esperado: reação propagada via SignalR visível em ambas as sessões;
+  `aria-label` estável `Reação {emoji}` (opcionalmente com `: {tooltip}`).
+- Resultado atual: fix `reactionAriaLabel` no bubble (#123); critérios 1–2 abaixo
+  ainda pendentes em `main`.
 - Impacto: `main` vermelho bloqueia auto-merge e viola invariante operacional.
-- Risk class: R1 (teste/regressão); severidade Critical por bloqueio de pipeline.
+- Risk class: R1 (teste/a11y); severidade Critical por bloqueio de pipeline.
 - Owner automático: Build + QA.
 - Critério de resolução:
   1. `E2E (Playwright)` verde em `main` por ≥2 runs consecutivos;

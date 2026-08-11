@@ -237,7 +237,7 @@ import { environment } from '../../../../environments/environment';
                         type="button"
                         [class.active]="reaction.me"
                         [attr.aria-pressed]="reaction.me"
-                        [attr.aria-label]="reactionTooltip(reaction.emoji) || ('Reação ' + reaction.emoji)"
+                        [attr.aria-label]="reactionAriaLabel(reaction.emoji)"
                         [title]="reactionTooltip(reaction.emoji)"
                         (mouseenter)="loadReactionTooltip(reaction.emoji)"
                         (focus)="loadReactionTooltip(reaction.emoji)"
@@ -1036,6 +1036,12 @@ export class MessageBubble {
 
   reactionTooltip(emoji: string): string {
     return this.reactionTooltips()[emoji] ?? '';
+  }
+
+  /** Stable accessible name — never replace "Reação {emoji}" with tooltip-only text. */
+  reactionAriaLabel(emoji: string): string {
+    const tip = this.reactionTooltip(emoji);
+    return tip ? `Reação ${emoji}: ${tip}` : `Reação ${emoji}`;
   }
 
   async loadReactionTooltip(emoji: string): Promise<void> {
