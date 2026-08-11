@@ -33,6 +33,7 @@ Regras do registro:
 | BUG-011 | Admin / shell    | Membros não veem o botão Admin                                        | Média      | Aberto                      |
 | BUG-012 | Timeline / bolha | Toolbar de ações no hover mal posicionada em mensagens curtas agrupadas | Média      | Aberto                      |
 | BUG-013 | Timeline / pins  | “Ir até” mensagem fixada buga o scroll da timeline                      | Média      | Aberto                      |
+| BUG-014 | Timeline / áudio | Bolha de áudio não mostra as waves do áudio tocando                     | Média      | Aberto                      |
 
 ## Detalhamento
 
@@ -384,7 +385,40 @@ Regras do registro:
   `scrollIntoView` em microtask sozinho após `replace`; fechar painel só após
   âncora estável ou compensar resize do scroller.
 
+### BUG-014 — Bolha de áudio sem waves na reprodução
+
+- Status: **Aberto**
+- Observado em: relato de produto, 2026-08-11 — na timeline, a bolha de
+  mensagem de áudio **não exibe as waves** (waveform) do áudio enquanto
+  toca; o player sobe (play/pause, tempo, scrubber), mas o canvas da
+  waveform fica vazio, com linha plana ou sem progresso visual nas barras.
+- Hipótese: `vc-audio-message` desenha o canvas uma vez via `effect` com
+  `drawAudioWaveform(canvas, attachment.waveform)`; se `waveform` vier
+  `undefined`/vazio (não persistido no envio, perdido no map HTTP/hub, ou
+  ainda não reidratado), o util só pinta uma linha horizontal fraca. Além
+  disso, o desenho é estático — `ontimeupdate` atualiza só `elapsedMs` /
+  range, **sem** redesenhar barras com progresso (played vs restante), então
+  mesmo com samples o usuário não vê “waves tocando”.
+- Arquivos: `apps/web/src/app/shared/ui/audio-message/audio-message.ts`,
+  `apps/web/src/app/shared/utils/audio.ts` (`drawAudioWaveform`),
+  gravação/`waveform` em `audio-recorder.service.ts` e initiate em
+  `attachment-queue.service.ts`, map de attachment em `api.service.ts` /
+  `chat.models.ts`.
+- Resultado esperado: bolha de áudio mostra waveform com barras; durante a
+  reprodução o progresso fica visível nas waves (ou equivalente claro);
+  áudio sem samples ainda tem fallback legível, não canvas “morto”.
+- Risk class: R1.
+- Owner automático: Frontend (D); Files (C) se o payload `waveform` não
+  estiver chegando.
+- Critério de resolução: mensagem `Audio` com waveform persistido renderiza
+  barras; play atualiza visual de progresso na wave; regressão unit do
+  draw/progresso; finding `Done`.
+- Próxima ação: confirmar se `waveform` chega no DTO da timeline; se sim,
+  redesenhar no `timeupdate` com highlight de progresso; se não, corrigir
+  persistência/map no caminho de envio e history.
+
 ## Fechados
+
 
 | ID      | Área                | Achado                                            | Severidade | Status |
 | ------- | ------------------- | ------------------------------------------------- | ---------- | ------ |
