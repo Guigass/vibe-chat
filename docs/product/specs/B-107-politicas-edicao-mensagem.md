@@ -29,9 +29,15 @@ por `workspace.admin` via `/admin/settings` (e refletida no client):
 Comportamento:
 
 - API rejeita fora da política com **403** ou **422** estável (`EditWindowExpired`,
-  `EditDisabled`, `EditRoleDenied`) — documentar em `contratos.md`.
+  `EditDisabled`, `EditRoleDenied`, e equivalentes de delete) — documentar em
+  `contratos.md`.
 - UI esconde/desabilita “Editar” / “Apagar” conforme a política efetiva do ator
   (não só tentar e falhar).
+- Soft-delete continua respeitando ADR-018 (body na linha; leituras normais
+  redigem). Quem pode apagar é deste item; **preservar o conteúdo apagado no
+  audit log** (snapshot em `message.delete` quando `contentAuditEnabled`) é
+  obrigação de [B-169](B-169-modo-auditoria-conteudo-tenant.md) — esta política
+  não desliga nem substitui esse snapshot.
 - Indicador “(editada)” permanece; histórico de body anterior continua só na
   auditoria admin (B-067) — sem versionamento completo nesta fatia.
 - Expor política efetiva ao client: incluir em settings mascarados ou endpoint
@@ -43,8 +49,10 @@ Comportamento:
   Auditor/Guest) — sem inventar “user groups” novos; se produto quiser depois,
   nova decisão.
 - Editar anexos/reações; editar mensagem de outro sem override de moderação.
-- Versionamento completo de body (diff/histórico para membros).
+- Versionamento completo de body (diff/histórico para membros) além do snapshot
+  de delete definido em B-169.
 - Política por canal individual (só workspace nesta fatia).
+- Gate `contentAuditEnabled` e shape do metadata de `message.delete` (B-169).
 
 ## Contratos
 
@@ -76,6 +84,8 @@ Comportamento:
 - [ ] Com `edit.enabled=false`, autor não edita; moderador só se override ligado
 - [ ] Restringir a papéis Admin: Member vê menu sem Editar
 - [ ] Soft-delete respeita janela/papéis espelhados
+- [ ] Com delete permitido pela política e `contentAuditEnabled=true` (B-169), o
+      soft-delete **não** impede o snapshot de body em `message.delete` no audit
 - [ ] Settings mascarados: membro não lê/altera a política (403)
 - [ ] Teste cross-tenant negativo
 

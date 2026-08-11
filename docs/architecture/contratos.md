@@ -182,6 +182,10 @@ Validação ocorre em `POST .../messages`, `POST .../threads/{threadId}/messages
 - Autor com `message.delete.own` **ou** papel com `message.delete.any`
 - Soft-delete (`DeletedAt`); body oculto nas leituras (ADR-018)
 - Também cobre replies de thread do canal (authZ por membership do canal pai)
+- **Planned (B-169):** com `contentAuditEnabled=true`, o evento `message.delete`
+  em `audit.audit_events` inclui snapshot do body (e ids mínimos) no
+  `metadataJson`, para sobreviver a purge (B-047). Com `false`, metadata sem
+  body. Políticas de quem/quando pode apagar: B-107 (`messaging.delete.*`).
 
 ### Reactions
 
@@ -478,6 +482,14 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 `AdminConversationMessageResponse`: `id`, `channelId`, `conversationId`, `sequence`, `authorId`, `authorName`, `body` (sempre o valor persistido), `createdAt`, `editedAt`, `deletedAt`, `deletedBy`, `deletedByName`, `threadId`, `replyToMessageId`, `replyCount`, `attachments`.
 
 Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `settings.change`, `settings.credential.rotate`, `settings.encryption.reencrypt`, `workspace.export`, `message.purge`.
+
+**Planned (B-169) — metadata de `message.delete`:** quando `contentAuditEnabled=true`,
+`metadataJson` inclui `channelId`, `threadId?`, `sequence`, `authorId`, `body`
+(conteúdo no soft-delete). Com `false`, mesmos ids/`sequence` sem `body`.
+Hoje o runtime grava só `channelId` / `threadId` / `sequence` (sem body) —
+comportamento acima é contrato alvo da flag, não o estado atual do código.
+Outros eventos de audit (ex. `settings.content_audit.change`) continuam sem
+body de mensagem.
 
 ### Export de workspace (B-046)
 
