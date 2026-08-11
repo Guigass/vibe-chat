@@ -378,12 +378,15 @@ export class Timeline {
       this.lastMessageCount = list.length;
 
       queueMicrotask(() => {
+        const el = this.scroller()?.nativeElement;
         if (wasEmpty) {
           this.afterChannelOpen();
           return;
         }
-        if (ownArrival || this.nearBottom()) {
-          this.scrollToBottom();
+        const near = el ? this.isNearBottom(el) : this.nearBottom();
+        this.nearBottom.set(near);
+        if (ownArrival || near) {
+          this.scrollToBottom(el);
           this.newWhileAway.set(0);
           this.nearBottom.set(true);
           this.messages.markViewedLatest();
