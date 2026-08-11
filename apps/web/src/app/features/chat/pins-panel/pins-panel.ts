@@ -1,6 +1,6 @@
 import { Component, inject, input, output } from '@angular/core';
 import { PinStore } from '../../../core/services/pin.store';
-import { PinnedMessageItem } from '../../models/chat.models';
+import { PinnedMessageItem } from '../../../shared/models/chat.models';
 import { IconButton } from '../../../shared/ui';
 
 @Component({
