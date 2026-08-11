@@ -32,6 +32,7 @@ Regras do registro:
 | BUG-010 | Timeline / scroll | Ao abrir a conversa não rola até as mensagens mais recentes          | Média      | Aberto                      |
 | BUG-011 | Admin / shell    | Membros não veem o botão Admin                                        | Média      | Aberto                      |
 | BUG-012 | Timeline / bolha | Toolbar de ações no hover mal posicionada em mensagens curtas agrupadas | Média      | Aberto                      |
+| BUG-013 | Timeline / pins  | “Ir até” mensagem fixada buga o scroll da timeline                      | Média      | Aberto                      |
 
 ## Detalhamento
 
@@ -353,6 +354,35 @@ Regras do registro:
   4. **Agrupadas `middle`/`end`** — preferir deslocamento horizontal
      (`inline-end` da linha) em vez de flutuar acima quando a linha é mais baixa
      que a toolbar.
+
+### BUG-013 — “Ir até” mensagem fixada buga o scroll
+
+- Status: **Aberto**
+- Observado em: relato de produto, 2026-08-11 — no painel de mensagens fixadas,
+  ao clicar **Ir até**, a timeline tenta ancorar na mensagem e o **scroll fica
+  quebrado** (posição errada, trava, ou deixa de responder de forma estável
+  depois do salto).
+- Hipótese: `PinStore.jumpToPin` → `jumpToSequence` faz `replace` da página
+  `around` + `queueMicrotask` → `jumpToMessage` (`scrollIntoView` smooth) antes
+  do layout/altura final da lista; conflito com `setViewingLatest(false)`,
+  sticky de data, load older no topo e/ou o mesmo timing frágil de **BUG-010**.
+  Fechar o painel no meio do salto pode ainda alterar a largura do scroller.
+- Arquivos: `apps/web/src/app/core/services/pin.store.ts` (`jumpToPin`),
+  `apps/web/src/app/core/services/message.store.ts` (`jumpToSequence`,
+  `jumpToMessage`), `apps/web/src/app/features/chat/pins-panel/pins-panel.ts`,
+  `apps/web/src/app/features/chat/timeline/timeline.ts`.
+- Resultado esperado: **Ir até** ancora a mensagem fixada no centro (ou
+  visível) da viewport; scroll da timeline continua suave e utilizável
+  (cima/baixo, jump to latest, load older) após o salto; highlight temporário
+  sem travar o scroller.
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: regressão E2E/unit que fixa mensagem fora da página
+  atual, clica **Ir até**, afirma elemento visível e scroll ainda operável;
+  finding `Done`.
+- Próxima ação: reancorar após paint/layout estável (como BUG-010); evitar
+  `scrollIntoView` em microtask sozinho após `replace`; fechar painel só após
+  âncora estável ou compensar resize do scroller.
 
 ## Fechados
 
