@@ -20,7 +20,7 @@ um caso realmente fora desses defaults também for R4 em `agents/autonomia.md`.
 | D-08 | **SLA/RPO/RTO** | Dimensiona backup e HA | Ops | **Decidido (2026-07-24)** — dev/self-host sem SLA comercial; RPO/RTO “best effort” + backup diário Postgres (`docs/operations/backup-restore.md`) |
 | D-09 | **Código de conduta e governança** | OSS saudável | Founder | **Decidido (2026-07-24)** — `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1) + `CONTRIBUTING.md` |
 | D-10 | **Provedor SMTP / e-mail** | Features P2 | Ops | **Decidido (2026-07-24)** — Mailpit em dev; produção = SMTP genérico configurável (sem vendor locked) |
-| D-11 | **Escopo de paridade da fase 2** | Define o que o agente pode implementar sem perguntar | Founder / Produto | **Decidido (2026-07-25)**, **esclarecido (2026-07-27)** — mensageria rica entra; voz/vídeo, canvas, registry e E2EE ficam fora **da fase 2** e foram ordenados depois por D-16…D-26 |
+| D-11 | **Escopo de paridade da fase 2** | Define o que o agente pode implementar sem perguntar | Founder / Produto | **Decidido (2026-07-25)**, **esclarecido (2026-07-27 / 2026-08-11)** — mensageria rica entra (inclui anexo de vídeo curto via B-168); voz/vídeo ao vivo, canvas, registry e E2EE ficam fora **da fase 2** e foram ordenados depois por D-16…D-26 |
 | D-12 | **Mensagem de áudio** | Formato, limites, privacidade da transcrição | Produto + Security | **Decidido (2026-07-25)** — anexo de áudio com MIME negociado no cliente; 5 min / 10 MB; transcrição opt-in atrás da flag de IA |
 | D-13 | **Notificações push** | Sai do perímetro self-host se usar serviço fechado | Ops + Security | **Decidido (2026-07-25)** — Web Push (VAPID) do próprio servidor; opt-in por usuário; sem FCM/APNs proprietário |
 | D-14 | **Idiomas suportados** | Custo de manutenção de catálogo | Produto | **Decidido (2026-07-25)** — `pt-BR` (default) e `en`; `@angular/localize`; sem terceiro idioma na fase 2 |
@@ -175,7 +175,8 @@ Impacto em código/docs: .env.example (Mailpit + SMTP_*); notificações email e
 ```text
 Decisão: D-11
 Escolha: Paridade da fase 2 = mensageria rica assíncrona. Entram composição
-  (formatação, menções, emoji, anexos múltiplos, áudio, citar, encaminhar),
+  (formatação, menções, emoji, anexos múltiplos, áudio, vídeo curto, citar,
+  encaminhar),
   leitura (agrupamento, histórico paginado, previews, fixar, salvos, não lidas),
   notificações (web push, preferências, DND), busca com filtros, atalhos,
   acessibilidade e i18n.
@@ -187,10 +188,14 @@ Escolha: Paridade da fase 2 = mensageria rica assíncrona. Entram composição
   B-109 (núcleo bot+token+send) → B-110 (instalar/gerir na instância) →
   B-066 (capabilities avançadas, W15) → B-111.
   O gate de registry remoto foi posteriormente fechado por D-18 para B-137.
+  Esclarecimento (2026-08-11): **anexo de vídeo curto** (arquivo assíncrono,
+  mp4/webm, sem transcode) entra na paridade via B-168 / W9-8. Continua FORA
+  a chamada de voz/vídeo ao vivo e screen share (B-147/B-148).
 Data: 2026-07-25
 Owner: Founder / Produto
 Impacto em código/docs: waves 8-10 do roadmap; benchmark-mensageria.md;
-  itens fora da fase 2 permanecem ordenados em W15–W17 quando aplicável
+  itens fora da fase 2 permanecem ordenados em W15–W17 quando aplicável;
+  B-168 catalogado em W9-8
 ```
 
 ### D-12

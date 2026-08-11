@@ -56,6 +56,7 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-092 | [Fixar mensagem](B-092-fixar-mensagem.md) |
 | B-093 | [Salvos](B-093-salvos.md) |
 | B-094 | [Recibos de leitura e não lidas (persistência definitiva)](B-094-recibos-de-leitura.md) |
+| B-168 | [Anexo de vídeo (aceite, preview e visualização)](B-168-anexo-de-video.md) |
 
 ### Wave 10 — Notificações, organização e acesso
 

@@ -123,6 +123,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-092 | Fixar mensagem | Planned (W9-5) — limite 20, permissão `message.pin` |
 | B-093 | Salvos | Planned (W9-6) — revalida membership na leitura |
 | B-094 | Recibos de leitura e não lidas | Planned (W9-7) — persistência definitiva em `messaging.read_cursors`; liga o `upsertReadCursor` órfão; badges sobrevivem a F5/multi-device; `read-by` em canal é contagem |
+| B-168 | Anexo de vídeo | Planned (W9-8) — aceitar `video/mp4`/`webm`; prévia no composer; player tipado na bolha (B-163); sem transcode; soft-dep poster B-090 |
 
 ### Wave 10 — Notificações, organização e acesso
 

@@ -46,7 +46,7 @@ com gesto “Follow thread” e uma visão agregada de threads seguidas. Discord
 | Progresso de upload por arquivo | sim | sim | sim | sim | **Falta** — B-079 |
 | Mensagem de áudio | Clips | gravação | mensagens de voz | sim (central) | **Falta** — B-080 |
 | Transcrição de áudio | sim | sim | — | sim (on-device) | **Falta** — B-080 (flag) |
-| Clipe de vídeo curto | Clips | sim | — | sim | Fora de escopo fase 2 |
+| Clipe de vídeo curto | Clips | sim | — | sim | **Falta** — B-168 |
 | Responder citando (inline) | sim | sim | sim | sim | **Done** — B-084 |
 | Encaminhar mensagem | sim | sim | sim | sim | **Falta** — B-085 |
 | Rascunho persistente por conversa | sim | sim | sim | sim | **Falta** — B-086 |
@@ -151,7 +151,7 @@ confidencial opt-in com capacidades reduzidas (D-26).
 | Wave | Tema | Itens |
 |------|------|-------|
 | 8 | Composição de mensagem | B-079…B-087 |
-| 9 | Leitura da timeline | B-088…B-094 |
+| 9 | Leitura da timeline | B-088…B-094, B-163, B-168 |
 | 10 | Notificações, organização e acesso | B-095…B-103, B-040 |
 
 Cada item tem spec em `docs/product/specs/`. Sem spec, o item não é elegível para a

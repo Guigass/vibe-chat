@@ -26,7 +26,7 @@ ter feito da mensagem de voz um recurso central.
 - Chamada de voz ao vivo e canal de voz — fora por D-11.
 - Transcrição automática de todo áudio — só sob demanda, para não mandar tudo ao provedor.
 - Cancelamento de ruído, normalização e transcodificação server-side.
-- Vídeo curto.
+- Vídeo curto / anexo de vídeo → **B-168**.
 
 ## Contratos
 

@@ -16,8 +16,9 @@ imagem/PDF grandes e sem reserva de espaço (`Width`/`Height`).
 - Visualizador em tela cheia (B-163) passa a preferir a miniatura na grade e o
   original só no “baixar” / zoom.
 - PDF: primeira página como miniatura + contagem de páginas.
-- Áudio permanece no player de B-080; vídeo e demais tipos usam o cartão tipado
-  de B-163 (sem transcode).
+- Áudio permanece no player de B-080; vídeo usa o cartão/player tipado de B-163.
+  Aceite de MIME/limites de vídeo e prévia no composer → **B-168** (pode reutilizar
+  `ThumbnailKey` desta fatia como poster quando `Ready`).
 - Falha ao carregar a miniatura cai para o cartão de arquivo, sem bolha quebrada.
 
 ## Fora de escopo
@@ -25,7 +26,7 @@ imagem/PDF grandes e sem reserva de espaço (`Width`/`Height`).
 - Layout tipado da bolha, toolbar/context menu e lightbox client-side → **B-163**
   (deps: B-163 entregue ou em paralelo com fallback ao original).
 - Visualizador de PDF embutido rico, edição/anotação de imagem, preview de Office.
-- Transcodificação de vídeo.
+- Transcodificação de vídeo; liberar upload de vídeo → **B-168**.
 
 ## Contratos
 

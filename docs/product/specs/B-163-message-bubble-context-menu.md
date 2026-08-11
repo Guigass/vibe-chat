@@ -52,7 +52,7 @@ entrega). Toque/clique abre preview adequado:
 | **Image** (`image/png`, `jpeg`, `webp`, `gif`) | Miniatura inline (proporção preservada, altura máx. ~320 px, `loading="lazy"`) | Lightbox / tela cheia; `Esc` fecha; baixar original |
 | **PDF** (`application/pdf`) | Cartão com ícone PDF, nome, tamanho; se houver miniatura (B-090), primeira página | Abre visualização (nova aba ou overlay leve); baixar sempre disponível |
 | **Audio** (`kind=Audio` / B-080) | Player existente (`vc-audio-message`) | Play in-place; sem lightbox extra |
-| **Video** (`video/mp4`, `webm`, …) | Poster/frame + duração se houver; senão cartão tipado “Vídeo” | Player inline ou overlay com controles nativos; sem transcodificação |
+| **Video** (`video/mp4`, `webm`, …) | Poster/frame + duração se houver; senão cartão tipado “Vídeo” | Player inline ou overlay com controles nativos; sem transcodificação. Aceite MIME/limites → **B-168** |
 | **Outros** (Office, zip, etc.) | Cartão de arquivo tipado (ícone por família MIME, nome, tamanho) | Download / abrir em nova aba |
 
 Regras:
