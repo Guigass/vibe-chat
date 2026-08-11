@@ -145,6 +145,9 @@ import { environment } from '../../../../environments/environment';
                   · {{ origin.createdAt | date: 'shortDate' }}
                 </p>
               }
+              @if (message().editedAt && !message().deletedAt && !showMeta()) {
+                <span class="vc-msg__edited-badge">editada</span>
+              }
               @if (message().replyTo; as cite) {
                 @if (cite.deleted) {
                   <div class="vc-msg__quote vc-msg__quote--deleted">Mensagem removida</div>
@@ -467,6 +470,13 @@ import { environment } from '../../../../environments/environment';
     }
     .vc-msg__status--fail {
       color: var(--vc-danger);
+    }
+    .vc-msg__edited-badge {
+      align-self: flex-end;
+      font-size: 0.68rem;
+      color: var(--vc-ink-subtle);
+      font-weight: 500;
+      margin-top: -0.15rem;
     }
     p {
       margin: 0;

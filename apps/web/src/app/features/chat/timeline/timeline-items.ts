@@ -156,7 +156,7 @@ export function buildTimelineItems(
     }
 
     const group = groupRoleAt(messages, i);
-    const showMeta = group === 'start' || group === 'single' || !!message.editedAt;
+    const showMeta = group === 'start' || group === 'single';
     flat.push({
       kind: 'message',
       id: message.id,
@@ -224,7 +224,7 @@ function normalizeStackRoles(messages: TimelineMessageItem[]): void {
     const group: MessageGroupRole =
       i === 0 ? 'start' : i === messages.length - 1 ? 'end' : 'middle';
     messages[i].group = group;
-    messages[i].showMeta = group === 'start' || !!messages[i].message.editedAt;
+    messages[i].showMeta = group === 'start';
     messages[i].showAvatar = group === 'start';
   }
 }

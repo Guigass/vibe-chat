@@ -50,15 +50,20 @@ test.describe(`realtime events (${AUTH_MODE})`, () => {
       bob.page.locator('article.vc-msg', { hasText: edited }).getByText(/editada/i),
     ).toBeVisible({ timeout: 15_000 });
 
-    const bobBubble = bob.page.locator('article.vc-msg', { hasText: edited }).last();
+    const editedMessageId = await alice.page
+      .locator('article.vc-msg', { hasText: edited })
+      .last()
+      .getAttribute('data-message-id');
+    expect(editedMessageId).toBeTruthy();
+
+    const bobBubble = bob.page.locator(`article.vc-msg[data-message-id="${editedMessageId}"]`);
+    await bobBubble.scrollIntoViewIfNeeded();
     await clickMessageToolbarButton(bobBubble, /Reagir com 👍/i);
 
+    await expect(bobBubble.getByLabel(/Reação 👍/i)).toBeVisible({ timeout: 15_000 });
     await expect(
-      alice.page.locator('article.vc-msg', { hasText: edited }).getByLabel(/Reação 👍/i),
+      alice.page.locator(`article.vc-msg[data-message-id="${editedMessageId}"]`).getByLabel(/Reação 👍/i),
     ).toBeVisible({ timeout: 30_000 });
-    await expect(
-      bob.page.locator('article.vc-msg', { hasText: edited }).getByLabel(/Reação 👍/i),
-    ).toBeVisible({ timeout: 15_000 });
 
     const aliceEditedBubble = alice.page.locator('article.vc-msg', { hasText: edited }).last();
     await openMessageMoreMenu(aliceEditedBubble, alice.page);

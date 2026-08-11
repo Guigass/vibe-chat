@@ -138,23 +138,6 @@ describe('buildTimelineItems', () => {
     ]);
   });
 
-  it('shows meta on grouped messages when edited', () => {
-    const messages = [
-      msg({ id: 'a1', seq: 1, createdAt: new Date(2026, 7, 10, 12, 0, 0).toISOString() }),
-      msg({
-        id: 'a2',
-        seq: 2,
-        createdAt: new Date(2026, 7, 10, 12, 0, 30).toISOString(),
-        editedAt: new Date(2026, 7, 10, 12, 5, 0).toISOString(),
-      }),
-    ];
-    const stacks = buildTimelineItems(messages, { now }).filter((i) => i.kind === 'stack');
-    expect(stacks[0]?.kind === 'stack' && stacks[0].messages.map((m) => m.showMeta)).toEqual([
-      true,
-      true,
-    ]);
-  });
-
   it('inserts the unread divider before the first of 5 unread messages', () => {
     const messages = Array.from({ length: 8 }, (_, i) =>
       msg({ id: `m${i + 1}`, seq: i + 1, createdAt: localIso(2026, 8, 10, 10, i) }),
