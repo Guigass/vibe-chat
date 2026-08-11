@@ -1002,7 +1002,11 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
                 x.Status.ToString(),
                 x.Kind.ToString(),
                 x.DurationMs,
-                x.Waveform))
+                x.Waveform,
+                x.ThumbnailStatus != null ? x.ThumbnailStatus.ToString() : null,
+                x.Width,
+                x.Height,
+                x.PageCount))
             .ToArrayAsync(ct);
 
         var replyToId = request.ReplyToMessageId is Guid rid ? new MessageId(rid) : (MessageId?)null;
@@ -1133,7 +1137,11 @@ v1.MapPost("/workspaces/{workspaceId:guid}/messages/{messageId:guid}/forward", a
                     x.Status.ToString(),
                     x.Kind.ToString(),
                     x.DurationMs,
-                    x.Waveform)).ToArray());
+                    x.Waveform,
+                    x.ThumbnailStatus?.ToString(),
+                    x.Width,
+                    x.Height,
+                    x.PageCount)).ToArray());
 
         var createdRows = await db.Messages.AsNoTracking()
             .Where(x => messageIds.Contains(x.Id))
@@ -1498,7 +1506,11 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
                 x.Status.ToString(),
                 x.Kind.ToString(),
                 x.DurationMs,
-                x.Waveform))
+                x.Waveform,
+                x.ThumbnailStatus != null ? x.ThumbnailStatus.ToString() : null,
+                x.Width,
+                x.Height,
+                x.PageCount))
             .ToArrayAsync(ct);
 
         var effectiveReplyTo = request.ReplyToMessageId ?? thread.ParentMessageId.Value;
@@ -1732,6 +1744,10 @@ v1.MapPost("/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete"
     attachment.Status = AttachmentStatus.Ready;
     attachment.ReadyAt = clock.UtcNow;
     attachment.ChecksumSha256 = string.IsNullOrWhiteSpace(stat.ETag) ? null : stat.ETag.Trim('"');
+    if (AttachmentPolicies.IsThumbnailEligible(attachment.ContentType))
+    {
+        attachment.ThumbnailStatus = ThumbnailStatus.Pending;
+    }
 
     outbox.Add(new OutboxMessage
     {
@@ -1745,7 +1761,8 @@ v1.MapPost("/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete"
             fileName = attachment.FileName,
             contentType = attachment.ContentType,
             sizeBytes = attachment.SizeBytes,
-            readyAt = attachment.ReadyAt
+            readyAt = attachment.ReadyAt,
+            thumbnailStatus = attachment.ThumbnailStatus?.ToString()
         })
     });
     await db.SaveChangesAsync(ct);
@@ -1794,6 +1811,58 @@ v1.MapGet("/channels/{channelId:guid}/attachments/{attachmentId:guid}/download",
         attachment.FileName,
         attachment.ContentType,
         attachment.SizeBytes));
+});
+
+v1.MapGet("/channels/{channelId:guid}/attachments/{attachmentId:guid}/thumbnail", async (
+    Guid channelId,
+    Guid attachmentId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IObjectStorage storage,
+    FilesSettingsResolver filesSettings,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Files.Download, ct)
+        || !await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Read, ct))
+    {
+        return Results.Forbid();
+    }
+
+    var attachment = await db.Attachments.AsNoTracking()
+        .FirstOrDefaultAsync(x => x.Id == attachmentId && x.ChannelId == channel.Id, ct);
+    if (attachment is null
+        || attachment.Status != AttachmentStatus.Ready
+        || attachment.ThumbnailStatus != ThumbnailStatus.Ready
+        || string.IsNullOrWhiteSpace(attachment.ThumbnailKey))
+    {
+        return Results.NotFound();
+    }
+
+    var files = await filesSettings.ResolveAsync(channel.TenantId, ct);
+    var downloadTtl = TimeSpan.FromSeconds(files.PresignDownloadTtlSeconds);
+    var download = await storage.CreateDownloadUrlAsync(
+        attachment.ThumbnailKey,
+        AttachmentPolicies.ThumbnailFileName,
+        downloadTtl,
+        ct);
+    return Results.Ok(new AttachmentThumbnailResponse(
+        attachment.Id,
+        download.Url.ToString(),
+        download.ExpiresAt,
+        AttachmentPolicies.ThumbnailContentType,
+        attachment.Width,
+        attachment.Height,
+        attachment.PageCount));
 });
 
 v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, EditMessageRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IClock clock, CancellationToken ct) =>
@@ -1864,7 +1933,11 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid ch
             x.Status.ToString(),
             x.Kind.ToString(),
             x.DurationMs,
-            x.Waveform))
+            x.Waveform,
+            x.ThumbnailStatus != null ? x.ThumbnailStatus.ToString() : null,
+            x.Width,
+            x.Height,
+            x.PageCount))
         .ToArrayAsync(ct);
     return Results.Ok(new MessageResponse(
         message.Id.Value,
@@ -3181,7 +3254,11 @@ static AttachmentResponse ToAttachmentResponse(Attachment attachment) =>
         attachment.Status.ToString(),
         attachment.Kind.ToString(),
         attachment.DurationMs,
-        attachment.Waveform);
+        attachment.Waveform,
+        attachment.ThumbnailStatus?.ToString(),
+        attachment.Width,
+        attachment.Height,
+        attachment.PageCount);
 
 static async Task<(UserProfile Profile, TenantId TenantId)?> ResolveAdminDashboardAccessAsync(
     HttpContext http,
@@ -4118,7 +4195,11 @@ public sealed record AttachmentResponse(
     string Status,
     string Kind = "File",
     int? DurationMs = null,
-    int[]? Waveform = null);
+    int[]? Waveform = null,
+    string? ThumbnailStatus = null,
+    int? Width = null,
+    int? Height = null,
+    int? PageCount = null);
 public sealed record AttachmentUploadResponse(
     Guid AttachmentId,
     string UploadUrl,
@@ -4134,6 +4215,14 @@ public sealed record AttachmentDownloadResponse(
     string FileName,
     string ContentType,
     long SizeBytes);
+public sealed record AttachmentThumbnailResponse(
+    Guid AttachmentId,
+    string DownloadUrl,
+    DateTimeOffset ExpiresAt,
+    string ContentType,
+    int? Width,
+    int? Height,
+    int? PageCount);
 public sealed record ReactionSummaryResponse(string Emoji, int Count, bool Me);
 public sealed record ReactionUserResponse(Guid UserId, string DisplayName);
 public sealed record ReactionUsersResponse(string Emoji, ReactionUserResponse[] Users, int Total);

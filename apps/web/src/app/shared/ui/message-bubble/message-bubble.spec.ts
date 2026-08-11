@@ -22,17 +22,21 @@ function baseMessage(overrides: Partial<ChatMessage> = {}): ChatMessage {
 }
 
 describe('MessageBubble (B-163)', () => {
-  async function setup(
+    async function setup(
     message: ChatMessage,
     inputs: Record<string, unknown> = {},
     apiOverrides: Partial<{
       getAttachmentDownload: ReturnType<typeof vi.fn>;
+      getAttachmentThumbnail: ReturnType<typeof vi.fn>;
     }> = {},
   ) {
     TestBed.resetTestingModule();
     const getAttachmentDownload =
       apiOverrides.getAttachmentDownload ??
       vi.fn().mockResolvedValue({ downloadUrl: 'https://example.test/f' });
+    const getAttachmentThumbnail =
+      apiOverrides.getAttachmentThumbnail ??
+      vi.fn().mockResolvedValue({ downloadUrl: 'https://example.test/thumb.webp' });
     await TestBed.configureTestingModule({
       imports: [MessageBubble],
       providers: [
@@ -40,6 +44,7 @@ describe('MessageBubble (B-163)', () => {
           provide: ApiService,
           useValue: {
             getAttachmentDownload,
+            getAttachmentThumbnail,
             getReactionUsers: vi.fn(),
             transcribeAttachment: vi.fn(),
           },
@@ -169,6 +174,38 @@ describe('MessageBubble (B-163)', () => {
       'noopener,noreferrer',
     );
     openSpy.mockRestore();
+  });
+
+  it('loads thumbnail URL for Ready image attachments (B-090)', async () => {
+    const getAttachmentThumbnail = vi
+      .fn()
+      .mockResolvedValue({ downloadUrl: 'https://example.test/thumb.webp' });
+    const getAttachmentDownload = vi.fn();
+    const { fixture } = await setup(
+      baseMessage({
+        body: '',
+        attachments: [
+          {
+            id: 'a1',
+            fileName: 'shot.png',
+            contentType: 'image/png',
+            sizeBytes: 1200,
+            kind: 'File',
+            thumbnailStatus: 'Ready',
+            width: 800,
+            height: 600,
+          },
+        ],
+      }),
+      {},
+      { getAttachmentThumbnail, getAttachmentDownload },
+    );
+
+    await vi.waitFor(() => {
+      expect(getAttachmentThumbnail).toHaveBeenCalledWith('ch1', 'a1');
+    });
+    expect(getAttachmentDownload).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.previewUrls()['a1']).toBe('https://example.test/thumb.webp');
   });
 
   it('does not render a salva status tag for persisted messages', async () => {

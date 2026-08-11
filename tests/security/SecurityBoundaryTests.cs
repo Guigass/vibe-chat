@@ -460,6 +460,10 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
         var download = await client.GetAsync(
             $"/api/v1/channels/{foreignChannelId}/attachments/{Guid.NewGuid()}/download");
         download.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var thumbnail = await client.GetAsync(
+            $"/api/v1/channels/{foreignChannelId}/attachments/{Guid.NewGuid()}/thumbnail");
+        thumbnail.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact]

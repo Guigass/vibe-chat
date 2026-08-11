@@ -55,6 +55,7 @@ export class MessageStore {
   private unsubEdited: (() => void) | null = null;
   private unsubDeleted: (() => void) | null = null;
   private unsubReactions: (() => void) | null = null;
+  private unsubThumbnail: (() => void) | null = null;
   private unsubReconnected: (() => void) | null = null;
 
   readonly messages = this.messagesSignal.asReadonly();
@@ -101,6 +102,9 @@ export class MessageStore {
     this.unsubDeleted = this.hub.onMessageDeleted((patch) => this.applyDelete(patch));
     this.unsubReactions = this.hub.onReactionChanged((event) =>
       this.applyReactions(event.messageId, event.reactions),
+    );
+    this.unsubThumbnail = this.hub.onAttachmentThumbnailReady((event) =>
+      this.applyThumbnailReady(event),
     );
     this.unsubReconnected = this.hub.onReconnected(() => {
       void this.gapFillActiveChannel();
@@ -583,6 +587,36 @@ export class MessageStore {
   ): void {
     this.messagesSignal.update((list) =>
       list.map((m) => (m.id === messageId ? { ...m, reactions: [...reactions] } : m)),
+    );
+  }
+
+  private applyThumbnailReady(event: {
+    attachmentId: string;
+    channelId: string;
+    thumbnailStatus: string | null;
+    width?: number | null;
+    height?: number | null;
+    pageCount?: number | null;
+  }): void {
+    this.messagesSignal.update((list) =>
+      list.map((m) => {
+        if (!idsEqual(m.channelId, event.channelId) || !m.attachments?.length) {
+          return m;
+        }
+        let changed = false;
+        const attachments = m.attachments.map((a) => {
+          if (!idsEqual(a.id, event.attachmentId)) return a;
+          changed = true;
+          return {
+            ...a,
+            thumbnailStatus: event.thumbnailStatus,
+            width: event.width ?? a.width,
+            height: event.height ?? a.height,
+            pageCount: event.pageCount ?? a.pageCount,
+          };
+        });
+        return changed ? { ...m, attachments } : m;
+      }),
     );
   }
 

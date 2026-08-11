@@ -527,6 +527,76 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Image_attachment_complete_enqueues_thumbnail_job_to_ready()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        byte[] pngBytes;
+        using (var image = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(80, 40))
+        using (var ms = new MemoryStream())
+        {
+            image.Save(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder());
+            pngBytes = ms.ToArray();
+        }
+
+        var initiate = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments",
+            new CreateAttachmentUploadRequest("thumb-test.png", "image/png", pngBytes.Length));
+        initiate.StatusCode.Should().Be(HttpStatusCode.OK);
+        var upload = await initiate.Content.ReadFromJsonAsync<AttachmentUploadDto>(JsonOptions);
+        upload.Should().NotBeNull();
+
+        using var putClient = new HttpClient();
+        using var putRequest = new HttpRequestMessage(HttpMethod.Put, upload!.UploadUrl)
+        {
+            Content = new ByteArrayContent(pngBytes)
+        };
+        var put = await putClient.SendAsync(putRequest);
+        put.IsSuccessStatusCode.Should().BeTrue();
+
+        var complete = await client.PostAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments/{upload.AttachmentId}/complete",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+        complete.StatusCode.Should().Be(HttpStatusCode.OK);
+        var ready = await complete.Content.ReadFromJsonAsync<AttachmentDto>(JsonOptions);
+        ready.Should().NotBeNull();
+        ready!.ThumbnailStatus.Should().Be("Pending");
+
+        var processor = factory.Services.GetRequiredService<OutboxProcessor>();
+        for (var i = 0; i < 5; i++)
+        {
+            await processor.ProcessBatchAsync(CancellationToken.None);
+            await using var check = factory.CreateMigratorDbContext();
+            var row = await check.Attachments.IgnoreQueryFilters()
+                .SingleAsync(x => x.Id == upload.AttachmentId);
+            if (row.ThumbnailStatus == VibeChat.Files.ThumbnailStatus.Ready)
+            {
+                break;
+            }
+        }
+
+        await using (var db = factory.CreateMigratorDbContext())
+        {
+            var attachment = await db.Attachments.IgnoreQueryFilters()
+                .SingleAsync(x => x.Id == upload.AttachmentId);
+            attachment.ThumbnailStatus.Should().Be(VibeChat.Files.ThumbnailStatus.Ready);
+            attachment.ThumbnailKey.Should().NotBeNullOrWhiteSpace();
+            attachment.Width.Should().Be(80);
+            attachment.Height.Should().Be(40);
+        }
+
+        var thumb = await client.GetFromJsonAsync<AttachmentThumbnailDto>(
+            $"/api/v1/channels/{DemoChannelId}/attachments/{upload.AttachmentId}/thumbnail",
+            JsonOptions);
+        thumb.Should().NotBeNull();
+        thumb!.DownloadUrl.Should().NotBeNullOrWhiteSpace();
+        thumb.ContentType.Should().Be("image/webp");
+        thumb.Width.Should().Be(80);
+        thumb.Height.Should().Be(40);
+    }
+
+    [Fact]
     public async Task Forward_rejects_target_without_membership_without_partial_send()
     {
         using var alice = factory.CreateClient();
@@ -1923,9 +1993,21 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         string Status,
         string Kind = "File",
         int? DurationMs = null,
-        int[]? Waveform = null);
+        int[]? Waveform = null,
+        string? ThumbnailStatus = null,
+        int? Width = null,
+        int? Height = null,
+        int? PageCount = null);
     private sealed record AttachmentUploadDto(Guid AttachmentId, string UploadUrl, DateTimeOffset ExpiresAt, string FileName, string ContentType);
     private sealed record AttachmentDownloadDto(Guid AttachmentId, string DownloadUrl, DateTimeOffset ExpiresAt, string FileName, string ContentType, long SizeBytes);
+    private sealed record AttachmentThumbnailDto(
+        Guid AttachmentId,
+        string DownloadUrl,
+        DateTimeOffset ExpiresAt,
+        string ContentType,
+        int? Width,
+        int? Height,
+        int? PageCount);
 
     private sealed record ChannelDto(
         Guid Id,

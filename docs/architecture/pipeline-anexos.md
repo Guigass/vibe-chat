@@ -103,7 +103,8 @@ Falha move para `Rejected` e agenda remoção.
 
 Jobs derivados:
 
-- thumbnail;
+- thumbnail (B-090): WebP lado maior 640 px; image/* + 1ª página PDF;
+  `ThumbnailStatus` Pending→Ready|Failed; disparado por `files.attachment.ready`;
 - preview seguro;
 - waveform;
 - metadata de mídia;

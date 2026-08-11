@@ -204,6 +204,11 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.ReferenceCount).HasDefaultValue(1);
             entity.Property(x => x.DurationMs);
             entity.Property(x => x.Waveform).HasColumnType("jsonb");
+            entity.Property(x => x.ThumbnailKey).HasMaxLength(512);
+            entity.Property(x => x.Width);
+            entity.Property(x => x.Height);
+            entity.Property(x => x.ThumbnailStatus).HasConversion<string>().HasMaxLength(16);
+            entity.Property(x => x.PageCount);
             entity.HasIndex(x => x.StorageKey);
             entity.HasIndex(x => new { x.TenantId, x.ChannelId, x.MessageId });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
@@ -958,6 +963,11 @@ public sealed class MessageWriter(
                     ReferenceCount = nextCount,
                     DurationMs = original.DurationMs,
                     Waveform = original.Waveform,
+                    ThumbnailKey = original.ThumbnailKey,
+                    Width = original.Width,
+                    Height = original.Height,
+                    ThumbnailStatus = original.ThumbnailStatus,
+                    PageCount = original.PageCount,
                     CreatedAt = now,
                     ReadyAt = original.ReadyAt ?? now
                 };
@@ -1771,6 +1781,41 @@ public sealed class MinioObjectStorage(
         }
     }
 
+    public async Task<Stream?> GetObjectAsync(string storageKey, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var memory = new MemoryStream();
+            await minioClient.GetObjectAsync(new Minio.DataModel.Args.GetObjectArgs()
+                .WithBucket(Bucket())
+                .WithObject(storageKey)
+                .WithCallbackStream(stream => stream.CopyTo(memory)), cancellationToken);
+            memory.Position = 0;
+            return memory;
+        }
+        catch (Minio.Exceptions.ObjectNotFoundException)
+        {
+            return null;
+        }
+    }
+
+    public async Task PutObjectAsync(string storageKey, Stream content, string contentType, CancellationToken cancellationToken)
+    {
+        if (content.CanSeek)
+        {
+            content.Position = 0;
+        }
+
+        var size = content.CanSeek ? content.Length : -1;
+        var putArgs = new Minio.DataModel.Args.PutObjectArgs()
+            .WithBucket(Bucket())
+            .WithObject(storageKey)
+            .WithStreamData(content)
+            .WithObjectSize(size)
+            .WithContentType(contentType);
+        await minioClient.PutObjectAsync(putArgs, cancellationToken);
+    }
+
     private string Bucket() => configuration["Minio:Bucket"] ?? "vibechat";
 }
 
@@ -1967,6 +2012,18 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     continue;
                 }
 
+                if (outbox.Type == "files.attachment.ready")
+                {
+                    await ProcessAttachmentReadyAsync(
+                        scope.ServiceProvider,
+                        dbContext,
+                        publisher,
+                        outbox,
+                        now,
+                        cancellationToken);
+                    continue;
+                }
+
                 var payloadNode = JsonNode.Parse(outbox.Payload)
                     ?? throw new InvalidOperationException("Invalid outbox payload JSON");
                 var root = payloadNode.AsObject();
@@ -2029,6 +2086,61 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
         await dbContext.SaveChangesAsync(cancellationToken);
         await RlsSession.CommitAsync(dbContext, cancellationToken);
         return messages.Length;
+    }
+
+    private static async Task ProcessAttachmentReadyAsync(
+        IServiceProvider services,
+        VibeChatDbContext dbContext,
+        IChatPublisher publisher,
+        OutboxMessage outbox,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var payloadNode = JsonNode.Parse(outbox.Payload)
+            ?? throw new InvalidOperationException("Invalid outbox payload JSON");
+        var root = payloadNode.AsObject();
+        var tenantId = new TenantId(root["tenantId"]?.GetValue<Guid>()
+            ?? throw new InvalidOperationException("Outbox payload missing tenantId"));
+        var channelId = new ChannelId(root["channelId"]?.GetValue<Guid>()
+            ?? throw new InvalidOperationException("Outbox payload missing channelId"));
+        var attachmentId = root["attachmentId"]?.GetValue<Guid>()
+            ?? throw new InvalidOperationException("Outbox payload missing attachmentId");
+
+        // Fan-out legacy ready event for any listeners.
+        await publisher.PublishAsync(
+            new RealtimeMessage("files.attachment.ready", tenantId, channelId, payloadNode),
+            cancellationToken);
+
+        var attachment = await dbContext.Attachments.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(
+                x => x.Id == attachmentId && x.TenantId == tenantId && x.ChannelId == channelId,
+                cancellationToken);
+
+        if (attachment is not null
+            && AttachmentPolicies.IsThumbnailEligible(attachment.ContentType)
+            && attachment.ThumbnailStatus is ThumbnailStatus.Pending or null)
+        {
+            var generator = services.GetRequiredService<AttachmentThumbnailGenerator>();
+            await generator.TryGenerateAsync(attachment, cancellationToken);
+
+            var thumbPayload = JsonNode.Parse(JsonSerializer.Serialize(new
+            {
+                tenantId = tenantId.Value,
+                channelId = channelId.Value,
+                attachmentId = attachment.Id,
+                thumbnailStatus = attachment.ThumbnailStatus?.ToString(),
+                width = attachment.Width,
+                height = attachment.Height,
+                pageCount = attachment.PageCount,
+                thumbnailKey = attachment.ThumbnailKey
+            }))!;
+            await publisher.PublishAsync(
+                new RealtimeMessage("AttachmentThumbnailReady", tenantId, channelId, thumbPayload),
+                cancellationToken);
+        }
+
+        outbox.ProcessedAt = now;
+        outbox.Error = null;
     }
 }
 
@@ -2380,6 +2492,7 @@ public sealed class MessageRetentionPurgeProcessor(
             var attachmentCandidates = await db.Attachments.IgnoreQueryFilters()
                 .Where(x => x.TenantId == policy.TenantId && x.MessageId != null)
                 .ToListAsync(cancellationToken);
+            var storage = scope.ServiceProvider.GetRequiredService<IObjectStorage>();
             foreach (var attachment in attachmentCandidates
                 .Where(a => a.MessageId is { } mid && messageIdGuids.Contains(mid.Value)))
             {
@@ -2390,9 +2503,17 @@ public sealed class MessageRetentionPurgeProcessor(
                     .ToListAsync(cancellationToken);
                 if (siblings.Count == 0)
                 {
-                    // Sole row: detach for compliance (B-047). Blob stays (CanDeleteBlob only when 0 rows).
+                    // Sole row (B-090): delete original + thumbnail blobs, then detach metadata (B-047).
+                    await storage.DeleteObjectAsync(attachment.StorageKey, cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(attachment.ThumbnailKey))
+                    {
+                        await storage.DeleteObjectAsync(attachment.ThumbnailKey, cancellationToken);
+                    }
+
                     attachment.MessageId = null;
                     attachment.ReferenceCount = 1;
+                    attachment.ThumbnailKey = null;
+                    attachment.ThumbnailStatus = null;
                 }
                 else
                 {
@@ -2839,6 +2960,7 @@ public static class DependencyInjection
             return new MinioPresignClient(client);
         });
         services.AddScoped<IObjectStorage, MinioObjectStorage>();
+        services.AddScoped<AttachmentThumbnailGenerator>();
 
         // ADR-020: never capture API key in DefaultRequestHeaders — set per HttpRequestMessage.
         services.AddHttpClient<OpenRouterAiProvider>((sp, client) =>

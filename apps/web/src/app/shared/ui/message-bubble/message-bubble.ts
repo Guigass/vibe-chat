@@ -27,6 +27,7 @@ import {
 } from '../../models/chat.models';
 import {
   classifyAttachmentPreview,
+  isGifContentType,
   menuActionsForMessage,
 } from '../../attachments/attachment-preview';
 import { Avatar } from '../avatar/avatar';
@@ -171,6 +172,7 @@ import { environment } from '../../../../environments/environment';
                     <li>
                       <vc-attachment-preview
                         [attachment]="attachment"
+                        [previewUrl]="previewUrls()[attachment.id] ?? null"
                         [downloadUrl]="downloadUrls()[attachment.id] ?? null"
                         [showTranscribe]="attachment.kind === 'Audio' && transcribeEnabled()"
                         (imageOpen)="openLightbox($event)"
@@ -722,6 +724,7 @@ export class MessageBubble {
   readonly draft = signal('');
   readonly transcript = signal<string | null>(null);
   readonly downloadUrls = signal<Record<string, string>>({});
+  readonly previewUrls = signal<Record<string, string>>({});
   readonly emojiOptions = REACTION_EMOJI_OPTIONS;
   readonly reactionPickerOpen = signal(false);
   readonly menuOpen = signal(false);
@@ -754,9 +757,15 @@ export class MessageBubble {
   readonly hasMenu = computed(() => this.menuItems().length > 0);
   readonly lightboxImages = computed<LightboxImage[]>(() => {
     const urls = this.downloadUrls();
+    const previews = this.previewUrls();
     return (this.message().attachments ?? [])
-      .filter((a) => classifyAttachmentPreview(a.contentType, a.kind) === 'image' && urls[a.id])
-      .map((a) => ({ id: a.id, url: urls[a.id], alt: a.fileName }));
+      .filter((a) => classifyAttachmentPreview(a.contentType, a.kind) === 'image')
+      .map((a) => ({
+        id: a.id,
+        url: urls[a.id] ?? previews[a.id],
+        alt: a.fileName,
+      }))
+      .filter((a): a is LightboxImage => !!a.url);
   });
 
   private longPressTimer: ReturnType<typeof setTimeout> | null = null;
@@ -767,8 +776,28 @@ export class MessageBubble {
       const attachments = this.message().attachments ?? [];
       const channelId = this.message().channelId;
       for (const attachment of attachments) {
-        if (this.downloadUrls()[attachment.id]) continue;
-        void this.loadDownloadUrl(channelId, attachment.id);
+        const kind = classifyAttachmentPreview(attachment.contentType, attachment.kind);
+        if (kind === 'image' || kind === 'pdf') {
+          const status = attachment.thumbnailStatus;
+          if (status === 'Ready' && !this.previewUrls()[attachment.id]) {
+            void this.loadPreviewUrl(channelId, attachment.id);
+          } else if (
+            (!status || status === 'Failed') &&
+            !this.downloadUrls()[attachment.id] &&
+            kind === 'image'
+          ) {
+            // Legacy attachments without thumbnail pipeline — show original.
+            void this.loadDownloadUrl(channelId, attachment.id);
+          }
+          if (isGifContentType(attachment.contentType) && !this.downloadUrls()[attachment.id]) {
+            void this.loadDownloadUrl(channelId, attachment.id);
+          }
+        } else if (
+          (kind === 'audio' || kind === 'video') &&
+          !this.downloadUrls()[attachment.id]
+        ) {
+          void this.loadDownloadUrl(channelId, attachment.id);
+        }
       }
     });
   }
@@ -886,6 +915,10 @@ export class MessageBubble {
   }
 
   openLightbox(attachmentId: string): void {
+    const channelId = this.message().channelId;
+    if (channelId && !this.downloadUrls()[attachmentId]) {
+      void this.loadDownloadUrl(channelId, attachmentId);
+    }
     this.lightboxStartId.set(attachmentId);
     this.lightboxOpen.set(true);
   }
@@ -926,6 +959,18 @@ export class MessageBubble {
       this.downloadUrls.update((current) => ({ ...current, [attachmentId]: result.downloadUrl }));
     } catch {
       // preview stays on file card until URL resolves
+    }
+  }
+
+  private async loadPreviewUrl(channelId: string, attachmentId: string): Promise<void> {
+    try {
+      const result = await this.api.getAttachmentThumbnail(channelId, attachmentId);
+      this.previewUrls.update((current) => ({ ...current, [attachmentId]: result.downloadUrl }));
+    } catch {
+      // fall back to original when thumbnail endpoint is not ready
+      if (!this.downloadUrls()[attachmentId]) {
+        void this.loadDownloadUrl(channelId, attachmentId);
+      }
     }
   }
 }

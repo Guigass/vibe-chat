@@ -123,6 +123,47 @@ public sealed class BackendUnitTests
         AttachmentPolicies.IsAllowedContentType("application/x-msdownload", null).Should().BeFalse();
     }
 
+    [Fact]
+    public void Attachment_thumbnail_policies_detect_eligible_types_and_limits()
+    {
+        AttachmentPolicies.IsThumbnailEligible("image/png").Should().BeTrue();
+        AttachmentPolicies.IsThumbnailEligible("application/pdf").Should().BeTrue();
+        AttachmentPolicies.IsThumbnailEligible("text/plain").Should().BeFalse();
+        AttachmentPolicies.IsWithinThumbnailInputLimits(100, 100).Should().BeTrue();
+        AttachmentPolicies.IsWithinThumbnailInputLimits(9000, 100).Should().BeFalse();
+        AttachmentPolicies.IsWithinThumbnailInputLimits(5000, 5001).Should().BeFalse();
+        var key = AttachmentPolicies.BuildThumbnailKey(TenantId.New(), ChannelId.New(), Guid.NewGuid());
+        key.Should().EndWith("/thumb.webp");
+    }
+
+    [Fact]
+    public void Attachment_thumbnail_codec_resizes_image_to_max_edge()
+    {
+        using var image = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(1200, 800);
+        using var input = new MemoryStream();
+        image.Save(input, new SixLabors.ImageSharp.Formats.Png.PngEncoder());
+        input.Position = 0;
+
+        var result = AttachmentThumbnailCodec.FromImage(input);
+        result.Success.Should().BeTrue();
+        result.Width.Should().Be(1200);
+        result.Height.Should().Be(800);
+        result.WebpBytes.Should().NotBeNull();
+        result.WebpBytes!.Length.Should().BeGreaterThan(0);
+
+        using var thumb = SixLabors.ImageSharp.Image.Load(result.WebpBytes);
+        Math.Max(thumb.Width, thumb.Height).Should().Be(AttachmentPolicies.ThumbnailMaxEdgePx);
+    }
+
+    [Fact]
+    public void Attachment_thumbnail_codec_rejects_unsupported_content_type()
+    {
+        using var input = new MemoryStream([1, 2, 3, 4]);
+        var result = AttachmentThumbnailCodec.FromContent(input, "text/plain");
+        result.Success.Should().BeFalse();
+        result.Error.Should().Be("UnsupportedContentType");
+    }
+
     [Theory]
     [InlineData(0, true)]
     [InlineData(10, true)]

@@ -112,7 +112,7 @@ membership. Endpoints tipicamente checam membership + `HasPermissionAsync` (ex.:
 | ForwardedFromChannelId | Guid? | Canal de origem do encaminhamento |
 | ForwardedFrom | `{ messageId, channelId, channelName, authorName, createdAt, isDirect }`? | Cabeçalho resolvido (permanece se a origem for apagada depois); em DM, `channelName` é o display name do peer (nunca o slug `dm:guid:guid`) e `isDirect = true` |
 | ReplyCount | int | Contagem de replies (timeline do canal) |
-| Attachments | AttachmentDto[] | Metadados prontos (sem URL) |
+| Attachments | AttachmentDto[] | Metadados prontos (sem URL): `id`, `fileName`, `contentType`, `sizeBytes`, `status`, `kind`, `durationMs?`, `waveform?`, `thumbnailStatus?` (`Pending`\|`Ready`\|`Failed`), `width?`, `height?`, `pageCount?` (B-090) |
 | Reactions | ReactionSummaryDto[] | `{ emoji, count, me }` agregado |
 
 `ReplyToMessageId` de outro canal → 400 `ReplyToDifferentChannel`. Inexistente → 400 `ReplyToNotFound`. Soft-delete da original: `replyTo.deleted = true`, preview vazio (UI: “Mensagem removida”).
@@ -326,7 +326,14 @@ Usado por Presence/Realtime/Search para invalidar caches e grupos.
 
 ### `files.attachment.ready`
 
-Metadados prontos / vírus scan ok (quando existir).
+Metadados prontos / vírus scan ok (quando existir). No `complete`, anexos
+`image/*` e `application/pdf` entram com `thumbnailStatus=Pending`; o worker
+gera a miniatura no processamento deste outbox (nunca no hot path do envio).
+
+### `AttachmentThumbnailReady` (SignalR)
+
+Fan-out após geração (sucesso ou falha): `{ tenantId, channelId, attachmentId,
+thumbnailStatus, width?, height?, pageCount?, thumbnailKey? }`.
 
 ---
 
@@ -384,17 +391,27 @@ public interface IObjectStorage
     Task<PresignedDownload> CreateDownloadUrlAsync(string storageKey, string fileName, TimeSpan ttl, CancellationToken ct);
     Task<ObjectStat?> StatObjectAsync(string storageKey, CancellationToken ct);
     Task DeleteObjectAsync(string storageKey, CancellationToken ct);
+    Task<Stream?> GetObjectAsync(string storageKey, CancellationToken ct);
+    Task PutObjectAsync(string storageKey, Stream content, string contentType, CancellationToken ct);
 }
 ```
 
 `Attachment.ReferenceCount` (default 1): quantas linhas compartilham o `StorageKey` após encaminhar (B-085).
+
+Campos de miniatura (B-090) em `files.attachments`: `ThumbnailKey`, `Width`,
+`Height`, `ThumbnailStatus` (`Pending`\|`Ready`\|`Failed`|null), `PageCount`
+(PDF). Miniatura WebP lado maior 640 px em
+`tenants/{tenantId}/channels/{channelId}/{attachmentId}/thumb.webp`. Forward
+clona os campos de thumbnail junto com `StorageKey`.
+
 ### Endpoints (API)
 
 | Endpoint | Notas |
 |----------|-------|
 | `POST /api/v1/channels/{channelId}/attachments` | Body `{ fileName, contentType, sizeBytes, kind?, durationMs?, waveform? }` → URL pré-assinada PUT; exige membership + `file.upload`; `kind=Audio` exige `durationMs` e aceita `waveform` (0–100, ≤100 pts) |
-| `POST /api/v1/channels/{channelId}/attachments/{id}/complete` | Confirma objeto no MinIO; status `Ready` |
-| `GET /api/v1/channels/{channelId}/attachments/{id}/download` | URL pré-assinada GET; exige membership + `file.download` |
+| `POST /api/v1/channels/{channelId}/attachments/{id}/complete` | Confirma objeto no MinIO; status `Ready`; image/PDF → `ThumbnailStatus=Pending` + outbox `files.attachment.ready` |
+| `GET /api/v1/channels/{channelId}/attachments/{id}/download` | URL pré-assinada GET do original; exige membership + `file.download` |
+| `GET /api/v1/channels/{channelId}/attachments/{id}/thumbnail` | URL pré-assinada GET da miniatura WebP; mesma authZ do download; `404` se não `Ready`; cross-tenant → 403 |
 | `POST /api/v1/workspaces/{workspaceId}/channels/{channelId}/messages/{messageId}/attachments/{attachmentId}/transcribe` | membership + `ai.transcribe`; `{ text, language, provider }` efêmero (não persiste); `503 AiDisabled` se IA off |
 
 Regras: keys prefixadas por tenant (`tenants/{tenantId}/…`); MIME/tamanho via resolver efetivo (`Files:*` env como teto + `files.settings` por tenant quando ADR-020 habilitado); body da mensagem pode ser vazio se houver `AttachmentIds` prontos no `SendMessage`.
@@ -507,7 +524,7 @@ Regras:
 
 - Soft-delete permanece o default de exclusão (ADR-018); APIs de leitura redigem body
 - Hard-delete: worker `MessageRetentionPurgeDispatcher` remove mensagens com `DeletedAt` anterior ao cutoff (`now - retentionDays`)
-- Cascata mínima: remove `reactions` da mensagem; anexos com `StorageKey` exclusivo fazem `attachments.MessageId = null` (metadados preservados); anexos compartilhados (B-085) removem só a linha da mensagem purgada e ajustam `ReferenceCount` nos irmãos — sem delete MinIO enquanto houver referência
+- Cascata mínima: remove `reactions` da mensagem; anexos com `StorageKey` exclusivo fazem `attachments.MessageId = null` (metadados preservados) e apagam no MinIO o `StorageKey` **e** o `ThumbnailKey` quando presentes (B-090); anexos compartilhados (B-085) removem só a linha da mensagem purgada e ajustam `ReferenceCount` nos irmãos — sem delete MinIO enquanto houver referência
 - `ConversationSequence` / `seq` não são reescritos
 - Off por default (processo + tenant)
 

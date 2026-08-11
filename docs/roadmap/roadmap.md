@@ -255,7 +255,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W9-0 | D | Message bubble moderno — layout tipado, preview e context menu (B-163) | B-023, B-024, B-083 | [B-163](../product/specs/B-163-message-bubble-context-menu.md) | **Done** |
 | W9-1 | D | Agrupamento, separadores e não lidas (B-088) | — | [B-088](../product/specs/B-088-timeline-agrupamento-separadores.md) | **Done** |
 | W9-2 | C/D | Histórico paginado e pular para a mensagem (B-089) | W9-1 | [B-089](../product/specs/B-089-historico-paginado.md) | **Done** |
-| W9-3 | C/D | Preview de anexos — miniaturas no worker (B-090) | W8-1, W9-0 | [B-090](../product/specs/B-090-preview-de-anexos.md) | Planned |
+| W9-3 | C/D | Preview de anexos — miniaturas no worker (B-090) | W8-1, W9-0 | [B-090](../product/specs/B-090-preview-de-anexos.md) | Done |
 | W9-4 | C/D | Link preview (B-091) | — | [B-091](../product/specs/B-091-link-preview.md) | Planned |
 | W9-5 | C/D | Fixar mensagem (B-092) | W9-2 | [B-092](../product/specs/B-092-fixar-mensagem.md) | Planned |
 | W9-6 | C/D | Salvos (B-093) | W9-2 | [B-093](../product/specs/B-093-salvos.md) | Planned |

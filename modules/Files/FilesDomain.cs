@@ -15,6 +15,14 @@ public enum AttachmentKind
     Audio = 1
 }
 
+/// <summary>Derived thumbnail lifecycle (B-090). Null means not applicable (non-image/PDF).</summary>
+public enum ThumbnailStatus
+{
+    Pending = 0,
+    Ready = 1,
+    Failed = 2
+}
+
 public sealed class Attachment
 {
     public Guid Id { get; set; }
@@ -33,6 +41,15 @@ public sealed class Attachment
     public int ReferenceCount { get; set; } = 1;
     public int? DurationMs { get; set; }
     public int[]? Waveform { get; set; }
+    /// <summary>Object key of the WebP thumbnail derivative (B-090).</summary>
+    public string? ThumbnailKey { get; set; }
+    /// <summary>Original image/PDF page width in pixels (layout reservation).</summary>
+    public int? Width { get; set; }
+    /// <summary>Original image/PDF page height in pixels (layout reservation).</summary>
+    public int? Height { get; set; }
+    public ThumbnailStatus? ThumbnailStatus { get; set; }
+    /// <summary>PDF page count when known (B-090).</summary>
+    public int? PageCount { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? ReadyAt { get; set; }
 }
@@ -50,6 +67,10 @@ public interface IObjectStorage
     Task<PresignedDownload> CreateDownloadUrlAsync(string storageKey, string fileName, TimeSpan ttl, CancellationToken cancellationToken);
     Task<ObjectStat?> StatObjectAsync(string storageKey, CancellationToken cancellationToken);
     Task DeleteObjectAsync(string storageKey, CancellationToken cancellationToken);
+    /// <summary>Download object bytes for server-side derived jobs (B-090). Caller owns the stream.</summary>
+    Task<Stream?> GetObjectAsync(string storageKey, CancellationToken cancellationToken);
+    /// <summary>Upload derived object bytes (thumbnails). Overwrites if present.</summary>
+    Task PutObjectAsync(string storageKey, Stream content, string contentType, CancellationToken cancellationToken);
 }
 
 /// <summary>Shared-blob lifecycle for forward-by-reference attachments (B-085).</summary>
@@ -87,6 +108,11 @@ public static class AttachmentPolicies
     public const int DefaultUploadTtlSeconds = 900;
     public const int DefaultDownloadTtlSeconds = 300;
     public const int MaxFileNameLength = 180;
+    public const int ThumbnailMaxEdgePx = 640;
+    public const int ThumbnailMaxInputEdgePx = 8192;
+    public const long ThumbnailMaxInputPixels = 25_000_000L;
+    public const string ThumbnailContentType = "image/webp";
+    public const string ThumbnailFileName = "thumb.webp";
 
     public static readonly HashSet<string> DefaultAllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -129,6 +155,38 @@ public static class AttachmentPolicies
 
     public static string BuildStorageKey(TenantId tenantId, ChannelId channelId, Guid attachmentId, string safeFileName) =>
         $"tenants/{tenantId.Value:N}/channels/{channelId.Value:N}/{attachmentId:N}/{safeFileName}";
+
+    public static string BuildThumbnailKey(TenantId tenantId, ChannelId channelId, Guid attachmentId) =>
+        $"tenants/{tenantId.Value:N}/channels/{channelId.Value:N}/{attachmentId:N}/{ThumbnailFileName}";
+
+    public static bool IsThumbnailEligible(string contentType)
+    {
+        var type = (contentType ?? string.Empty).Trim();
+        if (type.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return type.Equals("application/pdf", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool IsPdfContentType(string contentType) =>
+        (contentType ?? string.Empty).Trim().Equals("application/pdf", StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsWithinThumbnailInputLimits(int width, int height)
+    {
+        if (width <= 0 || height <= 0)
+        {
+            return false;
+        }
+
+        if (width > ThumbnailMaxInputEdgePx || height > ThumbnailMaxInputEdgePx)
+        {
+            return false;
+        }
+
+        return (long)width * height <= ThumbnailMaxInputPixels;
+    }
 
     public static bool IsAllowedContentType(string contentType, IEnumerable<string>? allowed) =>
         (allowed ?? DefaultAllowedContentTypes).Contains(contentType.Trim(), StringComparer.OrdinalIgnoreCase);

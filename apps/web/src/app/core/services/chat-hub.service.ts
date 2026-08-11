@@ -112,6 +112,15 @@ export interface ReactionChangedEvent {
   topUsers?: string[];
 }
 
+export interface AttachmentThumbnailReadyEvent {
+  attachmentId: string;
+  channelId: string;
+  thumbnailStatus: string | null;
+  width?: number | null;
+  height?: number | null;
+  pageCount?: number | null;
+}
+
 interface ReactionChangedPayload {
   messageId?: string;
   channelId: string;
@@ -120,6 +129,15 @@ interface ReactionChangedPayload {
   added?: boolean;
   topUsers?: string[];
   reactions?: Array<{ emoji: string; count: number; userIds?: string[]; me?: boolean }>;
+}
+
+interface AttachmentThumbnailReadyPayload {
+  attachmentId?: string;
+  channelId?: string;
+  thumbnailStatus?: string | null;
+  width?: number | null;
+  height?: number | null;
+  pageCount?: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -151,6 +169,7 @@ export class ChatHubService {
   private readonly reactionHandlers = new Set<(event: ReactionChangedEvent) => void>();
   private readonly presenceHandlers = new Set<(event: PresenceChangedEvent) => void>();
   private readonly reconnectedHandlers = new Set<() => void | Promise<void>>();
+  private readonly thumbnailReadyHandlers = new Set<(event: AttachmentThumbnailReadyEvent) => void>();
 
   readonly status = this.statusSignal.asReadonly();
   readonly typingUsers = this.typingSignal.asReadonly();
@@ -310,6 +329,22 @@ export class ChatHubService {
         }),
       };
       for (const handler of this.reactionHandlers) {
+        handler(event);
+      }
+    });
+
+    connection.on('AttachmentThumbnailReady', (raw: AttachmentThumbnailReadyPayload | string) => {
+      const payload = this.coercePayload<AttachmentThumbnailReadyPayload>(raw);
+      if (!payload?.attachmentId || !payload.channelId) return;
+      const event: AttachmentThumbnailReadyEvent = {
+        attachmentId: String(payload.attachmentId),
+        channelId: String(payload.channelId),
+        thumbnailStatus: payload.thumbnailStatus ?? null,
+        width: payload.width ?? null,
+        height: payload.height ?? null,
+        pageCount: payload.pageCount ?? null,
+      };
+      for (const handler of this.thumbnailReadyHandlers) {
         handler(event);
       }
     });
@@ -526,6 +561,11 @@ export class ChatHubService {
   onReactionChanged(handler: (event: ReactionChangedEvent) => void): () => void {
     this.reactionHandlers.add(handler);
     return () => this.reactionHandlers.delete(handler);
+  }
+
+  onAttachmentThumbnailReady(handler: (event: AttachmentThumbnailReadyEvent) => void): () => void {
+    this.thumbnailReadyHandlers.add(handler);
+    return () => this.thumbnailReadyHandlers.delete(handler);
   }
 
   onPresenceChanged(handler: (event: PresenceChangedEvent) => void): () => void {

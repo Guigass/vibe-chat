@@ -62,13 +62,13 @@ miniatura junto com o original — incluir no teste de purge.
 
 ## Aceite
 
-- [ ] `complete` do upload enfileira job; `ThumbnailStatus` → `Ready` com `ThumbnailKey`
-- [ ] Timeline (B-163) serve a miniatura no lugar do original (bytes baixados menores)
-- [ ] `Width`/`Height` evitam layout shift no placeholder
-- [ ] PDF: miniatura da 1ª página + contagem de páginas no DTO
-- [ ] Miniatura falhada → `Failed`; bolha cai no cartão de arquivo
-- [ ] Miniatura de outro tenant → 403
-- [ ] Purge (B-047) remove original e miniatura
+- [x] `complete` do upload enfileira job; `ThumbnailStatus` → `Ready` com `ThumbnailKey`
+- [x] Timeline (B-163) serve a miniatura no lugar do original (bytes baixados menores)
+- [x] `Width`/`Height` evitam layout shift no placeholder
+- [x] PDF: miniatura da 1ª página + contagem de páginas no DTO
+- [x] Miniatura falhada → `Failed`; bolha cai no cartão de arquivo
+- [x] Miniatura de outro tenant → 403
+- [x] Purge (B-047) remove original e miniatura
 
 ## Testes
 

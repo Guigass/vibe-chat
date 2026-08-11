@@ -72,6 +72,11 @@ export interface MessageAttachment {
   kind?: 'File' | 'Audio';
   durationMs?: number;
   waveform?: number[];
+  /** B-090 — Pending | Ready | Failed */
+  thumbnailStatus?: string | null;
+  width?: number | null;
+  height?: number | null;
+  pageCount?: number | null;
 }
 
 export interface ReactionSummary {

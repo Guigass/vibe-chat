@@ -78,6 +78,10 @@ interface AttachmentDto {
   kind?: string;
   durationMs?: number;
   waveform?: number[];
+  thumbnailStatus?: string | null;
+  width?: number | null;
+  height?: number | null;
+  pageCount?: number | null;
 }
 
 interface ReactionSummaryDto {
@@ -547,6 +551,15 @@ export class ApiService {
     );
   }
 
+  async getAttachmentThumbnail(
+    channelId: string,
+    attachmentId: string,
+  ): Promise<AttachmentDownloadDto> {
+    return this.request<AttachmentDownloadDto>(
+      `/api/v1/channels/${channelId}/attachments/${attachmentId}/thumbnail`,
+    );
+  }
+
   async uploadFileToPresignedUrl(
     uploadUrl: string,
     file: File,
@@ -972,6 +985,10 @@ export class ApiService {
       kind: a.kind === 'Audio' ? 'Audio' : 'File',
       durationMs: a.durationMs,
       waveform: a.waveform,
+      thumbnailStatus: a.thumbnailStatus ?? null,
+      width: a.width ?? null,
+      height: a.height ?? null,
+      pageCount: a.pageCount ?? null,
     };
   }
 

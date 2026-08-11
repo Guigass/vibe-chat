@@ -328,6 +328,23 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<string>("ThumbnailKey")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("ThumbnailStatus")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int?>("Width")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("PageCount")
+                        .HasColumnType("integer");
+
                     b.Property<int>("ReferenceCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
