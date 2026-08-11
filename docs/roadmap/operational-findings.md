@@ -24,6 +24,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-DOC-CHECKER | Integridade documental | Contrato e baseline DOC-006 existem, mas a CI ainda não executa checker offline | Medium | Open | Implementar as regras de `qualidade-documental.md` sem alterar prioridade das waves |
 | OPS-PR-DRAFT | Tooling de PR | `open_git_pr` pode criar draft | Medium | Mitigated | Prompts convertem imediatamente para ready; monitorar |
 | OPS-DOCS-RACE | Corrida Docs | Merges #72+#73 (~20s) abriram Docs #76+#77; #77 foi re-draftado e ficou CONFLICTING | High | External action | Colar prompts 03/06 atualizados no dashboard (repo já em #78) |
+| OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` — reação 👍 não visível em alice após bob reagir; 5+ runs consecutivos falhando em main desde ~2026-08-10T18:08Z; último green completo `ecb147c` (2026-08-10T17:07Z) | Critical | Open | Build: corrigir regressão E2E/SignalR de reações; incident SHA `654f68d` |
 
 ## Resolvidos
 
@@ -67,6 +68,27 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   9. threat model, catálogo de configuração e runbook de rotação são atualizados.
 - Rollback: reverter roles/policies apenas em ambiente de teste; com dados,
   preferir roll-forward de grants sem desabilitar RLS.
+
+### OPS-E2E-REALTIME
+
+- Status: **Open** — main RED desde ~2026-08-10T18:08Z; Watchdog 2026-08-11T12:04Z.
+- Observado em: CI `E2E (Playwright)` em
+  [`realtime-events.spec.ts`](../../tests/e2e/specs/realtime-events.spec.ts) linha 66
+  (`getByLabel(/Reação 👍/i)` em alice após bob reagir).
+- Base/head SHA: último green `ecb147c9` (2026-08-10T17:07Z); incident tip
+  `654f68dc4fc8b6714b751a58c37cc5e975e0396d` (run
+  [#31488977720](https://github.com/Guigass/vibe-chat/actions/runs/31488977720)).
+- Reprodução: CI em `main` — 10 passed, 1 failed; falha persiste em retry interno
+  do Playwright e em docs-only merges (#119, #121).
+- Resultado esperado: reação propagada via SignalR visível em ambas as sessões.
+- Resultado atual: elemento `Reação 👍` ausente na sessão alice após 30s.
+- Impacto: `main` vermelho bloqueia auto-merge e viola invariante operacional.
+- Risk class: R1 (teste/regressão); severidade Critical por bloqueio de pipeline.
+- Owner automático: Build + QA.
+- Critério de resolução:
+  1. `E2E (Playwright)` verde em `main` por ≥2 runs consecutivos;
+  2. `realtime-events.spec.ts` passa localmente via `task test:e2e:ci`;
+  3. finding marcado Resolved citando PR de fix.
 
 ### OPS-DOCS-RACE
 
