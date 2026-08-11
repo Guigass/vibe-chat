@@ -168,7 +168,7 @@ public sealed class FilesSettingsResolver(
     VibeChatDbContext dbContext,
     IConfiguration configuration,
     IOptions<RuntimeSettingsOptions> runtimeOptions,
-    IMemoryCache cache) 
+    IMemoryCache cache)
 {
     private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(30);
 
