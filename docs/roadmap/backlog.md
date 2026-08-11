@@ -118,7 +118,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-163 | Message bubble moderno (layout tipado + ações + preview) | **Done** (W9-0) — alinhamento mine/theirs p/ todos os tipos; preview Image/PDF/Audio/Video; toolbar só no hover/focus + context menu; base antes de pin/salvos; [spec](../product/specs/B-163-message-bubble-context-menu.md) |
 | B-088 | Agrupamento, separadores e não lidas | **Done (W9-1)** — agrupamento 5 min, sticky de data, divisor local, jump + auto-scroll só no fim |
 | B-089 | Histórico paginado e pular para a mensagem | Done (W9-2) |
-| B-090 | Preview de anexos | Planned (W9-3) — miniatura no worker; UI tipada em B-163; purge remove junto |
+| B-090 | Preview de anexos | Done (W9-3) — miniatura no worker; UI tipada em B-163; purge remove junto |
 | B-091 | Link preview | Planned (W9-4) — **exige guarda de SSRF**; sem ela não passa |
 | B-092 | Fixar mensagem | Planned (W9-5) — limite 20, permissão `message.pin` |
 | B-093 | Salvos | Planned (W9-6) — revalida membership na leitura |
@@ -152,7 +152,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-061 | Bus externo | Conditional — somente gatilho ADR-015 medido |
 | B-062 | Helm/K8s | Conditional — somente gatilho ADR-017 medido |
 | B-063 | Clientes mobile nativos | Planned — W15 |
-| B-064 | Canais confidenciais E2EE | Planned — W16 |
+| B-064 | Canais confidenciais E2EE | Planned — W16; deps B-169 (gate `contentAuditEnabled`) |
 | B-065 | Federação entre instâncias | Planned — W16 |
 | B-066 | Plugins — capabilities avançadas | Planned — W15, após B-109/B-110 |
 | B-111 | Interações governadas para plugins | Planned — W15, após B-066 |
@@ -168,7 +168,7 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-112…B-118, B-153/B-154, B-166/B-167 | Organização, onboarding, contatos, perfil, migração, diagnóstico, inbox e tópicos | Planned — W11 |
 | B-119…B-124 | Conhecimento, decisões, RAG, tarefas e formulários | Planned — W12 |
 | B-125…B-128, B-131, B-139, B-164 | Automações, incidentes, conectores, SSO e contratos | Planned — W13 |
-| B-129/B-130/B-132…B-134/B-146 | Segurança enterprise, SIEM, policies e capacidade | Planned — W14 |
+| B-129/B-130/B-132…B-134/B-146/B-169 | Segurança enterprise, SIEM, policies, auditoria de conteúdo e capacidade | Planned — W14 |
 | B-135…B-138, B-140/B-141, B-063/B-066/B-111 | Plataforma, registry, bridges, branding e clients | Planned — W15 |
 | B-143…B-145 + B-064/B-065 | Offline, HA, storage, federação e E2EE | Planned — W16 |
 | B-147…B-149, B-152 | Live media, notas de reunião e canvas | Planned — W17 |

@@ -35,7 +35,7 @@ um caso realmente fora desses defaults também for R4 em `agents/autonomia.md`.
 | D-23 | **Meta de compliance enterprise** | SCIM, legal hold, eDiscovery e DLP dependem dos mercados/regulações alvo | Founder + Legal/DPO + Security | **Decidido (2026-07-27)** — LGPD/GDPR + controles alinhados a SOC 2/ISO 27001, sem alegar certificação |
 | D-24 | **White-label e política de marca** | Branding por tenant pode diluir VibeChat e afetar suporte/comercialização | Founder / Brand | **Decidido (2026-07-27)** — nome/logo/tokens limitados por tenant; sem CSS/JS arbitrário |
 | D-25 | **Porte, SLO e disponibilidade alvo** | HA/multi-região/K8s só podem ser dimensionados com carga, RPO/RTO e orçamento | Platform owner + Founder | **Decidido (2026-07-27)** — perfis Standard/HA; sem multi-region write; escalar por evidência |
-| D-26 | **E2EE versus compliance** | E2EE conflita com busca, moderação, legal hold, export e IA server-side | Founder + Security + Legal | **Decidido (2026-07-27)** — canais confidenciais E2EE opt-in, off default e com capacidades reduzidas |
+| D-26 | **E2EE versus compliance** | E2EE conflita com busca, moderação, legal hold, export e IA server-side | Founder + Security + Legal | **Decidido (2026-07-27)**, **emendado (2026-08-11)** — canais E2EE opt-in; gate tenant `contentAuditEnabled` (B-169) mutuamente exclusivo com leitura privilegiada de body |
 | D-27 | **Kit UI OSS pós-PrimeNG** | Substitui PrimeNG sem dependência comercial; define a stack do B-104 | Founder / Frontend | **Decidido (2026-07-27)** — **spartan/ui** (não NG-ZORRO); ver registro D-27 |
 | D-28 | **Perfis de recuperação e RPO Standard** | Separa laboratório de produção e evita prometer que backup diário basta para chat operacional | Founder + Platform | **Decidido (2026-07-27)** — Basic best effort RPO≤24h; Standard de produção RPO≤1h com PITR/WAL; HA mantém RPO≤5m após B-144 |
 
@@ -395,6 +395,13 @@ Capacidades reduzidas e visíveis: sem busca/IA/DLP/moderação de conteúdo,
 legal hold de body ou preview server-side. Metadata mínima continua auditável.
 Chaves não ficam em logs/outbox; perda de chave pode ser irrecuperável.
 Escrow organizacional não entra no v1 e exige spec própria futura.
+
+Emenda (2026-08-11) — eixo Openfire ↔ WhatsApp via B-169:
+  - contentAuditEnabled=true (default): auditores (B-067) e export de body
+    leem plaintext; ConfidentialE2EE bloqueado.
+  - contentAuditEnabled=false: sem leitura privilegiada de body; E2EE permitido
+    (opt-in por canal, B-064).
+  Criar E2EE exige contentAuditEnabled=false no tenant.
 ```
 
 ### D-27 — Kit UI OSS pós-PrimeNG

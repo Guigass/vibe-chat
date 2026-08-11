@@ -118,6 +118,7 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | ID | Spec |
 |----|------|
 | B-129 | [Legal hold e eDiscovery](B-129-legal-hold-ediscovery.md) |
+| B-169 | [Modo auditoria de conteúdo por tenant](B-169-modo-auditoria-conteudo-tenant.md) |
 | B-130 | [Classificação e DLP](B-130-classificacao-dlp.md) |
 | B-132 | [Audit para SIEM](B-132-audit-siem.md) |
 | B-133 | [Policy packs](B-133-policy-packs.md) |

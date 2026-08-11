@@ -118,6 +118,7 @@ Objetivo: operar com segurança, compliance e delegação em organizações maio
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
 | B-129 | B/C/D/E | Legal hold e eDiscovery | B-046, B-114, D-23 | [B-129](../product/specs/B-129-legal-hold-ediscovery.md) | Planned |
+| B-169 | B/D/E | Modo auditoria de conteúdo por tenant (gate E2EE) | B-067, B-046, B-069, D-26 | [B-169](../product/specs/B-169-modo-auditoria-conteudo-tenant.md) | Planned |
 | B-130 | B/C/D/E | Classificação de dados e DLP | B-129, D-23 | [B-130](../product/specs/B-130-classificacao-dlp.md) | Planned |
 | B-132 | B/E/A | Audit streaming/export para SIEM | B-042, B-108 | [B-132](../product/specs/B-132-audit-siem.md) | Planned |
 | B-133 | B/D/E | Policy packs por tipo de organização | B-128, B-130 | [B-133](../product/specs/B-133-policy-packs.md) | Planned |
@@ -131,6 +132,8 @@ Objetivo: operar com segurança, compliance e delegação em organizações maio
 - eventos enviados ao SIEM não vazam conteúdo sem política;
 - malware scan tem estados claros, timeout e fallback seguro.
 - legal hold tem precedência explícita e auditada sobre purge.
+- tenant com `contentAuditEnabled=true` não cria E2EE; com `false`, B-067
+  não expõe body (B-169).
 
 ## Wave 15 — Plataforma e ecossistema
 
@@ -166,7 +169,7 @@ arquitetura preventiva.
 | B-145 | A/C/E | Lifecycle de objetos, quotas de storage e CDN opcional | B-131, B-134 | [B-145](../product/specs/B-145-lifecycle-storage.md) | Planned |
 | B-144 | A/B/C/E/F | HA, rolling upgrade e zero-downtime documentado | B-146, D-25, D-28 | [B-144](../product/specs/B-144-ha-rolling-upgrade.md) | Planned |
 | B-065 | B/C/A/E | Federação entre instâncias | B-138, B-146, D-21 | [B-065](../product/specs/B-065-federacao.md) | Planned |
-| B-064 | B/C/D/E | Canais confidenciais E2EE | B-129, D-26 | [B-064](../product/specs/B-064-canais-e2ee.md) | Planned |
+| B-064 | B/C/D/E | Canais confidenciais E2EE | B-129, B-169, D-26 | [B-064](../product/specs/B-064-canais-e2ee.md) | Planned |
 
 ### Critérios de saída
 
@@ -235,7 +238,7 @@ projeção opcional conforme
 |------------------|---------------------|---------------------|
 | Anúncios, agendamento, inbox, status | Decisões, digests, playbooks, policy packs | Live media |
 | Histórico, templates, malware scan | Developer portal, SDK, automation builder | Federação |
-| Audit SIEM, quotas, lifecycle | RAG autorizado, bots internos e MCP governado | E2EE |
+| Audit SIEM, modo auditoria↔E2EE (B-169), quotas, lifecycle | RAG autorizado, bots internos e MCP governado | E2EE |
 | Capacity model | Enterprise governance | Canvas CRDT |
 | | Plugins/bridges governados | Mobile/offline completo |
 

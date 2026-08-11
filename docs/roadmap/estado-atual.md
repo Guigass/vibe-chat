@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-11
 - **Fase:** Wave 9 — Leitura e paridade de bolha (Wave 8 completa)
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165)
-- **Próximo item elegível:** W9-3 / B-090 (preview de anexos); W9-8 / B-168 (vídeo) após W8-1+W9-0; W9-2 / B-089 Done; W9-1 / B-088 Done; W9-0 / B-163 Done; W9-4 / B-091 paralelo; BUG-002 fecha em B-094 quando W9-7 elegível
+- **Próximo item elegível:** W9-4 / B-091 (link preview); W9-3 / B-090 Done; W9-8 / B-168 (vídeo) após W8-1+W9-0; W9-2 / B-089 Done; W9-1 / B-088 Done; W9-0 / B-163 Done; BUG-002 fecha em B-094 quando W9-7 elegível
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -25,7 +25,7 @@ O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
 2. Wave 7 completa (W7-9 / B-165 Done — versão do cliente web / cache PWA);
-3. avançar Wave 9 de leitura/paridade (W9-0 / B-163, W9-1 / B-088 e W9-2 / B-089 Done; próximo: W9-3 / B-090; W9-8 / B-168 paralelo após deps); Wave 8 completa;
+3. avançar Wave 9 de leitura/paridade (W9-0 / B-163, W9-1 / B-088, W9-2 / B-089 e W9-3 / B-090 Done; próximo: W9-4 / B-091; W9-8 / B-168 paralelo após deps); Wave 8 completa;
 4. consumir o roadmap autorizado W11–W17.
 
 ## Runtime e fronteiras
@@ -79,8 +79,8 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W9-3 | Preview de anexos (B-090); W9-2 / B-089 Done; safety lane Alta vazia |
-| 2 | W9-3+ | Demais itens Wave 9 Planned com spec (W9-4 / B-091 e W9-8 / B-168 paralelos) |
+| 1 | W9-4 | Link preview (B-091); W9-3 / B-090 Done; safety lane Alta vazia |
+| 2 | W9-4+ | Demais itens Wave 9 Planned com spec (W9-5… e W9-8 / B-168 paralelos) |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
@@ -91,8 +91,9 @@ altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
 
 ## Baseline de planejamento
 
-- 82 itens `Planned` entre W7–W17 (B-104/W7-6 Done via #82; B-076/W7-3 Done via #84;
-  B-165/W7-9 Done 2026-08-10; B-088/W9-1 Done; B-167 catalogado em W11);
+- 85 itens `Planned` entre W7–W17 (B-104/W7-6 Done via #82; B-076/W7-3 Done via #84;
+  B-165/W7-9 Done 2026-08-10; B-088/W9-1 Done; B-167 catalogado em W11;
+  B-169 catalogado em W14 — gate auditoria↔E2EE);
 - specs em correspondência 1:1 com itens Planned;
 - classes R0–R3 declaradas nas specs;
 - nenhuma decisão D-* aberta;
@@ -123,8 +124,9 @@ altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
 - Fase 1 permanece Compose; não adicionar K8s, bus externo ou OpenSearch sem os
   gatilhos dos ADRs 015–017.
 - IA externa é opt-in e não entra no hot path de envio.
-- E2EE opt-in, registry governado, voz/vídeo e documento colaborativo estão
-  autorizados apenas nas Waves 15–17, com defaults restritivos e gates R3.
+- E2EE opt-in (após B-169 / `contentAuditEnabled=false`), registry governado,
+  voz/vídeo e documento colaborativo estão autorizados apenas nas Waves 15–17,
+  com defaults restritivos e gates R3.
 - Plugins locais seguem B-109 → B-110 → B-066 → B-111.
 - Guests entram apenas pelo modelo restrito de D-07/B-040.
 - Decisões técnicas reversíveis são autônomas; somente ações R4 externas param

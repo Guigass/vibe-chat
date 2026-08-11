@@ -140,9 +140,11 @@ mensagem cobrem o caso “documentar decisão do canal”.
 ## 9. E2EE
 
 WhatsApp é E2EE por padrão; os outros três não são, em favor de compliance e busca
-server-side. O VibeChat já decidiu por auditoria de conversa (B-067) e export (B-046),
-que são incompatíveis com E2EE puro. Entra em W16 (B-064), como canal
-confidencial opt-in com capacidades reduzidas (D-26).
+server-side. O VibeChat posiciona-se no meio: o tenant escolhe o eixo via B-169
+(`contentAuditEnabled` — Openfire-like com auditores/export vs modo confidencial).
+Com auditoria ligada (default), B-067/B-046 leem plaintext e E2EE fica bloqueado;
+com auditoria desligada, canais confidenciais E2EE entram em W16 (B-064), opt-in
+e com capacidades reduzidas (D-26).
 
 ---
 

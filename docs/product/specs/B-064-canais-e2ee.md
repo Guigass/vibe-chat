@@ -1,6 +1,6 @@
 # B-064 — Canais confidenciais E2EE
 
-> Wave 16 · Trilha B/C/D/E · Deps: B-129, D-26 · Risco R3
+> Wave 16 · Trilha B/C/D/E · Deps: B-129, B-169, D-26 · Risco R3
 > Requisitos comuns: [Waves 11–17](long-term-common.md)
 
 ## Problema
@@ -11,6 +11,9 @@ de busca, IA e compliance server-side reduzidos.
 ## Escopo
 
 - Channel mode `ConfidentialE2EE`, opt-in e off default.
+- Criação só permitida quando o tenant está em modo confidencial
+  (`contentAuditEnabled=false`, B-169); com auditoria de conteúdo ligada →
+  bloqueio com código estável (`ContentAuditBlocksE2ee`).
 - Device keys, session verification e group key rotation.
 - Encrypt body/attachments no client; servidor guarda ciphertext/metadata mínima.
 - Adicionar/remover membro rotaciona chaves para eventos futuros.
@@ -48,6 +51,7 @@ Dispositivo revogado deixa de receber chaves futuras.
 - [ ] Removido não lê futuro.
 - [ ] Client incompatível falha fechado.
 - [ ] Capability reduzida é clara antes de criar.
+- [ ] Com `contentAuditEnabled=true` (B-169), criação de `ConfidentialE2EE` é bloqueada.
 
 ## Testes
 
