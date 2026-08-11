@@ -10,7 +10,7 @@
 | R-04 | Misconfig Keycloak em prod | M | Alto | Realm as code; checklist ops | Infra |
 | R-05 | Secrets commitados | M | Crítico | .gitignore; scanning; env only | Todos |
 | R-06 | SignalR scale sem backplane | M | Médio | Redis backplane doc + config | Backend / Infra |
-| R-07 | Outbox lag sob carga | M | Médio | Métricas + replicas worker | Ops |
+| R-07 | Outbox lag sob carga | M | Médio | Métricas + replicas worker; revisão B-170 após B-146 | Ops |
 | R-08 | Dependência de AI vazar PII | B | Alto | Flag off; redaction; aceite admin | Security / Produto |
 | R-09 | Licença/marca indefinidas | A | Alto | **Fechado** — D-01 Apache-2.0 e D-02 “VibeChat” decididos em 2026-07-24 | Legal / Founder |
 | R-10 | Retenção legal indefinida | A | Alto | **Mitigado** — D-03 + ADR-018; retenção configurável por tenant e purge com kill switch (B-047), off por default | Legal |

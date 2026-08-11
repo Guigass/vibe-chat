@@ -143,6 +143,7 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 
 | ID | Spec |
 |----|------|
+| B-170 | [Performance e escalabilidade](B-170-performance-escalabilidade.md) |
 | B-143 | [Offline sync](B-143-offline-sync.md) |
 | B-145 | [Lifecycle e quotas de storage](B-145-lifecycle-storage.md) |
 | B-144 | [HA e rolling upgrade](B-144-ha-rolling-upgrade.md) |

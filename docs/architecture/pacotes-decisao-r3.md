@@ -284,7 +284,7 @@ Desabilitar criação de sessão; sessões existentes expiram; chat permanece at
 
 ## HA, capacidade e storage
 
-Aplica-se a B-145/B-146/B-144 e D-25/D-28.
+Aplica-se a B-145/B-146/B-170/B-144 e D-25/D-28.
 
 ### Perfis
 

@@ -306,8 +306,9 @@ B-136/B-137 (SDK e registry governado).
 O roadmap executável posterior está em
 [`horizonte-ambicioso.md`](horizonte-ambicioso.md). Waves 11–17 estão `Planned`,
 possuem specs e são elegíveis para o Build somente depois da conclusão das
-Waves 7–10 e de suas dependências. D-16…D-28 registram os defaults já decididos;
-`docs/agents/autonomia.md` governa decisões técnicas e risco.
+Waves 7–10 e de suas dependências. Na Wave 16, **B-170** revisa performance e
+escalabilidade (após B-146) antes de HA (B-144). D-16…D-28 registram os defaults
+já decididos; `docs/agents/autonomia.md` governa decisões técnicas e risco.
 
 A visão de produto correspondente está em
 [`product/visao-longo-prazo.md`](../product/visao-longo-prazo.md).

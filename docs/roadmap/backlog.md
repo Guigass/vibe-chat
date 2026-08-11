@@ -152,6 +152,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-061 | Bus externo | Conditional — somente gatilho ADR-015 medido |
 | B-062 | Helm/K8s | Conditional — somente gatilho ADR-017 medido |
 | B-063 | Clientes mobile nativos | Planned — W15 |
+| B-170 | Performance e escalabilidade | Planned — W16; hot paths/gargalos após B-146; gate antes de B-144 |
 | B-064 | Canais confidenciais E2EE | Planned — W16; deps B-169 (gate `contentAuditEnabled`) |
 | B-065 | Federação entre instâncias | Planned — W16 |
 | B-066 | Plugins — capabilities avançadas | Planned — W15, após B-109/B-110 |
@@ -170,7 +171,7 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-125…B-128, B-131, B-139, B-164 | Automações, incidentes, conectores, SSO e contratos | Planned — W13 |
 | B-129/B-130/B-132…B-134/B-146/B-169 | Segurança enterprise, SIEM, policies, auditoria de conteúdo (`contentAuditEnabled` + snapshot de body em `message.delete`) e capacidade | Planned — W14 |
 | B-135…B-138, B-140/B-141, B-063/B-066/B-111 | Plataforma, registry, bridges, branding e clients | Planned — W15 |
-| B-143…B-145 + B-064/B-065 | Offline, HA, storage, federação e E2EE | Planned — W16 |
+| B-170, B-143…B-145 + B-064/B-065 | Performance/escalabilidade, offline, HA, storage, federação e E2EE | Planned — W16 |
 | B-147…B-149, B-152 | Live media, notas de reunião e canvas | Planned — W17 |
 
 Todos possuem decisão e spec. A elegibilidade concreta continua dependendo de
