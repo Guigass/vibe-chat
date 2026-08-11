@@ -79,7 +79,10 @@ export class PinStore {
     try {
       const page = await this.api.getPins(channelId);
       this.pinsByChannelSignal.update((current) => ({ ...current, [channelId]: page.pins }));
-      this.messages.applyPinnedFlags(channelId, page.pins.map((p) => p.messageId));
+      this.messages.applyPinnedFlags(
+        channelId,
+        page.pins.map((p) => p.messageId),
+      );
     } catch {
       this.errorSignal.set('Não foi possível carregar mensagens fixadas.');
     } finally {
@@ -110,9 +113,9 @@ export class PinStore {
   }
 
   async jumpToPin(pin: PinnedMessageItem): Promise<void> {
-    await this.channels.selectChannel(pin.channelId);
-    await this.messages.jumpToSequence(pin.channelId, pin.sequence, pin.messageId);
+    this.channels.selectChannel(pin.channelId);
     this.closePanel();
+    await this.messages.jumpToSequence(pin.channelId, pin.sequence, pin.messageId);
   }
 
   private async handlePinChanged(

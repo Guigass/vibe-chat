@@ -1,7 +1,16 @@
-import { Component, effect, inject, ElementRef, signal, computed, viewChild } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  effect,
+  inject,
+  ElementRef,
+  signal,
+  computed,
+  viewChild,
+} from '@angular/core';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ApiService } from '../../../core/api/api.service';
-import { MessageStore } from '../../../core/services/message.store';
+import { MessageStore, type MessageScrollRequest } from '../../../core/services/message.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { ThemeService } from '../../../core/services/theme.service';
@@ -12,7 +21,12 @@ import { Avatar, EmptyState, MessageBubble, Skeleton, TypingIndicator } from '..
 import { ForwardDialog } from '../forward-dialog/forward-dialog';
 import { PinStore } from '../../../core/services/pin.store';
 import { SavedStore } from '../../../core/services/saved.store';
-import { buildTimelineItems, type TimelineItem } from './timeline-items';
+import {
+  buildTimelineItems,
+  unreadDividerAfterSeq,
+  type TimelineItem,
+} from './timeline-items';
+import { TimelineScrollAnchorController, type TimelineScrollAnchor } from './timeline-scroll';
 
 const NEAR_BOTTOM_PX = 80;
 const NEAR_TOP_PX = 120;
@@ -22,7 +36,16 @@ const NEAR_TOP_PX = 120;
   standalone: true,
   imports: [Avatar, MessageBubble, TypingIndicator, EmptyState, Skeleton, ForwardDialog],
   template: `
-    <section class="timeline" #scroller aria-live="polite" (scroll)="onScroll()">
+    <section
+      class="timeline"
+      #scroller
+      aria-live="polite"
+      (scroll)="onScroll()"
+      (wheel)="cancelPendingAnchor()"
+      (pointerdown)="cancelPendingAnchor()"
+      (touchstart)="cancelPendingAnchor()"
+      (keydown)="cancelPendingAnchor()"
+    >
       @if (messages.loading()) {
         <div class="timeline__loading">
           <vc-skeleton height="3.5rem" />
@@ -85,7 +108,10 @@ const NEAR_TOP_PX = 120;
                 >
                   @if (!item.mine) {
                     <div class="timeline__stack-avatar">
-                      <vc-avatar [name]="item.messages[0].message.authorName" [size]="avatarSize()" />
+                      <vc-avatar
+                        [name]="item.messages[0].message.authorName"
+                        [size]="avatarSize()"
+                      />
                     </div>
                   }
                   <div class="timeline__stack-body">
@@ -142,11 +168,7 @@ const NEAR_TOP_PX = 120;
         data-testid="timeline-jump"
         (click)="jumpToLatest()"
       >
-        @if (newWhileAway() > 0) {
-          Ir para a mais recente ({{ newWhileAway() }})
-        } @else {
-          Ir para a mais recente
-        }
+        {{ jumpLabel() }}
       </button>
     }
 
@@ -211,7 +233,7 @@ const NEAR_TOP_PX = 120;
       cursor: pointer;
     }
     .timeline__stack {
-      --vc-msg-max: min(36rem, 100%);
+      --vc-msg-max: min(44rem, 100%);
       display: grid;
       grid-template-columns: var(--vc-msg-avatar) minmax(0, var(--vc-msg-max));
       gap: var(--vc-msg-gap);
@@ -222,7 +244,9 @@ const NEAR_TOP_PX = 120;
     }
     .timeline__stack--mine {
       margin-left: auto;
+      max-width: calc(100% - 2.75rem);
       grid-template-columns: minmax(0, var(--vc-msg-max));
+      justify-content: end;
     }
     .timeline__stack-avatar {
       width: var(--vc-msg-avatar);
@@ -235,15 +259,12 @@ const NEAR_TOP_PX = 120;
       min-width: 0;
       width: max-content;
       max-width: 100%;
-      border-radius: var(--vc-radius-md);
-      background: var(--vc-msg-theirs);
-      border: 1px solid var(--vc-border);
+      gap: 0.25rem;
       /* visible: hover toolbar / menus must not be clipped */
       overflow: visible;
     }
     .timeline__stack--mine .timeline__stack-body {
-      background: var(--vc-msg-mine);
-      border-color: color-mix(in srgb, var(--vc-brand) 28%, var(--vc-border));
+      align-items: flex-end;
     }
     .timeline__loading {
       display: grid;
@@ -343,6 +364,7 @@ export class Timeline {
   private readonly auth = inject(AuthService);
   private readonly api = inject(ApiService);
   private readonly theme = inject(ThemeService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly avatarSize = computed(() => (this.theme.density() === 'compact' ? 28 : 34));
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
   private readonly forwardDialog = viewChild(ForwardDialog);
@@ -354,8 +376,13 @@ export class Timeline {
   readonly newWhileAway = signal(0);
   readonly unreadLive = signal('');
   readonly showJump = computed(
-    () => !this.messages.loading() && this.messages.forActiveChannel().length > 0 && !this.nearBottom(),
+    () =>
+      !this.messages.loading() && this.messages.forActiveChannel().length > 0 && !this.nearBottom(),
   );
+  readonly jumpLabel = computed(() => {
+    const count = this.newWhileAway();
+    return count > 0 ? `Ir para a mais recente · ${count}` : 'Ir para a mais recente';
+  });
   readonly atConversationStart = computed(
     () =>
       !this.messages.loading() &&
@@ -365,37 +392,52 @@ export class Timeline {
   );
 
   private loadingOlder = false;
+  private scrollAnchorController: TimelineScrollAnchorController | null = null;
 
   private readonly unreadSnapshot = signal(0);
+  private readonly frozenUnreadAfterSeq = signal<number | null>(null);
   private readonly unreadDismissed = signal(false);
   private lastChannelId: string | null = null;
   private lastMessageCount = 0;
+  private lastTailId: string | null = null;
   private unreadAnnouncedFor: string | null = null;
 
   readonly timelineItems = computed((): TimelineItem[] =>
     buildTimelineItems(this.messages.forActiveChannel(), {
       unreadCount: this.unreadSnapshot(),
+      dividerAfterSeq: this.frozenUnreadAfterSeq(),
       showUnreadDivider: !this.unreadDismissed() && this.unreadSnapshot() > 0,
     }),
   );
 
   constructor() {
+    this.destroyRef.onDestroy(() => this.scrollAnchorController?.cancel());
+
     effect(() => {
       const channelId = this.channels.activeChannelId();
       const list = this.messages.forActiveChannel();
       const opened = this.channels.openedUnreadCount();
+      this.messages.scrollRequest();
 
       if (channelId !== this.lastChannelId) {
         this.lastChannelId = channelId;
         this.lastMessageCount = list.length;
+        this.lastTailId = list.at(-1)?.id ?? null;
         this.newWhileAway.set(0);
         this.unreadDismissed.set(false);
         this.unreadSnapshot.set(opened);
+        this.frozenUnreadAfterSeq.set(
+          opened > 0 && list.length > 0 ? unreadDividerAfterSeq(list, opened) : null,
+        );
         this.unreadLive.set('');
         this.unreadAnnouncedFor = null;
         this.nearBottom.set(true);
         this.messages.markViewedLatest();
-        queueMicrotask(() => this.afterChannelOpen());
+        queueMicrotask(() => {
+          if (!this.isScrollRequestForChannel(this.messages.scrollRequest(), channelId)) {
+            this.afterChannelOpen();
+          }
+        });
         return;
       }
 
@@ -403,11 +445,19 @@ export class Timeline {
 
       const added = Math.max(0, list.length - this.lastMessageCount);
       const wasEmpty = this.lastMessageCount === 0;
-      const incoming = added > 0 ? list.slice(-added) : [];
+      const nextTailId = list.at(-1)?.id ?? null;
+      const prependOnly =
+        this.loadingOlder || (added > 0 && !!this.lastTailId && nextTailId === this.lastTailId);
+      const incoming = !prependOnly && added > 0 ? list.slice(-added) : [];
       const ownArrival = incoming.some((m) => m.mine);
       this.lastMessageCount = list.length;
+      this.lastTailId = nextTailId;
+      this.ensureFrozenUnreadDivider(list);
+
+      if (prependOnly) return;
 
       queueMicrotask(() => {
+        if (this.isScrollRequestForChannel(this.messages.scrollRequest(), channelId)) return;
         const el = this.scroller()?.nativeElement;
         if (wasEmpty) {
           this.afterChannelOpen();
@@ -426,6 +476,19 @@ export class Timeline {
           this.nearBottom.set(false);
           this.messages.setViewingLatest(false);
         }
+      });
+    });
+
+    effect(() => {
+      const request = this.messages.scrollRequest();
+      const loading = this.messages.loading();
+      const channelId = this.channels.activeChannelId();
+      if (!request || loading || !this.isScrollRequestForChannel(request, channelId)) return;
+
+      queueMicrotask(() => {
+        const current = this.messages.scrollRequest();
+        if (current?.requestId !== request.requestId || this.messages.loading()) return;
+        this.anchorMessageRequest(request);
       });
     });
   }
@@ -460,18 +523,22 @@ export class Timeline {
     if (!pagination.hasMoreBefore || pagination.loadingOlder || this.loadingOlder) return;
 
     const prevHeight = el.scrollHeight;
+    const prevTop = el.scrollTop;
     this.loadingOlder = true;
     const loaded = await this.messages.loadOlderMessages();
     this.loadingOlder = false;
     if (!loaded) return;
 
-    requestAnimationFrame(() => {
+    const restore = () => {
       const delta = el.scrollHeight - prevHeight;
-      if (delta > 0) el.scrollTop += delta;
-    });
+      if (delta > 0) el.scrollTop = prevTop + delta;
+    };
+    // Double rAF: wait for Angular to commit prepend + drop the top skeleton.
+    requestAnimationFrame(() => requestAnimationFrame(restore));
   }
 
   jumpToLatest(): void {
+    this.messages.cancelScrollRequest();
     this.scrollToBottom();
     this.newWhileAway.set(0);
     this.nearBottom.set(true);
@@ -576,22 +643,40 @@ export class Timeline {
   private afterChannelOpen(): void {
     const el = this.scroller()?.nativeElement;
     if (!el) return;
+    const channelId = this.channels.activeChannelId();
+    if (this.isScrollRequestForChannel(this.messages.scrollRequest(), channelId)) return;
+    this.ensureFrozenUnreadDivider(this.messages.forActiveChannel());
     this.announceUnreadOnce();
     const divider = el.querySelector<HTMLElement>('.timeline__unread');
     if (divider) {
-      divider.scrollIntoView({ block: 'center' });
-      const near = this.isNearBottom(el);
-      this.nearBottom.set(near);
-      if (near) this.messages.markViewedLatest();
-      else this.messages.setViewingLatest(false);
-      if (!near && this.newWhileAway() === 0) {
-        this.newWhileAway.set(this.unreadSnapshot());
-      }
+      this.anchorTimeline(
+        el,
+        {
+          kind: 'element',
+          target: () => el.querySelector<HTMLElement>('.timeline__unread'),
+        },
+        () => {
+          const near = this.isNearBottom(el);
+          this.nearBottom.set(near);
+          if (near) this.messages.markViewedLatest();
+          else this.messages.setViewingLatest(false);
+          if (!near && this.newWhileAway() === 0) {
+            this.newWhileAway.set(this.unreadSnapshot());
+          }
+        },
+      );
       return;
     }
     this.scrollToBottom(el);
     this.nearBottom.set(true);
     this.messages.markViewedLatest();
+  }
+
+  private ensureFrozenUnreadDivider(list: readonly ChatMessage[]): void {
+    if (this.frozenUnreadAfterSeq() !== null) return;
+    const unread = this.unreadSnapshot();
+    if (unread <= 0 || list.length === 0) return;
+    this.frozenUnreadAfterSeq.set(unreadDividerAfterSeq(list, unread));
   }
 
   private clearActiveUnread(): void {
@@ -628,9 +713,57 @@ export class Timeline {
 
   private scrollToBottom(el = this.scroller()?.nativeElement): void {
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
-    requestAnimationFrame(() => {
-      el.scrollTop = el.scrollHeight;
-    });
+    this.anchorTimeline(el, { kind: 'bottom' });
+  }
+
+  cancelPendingAnchor(): void {
+    this.scrollAnchorController?.cancel();
+    this.scrollAnchorController = null;
+    this.messages.cancelScrollRequest();
+  }
+
+  private anchorMessageRequest(request: MessageScrollRequest): void {
+    const el = this.scroller()?.nativeElement;
+    if (!el) return;
+    this.anchorTimeline(
+      el,
+      {
+        kind: 'element',
+        target: () =>
+          Array.from(el.querySelectorAll<HTMLElement>('[data-message-id]')).find((candidate) =>
+            this.idsEqual(candidate.dataset['messageId'], request.messageId),
+          ) ?? null,
+      },
+      () => {
+        this.nearBottom.set(this.isNearBottom(el));
+        this.messages.setViewingLatest(false);
+      },
+      () => this.messages.cancelScrollRequest(request.requestId),
+      () => this.messages.acknowledgeScrollRequest(request.requestId),
+    );
+  }
+
+  private anchorTimeline(
+    el: HTMLElement,
+    anchor: TimelineScrollAnchor,
+    onAnchored?: () => void,
+    onExpired?: () => void,
+    onSettled?: () => void,
+  ): void {
+    this.scrollAnchorController?.cancel();
+    const controller = new TimelineScrollAnchorController(el);
+    this.scrollAnchorController = controller;
+    controller.anchor(anchor, onAnchored, onExpired, onSettled);
+  }
+
+  private isScrollRequestForChannel(
+    request: MessageScrollRequest | null,
+    channelId: string | null,
+  ): boolean {
+    return !!request && !!channelId && this.idsEqual(request.channelId, channelId);
+  }
+
+  private idsEqual(left: string | null | undefined, right: string | null | undefined): boolean {
+    return !!left && !!right && left.toLowerCase() === right.toLowerCase();
   }
 }

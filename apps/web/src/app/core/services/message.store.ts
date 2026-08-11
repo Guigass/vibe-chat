@@ -26,6 +26,12 @@ export interface ChannelPaginationState {
   loadError: string | null;
 }
 
+export interface MessageScrollRequest {
+  requestId: number;
+  channelId: string;
+  messageId: string;
+}
+
 const defaultPagination = (): ChannelPaginationState => ({
   hasMoreBefore: false,
   hasMoreAfter: false,
@@ -46,7 +52,9 @@ export class MessageStore {
   private readonly sendingSignal = signal(false);
   private readonly replyTargetSignal = signal<ChatMessage | null>(null);
   private readonly highlightMessageIdSignal = signal<string | null>(null);
+  private readonly scrollRequestSignal = signal<MessageScrollRequest | null>(null);
   private readonly paginationSignal = signal<Record<string, ChannelPaginationState>>({});
+  private scrollRequestVersion = 0;
   private highlightTimer: ReturnType<typeof setTimeout> | null = null;
   private gapFillInFlight = new Set<string>();
   private readCursorTimer: ReturnType<typeof setTimeout> | null = null;
@@ -64,6 +72,7 @@ export class MessageStore {
   readonly sending = this.sendingSignal.asReadonly();
   readonly replyTarget = this.replyTargetSignal.asReadonly();
   readonly highlightMessageId = this.highlightMessageIdSignal.asReadonly();
+  readonly scrollRequest = this.scrollRequestSignal.asReadonly();
   readonly paginationForActive = computed(() => {
     const channelId = this.channels.activeChannelId();
     if (!channelId) return defaultPagination();
@@ -130,10 +139,31 @@ export class MessageStore {
 
   jumpToMessage(messageId: string): void {
     if (!messageId) return;
-    const el = document.querySelector(`[data-message-id="${messageId}"]`);
-    if (el instanceof HTMLElement) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const channelId = this.channels.activeChannelId();
+    if (!channelId) return;
+    this.requestMessageScroll(channelId, messageId);
+    this.highlightMessage(messageId);
+  }
+
+  acknowledgeScrollRequest(requestId: number): void {
+    if (this.scrollRequestSignal()?.requestId === requestId) {
+      this.scrollRequestSignal.set(null);
     }
+  }
+
+  cancelScrollRequest(requestId?: number): void {
+    if (requestId === undefined || this.scrollRequestSignal()?.requestId === requestId) {
+      this.scrollRequestSignal.set(null);
+    }
+  }
+
+  private requestMessageScroll(channelId: string, messageId: string): number {
+    const requestId = ++this.scrollRequestVersion;
+    this.scrollRequestSignal.set({ requestId, channelId, messageId });
+    return requestId;
+  }
+
+  private highlightMessage(messageId: string): void {
     if (this.highlightTimer) clearTimeout(this.highlightTimer);
     this.highlightMessageIdSignal.set(messageId);
     this.highlightTimer = setTimeout(() => {
@@ -159,8 +189,9 @@ export class MessageStore {
     messageId: string,
   ): Promise<'ok' | 'deleted' | 'missing'> {
     if (!channelId || seq <= 0 || !messageId) return 'missing';
+    let requestId = this.requestMessageScroll(channelId, messageId);
     if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
-      this.jumpToMessage(messageId);
+      this.highlightMessage(messageId);
       return 'ok';
     }
 
@@ -171,14 +202,26 @@ export class MessageStore {
       const target =
         page.messages.find((m) => idsEqual(m.id, messageId)) ??
         page.messages.find((m) => m.seq === seq);
-      if (!target) return 'missing';
-      if (target.deletedAt) return 'deleted';
+      if (!target) {
+        this.cancelScrollRequest(requestId);
+        return 'missing';
+      }
+      if (target.deletedAt) {
+        this.cancelScrollRequest(requestId);
+        return 'deleted';
+      }
+
+      if (!idsEqual(target.id, messageId)) {
+        this.cancelScrollRequest(requestId);
+        requestId = this.requestMessageScroll(channelId, target.id);
+      }
 
       this.applyChannelPage(channelId, page, { replace: true });
-      queueMicrotask(() => this.jumpToMessage(target.id));
+      this.highlightMessage(target.id);
       this.setViewingLatest(false);
       return 'ok';
     } catch {
+      this.cancelScrollRequest(requestId);
       return 'missing';
     } finally {
       this.loadingSignal.set(false);
@@ -223,7 +266,11 @@ export class MessageStore {
       await this.hub.joinChannel(channelId);
       if (this.channels.isDemo()) {
         this.messagesSignal.set(this.demoMessages(channelId));
-        this.patchPagination(channelId, { hasMoreBefore: false, hasMoreAfter: false, loadError: null });
+        this.patchPagination(channelId, {
+          hasMoreBefore: false,
+          hasMoreAfter: false,
+          loadError: null,
+        });
       } else {
         const page = await this.api.getMessages(channelId, { take: 50 });
         this.applyChannelPage(channelId, page, { replace: true });
@@ -376,9 +423,7 @@ export class MessageStore {
     if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
       this.messagesSignal.update((list) =>
         list.map((m) =>
-          m.id === messageId
-            ? { ...m, body: body.trim(), editedAt: new Date().toISOString() }
-            : m,
+          m.id === messageId ? { ...m, body: body.trim(), editedAt: new Date().toISOString() } : m,
         ),
       );
       return;
@@ -586,7 +631,12 @@ export class MessageStore {
     );
   }
 
-  private applyDelete(patch: { id: string; channelId: string; deletedAt: string; seq?: number }): void {
+  private applyDelete(patch: {
+    id: string;
+    channelId: string;
+    deletedAt: string;
+    seq?: number;
+  }): void {
     this.messagesSignal.update((list) => {
       const deleted = list.map((m) =>
         idsEqual(m.id, patch.id)
@@ -718,8 +768,7 @@ export class MessageStore {
   private normalize(message: ChatMessage): ChatMessage {
     const me = this.auth.profile()?.id;
     const mentionsMe =
-      message.mentionsMe ??
-      (!!me && !!message.body && message.body.includes(`<@${me}>`));
+      message.mentionsMe ?? (!!me && !!message.body && message.body.includes(`<@${me}>`));
     return {
       ...message,
       channelId: message.channelId || message.conversationId,
@@ -748,9 +797,7 @@ export class MessageStore {
   applyPinnedFlags(channelId: string, messageIds: readonly string[]): void {
     const pinned = new Set(messageIds);
     this.messagesSignal.update((current) =>
-      current.map((m) =>
-        m.channelId === channelId ? { ...m, isPinned: pinned.has(m.id) } : m,
-      ),
+      current.map((m) => (m.channelId === channelId ? { ...m, isPinned: pinned.has(m.id) } : m)),
     );
   }
 

@@ -1,10 +1,5 @@
 import { DatePipe } from '@angular/common';
-import {
-  CdkContextMenuTrigger,
-  CdkMenu,
-  CdkMenuItem,
-  CdkMenuTrigger,
-} from '@angular/cdk/menu';
+import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import {
   Component,
   computed,
@@ -75,7 +70,7 @@ import { environment } from '../../../../environments/environment';
       [attr.data-group]="groupRole()"
       [attr.data-message-id]="message().id"
       [cdkContextMenuTriggerFor]="actionsMenu"
-      [cdkContextMenuDisabled]="!hasMenu()"
+      [cdkContextMenuDisabled]="!showActions()"
       (cdkContextMenuOpened)="menuOpen.set(true)"
       (cdkContextMenuClosed)="menuOpen.set(false)"
       (touchstart)="onTouchStart($event)"
@@ -93,23 +88,24 @@ import { environment } from '../../../../environments/environment';
 
       <div class="vc-msg__column">
         <div class="vc-msg__body">
-          @if (!showMeta()) {
-            <time class="vc-msg__hover-time" [attr.datetime]="message().createdAt">
-              {{ message().createdAt | date: 'shortTime' }}
-            </time>
-          }
           @if (showMeta()) {
             <header class="vc-msg__meta">
               <strong>{{ message().authorName }}</strong>
-              <time [attr.datetime]="message().createdAt">{{ message().createdAt | date: 'shortTime' }}</time>
+              <time [attr.datetime]="message().createdAt">{{
+                message().createdAt | date: 'shortTime'
+              }}</time>
               @if (message().editedAt && !message().deletedAt) {
                 <span class="vc-msg__status">editada</span>
               }
               @if (message().isPinned && !message().deletedAt) {
-                <span class="vc-msg__status vc-msg__status--pin" aria-label="Mensagem fixada">fixada</span>
+                <span class="vc-msg__status vc-msg__status--pin" aria-label="Mensagem fixada"
+                  >fixada</span
+                >
               }
               @if (message().isSaved && !message().deletedAt) {
-                <span class="vc-msg__status vc-msg__status--saved" aria-label="Mensagem salva">salva</span>
+                <span class="vc-msg__status vc-msg__status--saved" aria-label="Mensagem salva"
+                  >salva</span
+                >
               }
               @if (message().status === 'sending') {
                 <span class="vc-msg__status">enviando…</span>
@@ -128,7 +124,7 @@ import { environment } from '../../../../environments/environment';
               <div class="vc-msg__edit">
                 <textarea
                   [value]="draft()"
-                  (input)="draft.set(($any($event.target).value))"
+                  (input)="draft.set($any($event.target).value)"
                   rows="3"
                   aria-label="Editar mensagem"
                 ></textarea>
@@ -142,7 +138,9 @@ import { environment } from '../../../../environments/environment';
                   </p>
                 }
                 <div class="vc-msg__edit-actions">
-                  <button type="button" [disabled]="editSaveDisabled()" (click)="saveEdit()">Salvar</button>
+                  <button type="button" [disabled]="editSaveDisabled()" (click)="saveEdit()">
+                    Salvar
+                  </button>
                   <button type="button" class="ghost" (click)="cancelEdit()">Cancelar</button>
                 </div>
               </div>
@@ -151,8 +149,7 @@ import { environment } from '../../../../environments/environment';
                 <p class="vc-msg__forwarded">
                   Encaminhada de
                   {{ formatForwardOrigin(origin) }}
-                  · {{ origin.authorName }}
-                  · {{ origin.createdAt | date: 'shortDate' }}
+                  · {{ origin.authorName }} · {{ origin.createdAt | date: 'shortDate' }}
                 </p>
               }
               @if (message().editedAt && !message().deletedAt && !showMeta()) {
@@ -255,55 +252,30 @@ import { environment } from '../../../../environments/environment';
               }
             }
           </div>
+          @if (!showMeta()) {
+            <time class="vc-msg__group-time" [attr.datetime]="message().createdAt">
+              {{ message().createdAt | date: 'shortTime' }}
+            </time>
+          }
         </div>
 
         @if (showActions()) {
           <div
             class="vc-msg__toolbar"
             data-testid="msg-toolbar"
-            [class.vc-msg__toolbar--pinned]="menuOpen() || reactionPickerOpen()"
+            [class.vc-msg__toolbar--pinned]="menuOpen()"
           >
-            <div class="vc-msg__react-picker" role="group" aria-label="Adicionar reação">
-              @for (emoji of emojiOptions; track emoji) {
-                <button type="button" [attr.aria-label]="'Reagir com ' + emoji" (click)="onQuickReact(emoji)">
-                  {{ emoji }}
-                </button>
-              }
-              <div class="vc-msg__react-more">
-                <button
-                  type="button"
-                  aria-label="Mais emojis"
-                  aria-haspopup="dialog"
-                  [attr.aria-expanded]="reactionPickerOpen()"
-                  (click)="toggleReactionPicker($event)"
-                >
-                  🙂
-                </button>
-                <vc-emoji-picker
-                  [open]="reactionPickerOpen()"
-                  (select)="onQuickReact($event)"
-                  (closed)="reactionPickerOpen.set(false)"
-                />
-              </div>
-            </div>
-            @if (showReplyAction()) {
-              <button type="button" class="vc-msg__toolbar-btn" (click)="reply.emit()" aria-label="Responder">
-                Responder
-              </button>
-            }
-            @if (hasMenu()) {
-              <button
-                type="button"
-                class="vc-msg__toolbar-btn vc-msg__more"
-                aria-label="Mais opções"
-                aria-haspopup="menu"
-                [cdkMenuTriggerFor]="actionsMenu"
-                (cdkMenuOpened)="menuOpen.set(true)"
-                (cdkMenuClosed)="menuOpen.set(false)"
-              >
-                ⋯
-              </button>
-            }
+            <button
+              type="button"
+              class="vc-msg__toolbar-btn vc-msg__more"
+              aria-label="Ações da mensagem"
+              aria-haspopup="menu"
+              [cdkMenuTriggerFor]="actionsMenu"
+              (cdkMenuOpened)="menuOpen.set(true)"
+              (cdkMenuClosed)="menuOpen.set(false)"
+            >
+              ⋯
+            </button>
           </div>
         }
       </div>
@@ -311,6 +283,38 @@ import { environment } from '../../../../environments/environment';
 
     <ng-template #actionsMenu>
       <div class="vc-msg-menu" cdkMenu>
+        <div class="vc-msg-menu__reactions" role="group" aria-label="Adicionar reação">
+          @for (emoji of emojiOptions; track emoji) {
+            <button
+              type="button"
+              [attr.aria-label]="'Reagir com ' + emoji"
+              (click)="onQuickReact(emoji)"
+            >
+              {{ emoji }}
+            </button>
+          }
+          <div class="vc-msg__react-more">
+            <button
+              type="button"
+              aria-label="Mais emojis"
+              aria-haspopup="dialog"
+              [attr.aria-expanded]="reactionPickerOpen()"
+              (click)="toggleReactionPicker($event)"
+            >
+              🙂
+            </button>
+            <vc-emoji-picker
+              [open]="reactionPickerOpen()"
+              (select)="onQuickReact($event)"
+              (closed)="reactionPickerOpen.set(false)"
+            />
+          </div>
+        </div>
+        @if (showReplyAction()) {
+          <button type="button" cdkMenuItem class="vc-msg-menu__item" (click)="reply.emit()">
+            Responder
+          </button>
+        }
         @for (item of menuItems(); track item.id) {
           <button
             type="button"
@@ -339,7 +343,7 @@ import { environment } from '../../../../environments/environment';
       min-width: 0;
     }
     .vc-msg {
-      --vc-msg-max: min(36rem, 100%);
+      --vc-msg-max: min(44rem, 100%);
       display: grid;
       grid-template-columns: var(--vc-msg-avatar) minmax(0, var(--vc-msg-max));
       gap: var(--vc-msg-gap);
@@ -350,19 +354,22 @@ import { environment } from '../../../../environments/environment';
       -webkit-touch-callout: none;
     }
     .vc-msg--mine {
+      --vc-msg-max: min(44rem, calc(100% - 2.75rem));
       margin-left: auto;
       grid-template-columns: minmax(0, var(--vc-msg-max));
     }
     .vc-msg--plain {
-      width: 100%;
-      max-width: none;
-      grid-template-columns: minmax(0, 1fr);
+      width: fit-content;
+      max-width: 100%;
+      grid-template-columns: minmax(0, auto);
     }
     .vc-msg--plain.vc-msg--mine {
-      margin-left: 0;
+      margin-left: auto;
+      align-self: flex-end;
     }
     .vc-msg--plain .vc-msg__column {
-      max-width: none;
+      width: fit-content;
+      max-width: 100%;
       overflow: visible;
     }
     .vc-msg__avatar-slot {
@@ -393,6 +400,7 @@ import { environment } from '../../../../environments/environment';
       border: 1px solid var(--vc-border);
       min-width: 0;
       width: 100%;
+      box-sizing: border-box;
       position: relative;
     }
     .vc-msg--mine .vc-msg__body {
@@ -402,53 +410,37 @@ import { environment } from '../../../../environments/environment';
     .vc-msg--deleted .vc-msg__body {
       opacity: 0.72;
     }
-    /* Plain surface: chrome lives on the timeline stack bubble (B-088). */
+    /* Grouping removes repeated identity, never the boundary of each message. */
     .vc-msg--plain .vc-msg__body {
-      background: transparent;
-      border: 0;
-      border-radius: 0;
-      width: 100%;
-    }
-    .vc-msg--plain.vc-msg--group-start .vc-msg__body,
-    .vc-msg--plain.vc-msg--group-middle .vc-msg__body {
-      padding-bottom: calc(var(--vc-msg-pad-block) * 0.35);
-    }
-    .vc-msg--plain.vc-msg--group-middle .vc-msg__body,
-    .vc-msg--plain.vc-msg--group-end .vc-msg__body {
-      padding-top: calc(var(--vc-msg-pad-block) * 0.35);
+      width: fit-content;
+      max-width: 100%;
     }
     .vc-msg--plain.vc-msg--mentioned:not(.vc-msg--mine) .vc-msg__body {
       border-left: 3px solid var(--vc-brand);
       padding-left: 0.55rem;
-      background: color-mix(in srgb, var(--vc-brand) 8%, transparent);
+      background: color-mix(in srgb, var(--vc-brand) 8%, var(--vc-msg-theirs));
     }
-    .vc-msg__hover-time {
+    .vc-msg__group-time {
       position: absolute;
-      top: 0.4rem;
-      right: 0.6rem;
+      top: 50%;
+      left: -3.35rem;
+      width: 3rem;
+      transform: translateY(-50%);
+      text-align: right;
       font-size: 0.68rem;
       color: var(--vc-ink-subtle);
-      background: color-mix(in srgb, var(--vc-msg-theirs) 85%, transparent);
-      padding: 0.05rem 0.35rem;
-      border-radius: var(--vc-radius-sm);
+      white-space: nowrap;
       opacity: 0;
       pointer-events: none;
-      white-space: nowrap;
-      z-index: 1;
+      transition: opacity var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease);
     }
-    .vc-msg--mine .vc-msg__hover-time {
-      background: color-mix(in srgb, var(--vc-msg-mine) 85%, transparent);
-    }
-    .vc-msg--plain .vc-msg__hover-time {
-      background: color-mix(in srgb, var(--vc-surface) 72%, transparent);
-    }
-    .vc-msg:hover .vc-msg__hover-time,
-    .vc-msg:focus-within .vc-msg__hover-time {
+    .vc-msg:hover .vc-msg__group-time,
+    .vc-msg:focus-within .vc-msg__group-time {
       opacity: 1;
     }
-    @media (hover: none) {
-      .vc-msg__hover-time {
-        opacity: 1;
+    @media (prefers-reduced-motion: reduce) {
+      .vc-msg__group-time {
+        transition: none;
       }
     }
     .vc-msg--highlight .vc-msg__body {
@@ -549,7 +541,7 @@ import { environment } from '../../../../environments/environment';
       flex-direction: row;
       align-items: flex-start;
       gap: 0.55rem;
-      /* fit-content: width 100% forced the stack bubble to --vc-msg-max (~36rem)
+      /* fit-content: width 100% forced the stack bubble to --vc-msg-max
          and left a huge empty field when there is no thumbnail. */
       width: fit-content;
       max-width: min(22rem, 100%);
@@ -651,57 +643,45 @@ import { environment } from '../../../../environments/environment';
     }
     .vc-msg__toolbar {
       position: absolute;
-      top: -0.45rem;
-      right: 0.35rem;
+      top: 0.4rem;
+      right: 0;
       z-index: 5;
       display: inline-flex;
-      flex-wrap: nowrap;
       align-items: center;
-      gap: 0.2rem;
-      width: max-content;
-      max-width: none;
-      padding: 0.15rem 0.25rem;
-      border: 1px solid var(--vc-border);
-      border-radius: var(--vc-radius-md);
-      background: var(--vc-surface);
+      justify-content: center;
+      width: 1.55rem;
+      height: 1.55rem;
+      margin: 0;
+      padding: 0;
+      border: 1px solid color-mix(in srgb, var(--vc-border) 78%, transparent);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--vc-surface) 74%, transparent);
       opacity: 0;
+      visibility: hidden;
       pointer-events: none;
-      transform: translateY(0.15rem);
+      transform: translateX(42%) scale(0.9);
       transition:
         opacity var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease),
-        transform var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease);
-      box-shadow: var(--vc-shadow-soft, 0 4px 12px rgba(15, 23, 42, 0.1));
-    }
-    .vc-msg:not(.vc-msg--mine) .vc-msg__toolbar {
-      right: 0.35rem;
-      left: auto;
-    }
-    /* Float outside the shared stack bubble so it is never squeezed. */
-    .vc-msg--plain .vc-msg__toolbar {
-      top: 0.35rem;
-      right: 0;
-      transform: translate(0.35rem, -100%);
-    }
-    .vc-msg--plain:hover .vc-msg__toolbar,
-    .vc-msg--plain:focus-within .vc-msg__toolbar,
-    .vc-msg--plain .vc-msg__toolbar--pinned {
-      transform: translate(0.35rem, calc(-100% - 0.2rem));
+        transform var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease),
+        visibility 0s linear var(--vc-dur-fast, 120ms);
+      box-shadow: 0 1px 4px color-mix(in srgb, var(--vc-ink) 12%, transparent);
     }
     .vc-msg:hover .vc-msg__toolbar,
     .vc-msg:focus-within .vc-msg__toolbar,
     .vc-msg__toolbar--pinned {
       opacity: 1;
+      visibility: visible;
       pointer-events: auto;
-      transform: translateY(0);
+      transform: translateX(42%) scale(1);
+      transition-delay: 0s;
     }
     @media (hover: none) {
       .vc-msg__toolbar {
         opacity: 1;
+        visibility: visible;
         pointer-events: auto;
-        transform: none;
-      }
-      .vc-msg--plain .vc-msg__toolbar {
-        transform: translate(0.35rem, calc(-100% - 0.2rem));
+        transform: translateX(42%) scale(1);
+        transition: none;
       }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -709,10 +689,15 @@ import { environment } from '../../../../environments/environment';
         transition: none;
       }
     }
-    .vc-msg__react-picker {
-      display: inline-flex;
-      gap: 0.1rem;
-      position: relative;
+    .vc-msg-menu__reactions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.05rem;
+      width: 100%;
+      padding: 0.2rem 0.25rem 0.45rem;
+      margin-bottom: 0.2rem;
+      border-bottom: 1px solid var(--vc-border-subtle);
     }
     .vc-msg__react-more {
       position: relative;
@@ -721,7 +706,7 @@ import { environment } from '../../../../environments/environment';
       /* Anchored by CDK overlay; host only marks the origin box. */
       z-index: 0;
     }
-    .vc-msg__react-picker button,
+    .vc-msg-menu__reactions button,
     .vc-msg__toolbar-btn {
       border: 0;
       background: transparent;
@@ -733,17 +718,17 @@ import { environment } from '../../../../environments/environment';
       padding: 0.25rem 0.35rem;
       border-radius: var(--vc-radius-sm);
     }
-    .vc-msg__react-picker button:hover,
-    .vc-msg__react-picker button:focus-visible,
+    .vc-msg-menu__reactions button:hover,
+    .vc-msg-menu__reactions button:focus-visible,
     .vc-msg__toolbar-btn:hover,
     .vc-msg__toolbar-btn:focus-visible {
       color: var(--vc-ink);
       background: color-mix(in srgb, var(--vc-brand) 10%, transparent);
     }
     .vc-msg__more {
-      font-size: 1rem;
+      font-size: 0.88rem;
       font-weight: 600;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.03em;
     }
     .vc-msg__edit-actions {
       display: flex;
@@ -786,12 +771,16 @@ import { environment } from '../../../../environments/environment';
     .vc-msg-menu {
       display: flex;
       flex-direction: column;
-      min-width: 10.5rem;
+      min-width: min(19rem, calc(100vw - 1rem));
+      max-width: calc(100vw - 1rem);
       padding: 0.3rem;
       border: 1px solid var(--vc-border);
       border-radius: var(--vc-radius-md);
       background: var(--vc-surface);
-      box-shadow: var(--vc-shadow-md, 0 8px 24px color-mix(in srgb, var(--vc-ink) 18%, transparent));
+      box-shadow: var(
+        --vc-shadow-md,
+        0 8px 24px color-mix(in srgb, var(--vc-ink) 18%, transparent)
+      );
     }
     .vc-msg-menu__item {
       border: 0;
@@ -863,9 +852,7 @@ export class MessageBubble {
   readonly editLength = computed(() => measureMessageBodyLength(this.draft()));
   readonly editTooLong = computed(() => isMessageBodyTooLong(this.draft()));
   readonly showEditCounter = computed(() => this.editLength() >= MESSAGE_BODY_COUNTER_THRESHOLD);
-  readonly editSaveDisabled = computed(
-    () => !this.draft().trim() || this.editTooLong(),
-  );
+  readonly editSaveDisabled = computed(() => !this.draft().trim() || this.editTooLong());
   readonly transcribeEnabled = computed(
     () => environment.aiTranscribeEnabled && environment.aiSummarizeEnabled,
   );
@@ -886,7 +873,6 @@ export class MessageBubble {
       hasLinkPreview: !!this.visibleLinkPreview(),
     }),
   );
-  readonly hasMenu = computed(() => this.menuItems().length > 0);
   readonly visibleLinkPreview = computed(() => {
     const preview = this.message().linkPreview;
     if (!preview || this.message().deletedAt) return null;
@@ -932,10 +918,7 @@ export class MessageBubble {
           if (isGifContentType(attachment.contentType) && !this.downloadUrls()[attachment.id]) {
             void this.loadDownloadUrl(channelId, attachment.id);
           }
-        } else if (
-          (kind === 'audio' || kind === 'video') &&
-          !this.downloadUrls()[attachment.id]
-        ) {
+        } else if ((kind === 'audio' || kind === 'video') && !this.downloadUrls()[attachment.id]) {
           void this.loadDownloadUrl(channelId, attachment.id);
         }
       }

@@ -25,15 +25,17 @@ Regras do registro:
 
 ## Abertos
 
-| ID      | Área             | Achado                                                                | Severidade | Status                      |
-| ------- | ---------------- | --------------------------------------------------------------------- | ---------- | --------------------------- |
-| BUG-002 | Sidebar / unread | Badges de novas mensagens não limpam de forma persistente após reload | Média      | Aberto — alívio aplicado; fecha em **B-094** |
-| BUG-008 | Presence         | Minimizar a janela marca ausente na hora                              | Média      | Aberto                      |
-| BUG-010 | Timeline / scroll | Ao abrir a conversa não rola até as mensagens mais recentes          | Média      | Aberto                      |
-| BUG-011 | Admin / shell    | Membros não veem o botão Admin                                        | Média      | Aberto                      |
-| BUG-012 | Timeline / bolha | Toolbar de hover fica em cima da mensagem (texto, reações, cabeçalho) | Média      | Aberto                      |
-| BUG-013 | Timeline / pins  | “Ir até” mensagem fixada buga o scroll da timeline                      | Média      | Aberto                      |
-| BUG-014 | Timeline / áudio | Bolha de áudio não mostra as waves do áudio tocando                     | Média      | Aberto                      |
+| ID      | Área              | Achado                                                                | Severidade | Status                                       |
+| ------- | ----------------- | --------------------------------------------------------------------- | ---------- | -------------------------------------------- |
+| BUG-002 | Sidebar / unread  | Badges de novas mensagens não limpam de forma persistente após reload | Média      | Aberto — alívio aplicado; fecha em **B-094** |
+| BUG-008 | Presence          | Minimizar a janela marca ausente na hora                              | Média      | Aberto                                       |
+| BUG-010 | Timeline / scroll | Ao abrir a conversa não rola até as mensagens mais recentes           | Média      | Done                                         |
+| BUG-011 | Admin / shell     | Membros não veem o botão Admin                                        | Média      | Aberto                                       |
+| BUG-012 | Timeline / bolha  | Toolbar de hover fica em cima da mensagem (texto, reações, cabeçalho) | Média      | Done                                         |
+| BUG-013 | Timeline / pins   | “Ir até” mensagem fixada buga o scroll da timeline                    | Média      | Done                                         |
+| BUG-014 | Timeline / áudio  | Bolha de áudio não mostra as waves do áudio tocando                   | Média      | Done                                         |
+| BUG-015 | Timeline / scroll | Load older ao rolar pra cima devolve o scroll às mais recentes        | Média      | Aberto                                       |
+| BUG-016 | Timeline / unread | Tarja “Novas mensagens” salta/estranha quando chegam outras novas     | Média      | Aberto — normalização aplicada               |
 
 ## Detalhamento
 
@@ -197,7 +199,7 @@ Regras do registro:
 - Hipótese (confirmada): build production do Angular
   (`optimization.styles.inlineCritical`, default on) emite
   `<link rel="stylesheet" href="styles-*.css" media="print"
-  onload="this.media='all'">`. O CSP em
+onload="this.media='all'">`. O CSP em
   `infra/nginx/security-headers.conf` tem `script-src 'self'` (sem
   `'unsafe-inline'`), então o `onload` nunca roda e o CSS global fica preso
   em `media=print`. Forçar `link.media='all'` via DevTools restaura o layout.
@@ -267,7 +269,7 @@ Regras do registro:
 
 ### BUG-010 — Abrir conversa sem scroll para o fim
 
-- Status: **Aberto**
+- Status: **Done** (2026-08-11)
 - Observado em: relato de produto, 2026-08-10 — ao abrir um canal/conversa a
   timeline **não** posiciona nas mensagens mais recentes; o usuário vê
   histórico antigo (topo) e precisa rolar manualmente até o fim.
@@ -287,8 +289,12 @@ Regras do registro:
 - Owner automático: Frontend (D).
 - Critério de resolução: regressão E2E/unit que abre canal com histórico
   maior que a viewport e afirma `scrollTop` perto do fim; finding `Done`.
-- Próxima ação: reancorar scroll após paint/layout estável no open (e após
-  mutação de altura se necessário); cobrir no E2E de timeline/shell.
+- Causa confirmada: a ancoragem acontecia antes da estabilização do layout e
+  o único rAF não acompanhava mudanças tardias de altura.
+- Resolução: controller cancelável reaplica a âncora por frames e
+  `ResizeObserver`, prioriza o divisor de não lidas e cede imediatamente em
+  wheel/pointer/touch/teclado. Regressão em `timeline-scroll.spec.ts` e E2E
+  `timeline-anchor.spec.ts` com histórico maior que a viewport.
 
 ### BUG-011 — Membros não veem o botão Admin
 
@@ -318,11 +324,11 @@ Regras do registro:
 
 ### BUG-012 — Toolbar de hover fica em cima das mensagens
 
-- Status: **Aberto**
+- Status: **Done** (2026-08-11)
 - Observado em: relato de produto + capturas no lab Compose (`localhost:4200`),
   2026-08-10 / 2026-08-11 — no hover, a barra de reações rápidas + **Responder**
-  + ⋯ **não fica ao lado/acima da bolha de forma limpa**; cobre o conteúdo da
-  própria mensagem. Sintomas vistos nas capturas:
+  - ⋯ **não fica ao lado/acima da bolha de forma limpa**; cobre o conteúdo da
+    própria mensagem. Sintomas vistos nas capturas:
   1. **Cobre o corpo** — barra atravessa o meio/fundo da bolha (ex.: Alice
      “opaaa / falara galera / ta paz?”), obscurecendo a última linha e o
      badge de reação (✅ 1).
@@ -335,8 +341,8 @@ Regras do registro:
      no vazio entre linhas / perto do divisor da sidebar, longe do texto
      hoverado (ex.: pill `e2e-hist-…` e barra acima da bolha da Alice),
      parecendo “solta” em cima do fluxo.
-  Percepção de produto: “não fica legal, fica em cima das msgs — dá para
-  melhorar muito.”
+     Percepção de produto: “não fica legal, fica em cima das msgs — dá para
+     melhorar muito.”
 - Hipótese (duas âncoras quebradas no mesmo componente):
   - Bolha padrão (`.vc-msg__toolbar`): `position: absolute; top: -0.45rem` e,
     no hover, `transform: translateY(0)` — a barra **permanece sobreposta** à
@@ -364,23 +370,23 @@ Regras do registro:
   (b) bolha multi-linha com reação, (c) stack com linha curta após linha longa;
   em todos, a toolbar não intersecta o texto nem o badge de reação;
   finding `Done`.
-- Próxima ação (direções de solução, escolher uma ou combinar):
-  1. **Sair do retângulo da bolha** — offset negativo real no eixo Y (ou
-     `bottom: 100%` + gap) no hover padrão, sem `top: -0.45rem` + `translateY(0)`
-     que deixa a barra dentro da área útil.
-  2. **Ancorar à largura do conteúdo** — coluna/`body` com `width: fit-content`
-     por linha, ou toolbar relativa a `.vc-msg__body` (não à coluna do stack).
-  3. **Toolbar no nível do stack** — uma barra por entrada ativa no hover,
-     evitando N absolutas com `translateY(-100%)` desalinhadas.
-  4. **Posicionamento adaptativo** — CDK overlay / fixed com flip
-     (acima · ao lado · abaixo) conforme espaço; fallback lateral em mensagem
-     de uma palavra.
-  5. **Agrupadas `middle`/`end`** — preferir âncora horizontal (`inline-end`)
-     quando a linha for mais baixa que a toolbar.
+- Causa confirmada: o posicionamento absoluto se ancorava à coluna compartilhada
+  do stack e inevitavelmente invadia conteúdo próprio ou vizinho.
+- Resolução: a toolbar expansível foi substituída por um único gatilho `⋯`
+  dentro de uma área reservada da bolha, sempre no inline-end e independente
+  de mine/theirs. O gatilho abre um popover CDK estável com reações, responder
+  e demais ações; não existe gap de hover nem mudança de geometria. Cada item
+  agrupado preserva sua própria bolha, mensagens do autor atual mantêm o mesmo
+  inline-end e a largura útil chega a 44rem sem ocupar a timeline inteira. A
+  primeira mensagem mostra autor + hora no cabeçalho; continuações revelam a
+  hora no gutter em hover/foco, sem sobrepor ou criar uma segunda linha. Unit e
+  E2E `timeline-toolbar-layout.spec.ts` cobrem mensagem longa do Demo, curta,
+  agrupada, reação e popover dentro da viewport em 1280/900/390px; inspeção no
+  Chrome em 1920px cobre também o alinhamento do grid largo.
 
 ### BUG-013 — “Ir até” mensagem fixada buga o scroll
 
-- Status: **Aberto**
+- Status: **Done** (2026-08-11)
 - Observado em: relato de produto, 2026-08-11 — no painel de mensagens fixadas,
   ao clicar **Ir até**, a timeline tenta ancorar na mensagem e o **scroll fica
   quebrado** (posição errada, trava, ou deixa de responder de forma estável
@@ -403,13 +409,19 @@ Regras do registro:
 - Critério de resolução: regressão E2E/unit que fixa mensagem fora da página
   atual, clica **Ir até**, afirma elemento visível e scroll ainda operável;
   finding `Done`.
-- Próxima ação: reancorar após paint/layout estável (como BUG-010); evitar
-  `scrollIntoView` em microtask sozinho após `replace`; fechar painel só após
-  âncora estável ou compensar resize do scroller.
+- Causa confirmada: o store consultava o DOM antes de a página `around` e o
+  resize causado pelo painel estarem estabilizados; auto-scrolls concorrentes
+  podiam substituir o salto.
+- Resolução: pedido interno tipado e versionado (`channelId`, `messageId`,
+  `requestId`) é consumido pela timeline após render/layout; pedidos antigos
+  são descartados, o painel fecha antes do salto e o pedido mantém prioridade
+  até terminar a janela de estabilização (inclusive paginação tardia). Units
+  cobrem lifecycle e ordem; E2E `timeline-anchor.spec.ts` valida
+  centro/highlight, painel fechado e scroll utilizável após o salto.
 
 ### BUG-014 — Bolha de áudio sem waves na reprodução
 
-- Status: **Aberto**
+- Status: **Done** (2026-08-11)
 - Observado em: relato de produto, 2026-08-11 — na timeline, a bolha de
   mensagem de áudio **não exibe as waves** (waveform) do áudio enquanto
   toca; o player sobe (play/pause, tempo, scrubber), mas o canvas da
@@ -435,12 +447,68 @@ Regras do registro:
 - Critério de resolução: mensagem `Audio` com waveform persistido renderiza
   barras; play atualiza visual de progresso na wave; regressão unit do
   draw/progresso; finding `Done`.
-- Próxima ação: confirmar se `waveform` chega no DTO da timeline; se sim,
-  redesenhar no `timeupdate` com highlight de progresso; se não, corrigir
-  persistência/map no caminho de envio e history.
+- Causa confirmada: o canvas era estático e o cleanup do próprio efeito
+  interrompia o áudio quando um redesenho reativo era necessário; ausência de
+  samples produzia apenas uma linha quase invisível.
+- Resolução: `drawAudioWaveform` aceita progresso opcional, diferencia barras
+  tocadas/restantes e usa samples fallback determinísticos. O componente
+  redesenha em `timeupdate`, scrub e término, e limpa o áudio somente no
+  destroy. Units cobrem samples, fallback, clamp, reprodução, scrub e término.
+
+### BUG-015 — Load older devolve o scroll às mais recentes
+
+- Status: **Aberto**
+- Severidade: **Média**
+- Observado em: relato de produto, 2026-08-11 — ao rolar a timeline para cima
+  (histórico) e disparar o carregamento de mensagens mais antigas, o scroll
+  **salta de volta** para as mensagens mais recentes (drift da viewport).
+- Hipótese: (1) o `effect` de chegada em `timeline.ts` trata o crescimento da
+  lista no prepend (`loadOlderMessages`) como “mensagens novas”:
+  `list.slice(-added)` pega a cauda já visível; se alguma for `mine`, chama
+  `scrollToBottom`. (2) a compensação `scrollTop += delta` após o prepend usa
+  um único `rAF` e compete com skeleton/`ResizeObserver`/auto-scroll, então a
+  âncora visual de B-089 falha.
+- Arquivos: `apps/web/src/app/features/chat/timeline/timeline.ts`
+  (`maybeLoadOlder`, effect de `forActiveChannel`),
+  `apps/web/src/app/core/services/message.store.ts` (`loadOlderMessages` /
+  prepend), `timeline-scroll.ts`.
+- Resultado esperado: carregar página anterior preserva a mensagem sob o
+  viewport (B-089); prepend nunca dispara auto-scroll para o fim nem infla
+  contagem de novas.
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: regressão unit/E2E — rolar ao topo, load older, a
+  mesma âncora visual permanece; finding `Done`.
+- Alívio parcial (2026-08-11): effect ignora crescimento por prepend
+  (`loadingOlder` / cauda estável) e não chama `scrollToBottom` nesse caminho;
+  âncora pós-prepend reforçada. Fechar após prova de regressão estável.
+
+### BUG-016 — Tarja “Novas mensagens” estranha com novas chegando
+
+- Status: **Aberto** — normalização aplicada; fecha com regressão verde
+- Severidade: **Média**
+- Observado em: relato de produto, 2026-08-11 — com a tarja/divisor “Novas
+  mensagens” visível, ao chegarem outras mensagens novas a tarja **salta ou
+  fica inconsistente** (posição e/ou contagem do botão “Ir para a mais
+  recente”).
+- Hipótese: `buildTimelineItems` recoloca o divisor como “antes das últimas N
+  mensagens” (`unreadDividerAfterSeq` + `unreadSnapshot` fixo). Cada append
+  no fim empurra o “bloco de N” para baixo e a tarja **migra** em direção ao
+  bottom. Em paralelo, prepend de histórico (BUG-015) inflava `newWhileAway`
+  com o tamanho da página, deixando o botão de salto com contagem absurda.
+- Arquivos: `apps/web/src/app/features/chat/timeline/timeline.ts`,
+  `timeline-items.ts` (`unreadDividerAfterSeq` / `dividerAfterSeq`).
+- Resultado esperado: divisor congela no `afterSeq` da abertura do canal
+  (B-088) até dismiss por scroll; novas no fim só atualizam o botão “Ir para
+  a mais recente (N)”; load older não mexe na contagem.
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: unit com `dividerAfterSeq` congelado sob append;
+  contagem `newWhileAway` só sob append real; finding `Done`.
+- Normalização (2026-08-11): `frozenUnreadAfterSeq` na abertura; effect de
+  chegada distingue prepend vs append; botão de salto mantém rótulo estável.
 
 ## Fechados
-
 
 | ID      | Área                | Achado                                            | Severidade | Status |
 | ------- | ------------------- | ------------------------------------------------- | ---------- | ------ |

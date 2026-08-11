@@ -112,7 +112,7 @@ export interface MessageForwardedFrom {
   isDirect?: boolean;
 }
 
-export const REACTION_EMOJI_OPTIONS = ['👍', '❤️', '😂', '🎉', '👀', '✅'] as const;
+export const REACTION_EMOJI_OPTIONS = ['👍', '❤️', '😂', '🎉', '👀', '✅', '🔥', '🙌'] as const;
 
 export interface ChatMessage {
   id: string;

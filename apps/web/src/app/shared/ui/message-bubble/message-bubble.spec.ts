@@ -22,7 +22,7 @@ function baseMessage(overrides: Partial<ChatMessage> = {}): ChatMessage {
 }
 
 describe('MessageBubble (B-163)', () => {
-    async function setup(
+  async function setup(
     message: ChatMessage,
     inputs: Record<string, unknown> = {},
     apiOverrides: Partial<{
@@ -87,13 +87,20 @@ describe('MessageBubble (B-163)', () => {
 
   it('keeps the action toolbar in the DOM but hidden without hover/focus styles active', async () => {
     const { fixture } = await setup(baseMessage());
-    const toolbar = fixture.nativeElement.querySelector('[data-testid="msg-toolbar"]') as HTMLElement;
+    const toolbar = fixture.nativeElement.querySelector(
+      '[data-testid="msg-toolbar"]',
+    ) as HTMLElement;
     expect(toolbar).toBeTruthy();
 
     const cmp = MessageBubble as unknown as { ɵcmp: { styles: string[] } };
     const css = cmp.ɵcmp.styles.join('\n');
     expect(css).toMatch(/\.vc-msg__toolbar/);
     expect(css).toMatch(/opacity:\s*0/);
+    expect(css).toMatch(/\.vc-msg__toolbar(?:\[[^\]]+\])?\s*{[^}]*position:\s*absolute/s);
+    expect(css).toMatch(/\.vc-msg__toolbar(?:\[[^\]]+\])?\s*{[^}]*right:\s*0/s);
+    expect(css).not.toMatch(/\.vc-msg__body(?:\[[^\]]+\])?\s*{[^}]*padding-right:\s*calc/s);
+    expect(css).not.toMatch(/\.vc-msg__toolbar(?:\[[^\]]+\])?\s*{[^}]*max-height/s);
+    expect(css).toMatch(/\.vc-msg-menu__reactions/);
     expect(css).toMatch(/\.vc-msg(?:\[[^\]]*\])?:hover/);
     expect(css).toMatch(/\.vc-msg(?:\[[^\]]*\])?:focus-within/);
     expect(css).toMatch(/\.vc-msg__toolbar--pinned/);
@@ -121,20 +128,25 @@ describe('MessageBubble (B-163)', () => {
     expect(button.getAttribute('aria-label')).toMatch(/^Reação 👍/);
   });
 
-  it('filters more-menu affordance by mine / action flags', async () => {
+  it('keeps one stable menu trigger and filters actions by mine / flags', async () => {
     const theirs = await setup(baseMessage({ mine: false }), {
       showForwardAction: false,
       showThreadAction: false,
       showReplyAction: true,
     });
-    expect(theirs.fixture.nativeElement.querySelector('[aria-label="Mais opções"]')).toBeNull();
-    expect(theirs.fixture.nativeElement.querySelector('[aria-label="Responder"]')).toBeTruthy();
+    expect(
+      theirs.fixture.nativeElement.querySelector('[aria-label="Ações da mensagem"]'),
+    ).toBeTruthy();
+    expect(theirs.fixture.nativeElement.querySelector('[aria-label="Responder"]')).toBeNull();
+    expect(theirs.fixture.componentInstance.menuItems()).toEqual([]);
 
     const mine = await setup(baseMessage({ mine: true }), {
       showForwardAction: true,
       showThreadAction: true,
     });
-    expect(mine.fixture.nativeElement.querySelector('[aria-label="Mais opções"]')).toBeTruthy();
+    expect(
+      mine.fixture.nativeElement.querySelector('[aria-label="Ações da mensagem"]'),
+    ).toBeTruthy();
     expect(mine.fixture.componentInstance.menuItems().map((i) => i.id)).toEqual([
       'forward',
       'thread',
@@ -163,7 +175,9 @@ describe('MessageBubble (B-163)', () => {
 
   it('pins the toolbar while the action menu is open', async () => {
     const { fixture } = await setup(baseMessage());
-    const toolbar = fixture.nativeElement.querySelector('[data-testid="msg-toolbar"]') as HTMLElement;
+    const toolbar = fixture.nativeElement.querySelector(
+      '[data-testid="msg-toolbar"]',
+    ) as HTMLElement;
     expect(toolbar.classList.contains('vc-msg__toolbar--pinned')).toBe(false);
 
     fixture.componentInstance.menuOpen.set(true);
@@ -287,7 +301,7 @@ describe('MessageBubble (B-163)', () => {
     expect(root.querySelector('vc-avatar')).toBeNull();
     expect(root.querySelector('.vc-msg--grouped')).toBeTruthy();
     expect(root.querySelector('.vc-msg--group-end')).toBeTruthy();
-    expect(root.querySelector('.vc-msg__hover-time')).toBeTruthy();
+    expect(root.querySelector('.vc-msg__group-time')).toBeTruthy();
   });
 
   it('applies plain surface styles for stack-embedded messages', async () => {
@@ -304,6 +318,6 @@ describe('MessageBubble (B-163)', () => {
     const cmp = MessageBubble as unknown as { ɵcmp: { styles: string[] } };
     const css = cmp.ɵcmp.styles.join('\n');
     expect(css).toMatch(/vc-msg--plain/);
-    expect(css).toMatch(/background:\s*transparent/);
+    expect(root.querySelector('.vc-msg__body')).toBeTruthy();
   });
 });

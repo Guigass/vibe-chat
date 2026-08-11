@@ -1,8 +1,10 @@
 import {
   Component,
+  DestroyRef,
   ElementRef,
   computed,
   effect,
+  inject,
   input,
   signal,
   viewChild,
@@ -28,7 +30,13 @@ const PLAYBACK_RATES = [1, 1.5, 2] as const;
       </button>
 
       <div class="vc-audio__body">
-        <canvas #waveCanvas class="vc-audio__wave" width="180" height="36" aria-hidden="true"></canvas>
+        <canvas
+          #waveCanvas
+          class="vc-audio__wave"
+          width="180"
+          height="36"
+          aria-hidden="true"
+        ></canvas>
         <div class="vc-audio__meta">
           <span>{{ elapsedLabel() }}</span>
           <span>{{ durationLabel() }}</span>
@@ -105,6 +113,7 @@ const PLAYBACK_RATES = [1, 1.5, 2] as const;
   `,
 })
 export class AudioMessage {
+  private readonly destroyRef = inject(DestroyRef);
   readonly attachment = input.required<MessageAttachment>();
   readonly downloadUrl = input<string | null>(null);
 
@@ -122,13 +131,18 @@ export class AudioMessage {
     if (duration <= 0) return 0;
     return Math.round((this.elapsedMs() / duration) * 1000);
   });
+  readonly playbackProgress = computed(() => this.progressValue() / 1000);
   readonly ariaLabel = computed(() => `Mensagem de áudio, duração ${this.durationLabel()}`);
 
   constructor() {
-    effect((onCleanup) => {
-      drawAudioWaveform(this.waveCanvas()?.nativeElement, this.attachment().waveform);
-      onCleanup(() => this.stopAudio());
+    effect(() => {
+      drawAudioWaveform(
+        this.waveCanvas()?.nativeElement,
+        this.attachment().waveform,
+        this.playbackProgress(),
+      );
     });
+    this.destroyRef.onDestroy(() => this.stopAudio());
   }
 
   togglePlayback(): void {
@@ -138,7 +152,8 @@ export class AudioMessage {
     if (!this.audio) {
       this.audio = new Audio(url);
       this.audio.playbackRate = this.speed();
-      this.audio.ontimeupdate = () => this.elapsedMs.set(Math.round((this.audio?.currentTime ?? 0) * 1000));
+      this.audio.ontimeupdate = () =>
+        this.elapsedMs.set(Math.round((this.audio?.currentTime ?? 0) * 1000));
       this.audio.onended = () => {
         this.playing.set(false);
         this.elapsedMs.set(0);
@@ -151,7 +166,10 @@ export class AudioMessage {
       return;
     }
 
-    void this.audio.play().then(() => this.playing.set(true)).catch(() => this.playing.set(false));
+    void this.audio
+      .play()
+      .then(() => this.playing.set(true))
+      .catch(() => this.playing.set(false));
   }
 
   cycleSpeed(): void {

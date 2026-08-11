@@ -151,6 +151,33 @@ describe('buildTimelineItems', () => {
     expect(firstUnreadStack?.kind === 'stack' && firstUnreadStack.messages[0]?.id).toBe('m4');
   });
 
+  it('keeps a frozen dividerAfterSeq when newer messages append (BUG-016)', () => {
+    const opened = Array.from({ length: 8 }, (_, i) =>
+      msg({ id: `m${i + 1}`, seq: i + 1, createdAt: localIso(2026, 8, 10, 10, i) }),
+    );
+    const frozenAfterSeq = unreadDividerAfterSeq(opened, 5);
+    expect(frozenAfterSeq).toBe(3);
+
+    const withNew = [
+      ...opened,
+      msg({ id: 'm9', seq: 9, createdAt: localIso(2026, 8, 10, 10, 8) }),
+      msg({ id: 'm10', seq: 10, createdAt: localIso(2026, 8, 10, 10, 9) }),
+    ];
+    const drifting = unreadDividerAfterSeq(withNew, 5);
+    expect(drifting).toBe(5);
+
+    const items = buildTimelineItems(withNew, {
+      now,
+      unreadCount: 5,
+      dividerAfterSeq: frozenAfterSeq,
+    });
+    const unread = items.find((i) => i.kind === 'unread');
+    expect(unread).toMatchObject({ kind: 'unread', afterSeq: 3 });
+    const unreadIndex = items.findIndex((i) => i.kind === 'unread');
+    const firstUnreadStack = items[unreadIndex + 1];
+    expect(firstUnreadStack?.kind === 'stack' && firstUnreadStack.messages[0]?.id).toBe('m4');
+  });
+
   it('omits the unread divider when dismissed', () => {
     const messages = [
       msg({ id: 'm1', seq: 1, createdAt: localIso(2026, 8, 10, 12, 0) }),
