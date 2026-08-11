@@ -339,6 +339,30 @@ gera a miniatura no processamento deste outbox (nunca no hot path do envio).
 Fan-out após geração (sucesso ou falha): `{ tenantId, channelId, attachmentId,
 thumbnailStatus, width?, height?, pageCount?, thumbnailKey? }`.
 
+### Link preview (B-091 / ADR-021)
+
+Tabelas (RLS por `TenantId`):
+
+| Tabela | Papel |
+|--------|--------|
+| `messaging.link_previews` | Cache por tenant+`UrlHash` — `Url`, `Title`, `Description`, `SiteName`, `ImageKey?`, `Status` (`Pending`\|`Ready`\|`Failed`\|`Blocked`), `FetchedAt`, `ExpiresAt` (TTL 7d) |
+| `messaging.message_link_previews` | Junction mensagem ↔ preview; `RemovedAt` soft-remove |
+| `messaging.link_preview_settings` | Toggle admin por tenant (`Enabled`) |
+
+Flags: `LinkPreview:Enabled` (default `true`) e `LinkPreview:TimeoutMs` (default `8000`).
+
+Job: no `OutboxProcessor` após realtime de `MessageCreated` — **nunca** no hot path de envio. Fetcher com guarda SSRF (scheme allowlist, IP privado/metadata após DNS e cada redirect, máx. 3 redirects, HTML ≤ 1,5 MB, imagem ≤ 512 KB).
+
+| Endpoint | Notas |
+|----------|--------|
+| History/thread `MessageResponse.linkPreview?` | Só status `Ready` e junction não removida |
+| `DELETE /api/v1/channels/{channelId}/messages/{messageId}/link-preview` | Autor ou `workspace.admin` |
+| `GET /api/v1/channels/{channelId}/messages/{messageId}/link-preview/image` | Presign MinIO da miniatura própria |
+
+### `LinkPreviewReady` (SignalR)
+
+`{ tenantId, channelId, messageId, linkPreviewId, url, title?, description?, siteName?, hasImage, status }` — fan-out quando o cartão fica `Ready`.
+
 ---
 
 ## Realtime
@@ -367,6 +391,8 @@ Nomes de eventos hub (cliente):
 | `MessageEdited` | Edição |
 | `MessageDeleted` | Soft delete |
 | `ReactionChanged` | Toggle de reação (payload com resumo agregado) |
+| `AttachmentThumbnailReady` | Miniatura de anexo pronta/falha (B-090) |
+| `LinkPreviewReady` | Cartão Open Graph pronto (B-091) |
 | `Typing` | Typing (TTL curto Redis); hub publica com `Clients.OthersInGroup` (B-071) — autor não recebe o próprio evento |
 | `PresenceChanged` | Presence `online`/`away`/`offline` (hub group `t:{tenantId}`) |
 
@@ -468,7 +494,7 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 | `GET /api/v1/admin/conversations/{channelId}/messages?after=&limit=` | Histórico admin do canal/DM (root); body **visível** mesmo com soft-delete; inclui `deletedBy` / anexos; exige `admin.dashboard`; canal fora do tenant → 403 |
 | `GET /api/v1/admin/threads/{threadId}/messages?after=&limit=` | Histórico admin de replies da thread; mesma authZ e semântica de body |
 | `GET /api/v1/admin/settings?workspaceId=` | Settings sensíveis mascarados (B-069 / ADR-020); exige `workspace.admin` (Auditor com só `admin.dashboard` → 403); `workspaceId` opcional (default: primeiro workspace do actor) |
-| `PUT /api/v1/admin/settings` | Atualiza flags não-secretas (AI/email/webhooks/retention/files/rateLimit); mesma authZ; rejeita secrets no body (`SecretsNotWritable`); audit `settings.change` |
+| `PUT /api/v1/admin/settings` | Atualiza flags não-secretas (AI/email/webhooks/retention/linkPreview/files/rateLimit); mesma authZ; rejeita secrets no body (`SecretsNotWritable`); audit `settings.change` |
 | `POST /api/v1/admin/settings/credentials/openrouter/rotate` | Rotaciona API key OpenRouter (envelope AES-GCM em `ai.settings`); body `{ workspaceId?, value }`; resposta `{ configured, mask, keyVersion, rotatedAt }`; `503` se keyring indisponível |
 | `POST /api/v1/admin/settings/credentials/smtp/rotate` | Rotaciona senha SMTP do tenant (envelope em `notifications.email_settings`); mesma forma de resposta |
 | `POST /api/v1/admin/settings/credentials/webhook/rotate` | Rotaciona signing secret do webhook (envelope em `integrations.webhook_endpoints`); mesma forma |

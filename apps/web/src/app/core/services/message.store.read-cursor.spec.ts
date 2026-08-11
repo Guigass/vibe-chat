@@ -83,6 +83,7 @@ describe('MessageStore read cursor (BUG-002)', () => {
             onMessageDeleted: () => () => undefined,
             onReactionChanged: () => () => undefined,
             onAttachmentThumbnailReady: () => () => undefined,
+            onLinkPreviewReady: () => () => undefined,
             onReconnected: () => () => undefined,
           },
         },
@@ -106,6 +107,7 @@ describe('MessageStore read cursor (BUG-002)', () => {
           useValue: {
             bumpReplyCount: vi.fn(),
             gapFillActive: vi.fn(),
+            applyLinkPreviewCleared: vi.fn(),
           },
         },
       ],

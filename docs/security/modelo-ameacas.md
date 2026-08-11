@@ -57,6 +57,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
     exaustão de storage
 14. **Support bundle/repair** — exfiltração de secret/PII e ação administrativa
     destrutiva
+15. **Link preview / egress HTTP** — SSRF via URL em mensagem (B-091 / ADR-021)
 
 ## Controles mínimos obrigatórios (fase 1)
 
@@ -120,6 +121,17 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Cascata | Remove reactions; detach `attachments.MessageId` (sem delete MinIO neste slice) |
 | Audit | `message.purge` em `audit.audit_events` |
 
+### B-091 / ADR-021 — Link preview / SSRF
+
+| Item | Controle |
+|------|----------|
+| Egress | Só `http`/`https`; IP privado/loopback/link-local/metadata recusado após DNS e cada redirect |
+| Redirect | Máx. 3; `AllowAutoRedirect=false` + revalidação; `ConnectCallback` só a IPs públicos |
+| Limites | Timeout `LinkPreview:TimeoutMs` (default 8s); HTML ≤ 1,5 MB / imagem ≤ 512 KB; sem cookies/creds |
+| Isolamento | Cache por `TenantId`+`UrlHash`; imagem no MinIO do tenant; kill switch processo + admin |
+| AuthZ remoção | Autor ou `workspace.admin`; alheio → 403 |
+| Hot path | Fetch só no worker via outbox `MessageCreated` |
+
 ## Ameaças priorizadas para a fatia vertical
 
 1. Leitura/escrita cross-tenant
@@ -130,6 +142,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 6. Abuso de auditoria de conversa fora do tenant / por membro (R-18 / B-067)
 7. Abuso de export ZIP fora do tenant / por não-admin (B-046)
 8. Purge hard-delete sem authZ / kill switch / isolamento de tenant (B-047)
+9. SSRF via link preview (B-091 / ADR-021)
 
 ## O que está fora (por ora)
 

@@ -373,3 +373,196 @@ public static class MessageBodyPolicies
         maxLength = MaxLength
     };
 }
+
+public enum LinkPreviewStatus
+{
+    Pending = 0,
+    Ready = 1,
+    Failed = 2,
+    Blocked = 3
+}
+
+/// <summary>Cached Open Graph / oEmbed metadata for a URL within one tenant (B-091).</summary>
+public sealed class LinkPreview
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public string UrlHash { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+    public string? Title { get; set; }
+    public string? Description { get; set; }
+    public string? SiteName { get; set; }
+    public string? ImageKey { get; set; }
+    public string? ImageContentType { get; set; }
+    public DateTimeOffset FetchedAt { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
+    public LinkPreviewStatus Status { get; set; }
+}
+
+/// <summary>Junction message ↔ link preview; soft-removed when author dismisses the card.</summary>
+public sealed class MessageLinkPreview
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public MessageId MessageId { get; set; }
+    public ChannelId ChannelId { get; set; }
+    public Guid LinkPreviewId { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? RemovedAt { get; set; }
+}
+
+/// <summary>Per-tenant kill switch for link preview (admin). Env <c>LinkPreview:Enabled</c> is the process gate.</summary>
+public sealed class TenantLinkPreviewSettings
+{
+    public TenantId TenantId { get; set; }
+    public bool Enabled { get; set; } = true;
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public static class LinkPreviewPolicies
+{
+    public const int CacheTtlDays = 7;
+    public const int MaxRedirects = 3;
+    public const int DefaultTimeoutMs = 8000;
+    /// <summary>HTML cap — YouTube and similar place OG tags past 512 KB.</summary>
+    public const int MaxHtmlBodyBytes = 1536 * 1024;
+    /// <summary>Thumbnail download cap (SSRF budget).</summary>
+    public const int MaxImageBodyBytes = 512 * 1024;
+    public const int MaxTitleLength = 240;
+    public const int MaxDescriptionLength = 480;
+    public const int MaxSiteNameLength = 120;
+    public const string UserAgent = "VibeChat-LinkPreview/1.0";
+
+    private static readonly Regex HttpUrlRegex = new(
+        @"https?://[^\s<>""')\]]+",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    public static string? ExtractFirstUrl(string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return null;
+        }
+
+        var match = HttpUrlRegex.Match(body);
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        return NormalizeUrl(match.Value.TrimEnd('.', ',', ';', '!', '?', ')', ']'));
+    }
+
+    public static string? NormalizeUrl(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        if (!Uri.TryCreate(raw.Trim(), UriKind.Absolute, out var uri))
+        {
+            return null;
+        }
+
+        if (uri.Scheme is not ("http" or "https"))
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(uri.Host))
+        {
+            return null;
+        }
+
+        var builder = new UriBuilder(uri)
+        {
+            Fragment = string.Empty
+        };
+        return builder.Uri.AbsoluteUri;
+    }
+
+    public static string ComputeUrlHash(string normalizedUrl)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(normalizedUrl));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
+    }
+
+    public static string BuildImageKey(TenantId tenantId, Guid previewId) =>
+        $"tenants/{tenantId.Value:N}/link-previews/{previewId:N}/image";
+
+    public static string Truncate(string? value, int max)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var trimmed = value.Trim();
+        return trimmed.Length <= max ? trimmed : trimmed[..max];
+    }
+
+    public static bool IsBlockedIp(System.Net.IPAddress address)
+    {
+        if (System.Net.IPAddress.IsLoopback(address))
+        {
+            return true;
+        }
+
+        if (address.IsIPv6LinkLocal || address.IsIPv6SiteLocal || address.IsIPv6UniqueLocal || address.IsIPv6Teredo)
+        {
+            return true;
+        }
+
+        if (address.IsIPv4MappedToIPv6)
+        {
+            return IsBlockedIp(address.MapToIPv4());
+        }
+
+        if (address.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
+        {
+            return false;
+        }
+
+        var bytes = address.GetAddressBytes();
+        if (bytes[0] == 0 || bytes[0] == 10 || bytes[0] == 127)
+        {
+            return true;
+        }
+
+        if (bytes[0] == 100 && bytes[1] >= 64 && bytes[1] <= 127)
+        {
+            return true;
+        }
+
+        if (bytes[0] == 169 && bytes[1] == 254)
+        {
+            return true;
+        }
+
+        if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
+        {
+            return true;
+        }
+
+        if (bytes[0] == 192 && bytes[1] == 168)
+        {
+            return true;
+        }
+
+        if (bytes[0] == 192 && bytes[1] == 0 && bytes[2] == 2)
+        {
+            return true;
+        }
+
+        if (bytes[0] >= 224)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static bool TryParseHostAsIp(string host, out System.Net.IPAddress address) =>
+        System.Net.IPAddress.TryParse(host, out address!);
+}

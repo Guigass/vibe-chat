@@ -76,6 +76,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<MessageRetentionSettings> MessageRetentionSettings => Set<MessageRetentionSettings>();
     public DbSet<TenantFilesSettings> TenantFilesSettings => Set<TenantFilesSettings>();
     public DbSet<TenantRateLimitSettings> TenantRateLimitSettings => Set<TenantRateLimitSettings>();
+    public DbSet<LinkPreview> LinkPreviews => Set<LinkPreview>();
+    public DbSet<MessageLinkPreview> MessageLinkPreviews => Set<MessageLinkPreview>();
+    public DbSet<TenantLinkPreviewSettings> TenantLinkPreviewSettings => Set<TenantLinkPreviewSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -367,6 +370,43 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
         modelBuilder.Entity<TenantRateLimitSettings>(entity =>
         {
             entity.ToTable("rate_limit_settings", "building_blocks");
+            entity.HasKey(x => x.TenantId);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<LinkPreview>(entity =>
+        {
+            entity.ToTable("link_previews", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UrlHash).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.Url).HasMaxLength(2048).IsRequired();
+            entity.Property(x => x.Title).HasMaxLength(LinkPreviewPolicies.MaxTitleLength);
+            entity.Property(x => x.Description).HasMaxLength(LinkPreviewPolicies.MaxDescriptionLength);
+            entity.Property(x => x.SiteName).HasMaxLength(LinkPreviewPolicies.MaxSiteNameLength);
+            entity.Property(x => x.ImageKey).HasMaxLength(512);
+            entity.Property(x => x.ImageContentType).HasMaxLength(128);
+            entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(16);
+            entity.HasIndex(x => new { x.TenantId, x.UrlHash }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<MessageLinkPreview>(entity =>
+        {
+            entity.ToTable("message_link_previews", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.MessageId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.HasIndex(x => new { x.TenantId, x.MessageId });
+            entity.HasIndex(x => x.LinkPreviewId);
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<TenantLinkPreviewSettings>(entity =>
+        {
+            entity.ToTable("link_preview_settings", "messaging");
             entity.HasKey(x => x.TenantId);
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
@@ -2072,6 +2112,32 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     await webhooks.TryDispatchAsync(tenantId, eventName, outbox.Id, outbox.Payload, cancellationToken);
                 }
 
+                // B-091: link preview after realtime — never on SendMessage hot path.
+                if (outbox.Type == nameof(MessageCreatedEvent)
+                    && root["messageId"] is JsonNode linkPreviewMessageIdNode)
+                {
+                    try
+                    {
+                        var messageId = new MessageId(linkPreviewMessageIdNode.GetValue<Guid>());
+                        var body = root["body"]?.GetValue<string>() ?? string.Empty;
+                        var generator = scope.ServiceProvider.GetRequiredService<LinkPreviewGenerator>();
+                        await generator.TryProcessMessageCreatedAsync(
+                            tenantId,
+                            channelId,
+                            messageId,
+                            body,
+                            publisher,
+                            cancellationToken);
+                    }
+                    catch (Exception linkEx)
+                    {
+                        logger.LogWarning(
+                            linkEx,
+                            "Link preview failed for outbox {OutboxMessageId}; realtime already published",
+                            outbox.Id);
+                    }
+                }
+
                 outbox.ProcessedAt = now;
                 outbox.Error = null;
             }
@@ -2961,6 +3027,16 @@ public static class DependencyInjection
         });
         services.AddScoped<IObjectStorage, MinioObjectStorage>();
         services.AddScoped<AttachmentThumbnailGenerator>();
+        services.AddScoped<LinkPreviewSettingsResolver>();
+        services.AddScoped<LinkPreviewFetcher>();
+        services.AddScoped<LinkPreviewGenerator>();
+        services.AddHttpClient(LinkPreviewFetcher.HttpClientName)
+            .ConfigurePrimaryHttpMessageHandler(LinkPreviewHttpHandlerFactory.Create)
+            .ConfigureHttpClient(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(15);
+                client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", LinkPreviewPolicies.UserAgent);
+            });
 
         // ADR-020: never capture API key in DefaultRequestHeaders — set per HttpRequestMessage.
         services.AddHttpClient<OpenRouterAiProvider>((sp, client) =>

@@ -56,6 +56,7 @@ export class MessageStore {
   private unsubDeleted: (() => void) | null = null;
   private unsubReactions: (() => void) | null = null;
   private unsubThumbnail: (() => void) | null = null;
+  private unsubLinkPreview: (() => void) | null = null;
   private unsubReconnected: (() => void) | null = null;
 
   readonly messages = this.messagesSignal.asReadonly();
@@ -105,6 +106,9 @@ export class MessageStore {
     );
     this.unsubThumbnail = this.hub.onAttachmentThumbnailReady((event) =>
       this.applyThumbnailReady(event),
+    );
+    this.unsubLinkPreview = this.hub.onLinkPreviewReady((event) =>
+      this.applyLinkPreviewReady(event),
     );
     this.unsubReconnected = this.hub.onReconnected(() => {
       void this.gapFillActiveChannel();
@@ -411,6 +415,23 @@ export class MessageStore {
     });
   }
 
+  async removeLinkPreview(messageId: string): Promise<void> {
+    const channel = this.channels.activeChannel();
+    const existing = this.messagesSignal().find((m) => idsEqual(m.id, messageId));
+    const channelId = existing?.channelId ?? channel?.id;
+    if (!channelId || !messageId) return;
+
+    if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
+      this.applyLinkPreviewCleared(messageId);
+      this.threads.applyLinkPreviewCleared(messageId);
+      return;
+    }
+
+    await this.api.deleteMessageLinkPreview(channelId, messageId);
+    this.applyLinkPreviewCleared(messageId);
+    this.threads.applyLinkPreviewCleared(messageId);
+  }
+
   async toggleReaction(messageId: string, emoji: string): Promise<void> {
     const channel = this.channels.activeChannel();
     if (!channel || !emoji) return;
@@ -617,6 +638,44 @@ export class MessageStore {
         });
         return changed ? { ...m, attachments } : m;
       }),
+    );
+  }
+
+  private applyLinkPreviewReady(event: {
+    channelId: string;
+    messageId: string;
+    linkPreviewId: string;
+    url: string;
+    title?: string | null;
+    description?: string | null;
+    siteName?: string | null;
+    hasImage: boolean;
+    status: string;
+  }): void {
+    this.messagesSignal.update((list) =>
+      list.map((m) => {
+        if (!idsEqual(m.id, event.messageId) || !idsEqual(m.channelId, event.channelId)) {
+          return m;
+        }
+        return {
+          ...m,
+          linkPreview: {
+            id: event.linkPreviewId,
+            url: event.url,
+            title: event.title ?? null,
+            description: event.description ?? null,
+            siteName: event.siteName ?? null,
+            hasImage: event.hasImage,
+            status: event.status,
+          },
+        };
+      }),
+    );
+  }
+
+  private applyLinkPreviewCleared(messageId: string): void {
+    this.messagesSignal.update((list) =>
+      list.map((m) => (idsEqual(m.id, messageId) ? { ...m, linkPreview: null } : m)),
     );
   }
 

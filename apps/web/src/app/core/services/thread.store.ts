@@ -46,6 +46,7 @@ export class ThreadStore {
     this.hub.onMessageDeleted((patch) => this.applyDelete(patch.id));
     this.hub.onReactionChanged((event) => this.applyReactions(event.messageId, event.reactions));
     this.hub.onAttachmentThumbnailReady((event) => this.applyThumbnailReady(event));
+    this.hub.onLinkPreviewReady((event) => this.applyLinkPreviewReady(event));
   }
 
   async openFromMessage(channelId: string, messageId: string): Promise<void> {
@@ -335,6 +336,60 @@ export class ThreadStore {
     const active = this.activeSignal();
     if (active?.parentMessage) {
       const [parent] = patchAttachments([active.parentMessage]);
+      if (parent !== active.parentMessage) {
+        this.activeSignal.set({ ...active, parentMessage: parent });
+      }
+    }
+  }
+
+  applyLinkPreviewCleared(messageId: string): void {
+    const clear = (list: ChatMessage[]): ChatMessage[] =>
+      list.map((m) => (idsEqual(m.id, messageId) ? { ...m, linkPreview: null } : m));
+
+    this.messagesSignal.update(clear);
+    const active = this.activeSignal();
+    if (active?.parentMessage && idsEqual(active.parentMessage.id, messageId)) {
+      this.activeSignal.set({
+        ...active,
+        parentMessage: { ...active.parentMessage, linkPreview: null },
+      });
+    }
+  }
+
+  private applyLinkPreviewReady(event: {
+    channelId: string;
+    messageId: string;
+    linkPreviewId: string;
+    url: string;
+    title?: string | null;
+    description?: string | null;
+    siteName?: string | null;
+    hasImage: boolean;
+    status: string;
+  }): void {
+    const patch = (list: ChatMessage[]): ChatMessage[] =>
+      list.map((m) => {
+        if (!idsEqual(m.id, event.messageId) || !idsEqual(m.channelId, event.channelId)) {
+          return m;
+        }
+        return {
+          ...m,
+          linkPreview: {
+            id: event.linkPreviewId,
+            url: event.url,
+            title: event.title ?? null,
+            description: event.description ?? null,
+            siteName: event.siteName ?? null,
+            hasImage: event.hasImage,
+            status: event.status,
+          },
+        };
+      });
+
+    this.messagesSignal.update(patch);
+    const active = this.activeSignal();
+    if (active?.parentMessage) {
+      const [parent] = patch([active.parentMessage]);
       if (parent !== active.parentMessage) {
         this.activeSignal.set({ ...active, parentMessage: parent });
       }

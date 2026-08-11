@@ -28,6 +28,7 @@ describe('MessageBubble (B-163)', () => {
     apiOverrides: Partial<{
       getAttachmentDownload: ReturnType<typeof vi.fn>;
       getAttachmentThumbnail: ReturnType<typeof vi.fn>;
+      getLinkPreviewImage: ReturnType<typeof vi.fn>;
     }> = {},
   ) {
     TestBed.resetTestingModule();
@@ -37,6 +38,13 @@ describe('MessageBubble (B-163)', () => {
     const getAttachmentThumbnail =
       apiOverrides.getAttachmentThumbnail ??
       vi.fn().mockResolvedValue({ downloadUrl: 'https://example.test/thumb.webp' });
+    const getLinkPreviewImage =
+      apiOverrides.getLinkPreviewImage ??
+      vi.fn().mockResolvedValue({
+        downloadUrl: 'https://example.test/og.webp',
+        expiresAt: new Date().toISOString(),
+        contentType: 'image/webp',
+      });
     await TestBed.configureTestingModule({
       imports: [MessageBubble],
       providers: [
@@ -45,6 +53,7 @@ describe('MessageBubble (B-163)', () => {
           useValue: {
             getAttachmentDownload,
             getAttachmentThumbnail,
+            getLinkPreviewImage,
             getReactionUsers: vi.fn(),
             transcribeAttachment: vi.fn(),
           },
@@ -206,6 +215,42 @@ describe('MessageBubble (B-163)', () => {
     });
     expect(getAttachmentDownload).not.toHaveBeenCalled();
     expect(fixture.componentInstance.previewUrls()['a1']).toBe('https://example.test/thumb.webp');
+  });
+
+  it('renders link preview card and loads image when Ready (B-091)', async () => {
+    const getLinkPreviewImage = vi.fn().mockResolvedValue({
+      downloadUrl: 'https://example.test/og.webp',
+      expiresAt: new Date().toISOString(),
+      contentType: 'image/webp',
+    });
+    const { fixture } = await setup(
+      baseMessage({
+        body: 'veja https://example.com',
+        linkPreview: {
+          id: 'lp1',
+          url: 'https://example.com',
+          title: 'Example Site',
+          description: 'A demo page',
+          siteName: 'example.com',
+          hasImage: true,
+          status: 'Ready',
+        },
+      }),
+      {},
+      { getLinkPreviewImage },
+    );
+
+    const card = fixture.nativeElement.querySelector('a.vc-msg__link-preview') as HTMLAnchorElement;
+    expect(card).toBeTruthy();
+    expect(card.href).toContain('https://example.com');
+    expect(card.target).toBe('_blank');
+    expect(card.rel).toContain('noopener');
+    expect(fixture.componentInstance.menuItems().map((i) => i.id)).toContain('remove-link-preview');
+
+    await vi.waitFor(() => {
+      expect(getLinkPreviewImage).toHaveBeenCalledWith('ch1', 'm1');
+    });
+    expect(fixture.componentInstance.linkPreviewImageUrl()).toBe('https://example.test/og.webp');
   });
 
   it('does not render a salva status tag for persisted messages', async () => {

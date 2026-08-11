@@ -121,6 +121,19 @@ export interface AttachmentThumbnailReadyEvent {
   pageCount?: number | null;
 }
 
+export interface LinkPreviewReadyEvent {
+  tenantId?: string;
+  channelId: string;
+  messageId: string;
+  linkPreviewId: string;
+  url: string;
+  title?: string | null;
+  description?: string | null;
+  siteName?: string | null;
+  hasImage: boolean;
+  status: string;
+}
+
 interface ReactionChangedPayload {
   messageId?: string;
   channelId: string;
@@ -138,6 +151,19 @@ interface AttachmentThumbnailReadyPayload {
   width?: number | null;
   height?: number | null;
   pageCount?: number | null;
+}
+
+interface LinkPreviewReadyPayload {
+  tenantId?: string;
+  channelId?: string;
+  messageId?: string;
+  linkPreviewId?: string;
+  url?: string;
+  title?: string | null;
+  description?: string | null;
+  siteName?: string | null;
+  hasImage?: boolean;
+  status?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -170,6 +196,7 @@ export class ChatHubService {
   private readonly presenceHandlers = new Set<(event: PresenceChangedEvent) => void>();
   private readonly reconnectedHandlers = new Set<() => void | Promise<void>>();
   private readonly thumbnailReadyHandlers = new Set<(event: AttachmentThumbnailReadyEvent) => void>();
+  private readonly linkPreviewReadyHandlers = new Set<(event: LinkPreviewReadyEvent) => void>();
 
   readonly status = this.statusSignal.asReadonly();
   readonly typingUsers = this.typingSignal.asReadonly();
@@ -345,6 +372,28 @@ export class ChatHubService {
         pageCount: payload.pageCount ?? null,
       };
       for (const handler of this.thumbnailReadyHandlers) {
+        handler(event);
+      }
+    });
+
+    connection.on('LinkPreviewReady', (raw: LinkPreviewReadyPayload | string) => {
+      const payload = this.coercePayload<LinkPreviewReadyPayload>(raw);
+      if (!payload?.messageId || !payload.channelId || !payload.linkPreviewId || !payload.url) {
+        return;
+      }
+      const event: LinkPreviewReadyEvent = {
+        tenantId: payload.tenantId ? String(payload.tenantId) : undefined,
+        channelId: String(payload.channelId),
+        messageId: String(payload.messageId),
+        linkPreviewId: String(payload.linkPreviewId),
+        url: payload.url,
+        title: payload.title ?? null,
+        description: payload.description ?? null,
+        siteName: payload.siteName ?? null,
+        hasImage: !!payload.hasImage,
+        status: payload.status ?? 'Ready',
+      };
+      for (const handler of this.linkPreviewReadyHandlers) {
         handler(event);
       }
     });
@@ -566,6 +615,11 @@ export class ChatHubService {
   onAttachmentThumbnailReady(handler: (event: AttachmentThumbnailReadyEvent) => void): () => void {
     this.thumbnailReadyHandlers.add(handler);
     return () => this.thumbnailReadyHandlers.delete(handler);
+  }
+
+  onLinkPreviewReady(handler: (event: LinkPreviewReadyEvent) => void): () => void {
+    this.linkPreviewReadyHandlers.add(handler);
+    return () => this.linkPreviewReadyHandlers.delete(handler);
   }
 
   onPresenceChanged(handler: (event: PresenceChangedEvent) => void): () => void {

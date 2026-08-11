@@ -380,6 +380,8 @@ services:
       Email__Smtp__Password: ${EMAIL__Smtp__Password:-}
       Email__Smtp__From: ${EMAIL__Smtp__From:-noreply@vibechat.local}
       Email__Smtp__UseStartTls: ${EMAIL__Smtp__UseStartTls:-false}
+      LinkPreview__Enabled: ${LinkPreview__Enabled:-true}
+      LinkPreview__TimeoutMs: ${LinkPreview__TimeoutMs:-8000}
       RuntimeSettings__DatabaseOverridesEnabled: ${RuntimeSettings__DatabaseOverridesEnabled:-false}
       RuntimeSettings__Encryption__ActiveKeyVersion: ${RuntimeSettings__Encryption__ActiveKeyVersion:-1}
       RuntimeSettings__Encryption__Keys__1: ${RuntimeSettings__Encryption__Keys__1:-}
@@ -450,10 +452,18 @@ services:
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-vibechat};Username=${POSTGRES_APP_USER:-vibechat_app};Password=${POSTGRES_APP_PASSWORD:-vibechat_app_password_change_me}
       ConnectionStrings__Redis: redis:6379
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      Minio__Endpoint: minio:9000
+      Minio__PublicEndpoint: ${MINIO_ENDPOINT:-http://localhost:9000}
+      Minio__AccessKey: ${MINIO_ROOT_USER:-minioadmin}
+      Minio__SecretKey: ${MINIO_ROOT_PASSWORD:-minioadmin_dev_password_change_me}
+      Minio__Bucket: ${MINIO_BUCKET:-vibechat}
+      Minio__UseSsl: "false"
       MessageRetention__Enabled: ${MessageRetention__Enabled:-false}
       MessageRetention__DefaultRetentionDays: ${MessageRetention__DefaultRetentionDays:-90}
       MessageRetention__BatchSize: ${MessageRetention__BatchSize:-500}
       MessageRetention__IntervalMinutes: ${MessageRetention__IntervalMinutes:-60}
+      LinkPreview__Enabled: ${LinkPreview__Enabled:-true}
+      LinkPreview__TimeoutMs: ${LinkPreview__TimeoutMs:-8000}
       RuntimeSettings__DatabaseOverridesEnabled: ${RuntimeSettings__DatabaseOverridesEnabled:-false}
       RuntimeSettings__Encryption__ActiveKeyVersion: ${RuntimeSettings__Encryption__ActiveKeyVersion:-1}
       RuntimeSettings__Encryption__Keys__1: ${RuntimeSettings__Encryption__Keys__1:-}

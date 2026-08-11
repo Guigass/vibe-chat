@@ -100,6 +100,7 @@ const NEAR_TOP_PX = 120;
                         [highlighted]="messages.highlightMessageId() === entry.message.id"
                         (edit)="onEdit(entry.message.id, $event)"
                         (delete)="onDelete(entry.message.id)"
+                        (removeLinkPreview)="onRemoveLinkPreview(entry.message.id)"
                         (reply)="onReply(entry.message)"
                         (forward)="onForward(entry.message)"
                         (openThread)="onOpenThread(entry.message.id)"
@@ -456,6 +457,10 @@ export class Timeline {
 
   async onDelete(messageId: string): Promise<void> {
     await this.messages.remove(messageId);
+  }
+
+  async onRemoveLinkPreview(messageId: string): Promise<void> {
+    await this.messages.removeLinkPreview(messageId);
   }
 
   onReply(message: ChatMessage): void {

@@ -96,6 +96,7 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 | `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL` | `Ai__OpenRouter__*` | api | Fallback env; BaseUrl permanece env; key pode ir ao DB criptografada (ADR-020) |
 | `EMAIL__*` | `Email__*` | api | Injetado no profile `apps`; senha fallback env ou envelope DB |
 | `MessageRetention__*` | `MessageRetention__*` | worker | Injetado no profile `apps`; kill switch off default |
+| `LinkPreview__*` | `LinkPreview__*` | api + worker | B-091 / ADR-021; default Enabled; TimeoutMs 8000 |
 | `RuntimeSettings__DatabaseOverridesEnabled` | `RuntimeSettings__DatabaseOverridesEnabled` | api, worker | Default `false`; liga overrides DB + rotação |
 | `RuntimeSettings__Encryption__ActiveKeyVersion` | idem | api, worker | Versão ativa do keyring AES-GCM |
 | `RuntimeSettings__Encryption__Keys__{n}` | idem | api, worker | Chave mestra base64 (32 bytes); **nunca** no DB |

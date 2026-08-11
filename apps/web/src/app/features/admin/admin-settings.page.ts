@@ -99,6 +99,7 @@ export class AdminSettingsPage implements OnInit {
     const webhookUrl = String(data.get('webhookUrl') ?? '').trim();
     const retentionEnabled = data.get('retentionEnabled') === 'on';
     const retentionDays = Number(data.get('retentionDays') ?? current.retention.retentionDays);
+    const linkPreviewEnabled = data.get('linkPreviewEnabled') === 'on';
     const maxSizeBytes = Number(data.get('maxSizeBytes') ?? current.files.maxSizeBytes);
     const maxAttachmentsPerMessage = Number(
       data.get('maxAttachmentsPerMessage') ?? current.files.maxAttachmentsPerMessage,
@@ -130,6 +131,9 @@ export class AdminSettingsPage implements OnInit {
           retentionDays: Number.isFinite(retentionDays)
             ? retentionDays
             : current.retention.retentionDays,
+        },
+        linkPreview: {
+          enabled: linkPreviewEnabled,
         },
         files: {
           maxSizeBytes: Number.isFinite(maxSizeBytes) ? maxSizeBytes : current.files.maxSizeBytes,

@@ -41,7 +41,7 @@ Tabela nova `messaging.link_previews`:
 - Job do worker disparado por evento de outbox de `MessageCreated`. **Nunca** síncrono
   no envio.
 - `DELETE .../messages/{messageId}/link-preview` — só o autor ou `workspace.admin`.
-- `LinkPreview:Enabled` (default `true`) e `LinkPreview:TimeoutMs` (default `4000`).
+- `LinkPreview:Enabled` (default `true`) e `LinkPreview:TimeoutMs` (default `8000`).
 
 `contratos.md`: tabelas, endpoint, flags e o job.
 
@@ -61,20 +61,20 @@ requisição para URL fornecida pelo usuário (SSRF). Controles obrigatórios:
 - Só `http`/`https`; qualquer outro esquema → `Blocked`.
 - Resolver o DNS e **recusar** IP privado, loopback, link-local e metadata
   (`169.254.169.254`), inclusive após cada redirecionamento.
-- Máximo 3 redirecionamentos; timeout de 4 s; corpo lido até 512 KB.
+- Máximo 3 redirecionamentos; timeout de 8 s; HTML até 1,5 MB; imagem até 512 KB.
 - Sem cookie, sem credencial, sem header de autenticação; `User-Agent` próprio.
 - Cache é **por tenant** — preview de um tenant nunca serve outro.
 - `modelo-ameacas.md` ganha a entrada de SSRF com esses controles.
 
 ## Aceite
 
-- [ ] Link público vira cartão em poucos segundos, sem travar o envio
-- [ ] `http://169.254.169.254/...` → `Blocked`, sem requisição
-- [ ] Redirecionamento para IP privado é barrado
-- [ ] Site sem Open Graph não gera cartão e não gera erro
-- [ ] Autor consegue remover o preview
-- [ ] `LinkPreview:Enabled=false` desliga tudo
-- [ ] Mesma URL em dois tenants gera duas entradas de cache
+- [x] Link público vira cartão em poucos segundos, sem travar o envio
+- [x] `http://169.254.169.254/...` → `Blocked`, sem requisição
+- [x] Redirecionamento para IP privado é barrado
+- [x] Site sem Open Graph não gera cartão e não gera erro
+- [x] Autor consegue remover o preview
+- [x] `LinkPreview:Enabled=false` desliga tudo
+- [x] Mesma URL em dois tenants gera duas entradas de cache
 
 ## Testes
 

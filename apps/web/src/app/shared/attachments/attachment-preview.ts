@@ -41,14 +41,22 @@ export function formatAttachmentSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+export type MessageMenuActionId =
+  | 'forward'
+  | 'thread'
+  | 'edit'
+  | 'remove-link-preview'
+  | 'delete';
+
 export function menuActionsForMessage(options: {
   mine: boolean;
   showForward: boolean;
   showThread: boolean;
   replyCount?: number;
-}): Array<{ id: 'forward' | 'thread' | 'edit' | 'delete'; label: string; danger?: boolean }> {
+  hasLinkPreview?: boolean;
+}): Array<{ id: MessageMenuActionId; label: string; danger?: boolean }> {
   const items: Array<{
-    id: 'forward' | 'thread' | 'edit' | 'delete';
+    id: MessageMenuActionId;
     label: string;
     danger?: boolean;
   }> = [];
@@ -67,6 +75,9 @@ export function menuActionsForMessage(options: {
   }
   if (options.mine) {
     items.push({ id: 'edit', label: 'Editar' });
+    if (options.hasLinkPreview) {
+      items.push({ id: 'remove-link-preview', label: 'Remover preview' });
+    }
     items.push({ id: 'delete', label: 'Apagar', danger: true });
   }
   return items;

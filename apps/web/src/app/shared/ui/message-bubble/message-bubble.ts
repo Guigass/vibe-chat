@@ -19,6 +19,7 @@ import {
   ChatMessage,
   MessageAttachment,
   MessageForwardedFrom,
+  MessageLinkPreview,
   REACTION_EMOJI_OPTIONS,
   isMessageBodyTooLong,
   measureMessageBodyLength,
@@ -29,6 +30,7 @@ import {
   classifyAttachmentPreview,
   isGifContentType,
   menuActionsForMessage,
+  type MessageMenuActionId,
 } from '../../attachments/attachment-preview';
 import { Avatar } from '../avatar/avatar';
 import { AttachmentPreview } from '../attachment-preview/attachment-preview';
@@ -165,6 +167,43 @@ import { environment } from '../../../../environments/environment';
               }
               @if (message().body) {
                 <vc-markdown-body [source]="message().body" [mentionLabels]="mentionLabels()" />
+              }
+              @if (visibleLinkPreview(); as preview) {
+                @if ((preview.status ?? '').toLowerCase() === 'pending') {
+                  <div
+                    class="vc-msg__link-preview vc-msg__link-preview--pending"
+                    aria-hidden="true"
+                  ></div>
+                } @else {
+                  <a
+                    class="vc-msg__link-preview"
+                    [href]="preview.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    [attr.aria-label]="linkPreviewLabel(preview)"
+                  >
+                    @if (preview.hasImage && linkPreviewImageUrl()) {
+                      <img
+                        class="vc-msg__link-preview-img"
+                        [src]="linkPreviewImageUrl()!"
+                        [alt]="preview.title || preview.siteName || 'Preview'"
+                        loading="lazy"
+                        (error)="onLinkPreviewImageError()"
+                      />
+                    }
+                    <span class="vc-msg__link-preview-body">
+                      @if (preview.siteName) {
+                        <span class="vc-msg__link-preview-site">{{ preview.siteName }}</span>
+                      }
+                      @if (preview.title) {
+                        <span class="vc-msg__link-preview-title">{{ preview.title }}</span>
+                      }
+                      @if (preview.description) {
+                        <span class="vc-msg__link-preview-desc">{{ preview.description }}</span>
+                      }
+                    </span>
+                  </a>
+                }
               }
               @if (message().attachments?.length) {
                 <ul class="vc-msg__attachments">
@@ -498,6 +537,79 @@ import { environment } from '../../../../environments/environment';
       gap: 0.4rem;
       width: 100%;
     }
+    .vc-msg__link-preview {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 0.55rem;
+      /* fit-content: width 100% forced the stack bubble to --vc-msg-max (~36rem)
+         and left a huge empty field when there is no thumbnail. */
+      width: fit-content;
+      max-width: min(22rem, 100%);
+      box-sizing: border-box;
+      margin-top: 0.35rem;
+      padding: 0.45rem 0.55rem;
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-sm);
+      background: color-mix(in srgb, var(--vc-surface-elevated) 88%, var(--vc-surface));
+      color: inherit;
+      text-decoration: none;
+      overflow: hidden;
+    }
+    .vc-msg__link-preview:hover {
+      border-color: color-mix(in srgb, var(--vc-brand) 35%, var(--vc-border));
+    }
+    .vc-msg__link-preview--pending {
+      display: block;
+      width: min(22rem, 100%);
+      max-width: 100%;
+      min-height: 2.75rem;
+      pointer-events: none;
+      background: color-mix(in srgb, var(--vc-surface-elevated) 70%, transparent);
+    }
+    .vc-msg__link-preview-img {
+      flex: 0 0 4.5rem;
+      width: 4.5rem;
+      height: 4.5rem;
+      object-fit: cover;
+      border-radius: calc(var(--vc-radius-sm) - 2px);
+      background: var(--vc-surface);
+    }
+    .vc-msg__link-preview-body {
+      flex: 1 1 auto;
+      display: grid;
+      gap: 0.15rem;
+      min-width: 0;
+      max-width: 16rem;
+    }
+    .vc-msg__link-preview-site {
+      font-size: 0.72rem;
+      color: var(--vc-ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .vc-msg__link-preview-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--vc-ink);
+      line-height: 1.25;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .vc-msg__link-preview-desc {
+      font-size: 0.78rem;
+      color: var(--vc-ink-muted);
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
     .vc-msg__transcript {
       margin: 0;
       font-size: 0.82rem;
@@ -714,6 +826,7 @@ export class MessageBubble {
   readonly highlighted = input(false);
   readonly edit = output<string>();
   readonly delete = output<void>();
+  readonly removeLinkPreview = output<void>();
   readonly openThread = output<void>();
   readonly reply = output<void>();
   readonly forward = output<void>();
@@ -725,6 +838,7 @@ export class MessageBubble {
   readonly transcript = signal<string | null>(null);
   readonly downloadUrls = signal<Record<string, string>>({});
   readonly previewUrls = signal<Record<string, string>>({});
+  readonly linkPreviewImageUrl = signal<string | null>(null);
   readonly emojiOptions = REACTION_EMOJI_OPTIONS;
   readonly reactionPickerOpen = signal(false);
   readonly menuOpen = signal(false);
@@ -752,9 +866,18 @@ export class MessageBubble {
       showForward: this.showForwardAction(),
       showThread: this.showThreadAction(),
       replyCount: this.message().replyCount,
+      hasLinkPreview: !!this.visibleLinkPreview(),
     }),
   );
   readonly hasMenu = computed(() => this.menuItems().length > 0);
+  readonly visibleLinkPreview = computed(() => {
+    const preview = this.message().linkPreview;
+    if (!preview || this.message().deletedAt) return null;
+    const status = (preview.status ?? 'Ready').toLowerCase();
+    if (status === 'failed' || status === 'blocked') return null;
+    if (status === 'pending' || status === 'ready') return preview;
+    return null;
+  });
   readonly lightboxImages = computed<LightboxImage[]>(() => {
     const urls = this.downloadUrls();
     const previews = this.previewUrls();
@@ -800,6 +923,31 @@ export class MessageBubble {
         }
       }
     });
+
+    effect(() => {
+      const preview = this.visibleLinkPreview();
+      const channelId = this.message().channelId;
+      const messageId = this.message().id;
+      if (!preview || !preview.hasImage || (preview.status ?? '').toLowerCase() === 'pending') {
+        this.linkPreviewImageUrl.set(null);
+        return;
+      }
+      if (!channelId || !messageId || this.linkPreviewImageUrl()) return;
+      void this.loadLinkPreviewImage(channelId, messageId);
+    });
+  }
+
+  linkPreviewLabel(preview: MessageLinkPreview): string {
+    const title = (preview.title ?? '').trim();
+    const site = (preview.siteName ?? '').trim();
+    if (title && site) return `${title} — ${site}`;
+    if (title) return title;
+    if (site) return site;
+    return preview.url;
+  }
+
+  onLinkPreviewImageError(): void {
+    this.linkPreviewImageUrl.set(null);
   }
 
   formatForwardOrigin(origin: MessageForwardedFrom): string {
@@ -897,7 +1045,7 @@ export class MessageBubble {
     }
   }
 
-  onMenuAction(id: 'forward' | 'thread' | 'edit' | 'delete'): void {
+  onMenuAction(id: MessageMenuActionId): void {
     switch (id) {
       case 'forward':
         this.forward.emit();
@@ -907,6 +1055,9 @@ export class MessageBubble {
         break;
       case 'edit':
         this.startEdit();
+        break;
+      case 'remove-link-preview':
+        this.removeLinkPreview.emit();
         break;
       case 'delete':
         this.delete.emit();
@@ -971,6 +1122,15 @@ export class MessageBubble {
       if (!this.downloadUrls()[attachmentId]) {
         void this.loadDownloadUrl(channelId, attachmentId);
       }
+    }
+  }
+
+  private async loadLinkPreviewImage(channelId: string, messageId: string): Promise<void> {
+    try {
+      const result = await this.api.getLinkPreviewImage(channelId, messageId);
+      this.linkPreviewImageUrl.set(result.downloadUrl);
+    } catch {
+      // card stays text-only when image URL is unavailable
     }
   }
 }

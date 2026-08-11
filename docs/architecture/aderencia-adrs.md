@@ -25,6 +25,7 @@ testes nem uma revisão de segurança.
 | [017](../adrs/ADR-017-quando-justificar-kubernetes.md) | Compose na fase 1 | `compose.yaml`, profiles e runbooks; sem Helm/K8s | Alinhado |
 | [018](../adrs/ADR-018-retencao-mensagens.md) | Soft-delete + purge configurável | settings, migration, worker purge e kill switch | Operacional: `MessageRetention__*` injetado no worker (B-105) |
 | [020](../adrs/ADR-020-runtime-settings-credenciais-criptografadas.md) | Settings runtime + AES-GCM | envelopes tipados, flag off default, rotate/reencrypt, Files/RateLimit tenant | Em implementação |
+| [021](../adrs/ADR-021-link-preview-ssrf.md) | Link preview + SSRF | outbox B-091, `LinkPreviewFetcher`, cache por tenant, ADR+threat model | **Alinhado** (W9-4) |
 
 ## Gaps transversais derivados
 

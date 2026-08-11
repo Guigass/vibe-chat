@@ -48,6 +48,13 @@ const baseSettings: SensitiveSettings = {
     defaultRetentionDays: 90,
     message: 'off',
   },
+  linkPreview: {
+    processEnabled: true,
+    processSource: 'env',
+    enabled: true,
+    timeoutMs: 4000,
+    message: 'Worker busca Open Graph da primeira URL (guarda SSRF).',
+  },
   files: {
     source: 'env',
     maxSizeBytes: 10_485_760,

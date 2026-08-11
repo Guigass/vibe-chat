@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-11
 - **Fase:** Wave 9 — Leitura e paridade de bolha (Wave 8 completa)
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165)
-- **Próximo item elegível:** W9-4 / B-091 (link preview); W9-3 / B-090 Done; W9-8 / B-168 (vídeo) após W8-1+W9-0; W9-2 / B-089 Done; W9-1 / B-088 Done; W9-0 / B-163 Done; BUG-002 fecha em B-094 quando W9-7 elegível
+- **Próximo item elegível:** W9-5 / B-092 (fixar mensagem); W9-4 / B-091 Done; W9-8 / B-168 (vídeo) após W8-1+W9-0; W9-3 / B-090 Done; W9-2 / B-089 Done; W9-1 / B-088 Done; W9-0 / B-163 Done; BUG-002 fecha em B-094 quando W9-7 elegível
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -25,7 +25,7 @@ O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
 2. Wave 7 completa (W7-9 / B-165 Done — versão do cliente web / cache PWA);
-3. avançar Wave 9 de leitura/paridade (W9-0 / B-163, W9-1 / B-088, W9-2 / B-089 e W9-3 / B-090 Done; próximo: W9-4 / B-091; W9-8 / B-168 paralelo após deps); Wave 8 completa;
+3. avançar Wave 9 de leitura/paridade (W9-0…W9-4 Done; próximo: W9-5 / B-092; W9-8 / B-168 paralelo após deps); Wave 8 completa;
 4. consumir o roadmap autorizado W11–W17.
 
 ## Runtime e fronteiras
@@ -79,8 +79,8 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W9-4 | Link preview (B-091); W9-3 / B-090 Done; safety lane Alta vazia |
-| 2 | W9-4+ | Demais itens Wave 9 Planned com spec (W9-5… e W9-8 / B-168 paralelos) |
+| 1 | W9-5 | Fixar mensagem (B-092); W9-4 / B-091 Done; safety lane Alta vazia |
+| 2 | W9-5+ | Demais itens Wave 9 Planned com spec (W9-6… e W9-8 / B-168 paralelos) |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).

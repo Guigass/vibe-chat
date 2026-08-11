@@ -165,6 +165,80 @@ public sealed class BackendUnitTests
     }
 
     [Theory]
+    [InlineData("see https://example.com/path?q=1 more", "https://example.com/path?q=1")]
+    [InlineData("no link here", null)]
+    [InlineData("ftp://example.com/x", null)]
+    public void Link_preview_extracts_first_http_url(string body, string? expected)
+    {
+        LinkPreviewPolicies.ExtractFirstUrl(body).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("file:///etc/passwd", null)]
+    [InlineData("javascript:alert(1)", null)]
+    [InlineData("https://example.com/a", "https://example.com/a")]
+    public void Link_preview_normalize_allows_only_http_https(string raw, string? expected)
+    {
+        LinkPreviewPolicies.NormalizeUrl(raw).Should().Be(expected);
+    }
+
+    [Fact]
+    public void Link_preview_url_hash_is_stable_and_hex()
+    {
+        var hash = LinkPreviewPolicies.ComputeUrlHash("https://example.com/");
+        hash.Should().HaveLength(64);
+        hash.Should().MatchRegex("^[0-9a-f]{64}$");
+        LinkPreviewPolicies.ComputeUrlHash("https://example.com/").Should().Be(hash);
+    }
+
+    [Theory]
+    [InlineData("127.0.0.1", true)]
+    [InlineData("10.0.0.1", true)]
+    [InlineData("192.168.1.1", true)]
+    [InlineData("169.254.169.254", true)]
+    [InlineData("172.16.5.5", true)]
+    [InlineData("8.8.8.8", false)]
+    [InlineData("1.1.1.1", false)]
+    public void Link_preview_blocks_private_and_metadata_ips(string ip, bool blocked)
+    {
+        var address = System.Net.IPAddress.Parse(ip);
+        LinkPreviewPolicies.IsBlockedIp(address).Should().Be(blocked);
+    }
+
+    [Fact]
+    public void Open_graph_parser_reads_og_tags_and_title_fallback()
+    {
+        var html = """
+            <html><head>
+            <meta property="og:title" content="Hello &amp; Co" />
+            <meta property="og:description" content="Desc" />
+            <meta property="og:image" content="/img.png" />
+            <meta property="og:site_name" content="Site" />
+            <title>Ignored</title>
+            </head></html>
+            """;
+        var meta = OpenGraphParser.Parse(html, new Uri("https://example.com/page"));
+        meta.Title.Should().Be("Hello & Co");
+        meta.Description.Should().Be("Desc");
+        meta.SiteName.Should().Be("Site");
+        meta.ImageUrl.Should().Be("https://example.com/img.png");
+    }
+
+    [Fact]
+    public void Open_graph_parser_reads_twitter_image_fallback()
+    {
+        var html = """
+            <html><head>
+            <meta name="twitter:title" content="Tweet Title" />
+            <meta name="twitter:image" content="//cdn.example.com/pic.jpg" />
+            </head></html>
+            """;
+        var meta = OpenGraphParser.Parse(html, new Uri("https://example.com/page"));
+        meta.Title.Should().Be("Tweet Title");
+        meta.ImageUrl.Should().Be("https://cdn.example.com/pic.jpg");
+    }
+
+    [Theory]
     [InlineData(0, true)]
     [InlineData(10, true)]
     [InlineData(11, false)]

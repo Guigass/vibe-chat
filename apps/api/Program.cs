@@ -1396,6 +1396,7 @@ v1.MapGet("/threads/{threadId:guid}/messages", async (
         rows.Select(x => (x.ForwardedFromMessageId, x.ForwardedFromChannelId)),
         profile.Id,
         ct);
+    var linkPreviewByMessage = await LoadLinkPreviewsByMessageAsync(db, messageIds, ct);
     var messages = rows.Select(x => new MessageResponse(
         x.Id.Value,
         channel.Id.Value,
@@ -1415,7 +1416,8 @@ v1.MapGet("/threads/{threadId:guid}/messages", async (
         x.ReplyToMessageId is MessageId rtid && replyToById.TryGetValue(rtid.Value, out var replyTo) ? replyTo : null,
         x.ForwardedFromMessageId?.Value,
         x.ForwardedFromChannelId?.Value,
-        x.ForwardedFromMessageId is MessageId ffid && forwardedFromById.TryGetValue(ffid.Value, out var forwarded) ? forwarded : null)).ToArray();
+        x.ForwardedFromMessageId is MessageId ffid && forwardedFromById.TryGetValue(ffid.Value, out var forwarded) ? forwarded : null,
+        x.DeletedAt == null && linkPreviewByMessage.TryGetValue(x.Id.Value, out var preview) ? preview : null)).ToArray();
     return Results.Ok(messages);
 });
 
@@ -2166,6 +2168,109 @@ v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid
     audit.Add(new AuditEvent { TenantId = channel.TenantId, ActorUserId = profile.Id, Action = AuditActions.MessageDelete, EntityType = "Message", EntityId = message.Id.ToString(), MetadataJson = JsonSerializer.Serialize(new { channelId, threadId = message.ThreadId, message.Sequence }) });
     await db.SaveChangesAsync(ct);
     return Results.NoContent();
+});
+
+v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}/link-preview", async (
+    Guid channelId,
+    Guid messageId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var message = await FindMessageInChannelAsync(db, channel.Id, new MessageId(messageId), ct);
+    if (message is null)
+    {
+        return Results.NotFound();
+    }
+
+    var isAuthor = message.AuthorId == profile.Id;
+    var isAdmin = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Workspace.Admin, ct);
+    if (!isAuthor && !isAdmin)
+    {
+        return Results.Forbid();
+    }
+
+    var links = await db.MessageLinkPreviews
+        .Where(x => x.MessageId == message.Id && x.RemovedAt == null)
+        .ToListAsync(ct);
+    if (links.Count == 0)
+    {
+        return Results.NoContent();
+    }
+
+    var now = clock.UtcNow;
+    foreach (var link in links)
+    {
+        link.RemovedAt = now;
+    }
+
+    await db.SaveChangesAsync(ct);
+    return Results.NoContent();
+});
+
+v1.MapGet("/channels/{channelId:guid}/messages/{messageId:guid}/link-preview/image", async (
+    Guid channelId,
+    Guid messageId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IObjectStorage storage,
+    FilesSettingsResolver filesSettings,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var message = await FindMessageInChannelAsync(db, channel.Id, new MessageId(messageId), ct);
+    if (message is null || message.DeletedAt is not null)
+    {
+        return Results.NotFound();
+    }
+
+    var row = await (
+        from link in db.MessageLinkPreviews.AsNoTracking()
+        join preview in db.LinkPreviews.AsNoTracking() on link.LinkPreviewId equals preview.Id
+        where link.MessageId == message.Id
+              && link.RemovedAt == null
+              && preview.Status == LinkPreviewStatus.Ready
+              && preview.ImageKey != null
+        select preview
+    ).FirstOrDefaultAsync(ct);
+
+    if (row?.ImageKey is null)
+    {
+        return Results.NotFound();
+    }
+
+    var files = await filesSettings.ResolveAsync(channel.TenantId, ct);
+    var downloadTtl = TimeSpan.FromSeconds(files.PresignDownloadTtlSeconds);
+    var download = await storage.CreateDownloadUrlAsync(
+        row.ImageKey,
+        "preview",
+        downloadTtl,
+        ct);
+    return Results.Ok(new
+    {
+        messageId,
+        downloadUrl = download.Url.ToString(),
+        expiresAt = download.ExpiresAt,
+        contentType = row.ImageContentType ?? "image/jpeg"
+    });
 });
 
 v1.MapPut("/channels/{channelId:guid}/read-cursor", async (Guid channelId, UpsertReadCursorRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IChatPublisher publisher, IClock clock, CancellationToken ct) =>
@@ -2924,6 +3029,36 @@ v1.MapPut("/admin/settings", async (
         if (created || changes.Any(c => c.StartsWith("retention.", StringComparison.Ordinal)))
         {
             retentionRow.UpdatedAt = clock.UtcNow;
+        }
+    }
+
+    if (request.LinkPreview is not null)
+    {
+        var linkPreviewRow = await db.TenantLinkPreviewSettings
+            .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
+        var created = false;
+        if (linkPreviewRow is null)
+        {
+            linkPreviewRow = new TenantLinkPreviewSettings
+            {
+                TenantId = workspace.TenantId,
+                Enabled = true,
+                UpdatedAt = clock.UtcNow
+            };
+            db.TenantLinkPreviewSettings.Add(linkPreviewRow);
+            created = true;
+            changes.Add("linkPreview.created");
+        }
+
+        if (request.LinkPreview.Enabled is { } linkPreviewEnabled && linkPreviewRow.Enabled != linkPreviewEnabled)
+        {
+            linkPreviewRow.Enabled = linkPreviewEnabled;
+            changes.Add("linkPreview.enabled");
+        }
+
+        if (created || changes.Any(c => c.StartsWith("linkPreview.", StringComparison.Ordinal)))
+        {
+            linkPreviewRow.UpdatedAt = clock.UtcNow;
         }
     }
 
@@ -3964,6 +4099,7 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
         rows.Select(x => (x.ForwardedFromMessageId, x.ForwardedFromChannelId)),
         profile.Id,
         ct);
+    var linkPreviewByMessage = await LoadLinkPreviewsByMessageAsync(db, messageIds, ct);
 
     var messages = rows.Select(x => new MessageResponse(
         x.Id.Value,
@@ -3984,9 +4120,49 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
         x.ReplyToMessageId is MessageId rtid && replyToById.TryGetValue(rtid.Value, out var replyTo) ? replyTo : null,
         x.ForwardedFromMessageId?.Value,
         x.ForwardedFromChannelId?.Value,
-        x.ForwardedFromMessageId is MessageId ffid && forwardedFromById.TryGetValue(ffid.Value, out var forwarded) ? forwarded : null)).ToArray();
+        x.ForwardedFromMessageId is MessageId ffid && forwardedFromById.TryGetValue(ffid.Value, out var forwarded) ? forwarded : null,
+        x.DeletedAt == null && linkPreviewByMessage.TryGetValue(x.Id.Value, out var preview) ? preview : null)).ToArray();
 
     return new ChannelMessagesResponse(messages, hasMoreBefore, hasMoreAfter);
+}
+
+static async Task<Dictionary<Guid, LinkPreviewResponse>> LoadLinkPreviewsByMessageAsync(
+    VibeChatDbContext db,
+    IReadOnlyCollection<MessageId> messageIds,
+    CancellationToken ct)
+{
+    if (messageIds.Count == 0)
+    {
+        return new Dictionary<Guid, LinkPreviewResponse>();
+    }
+
+    // Materialize as List so EF translates Contains (HashSet.Contains is not SQL-translatable).
+    var wantedIds = messageIds.ToList();
+    var rows = await (
+        from link in db.MessageLinkPreviews.AsNoTracking()
+        join preview in db.LinkPreviews.AsNoTracking() on link.LinkPreviewId equals preview.Id
+        where link.RemovedAt == null
+              && preview.Status == LinkPreviewStatus.Ready
+              && wantedIds.Contains(link.MessageId)
+        select new { link.MessageId, Preview = preview }
+    ).ToListAsync(ct);
+
+    return rows
+        .GroupBy(x => x.MessageId.Value)
+        .ToDictionary(
+            g => g.Key,
+            g =>
+            {
+                var preview = g.First().Preview;
+                return new LinkPreviewResponse(
+                    preview.Id,
+                    preview.Url,
+                    preview.Title,
+                    preview.Description,
+                    preview.SiteName,
+                    !string.IsNullOrWhiteSpace(preview.ImageKey),
+                    preview.Status.ToString());
+            });
 }
 
 static async Task<ChannelMessageRow[]> QueryChannelMessageRowsAsync(
@@ -4286,7 +4462,17 @@ public sealed record MessageResponse(
     ReplyToResponse? ReplyTo = null,
     Guid? ForwardedFromMessageId = null,
     Guid? ForwardedFromChannelId = null,
-    ForwardedFromResponse? ForwardedFrom = null);
+    ForwardedFromResponse? ForwardedFrom = null,
+    LinkPreviewResponse? LinkPreview = null);
+
+public sealed record LinkPreviewResponse(
+    Guid Id,
+    string Url,
+    string? Title,
+    string? Description,
+    string? SiteName,
+    bool HasImage,
+    string Status);
 
 public sealed record ForwardMessageRequest(
     Guid[] TargetChannelIds,
@@ -4389,12 +4575,14 @@ public sealed record UpdateWebhooksSensitiveSettingsRequest(
 public sealed record UpdateRetentionSensitiveSettingsRequest(
     bool? Enabled = null,
     int? RetentionDays = null);
+public sealed record UpdateLinkPreviewSettingsRequest(bool? Enabled = null);
 public sealed record UpdateSensitiveSettingsRequest(
     Guid? WorkspaceId = null,
     UpdateAiSensitiveSettingsRequest? Ai = null,
     UpdateEmailSensitiveSettingsRequest? Email = null,
     UpdateWebhooksSensitiveSettingsRequest? Webhooks = null,
     UpdateRetentionSensitiveSettingsRequest? Retention = null,
+    UpdateLinkPreviewSettingsRequest? LinkPreview = null,
     UpdateFilesSettingsRequest? Files = null,
     UpdateRateLimitSettingsRequest? RateLimit = null);
 public sealed record RotateCredentialRequest(

@@ -49,6 +49,7 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
                 (reply)="onReply(parent)"
                 (quoteClick)="onQuoteClick($event)"
                 (react)="onReact(parent.id, $event)"
+                (removeLinkPreview)="onRemoveLinkPreview(parent.id)"
               />
             </div>
           }
@@ -68,6 +69,7 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
                   (reply)="onReply(message)"
                   (quoteClick)="onQuoteClick($event)"
                   (react)="onReact(message.id, $event)"
+                  (removeLinkPreview)="onRemoveLinkPreview(message.id)"
                 />
               }
             </div>
@@ -320,6 +322,10 @@ export class ThreadPanel {
 
   async onReact(messageId: string, emoji: string): Promise<void> {
     await this.threads.toggleReaction(messageId, emoji);
+  }
+
+  async onRemoveLinkPreview(messageId: string): Promise<void> {
+    await this.messages.removeLinkPreview(messageId);
   }
 
   onKeydown(event: KeyboardEvent): void {

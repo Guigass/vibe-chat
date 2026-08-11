@@ -119,7 +119,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-088 | Agrupamento, separadores e não lidas | **Done (W9-1)** — agrupamento 5 min, sticky de data, divisor local, jump + auto-scroll só no fim |
 | B-089 | Histórico paginado e pular para a mensagem | Done (W9-2) |
 | B-090 | Preview de anexos | Done (W9-3) — miniatura no worker; UI tipada em B-163; purge remove junto |
-| B-091 | Link preview | Planned (W9-4) — **exige guarda de SSRF**; sem ela não passa |
+| B-091 | Link preview | **Done** (W9-4) — outbox + guarda SSRF (ADR-021) |
 | B-092 | Fixar mensagem | Planned (W9-5) — limite 20, permissão `message.pin` |
 | B-093 | Salvos | Planned (W9-6) — revalida membership na leitura |
 | B-094 | Recibos de leitura e não lidas | Planned (W9-7) — persistência definitiva em `messaging.read_cursors`; liga o `upsertReadCursor` órfão; badges sobrevivem a F5/multi-device; `read-by` em canal é contagem |

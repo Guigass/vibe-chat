@@ -79,6 +79,17 @@ export interface MessageAttachment {
   pageCount?: number | null;
 }
 
+/** B-091 — Pending | Ready | Failed | Blocked */
+export interface MessageLinkPreview {
+  id: string;
+  url: string;
+  title?: string | null;
+  description?: string | null;
+  siteName?: string | null;
+  hasImage: boolean;
+  status: string;
+}
+
 export interface ReactionSummary {
   emoji: string;
   count: number;
@@ -131,6 +142,8 @@ export interface ChatMessage {
   replyCount?: number;
   reactions?: ReactionSummary[];
   mentionsMe?: boolean;
+  /** B-091 link unfurl card; null after author removes. */
+  linkPreview?: MessageLinkPreview | null;
 }
 
 export interface ChatThread {
@@ -282,6 +295,13 @@ export interface SensitiveSettings {
     defaultRetentionDays: number;
     message: string;
   };
+  linkPreview: {
+    processEnabled: boolean;
+    processSource: string;
+    enabled: boolean;
+    timeoutMs: number;
+    message: string;
+  };
   files: {
     source: string;
     maxSizeBytes: number;
@@ -330,6 +350,9 @@ export interface UpdateSensitiveSettingsInput {
   retention?: {
     enabled?: boolean;
     retentionDays?: number;
+  };
+  linkPreview?: {
+    enabled?: boolean;
   };
   files?: {
     maxSizeBytes?: number;

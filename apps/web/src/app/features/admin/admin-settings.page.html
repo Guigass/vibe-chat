@@ -34,6 +34,16 @@
       <span class="settings__status-src">env</span>
     </div>
     <div class="settings__status-item">
+      <span class="settings__status-label">Link preview</span>
+      <strong
+        [class.settings__status-on]="s.linkPreview.processEnabled"
+        [class.settings__status-off]="!s.linkPreview.processEnabled"
+      >
+        {{ s.linkPreview.processEnabled ? 'ligado' : 'desligado' }}
+      </strong>
+      <span class="settings__status-src">env</span>
+    </div>
+    <div class="settings__status-item">
       <span class="settings__status-label">Overrides DB</span>
       <strong
         [class.settings__status-on]="s.encryption.databaseOverridesEnabled"
@@ -374,6 +384,24 @@
             max="3650"
             [value]="s.retention.retentionDays"
           />
+        </label>
+      </fieldset>
+    </div>
+
+    <div class="settings__block">
+      <div class="settings__block-head">
+        <h3 class="settings__block-title">Link preview</h3>
+        <p class="settings__meta">{{ s.linkPreview.message }}</p>
+      </div>
+      <fieldset class="settings__fields" [disabled]="settingsBusy()">
+        <label class="settings__check">
+          <input
+            form="admin-settings-form"
+            type="checkbox"
+            name="linkPreviewEnabled"
+            [checked]="s.linkPreview.enabled"
+          />
+          <span>Preview de links habilitado neste tenant</span>
         </label>
       </fieldset>
     </div>

@@ -65,6 +65,12 @@ ALTER TABLE IF EXISTS messaging.idempotency ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.idempotency FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.message_retention_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.message_retention_settings FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.link_previews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.link_previews FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.message_link_previews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.message_link_previews FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.link_preview_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.link_preview_settings FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS building_blocks.outbox_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS building_blocks.outbox_messages FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS audit.audit_events ENABLE ROW LEVEL SECURITY;
@@ -208,6 +214,28 @@ CREATE POLICY tenant_isolation_message_retention_settings ON messaging.message_r
         "TenantId" = app.current_tenant_id()
         OR app.current_job_role() = 'retention'
     )
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+ALTER TABLE IF EXISTS messaging.link_previews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.link_previews FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.message_link_previews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.message_link_previews FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.link_preview_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.link_preview_settings FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_link_previews ON messaging.link_previews;
+CREATE POLICY tenant_isolation_link_previews ON messaging.link_previews
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_message_link_previews ON messaging.message_link_previews;
+CREATE POLICY tenant_isolation_message_link_previews ON messaging.message_link_previews
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_link_preview_settings ON messaging.link_preview_settings;
+CREATE POLICY tenant_isolation_link_preview_settings ON messaging.link_preview_settings
+    USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
 DROP POLICY IF EXISTS tenant_isolation_outbox_messages ON building_blocks.outbox_messages;

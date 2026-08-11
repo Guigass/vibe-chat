@@ -23,6 +23,7 @@ import {
   UpdateSensitiveSettingsInput,
   Workspace,
   WorkspaceMember,
+  MessageLinkPreview,
 } from '../../shared/models/chat.models';
 
 interface WorkspaceDto {
@@ -106,6 +107,16 @@ interface ForwardedFromDto {
   isDirect?: boolean;
 }
 
+interface LinkPreviewDto {
+  id: string;
+  url: string;
+  title?: string | null;
+  description?: string | null;
+  siteName?: string | null;
+  hasImage: boolean;
+  status: string;
+}
+
 interface ChannelMessagesDto {
   messages: MessageDto[];
   hasMoreBefore: boolean;
@@ -138,6 +149,7 @@ interface MessageDto {
   forwardedFrom?: ForwardedFromDto | null;
   replyCount?: number;
   reactions?: ReactionSummaryDto[] | null;
+  linkPreview?: LinkPreviewDto | null;
 }
 
 interface ForwardMessageResponseDto {
@@ -179,6 +191,13 @@ interface AttachmentDownloadDto {
   fileName: string;
   contentType: string;
   sizeBytes: number;
+}
+
+interface LinkPreviewImageDto {
+  messageId?: string;
+  downloadUrl: string;
+  expiresAt: string;
+  contentType: string;
 }
 
 interface AdminDashboardDto {
@@ -557,6 +576,21 @@ export class ApiService {
   ): Promise<AttachmentDownloadDto> {
     return this.request<AttachmentDownloadDto>(
       `/api/v1/channels/${channelId}/attachments/${attachmentId}/thumbnail`,
+    );
+  }
+
+  async deleteMessageLinkPreview(channelId: string, messageId: string): Promise<void> {
+    await this.request(`/api/v1/channels/${channelId}/messages/${messageId}/link-preview`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getLinkPreviewImage(
+    channelId: string,
+    messageId: string,
+  ): Promise<LinkPreviewImageDto> {
+    return this.request<LinkPreviewImageDto>(
+      `/api/v1/channels/${channelId}/messages/${messageId}/link-preview/image`,
     );
   }
 
@@ -972,6 +1006,20 @@ export class ApiService {
         count: r.count,
         me: !!r.me,
       })),
+      linkPreview: this.mapLinkPreview(m.linkPreview),
+    };
+  }
+
+  private mapLinkPreview(preview?: LinkPreviewDto | null): MessageLinkPreview | null {
+    if (!preview?.id || !preview.url) return null;
+    return {
+      id: String(preview.id),
+      url: preview.url,
+      title: preview.title ?? null,
+      description: preview.description ?? null,
+      siteName: preview.siteName ?? null,
+      hasImage: !!preview.hasImage,
+      status: preview.status ?? 'Ready',
     };
   }
 

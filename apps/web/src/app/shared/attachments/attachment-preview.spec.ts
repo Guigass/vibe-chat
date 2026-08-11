@@ -57,6 +57,15 @@ describe('attachment preview helpers', () => {
       }).map((item) => item.id),
     ).toEqual(['forward', 'thread', 'edit', 'delete']);
 
+    expect(
+      menuActionsForMessage({
+        mine: true,
+        showForward: false,
+        showThread: false,
+        hasLinkPreview: true,
+      }).map((item) => item.id),
+    ).toEqual(['edit', 'remove-link-preview', 'delete']);
+
     const deleteItem = menuActionsForMessage({
       mine: true,
       showForward: false,

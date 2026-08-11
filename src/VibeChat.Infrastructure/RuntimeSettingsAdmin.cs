@@ -154,6 +154,20 @@ public sealed class RuntimeSettingsAdminService(
                 defaultRetentionDays,
                 message = retentionMessage
             },
+            linkPreview = new
+            {
+                processEnabled = config.GetValue("LinkPreview:Enabled", true),
+                processSource = "env",
+                enabled = (await db.TenantLinkPreviewSettings.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct))?.Enabled ?? true,
+                timeoutMs = Math.Clamp(
+                    config.GetValue("LinkPreview:TimeoutMs", LinkPreviewPolicies.DefaultTimeoutMs),
+                    500,
+                    15_000),
+                message = config.GetValue("LinkPreview:Enabled", true)
+                    ? "Worker busca Open Graph da primeira URL (guarda SSRF)."
+                    : "Link preview desligado no processo (LinkPreview:Enabled=false)."
+            },
             files = new
             {
                 source = files.Source,
