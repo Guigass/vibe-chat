@@ -261,6 +261,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W9-6 | C/D | Salvos (B-093) | W9-2 | [B-093](../product/specs/B-093-salvos.md) | **Done** |
 | W9-7 | C/D | Recibos de leitura e não lidas persistentes (B-094) | W9-1 | [B-094](../product/specs/B-094-recibos-de-leitura.md) | Planned |
 | W9-8 | C/D | Anexo de vídeo — aceite, preview e visualização no chat (B-168) | W8-1, W9-0 | [B-168](../product/specs/B-168-anexo-de-video.md) | Planned |
+| W9-9 | D | Refatorar painéis de contexto (sidebar direita) — largura e encaixe (B-171) | B-022, B-092, B-093 | [B-171](../product/specs/B-171-paineis-contexto-direita.md) | Planned |
 
 ### Wave 10 — Notificações, organização e acesso
 
@@ -338,7 +339,7 @@ Agent-Infra     → W0-1, W0-2, W0-6, W5-*, W6-8, W7-7, W7-9 (headers cache web)
 Agent-Backend   → W0-3, W1-*, W2-1..W2-4, W3-1, W3-3, W4-*, W6-1, W6-2, W6-4..W6-6,
                   W8-4, W9-4, W10-1, W10-7, W10-11, W10-12, W10-13, W10-14
 Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7, W6-1..W6-3, W6-7, W7-6, W7-8, W7-9,
-                  W8-1..W8-3, W8-5..W8-8, W9-0..W9-3, W9-7, W10-5, W10-6
+                  W8-1..W8-3, W8-5..W8-8, W9-0..W9-3, W9-7, W9-9, W10-5, W10-6
 Agent-QA        → W0-7, W1-5, W2-6, W2-7, W3-2, W3-5, W5-3, W6-1 E2E, W6-8 smoke, W7-1
 Agent-Security  → W3-1/W3-2 review, W6-5/W6-6 authZ + threat model, W7-3..W7-5,
                   W9-4 (SSRF), W10-9, W10-10 (guests), W10-13 (integration tokens),

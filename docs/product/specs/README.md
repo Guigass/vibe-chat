@@ -57,6 +57,7 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-093 | [Salvos](B-093-salvos.md) |
 | B-094 | [Recibos de leitura e não lidas (persistência definitiva)](B-094-recibos-de-leitura.md) |
 | B-168 | [Anexo de vídeo (aceite, preview e visualização)](B-168-anexo-de-video.md) |
+| B-171 | [Painéis de contexto (sidebar direita) — largura e encaixe](B-171-paineis-contexto-direita.md) |
 
 ### Wave 10 — Notificações, organização e acesso
 
