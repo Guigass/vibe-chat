@@ -732,7 +732,25 @@ export class MessageStore {
       replyCount: message.replyCount ?? 0,
       reactions: message.reactions ?? [],
       replyTo: message.replyTo ?? null,
+      isPinned: message.isPinned ?? false,
     };
+  }
+
+  setPinned(channelId: string, messageId: string, pinned: boolean): void {
+    this.messagesSignal.update((current) =>
+      current.map((m) =>
+        m.channelId === channelId && m.id === messageId ? { ...m, isPinned: pinned } : m,
+      ),
+    );
+  }
+
+  applyPinnedFlags(channelId: string, messageIds: readonly string[]): void {
+    const pinned = new Set(messageIds);
+    this.messagesSignal.update((current) =>
+      current.map((m) =>
+        m.channelId === channelId ? { ...m, isPinned: pinned.has(m.id) } : m,
+      ),
+    );
   }
 
   private demoMessages(channelId: string): ChatMessage[] {

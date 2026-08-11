@@ -10,6 +10,7 @@ import { withoutSelfTyping } from '../../../core/services/typing-filter';
 import { ChatMessage } from '../../../shared/models/chat.models';
 import { Avatar, EmptyState, MessageBubble, Skeleton, TypingIndicator } from '../../../shared/ui';
 import { ForwardDialog } from '../forward-dialog/forward-dialog';
+import { PinStore } from '../../../core/services/pin.store';
 import { buildTimelineItems, type TimelineItem } from './timeline-items';
 
 const NEAR_BOTTOM_PX = 80;
@@ -97,6 +98,7 @@ const NEAR_TOP_PX = 120;
                         [showReplyAction]="true"
                         [showForwardAction]="true"
                         [showThreadAction]="true"
+                        [showPinAction]="true"
                         [highlighted]="messages.highlightMessageId() === entry.message.id"
                         (edit)="onEdit(entry.message.id, $event)"
                         (delete)="onDelete(entry.message.id)"
@@ -106,9 +108,16 @@ const NEAR_TOP_PX = 120;
                         (openThread)="onOpenThread(entry.message.id)"
                         (quoteClick)="onQuoteClick($event)"
                         (react)="onReact(entry.message.id, $event)"
+                        (pin)="onPin(entry.message.id)"
+                        (unpin)="onUnpin(entry.message.id)"
                       />
                     }
                   </div>
+                </div>
+              }
+              @case ('system') {
+                <div class="timeline__system" role="status" data-testid="timeline-system">
+                  <span>{{ item.label }}</span>
                 </div>
               }
             }
@@ -304,11 +313,26 @@ const NEAR_TOP_PX = 120;
     .timeline__jump:hover {
       background: color-mix(in srgb, var(--vc-brand) 12%, var(--vc-surface-elevated));
     }
+
+    .timeline__system {
+      display: flex;
+      justify-content: center;
+      padding: var(--vc-space-1) var(--vc-space-3);
+      color: var(--vc-text-muted);
+      font-size: var(--vc-text-xs);
+    }
+
+    .timeline__system span {
+      padding: 0.15rem 0.65rem;
+      border-radius: var(--vc-radius-pill);
+      background: color-mix(in srgb, var(--vc-text-muted) 12%, transparent);
+    }
   `,
 })
 export class Timeline {
   readonly messages = inject(MessageStore);
   readonly channels = inject(ChannelStore);
+  private readonly pins = inject(PinStore);
   private readonly threads = inject(ThreadStore);
   private readonly hub = inject(ChatHubService);
   private readonly auth = inject(AuthService);
@@ -519,6 +543,21 @@ export class Timeline {
 
   async onReact(messageId: string, emoji: string): Promise<void> {
     await this.messages.toggleReaction(messageId, emoji);
+  }
+
+  async onPin(messageId: string): Promise<void> {
+    const channelId = this.channels.activeChannelId();
+    if (!channelId) return;
+    const result = await this.pins.pinMessage(channelId, messageId);
+    if (result === 'limit') {
+      this.pins.openPanel();
+    }
+  }
+
+  async onUnpin(messageId: string): Promise<void> {
+    const channelId = this.channels.activeChannelId();
+    if (!channelId) return;
+    await this.pins.unpinMessage(channelId, messageId);
   }
 
   private afterChannelOpen(): void {

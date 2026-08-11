@@ -144,7 +144,7 @@ public static class RolePermissionCatalog
     [
         Permissions.Workspace.Read, Permissions.Workspace.Manage, Permissions.Workspace.Admin,
         Permissions.Channel.Read, Permissions.Channel.Create, Permissions.Channel.Manage, Permissions.Channel.MentionAll,
-        Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny,
+        Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny, Permissions.Message.Pin,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
         Permissions.Admin.Dashboard, Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe
@@ -153,7 +153,7 @@ public static class RolePermissionCatalog
     private static readonly HashSet<string> ModeratorPermissions =
     [
         Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Channel.Create, Permissions.Channel.MentionAll,
-        Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny,
+        Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny, Permissions.Message.Pin,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
         Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe
@@ -168,7 +168,7 @@ public static class RolePermissionCatalog
     private static readonly HashSet<string> MemberPermissions =
     [
         Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Channel.Create, Permissions.Channel.MentionAll,
-        Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn,
+        Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn, Permissions.Message.Pin,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
         Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe
@@ -182,7 +182,7 @@ public static class RolePermissionCatalog
     private static readonly HashSet<string> BotPermissions =
     [
         Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Channel.MentionAll,
-        Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React,
+        Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.Pin,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
         Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe

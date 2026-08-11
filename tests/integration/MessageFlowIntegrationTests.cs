@@ -185,6 +185,126 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Pin_message_persists_limit_unpin_and_cascade_on_delete()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var messageId = Guid.NewGuid();
+        var create = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-pin-{messageId:N}", $"pin-me-{messageId:N}", null, null));
+        create.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var pin = await client.PostAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages/{messageId}/pin",
+            null);
+        pin.StatusCode.Should().Be(HttpStatusCode.OK);
+        var pinned = await pin.Content.ReadFromJsonAsync<PinMessageResponseDto>(JsonOptions);
+        pinned.Should().NotBeNull();
+        pinned!.Pinned.Should().BeTrue();
+        pinned.PinCount.Should().Be(1);
+
+        var pins = await client.GetFromJsonAsync<ChannelPinsResponseDto>(
+            $"/api/v1/channels/{DemoChannelId}/pins",
+            JsonOptions);
+        pins.Should().NotBeNull();
+        pins!.Count.Should().Be(1);
+        pins.Pins.Should().ContainSingle(p => p.MessageId == messageId);
+
+        var list = await client.GetFromJsonAsync<ChannelMessagesResponseDto>(
+            $"/api/v1/channels/{DemoChannelId}/messages?after=0&limit=100",
+            JsonOptions);
+        list!.Messages.Single(m => m.Id == messageId).IsPinned.Should().BeTrue();
+
+        var unpin = await client.DeleteAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages/{messageId}/pin");
+        unpin.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var afterUnpin = await client.GetFromJsonAsync<ChannelPinsResponseDto>(
+            $"/api/v1/channels/{DemoChannelId}/pins",
+            JsonOptions);
+        afterUnpin!.Count.Should().Be(0);
+
+        var repin = await client.PostAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages/{messageId}/pin",
+            null);
+        repin.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var delete = await client.DeleteAsync($"/api/v1/channels/{DemoChannelId}/messages/{messageId}");
+        delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var afterDelete = await client.GetFromJsonAsync<ChannelPinsResponseDto>(
+            $"/api/v1/channels/{DemoChannelId}/pins",
+            JsonOptions);
+        afterDelete!.Pins.Should().NotContain(p => p.MessageId == messageId);
+
+        await using var db = factory.CreateMigratorDbContext();
+        var outbox = await db.OutboxMessages.IgnoreQueryFilters()
+            .Where(x => x.Type == nameof(PinChangedEvent))
+            .OrderByDescending(x => x.OccurredAt)
+            .Take(20)
+            .ToListAsync();
+        outbox.Should().Contain(x =>
+            x.Payload.Contains(messageId.ToString(), StringComparison.OrdinalIgnoreCase)
+            && x.Payload.Contains("\"pinned\":true", StringComparison.Ordinal));
+        outbox.Should().Contain(x =>
+            x.Payload.Contains(messageId.ToString(), StringComparison.OrdinalIgnoreCase)
+            && x.Payload.Contains("\"pinned\":false", StringComparison.Ordinal));
+
+        var audit = await db.AuditEvents.IgnoreQueryFilters()
+            .Where(x => x.Action == AuditActions.MessagePin || x.Action == AuditActions.MessageUnpin)
+            .OrderByDescending(x => x.OccurredAt)
+            .Take(10)
+            .ToListAsync();
+        audit.Should().Contain(x => x.Action == AuditActions.MessagePin);
+        audit.Should().Contain(x => x.Action == AuditActions.MessageUnpin);
+    }
+
+    [Fact]
+    public async Task Pin_limit_blocks_21st_pin()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var channelName = $"pin-limit-{Guid.NewGuid():N}"[..20];
+        var createChannel = await client.PostAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/channels",
+            new CreateChannelRequestDto(channelName, "Public", SeedData.DemoSpaceGeralId));
+        createChannel.StatusCode.Should().Be(HttpStatusCode.Created);
+        var channel = await createChannel.Content.ReadFromJsonAsync<ChannelDto>(JsonOptions);
+        channel.Should().NotBeNull();
+        var channelId = channel!.Id;
+
+        var pinnedIds = new List<Guid>();
+        for (var i = 0; i < PinPolicies.MaxPinnedPerChannel; i++)
+        {
+            var messageId = Guid.NewGuid();
+            pinnedIds.Add(messageId);
+            var create = await client.PostAsJsonAsync(
+                $"/api/v1/channels/{channelId}/messages",
+                new SendMessageRequest(messageId, $"idem-pin-limit-{messageId:N}", $"pin-limit-{i}", null, null));
+            create.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+            var pin = await client.PostAsync(
+                $"/api/v1/channels/{channelId}/messages/{messageId}/pin",
+                null);
+            pin.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        var overflowId = Guid.NewGuid();
+        var overflowCreate = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{channelId}/messages",
+            new SendMessageRequest(overflowId, $"idem-pin-overflow-{overflowId:N}", "overflow", null, null));
+        overflowCreate.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var overflowPin = await client.PostAsync(
+            $"/api/v1/channels/{channelId}/messages/{overflowId}/pin",
+            null);
+        overflowPin.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Edit_message_updates_body_and_edited_at()
     {
         using var client = factory.CreateClient();
@@ -1972,7 +2092,23 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         ReplyToDto? ReplyTo = null,
         Guid? ForwardedFromMessageId = null,
         Guid? ForwardedFromChannelId = null,
-        ForwardedFromDto? ForwardedFrom = null);
+        ForwardedFromDto? ForwardedFrom = null,
+        bool IsPinned = false);
+
+    private sealed record PinMessageResponseDto(Guid MessageId, Guid ChannelId, bool Pinned, int PinCount);
+    private sealed record PinnedMessageResponseDto(
+        Guid MessageId,
+        Guid ChannelId,
+        long Sequence,
+        string BodyPreview,
+        string AuthorName,
+        Guid PinnedByUserId,
+        string PinnedByName,
+        DateTimeOffset PinnedAt);
+    private sealed record ChannelPinsResponseDto(
+        PinnedMessageResponseDto[] Pins,
+        int Count,
+        int Limit);
 
     private sealed record ForwardMessageResponseDto(MessageDto[] Messages);
 

@@ -335,6 +335,7 @@ public sealed class BackendUnitTests
 
         permissions.Should().Contain(Permissions.Message.Send);
         permissions.Should().Contain(Permissions.Message.React);
+        permissions.Should().Contain(Permissions.Message.Pin);
         permissions.Should().Contain(Permissions.Channel.Create);
         permissions.Should().Contain(Permissions.Ai.SuggestReply);
         permissions.Should().NotContain(Permissions.Admin.Dashboard);

@@ -144,6 +144,20 @@ export interface ChatMessage {
   mentionsMe?: boolean;
   /** B-091 link unfurl card; null after author removes. */
   linkPreview?: MessageLinkPreview | null;
+  /** B-092 pinned marker in channel. */
+  isPinned?: boolean;
+}
+
+export interface PinnedMessageItem {
+  messageId: string;
+  channelId: string;
+  sequence: number;
+  bodyPreview: string;
+  authorName: string;
+  pinnedByUserId: string;
+  pinnedByName: string;
+  pinnedAt: string;
+  limit?: number;
 }
 
 export interface ChatThread {

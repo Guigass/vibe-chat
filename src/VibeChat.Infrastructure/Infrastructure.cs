@@ -79,6 +79,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<LinkPreview> LinkPreviews => Set<LinkPreview>();
     public DbSet<MessageLinkPreview> MessageLinkPreviews => Set<MessageLinkPreview>();
     public DbSet<TenantLinkPreviewSettings> TenantLinkPreviewSettings => Set<TenantLinkPreviewSettings>();
+    public DbSet<PinnedMessage> PinnedMessages => Set<PinnedMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -226,6 +227,19 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
             entity.Property(x => x.Emoji).HasMaxLength(32);
             entity.HasIndex(x => new { x.TenantId, x.MessageId, x.UserId, x.Emoji }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<PinnedMessage>(entity =>
+        {
+            entity.ToTable("pinned_messages", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.MessageId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.PinnedByUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.HasIndex(x => new { x.TenantId, x.ChannelId, x.MessageId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.ChannelId });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -2077,6 +2091,7 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     nameof(MessageEditedEvent) => "MessageEdited",
                     nameof(MessageDeletedEvent) => "MessageDeleted",
                     nameof(ReactionChangedEvent) => "ReactionChanged",
+                    nameof(PinChangedEvent) => "PinChanged",
                     _ => outbox.Type
                 };
 
@@ -2543,6 +2558,14 @@ public sealed class MessageRetentionPurgeProcessor(
             if (reactions.Count > 0)
             {
                 db.Reactions.RemoveRange(reactions);
+            }
+
+            var pins = await db.PinnedMessages.IgnoreQueryFilters()
+                .Where(x => x.TenantId == policy.TenantId && messageIds.Contains(x.MessageId))
+                .ToListAsync(cancellationToken);
+            if (pins.Count > 0)
+            {
+                db.PinnedMessages.RemoveRange(pins);
             }
 
             var mentions = await db.MessageMentions.IgnoreQueryFilters()

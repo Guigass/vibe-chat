@@ -46,12 +46,16 @@ export type MessageMenuActionId =
   | 'thread'
   | 'edit'
   | 'remove-link-preview'
-  | 'delete';
+  | 'delete'
+  | 'pin'
+  | 'unpin';
 
 export function menuActionsForMessage(options: {
   mine: boolean;
   showForward: boolean;
   showThread: boolean;
+  showPin?: boolean;
+  isPinned?: boolean;
   replyCount?: number;
   hasLinkPreview?: boolean;
 }): Array<{ id: MessageMenuActionId; label: string; danger?: boolean }> {
@@ -71,6 +75,12 @@ export function menuActionsForMessage(options: {
         count > 0
           ? `${count} ${count === 1 ? 'resposta' : 'respostas'}`
           : 'Abrir thread',
+    });
+  }
+  if (options.showPin) {
+    items.push({
+      id: options.isPinned ? 'unpin' : 'pin',
+      label: options.isPinned ? 'Desafixar' : 'Fixar',
     });
   }
   if (options.mine) {
