@@ -102,6 +102,18 @@ interface ForwardedFromDto {
   isDirect?: boolean;
 }
 
+interface ChannelMessagesDto {
+  messages: MessageDto[];
+  hasMoreBefore: boolean;
+  hasMoreAfter: boolean;
+}
+
+export interface ChannelMessagesPage {
+  messages: ChatMessage[];
+  hasMoreBefore: boolean;
+  hasMoreAfter: boolean;
+}
+
 interface MessageDto {
   id: string;
   channelId: string;
@@ -382,19 +394,22 @@ export class ApiService {
 
   async getMessages(
     channelId: string,
-    options: { take?: number; after?: number } | number = 50,
-  ): Promise<ChatMessage[]> {
-    const take = typeof options === 'number' ? options : (options.take ?? 50);
-    const after = typeof options === 'number' ? 0 : (options.after ?? 0);
-    const params = new URLSearchParams({
-      limit: String(take),
-      after: String(after),
-    });
-    const rows = await this.request<MessageDto[]>(
+    options: { take?: number; after?: number; before?: number; around?: number } = {},
+  ): Promise<ChannelMessagesPage> {
+    const take = options.take ?? 50;
+    const params = new URLSearchParams({ limit: String(take) });
+    if (options.after !== undefined) params.set('after', String(options.after));
+    if (options.before !== undefined) params.set('before', String(options.before));
+    if (options.around !== undefined) params.set('around', String(options.around));
+    const dto = await this.request<ChannelMessagesDto>(
       `/api/v1/channels/${channelId}/messages?${params.toString()}`,
     );
     const me = this.auth.profile()?.id;
-    return rows.map((m) => this.mapMessage(m, me));
+    return {
+      messages: dto.messages.map((m) => this.mapMessage(m, me)),
+      hasMoreBefore: dto.hasMoreBefore,
+      hasMoreAfter: dto.hasMoreAfter,
+    };
   }
 
   async sendMessage(input: {

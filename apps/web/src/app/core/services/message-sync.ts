@@ -17,6 +17,18 @@ export function maxSeqForChannel(messages: readonly ChatMessage[], channelId: st
   return max;
 }
 
+/** Lowest persisted sequence for a channel (ignores rows without seq). */
+export function minSeqForChannel(messages: readonly ChatMessage[], channelId: string): number {
+  let min = 0;
+  for (const message of messages) {
+    if (message.channelId !== channelId) continue;
+    const seq = message.seq ?? 0;
+    if (seq <= 0) continue;
+    if (min === 0 || seq < min) min = seq;
+  }
+  return min;
+}
+
 /** True when an incoming seq skips ahead of the local contiguous tip. */
 export function hasSeqGap(
   messages: readonly ChatMessage[],

@@ -484,9 +484,9 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
                 [foreignAttachmentId]));
         send.StatusCode.Should().BeOneOf(HttpStatusCode.BadRequest, HttpStatusCode.Forbidden);
 
-        var list = await client.GetFromJsonAsync<MessageDto[]>(
+        var list = await client.GetFromJsonAsync<ChannelMessagesResponseDto>(
             $"/api/v1/channels/{SeedData.DemoChannelId.Value}/messages?limit=200");
-        list.Should().NotContain(x => x.Id == messageId);
+        list!.Messages.Should().NotContain(x => x.Id == messageId);
     }
 
     [Fact]
@@ -765,6 +765,11 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     private sealed record ChannelDto(Guid Id, Guid WorkspaceId, string Name, string Type);
+    private sealed record ChannelMessagesResponseDto(
+        MessageDto[] Messages,
+        bool HasMoreBefore,
+        bool HasMoreAfter);
+
     private sealed record MessageDto(Guid Id, Guid ChannelId, long Sequence, Guid AuthorId, string Body, DateTimeOffset CreatedAt);
     private sealed record AttachmentUploadDto(Guid AttachmentId, string UploadUrl);
     private sealed record SearchMessageHitDto(Guid MessageId, Guid ChannelId, string BodyPreview);

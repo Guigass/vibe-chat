@@ -8,6 +8,7 @@ import {
   idsEqual,
   markReplyQuotesDeleted,
   maxSeqForChannel,
+  minSeqForChannel,
   mergeMessagesById,
   replyPreviewText,
   upsertRemoteMessage,
@@ -36,6 +37,17 @@ describe('message-sync', () => {
     ];
     expect(maxSeqForChannel(messages, 'c1')).toBe(7);
     expect(maxSeqForChannel(messages, 'missing')).toBe(0);
+  });
+
+  it('minSeqForChannel ignores other channels and missing seq', () => {
+    const messages = [
+      msg({ id: '1', channelId: 'c1', seq: 3 }),
+      msg({ id: '2', channelId: 'c1', seq: 7 }),
+      msg({ id: '3', channelId: 'c2', seq: 99 }),
+      msg({ id: '4', channelId: 'c1', seq: undefined }),
+    ];
+    expect(minSeqForChannel(messages, 'c1')).toBe(3);
+    expect(minSeqForChannel(messages, 'missing')).toBe(0);
   });
 
   it('hasSeqGap detects skipped sequences', () => {

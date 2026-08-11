@@ -253,9 +253,18 @@ export class ShellPage implements OnInit, OnDestroy {
     await this.auth.logout();
   }
 
+  readonly searchJumpNotice = signal<string | null>(null);
+
   async openSearchHit(hit: SearchMessageHit): Promise<void> {
-    this.channels.selectChannel(hit.channelId);
-    await this.messages.loadChannel(hit.channelId);
+    await this.channels.selectChannel(hit.channelId);
+    const result = await this.messages.jumpToSequence(hit.channelId, hit.sequence, hit.messageId);
+    if (result === 'deleted') {
+      this.searchJumpNotice.set('Esta mensagem foi removida.');
+    } else if (result === 'missing') {
+      this.searchJumpNotice.set('Não foi possível localizar a mensagem.');
+    } else {
+      this.searchJumpNotice.set(null);
+    }
     this.searchOpen.set(false);
     this.searchFocused.set(false);
   }

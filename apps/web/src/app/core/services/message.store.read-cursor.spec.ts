@@ -21,28 +21,32 @@ describe('MessageStore read cursor (BUG-002)', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     upsertReadCursor = vi.fn().mockResolvedValue(undefined);
-    getMessages = vi.fn().mockResolvedValue([
-      {
-        id: 'm-1',
-        conversationId: channelId,
-        channelId,
-        authorUserId: 'u-bob',
-        authorName: 'Bob',
-        body: 'olá',
-        createdAt: '2026-08-10T12:00:00.000Z',
-        seq: 7,
-      },
-      {
-        id: 'm-2',
-        conversationId: channelId,
-        channelId,
-        authorUserId: 'u-alice',
-        authorName: 'Alice',
-        body: 'oi',
-        createdAt: '2026-08-10T12:01:00.000Z',
-        seq: 12,
-      },
-    ]);
+    getMessages = vi.fn().mockResolvedValue({
+      messages: [
+        {
+          id: 'm-1',
+          conversationId: channelId,
+          channelId,
+          authorUserId: 'u-bob',
+          authorName: 'Bob',
+          body: 'olá',
+          createdAt: '2026-08-10T12:00:00.000Z',
+          seq: 7,
+        },
+        {
+          id: 'm-2',
+          conversationId: channelId,
+          channelId,
+          authorUserId: 'u-alice',
+          authorName: 'Alice',
+          body: 'oi',
+          createdAt: '2026-08-10T12:01:00.000Z',
+          seq: 12,
+        },
+      ],
+      hasMoreBefore: false,
+      hasMoreAfter: false,
+    });
     messageHandler = null;
     activeChannelId = signal<string | null>(channelId);
     bumpUnread = vi.fn();
@@ -115,7 +119,7 @@ describe('MessageStore read cursor (BUG-002)', () => {
   it('calls upsertReadCursor with max seq after loadChannel', async () => {
     await store.loadChannel(channelId);
 
-    expect(getMessages).toHaveBeenCalledWith(channelId);
+    expect(getMessages).toHaveBeenCalledWith(channelId, { take: 50 });
     expect(upsertReadCursor).toHaveBeenCalledWith(channelId, 12);
   });
 

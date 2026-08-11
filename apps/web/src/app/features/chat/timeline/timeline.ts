@@ -13,6 +13,7 @@ import { ForwardDialog } from '../forward-dialog/forward-dialog';
 import { buildTimelineItems, type TimelineItem } from './timeline-items';
 
 const NEAR_BOTTOM_PX = 80;
+const NEAR_TOP_PX = 120;
 
 @Component({
   selector: 'vc-timeline',
@@ -32,6 +33,25 @@ const NEAR_BOTTOM_PX = 80;
           description="Envie a primeira mensagem. O status mostrará enviando → enviada/salva sem fingir persistência."
         />
       } @else {
+        @if (messages.paginationForActive().loadingOlder) {
+          <div class="timeline__top-load" data-testid="timeline-loading-older">
+            <vc-skeleton height="3.5rem" />
+            <vc-skeleton height="3.5rem" width="80%" />
+          </div>
+        } @else if (messages.paginationForActive().loadError) {
+          <button
+            type="button"
+            class="timeline__retry"
+            data-testid="timeline-retry-older"
+            (click)="messages.retryLoadOlder()"
+          >
+            Não foi possível carregar — tentar novamente
+          </button>
+        } @else if (atConversationStart()) {
+          <div class="timeline__start" data-testid="timeline-start" role="status">
+            Início da conversa
+          </div>
+        }
         <div class="timeline__list">
           @for (item of timelineItems(); track item.id) {
             @switch (item.kind) {
@@ -151,6 +171,30 @@ const NEAR_BOTTOM_PX = 80;
       margin-top: auto;
       min-width: 0;
       padding-top: var(--vc-timeline-pad);
+    }
+    .timeline__top-load,
+    .timeline__start,
+    .timeline__retry {
+      flex-shrink: 0;
+      margin: 0.35rem 0 0.5rem;
+    }
+    .timeline__start {
+      text-align: center;
+      color: var(--vc-text-muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.02em;
+    }
+    .timeline__retry {
+      display: block;
+      width: 100%;
+      border: 1px dashed var(--vc-border-subtle);
+      border-radius: var(--vc-radius-md, 8px);
+      background: transparent;
+      color: var(--vc-brand);
+      font: inherit;
+      font-size: 0.82rem;
+      padding: 0.45rem 0.75rem;
+      cursor: pointer;
     }
     .timeline__stack {
       --vc-msg-max: min(36rem, 100%);
@@ -282,6 +326,15 @@ export class Timeline {
   readonly showJump = computed(
     () => !this.messages.loading() && this.messages.forActiveChannel().length > 0 && !this.nearBottom(),
   );
+  readonly atConversationStart = computed(
+    () =>
+      !this.messages.loading() &&
+      this.messages.forActiveChannel().length > 0 &&
+      !this.messages.paginationForActive().hasMoreBefore &&
+      !this.messages.paginationForActive().loadingOlder,
+  );
+
+  private loadingOlder = false;
 
   private readonly unreadSnapshot = signal(0);
   private readonly unreadDismissed = signal(false);
@@ -365,6 +418,24 @@ export class Timeline {
       this.messages.setViewingLatest(false);
     }
     this.dismissUnreadIfPast(el);
+    void this.maybeLoadOlder(el);
+  }
+
+  private async maybeLoadOlder(el: HTMLElement): Promise<void> {
+    if (el.scrollTop > NEAR_TOP_PX) return;
+    const pagination = this.messages.paginationForActive();
+    if (!pagination.hasMoreBefore || pagination.loadingOlder || this.loadingOlder) return;
+
+    const prevHeight = el.scrollHeight;
+    this.loadingOlder = true;
+    const loaded = await this.messages.loadOlderMessages();
+    this.loadingOlder = false;
+    if (!loaded) return;
+
+    requestAnimationFrame(() => {
+      const delta = el.scrollHeight - prevHeight;
+      if (delta > 0) el.scrollTop += delta;
+    });
   }
 
   jumpToLatest(): void {
@@ -425,7 +496,7 @@ export class Timeline {
   }
 
   onQuoteClick(messageId: string): void {
-    this.messages.jumpToMessage(messageId);
+    void this.messages.ensureMessageVisible(messageId);
   }
 
   async onOpenThread(messageId: string): Promise<void> {

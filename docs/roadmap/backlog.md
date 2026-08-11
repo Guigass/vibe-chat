@@ -117,7 +117,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 |----|------|-------|
 | B-163 | Message bubble moderno (layout tipado + ações + preview) | **Done** (W9-0) — alinhamento mine/theirs p/ todos os tipos; preview Image/PDF/Audio/Video; toolbar só no hover/focus + context menu; base antes de pin/salvos; [spec](../product/specs/B-163-message-bubble-context-menu.md) |
 | B-088 | Agrupamento, separadores e não lidas | **Done (W9-1)** — agrupamento 5 min, sticky de data, divisor local, jump + auto-scroll só no fim |
-| B-089 | Histórico paginado e pular para a mensagem | Planned (W9-2) — hoje janela fixa de 50 |
+| B-089 | Histórico paginado e pular para a mensagem | Done (W9-2) |
 | B-090 | Preview de anexos | Planned (W9-3) — miniatura no worker; UI tipada em B-163; purge remove junto |
 | B-091 | Link preview | Planned (W9-4) — **exige guarda de SSRF**; sem ela não passa |
 | B-092 | Fixar mensagem | Planned (W9-5) — limite 20, permissão `message.pin` |
