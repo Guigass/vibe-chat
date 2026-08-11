@@ -69,7 +69,13 @@ Comportamento:
   próprios mínimos).
 - Na timeline: menu da mensagem respeita política; tooltip se a janela expirou
   (“Edição disponível por X min após o envio”).
-- Atalho `↑` (B-099) só abre edição se a política permitir.
+- **Editar** abre no **composer** (barra de contexto + textarea), não em
+  textarea inline na bolha — superfície de UI em
+  [B-173](B-173-editar-mensagem-no-composer.md). A política só decide se a ação
+  aparece / se a API aceita.
+- Atalho `↑` (B-099) só abre edição no composer se a política permitir.
+- Escopo de “quem”: papéis do catálogo do workspace (Member/Moderator/Admin/
+  Auditor/Guest), **não** grupos arbitrários — ver Fora de escopo.
 
 ## Multi-tenant e authZ
 

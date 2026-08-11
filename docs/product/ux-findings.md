@@ -19,6 +19,7 @@ Regras do registro:
 |----|------|--------|------------|--------|
 | UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de contraste |
 | UX-006 | Header | Botões de ícone (buscar, tema, densidade, painel) sem estado de hover/foco perceptível | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de foco |
+| UX-008 | Timeline / composer | Editar mensagem usa textarea inline na bolha em vez do composer | Média | Aberto — fecha em **B-173** |
 
 ## Detalhamento
 
@@ -111,6 +112,17 @@ anti-cache em `index.html`/version e CTA de reload.
 
 **Done** — `version.json` público + `buildId` embutido; `AppUpdateService` /
 `vc-update-banner`; nginx `no-cache` em shell/SW/version; runbook de upgrade.
+
+### UX-008 — Editar mensagem na bolha em vez do composer
+
+Observado no lab Compose (`localhost:4200/app`): ao escolher **Editar** na
+toolbar/menu da bolha, o body vira um textarea **dentro da bolha**
+(`message-bubble` modo `editing`), com Salvar/Cancelar locais. Responder (B-084)
+já usa o composer; o atalho `↑` (B-099) também pressupõe edição no composer.
+
+Correção esperada: **B-173** — modo edição no composer (barra de contexto +
+textarea), bolha só exibe body/badge “editada”. Políticas de janela/papéis
+permanecem em **B-107** (`messaging.edit.*` / `messaging.delete.*`).
 
 ## Fechados
 

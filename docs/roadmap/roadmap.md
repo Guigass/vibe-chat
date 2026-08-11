@@ -262,6 +262,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W9-7 | C/D | Recibos de leitura e não lidas persistentes (B-094) | W9-1 | [B-094](../product/specs/B-094-recibos-de-leitura.md) | Planned |
 | W9-8 | C/D | Anexo de vídeo — aceite, preview e visualização no chat (B-168) | W8-1, W9-0 | [B-168](../product/specs/B-168-anexo-de-video.md) | Planned |
 | W9-9 | D | Refatorar painéis de contexto (sidebar direita) — largura e encaixe (B-171) | B-022, B-092, B-093 | [B-171](../product/specs/B-171-paineis-contexto-direita.md) | Planned |
+| W9-10 | D | Editar mensagem no composer — sem textarea inline na bolha (B-173) | B-023, B-084, B-163 | [B-173](../product/specs/B-173-editar-mensagem-no-composer.md) | Planned |
 
 ### Wave 10 — Notificações, organização e acesso
 
@@ -271,7 +272,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W10-2 | C/D | Enquetes (B-096) | — | [B-096](../product/specs/B-096-enquetes.md) | Planned |
 | W10-3 | B/D | Preferências de notificação e DND (B-097) | W10-1 | [B-097](../product/specs/B-097-preferencias-notificacao-dnd.md) | Planned |
 | W10-4 | C/D | Busca com filtros (B-098) | W9-2 | [B-098](../product/specs/B-098-busca-com-filtros.md) | Planned |
-| W10-5 | D | Paleta de comandos e atalhos (B-099) | W8-9, W10-4 | [B-099](../product/specs/B-099-paleta-de-comandos.md) | Planned |
+| W10-5 | D | Paleta de comandos e atalhos (B-099) | W8-9, W10-4, W9-10 | [B-099](../product/specs/B-099-paleta-de-comandos.md) | Planned |
 | W10-6 | D/G | Internacionalização (B-100) | D-14 | [B-100](../product/specs/B-100-i18n.md) | Planned |
 | W10-7 | B/C/D | DM em grupo (B-101) | B-021 | [B-101](../product/specs/B-101-dm-em-grupo.md) | Planned |
 | W10-8 | C/D | Seguir thread (B-102) | B-022, W10-1 | [B-102](../product/specs/B-102-seguir-thread.md) | Planned |

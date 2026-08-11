@@ -125,6 +125,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-094 | Recibos de leitura e não lidas | Planned (W9-7) — persistência definitiva em `messaging.read_cursors`; liga o `upsertReadCursor` órfão; badges sobrevivem a F5/multi-device; `read-by` em canal é contagem |
 | B-168 | Anexo de vídeo | Planned (W9-8) — aceitar `video/mp4`/`webm`; prévia no composer; player tipado na bolha (B-163); sem transcode; soft-dep poster B-090 |
 | B-171 | Painéis de contexto (sidebar direita) | Planned (W9-9) — trilho direito um pouco maior e melhor encaixado (thread/pins/salvos/contexto); só UI/tokens; [spec](../product/specs/B-171-paineis-contexto-direita.md) |
+| B-173 | Editar mensagem no composer | Planned (W9-10) — tirar textarea inline da bolha; modo edição no composer (padrão B-084); atalho `↑` em B-099; políticas de janela/papéis em B-107; [spec](../product/specs/B-173-editar-mensagem-no-composer.md) |
 
 ### Wave 10 — Notificações, organização e acesso
 
@@ -140,7 +141,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-102 | Seguir thread | Planned (W10-8) — auto-inscrição na mesma transação |
 | B-103 | Acessibilidade WCAG 2.2 AA | Planned (W10-9) — axe-core como gate na CI |
 | B-040 | Guests por convite | Planned (W10-10) — deixou de estar Blocked; D-07 revisado em 2026-07-25 |
-| B-107 | Políticas de edição/apagar mensagem | Planned (W10-11) — janela de tempo, papéis e override de moderação; settings admin; preservação de body no audit → B-169; spec `docs/product/specs/B-107-politicas-edicao-mensagem.md` |
+| B-107 | Políticas de edição/apagar mensagem | Planned (W10-11) — janela de tempo (`messaging.edit|delete.windowMinutes`), papéis e override de moderação; settings admin; UI de editar no composer (B-173); preservação de body no audit → B-169; [spec](../product/specs/B-107-politicas-edicao-mensagem.md) |
 | B-108 | Extender webhooks outbound | Planned (W10-12) — mais eventos, multi-endpoint, filtros de canal, ping de teste; spec `docs/product/specs/B-108-extender-webhooks.md` |
 | B-109 | Núcleo plugin — bot/token + envio msgs | Planned (W10-13) — capability `messages.send`; base da trilha; spec `docs/product/specs/B-109-api-integracao-envio-mensagens.md` |
 | B-110 | Instalar/gerir plugins na instância | Planned (W10-14) — manifesto local, built-in Incoming Messages; deps B-109; spec `docs/product/specs/B-110-instalar-plugins.md` |

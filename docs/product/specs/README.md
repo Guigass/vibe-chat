@@ -58,6 +58,7 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-094 | [Recibos de leitura e não lidas (persistência definitiva)](B-094-recibos-de-leitura.md) |
 | B-168 | [Anexo de vídeo (aceite, preview e visualização)](B-168-anexo-de-video.md) |
 | B-171 | [Painéis de contexto (sidebar direita) — largura e encaixe](B-171-paineis-contexto-direita.md) |
+| B-173 | [Editar mensagem no composer (não na bolha)](B-173-editar-mensagem-no-composer.md) |
 
 ### Wave 10 — Notificações, organização e acesso
 

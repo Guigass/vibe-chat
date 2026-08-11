@@ -1,6 +1,6 @@
 # B-099 — Paleta de comandos e atalhos
 
-> Wave W10-5 · Trilha D · Deps: B-087, B-098 · Decisões: D-11 · Risco R1
+> Wave W10-5 · Trilha D · Deps: B-087, B-098, B-173 · Decisões: D-11 · Risco R1
 
 ## Problema
 
@@ -21,7 +21,7 @@ mouse. Quem usa o produto o dia inteiro pede navegação por teclado.
 | `Alt+↑` / `Alt+↓` | canal anterior / próximo |
 | `Alt+Shift+↑` / `Alt+Shift+↓` | canal não lido anterior / próximo |
 | `Esc` | fecha painel, cancela edição |
-| `↑` no composer vazio | edita a própria última mensagem |
+| `↑` no composer vazio | edita a própria última mensagem **no composer** (B-173; não na bolha) |
 | `Ctrl/Cmd+Shift+M` | vai para menções |
 | `Shift+Esc` | marca canal atual como lido |
 | `?` | folha de atalhos |
@@ -57,7 +57,8 @@ endpoint que já valida.
 - [ ] `Ctrl+K` abre e digitar “ger” encontra `#geral`
 - [ ] `Enter` troca de canal e devolve o foco ao composer
 - [ ] `Alt+↓` navega entre canais
-- [ ] `↑` no composer vazio abre a edição da última mensagem própria
+- [ ] `↑` no composer vazio abre a edição da última mensagem própria **no composer**
+      (B-173; política B-107 se já existir)
 - [ ] `?` abre a folha de atalhos
 - [ ] Atalho não dispara enquanto digita no composer
 - [ ] Paleta não lista canal sem membership

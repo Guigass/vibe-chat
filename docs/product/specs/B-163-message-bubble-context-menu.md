@@ -122,6 +122,8 @@ menu só aparecem se o cliente já teria mostrado o botão (ex.: Editar/Apagar s
 - [x] Hover ou focus revela toolbar compacta com reagir + responder + “mais”
 - [x] Clique direito / long-press / “mais” abre o mesmo menu de opções
 - [x] Editar, apagar, reagir, responder e abrir thread continuam funcionando
+      (superfície de edição migra para o composer em B-173; menu/toolbar só
+      disparam a ação)
 - [x] Menu e toolbar navegáveis só por teclado; `Esc` fecha
 - [x] Touch: long-press abre o menu sem selecionar texto por engano
 
