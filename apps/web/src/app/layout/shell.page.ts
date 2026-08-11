@@ -15,9 +15,11 @@ import { ChannelStore } from '../core/services/channel.store';
 import { ChatHubService } from '../core/services/chat-hub.service';
 import { MessageStore } from '../core/services/message.store';
 import { ThreadStore } from '../core/services/thread.store';
+import { PinStore } from '../core/services/pin.store';
 import { ChannelList } from '../features/chat/channel-list/channel-list';
 import { Composer } from '../features/chat/composer/composer';
 import { Timeline } from '../features/chat/timeline/timeline';
+import { PinsPanel } from '../features/chat/pins-panel/pins-panel';
 import { ThreadPanel } from '../features/chat/thread-panel/thread-panel';
 import { SuggestReplyButton } from '../features/ai/suggest-reply-button';
 import { SummarizeButton } from '../features/ai/summarize-button';
@@ -44,6 +46,7 @@ import { defaultSidebarOpen, SHELL_NARROW_MEDIA_QUERY } from './shell-viewport';
     Timeline,
     Composer,
     ThreadPanel,
+    PinsPanel,
     SummarizeButton,
     SuggestReplyButton,
     ConnectionBanner,
@@ -61,6 +64,7 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly channels = inject(ChannelStore);
   readonly messages = inject(MessageStore);
   readonly threads = inject(ThreadStore);
+  readonly pins = inject(PinStore);
   readonly hub = inject(ChatHubService);
   private readonly api = inject(ApiService);
   private readonly attachments = inject(AttachmentQueueService);
@@ -91,12 +95,16 @@ export class ShellPage implements OnInit, OnDestroy {
       const channelId = this.channels.activeChannelId() ?? null;
       if (this.lastChannelId !== null && this.lastChannelId !== channelId) {
         this.threads.close();
+        this.pins.closePanel();
         // Narrow overlay: free the timeline after a channel/DM pick.
         if (this.narrowViewport()) {
           this.sidebarOpen.set(false);
         }
       }
       this.lastChannelId = channelId;
+      if (channelId) {
+        void this.pins.loadForChannel(channelId);
+      }
     });
 
     effect(() => {
@@ -159,6 +167,10 @@ export class ShellPage implements OnInit, OnDestroy {
         this.threads.close();
         return;
       }
+      if (this.pins.panelOpen()) {
+        this.pins.closePanel();
+        return;
+      }
       if (this.narrowViewport() && this.sidebarOpen()) {
         this.sidebarOpen.set(false);
         return;
@@ -208,7 +220,19 @@ export class ShellPage implements OnInit, OnDestroy {
   }
 
   toggleContext(): void {
+    this.pins.closePanel();
     this.contextOpen.update((v) => !v);
+  }
+
+  openPinsPanel(): void {
+    this.contextOpen.set(false);
+    this.pins.openPanel();
+  }
+
+  async onUnpinFromPanel(messageId: string): Promise<void> {
+    const channelId = this.channels.activeChannelId();
+    if (!channelId) return;
+    await this.pins.unpinMessage(channelId, messageId);
   }
 
   onFileDragEnter(event: DragEvent): void {

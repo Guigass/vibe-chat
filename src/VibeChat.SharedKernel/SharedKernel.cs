@@ -199,6 +199,7 @@ public static class Permissions
         public const string EditOwn = "message.edit.own";
         public const string DeleteOwn = "message.delete.own";
         public const string DeleteAny = "message.delete.any";
+        public const string Pin = "message.pin";
     }
 
     public static class Files

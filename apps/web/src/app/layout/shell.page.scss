@@ -289,6 +289,24 @@
   border-bottom: 1px solid var(--vc-border);
 }
 
+.shell__pin-bar {
+  margin: 0;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--vc-border);
+  background: color-mix(in srgb, var(--vc-brand) 8%, var(--vc-surface));
+  color: var(--vc-text);
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  padding: 0.45rem var(--vc-space-4);
+  cursor: pointer;
+}
+
+.shell__pin-bar:hover {
+  background: color-mix(in srgb, var(--vc-brand) 14%, var(--vc-surface));
+}
+
 .shell__context {
   border-left: 1px solid var(--vc-border);
   background: var(--vc-surface-elevated);

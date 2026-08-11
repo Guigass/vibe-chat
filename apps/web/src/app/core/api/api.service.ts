@@ -24,6 +24,7 @@ import {
   Workspace,
   WorkspaceMember,
   MessageLinkPreview,
+  PinnedMessageItem,
 } from '../../shared/models/chat.models';
 
 interface WorkspaceDto {
@@ -150,6 +151,7 @@ interface MessageDto {
   replyCount?: number;
   reactions?: ReactionSummaryDto[] | null;
   linkPreview?: LinkPreviewDto | null;
+  isPinned?: boolean;
 }
 
 interface ForwardMessageResponseDto {
@@ -643,6 +645,69 @@ export class ApiService {
     });
   }
 
+  async pinMessage(
+    channelId: string,
+    messageId: string,
+  ): Promise<{ messageId: string; channelId: string; pinned: boolean; pinCount: number }> {
+    const dto = await this.request<{
+      messageId: string;
+      channelId: string;
+      pinned: boolean;
+      pinCount: number;
+    }>(`/api/v1/channels/${channelId}/messages/${messageId}/pin`, {
+      method: 'POST',
+    });
+    return {
+      messageId: String(dto.messageId),
+      channelId: String(dto.channelId),
+      pinned: !!dto.pinned,
+      pinCount: dto.pinCount ?? 0,
+    };
+  }
+
+  async unpinMessage(channelId: string, messageId: string): Promise<void> {
+    await this.request(`/api/v1/channels/${channelId}/messages/${messageId}/pin`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getPins(channelId: string): Promise<{
+    pins: PinnedMessageItem[];
+    count: number;
+    limit: number;
+  }> {
+    const dto = await this.request<{
+      pins: Array<{
+        messageId: string;
+        channelId: string;
+        sequence: number;
+        bodyPreview: string;
+        authorName: string;
+        pinnedByUserId: string;
+        pinnedByName: string;
+        pinnedAt: string;
+      }>;
+      count: number;
+      limit: number;
+    }>(`/api/v1/channels/${channelId}/pins`);
+    const limit = dto.limit ?? 20;
+    return {
+      count: dto.count ?? dto.pins?.length ?? 0,
+      limit,
+      pins: (dto.pins ?? []).map((p) => ({
+        messageId: String(p.messageId),
+        channelId: String(p.channelId),
+        sequence: p.sequence,
+        bodyPreview: p.bodyPreview,
+        authorName: p.authorName,
+        pinnedByUserId: String(p.pinnedByUserId),
+        pinnedByName: p.pinnedByName,
+        pinnedAt: p.pinnedAt,
+        limit,
+      })),
+    };
+  }
+
   async toggleReaction(
     channelId: string,
     messageId: string,
@@ -1007,6 +1072,7 @@ export class ApiService {
         me: !!r.me,
       })),
       linkPreview: this.mapLinkPreview(m.linkPreview),
+      isPinned: !!m.isPinned,
     };
   }
 

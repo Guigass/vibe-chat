@@ -112,6 +112,13 @@ export interface ReactionChangedEvent {
   topUsers?: string[];
 }
 
+export interface PinChangedEvent {
+  messageId: string;
+  channelId: string;
+  pinned: boolean;
+  byUserId: string;
+}
+
 export interface AttachmentThumbnailReadyEvent {
   attachmentId: string;
   channelId: string;
@@ -142,6 +149,13 @@ interface ReactionChangedPayload {
   added?: boolean;
   topUsers?: string[];
   reactions?: Array<{ emoji: string; count: number; userIds?: string[]; me?: boolean }>;
+}
+
+interface PinChangedPayload {
+  messageId?: string;
+  channelId?: string;
+  pinned?: boolean;
+  byUserId?: string;
 }
 
 interface AttachmentThumbnailReadyPayload {
@@ -193,6 +207,7 @@ export class ChatHubService {
   private readonly editedHandlers = new Set<(event: MessageEditEvent) => void>();
   private readonly deletedHandlers = new Set<(event: MessageDeleteEvent) => void>();
   private readonly reactionHandlers = new Set<(event: ReactionChangedEvent) => void>();
+  private readonly pinHandlers = new Set<(event: PinChangedEvent) => void>();
   private readonly presenceHandlers = new Set<(event: PresenceChangedEvent) => void>();
   private readonly reconnectedHandlers = new Set<() => void | Promise<void>>();
   private readonly thumbnailReadyHandlers = new Set<(event: AttachmentThumbnailReadyEvent) => void>();
@@ -356,6 +371,20 @@ export class ChatHubService {
         }),
       };
       for (const handler of this.reactionHandlers) {
+        handler(event);
+      }
+    });
+
+    connection.on('PinChanged', (raw: PinChangedPayload | string) => {
+      const payload = this.coercePayload<PinChangedPayload>(raw);
+      if (!payload?.messageId || !payload.channelId) return;
+      const event: PinChangedEvent = {
+        messageId: String(payload.messageId),
+        channelId: String(payload.channelId),
+        pinned: !!payload.pinned,
+        byUserId: String(payload.byUserId ?? ''),
+      };
+      for (const handler of this.pinHandlers) {
         handler(event);
       }
     });
@@ -610,6 +639,11 @@ export class ChatHubService {
   onReactionChanged(handler: (event: ReactionChangedEvent) => void): () => void {
     this.reactionHandlers.add(handler);
     return () => this.reactionHandlers.delete(handler);
+  }
+
+  onPinChanged(handler: (event: PinChangedEvent) => void): () => void {
+    this.pinHandlers.add(handler);
+    return () => this.pinHandlers.delete(handler);
   }
 
   onAttachmentThumbnailReady(handler: (event: AttachmentThumbnailReadyEvent) => void): () => void {

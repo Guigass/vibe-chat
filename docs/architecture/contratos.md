@@ -196,6 +196,22 @@ Validação ocorre em `POST .../messages`, `POST .../threads/{threadId}/messages
 
 `MessageDto.reactions`: `{ emoji, count, me }[]` (agregado no history/thread). Outbox `ReactionChangedEvent` → hub `ReactionChanged` no grupo do canal pai (`messageId`, `emoji`, `userId`, `added`, `topUsers`, `reactions`).
 
+### Mensagens fixadas (B-092)
+
+| Artefato | Contrato |
+|----------|----------|
+| Tabela | `messaging.pinned_messages` (`TenantId`, `ChannelId`, `MessageId`, `PinnedByUserId`, `PinnedAt`); unique `(TenantId, ChannelId, MessageId)`; limite **20** por canal |
+| `POST /api/v1/channels/{channelId}/messages/{messageId}/pin` | Membership + `message.pin`; mensagem do mesmo canal (não thread reply) → senão **400**; idempotente se já fixada; **400** `PinLimitReached` na 21ª |
+| `DELETE /api/v1/channels/{channelId}/messages/{messageId}/pin` | Membership + `message.pin`; **204** se removida ou já ausente |
+| `GET /api/v1/channels/{channelId}/pins` | Membership + `message.read`; lista `{ messageId, sequence, bodyPreview, authorName, pinnedByUserId, pinnedByName, pinnedAt }[]` + `{ count, limit }` |
+| Hub | Outbox `PinChangedEvent` → `PinChanged` (`messageId`, `pinned`, `byUserId`) |
+| Audit | `message.pin` / `message.unpin` |
+| Sistema | Fixar/desafixar insere mensagem com corpo `<system:pin:{messageId}>` / `<system:unpin:{messageId}>` (transparência no canal) |
+| Cascata | Soft-delete remove pin da lista e emite `PinChanged pinned=false` |
+| `MessageDto` | `isPinned: bool` no history |
+
+Permissão `message.pin` (default: Member, Moderator, Admin, Bot — não Guest/Auditor).
+
 ### Menções (B-082)
 
 | Artefato | Contrato |

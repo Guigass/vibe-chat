@@ -104,6 +104,23 @@ describe('MessageBubble (B-163)', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="msg-toolbar"]')).toBeNull();
   });
 
+  it('keeps reaction aria-label prefixed with Reação even after tooltip loads', async () => {
+    const { fixture } = await setup(
+      baseMessage({
+        reactions: [{ emoji: '👍', count: 1, me: false }],
+      }),
+    );
+    const cmp = fixture.componentInstance;
+    expect(cmp.reactionAriaLabel('👍')).toBe('Reação 👍');
+    cmp.reactionTooltips.set({ '👍': 'Bob' });
+    fixture.detectChanges();
+    expect(cmp.reactionAriaLabel('👍')).toBe('Reação 👍: Bob');
+    const button = fixture.nativeElement.querySelector(
+      '.vc-msg__reactions button',
+    ) as HTMLButtonElement;
+    expect(button.getAttribute('aria-label')).toMatch(/^Reação 👍/);
+  });
+
   it('filters more-menu affordance by mine / action flags', async () => {
     const theirs = await setup(baseMessage({ mine: false }), {
       showForwardAction: false,

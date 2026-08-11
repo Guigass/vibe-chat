@@ -68,6 +68,7 @@ import { environment } from '../../../../environments/environment';
       [class.vc-msg--group-end]="groupRole() === 'end'"
       [class.vc-msg--grouped]="groupRole() === 'middle' || groupRole() === 'end'"
       [class.vc-msg--mentioned]="message().mentionsMe"
+      [class.vc-msg--pinned]="message().isPinned"
       [class.vc-msg--deleted]="!!message().deletedAt"
       [class.vc-msg--highlight]="highlighted()"
       [attr.data-status]="message().status"
@@ -103,6 +104,9 @@ import { environment } from '../../../../environments/environment';
               <time [attr.datetime]="message().createdAt">{{ message().createdAt | date: 'shortTime' }}</time>
               @if (message().editedAt && !message().deletedAt) {
                 <span class="vc-msg__status">editada</span>
+              }
+              @if (message().isPinned && !message().deletedAt) {
+                <span class="vc-msg__status vc-msg__status--pin" aria-label="Mensagem fixada">fixada</span>
               }
               @if (message().status === 'sending') {
                 <span class="vc-msg__status">enviando…</span>
@@ -233,7 +237,7 @@ import { environment } from '../../../../environments/environment';
                         type="button"
                         [class.active]="reaction.me"
                         [attr.aria-pressed]="reaction.me"
-                        [attr.aria-label]="reactionTooltip(reaction.emoji) || ('Reação ' + reaction.emoji)"
+                        [attr.aria-label]="reactionAriaLabel(reaction.emoji)"
                         [title]="reactionTooltip(reaction.emoji)"
                         (mouseenter)="loadReactionTooltip(reaction.emoji)"
                         (focus)="loadReactionTooltip(reaction.emoji)"
@@ -823,6 +827,7 @@ export class MessageBubble {
   readonly showThreadAction = input(false);
   readonly showReplyAction = input(false);
   readonly showForwardAction = input(false);
+  readonly showPinAction = input(false);
   readonly highlighted = input(false);
   readonly edit = output<string>();
   readonly delete = output<void>();
@@ -832,6 +837,8 @@ export class MessageBubble {
   readonly forward = output<void>();
   readonly quoteClick = output<string>();
   readonly react = output<string>();
+  readonly pin = output<void>();
+  readonly unpin = output<void>();
 
   readonly editing = signal(false);
   readonly draft = signal('');
@@ -865,6 +872,8 @@ export class MessageBubble {
       mine: this.message().mine,
       showForward: this.showForwardAction(),
       showThread: this.showThreadAction(),
+      showPin: this.showPinAction(),
+      isPinned: !!this.message().isPinned,
       replyCount: this.message().replyCount,
       hasLinkPreview: !!this.visibleLinkPreview(),
     }),
@@ -1029,6 +1038,12 @@ export class MessageBubble {
     return this.reactionTooltips()[emoji] ?? '';
   }
 
+  /** Stable accessible name — never replace "Reação {emoji}" with tooltip-only text. */
+  reactionAriaLabel(emoji: string): string {
+    const tip = this.reactionTooltip(emoji);
+    return tip ? `Reação ${emoji}: ${tip}` : `Reação ${emoji}`;
+  }
+
   async loadReactionTooltip(emoji: string): Promise<void> {
     if (this.reactionTooltips()[emoji]) return;
     const channelId = this.message().channelId;
@@ -1061,6 +1076,12 @@ export class MessageBubble {
         break;
       case 'delete':
         this.delete.emit();
+        break;
+      case 'pin':
+        this.pin.emit();
+        break;
+      case 'unpin':
+        this.unpin.emit();
         break;
     }
   }

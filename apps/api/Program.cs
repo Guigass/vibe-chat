@@ -2061,6 +2061,205 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}/reactions", asyn
     return Results.Ok(new ToggleReactionResponse(messageId, channelId, emoji, added, summaries));
 });
 
+v1.MapPost("/channels/{channelId:guid}/messages/{messageId:guid}/pin", async (
+    Guid channelId,
+    Guid messageId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IOutboxWriter outbox,
+    IAuditWriter audit,
+    IConversationSequenceStore sequences,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Pin, ct))
+    {
+        return Results.Forbid();
+    }
+
+    var message = await FindDirectChannelMessageAsync(db, channel.Id, new MessageId(messageId), ct);
+    if (message is null)
+    {
+        return Results.BadRequest(new { error = "WrongChannel", message = "A mensagem não pertence a este canal." });
+    }
+
+    if (message.DeletedAt is not null)
+    {
+        return Results.NotFound();
+    }
+
+    var existing = await db.PinnedMessages.FirstOrDefaultAsync(
+        x => x.ChannelId == channel.Id && x.MessageId == message.Id,
+        ct);
+    if (existing is not null)
+    {
+        return Results.Ok(new PinMessageResponse(messageId, channelId, true, await CountPinsAsync(db, channel.Id, ct)));
+    }
+
+    var count = await CountPinsAsync(db, channel.Id, ct);
+    if (count >= PinPolicies.MaxPinnedPerChannel)
+    {
+        return Results.BadRequest(new
+        {
+            error = "PinLimitReached",
+            message = $"Limite de {PinPolicies.MaxPinnedPerChannel} mensagens fixadas atingido. Desafixe uma antes de continuar.",
+            limit = PinPolicies.MaxPinnedPerChannel,
+            count
+        });
+    }
+
+    db.PinnedMessages.Add(new PinnedMessage
+    {
+        Id = Guid.NewGuid(),
+        TenantId = channel.TenantId,
+        ChannelId = channel.Id,
+        MessageId = message.Id,
+        PinnedByUserId = profile.Id,
+        PinnedAt = clock.UtcNow
+    });
+
+    await EmitPinChangedAsync(outbox, channel.TenantId, channel.Id, message.Id, profile.Id, pinned: true);
+    audit.Add(new AuditEvent
+    {
+        TenantId = channel.TenantId,
+        ActorUserId = profile.Id,
+        Action = AuditActions.MessagePin,
+        EntityType = "Message",
+        EntityId = message.Id.ToString(),
+        MetadataJson = JsonSerializer.Serialize(new { channelId, messageId })
+    });
+
+    var actorName = profile.DisplayName;
+    await AppendPinSystemEventAsync(
+        db, sequences, outbox, clock, channel.TenantId, channel.Id, profile.Id, actorName, message.Id, pinned: true, ct);
+
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new PinMessageResponse(messageId, channelId, true, count + 1));
+});
+
+v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}/pin", async (
+    Guid channelId,
+    Guid messageId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IOutboxWriter outbox,
+    IAuditWriter audit,
+    IConversationSequenceStore sequences,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Pin, ct))
+    {
+        return Results.Forbid();
+    }
+
+    var message = await FindDirectChannelMessageAsync(db, channel.Id, new MessageId(messageId), ct);
+    if (message is null)
+    {
+        return Results.BadRequest(new { error = "WrongChannel", message = "A mensagem não pertence a este canal." });
+    }
+
+    var pin = await db.PinnedMessages.FirstOrDefaultAsync(
+        x => x.ChannelId == channel.Id && x.MessageId == message.Id,
+        ct);
+    if (pin is null)
+    {
+        return Results.NoContent();
+    }
+
+    db.PinnedMessages.Remove(pin);
+    await EmitPinChangedAsync(outbox, channel.TenantId, channel.Id, message.Id, profile.Id, pinned: false);
+    audit.Add(new AuditEvent
+    {
+        TenantId = channel.TenantId,
+        ActorUserId = profile.Id,
+        Action = AuditActions.MessageUnpin,
+        EntityType = "Message",
+        EntityId = message.Id.ToString(),
+        MetadataJson = JsonSerializer.Serialize(new { channelId, messageId })
+    });
+
+    var actorName = profile.DisplayName;
+    await AppendPinSystemEventAsync(
+        db, sequences, outbox, clock, channel.TenantId, channel.Id, profile.Id, actorName, message.Id, pinned: false, ct);
+
+    await db.SaveChangesAsync(ct);
+    return Results.NoContent();
+});
+
+v1.MapGet("/channels/{channelId:guid}/pins", async (
+    Guid channelId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Read, ct))
+    {
+        return Results.Forbid();
+    }
+
+    var rawRows = await (
+        from pin in db.PinnedMessages.AsNoTracking()
+        join msg in db.Messages.AsNoTracking() on pin.MessageId equals msg.Id
+        join author in db.UserProfiles.AsNoTracking() on msg.AuthorId equals author.Id
+        join pinner in db.UserProfiles.AsNoTracking() on pin.PinnedByUserId equals pinner.Id
+        where pin.ChannelId == channel.Id && msg.DeletedAt == null
+        orderby pin.PinnedAt descending
+        select new
+        {
+            pin.MessageId,
+            msg.Sequence,
+            msg.Body,
+            AuthorName = author.DisplayName,
+            pin.PinnedByUserId,
+            PinnedByName = pinner.DisplayName,
+            pin.PinnedAt
+        })
+        .ToArrayAsync(ct);
+
+    var rows = rawRows
+        .Select(x => new PinnedMessageResponse(
+            x.MessageId.Value,
+            channel.Id.Value,
+            x.Sequence,
+            TruncateReplyPreview(x.Body),
+            x.AuthorName,
+            x.PinnedByUserId.Value,
+            x.PinnedByName,
+            x.PinnedAt))
+        .ToArray();
+
+    return Results.Ok(new ChannelPinsResponse(rows, rows.Length, PinPolicies.MaxPinnedPerChannel));
+});
+
 v1.MapGet("/channels/{channelId:guid}/messages/{messageId:guid}/reactions/{emoji}/users", async (
     Guid channelId,
     Guid messageId,
@@ -2150,6 +2349,16 @@ v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid
 
     message.DeletedAt = clock.UtcNow;
     message.DeletedBy = profile.Id;
+
+    var pin = await db.PinnedMessages.FirstOrDefaultAsync(
+        x => x.ChannelId == channel.Id && x.MessageId == message.Id,
+        ct);
+    if (pin is not null)
+    {
+        db.PinnedMessages.Remove(pin);
+        await EmitPinChangedAsync(outbox, channel.TenantId, channel.Id, message.Id, profile.Id, pinned: false);
+    }
+
     outbox.Add(new OutboxMessage
     {
         TenantId = channel.TenantId,
@@ -3812,6 +4021,96 @@ static async Task<Dictionary<ChannelId, DirectPeerInfo>> ResolveDirectPeersAsync
     return result;
 }
 
+static async Task<Message?> FindDirectChannelMessageAsync(
+    VibeChatDbContext db,
+    ChannelId channelId,
+    MessageId messageId,
+    CancellationToken ct) =>
+    await db.Messages.FirstOrDefaultAsync(
+        x => x.Id == messageId && x.ConversationId == channelId,
+        ct);
+
+static Task<int> CountPinsAsync(VibeChatDbContext db, ChannelId channelId, CancellationToken ct) =>
+    db.PinnedMessages.CountAsync(x => x.ChannelId == channelId, ct);
+
+static Task EmitPinChangedAsync(
+    IOutboxWriter outbox,
+    TenantId tenantId,
+    ChannelId channelId,
+    MessageId messageId,
+    UserId byUserId,
+    bool pinned)
+{
+    outbox.Add(new OutboxMessage
+    {
+        TenantId = tenantId,
+        Type = nameof(PinChangedEvent),
+        Payload = JsonSerializer.Serialize(new
+        {
+            tenantId = tenantId.Value,
+            channelId = channelId.Value,
+            messageId = messageId.Value,
+            pinned,
+            byUserId = byUserId.Value
+        })
+    });
+    return Task.CompletedTask;
+}
+
+static async Task AppendPinSystemEventAsync(
+    VibeChatDbContext db,
+    IConversationSequenceStore sequences,
+    IOutboxWriter outbox,
+    IClock clock,
+    TenantId tenantId,
+    ChannelId channelId,
+    UserId actorId,
+    string actorName,
+    MessageId targetMessageId,
+    bool pinned,
+    CancellationToken ct)
+{
+    var systemMessageId = new MessageId(Guid.NewGuid());
+    var sequence = await sequences.NextAsync(tenantId, channelId, ct);
+    var now = clock.UtcNow;
+    var body = pinned
+        ? SystemEventTokens.PinBody(targetMessageId)
+        : SystemEventTokens.UnpinBody(targetMessageId);
+
+    db.Messages.Add(new Message
+    {
+        Id = systemMessageId,
+        TenantId = tenantId,
+        ConversationId = channelId,
+        Sequence = sequence,
+        AuthorId = actorId,
+        Body = body,
+        CreatedAt = now
+    });
+
+    outbox.Add(new OutboxMessage
+    {
+        TenantId = tenantId,
+        Type = nameof(MessageCreatedEvent),
+        Payload = JsonSerializer.Serialize(new
+        {
+            tenantId = tenantId.Value,
+            channelId = channelId.Value,
+            conversationId = channelId.Value,
+            messageId = systemMessageId.Value,
+            clientMessageId = systemMessageId.Value,
+            authorId = actorId.Value,
+            authorName = actorName,
+            sequence,
+            body,
+            createdAt = now,
+            mentionedUserIds = Array.Empty<Guid>(),
+            mentionKinds = Array.Empty<string>(),
+            attachments = Array.Empty<object>()
+        })
+    });
+}
+
 static async Task<Message?> FindMessageInChannelAsync(
     VibeChatDbContext db,
     ChannelId channelId,
@@ -4100,6 +4399,12 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
         profile.Id,
         ct);
     var linkPreviewByMessage = await LoadLinkPreviewsByMessageAsync(db, messageIds, ct);
+    var pinnedIds = messageIds.Length == 0
+        ? new HashSet<Guid>()
+        : (await db.PinnedMessages.AsNoTracking()
+            .Where(x => x.ChannelId == channel.Id && messageIds.Contains(x.MessageId))
+            .Select(x => x.MessageId.Value)
+            .ToListAsync(ct)).ToHashSet();
 
     var messages = rows.Select(x => new MessageResponse(
         x.Id.Value,
@@ -4121,7 +4426,8 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
         x.ForwardedFromMessageId?.Value,
         x.ForwardedFromChannelId?.Value,
         x.ForwardedFromMessageId is MessageId ffid && forwardedFromById.TryGetValue(ffid.Value, out var forwarded) ? forwarded : null,
-        x.DeletedAt == null && linkPreviewByMessage.TryGetValue(x.Id.Value, out var preview) ? preview : null)).ToArray();
+        x.DeletedAt == null && linkPreviewByMessage.TryGetValue(x.Id.Value, out var preview) ? preview : null,
+        pinnedIds.Contains(x.Id.Value))).ToArray();
 
     return new ChannelMessagesResponse(messages, hasMoreBefore, hasMoreAfter);
 }
@@ -4463,7 +4769,23 @@ public sealed record MessageResponse(
     Guid? ForwardedFromMessageId = null,
     Guid? ForwardedFromChannelId = null,
     ForwardedFromResponse? ForwardedFrom = null,
-    LinkPreviewResponse? LinkPreview = null);
+    LinkPreviewResponse? LinkPreview = null,
+    bool IsPinned = false);
+
+public sealed record PinMessageResponse(Guid MessageId, Guid ChannelId, bool Pinned, int PinCount);
+public sealed record PinnedMessageResponse(
+    Guid MessageId,
+    Guid ChannelId,
+    long Sequence,
+    string BodyPreview,
+    string AuthorName,
+    Guid PinnedByUserId,
+    string PinnedByName,
+    DateTimeOffset PinnedAt);
+public sealed record ChannelPinsResponse(
+    PinnedMessageResponse[] Pins,
+    int Count,
+    int Limit);
 
 public sealed record LinkPreviewResponse(
     Guid Id,

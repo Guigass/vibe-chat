@@ -50,6 +50,63 @@ public sealed class Reaction
     public DateTimeOffset CreatedAt { get; set; }
 }
 
+public sealed class PinnedMessage
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public ChannelId ChannelId { get; set; }
+    public MessageId MessageId { get; set; }
+    public UserId PinnedByUserId { get; set; }
+    public DateTimeOffset PinnedAt { get; set; }
+}
+
+public static class PinPolicies
+{
+    public const int MaxPinnedPerChannel = 20;
+}
+
+public static class SystemEventTokens
+{
+    public const string PinPrefix = "<system:pin:";
+    public const string UnpinPrefix = "<system:unpin:";
+
+    public static string PinBody(MessageId messageId) => $"{PinPrefix}{messageId.Value}>";
+
+    public static string UnpinBody(MessageId messageId) => $"{UnpinPrefix}{messageId.Value}>";
+
+    public static bool TryParse(string body, out bool pinned, out Guid targetMessageId)
+    {
+        pinned = false;
+        targetMessageId = Guid.Empty;
+        if (string.IsNullOrEmpty(body))
+        {
+            return false;
+        }
+
+        if (body.StartsWith(PinPrefix, StringComparison.Ordinal) && body.EndsWith('>'))
+        {
+            var raw = body[PinPrefix.Length..^1];
+            if (Guid.TryParse(raw, out targetMessageId) && targetMessageId != Guid.Empty)
+            {
+                pinned = true;
+                return true;
+            }
+        }
+
+        if (body.StartsWith(UnpinPrefix, StringComparison.Ordinal) && body.EndsWith('>'))
+        {
+            var raw = body[UnpinPrefix.Length..^1];
+            if (Guid.TryParse(raw, out targetMessageId) && targetMessageId != Guid.Empty)
+            {
+                pinned = false;
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 public enum MentionKind
 {
     User = 0,
@@ -284,6 +341,13 @@ public sealed record ReactionChangedEvent(
     UserId UserId,
     string Emoji,
     bool Added) : IntegrationEvent(TenantId);
+
+public sealed record PinChangedEvent(
+    TenantId TenantId,
+    ChannelId ChannelId,
+    MessageId MessageId,
+    UserId ByUserId,
+    bool Pinned) : IntegrationEvent(TenantId);
 
 public interface IConversationSequenceStore
 {

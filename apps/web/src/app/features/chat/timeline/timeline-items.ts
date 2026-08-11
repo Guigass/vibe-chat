@@ -1,4 +1,5 @@
 import { ChatMessage } from '../../../shared/models/chat.models';
+import { isSystemEventBody, parseSystemEventBody, formatSystemEventLabel } from '../../../shared/system-event';
 
 export const GROUP_WINDOW_MS = 5 * 60 * 1000;
 
@@ -27,7 +28,6 @@ export type TimelineMessageItem = {
   showAvatar: boolean;
 };
 
-/** One visual bubble that may contain several consecutive same-author messages. */
 export type TimelineStackItem = {
   kind: 'stack';
   id: string;
@@ -35,7 +35,18 @@ export type TimelineStackItem = {
   messages: TimelineMessageItem[];
 };
 
-export type TimelineItem = TimelineDayItem | TimelineUnreadItem | TimelineStackItem;
+export type TimelineSystemItem = {
+  kind: 'system';
+  id: string;
+  label: string;
+  createdAt: string;
+};
+
+export type TimelineItem =
+  | TimelineDayItem
+  | TimelineUnreadItem
+  | TimelineStackItem
+  | TimelineSystemItem;
 
 export type BuildTimelineItemsOptions = {
   unreadCount?: number;
@@ -122,7 +133,7 @@ export function buildTimelineItems(
       ? options.dividerAfterSeq
       : unreadDividerAfterSeq(messages, options.unreadCount ?? 0);
 
-  const flat: Array<TimelineDayItem | TimelineUnreadItem | TimelineMessageItem> = [];
+  const flat: Array<TimelineDayItem | TimelineUnreadItem | TimelineMessageItem | TimelineSystemItem> = [];
   let lastDateKey: string | null = null;
   let unreadInserted = false;
 
@@ -155,6 +166,19 @@ export function buildTimelineItems(
       unreadInserted = true;
     }
 
+    if (!message.deletedAt && isSystemEventBody(message.body)) {
+      const parsed = parseSystemEventBody(message.body);
+      if (parsed) {
+        flat.push({
+          kind: 'system',
+          id: `system-${message.id}`,
+          label: formatSystemEventLabel(message.authorName, parsed),
+          createdAt: message.createdAt,
+        });
+        continue;
+      }
+    }
+
     const group = groupRoleAt(messages, i);
     const showMeta = group === 'start' || group === 'single';
     flat.push({
@@ -172,7 +196,7 @@ export function buildTimelineItems(
 
 /** Merge consecutive message items into shared-bubble stacks; break on day/unread. */
 export function coalesceMessageStacks(
-  items: ReadonlyArray<TimelineDayItem | TimelineUnreadItem | TimelineMessageItem>,
+  items: ReadonlyArray<TimelineDayItem | TimelineUnreadItem | TimelineMessageItem | TimelineSystemItem>,
 ): TimelineItem[] {
   const out: TimelineItem[] = [];
   let pending: TimelineMessageItem[] = [];
