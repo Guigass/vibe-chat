@@ -31,7 +31,7 @@ Regras do registro:
 | BUG-008 | Presence         | Minimizar a janela marca ausente na hora                              | Média      | Aberto                      |
 | BUG-010 | Timeline / scroll | Ao abrir a conversa não rola até as mensagens mais recentes          | Média      | Aberto                      |
 | BUG-011 | Admin / shell    | Membros não veem o botão Admin                                        | Média      | Aberto                      |
-| BUG-012 | Timeline / bolha | Toolbar de ações no hover mal posicionada em mensagens curtas agrupadas | Média      | Aberto                      |
+| BUG-012 | Timeline / bolha | Toolbar de hover fica em cima da mensagem (texto, reações, cabeçalho) | Média      | Aberto                      |
 | BUG-013 | Timeline / pins  | “Ir até” mensagem fixada buga o scroll da timeline                      | Média      | Aberto                      |
 | BUG-014 | Timeline / áudio | Bolha de áudio não mostra as waves do áudio tocando                     | Média      | Aberto                      |
 
@@ -316,45 +316,67 @@ Regras do registro:
   produto quiser esconder Admin de Member, documentar e alinhar B-106 —
   senão garantir visibilidade do link + empty-state.
 
-### BUG-012 — Toolbar de hover desalinhada em bolhas agrupadas
+### BUG-012 — Toolbar de hover fica em cima das mensagens
 
 - Status: **Aberto**
-- Observado em: relato de produto, 2026-08-10 — ao passar o mouse sobre
-  mensagens **curtas** dentro de um **stack agrupado** (B-088), a toolbar de
-  reações/responder/⋯ aparece longe do texto ou sobrepondo a linha anterior;
-  pior em `groupRole` `middle`/`end`, onde o padding vertical é reduzido.
-- Hipótese: em `surface='plain'` (timeline stack) a toolbar usa
-  `position: absolute` com `top: 0.35rem; right: 0; transform: translate(0.35rem, -100%)`
-  ancorada ao `.vc-msg__column`, que herda a largura do stack
-  (`timeline__stack-body` com `width: max-content`). Em mensagem curta num
-  bloco mais largo, o `right: 0` cola a barra na borda direita do stack — não
-  ao fim do texto. O deslocamento `-100%` para cima, somado ao padding
-  comprimido entre linhas agrupadas, faz a barra invadir a mensagem de cima ou
-  flutuar no vazio acima da linha.
+- Observado em: relato de produto + capturas no lab Compose (`localhost:4200`),
+  2026-08-10 / 2026-08-11 — no hover, a barra de reações rápidas + **Responder**
+  + ⋯ **não fica ao lado/acima da bolha de forma limpa**; cobre o conteúdo da
+  própria mensagem. Sintomas vistos nas capturas:
+  1. **Cobre o corpo** — barra atravessa o meio/fundo da bolha (ex.: Alice
+     “opaaa / falara galera / ta paz?”), obscurecendo a última linha e o
+     badge de reação (✅ 1).
+  2. **Cobre o topo** — em bolhas mine (ex.: “Olaaa”, “Demo / opaaa”) a barra
+     corta a borda superior ou inferior da bolha teal; cabeçalho/texto ficam
+     parcialmente ilegíveis.
+  3. **Mensagem curta some atrás** — em uma palavra (ex.: “ae”) a toolbar
+     ocupa quase toda a bolha; o texto quase desaparece sob a barra.
+  4. **Âncora solta no stack** — em timeline agrupada (B-088) a barra flutua
+     no vazio entre linhas / perto do divisor da sidebar, longe do texto
+     hoverado (ex.: pill `e2e-hist-…` e barra acima da bolha da Alice),
+     parecendo “solta” em cima do fluxo.
+  Percepção de produto: “não fica legal, fica em cima das msgs — dá para
+  melhorar muito.”
+- Hipótese (duas âncoras quebradas no mesmo componente):
+  - Bolha padrão (`.vc-msg__toolbar`): `position: absolute; top: -0.45rem` e,
+    no hover, `transform: translateY(0)` — a barra **permanece sobreposta** à
+    borda da bolha em vez de sair do retângulo do conteúdo.
+  - Superfície `plain` / stack (`.vc-msg--plain .vc-msg__toolbar`):
+    `top: 0.35rem; right: 0; transform: translate(0.35rem, -100%)` ancorada em
+    `.vc-msg__column`, que herda a largura do
+    `timeline__stack-body` (`width: max-content`). Em linha curta dentro de
+    bloco mais largo, `right: 0` cola a barra na borda do **stack**, não do
+    texto; o `-100%` + padding comprimido em `groupRole` `middle`/`end` faz a
+    barra invadir a linha de cima, cobrir a própria linha ou flutuar no vazio.
 - Arquivos: `apps/web/src/app/shared/ui/message-bubble/message-bubble.ts`
-  (`.vc-msg__toolbar`, variantes `--plain` / `--grouped`),
+  (`.vc-msg__toolbar`, variantes `--plain` / `--grouped` / mine|theirs),
   `apps/web/src/app/features/chat/timeline/timeline.ts`
   (`.timeline__stack-body`), `timeline-items.ts` (agrupamento B-088).
-- Resultado esperado: hover/focus revela toolbar **adjacente** ao conteúdo da
-  linha (inline-end do texto ou canto superior direito da bolha visível), sem
-  sobrepor outras mensagens do mesmo stack; comportamento estável em mine/theirs,
-  mensagem curta/longa e touch (long-press / ⋯).
+  Spec de intenção: B-163 (toolbar discreta no hover, sem chrome em cima do
+  conteúdo).
+- Resultado esperado: hover/focus revela toolbar **fora** do retângulo legível
+  da mensagem — tipicamente acima ou no inline-end da bolha/linha, com folga
+  clara — sem cobrir texto, nome/hora, badge de reação nem linha vizinha do
+  stack; estável em mine/theirs, curta/longa, agrupada e touch (long-press / ⋯).
 - Risk class: R1.
 - Owner automático: Frontend (D).
-- Critério de resolução: regressão visual/unit ou E2E cobrindo stack com linha
-  curta após linha longa; toolbar não sobrepõe linha vizinha; finding `Done`.
+- Critério de resolução: regressão visual/unit ou E2E com (a) bolha curta,
+  (b) bolha multi-linha com reação, (c) stack com linha curta após linha longa;
+  em todos, a toolbar não intersecta o texto nem o badge de reação;
+  finding `Done`.
 - Próxima ação (direções de solução, escolher uma ou combinar):
-  1. **Ancorar à largura do conteúdo** — coluna da bolha com `width: fit-content`
-     / `max-width: 100%` por linha, ou toolbar posicionada em relação a
-     `.vc-msg__body` (não à coluna do stack inteiro).
-  2. **Toolbar no nível do stack** — uma barra por entrada do stack no hover da
-     linha ativa, evitando N toolbars absolutas com `translateY(-100%)`.
-  3. **Posicionamento adaptativo** — CDK overlay / `position: fixed` com flip
-     (acima · ao lado · abaixo) conforme espaço e altura da linha; fallback
-     lateral para mensagens de uma palavra.
-  4. **Agrupadas `middle`/`end`** — preferir deslocamento horizontal
-     (`inline-end` da linha) em vez de flutuar acima quando a linha é mais baixa
-     que a toolbar.
+  1. **Sair do retângulo da bolha** — offset negativo real no eixo Y (ou
+     `bottom: 100%` + gap) no hover padrão, sem `top: -0.45rem` + `translateY(0)`
+     que deixa a barra dentro da área útil.
+  2. **Ancorar à largura do conteúdo** — coluna/`body` com `width: fit-content`
+     por linha, ou toolbar relativa a `.vc-msg__body` (não à coluna do stack).
+  3. **Toolbar no nível do stack** — uma barra por entrada ativa no hover,
+     evitando N absolutas com `translateY(-100%)` desalinhadas.
+  4. **Posicionamento adaptativo** — CDK overlay / fixed com flip
+     (acima · ao lado · abaixo) conforme espaço; fallback lateral em mensagem
+     de uma palavra.
+  5. **Agrupadas `middle`/`end`** — preferir âncora horizontal (`inline-end`)
+     quando a linha for mais baixa que a toolbar.
 
 ### BUG-013 — “Ir até” mensagem fixada buga o scroll
 
