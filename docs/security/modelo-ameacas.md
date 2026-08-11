@@ -168,6 +168,7 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | E2EE | Recuperação de conta, moderação e compliance incompatíveis | D-26; modelo formal antes de qualquer implementação persistente |
 | Canvas colaborativo | AuthZ por bloco, conflito, histórico e export incompletos | D-17; modelo de permissão e retenção antes de CRDT/OT |
 | Migração/import | Archive hostil, duplicação, papel falso e cross-tenant | B-153; staging, dry-run, adapters versionados, scan e quotas |
+| Backup de chat / destinos | Credencial de destino vazada; exfiltração; import hostil; confusão com dump de infra | B-172; flag off default, secrets mascarados, dry-run, audit, destinos OSS |
 | Diagnóstico/support | Bundle com secret/PII ou repair perigoso | B-154; schema allowlisted, scan, TTL, capability e dry-run |
 
 Ver também: [`multi-tenant.md`](multi-tenant.md) e

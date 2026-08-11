@@ -11,7 +11,7 @@ Snapshot de 2026-07-27, após D-28:
 | Controle | Resultado |
 |----------|-----------|
 | Decisões de produto | D-01…D-28, 28 IDs únicos, nenhuma aberta |
-| Itens de produto `Planned` | 87 entre W7 e W17 (B-171 em W9-9; B-170 catalogado em W16; B-169 em W14; B-168 em W9-8; B-167 em W11; B-165/W7-9 Done em 2026-08-10) |
+| Itens de produto `Planned` | 88 entre W7 e W17 (B-172 em W16 — backup de chat/destinos; B-171 em W9-9; B-170 em W16; B-169 em W14; B-168 em W9-8; B-167 em W11; B-165/W7-9 Done em 2026-08-10) |
 | Specs de itens `Planned` | correspondência 1:1 |
 | IDs `Planned` sem spec | 0 |
 | Specs sem item `Planned` | 0 |

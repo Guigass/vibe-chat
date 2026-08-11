@@ -83,6 +83,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Features:MeetingAi:Enabled` | workspace | false | B-149 | sem transcrição/notas |
 | `Features:CanvasRealtime:Enabled` | workspace | false | B-152 | páginas server-authoritative |
 | `Features:Import:Enabled` | instance | false | B-153 | onboarding/template manual |
+| `Features:ChatBackup:Enabled` | instance | false | B-172 | export pontual B-046 + scripts B-031 |
 | `Features:SupportBundle:Enabled` | instance | false | B-154 | health/runbooks permanecem |
 
 Nomes de binding podem mudar no ADR, mas semântica/default não muda

@@ -147,6 +147,7 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-170 | [Performance e escalabilidade](B-170-performance-escalabilidade.md) |
 | B-143 | [Offline sync](B-143-offline-sync.md) |
 | B-145 | [Lifecycle e quotas de storage](B-145-lifecycle-storage.md) |
+| B-172 | [Backup de chat (export/import, tarefas e destinos)](B-172-backup-chat-destinos.md) |
 | B-144 | [HA e rolling upgrade](B-144-ha-rolling-upgrade.md) |
 | B-065 | [Federação](B-065-federacao.md) |
 | B-064 | [Canais E2EE](B-064-canais-e2ee.md) |

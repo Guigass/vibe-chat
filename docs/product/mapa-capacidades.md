@@ -55,6 +55,7 @@ organiza. Estados:
 | Capacidade | Estado | Próximo passo |
 |------------|--------|---------------|
 | Papéis, audit, export, retenção | Atual | Hardening contínuo |
+| Backup de chat (tarefas + destinos) | Planned | B-172 / W16 |
 | Guests restritos e políticas de edição | Committed | Wave 10 |
 | SCIM e sincronização de grupos | Planned | B-128 / W13 |
 | Legal hold e eDiscovery | Planned | B-129 / W14 |
@@ -90,6 +91,7 @@ organiza. Estados:
 | Offline sync real | Planned | B-143 / W16 |
 | HA e rolling upgrade | Planned | B-144 / W16 |
 | Lifecycle de storage/CDN | Planned | B-145 / W16 |
+| Backup de chat (tarefas + destinos remotos) | Planned | B-172 / W16 |
 | Benchmarks e SLOs por porte | Planned | B-146 / W14 |
 | Revisão de performance e escalabilidade | Planned | B-170 / W16 |
 | Federação entre instâncias | Planned | B-065 / W16 |
