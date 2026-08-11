@@ -227,98 +227,98 @@ public sealed class RuntimeSettingsAdminService(
             switch (kind)
             {
                 case RuntimeSecretKinds.OpenRouterApiKey:
-                {
-                    var row = await db.AiSettings
-                        .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId && x.WorkspaceId == workspace.Id, ct);
-                    if (row is null)
                     {
-                        row = new AiSettings
+                        var row = await db.AiSettings
+                            .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId && x.WorkspaceId == workspace.Id, ct);
+                        if (row is null)
                         {
-                            WorkspaceId = workspace.Id,
-                            TenantId = workspace.TenantId,
-                            Enabled = false,
-                            Provider = "Mock"
-                        };
-                        db.AiSettings.Add(row);
-                    }
+                            row = new AiSettings
+                            {
+                                WorkspaceId = workspace.Id,
+                                TenantId = workspace.TenantId,
+                                Enabled = false,
+                                Provider = "Mock"
+                            };
+                            db.AiSettings.Add(row);
+                        }
 
-                    envelope = protector.Protect(
-                        trimmed,
-                        RuntimeSecretKinds.OpenRouterApiKey,
-                        workspace.TenantId,
-                        workspace.Id,
-                        workspace.Id.Value.ToString("D"),
-                        now);
-                    row.OpenRouterApiKey.CopyFrom(envelope);
-                    entityType = "AiSettings";
-                    entityId = workspace.Id.Value.ToString("D");
-                    break;
-                }
+                        envelope = protector.Protect(
+                            trimmed,
+                            RuntimeSecretKinds.OpenRouterApiKey,
+                            workspace.TenantId,
+                            workspace.Id,
+                            workspace.Id.Value.ToString("D"),
+                            now);
+                        row.OpenRouterApiKey.CopyFrom(envelope);
+                        entityType = "AiSettings";
+                        entityId = workspace.Id.Value.ToString("D");
+                        break;
+                    }
                 case RuntimeSecretKinds.SmtpPassword:
-                {
-                    var row = await db.TenantEmailSettings
-                        .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
-                    if (row is null)
                     {
-                        var baseline = await emailSettings.ResolveAsync(workspace.TenantId, ct);
-                        row = new TenantEmailSettings
+                        var row = await db.TenantEmailSettings
+                            .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
+                        if (row is null)
                         {
-                            TenantId = workspace.TenantId,
-                            Enabled = baseline.Enabled,
-                            Host = baseline.Host,
-                            Port = baseline.Port,
-                            Username = baseline.Username,
-                            From = baseline.From,
-                            UseStartTls = baseline.UseStartTls,
-                            UpdatedAt = now
-                        };
-                        db.TenantEmailSettings.Add(row);
-                    }
+                            var baseline = await emailSettings.ResolveAsync(workspace.TenantId, ct);
+                            row = new TenantEmailSettings
+                            {
+                                TenantId = workspace.TenantId,
+                                Enabled = baseline.Enabled,
+                                Host = baseline.Host,
+                                Port = baseline.Port,
+                                Username = baseline.Username,
+                                From = baseline.From,
+                                UseStartTls = baseline.UseStartTls,
+                                UpdatedAt = now
+                            };
+                            db.TenantEmailSettings.Add(row);
+                        }
 
-                    envelope = protector.Protect(
-                        trimmed,
-                        RuntimeSecretKinds.SmtpPassword,
-                        workspace.TenantId,
-                        workspaceId: null,
-                        workspace.TenantId.Value.ToString("D"),
-                        now);
-                    row.SmtpPassword.CopyFrom(envelope);
-                    row.UpdatedAt = now;
-                    entityType = "TenantEmailSettings";
-                    entityId = workspace.TenantId.Value.ToString("D");
-                    break;
-                }
+                        envelope = protector.Protect(
+                            trimmed,
+                            RuntimeSecretKinds.SmtpPassword,
+                            workspace.TenantId,
+                            workspaceId: null,
+                            workspace.TenantId.Value.ToString("D"),
+                            now);
+                        row.SmtpPassword.CopyFrom(envelope);
+                        row.UpdatedAt = now;
+                        entityType = "TenantEmailSettings";
+                        entityId = workspace.TenantId.Value.ToString("D");
+                        break;
+                    }
                 case RuntimeSecretKinds.WebhookSigningSecret:
-                {
-                    var row = await db.OutboundWebhookEndpoints
-                        .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
-                    if (row is null)
                     {
-                        row = new OutboundWebhookEndpoint
+                        var row = await db.OutboundWebhookEndpoints
+                            .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
+                        if (row is null)
                         {
-                            TenantId = workspace.TenantId,
-                            Enabled = false,
-                            Url = string.Empty,
-                            Secret = null,
-                            UpdatedAt = now
-                        };
-                        db.OutboundWebhookEndpoints.Add(row);
-                    }
+                            row = new OutboundWebhookEndpoint
+                            {
+                                TenantId = workspace.TenantId,
+                                Enabled = false,
+                                Url = string.Empty,
+                                Secret = null,
+                                UpdatedAt = now
+                            };
+                            db.OutboundWebhookEndpoints.Add(row);
+                        }
 
-                    envelope = protector.Protect(
-                        trimmed,
-                        RuntimeSecretKinds.WebhookSigningSecret,
-                        workspace.TenantId,
-                        workspaceId: null,
-                        workspace.TenantId.Value.ToString("D"),
-                        now);
-                    row.SigningSecret.CopyFrom(envelope);
-                    row.Secret = null;
-                    row.UpdatedAt = now;
-                    entityType = "OutboundWebhookEndpoint";
-                    entityId = workspace.TenantId.Value.ToString("D");
-                    break;
-                }
+                        envelope = protector.Protect(
+                            trimmed,
+                            RuntimeSecretKinds.WebhookSigningSecret,
+                            workspace.TenantId,
+                            workspaceId: null,
+                            workspace.TenantId.Value.ToString("D"),
+                            now);
+                        row.SigningSecret.CopyFrom(envelope);
+                        row.Secret = null;
+                        row.UpdatedAt = now;
+                        entityType = "OutboundWebhookEndpoint";
+                        entityId = workspace.TenantId.Value.ToString("D");
+                        break;
+                    }
                 default:
                     return new CredentialRotateResult(false, 400, "InvalidCredentialKind",
                         "Unknown credential kind.", false, null, null, null);

@@ -14,9 +14,24 @@ import {
   markReplyQuotesDeleted,
   maxSeqForChannel,
   mergeMessagesById,
+  minSeqForChannel,
   replyPreviewText,
   upsertRemoteMessage,
 } from './message-sync';
+
+export interface ChannelPaginationState {
+  hasMoreBefore: boolean;
+  hasMoreAfter: boolean;
+  loadingOlder: boolean;
+  loadError: string | null;
+}
+
+const defaultPagination = (): ChannelPaginationState => ({
+  hasMoreBefore: false,
+  hasMoreAfter: false,
+  loadingOlder: false,
+  loadError: null,
+});
 
 @Injectable({ providedIn: 'root' })
 export class MessageStore {
@@ -31,6 +46,7 @@ export class MessageStore {
   private readonly sendingSignal = signal(false);
   private readonly replyTargetSignal = signal<ChatMessage | null>(null);
   private readonly highlightMessageIdSignal = signal<string | null>(null);
+  private readonly paginationSignal = signal<Record<string, ChannelPaginationState>>({});
   private highlightTimer: ReturnType<typeof setTimeout> | null = null;
   private gapFillInFlight = new Set<string>();
   private readCursorTimer: ReturnType<typeof setTimeout> | null = null;
@@ -46,6 +62,11 @@ export class MessageStore {
   readonly sending = this.sendingSignal.asReadonly();
   readonly replyTarget = this.replyTargetSignal.asReadonly();
   readonly highlightMessageId = this.highlightMessageIdSignal.asReadonly();
+  readonly paginationForActive = computed(() => {
+    const channelId = this.channels.activeChannelId();
+    if (!channelId) return defaultPagination();
+    return this.paginationSignal()[channelId] ?? defaultPagination();
+  });
   private readonly viewingLatestSignal = signal(true);
 
   readonly forActiveChannel = computed(() => {
@@ -113,18 +134,91 @@ export class MessageStore {
     }, 2000);
   }
 
+  async ensureMessageVisible(messageId: string): Promise<'ok' | 'missing'> {
+    const channelId = this.channels.activeChannelId();
+    if (!channelId) return 'missing';
+    const existing = this.messagesSignal().find((m) => idsEqual(m.id, messageId));
+    if (existing) {
+      this.jumpToMessage(messageId);
+      return 'ok';
+    }
+    return 'missing';
+  }
+
+  async jumpToSequence(
+    channelId: string,
+    seq: number,
+    messageId: string,
+  ): Promise<'ok' | 'deleted' | 'missing'> {
+    if (!channelId || seq <= 0 || !messageId) return 'missing';
+    if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
+      this.jumpToMessage(messageId);
+      return 'ok';
+    }
+
+    this.loadingSignal.set(true);
+    try {
+      await this.hub.joinChannel(channelId);
+      const page = await this.api.getMessages(channelId, { around: seq, take: 50 });
+      const target =
+        page.messages.find((m) => idsEqual(m.id, messageId)) ??
+        page.messages.find((m) => m.seq === seq);
+      if (!target) return 'missing';
+      if (target.deletedAt) return 'deleted';
+
+      this.applyChannelPage(channelId, page, { replace: true });
+      queueMicrotask(() => this.jumpToMessage(target.id));
+      this.setViewingLatest(false);
+      return 'ok';
+    } catch {
+      return 'missing';
+    } finally {
+      this.loadingSignal.set(false);
+    }
+  }
+
+  async loadOlderMessages(channelId?: string): Promise<boolean> {
+    const id = channelId ?? this.channels.activeChannelId();
+    if (!id || this.channels.isDemo() || this.auth.isOfflineDemo()) return false;
+
+    const state = this.paginationSignal()[id] ?? defaultPagination();
+    if (!state.hasMoreBefore || state.loadingOlder) return false;
+
+    const minSeq = minSeqForChannel(this.messagesSignal(), id);
+    if (minSeq <= 0) return false;
+
+    this.patchPagination(id, { loadingOlder: true, loadError: null });
+    try {
+      const page = await this.api.getMessages(id, { before: minSeq, take: 50 });
+      if (!page.messages.length) {
+        this.patchPagination(id, { hasMoreBefore: false, loadingOlder: false });
+        return false;
+      }
+      this.applyChannelPage(id, page, { prepend: true });
+      return true;
+    } catch {
+      this.patchPagination(id, { loadingOlder: false, loadError: 'retry' });
+      return false;
+    }
+  }
+
+  retryLoadOlder(): void {
+    const channelId = this.channels.activeChannelId();
+    if (!channelId) return;
+    this.patchPagination(channelId, { loadError: null });
+    void this.loadOlderMessages(channelId);
+  }
+
   async loadChannel(channelId: string): Promise<void> {
     this.loadingSignal.set(true);
     try {
       await this.hub.joinChannel(channelId);
       if (this.channels.isDemo()) {
         this.messagesSignal.set(this.demoMessages(channelId));
+        this.patchPagination(channelId, { hasMoreBefore: false, hasMoreAfter: false, loadError: null });
       } else {
-        const messages = await this.api.getMessages(channelId);
-        this.messagesSignal.update((current) => {
-          const others = current.filter((m) => m.channelId !== channelId);
-          return [...others, ...messages.map((m) => this.normalize(m))];
-        });
+        const page = await this.api.getMessages(channelId, { take: 50 });
+        this.applyChannelPage(channelId, page, { replace: true });
         const maxSeq = maxSeqForChannel(this.messagesSignal(), channelId);
         if (maxSeq > 0) {
           void this.persistReadCursor(channelId, maxSeq);
@@ -135,6 +229,7 @@ export class MessageStore {
         const others = current.filter((m) => m.channelId !== channelId);
         return [...others, ...this.demoMessages(channelId)];
       });
+      this.patchPagination(channelId, defaultPagination());
     } finally {
       this.loadingSignal.set(false);
     }
@@ -148,14 +243,17 @@ export class MessageStore {
     try {
       const localMax = maxSeqForChannel(this.messagesSignal(), channelId);
       const after = gapFillAfterSeq(localMax);
-      const messages = await this.api.getMessages(channelId, { after, take: 100 });
-      if (!messages.length) return;
+      const page = await this.api.getMessages(channelId, { after, take: 100 });
+      if (!page.messages.length) return;
       this.messagesSignal.update((current) =>
         mergeMessagesById(
           current,
-          messages.map((m) => this.normalize(m)),
+          page.messages.map((m) => this.normalize(m)),
         ),
       );
+      this.patchPagination(channelId, {
+        hasMoreAfter: page.hasMoreAfter,
+      });
     } catch {
       // best-effort; live events or next reconnect can retry
     } finally {
@@ -492,6 +590,36 @@ export class MessageStore {
     this.messagesSignal.update((list) =>
       list.map((m) => (idsEqual(m.clientMessageId, clientMessageId) ? { ...m, ...patch } : m)),
     );
+  }
+
+  private applyChannelPage(
+    channelId: string,
+    page: { messages: ChatMessage[]; hasMoreBefore: boolean; hasMoreAfter: boolean },
+    mode: { replace?: boolean; prepend?: boolean } = {},
+  ): void {
+    const normalized = page.messages.map((m) => this.normalize(m));
+    this.messagesSignal.update((current) => {
+      const others = current.filter((m) => m.channelId !== channelId);
+      if (mode.replace) {
+        return [...others, ...normalized];
+      }
+      const existing = current.filter((m) => m.channelId === channelId);
+      const merged = mergeMessagesById(existing, normalized);
+      return [...others, ...merged];
+    });
+    this.patchPagination(channelId, {
+      hasMoreBefore: page.hasMoreBefore,
+      hasMoreAfter: page.hasMoreAfter,
+      loadingOlder: false,
+      loadError: null,
+    });
+  }
+
+  private patchPagination(channelId: string, patch: Partial<ChannelPaginationState>): void {
+    this.paginationSignal.update((map) => ({
+      ...map,
+      [channelId]: { ...(map[channelId] ?? defaultPagination()), ...patch },
+    }));
   }
 
   private normalize(message: ChatMessage): ChatMessage {

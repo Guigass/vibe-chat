@@ -40,11 +40,11 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         accepted.Body.Should().Be(body);
         accepted.Sequence.Should().BeGreaterThan(0);
 
-        var list = await client.GetFromJsonAsync<MessageDto[]>(
+        var list = await client.GetFromJsonAsync<ChannelMessagesResponseDto>(
             $"/api/v1/channels/{DemoChannelId}/messages?after={accepted.Sequence - 1}",
             JsonOptions);
         list.Should().NotBeNull();
-        list!.Should().Contain(m => m.Id == messageId && m.Body == body);
+        list!.Messages.Should().Contain(m => m.Id == messageId && m.Body == body);
 
         await using var db = factory.CreateMigratorDbContext();
         var persisted = await db.Messages.IgnoreQueryFilters()
@@ -111,10 +111,10 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         added.Emoji.Should().Be("👍");
         added.Reactions.Should().ContainSingle(r => r.Emoji == "👍" && r.Count == 1 && r.Me);
 
-        var list = await client.GetFromJsonAsync<MessageDto[]>(
+        var list = await client.GetFromJsonAsync<ChannelMessagesResponseDto>(
             $"/api/v1/channels/{DemoChannelId}/messages?after=0&limit=100",
             JsonOptions);
-        list!.Single(m => m.Id == messageId).Reactions.Should()
+        list!.Messages.Single(m => m.Id == messageId).Reactions.Should()
             .ContainSingle(r => r.Emoji == "👍" && r.Count == 1 && r.Me);
 
         var remove = await client.PutAsJsonAsync(
@@ -176,10 +176,10 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         var delete = await client.DeleteAsync($"/api/v1/channels/{DemoChannelId}/messages/{messageId}");
         delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var list = await client.GetFromJsonAsync<MessageDto[]>(
+        var list = await client.GetFromJsonAsync<ChannelMessagesResponseDto>(
             $"/api/v1/channels/{DemoChannelId}/messages?after={created!.Sequence - 1}",
             JsonOptions);
-        var softDeleted = list!.Single(m => m.Id == messageId);
+        var softDeleted = list!.Messages.Single(m => m.Id == messageId);
         softDeleted.Body.Should().BeEmpty();
         softDeleted.DeletedAt.Should().NotBeNull();
     }
@@ -349,12 +349,12 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         replyDto.ConversationId.Should().Be(thread1.Id);
         replyDto.Sequence.Should().Be(1);
 
-        var channelMessages = await client.GetFromJsonAsync<MessageDto[]>(
+        var channelMessages = await client.GetFromJsonAsync<ChannelMessagesResponseDto>(
             $"/api/v1/channels/{DemoChannelId}/messages?after={parent!.Sequence - 1}",
             JsonOptions);
         channelMessages.Should().NotBeNull();
-        channelMessages!.Should().Contain(m => m.Id == parentId && m.ThreadId == thread1.Id && m.ReplyCount >= 1);
-        channelMessages.Should().NotContain(m => m.Id == replyId);
+        channelMessages!.Messages.Should().Contain(m => m.Id == parentId && m.ThreadId == thread1.Id && m.ReplyCount >= 1);
+        channelMessages.Messages.Should().NotContain(m => m.Id == replyId);
 
         var threadMessages = await client.GetFromJsonAsync<MessageDto[]>(
             $"/api/v1/threads/{thread1.Id}/messages",
@@ -407,11 +407,11 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         replyDto.ReplyTo.Deleted.Should().BeFalse();
         replyDto.ReplyTo.Preview.Should().Contain("cite-parent");
 
-        var history = await client.GetFromJsonAsync<MessageDto[]>(
+        var history = await client.GetFromJsonAsync<ChannelMessagesResponseDto>(
             $"/api/v1/channels/{DemoChannelId}/messages?after=0&limit=100",
             JsonOptions);
         history.Should().NotBeNull();
-        var fromHistory = history!.Single(m => m.Id == replyId);
+        var fromHistory = history!.Messages.Single(m => m.Id == replyId);
         fromHistory.ReplyTo.Should().NotBeNull();
         fromHistory.ReplyTo!.MessageId.Should().Be(parentId);
 
@@ -515,10 +515,10 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         refs.Should().HaveCount(3);
         refs.Should().OnlyContain(x => x.ReferenceCount == 3);
 
-        var history = await client.GetFromJsonAsync<MessageDto[]>(
+        var history = await client.GetFromJsonAsync<ChannelMessagesResponseDto>(
             $"/api/v1/channels/{target.Id}/messages?after=0&limit=50",
             JsonOptions);
-        history!.Should().Contain(m =>
+        history!.Messages.Should().Contain(m =>
             m.ForwardedFromMessageId == sourceId
             && m.ForwardedFrom != null
             && m.ForwardedFrom.ChannelId == DemoChannelId
@@ -585,10 +585,10 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         header.ChannelName.Should().Be("Bob");
         header.ChannelName.Should().NotContain("dm:");
 
-        var history = await alice.GetFromJsonAsync<MessageDto[]>(
+        var history = await alice.GetFromJsonAsync<ChannelMessagesResponseDto>(
             $"/api/v1/channels/{DemoChannelId}/messages?after=0&limit=100",
             JsonOptions);
-        history.Should().Contain(m =>
+        history!.Messages.Should().Contain(m =>
             m.ForwardedFromMessageId == sourceId
             && m.ForwardedFrom != null
             && m.ForwardedFrom.IsDirect
@@ -683,10 +683,10 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             new SendMessageRequest(messageId, $"idem-dm-{messageId:N}", $"dm-hi-{messageId:N}", null, null));
         send.StatusCode.Should().Be(HttpStatusCode.Accepted);
 
-        var bobList = await bob.GetFromJsonAsync<MessageDto[]>(
+        var bobList = await bob.GetFromJsonAsync<ChannelMessagesResponseDto>(
             $"/api/v1/channels/{dm1.Id}/messages",
             JsonOptions);
-        bobList.Should().Contain(m => m.Id == messageId);
+        bobList!.Messages.Should().Contain(m => m.Id == messageId);
 
         var outsider = await demo.GetAsync($"/api/v1/channels/{dm1.Id}/messages");
         outsider.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -767,8 +767,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
 
         var memberHistory = await alice.GetAsync($"/api/v1/channels/{DemoChannelId}/messages?after=0&limit=100");
         memberHistory.EnsureSuccessStatusCode();
-        var memberRows = await memberHistory.Content.ReadFromJsonAsync<MessageDto[]>(JsonOptions);
-        var memberRow = memberRows!.Single(x => x.Id == messageId);
+        var memberRows = await memberHistory.Content.ReadFromJsonAsync<ChannelMessagesResponseDto>(JsonOptions);
+        var memberRow = memberRows!.Messages.Single(x => x.Id == messageId);
         memberRow.Body.Should().BeEmpty();
         memberRow.DeletedAt.Should().NotBeNull();
 
@@ -1723,6 +1723,59 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Channel_message_history_supports_before_around_and_rejects_mixed_cursors()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var sequences = new List<long>();
+        for (var i = 0; i < 15; i++)
+        {
+            var messageId = Guid.NewGuid();
+            var send = await client.PostAsJsonAsync(
+                $"/api/v1/channels/{DemoChannelId}/messages",
+                new SendMessageRequest(messageId, $"idem-page-{i}-{messageId:N}", $"page-{i}-{messageId:N}", null, null));
+            send.EnsureSuccessStatusCode();
+            var dto = await send.Content.ReadFromJsonAsync<MessageDto>(JsonOptions);
+            dto!.Sequence.Should().BeGreaterThan(0);
+            sequences.Add(dto.Sequence);
+        }
+
+        var latest = await client.GetFromJsonAsync<ChannelMessagesResponseDto>(
+            $"/api/v1/channels/{DemoChannelId}/messages?limit=10",
+            JsonOptions);
+        latest.Should().NotBeNull();
+        latest!.HasMoreBefore.Should().BeTrue();
+        latest.HasMoreAfter.Should().BeFalse();
+        latest.Messages.Should().HaveCount(10);
+        latest.Messages.Select(m => m.Sequence).Should().BeInAscendingOrder();
+
+        var minSeq = latest.Messages[0].Sequence;
+        var older = await client.GetFromJsonAsync<ChannelMessagesResponseDto>(
+            $"/api/v1/channels/{DemoChannelId}/messages?before={minSeq}&limit=10",
+            JsonOptions);
+        older!.Messages.Should().NotBeEmpty();
+        older.Messages.Max(m => m.Sequence).Should().BeLessThan(minSeq);
+
+        var midSeq = sequences[7];
+        var around = await client.GetFromJsonAsync<ChannelMessagesResponseDto>(
+            $"/api/v1/channels/{DemoChannelId}/messages?around={midSeq}&limit=10",
+            JsonOptions);
+        around!.Messages.Should().Contain(m => m.Sequence == midSeq);
+        around.Messages.Select(m => m.Sequence).Should().BeInAscendingOrder();
+
+        var mixed = await client.GetAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages?after=1&before=2");
+        mixed.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var gapFill = await client.GetFromJsonAsync<ChannelMessagesResponseDto>(
+            $"/api/v1/channels/{DemoChannelId}/messages?after={latest.Messages[^1].Sequence}",
+            JsonOptions);
+        gapFill!.Messages.Should().BeEmpty();
+        gapFill.HasMoreAfter.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Channel_members_autocomplete_is_scoped_to_channel()
     {
         using var client = factory.CreateClient();
@@ -1825,6 +1878,11 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         string AuthorName,
         DateTimeOffset CreatedAt,
         bool IsDirect = false);
+
+    private sealed record ChannelMessagesResponseDto(
+        MessageDto[] Messages,
+        bool HasMoreBefore,
+        bool HasMoreAfter);
 
     private sealed record MessageDto(
         Guid Id,

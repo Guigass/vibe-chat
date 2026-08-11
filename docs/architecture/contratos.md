@@ -117,6 +117,32 @@ membership. Endpoints tipicamente checam membership + `HasPermissionAsync` (ex.:
 
 `ReplyToMessageId` de outro canal → 400 `ReplyToDifferentChannel`. Inexistente → 400 `ReplyToNotFound`. Soft-delete da original: `replyTo.deleted = true`, preview vazio (UI: “Mensagem removida”).
 
+### Histórico paginado (B-089)
+
+`GET /api/v1/channels/{channelId}/messages`
+
+| Param | Notas |
+|-------|-------|
+| `limit` | 1–100; default 50 |
+| `after` | `seq` exclusivo — página para frente |
+| `before` | `seq` exclusivo — página para trás |
+| `around` | centraliza janela em torno de um `seq` |
+| *(nenhum cursor)* | última janela (`limit` mensagens mais recentes) |
+
+`after`, `before` e `around` são mutuamente exclusivos → 400 `InvalidMessagePagination`.
+
+Resposta:
+
+```json
+{
+  "messages": [ /* MessageDto[] */ ],
+  "hasMoreBefore": true,
+  "hasMoreAfter": false
+}
+```
+
+Membership + RLS idênticos ao histórico anterior; `seq` de outro canal nunca vaza conteúdo alheio.
+
 ### ForwardMessage (B-085)
 
 `POST /api/v1/workspaces/{workspaceId}/messages/{messageId}/forward`

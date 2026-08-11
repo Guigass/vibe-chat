@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-10
 - **Fase:** Wave 9 — Leitura e paridade de bolha (Wave 8 completa)
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165)
-- **Próximo item elegível:** W9-2 / B-089 (histórico paginado); W9-1 / B-088 Done; W9-0 / B-163 Done; W9-3 / B-090 e W9-4 / B-091 paralelos; BUG-002 fecha em B-094 quando W9-7 elegível
+- **Próximo item elegível:** W9-3 / B-090 (preview de anexos); W9-2 / B-089 Done; W9-1 / B-088 Done; W9-0 / B-163 Done; W9-4 / B-091 paralelo; BUG-002 fecha em B-094 quando W9-7 elegível
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -25,7 +25,7 @@ O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
 2. Wave 7 completa (W7-9 / B-165 Done — versão do cliente web / cache PWA);
-3. avançar Wave 9 de leitura/paridade (W9-0 / B-163 e W9-1 / B-088 Done; próximo: W9-2 / B-089); Wave 8 completa;
+3. avançar Wave 9 de leitura/paridade (W9-0 / B-163, W9-1 / B-088 e W9-2 / B-089 Done; próximo: W9-3 / B-090); Wave 8 completa;
 4. consumir o roadmap autorizado W11–W17.
 
 ## Runtime e fronteiras
@@ -79,8 +79,8 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W9-2 | Histórico paginado e pular para a mensagem (B-089); W9-1 / B-088 Done; safety lane Alta vazia |
-| 2 | W9-2+ | Demais itens Wave 9 Planned com spec (W9-3 / B-090 e W9-4 / B-091 paralelos) |
+| 1 | W9-3 | Preview de anexos (B-090); W9-2 / B-089 Done; safety lane Alta vazia |
+| 2 | W9-3+ | Demais itens Wave 9 Planned com spec (W9-4 / B-091 paralelo) |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).

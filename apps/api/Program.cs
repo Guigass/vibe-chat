@@ -888,8 +888,28 @@ v1.MapGet("/workspaces/{workspaceId:guid}/commands", async (
     return Results.Ok(allowed);
 });
 
-v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? after, int? limit, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
+v1.MapGet("/channels/{channelId:guid}/messages", async (
+    Guid channelId,
+    long? after,
+    long? before,
+    long? around,
+    int? limit,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
 {
+    var cursorCount = (after.HasValue ? 1 : 0) + (before.HasValue ? 1 : 0) + (around.HasValue ? 1 : 0);
+    if (cursorCount > 1)
+    {
+        return Results.BadRequest(new
+        {
+            error = "InvalidMessagePagination",
+            message = "after, before and around are mutually exclusive.",
+        });
+    }
+
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
     if (channel is null)
@@ -898,70 +918,8 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (Guid channelId, long? af
     }
 
     var take = Math.Clamp(limit ?? 50, 1, 100);
-    var rows = await (
-        from m in db.Messages
-        where m.ConversationId == channel.Id && m.Sequence > (after ?? 0)
-        join u in db.UserProfiles on m.AuthorId equals u.Id into authors
-        from u in authors.DefaultIfEmpty()
-        orderby m.Sequence
-        select new
-        {
-            Id = m.Id,
-            ChannelId = m.ConversationId,
-            m.Sequence,
-            m.AuthorId,
-            m.Body,
-            m.CreatedAt,
-            m.EditedAt,
-            m.DeletedAt,
-            m.ThreadId,
-            m.ReplyToMessageId,
-            m.ForwardedFromMessageId,
-            m.ForwardedFromChannelId,
-            AuthorName = u != null ? u.DisplayName : m.AuthorId.Value.ToString()
-        })
-        .Take(take)
-        .ToArrayAsync(ct);
-
-    var messageIds = rows.Select(x => x.Id).ToArray();
-    var threadIds = rows.Where(x => x.ThreadId is not null).Select(x => x.ThreadId!.Value).Distinct().ToArray();
-    var replyCounts = threadIds.Length == 0
-        ? new Dictionary<Guid, int>()
-        : await db.Messages.AsNoTracking()
-            .Where(m => m.ThreadId != null && threadIds.Contains(m.ThreadId.Value) && m.ConversationId != channel.Id)
-            .GroupBy(m => m.ThreadId!.Value)
-            .Select(g => new { ThreadId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.ThreadId, x => x.Count, ct);
-
-    var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, channel.Id, messageIds, ct);
-    var reactionsByMessage = await LoadReactionSummariesByMessageAsync(db, messageIds, profile.Id, ct);
-    var replyToById = await LoadReplyToByIdsAsync(db, rows.Select(x => x.ReplyToMessageId), ct);
-    var forwardedFromById = await LoadForwardedFromByIdsAsync(
-        db,
-        rows.Select(x => (x.ForwardedFromMessageId, x.ForwardedFromChannelId)),
-        profile.Id,
-        ct);
-    var messages = rows.Select(x => new MessageResponse(
-        x.Id.Value,
-        x.ChannelId.Value,
-        x.Sequence,
-        x.AuthorId.Value,
-        x.DeletedAt == null ? x.Body : string.Empty,
-        x.CreatedAt,
-        x.EditedAt,
-        x.DeletedAt,
-        x.AuthorName,
-        x.DeletedAt == null && attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [],
-        x.ThreadId,
-        x.ReplyToMessageId?.Value,
-        x.ThreadId is Guid tid && replyCounts.TryGetValue(tid, out var count) ? count : 0,
-        x.ChannelId.Value,
-        x.DeletedAt == null && reactionsByMessage.TryGetValue(x.Id.Value, out var rx) ? rx : [],
-        x.ReplyToMessageId is MessageId rtid && replyToById.TryGetValue(rtid.Value, out var replyTo) ? replyTo : null,
-        x.ForwardedFromMessageId?.Value,
-        x.ForwardedFromChannelId?.Value,
-        x.ForwardedFromMessageId is MessageId ffid && forwardedFromById.TryGetValue(ffid.Value, out var forwarded) ? forwarded : null)).ToArray();
-    return Results.Ok(messages);
+    var page = await ListChannelMessagesAsync(channel, profile, db, take, after, before, around, ct);
+    return Results.Ok(page);
 });
 
 v1.MapPost("/channels/{channelId:guid}/messages", async (
@@ -3820,6 +3778,168 @@ static async Task<Dictionary<Guid, AttachmentResponse[]>> LoadAttachmentsByMessa
             g => g.Select(x => ToAttachmentResponse(x)).ToArray());
 }
 
+static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
+    Channel channel,
+    UserProfile profile,
+    VibeChatDbContext db,
+    int take,
+    long? after,
+    long? before,
+    long? around,
+    CancellationToken ct)
+{
+    ChannelMessageRow[] rows;
+    var hasMoreBefore = false;
+    var hasMoreAfter = false;
+
+    if (around.HasValue)
+    {
+        var anchor = around.Value;
+        var afterCount = take / 2;
+        var beforeCount = Math.Max(0, take - afterCount - 1);
+
+        var beforeFetched = await QueryChannelMessageRowsAsync(
+            db,
+            channel.Id,
+            q => q.Where(m => m.Sequence <= anchor).OrderByDescending(m => m.Sequence).Take(beforeCount + 1),
+            ct);
+        hasMoreBefore = beforeFetched.Length > beforeCount;
+        var beforeRows = hasMoreBefore ? beforeFetched.Take(beforeCount).ToArray() : beforeFetched;
+        Array.Reverse(beforeRows);
+
+        var afterFetched = await QueryChannelMessageRowsAsync(
+            db,
+            channel.Id,
+            q => q.Where(m => m.Sequence > anchor).OrderBy(m => m.Sequence).Take(afterCount + 1),
+            ct);
+        hasMoreAfter = afterFetched.Length > afterCount;
+        var afterRows = hasMoreAfter ? afterFetched.Take(afterCount).ToArray() : afterFetched;
+
+        rows = beforeRows.Concat(afterRows).OrderBy(x => x.Sequence).ToArray();
+        if (rows.Length > 0)
+        {
+            var minSeq = rows[0].Sequence;
+            var maxSeq = rows[rows.Length - 1].Sequence;
+            hasMoreBefore = hasMoreBefore || await db.Messages.AsNoTracking()
+                .AnyAsync(m => m.ConversationId == channel.Id && m.Sequence < minSeq, ct);
+            hasMoreAfter = hasMoreAfter || await db.Messages.AsNoTracking()
+                .AnyAsync(m => m.ConversationId == channel.Id && m.Sequence > maxSeq, ct);
+        }
+    }
+    else if (before.HasValue)
+    {
+        var fetched = await QueryChannelMessageRowsAsync(
+            db,
+            channel.Id,
+            q => q.Where(m => m.Sequence < before.Value).OrderByDescending(m => m.Sequence).Take(take + 1),
+            ct);
+        hasMoreBefore = fetched.Length > take;
+        rows = (hasMoreBefore ? fetched.Take(take) : fetched).Reverse().ToArray();
+        if (rows.Length > 0)
+        {
+            var maxSeq = rows[rows.Length - 1].Sequence;
+            hasMoreAfter = await db.Messages.AsNoTracking()
+                .AnyAsync(m => m.ConversationId == channel.Id && m.Sequence > maxSeq, ct);
+        }
+    }
+    else if (after.HasValue)
+    {
+        var fetched = await QueryChannelMessageRowsAsync(
+            db,
+            channel.Id,
+            q => q.Where(m => m.Sequence > after.Value).OrderBy(m => m.Sequence).Take(take + 1),
+            ct);
+        hasMoreAfter = fetched.Length > take;
+        rows = (hasMoreAfter ? fetched.Take(take) : fetched).ToArray();
+        if (rows.Length > 0)
+        {
+            hasMoreBefore = await db.Messages.AsNoTracking()
+                .AnyAsync(m => m.ConversationId == channel.Id && m.Sequence < rows[0].Sequence, ct);
+        }
+    }
+    else
+    {
+        var fetched = await QueryChannelMessageRowsAsync(
+            db,
+            channel.Id,
+            q => q.OrderByDescending(m => m.Sequence).Take(take + 1),
+            ct);
+        hasMoreBefore = fetched.Length > take;
+        rows = (hasMoreBefore ? fetched.Take(take) : fetched).Reverse().ToArray();
+        hasMoreAfter = false;
+    }
+
+    var messageIds = rows.Select(x => x.Id).ToArray();
+    var threadIds = rows.Where(x => x.ThreadId is not null).Select(x => x.ThreadId!.Value).Distinct().ToArray();
+    var replyCounts = threadIds.Length == 0
+        ? new Dictionary<Guid, int>()
+        : await db.Messages.AsNoTracking()
+            .Where(m => m.ThreadId != null && threadIds.Contains(m.ThreadId.Value) && m.ConversationId != channel.Id)
+            .GroupBy(m => m.ThreadId!.Value)
+            .Select(g => new { ThreadId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.ThreadId, x => x.Count, ct);
+
+    var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, channel.Id, messageIds, ct);
+    var reactionsByMessage = await LoadReactionSummariesByMessageAsync(db, messageIds, profile.Id, ct);
+    var replyToById = await LoadReplyToByIdsAsync(db, rows.Select(x => x.ReplyToMessageId), ct);
+    var forwardedFromById = await LoadForwardedFromByIdsAsync(
+        db,
+        rows.Select(x => (x.ForwardedFromMessageId, x.ForwardedFromChannelId)),
+        profile.Id,
+        ct);
+
+    var messages = rows.Select(x => new MessageResponse(
+        x.Id.Value,
+        x.ChannelId.Value,
+        x.Sequence,
+        x.AuthorId.Value,
+        x.DeletedAt == null ? x.Body : string.Empty,
+        x.CreatedAt,
+        x.EditedAt,
+        x.DeletedAt,
+        x.AuthorName,
+        x.DeletedAt == null && attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [],
+        x.ThreadId,
+        x.ReplyToMessageId?.Value,
+        x.ThreadId is Guid tid && replyCounts.TryGetValue(tid, out var count) ? count : 0,
+        x.ChannelId.Value,
+        x.DeletedAt == null && reactionsByMessage.TryGetValue(x.Id.Value, out var rx) ? rx : [],
+        x.ReplyToMessageId is MessageId rtid && replyToById.TryGetValue(rtid.Value, out var replyTo) ? replyTo : null,
+        x.ForwardedFromMessageId?.Value,
+        x.ForwardedFromChannelId?.Value,
+        x.ForwardedFromMessageId is MessageId ffid && forwardedFromById.TryGetValue(ffid.Value, out var forwarded) ? forwarded : null)).ToArray();
+
+    return new ChannelMessagesResponse(messages, hasMoreBefore, hasMoreAfter);
+}
+
+static async Task<ChannelMessageRow[]> QueryChannelMessageRowsAsync(
+    VibeChatDbContext db,
+    ChannelId conversationId,
+    Func<IQueryable<Message>, IQueryable<Message>> shape,
+    CancellationToken ct)
+{
+    var shaped = shape(db.Messages.Where(m => m.ConversationId == conversationId));
+    return await (
+        from m in shaped
+        join u in db.UserProfiles on m.AuthorId equals u.Id into authors
+        from u in authors.DefaultIfEmpty()
+        select new ChannelMessageRow(
+            m.Id,
+            m.ConversationId,
+            m.Sequence,
+            m.AuthorId,
+            m.Body,
+            m.CreatedAt,
+            m.EditedAt,
+            m.DeletedAt,
+            m.ThreadId,
+            m.ReplyToMessageId,
+            m.ForwardedFromMessageId,
+            m.ForwardedFromChannelId,
+            u != null ? u.DisplayName : m.AuthorId.Value.ToString()))
+        .ToArrayAsync(ct);
+}
+
 static async Task<Dictionary<Guid, ReactionSummaryResponse[]>> LoadReactionSummariesByMessageAsync(
     VibeChatDbContext db,
     IReadOnlyCollection<MessageId> messageIds,
@@ -4037,6 +4157,26 @@ public sealed record ForwardedFromResponse(
     string AuthorName,
     DateTimeOffset CreatedAt,
     bool IsDirect = false);
+
+public sealed record ChannelMessagesResponse(
+    MessageResponse[] Messages,
+    bool HasMoreBefore,
+    bool HasMoreAfter);
+
+public sealed record ChannelMessageRow(
+    MessageId Id,
+    ChannelId ChannelId,
+    long Sequence,
+    UserId AuthorId,
+    string Body,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? EditedAt,
+    DateTimeOffset? DeletedAt,
+    Guid? ThreadId,
+    MessageId? ReplyToMessageId,
+    MessageId? ForwardedFromMessageId,
+    ChannelId? ForwardedFromChannelId,
+    string AuthorName);
 
 public sealed record MessageResponse(
     Guid Id,
