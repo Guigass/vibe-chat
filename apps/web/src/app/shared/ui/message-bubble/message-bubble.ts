@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
+import type { ConnectedPosition } from '@angular/cdk/overlay';
 import {
   Component,
   computed,
@@ -37,6 +38,76 @@ import { ThemeService } from '../../../core/services/theme.service';
 import { EmojiPicker } from '../emoji-picker/emoji-picker';
 import { rememberRecentEmoji } from '../../emoji/emoji-data';
 import { environment } from '../../../../environments/environment';
+
+const MINE_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
+  {
+    originX: 'start',
+    originY: 'bottom',
+    overlayX: 'end',
+    overlayY: 'top',
+    offsetX: 0,
+    offsetY: 4,
+  },
+  {
+    originX: 'start',
+    originY: 'top',
+    overlayX: 'end',
+    overlayY: 'bottom',
+    offsetX: 0,
+    offsetY: -4,
+  },
+  {
+    originX: 'end',
+    originY: 'bottom',
+    overlayX: 'start',
+    overlayY: 'top',
+    offsetX: 0,
+    offsetY: 4,
+  },
+  {
+    originX: 'end',
+    originY: 'top',
+    overlayX: 'start',
+    overlayY: 'bottom',
+    offsetX: 0,
+    offsetY: -4,
+  },
+];
+
+const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
+  {
+    originX: 'end',
+    originY: 'bottom',
+    overlayX: 'start',
+    overlayY: 'top',
+    offsetX: 0,
+    offsetY: 4,
+  },
+  {
+    originX: 'end',
+    originY: 'top',
+    overlayX: 'start',
+    overlayY: 'bottom',
+    offsetX: 0,
+    offsetY: -4,
+  },
+  {
+    originX: 'start',
+    originY: 'bottom',
+    overlayX: 'end',
+    overlayY: 'top',
+    offsetX: 0,
+    offsetY: 4,
+  },
+  {
+    originX: 'start',
+    originY: 'top',
+    overlayX: 'end',
+    overlayY: 'bottom',
+    offsetX: 0,
+    offsetY: -4,
+  },
+];
 
 @Component({
   selector: 'vc-message-bubble',
@@ -271,10 +342,11 @@ import { environment } from '../../../../environments/environment';
               aria-label="Ações da mensagem"
               aria-haspopup="menu"
               [cdkMenuTriggerFor]="actionsMenu"
+              [cdkMenuPosition]="actionMenuPositions()"
               (cdkMenuOpened)="menuOpen.set(true)"
               (cdkMenuClosed)="menuOpen.set(false)"
             >
-              ⋯
+              <span class="vc-msg__more-dots" aria-hidden="true"></span>
             </button>
           </div>
         }
@@ -437,6 +509,9 @@ import { environment } from '../../../../environments/environment';
     .vc-msg:hover .vc-msg__group-time,
     .vc-msg:focus-within .vc-msg__group-time {
       opacity: 1;
+    }
+    .vc-msg--mine .vc-msg__group-time {
+      left: calc(-3.35rem - 1.4rem);
     }
     @media (prefers-reduced-motion: reduce) {
       .vc-msg__group-time {
@@ -642,6 +717,7 @@ import { environment } from '../../../../environments/environment';
       background: color-mix(in srgb, var(--vc-brand) 16%, var(--vc-surface));
     }
     .vc-msg__toolbar {
+      --vc-msg-toolbar-shift: 100%;
       position: absolute;
       top: 0.4rem;
       right: 0;
@@ -649,22 +725,27 @@ import { environment } from '../../../../environments/environment';
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 1.55rem;
-      height: 1.55rem;
+      width: 1.5rem;
+      height: 1.5rem;
       margin: 0;
       padding: 0;
-      border: 1px solid color-mix(in srgb, var(--vc-border) 78%, transparent);
+      border: 1px solid color-mix(in srgb, var(--vc-border) 72%, transparent);
       border-radius: 999px;
-      background: color-mix(in srgb, var(--vc-surface) 74%, transparent);
+      background: color-mix(in srgb, var(--vc-surface) 92%, var(--vc-ink) 8%);
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      transform: translateX(42%) scale(0.9);
+      transform: translateX(var(--vc-msg-toolbar-shift)) scale(0.88);
       transition:
         opacity var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease),
         transform var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease),
         visibility 0s linear var(--vc-dur-fast, 120ms);
-      box-shadow: 0 1px 4px color-mix(in srgb, var(--vc-ink) 12%, transparent);
+      box-shadow: 0 1px 3px color-mix(in srgb, var(--vc-ink) 10%, transparent);
+    }
+    .vc-msg--mine .vc-msg__toolbar {
+      --vc-msg-toolbar-shift: -100%;
+      right: auto;
+      left: 0;
     }
     .vc-msg:hover .vc-msg__toolbar,
     .vc-msg:focus-within .vc-msg__toolbar,
@@ -672,7 +753,7 @@ import { environment } from '../../../../environments/environment';
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
-      transform: translateX(42%) scale(1);
+      transform: translateX(var(--vc-msg-toolbar-shift)) scale(1);
       transition-delay: 0s;
     }
     @media (hover: none) {
@@ -680,7 +761,7 @@ import { environment } from '../../../../environments/environment';
         opacity: 1;
         visibility: visible;
         pointer-events: auto;
-        transform: translateX(42%) scale(1);
+        transform: translateX(var(--vc-msg-toolbar-shift)) scale(1);
         transition: none;
       }
     }
@@ -726,9 +807,20 @@ import { environment } from '../../../../environments/environment';
       background: color-mix(in srgb, var(--vc-brand) 10%, transparent);
     }
     .vc-msg__more {
-      font-size: 0.88rem;
-      font-weight: 600;
-      letter-spacing: 0.03em;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      border-radius: inherit;
+    }
+    .vc-msg__more-dots {
+      display: block;
+      width: 0.16rem;
+      height: 0.16rem;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: -0.3rem 0 currentColor, 0.3rem 0 currentColor;
     }
     .vc-msg__edit-actions {
       display: flex;
@@ -842,6 +934,9 @@ export class MessageBubble {
   readonly previewUrls = signal<Record<string, string>>({});
   readonly linkPreviewImageUrl = signal<string | null>(null);
   readonly emojiOptions = REACTION_EMOJI_OPTIONS;
+  readonly actionMenuPositions = computed(() =>
+    this.message().mine ? MINE_ACTION_MENU_POSITIONS : THEIRS_ACTION_MENU_POSITIONS,
+  );
   readonly reactionPickerOpen = signal(false);
   readonly menuOpen = signal(false);
   readonly reactionTooltips = signal<Record<string, string>>({});

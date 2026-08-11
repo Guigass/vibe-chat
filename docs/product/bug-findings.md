@@ -36,6 +36,7 @@ Regras do registro:
 | BUG-014 | Timeline / áudio  | Bolha de áudio não mostra as waves do áudio tocando                   | Média      | Done                                         |
 | BUG-015 | Timeline / scroll | Load older ao rolar pra cima devolve o scroll às mais recentes        | Média      | Aberto                                       |
 | BUG-016 | Timeline / unread | Tarja “Novas mensagens” salta/estranha quando chegam outras novas     | Média      | Aberto — normalização aplicada               |
+| BUG-017 | Composer / reply  | Clicar em “Responder” não foca o composer                            | Média      | Aberto                                       |
 
 ## Detalhamento
 
@@ -372,9 +373,11 @@ onload="this.media='all'">`. O CSP em
   finding `Done`.
 - Causa confirmada: o posicionamento absoluto se ancorava à coluna compartilhada
   do stack e inevitavelmente invadia conteúdo próprio ou vizinho.
-- Resolução: a toolbar expansível foi substituída por um único gatilho `⋯`
-  dentro de uma área reservada da bolha, sempre no inline-end e independente
-  de mine/theirs. O gatilho abre um popover CDK estável com reações, responder
+- Resolução: a toolbar expansível foi substituída por um único gatilho `⋯`,
+  apresentado como handle circular compacto no lado externo livre da bolha
+  (à esquerda para mine e à direita para theirs), sem reduzir a área do texto.
+  O gatilho abre um popover CDK
+  estável com reações, responder
   e demais ações; não existe gap de hover nem mudança de geometria. Cada item
   agrupado preserva sua própria bolha, mensagens do autor atual mantêm o mesmo
   inline-end e a largura útil chega a 44rem sem ocupar a timeline inteira. A
@@ -507,6 +510,29 @@ onload="this.media='all'">`. O CSP em
   contagem `newWhileAway` só sob append real; finding `Done`.
 - Normalização (2026-08-11): `frozenUnreadAfterSeq` na abertura; effect de
   chegada distingue prepend vs append; botão de salto mantém rótulo estável.
+
+### BUG-017 — “Responder” não foca o composer
+
+- Status: **Aberto**
+- Severidade: **Média**
+- Observado em: relato de produto, 2026-08-11 — ao clicar **Responder** na
+  bolha (toolbar/menu), a barra de citação aparece no composer (B-084), mas o
+  foco **não** vai para o textarea; o usuário precisa clicar de novo no
+  composer para digitar.
+- Hipótese: `Timeline.onReply` / `ThreadPanel` só chamam
+  `setReplyTarget(message)`; o `Composer` reage a `replyTarget` para mostrar a
+  barra de citação, mas não há `focus()` no `vc-textarea` após o reply (mesmo
+  padrão esperado em B-173 para edição).
+- Arquivos: `apps/web/src/app/features/chat/timeline/timeline.ts` (`onReply`),
+  `apps/web/src/app/features/chat/thread-panel/thread-panel.ts`,
+  `apps/web/src/app/core/services/message.store.ts` (`setReplyTarget`),
+  `apps/web/src/app/features/chat/composer/composer.ts`.
+- Resultado esperado: ao iniciar resposta (canal ou thread), o composer recebe
+  foco no textarea imediatamente, com a citação já visível, pronto para digitar.
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: unit/component — “Responder” → `document.activeElement`
+  é o textarea do composer; finding `Done`.
 
 ## Fechados
 

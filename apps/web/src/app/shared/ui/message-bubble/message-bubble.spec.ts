@@ -98,6 +98,11 @@ describe('MessageBubble (B-163)', () => {
     expect(css).toMatch(/opacity:\s*0/);
     expect(css).toMatch(/\.vc-msg__toolbar(?:\[[^\]]+\])?\s*{[^}]*position:\s*absolute/s);
     expect(css).toMatch(/\.vc-msg__toolbar(?:\[[^\]]+\])?\s*{[^}]*right:\s*0/s);
+    expect(css).toMatch(
+      /\.vc-msg--mine(?:\[[^\]]+\])?\s+\.vc-msg__toolbar(?:\[[^\]]+\])?\s*{[^}]*left:\s*0/s,
+    );
+    expect(css).toMatch(/--(?:%NS%)?vc-msg-toolbar-shift:\s*-100%/);
+    expect(css).toMatch(/\.vc-msg__more-dots/);
     expect(css).not.toMatch(/\.vc-msg__body(?:\[[^\]]+\])?\s*{[^}]*padding-right:\s*calc/s);
     expect(css).not.toMatch(/\.vc-msg__toolbar(?:\[[^\]]+\])?\s*{[^}]*max-height/s);
     expect(css).toMatch(/\.vc-msg-menu__reactions/);
@@ -139,6 +144,10 @@ describe('MessageBubble (B-163)', () => {
     ).toBeTruthy();
     expect(theirs.fixture.nativeElement.querySelector('[aria-label="Responder"]')).toBeNull();
     expect(theirs.fixture.componentInstance.menuItems()).toEqual([]);
+    expect(theirs.fixture.componentInstance.actionMenuPositions()[0]).toMatchObject({
+      originX: 'end',
+      overlayX: 'start',
+    });
 
     const mine = await setup(baseMessage({ mine: true }), {
       showForwardAction: true,
@@ -153,6 +162,10 @@ describe('MessageBubble (B-163)', () => {
       'edit',
       'delete',
     ]);
+    expect(mine.fixture.componentInstance.actionMenuPositions()[0]).toMatchObject({
+      originX: 'start',
+      overlayX: 'end',
+    });
   });
 
   it('renders typed attachment preview instead of a plain download button for images', async () => {

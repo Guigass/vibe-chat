@@ -61,6 +61,7 @@ async function expectMessageMenuStable(
     };
 
     const failures: string[] = [];
+    const mine = article.classList.contains("vc-msg--mine");
     if (
       timelineRect &&
       (toolbarRect.left < timelineRect.left ||
@@ -70,7 +71,9 @@ async function expectMessageMenuStable(
     }
     if (
       bodyRect &&
-      (Math.abs((toolbarRect.left + toolbarRect.right) / 2 - bodyRect.right) > 4 ||
+      ((mine
+        ? Math.abs(toolbarRect.right - bodyRect.left)
+        : Math.abs(toolbarRect.left - bodyRect.right)) > 2 ||
         toolbarRect.top < bodyRect.top ||
         toolbarRect.bottom > bodyRect.bottom)
     ) {
@@ -153,6 +156,26 @@ async function expectMessageMenuStable(
   expect(menuRect.right).toBeLessThanOrEqual(menuRect.viewportWidth);
   expect(menuRect.top).toBeGreaterThanOrEqual(0);
   expect(menuRect.bottom).toBeLessThanOrEqual(menuRect.viewportHeight);
+
+  const bubbleSide = await bubble.evaluate((article) => {
+    const body = article.querySelector<HTMLElement>(".vc-msg__body")!;
+    const rect = body.getBoundingClientRect();
+    return {
+      mine: article.classList.contains("vc-msg--mine"),
+      left: rect.left,
+      right: rect.right,
+    };
+  });
+  const preferredSideRoom = bubbleSide.mine
+    ? bubbleSide.left
+    : menuRect.viewportWidth - bubbleSide.right;
+  if (preferredSideRoom >= menuRect.right - menuRect.left + 4) {
+    if (bubbleSide.mine) {
+      expect(menuRect.right).toBeLessThanOrEqual(bubbleSide.left);
+    } else {
+      expect(menuRect.left).toBeGreaterThanOrEqual(bubbleSide.right);
+    }
+  }
 
   const triggerRect = await trigger.boundingBox();
   const visibleMenuRect = await menu.boundingBox();
@@ -237,13 +260,27 @@ test.describe(`timeline toolbar layout (${AUTH_MODE})`, () => {
     await expectMessageMenuStable(page, multilineBubble);
     await expectMessageMenuStable(page, shortBubble);
 
+    const aliceSession = await openUserSession(browser, "alice");
+    await selectChannelGeral(aliceSession.page);
+    const receivedText = `toolbar-theirs-${suffix}`;
+    await sendMessage(aliceSession.page, receivedText);
+    const receivedBubble = page
+      .locator('article[data-message-id][data-status="persisted"]')
+      .filter({ hasText: receivedText })
+      .last();
+    await expect(receivedBubble).toBeVisible();
+    await expectMessageMenuStable(page, receivedBubble);
+
     await page.setViewportSize({ width: 900, height: 720 });
     await expectMessageMenuStable(page, multilineBubble);
     await expectMessageMenuStable(page, shortBubble);
+    await expectMessageMenuStable(page, receivedBubble);
 
     await page.setViewportSize({ width: 390, height: 720 });
     await expectMessageMenuStable(page, multilineBubble);
     await expectMessageMenuStable(page, shortBubble);
+    await expectMessageMenuStable(page, receivedBubble);
+    await aliceSession.context.close();
     await session.context.close();
   });
 });
