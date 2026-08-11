@@ -194,6 +194,14 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("MessageRetention:DefaultRetentionDays", "90");
         builder.UseSetting("MessageRetention:BatchSize", "500");
         builder.UseSetting("Authentication:RequireHttpsMetadata", "false");
+        // Shared Redis counters across the collection: Pin_limit alone does 21 sends;
+        // keep the env ceiling at Max so sibling tests do not cascade 429s.
+        builder.UseSetting(
+            "RateLimit:SendPerMinute",
+            RateLimitPolicies.MaxPerMinute.ToString());
+        builder.UseSetting(
+            "RateLimit:HubPerMinute",
+            RateLimitPolicies.MaxPerMinute.ToString());
     }
 
     // Testcontainers give every run a clean stack; a reused local stack does not, so
