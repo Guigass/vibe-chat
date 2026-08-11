@@ -90,6 +90,7 @@ organiza. Estados:
 | HA e rolling upgrade | Planned | B-144 / W16 |
 | Lifecycle de storage/CDN | Planned | B-145 / W16 |
 | Benchmarks e SLOs por porte | Planned | B-146 / W14 |
+| Revisão de performance e escalabilidade | Planned | B-170 / W16 |
 | Federação entre instâncias | Planned | B-065 / W16 |
 
 ## Delight e identidade

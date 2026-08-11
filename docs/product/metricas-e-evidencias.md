@@ -101,7 +101,7 @@ Não existe phone-home obrigatório.
 | W13 | automação idempotente, connector security, SCIM |
 | W14 | cadeia de custódia, SIEM, quotas e capacity |
 | W15 | SDK/registry provenance, bridges e support matrix |
-| W16 | failover/offline/federação/E2EE |
+| W16 | performance/escalabilidade, failover/offline/federação/E2EE |
 | W17 | capacity/consentimento/live/canvas |
 
 ## Evidence bundle de PR

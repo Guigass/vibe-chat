@@ -465,7 +465,7 @@ Escolha:
 
   HA:
   - objetivo 99,95%, RPO <= 5 min e RTO <= 30 min;
-  - somente após B-146/B-144 e evidência de failover/restore.
+  - somente após B-146/B-170/B-144 e evidência de failover/restore.
 
 Regras:
   - backup só conta após restore verificável;

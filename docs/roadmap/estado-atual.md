@@ -91,9 +91,10 @@ altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
 
 ## Baseline de planejamento
 
-- 85 itens `Planned` entre W7–W17 (B-104/W7-6 Done via #82; B-076/W7-3 Done via #84;
+- 86 itens `Planned` entre W7–W17 (B-104/W7-6 Done via #82; B-076/W7-3 Done via #84;
   B-165/W7-9 Done 2026-08-10; B-088/W9-1 Done; B-167 catalogado em W11;
-  B-169 catalogado em W14 — gate auditoria↔E2EE);
+  B-169 catalogado em W14 — gate auditoria↔E2EE; B-170 catalogado em W16 —
+  performance/escalabilidade antes de HA);
 - specs em correspondência 1:1 com itens Planned;
 - classes R0–R3 declaradas nas specs;
 - nenhuma decisão D-* aberta;

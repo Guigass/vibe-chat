@@ -1,12 +1,13 @@
 # B-144 — HA e rolling upgrade
 
-> Wave 16 · Trilha A/B/C/E/F · Deps: B-146, D-25, D-28 · Risco R3
+> Wave 16 · Trilha A/B/C/E/F · Deps: B-170, B-146, D-25, D-28 · Risco R3
 > Requisitos comuns: [Waves 11–17](long-term-common.md)
 
 ## Problema
 
 O profile Standard não atende o objetivo HA nem prova compatibilidade durante
-upgrade sem downtime.
+upgrade sem downtime. HA sem a revisão de performance (B-170) mascara gargalos
+da topologia atual.
 
 ## Escopo
 
@@ -60,5 +61,5 @@ Chaos/failover, mixed-version contract, migrations, load SLO, restore e security
 ## Riscos
 
 Complexidade operacional prematura. Implementar apenas topologia comprovada por
-B-146 e manter Standard como baseline.
+B-146/B-170 e manter Standard como baseline.
 

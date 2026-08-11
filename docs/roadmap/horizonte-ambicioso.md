@@ -162,18 +162,21 @@ Objetivo: tornar extensibilidade um produto sustentável.
 ## Wave 16 — Escala e continuidade
 
 Objetivo: suportar organizações e instalações maiores por evidência, não por
-arquitetura preventiva.
+arquitetura preventiva. Começa por **olhar** performance e escalabilidade na
+topologia atual; só então HA e apostas de distribuição.
 
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
+| B-170 | A/C/E/F | Performance e escalabilidade — hot paths, gargalos e alavancas | B-146, D-25 | [B-170](../product/specs/B-170-performance-escalabilidade.md) | Planned |
 | B-143 | C/D/E | Offline sync real e fila local confiável | B-089, B-094, D-20 | [B-143](../product/specs/B-143-offline-sync.md) | Planned |
 | B-145 | A/C/E | Lifecycle de objetos, quotas de storage e CDN opcional | B-131, B-134 | [B-145](../product/specs/B-145-lifecycle-storage.md) | Planned |
-| B-144 | A/B/C/E/F | HA, rolling upgrade e zero-downtime documentado | B-146, D-25, D-28 | [B-144](../product/specs/B-144-ha-rolling-upgrade.md) | Planned |
+| B-144 | A/B/C/E/F | HA, rolling upgrade e zero-downtime documentado | B-170, B-146, D-25, D-28 | [B-144](../product/specs/B-144-ha-rolling-upgrade.md) | Planned |
 | B-065 | B/C/A/E | Federação entre instâncias | B-138, B-146, D-21 | [B-065](../product/specs/B-065-federacao.md) | Planned |
 | B-064 | B/C/D/E | Canais confidenciais E2EE | B-129, B-169, D-26 | [B-064](../product/specs/B-064-canais-e2ee.md) | Planned |
 
 ### Critérios de saída
 
+- hot paths medidos e documento de performance/escalabilidade publicado (B-170);
 - ADRs 015–017 avaliados com métricas;
 - RPO/RTO/SLO definidos para o novo porte;
 - upgrade e rollback testados com dados representativos;
@@ -240,7 +243,7 @@ projeção opcional conforme
 | Anúncios, agendamento, inbox, status | Decisões, digests, playbooks, policy packs | Live media |
 | Histórico, templates, malware scan | Developer portal, SDK, automation builder | Federação |
 | Audit SIEM, modo auditoria↔E2EE (B-169), quotas, lifecycle | RAG autorizado, bots internos e MCP governado | E2EE |
-| Capacity model | Enterprise governance | Canvas CRDT |
+| Capacity model + revisão de performance | Enterprise governance | Canvas CRDT |
 | | Plugins/bridges governados | Mobile/offline completo |
 
 ## Sequência obrigatória
@@ -248,7 +251,8 @@ projeção opcional conforme
 1. Concluir Waves 7–10.
 2. Executar W11 → W12 → W13 → W14.
 3. Estabilizar contratos antes de SDK/registry/bridges.
-4. Medir porte real antes de HA, bus, OpenSearch ou Kubernetes.
+4. Medir porte (B-146) e revisar performance/escalabilidade (B-170) antes de HA,
+   bus, OpenSearch ou Kubernetes.
 5. Executar W15 → W16 → W17 → W18, respeitando dependências.
 6. Publicar bots somente após audit, guardrails e evals da própria Wave 18.
 7. Abrir no máximo **uma aposta arquitetural** por vez.
