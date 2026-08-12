@@ -1,3 +1,4 @@
+/** @vitest-environment jsdom */
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -7,7 +8,10 @@ import { AuthService } from '../core/auth/auth.service';
 import { ChannelStore } from '../core/services/channel.store';
 import { ChatHubService } from '../core/services/chat-hub.service';
 import { MessageStore } from '../core/services/message.store';
+import { PinStore } from '../core/services/pin.store';
+import { SavedStore } from '../core/services/saved.store';
 import { ThreadStore } from '../core/services/thread.store';
+import { AttachmentQueueService } from '../features/chat/composer/attachment-queue.service';
 import { ShellPage } from './shell.page';
 import { SHELL_NARROW_MEDIA_QUERY } from './shell-viewport';
 
@@ -56,9 +60,11 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
     id: 'ch-1',
     name: 'geral',
   });
+  const workspaceRole = signal('Member');
 
   beforeEach(async () => {
     activeChannel.set({ id: 'ch-1', name: 'geral' });
+    workspaceRole.set('Member');
     await TestBed.configureTestingModule({
       imports: [ShellPage],
       providers: [
@@ -76,8 +82,8 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
           useValue: {
             activeChannel: activeChannel.asReadonly(),
             activeChannelId: () => activeChannel()?.id ?? null,
-            activeWorkspace: () => ({ id: 'ws-1', name: 'Acme' }),
-            workspaces: () => [{ id: 'ws-1', name: 'Acme' }],
+            activeWorkspace: () => ({ id: 'ws-1', name: 'Acme', role: workspaceRole() }),
+            workspaces: () => [{ id: 'ws-1', name: 'Acme', role: workspaceRole() }],
             error: () => null,
             isDemo: () => true,
             load: vi.fn().mockResolvedValue(undefined),
@@ -104,6 +110,28 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
           useValue: {
             open: () => false,
             close: vi.fn(),
+          },
+        },
+        {
+          provide: PinStore,
+          useValue: {
+            panelOpen: () => false,
+            closePanel: vi.fn(),
+            loadForChannel: vi.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: SavedStore,
+          useValue: {
+            panelOpen: () => false,
+            closePanel: vi.fn(),
+            loadForWorkspace: vi.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: AttachmentQueueService,
+          useValue: {
+            addFiles: vi.fn().mockResolvedValue(undefined),
           },
         },
         {
@@ -134,6 +162,9 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
                 <button type="button" class="shell__backdrop" aria-label="Fechar barra lateral"></button>
               }
               <aside class="shell__sidebar" [attr.aria-hidden]="!sidebarOpen()"></aside>
+              @if (canAccessAdmin()) {
+                <a href="/admin">Admin</a>
+              }
               @if (!sidebarOpen()) {
                 <button type="button" aria-label="Abrir barra lateral" (click)="toggleSidebar()"></button>
               }
@@ -201,5 +232,20 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
     await fixture.whenStable();
 
     expect(fixture.componentInstance.sidebarOpen()).toBe(false);
+  });
+
+  it('hides the Admin link from a Member', () => {
+    const fixture = TestBed.createComponent(ShellPage);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('a[href="/admin"]')).toBeNull();
+  });
+
+  it('shows the Admin link to a WorkspaceOwner', () => {
+    workspaceRole.set('WorkspaceOwner');
+    const fixture = TestBed.createComponent(ShellPage);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('a[href="/admin"]')).toBeTruthy();
   });
 });

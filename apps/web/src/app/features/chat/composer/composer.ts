@@ -809,6 +809,12 @@ export class Composer {
       }
     });
 
+    // BUG-017: Responder shows the cite bar but must also move focus to the textarea.
+    effect(() => {
+      if (!this.messages.replyTarget()) return;
+      queueMicrotask(() => this.composerTextarea()?.nativeElement()?.focus());
+    });
+
     effect(() => {
       // Depend only on the id signal. Reading `activeChannel()` would re-run on every
       // channels list refresh (unread/presence) and abort an in-progress mic recording.

@@ -1,3 +1,4 @@
+/** @vitest-environment jsdom */
 import '@angular/compiler';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -7,6 +8,7 @@ import { ChannelStore } from '../../../core/services/channel.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { DraftStoreService } from '../../../core/services/draft-store.service';
 import { MessageStore } from '../../../core/services/message.store';
+import { ChatMessage } from '../../../shared/models/chat.models';
 import { AttachmentQueueService } from './attachment-queue.service';
 import { AudioRecorderService, RecordedAudio } from './audio-recorder.service';
 import { Composer } from './composer';
@@ -15,6 +17,7 @@ describe('Composer audio submit (BUG-004)', () => {
   const phase = signal<'idle' | 'recording' | 'preview'>('idle');
   const errorMessage = signal<string | null>(null);
   const activeChannelId = signal<string | null>('channel-1');
+  const replyTarget = signal<ChatMessage | null>(null);
   const stop = vi.fn();
   const buildRecordedAudio = vi.fn();
   const reset = vi.fn();
@@ -45,6 +48,7 @@ describe('Composer audio submit (BUG-004)', () => {
     phase.set('idle');
     errorMessage.set(null);
     activeChannelId.set('channel-1');
+    replyTarget.set(null);
     stop.mockReset();
     buildRecordedAudio.mockReset();
     reset.mockReset();
@@ -112,7 +116,7 @@ describe('Composer audio submit (BUG-004)', () => {
           provide: MessageStore,
           useValue: {
             sending: () => false,
-            replyTarget: () => null,
+            replyTarget: replyTarget.asReadonly(),
             send,
             clearReplyTarget,
           },
@@ -207,6 +211,27 @@ describe('Composer audio submit (BUG-004)', () => {
 
     // reset is called once on successful send, not spuriously mid-flight from the effect.
     expect(reset).toHaveBeenCalledTimes(1);
+  });
+
+  it('focuses the textarea when a reply target is set (BUG-017)', async () => {
+    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    textarea.blur();
+
+    replyTarget.set({
+      id: 'message-1',
+      conversationId: 'channel-1',
+      channelId: 'channel-1',
+      authorUserId: 'user-1',
+      authorName: 'Alice',
+      body: 'Original message',
+      createdAt: new Date().toISOString(),
+      status: 'sent',
+      mine: false,
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(textarea);
   });
 
   it('does not send unknown slash commands as messages (B-087)', async () => {

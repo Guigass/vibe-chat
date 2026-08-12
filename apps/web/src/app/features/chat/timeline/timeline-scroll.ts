@@ -1,7 +1,99 @@
 const ANCHOR_LIFETIME_MS = 1200;
 
 export type TimelineScrollAnchor =
-  { kind: 'bottom' } | { kind: 'element'; target: () => HTMLElement | null };
+  | { kind: 'bottom' }
+  | { kind: 'element'; target: () => HTMLElement | null }
+  | { kind: 'prepend'; previousScrollHeight: number; previousScrollTop: number };
+
+/** Latched stickiness: never remasure distance after content already grew (BUG-018). */
+export function shouldStickTimelineToBottom(
+  ownArrival: boolean,
+  nearBottomLatch: boolean,
+): boolean {
+  return ownArrival || nearBottomLatch;
+}
+
+/**
+ * Keeps the scroller glued to the latest message while the user is latched at
+ * the bottom. Late layout (images, audio waves, grouping) only re-pins when
+ * still enabled — user scroll away calls setPinned(false).
+ */
+export class TimelineStickyBottomPin {
+  private resizeObserver: ResizeObserver | null = null;
+  private frameId: number | null = null;
+  private pinned = false;
+
+  constructor(private readonly getScroller: () => HTMLElement | null) {}
+
+  setPinned(pinned: boolean): void {
+    if (!pinned) {
+      this.pinned = false;
+      this.teardown();
+      return;
+    }
+
+    const alreadyPinned = this.pinned;
+    const hadObserver = this.resizeObserver !== null;
+    this.pinned = true;
+    this.ensureObserver();
+    const attachedNow = !hadObserver && this.resizeObserver !== null;
+    // Snap on first enable or when the scroller finally mounts (cold open).
+    // Do not re-snap on repeated setPinned(true) — that fights the wheel.
+    if (!alreadyPinned || attachedNow) this.schedulePin();
+  }
+
+  /** Re-bind after view/list exists without forcing an extra snap by itself. */
+  sync(): void {
+    if (!this.pinned) return;
+    const hadObserver = this.resizeObserver !== null;
+    this.ensureObserver();
+    if (!hadObserver && this.resizeObserver !== null) this.schedulePin();
+  }
+
+  destroy(): void {
+    this.pinned = false;
+    this.teardown();
+  }
+
+  private ensureObserver(): void {
+    if (!this.pinned || typeof ResizeObserver === 'undefined') return;
+    const scroller = this.getScroller();
+    if (!scroller) return;
+
+    if (!this.resizeObserver) {
+      this.resizeObserver = new ResizeObserver(() => this.schedulePin());
+      this.resizeObserver.observe(scroller);
+    }
+
+    const list = scroller.querySelector<HTMLElement>('.timeline__list');
+    if (list) this.resizeObserver.observe(list);
+  }
+
+  private schedulePin(): void {
+    if (!this.pinned || this.frameId !== null) return;
+    this.frameId = requestAnimationFrame(() => {
+      this.frameId = null;
+      this.pinNow();
+    });
+  }
+
+  private pinNow(): void {
+    if (!this.pinned) return;
+    this.ensureObserver();
+    const scroller = this.getScroller();
+    if (!scroller) return;
+    scroller.scrollTop = scroller.scrollHeight;
+  }
+
+  private teardown(): void {
+    if (this.frameId !== null) {
+      cancelAnimationFrame(this.frameId);
+      this.frameId = null;
+    }
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
+  }
+}
 
 export function applyTimelineScrollAnchor(
   scroller: HTMLElement,
@@ -9,6 +101,12 @@ export function applyTimelineScrollAnchor(
 ): boolean {
   if (anchor.kind === 'bottom') {
     scroller.scrollTop = scroller.scrollHeight;
+    return true;
+  }
+
+  if (anchor.kind === 'prepend') {
+    const addedHeight = scroller.scrollHeight - anchor.previousScrollHeight;
+    scroller.scrollTop = anchor.previousScrollTop + Math.max(0, addedHeight);
     return true;
   }
 

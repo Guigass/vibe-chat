@@ -4,6 +4,7 @@ import {
   HostListener,
   OnDestroy,
   OnInit,
+  computed,
   effect,
   inject,
   signal,
@@ -36,6 +37,7 @@ import {
 } from '../shared/ui';
 import { AttachmentQueueService } from '../features/chat/composer/attachment-queue.service';
 import { collectFilesFromDataTransfer } from '../features/chat/composer/attachment-upload';
+import { hasAdminDashboard } from '../features/admin/admin-permissions';
 import { defaultSidebarOpen, SHELL_NARROW_MEDIA_QUERY } from './shell-viewport';
 
 @Component({
@@ -85,6 +87,9 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly searchLoading = signal(false);
   readonly searchError = signal<string | null>(null);
   readonly searchOpen = signal(false);
+  readonly canAccessAdmin = computed(() =>
+    this.channels.workspaces().some((workspace) => hasAdminDashboard(workspace.role)),
+  );
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private searchSeq = 0;

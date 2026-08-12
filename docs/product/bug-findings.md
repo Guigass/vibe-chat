@@ -28,15 +28,16 @@ Regras do registro:
 | ID      | Área              | Achado                                                                | Severidade | Status                                       |
 | ------- | ----------------- | --------------------------------------------------------------------- | ---------- | -------------------------------------------- |
 | BUG-002 | Sidebar / unread  | Badges de novas mensagens não limpam de forma persistente após reload | Média      | **Done** — B-094 |
-| BUG-008 | Presence          | Minimizar a janela marca ausente na hora                              | Média      | Aberto                                       |
+| BUG-008 | Presence          | Minimizar a janela marca ausente na hora                              | Média      | Done                                         |
 | BUG-010 | Timeline / scroll | Ao abrir a conversa não rola até as mensagens mais recentes           | Média      | Done                                         |
-| BUG-011 | Admin / shell     | Membros não veem o botão Admin                                        | Média      | Aberto                                       |
+| BUG-011 | Admin / shell     | Membros não veem o botão Admin                                        | Média      | Done — B-106 (Member sem link)               |
 | BUG-012 | Timeline / bolha  | Toolbar de hover fica em cima da mensagem (texto, reações, cabeçalho) | Média      | Done                                         |
 | BUG-013 | Timeline / pins   | “Ir até” mensagem fixada buga o scroll da timeline                    | Média      | Done                                         |
 | BUG-014 | Timeline / áudio  | Bolha de áudio não mostra as waves do áudio tocando                   | Média      | Done                                         |
-| BUG-015 | Timeline / scroll | Load older ao rolar pra cima devolve o scroll às mais recentes        | Média      | Aberto                                       |
-| BUG-016 | Timeline / unread | Tarja “Novas mensagens” salta/estranha quando chegam outras novas     | Média      | Aberto — normalização aplicada               |
-| BUG-017 | Composer / reply  | Clicar em “Responder” não foca o composer                            | Média      | Aberto                                       |
+| BUG-015 | Timeline / scroll | Load older ao rolar pra cima devolve o scroll às mais recentes        | Média      | Done                                         |
+| BUG-016 | Timeline / unread | Tarja “Novas mensagens” salta/estranha quando chegam outras novas     | Média      | Done                                         |
+| BUG-017 | Composer / reply  | Clicar em “Responder” não foca o composer                            | Média      | Done                                         |
+| BUG-018 | Timeline / scroll | Scroll não fica colado no fim ao enviar/receber (às vezes)           | Média      | Done                                         |
 
 ## Detalhamento
 
@@ -221,7 +222,7 @@ onload="this.media='all'">`. O CSP em
 
 ### BUG-008 — Ausente imediato ao minimizar
 
-- Status: **Aberto**
+- Status: **Done**
 - Observado em: relato de produto, 2026-08-10 — ao minimizar a janela/aba o
   usuário passa a **ausente** imediatamente; esperado só após idle prolongado
   ou quando a sessão/máquina fica bloqueada (não por minimize/troca de foco
@@ -241,9 +242,9 @@ onload="this.media='all'">`. O CSP em
 - Owner automático: Frontend (D) + Realtime (C).
 - Critério de resolução: minimizar não marca away na hora; after timer (ou
   lock) marca away; regressão cobrindo o grace period do visibility handler.
-- Próxima ação: introduzir debounce/idle timer no handler de visibility;
-  avaliar `navigator.userActivation` / eventos de input + APIs de lock quando
-  disponíveis; alinhar copy/contrato de presence se o threshold for produto.
+- Resolução: `visibilityState === 'hidden'` agenda `SetAway` após
+  `AWAY_GRACE_MS` (120s); `visible` cancela o timer e chama `heartbeat`;
+  limpeza em `stopPresenceLoop`. Regressão `chat-hub-presence.spec.ts`.
 
 ### BUG-009 — Reply de thread sem update em tempo real
 
@@ -298,7 +299,7 @@ onload="this.media='all'">`. O CSP em
 
 ### BUG-011 — Membros não veem o botão Admin
 
-- Status: **Aberto**
+- Status: **Done** — decisão de produto alinhada a B-106 (Member sem `/admin`)
 - Observado em: relato de produto, 2026-08-10 — usuário com papel **Member**
   (ex.: DevAuth Alice/Bob) **não vê** o botão/link **Admin** no shell; só
   consegue chegar ao admin com conta Owner/Admin (ex.: Demo) ou URL direta.
@@ -311,16 +312,15 @@ onload="this.media='all'">`. O CSP em
 - Arquivos: `apps/web/src/app/layout/shell.page.html` (footer Admin),
   `shell.page.scss` (`.shell__sidebar` / `.shell__sidebar-footer`),
   `apps/web/src/app/features/admin/admin.guard.ts`, seed de papéis.
-- Resultado esperado: Member vê o link Admin (ou alternativa clara no shell)
-  e, ao abrir, recebe o empty-state/explicação de BUG-005 sem sumir o
-  ponto de entrada; Owner/Admin/Auditor seguem com acesso às áreas.
+- Resultado esperado (fechamento): Member **não** vê o link Admin (matriz
+  B-106); Owner/Admin/Auditor veem o link; deep-link `/admin` por Member
+  mantém empty-state de BUG-005 sem abrir áreas privilegiadas.
 - Risk class: R1.
 - Owner automático: Frontend (D).
-- Critério de resolução: sessão Member mostra o controle Admin no shell
-  (desktop e narrow com sidebar aberta); regressão E2E/smoke; finding `Done`.
-- Próxima ação: confirmar se o footer está clipado/oculto no layout; se o
-  produto quiser esconder Admin de Member, documentar e alinhar B-106 —
-  senão garantir visibilidade do link + empty-state.
+- Critério de resolução: Member sem link Admin no shell; Owner/Admin/Auditor
+  com link; regressão unit/smoke; finding `Done`.
+- Resolução: `shell.page` renderiza Admin só com `hasAdminDashboard` nos
+  workspaces; smoke em `shell-responsive.spec.ts` (Member vs WorkspaceOwner).
 
 ### BUG-012 — Toolbar de hover fica em cima das mensagens
 
@@ -459,7 +459,7 @@ onload="this.media='all'">`. O CSP em
 
 ### BUG-015 — Load older devolve o scroll às mais recentes
 
-- Status: **Aberto**
+- Status: **Done**
 - Severidade: **Média**
 - Observado em: relato de produto, 2026-08-11 — ao rolar a timeline para cima
   (histórico) e disparar o carregamento de mensagens mais antigas, o scroll
@@ -481,13 +481,13 @@ onload="this.media='all'">`. O CSP em
 - Owner automático: Frontend (D).
 - Critério de resolução: regressão unit/E2E — rolar ao topo, load older, a
   mesma âncora visual permanece; finding `Done`.
-- Alívio parcial (2026-08-11): effect ignora crescimento por prepend
-  (`loadingOlder` / cauda estável) e não chama `scrollToBottom` nesse caminho;
-  âncora pós-prepend reforçada. Fechar após prova de regressão estável.
+- Resolução: effect ignora prepend (`loadingOlder` / cauda estável); âncora
+  `kind: 'prepend'` reaplica via double rAF + `ResizeObserver` curto sem
+  competir com `scrollToBottom`. Regressão em `timeline-scroll.spec.ts`.
 
 ### BUG-016 — Tarja “Novas mensagens” estranha com novas chegando
 
-- Status: **Aberto** — normalização aplicada; fecha com regressão verde
+- Status: **Done**
 - Severidade: **Média**
 - Observado em: relato de produto, 2026-08-11 — com a tarja/divisor “Novas
   mensagens” visível, ao chegarem outras mensagens novas a tarja **salta ou
@@ -507,12 +507,12 @@ onload="this.media='all'">`. O CSP em
 - Owner automático: Frontend (D).
 - Critério de resolução: unit com `dividerAfterSeq` congelado sob append;
   contagem `newWhileAway` só sob append real; finding `Done`.
-- Normalização (2026-08-11): `frozenUnreadAfterSeq` na abertura; effect de
-  chegada distingue prepend vs append; botão de salto mantém rótulo estável.
+- Resolução: `frozenUnreadAfterSeq` na abertura; effect distingue prepend vs
+  append; unit `timeline-items.spec.ts` cobre divisor congelado sob append.
 
 ### BUG-017 — “Responder” não foca o composer
 
-- Status: **Aberto**
+- Status: **Done**
 - Severidade: **Média**
 - Observado em: relato de produto, 2026-08-11 — ao clicar **Responder** na
   bolha (toolbar/menu), a barra de citação aparece no composer (B-084), mas o
@@ -532,6 +532,33 @@ onload="this.media='all'">`. O CSP em
 - Owner automático: Frontend (D).
 - Critério de resolução: unit/component — “Responder” → `document.activeElement`
   é o textarea do composer; finding `Done`.
+- Resolução: `effect` no `Composer` foca o `vc-textarea` quando `replyTarget`
+  fica preenchido (canal e thread); regressão em `composer.spec.ts`.
+
+### BUG-018 — Scroll sticky ao enviar/receber
+
+- Status: **Done**
+- Severidade: **Média**
+- Observado em: relato de produto, 2026-08-12 — às vezes ao enviar ou receber
+  mensagem o scroll **não permanece colado** no fim, mesmo com a viewport já
+  nas mensagens mais recentes. Esperado: colado enquanto o usuário está no
+  fundo; descola só quando ele rola para cima e navega o histórico.
+- Hipótese (confirmada): o effect de chegada em `timeline.ts` remedia
+  `isNearBottom(el)` **depois** do append no DOM; o `scrollHeight` já cresceu,
+  então quem estava no fim passa do threshold (`NEAR_BOTTOM_PX`) e o stick
+  falha de forma intermitente (pior com bolha alta/mídia).
+- Arquivos: `apps/web/src/app/features/chat/timeline/timeline.ts`,
+  `timeline-scroll.ts` (`shouldStickTimelineToBottom`,
+  `TimelineStickyBottomPin`).
+- Resultado esperado: no fim, enviar/receber mantém o fundo; rolando para cima
+  não força o fim; voltar ao fim (scroll/botão) recoloca o pin.
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: latched `nearBottom` (sem remedir pós-append);
+  `ownArrival` sempre cola; pin contínuo via `ResizeObserver` enquanto colado;
+  regressão unit; finding `Done`.
+- Resolução: decisão `ownArrival || nearBottom()` antes do microtask; pin
+  contínuo enquanto `nearBottom`; unit em `timeline-scroll.spec.ts`.
 
 ## Fechados
 

@@ -21,6 +21,8 @@ import {
 } from './chat-hub-reconnect';
 import { withoutSelfTyping } from './typing-filter';
 
+export const AWAY_GRACE_MS = 120_000;
+
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
 export interface PresenceChangedEvent {
@@ -206,6 +208,7 @@ export class ChatHubService {
    */
   private readonly joinedChannelIds = new Set<string>();
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private awayTimer: ReturnType<typeof setTimeout> | null = null;
   private visibilityHandler: (() => void) | null = null;
   private onlineHandler: (() => void) | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -735,15 +738,28 @@ export class ChatHubService {
 
     this.visibilityHandler = () => {
       if (document.visibilityState === 'hidden') {
-        void this.setAway();
+        this.clearAwayTimer();
+        this.awayTimer = setTimeout(() => {
+          this.awayTimer = null;
+          void this.setAway();
+        }, AWAY_GRACE_MS);
       } else {
+        this.clearAwayTimer();
         void this.heartbeat();
       }
     };
     document.addEventListener('visibilitychange', this.visibilityHandler);
   }
 
+  private clearAwayTimer(): void {
+    if (this.awayTimer) {
+      clearTimeout(this.awayTimer);
+      this.awayTimer = null;
+    }
+  }
+
   private stopPresenceLoop(): void {
+    this.clearAwayTimer();
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;

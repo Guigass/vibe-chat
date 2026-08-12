@@ -26,7 +26,12 @@ import {
   unreadDividerAfterSeq,
   type TimelineItem,
 } from './timeline-items';
-import { TimelineScrollAnchorController, type TimelineScrollAnchor } from './timeline-scroll';
+import {
+  TimelineScrollAnchorController,
+  TimelineStickyBottomPin,
+  shouldStickTimelineToBottom,
+  type TimelineScrollAnchor,
+} from './timeline-scroll';
 
 const NEAR_BOTTOM_PX = 80;
 const NEAR_TOP_PX = 120;
@@ -395,6 +400,9 @@ export class Timeline {
 
   private loadingOlder = false;
   private scrollAnchorController: TimelineScrollAnchorController | null = null;
+  private readonly stickyBottomPin = new TimelineStickyBottomPin(
+    () => this.scroller()?.nativeElement ?? null,
+  );
 
   private readonly unreadSnapshot = signal(0);
   private readonly frozenUnreadAfterSeq = signal<number | null>(null);
@@ -413,7 +421,10 @@ export class Timeline {
   );
 
   constructor() {
-    this.destroyRef.onDestroy(() => this.scrollAnchorController?.cancel());
+    this.destroyRef.onDestroy(() => {
+      this.scrollAnchorController?.cancel();
+      this.stickyBottomPin.destroy();
+    });
 
     effect(() => {
       const channelId = this.channels.activeChannelId();
@@ -433,7 +444,7 @@ export class Timeline {
         );
         this.unreadLive.set('');
         this.unreadAnnouncedFor = null;
-        this.nearBottom.set(true);
+        this.setNearBottom(true);
         this.messages.markViewedLatest();
         queueMicrotask(() => {
           if (!this.isScrollRequestForChannel(this.messages.scrollRequest(), channelId)) {
@@ -458,6 +469,10 @@ export class Timeline {
 
       if (prependOnly) return;
 
+      // Latch before microtask: after DOM growth, remasuring distance falsely
+      // reports "away" even when the user was stuck at the bottom (BUG-018).
+      const stick = shouldStickTimelineToBottom(ownArrival, this.nearBottom());
+
       queueMicrotask(() => {
         if (this.isScrollRequestForChannel(this.messages.scrollRequest(), channelId)) return;
         const el = this.scroller()?.nativeElement;
@@ -465,17 +480,15 @@ export class Timeline {
           this.afterChannelOpen();
           return;
         }
-        const near = el ? this.isNearBottom(el) : this.nearBottom();
-        this.nearBottom.set(near);
-        if (ownArrival || near) {
+        if (stick) {
+          this.setNearBottom(true);
           this.scrollToBottom(el);
           this.newWhileAway.set(0);
-          this.nearBottom.set(true);
           this.messages.markViewedLatest();
           this.clearActiveUnread();
         } else {
           this.newWhileAway.update((n) => n + added);
-          this.nearBottom.set(false);
+          this.setNearBottom(false);
           this.messages.setViewingLatest(false);
         }
       });
@@ -507,7 +520,7 @@ export class Timeline {
     if (!el) return;
     const near = this.isNearBottom(el);
     const wasNear = this.nearBottom();
-    this.nearBottom.set(near);
+    this.setNearBottom(near);
     if (near && !wasNear) {
       this.newWhileAway.set(0);
       this.clearActiveUnread();
@@ -531,19 +544,19 @@ export class Timeline {
     this.loadingOlder = false;
     if (!loaded) return;
 
-    const restore = () => {
-      const delta = el.scrollHeight - prevHeight;
-      if (delta > 0) el.scrollTop = prevTop + delta;
+    const prependAnchor: TimelineScrollAnchor = {
+      kind: 'prepend',
+      previousScrollHeight: prevHeight,
+      previousScrollTop: prevTop,
     };
-    // Double rAF: wait for Angular to commit prepend + drop the top skeleton.
-    requestAnimationFrame(() => requestAnimationFrame(restore));
+    this.anchorTimeline(el, prependAnchor);
   }
 
   jumpToLatest(): void {
     this.messages.cancelScrollRequest();
-    this.scrollToBottom();
     this.newWhileAway.set(0);
-    this.nearBottom.set(true);
+    this.setNearBottom(true);
+    this.scrollToBottom();
     this.unreadDismissed.set(true);
     this.messages.markViewedLatest();
     this.clearActiveUnread();
@@ -664,7 +677,7 @@ export class Timeline {
         },
         () => {
           const near = this.isNearBottom(el);
-          this.nearBottom.set(near);
+          this.setNearBottom(near);
           if (near) this.messages.markViewedLatest();
           else this.messages.setViewingLatest(false);
           if (!near && this.newWhileAway() === 0) {
@@ -674,8 +687,8 @@ export class Timeline {
       );
       return;
     }
+    this.setNearBottom(true);
     this.scrollToBottom(el);
-    this.nearBottom.set(true);
     this.messages.markViewedLatest();
   }
 
@@ -720,6 +733,8 @@ export class Timeline {
 
   private scrollToBottom(el = this.scroller()?.nativeElement): void {
     if (!el) return;
+    // Scroller may appear after the latch was set; re-bind the pin observer.
+    if (this.nearBottom()) this.stickyBottomPin.sync();
     this.anchorTimeline(el, { kind: 'bottom' });
   }
 
@@ -742,12 +757,19 @@ export class Timeline {
           ) ?? null,
       },
       () => {
-        this.nearBottom.set(this.isNearBottom(el));
+        this.setNearBottom(this.isNearBottom(el));
         this.messages.setViewingLatest(false);
       },
       () => this.messages.cancelScrollRequest(request.requestId),
       () => this.messages.acknowledgeScrollRequest(request.requestId),
     );
+  }
+
+  private setNearBottom(near: boolean): void {
+    // Always sync the pin — nearBottom starts true, so skipping when unchanged
+    // left the pin disarmed until the user scrolled away and back.
+    this.nearBottom.set(near);
+    this.stickyBottomPin.setPinned(near);
   }
 
   private anchorTimeline(

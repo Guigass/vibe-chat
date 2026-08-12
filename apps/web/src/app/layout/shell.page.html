@@ -40,7 +40,9 @@
     <vc-channel-list />
 
     <footer class="shell__sidebar-footer">
-      <a routerLink="/admin" routerLinkActive="is-active">Admin</a>
+      @if (canAccessAdmin()) {
+        <a routerLink="/admin" routerLinkActive="is-active">Admin</a>
+      }
       <button type="button" (click)="logout()">Sair</button>
     </footer>
   </aside>
