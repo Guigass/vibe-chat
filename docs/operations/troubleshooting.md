@@ -14,6 +14,17 @@
 
 ## Auth / Login
 
+### Sintoma: clicar em “Entrar com Keycloak” volta para `/login`
+
+- No Coolify, publique o domínio no serviço `web`, porta interna `80`; o Nginx
+  desse container encaminha `/auth/*` para o Keycloak.
+- Confirme `KEYCLOAK_PUBLIC_URL` e `KEYCLOAK_HOSTNAME` com a URL pública
+  `https://<dominio>/auth` e `KEYCLOAK_HTTP_RELATIVE_PATH=/auth`.
+- O Service Worker não pode tratar `/auth/**` (nem as demais rotas de proxy)
+  como navegação Angular. Verifique as exclusões em `apps/web/ngsw-config.json`.
+- Após publicar uma correção do Service Worker, recarregue a aplicação para o
+  navegador ativar o novo manifesto antes de repetir o login.
+
 ### Sintoma: redirect loop no login
 
 - Conferir `redirect_uri` do client Angular no Keycloak
