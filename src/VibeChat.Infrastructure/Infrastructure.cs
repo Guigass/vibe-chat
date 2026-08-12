@@ -2860,7 +2860,11 @@ public sealed class ChatHub(
     }
 }
 
-public sealed class SeedData(VibeChatDbContext dbContext, IClock clock, ILogger<SeedData> logger)
+public sealed class SeedData(
+    VibeChatDbContext dbContext,
+    IClock clock,
+    ILogger<SeedData> logger,
+    IConfiguration? configuration = null)
 {
     public static readonly WorkspaceId DemoWorkspaceId = new(Guid.Parse("11111111-1111-1111-1111-111111111111"));
     public static readonly TenantId DemoTenantId = new(DemoWorkspaceId.Value);
@@ -2868,6 +2872,7 @@ public sealed class SeedData(VibeChatDbContext dbContext, IClock clock, ILogger<
     public static readonly UserId DemoUserId = new(Guid.Parse("33333333-3333-3333-3333-333333333333"));
     public static readonly UserId AliceUserId = new(Guid.Parse("44444444-4444-4444-4444-444444444444"));
     public static readonly UserId BobUserId = new(Guid.Parse("55555555-5555-5555-5555-555555555555"));
+    public static readonly UserId InitialAdminUserId = new(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
     public static readonly Guid DemoSpaceGeralId = Guid.Parse("88888888-8888-8888-8888-888888888888");
     public static readonly Guid DemoSpaceEngenhariaId = Guid.Parse("99999999-9999-9999-9999-999999999999");
 
@@ -2893,6 +2898,29 @@ public sealed class SeedData(VibeChatDbContext dbContext, IClock clock, ILogger<
             {
                 dbContext.UserProfiles.Add(user);
             }
+        }
+
+        UserId? initialAdminUserId = null;
+        var initialAdminEmail = configuration?["Seed:InitialAdminEmail"]?.Trim().ToLowerInvariant();
+        if (!string.IsNullOrWhiteSpace(initialAdminEmail))
+        {
+            var initialAdmin = await dbContext.UserProfiles
+                .FirstOrDefaultAsync(x => x.Email.ToLower() == initialAdminEmail, cancellationToken);
+            if (initialAdmin is null)
+            {
+                initialAdmin = new UserProfile
+                {
+                    Id = InitialAdminUserId,
+                    Subject = WorkspaceRolePolicies.PendingSubjectForEmail(initialAdminEmail),
+                    Email = initialAdminEmail,
+                    DisplayName = "Admin",
+                    CreatedAt = now,
+                    UpdatedAt = now
+                };
+                dbContext.UserProfiles.Add(initialAdmin);
+            }
+
+            initialAdminUserId = initialAdmin.Id;
         }
 
         if (!await dbContext.Spaces.IgnoreQueryFilters().AnyAsync(x => x.Id == DemoSpaceGeralId, cancellationToken))
@@ -2944,7 +2972,18 @@ public sealed class SeedData(VibeChatDbContext dbContext, IClock clock, ILogger<
             }
         }
 
-        foreach (var (userId, role) in new[] { (DemoUserId, Role.WorkspaceOwner), (AliceUserId, Role.Member), (BobUserId, Role.Member) })
+        var seededMemberships = new List<(UserId UserId, Role Role)>
+        {
+            (DemoUserId, Role.WorkspaceOwner),
+            (AliceUserId, Role.Member),
+            (BobUserId, Role.Member)
+        };
+        if (initialAdminUserId is { } adminUserId)
+        {
+            seededMemberships.Add((adminUserId, Role.WorkspaceOwner));
+        }
+
+        foreach (var (userId, role) in seededMemberships)
         {
             if (!await dbContext.WorkspaceMembers.IgnoreQueryFilters().AnyAsync(x => x.WorkspaceId == DemoWorkspaceId && x.UserId == userId, cancellationToken))
             {

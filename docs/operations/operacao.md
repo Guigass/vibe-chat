@@ -31,6 +31,8 @@ task apps
 - OIDC: `Authentication__Authority` = issuer público (`KEYCLOAK_ISSUER_URL`); discovery in-network via `Authentication__MetadataAddress` → `keycloak:8080`
 - Lab/demo: `ASPNETCORE_ENVIRONMENT=Development` + `SEED_ENABLED=true` (default) aplica migrate/seed no startup
 - Primeiro boot de staging sem dados demo: `DATABASE_BOOTSTRAP_ON_STARTUP=true` + `SEED_ENABLED=false` aplica migrations e catálogo RLS. Depois, manter o switch conforme a política de release; produção prefere job de migration explícito.
+- Alpha/staging com workspace inicial: `SEED_ENABLED=true`, `SEED_INITIAL_ADMIN_EMAIL=admin@vibechat.local` e `VIBECHAT_INITIAL_ADMIN_PASSWORD` definido no secret manager. A senha importada é temporária e deve ser trocada no primeiro login.
+- Reimport controlado do Keycloak: mudar `KEYCLOAK_DB_SCHEMA` para um schema novo recria o estado do Keycloak a partir do realm versionado sem apagar o schema anterior; sessões e usuários anteriores deixam de valer.
 - Produção: `ASPNETCORE_ENVIRONMENT=Production`, `SEED_ENABLED=false`, secrets reais só via `.env` / secret manager (D-04)
 - `compose.override.yaml` (host networking) é opcional para DX em ambientes restritos — **não** faz parte do caminho oficial; `task apps` usa `compose.yaml` + `compose.dev.yaml`
 - Coolify: apenas `compose.yaml` (sem redes custom, `container_name` ou `ports` de host); domínio no serviço `web`

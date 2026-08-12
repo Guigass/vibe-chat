@@ -80,6 +80,7 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/${KEYCLOAK_DB:-keycloak}
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak_dev_password_change_me}
+      KC_DB_SCHEMA: ${KEYCLOAK_DB_SCHEMA:-public}
       # Full public URL when behind path proxy, e.g. https://host/auth (Keycloak 26
       # hostname v2). Hostname-only is fine for local lab (compose.override sets port).
       # Do NOT set KC_HOSTNAME_PORT here — it breaks HTTPS public URLs on Coolify.
@@ -94,6 +95,7 @@ services:
       KC_METRICS_ENABLED: "true"
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin_dev_password_change_me}
+      VIBECHAT_INITIAL_ADMIN_PASSWORD: ${VIBECHAT_INITIAL_ADMIN_PASSWORD:-}
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ${KEYCLOAK_REALM_IMPORT_FILE:-./infra/keycloak/realm-vibechat.json}:/opt/keycloak/data/import/realm-vibechat.json:ro
@@ -318,6 +320,7 @@ services:
       RuntimeSettings__Encryption__Keys__1: ${RuntimeSettings__Encryption__Keys__1:-}
       Database__BootstrapOnStartup: ${DATABASE_BOOTSTRAP_ON_STARTUP:-false}
       Seed__Enabled: ${SEED_ENABLED:-false}
+      Seed__InitialAdminEmail: ${SEED_INITIAL_ADMIN_EMAIL:-}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     depends_on:
       postgres:

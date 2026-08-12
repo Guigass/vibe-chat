@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using System.Text.Json;
 using FluentAssertions;
 
 namespace VibeChat.ArchitectureTests;
@@ -62,6 +63,38 @@ public sealed class ComposeConfigCatalogTests
         apiBlock.Should().Contain(
             "Database__BootstrapOnStartup: ${DATABASE_BOOTSTRAP_ON_STARTUP:-false}",
             because: "staging first boot needs an explicit migration switch without enabling demo seed data");
+    }
+
+    [Fact]
+    public void Staging_bootstrap_exposes_keycloak_schema_and_initial_owner_bindings()
+    {
+        var compose = ReadRepoFile("compose.yaml");
+        var keycloakBlock = ExtractServiceEnvironmentBlock(compose, "keycloak");
+        var apiBlock = ExtractServiceEnvironmentBlock(compose, "api");
+
+        keycloakBlock.Should().Contain("KC_DB_SCHEMA: ${KEYCLOAK_DB_SCHEMA:-public}");
+        keycloakBlock.Should().Contain("VIBECHAT_INITIAL_ADMIN_PASSWORD: ${VIBECHAT_INITIAL_ADMIN_PASSWORD:-}");
+        apiBlock.Should().Contain("Seed__InitialAdminEmail: ${SEED_INITIAL_ADMIN_EMAIL:-}");
+    }
+
+    [Fact]
+    public void Staging_realm_emits_subject_and_imports_temporary_admin_without_committed_password()
+    {
+        using var realm = JsonDocument.Parse(ReadRepoFile(Path.Combine("infra", "keycloak", "realm-vibechat.staging.json")));
+        var root = realm.RootElement;
+        var web = root.GetProperty("clients").EnumerateArray()
+            .Single(x => x.GetProperty("clientId").GetString() == "vibechat-web");
+        var subjectMapper = web.GetProperty("protocolMappers").EnumerateArray()
+            .Single(x => x.GetProperty("protocolMapper").GetString() == "oidc-sub-mapper");
+
+        subjectMapper.GetProperty("config").GetProperty("access.token.claim").GetString().Should().Be("true");
+        subjectMapper.GetProperty("config").GetProperty("lightweight.claim").GetString().Should().Be("true");
+
+        var admin = root.GetProperty("users").EnumerateArray()
+            .Single(x => x.GetProperty("username").GetString() == "admin");
+        admin.GetProperty("credentials")[0].GetProperty("value").GetString()
+            .Should().Be("${VIBECHAT_INITIAL_ADMIN_PASSWORD}");
+        admin.GetProperty("credentials")[0].GetProperty("temporary").GetBoolean().Should().BeTrue();
     }
 
     [Fact]

@@ -93,6 +93,7 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 | `API_BASE_URL`, `WEB_BASE_URL` | — | web build | URLs públicas |
 | `DATABASE_BOOTSTRAP_ON_STARTUP` | `Database__BootstrapOnStartup` | api | `false` por default; `true` no primeiro boot de staging aplica migrations + catálogo RLS sem seed |
 | `SEED_ENABLED` | `Seed__Enabled` | api | `false` em prod |
+| `SEED_INITIAL_ADMIN_EMAIL` | `Seed__InitialAdminEmail` | api | Com seed ativo, cria um stub pendente como `WorkspaceOwner`; o primeiro login OIDC com esse email assume o perfil |
 | `AI__Enabled`, `AI__Provider` | `Ai__*` | api | Off default (D-06) |
 | `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL` | `Ai__OpenRouter__*` | api | Fallback env; BaseUrl permanece env; key pode ir ao DB criptografada (ADR-020) |
 | `EMAIL__*` | `Email__*` | api | Injetado no profile `apps`; senha fallback env ou envelope DB |
@@ -101,6 +102,20 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 | `RuntimeSettings__DatabaseOverridesEnabled` | `RuntimeSettings__DatabaseOverridesEnabled` | api, worker | Default `false`; liga overrides DB + rotação |
 | `RuntimeSettings__Encryption__ActiveKeyVersion` | idem | api, worker | Versão ativa do keyring AES-GCM |
 | `RuntimeSettings__Encryption__Keys__{n}` | idem | api, worker | Chave mestra base64 (32 bytes); **nunca** no DB |
+
+### Primeiro administrador do staging
+
+O realm de staging importa o usuário `admin` com senha temporária lida de
+`VIBECHAT_INITIAL_ADMIN_PASSWORD`; o valor não fica versionado. Defina também
+`SEED_ENABLED=true` e `SEED_INITIAL_ADMIN_EMAIL=admin@vibechat.local` para que o
+primeiro login assuma um membership real de `WorkspaceOwner` no workspace de
+alpha. O cliente `vibechat-web` mantém o mapper `subject` no access token, inclusive
+para lightweight tokens.
+
+Quando for necessário reimportar o realm sem apagar o schema anterior, altere
+`KEYCLOAK_DB_SCHEMA` para um nome de schema novo e faça o redeploy. Isso invalida
+as sessões e recria os usuários do realm importado; use apenas com autorização
+explícita no staging.
 
 ### Variáveis do template fora das substituições do Compose
 
