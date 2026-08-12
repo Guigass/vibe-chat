@@ -27,7 +27,8 @@ O trabalho aberto concentra-se em:
 2. Wave 7 feature work completa (W7-9 / B-165 Done); sustentação authZ aberta
    (W7-10…W7-13 / B-174…B-177 — revisão API 2026-08-12);
 3. avançar Wave 9 de leitura/paridade (W9-0…W9-6 Done; próximo: W9-7 / B-094; W9-8 / B-168, W9-9 / B-171 e W9-10 / B-173 paralelos após deps); Wave 8 completa;
-4. consumir o roadmap autorizado W11–W17.
+4. consumir o roadmap autorizado W11–W19 (Wave 19 = organização do código,
+   recomendada antes de W11).
 
 ## Runtime e fronteiras
 
@@ -86,12 +87,14 @@ W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo co
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
 W8-9 / B-087 **Done** (slash commands + discovery + topic).
 
-O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W17. Ele não
-altera a prioridade imediata: o Build só o consome depois de W7–W10 `Done`.
+O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W19. Wave 19
+(organização do código) é recomendada antes de W11. Ele não altera a prioridade
+imediata: o Build só consome W11+ depois de W7–W10 `Done`.
 
 ## Baseline de planejamento
 
-- 89 itens `Planned` entre W7–W17 (B-104/W7-6 Done via #82; B-076/W7-3 Done via #84;
+- 95 itens `Planned` entre W7–W19 (B-178…B-183 catalogados em W19 — organização
+  do código; B-104/W7-6 Done via #82; B-076/W7-3 Done via #84;
   B-165/W7-9 Done 2026-08-10; B-088/W9-1 Done; B-171 catalogado em W9-9;
   B-173 catalogado em W9-10 — editar no composer; B-167 catalogado em W11;
   B-169 catalogado em W14 — gate auditoria↔E2EE;

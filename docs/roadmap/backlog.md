@@ -165,7 +165,22 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-066 | Plugins — capabilities avançadas | Planned — W15, após B-109/B-110 |
 | B-111 | Interações governadas para plugins | Planned — W15, após B-066 |
 
-## Waves 11–17 — Horizonte promovido
+## Wave 19 — Organização e decomposição do código
+
+Wave separada de refatoração estrutural (sem feature de produto). Reduz arquivos
+monolíticos e clarifica responsabilidades por fronteira de módulo. Elegível após
+Waves 7–10; **recomendada antes da Wave 11**.
+
+| ID | Item | Notas |
+|----|------|-------|
+| B-178 | Decompor `Program.cs` da API | Planned (W19-1) — maps/handlers por módulo; composition root fino; deps B-174 recomendado |
+| B-179 | Decompor `Infrastructure.cs` | Planned (W19-2) — registradores DI/adapters por área; deps W19-1 recomendado |
+| B-180 | Decompor `api.service.ts` | Planned (W19-3) — services por domínio; fachada fina |
+| B-181 | Decompor stores e hub do web | Planned (W19-4) — `message.store`, `chat-hub`, `channel.store`, `thread.store`; deps W19-3 recomendado |
+| B-182 | Decompor `composer` e `message-bubble` | Planned (W19-5) — subcomponentes/serviços; deps W19-3 e B-173 recomendados |
+| B-183 | Arch test: limite de linhas por arquivo | Planned (W19-6) — gate CI; exclusões migrations/gerados; deps W19-1…W19-5 |
+
+## Waves 11–17 — Horizonte promovido (produto)
 
 Os itens abaixo estão catalogados e ordenados no roadmap executável
 [`horizonte-ambicioso.md`](horizonte-ambicioso.md). Eles não competem com Waves
@@ -196,10 +211,11 @@ Ordem daqui para frente: **safety lane** (`BUG-*` Alta) antes de inventar ou
 avançar feature de wave; depois **paridade de mensageria** na ordem das
 waves — 8 (composição; W8-9 / B-087 Done), 9 (leitura; W9-0 / B-163 Done; W9-1 / B-088 Done; B-094 fecha
 BUG-002 / não lidas persistentes), 10 (notificações, organização, acesso e
-núcleo de plugins: B-109 → B-108 → B-110). Depois seguir W11–W17; a trilha
-avançada de plugins continua em W15 com B-066 → B-111/B-136. Dentro de cada
-wave, seguir a ordem da tabela; itens sem dependência entre si podem ir em
-paralelo por trilhas diferentes.
+núcleo de plugins: B-109 → B-108 → B-110). Depois **Wave 19** (organização do
+código — recomendada antes de W11) ou seguir W11–W17; a trilha avançada de
+plugins continua em W15 com B-066 → B-111/B-136. Dentro de cada wave, seguir a
+ordem da tabela; itens sem dependência entre si podem ir em paralelo por trilhas
+diferentes.
 
 Depois disso, usar a sequência de validação do horizonte ambicioso: comunicação
 organizada → conhecimento/ações → automação/governança (W13: B-164 SSO antes de

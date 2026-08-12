@@ -76,13 +76,14 @@ Build = 1. Segurança contra trabalho duplicado prevalece sobre velocidade.
    `BUG-*` Alta em `docs/product/bug-findings.md`, ou `UX-*` Alta no caminho
    principal;
 2. consumir `roadmap.md` até W10;
-3. consumir `horizonte-ambicioso.md` de W11 a W17;
-4. dentro da primeira wave não terminal, pegar a primeira linha elegível;
-5. item posterior só ultrapassa `BLOCKED-TECH` se não depender dele e não tocar
+3. consumir **Wave 19** em `horizonte-ambicioso.md` (recomendada antes de W11);
+4. consumir `horizonte-ambicioso.md` de W11 a W18;
+5. dentro da primeira wave não terminal, pegar a primeira linha elegível;
+6. item posterior só ultrapassa `BLOCKED-TECH` se não depender dele e não tocar
    os mesmos contratos/módulos;
-6. `Conditional` B-060/B-061/B-062 não entra até o ADR registrar métrica acima
+7. `Conditional` B-060/B-061/B-062 não entra até o ADR registrar métrica acima
    do gatilho;
-7. `External action` não bloqueia itens independentes.
+8. `External action` não bloqueia itens independentes.
 
 ## Cadência e budgets
 
@@ -153,7 +154,7 @@ Todo PR registra:
 
 ```text
 Work-Item: <B-*|GAP-*|HOTFIX-*|SEC-*|OPS-*|BUG-*|UX-*|DOCS-*>
-Wave: <W*-*|W11…W17|maintenance|docs|recovery>
+Wave: <W*-*|W11…W19|maintenance|docs|recovery>
 Trilha: <A|B|C|D|E|F|G>
 Deps satisfeitas: <ids ou —>
 Automation: build|docs|ux-review|watchdog

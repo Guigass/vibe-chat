@@ -239,6 +239,46 @@ projeção opcional conforme
 - evals adversariais, staged rollout e rollback bloqueiam publicação insegura;
 - chat continua operacional com IA, Qdrant ou MCP indisponíveis.
 
+## Wave 19 — Organização e decomposição do código
+
+Objetivo: reduzir arquivos monolíticos, clarificar responsabilidades por
+fronteira de módulo e facilitar review/manutenção **sem alterar comportamento**
+nem contratos públicos. Wave separada das waves de produto — só refatoração
+estrutural com testes verdes.
+
+**Baseline observada (2026-08-12):** `apps/api/Program.cs` (~5,5k linhas),
+`Infrastructure.cs` (~3,1k), `api.service.ts` (~1,3k), `composer.ts` (~1,3k),
+`message-bubble.ts` (~1,2k) e stores/hub do web acima de ~800 linhas.
+
+| ID | Trilha | Tarefa | Deps | Spec | Status |
+|----|--------|--------|------|------|--------|
+| W19-1 | B | Decompor composition root da API (`Program.cs` → maps/handlers por módulo) | B-174 (recomendado) | [B-178](../product/specs/B-178-decompor-api-program.md) | Planned |
+| W19-2 | B/A | Decompor registro de Infrastructure (`Infrastructure.cs` → registradores por área) | W19-1 (recomendado) | [B-179](../product/specs/B-179-decompor-infrastructure.md) | Planned |
+| W19-3 | D | Decompor camada HTTP do web (`api.service.ts` → services por domínio) | — | [B-180](../product/specs/B-180-decompor-api-service-web.md) | Planned |
+| W19-4 | D | Decompor stores e hub do web (`message.store`, `chat-hub`, `channel.store`, `thread.store`) | W19-3 (recomendado) | [B-181](../product/specs/B-181-decompor-stores-web.md) | Planned |
+| W19-5 | D | Decompor componentes de chat (`composer`, `message-bubble` → subcomponentes/serviços) | W19-3, B-173 (recomendado) | [B-182](../product/specs/B-182-decompor-componentes-chat.md) | Planned |
+| W19-6 | E/G | Arch test: limite de linhas por arquivo (gate CI; exclusões documentadas) | W19-1…W19-5 | [B-183](../product/specs/B-183-arch-test-limite-arquivo.md) | Planned |
+
+### Critérios de saída
+
+- `Program.cs` permanece composition root fino (bootstrap + `Map*` por módulo);
+  handlers em pastas por fronteira (`Endpoints/`, extensões por módulo).
+- `Infrastructure.cs` delega DI/adapters a registradores coesos por área.
+- Web: `api.service.ts` vira fachada fina; domínios em services dedicados;
+  stores/hub/componentes de chat com responsabilidade única e arquivos menores.
+- Nenhuma mudança de contrato HTTP/SignalR/evento; `task test` + E2E verdes.
+- Arch test impede regressão de arquivos monolíticos (migrations/gerados
+  excluídos conforme spec B-183).
+
+### Regras de execução
+
+1. Um PR por `B-*`; sem misturar refatoração com feature de produto.
+2. Mover código sem alterar lógica; diff deve ser majoritariamente relocate.
+3. Itens W19-1/W19-2 e W19-3…W19-5 podem correr em paralelo quando não
+   tocarem os mesmos arquivos.
+4. Wave 19 é elegível após Waves 7–10 `Done`; recomendada **antes** da Wave 11
+   para reduzir atrito nas próximas superfícies grandes.
+
 ## Portfólio por natureza
 
 | Evolução natural | Diferenciação forte | Aposta arquitetural |
@@ -252,10 +292,12 @@ projeção opcional conforme
 ## Sequência obrigatória
 
 1. Concluir Waves 7–10.
-2. Executar W11 → W12 → W13 → W14.
-3. Estabilizar contratos antes de SDK/registry/bridges.
-4. Medir porte (B-146) e revisar performance/escalabilidade (B-170) antes de HA,
+2. Executar **Wave 19** (organização do código) — recomendada antes da Wave 11;
+   trilhas B e D em paralelo quando não houver conflito de arquivo.
+3. Executar W11 → W12 → W13 → W14.
+4. Estabilizar contratos antes de SDK/registry/bridges.
+5. Medir porte (B-146) e revisar performance/escalabilidade (B-170) antes de HA,
    bus, OpenSearch ou Kubernetes.
-5. Executar W15 → W16 → W17 → W18, respeitando dependências.
-6. Publicar bots somente após audit, guardrails e evals da própria Wave 18.
-7. Abrir no máximo **uma aposta arquitetural** por vez.
+6. Executar W15 → W16 → W17 → W18, respeitando dependências.
+7. Publicar bots somente após audit, guardrails e evals da própria Wave 18.
+8. Abrir no máximo **uma aposta arquitetural** por vez.
