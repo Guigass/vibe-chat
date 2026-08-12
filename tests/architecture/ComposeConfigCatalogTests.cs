@@ -54,6 +54,17 @@ public sealed class ComposeConfigCatalogTests
     }
 
     [Fact]
+    public void Apps_profile_api_exposes_safe_database_bootstrap_switch()
+    {
+        var compose = ReadRepoFile("compose.yaml");
+        var apiBlock = ExtractServiceEnvironmentBlock(compose, "api");
+
+        apiBlock.Should().Contain(
+            "Database__BootstrapOnStartup: ${DATABASE_BOOTSTRAP_ON_STARTUP:-false}",
+            because: "staging first boot needs an explicit migration switch without enabling demo seed data");
+    }
+
+    [Fact]
     public void Apps_profile_worker_injects_message_retention_bindings_from_env()
     {
         var compose = ReadRepoFile("compose.yaml");

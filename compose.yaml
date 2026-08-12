@@ -316,6 +316,7 @@ services:
       RuntimeSettings__DatabaseOverridesEnabled: ${RuntimeSettings__DatabaseOverridesEnabled:-false}
       RuntimeSettings__Encryption__ActiveKeyVersion: ${RuntimeSettings__Encryption__ActiveKeyVersion:-1}
       RuntimeSettings__Encryption__Keys__1: ${RuntimeSettings__Encryption__Keys__1:-}
+      Database__BootstrapOnStartup: ${DATABASE_BOOTSTRAP_ON_STARTUP:-false}
       Seed__Enabled: ${SEED_ENABLED:-false}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     depends_on:

@@ -91,6 +91,7 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 | `ASPNETCORE_ENVIRONMENT` | — | api, worker | `Production` em prod |
 | `API_PORT`, `WEB_PORT` | — | compose | Portas host |
 | `API_BASE_URL`, `WEB_BASE_URL` | — | web build | URLs públicas |
+| `DATABASE_BOOTSTRAP_ON_STARTUP` | `Database__BootstrapOnStartup` | api | `false` por default; `true` no primeiro boot de staging aplica migrations + catálogo RLS sem seed |
 | `SEED_ENABLED` | `Seed__Enabled` | api | `false` em prod |
 | `AI__Enabled`, `AI__Provider` | `Ai__*` | api | Off default (D-06) |
 | `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL` | `Ai__OpenRouter__*` | api | Fallback env; BaseUrl permanece env; key pode ir ao DB criptografada (ADR-020) |
