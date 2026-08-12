@@ -134,7 +134,7 @@ não óbvios de execução. Comandos padrão estão no `README.md` e `Taskfile.y
   `/var/log/vibechat/dockerd.log`.
 - **Runtime sempre em Docker** — data plane e apps via Compose (`compose.yaml`);
   não subir API/Web/Worker no host. Preferir `task apps` ou
-  `docker compose -f compose.yaml --profile apps up -d --build`. Keycloak leva
+`docker compose -f compose.yaml -f compose.dev.yaml --profile apps up -d --build`. Keycloak leva
   ~40s para ficar healthy.
 - **`task dev` NÃO é o caminho neste ambiente** (e o interpretador do go-task /
   gosh não suporta `trap`/`kill 0` da recipe). Use Compose profile `apps`.

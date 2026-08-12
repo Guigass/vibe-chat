@@ -123,7 +123,7 @@ jobs:
     permissions:
       contents: read
     env:
-      COMPOSE_FILE: compose.yaml
+      COMPOSE_FILE: compose.yaml:compose.dev.yaml
       E2E_AUTH_MODE: devauth
       WEB_BASE_URL: http://localhost:4200
       API_BASE_URL: http://localhost:5080

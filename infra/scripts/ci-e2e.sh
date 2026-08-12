@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # W7-1 / B-075 — run Playwright E2E against a local DevAuth stack (CI or lab).
 #
-# Starts data plane via compose.yaml (bridge; ignores host-network override),
-# boots API + Web on the host, then runs tests/e2e with E2E_AUTH_MODE=devauth.
+# Starts data plane via compose.yaml + compose.dev.yaml (bridge; host ports;
+# ignores host-network override), boots API + Web on the host, then runs
+# tests/e2e with E2E_AUTH_MODE=devauth.
 #
 # Usage:
 #   ./infra/scripts/ci-e2e.sh
@@ -17,7 +18,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
-export COMPOSE_FILE="${COMPOSE_FILE:-compose.yaml}"
+export COMPOSE_FILE="${COMPOSE_FILE:-compose.yaml:compose.dev.yaml}"
 export E2E_AUTH_MODE="${E2E_AUTH_MODE:-devauth}"
 export WEB_BASE_URL="${WEB_BASE_URL:-http://localhost:4200}"
 export API_BASE_URL="${API_BASE_URL:-http://localhost:5080}"

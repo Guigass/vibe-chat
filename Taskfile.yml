@@ -62,8 +62,8 @@ tasks:
       - |
         set -euo pipefail
         if [[ ! -f .env ]]; then cp .env.example .env; fi
-        # Use compose.yaml only (skip host-network override) — official bridge path.
-        docker compose -f compose.yaml --profile apps up -d --build
+        # Bridge path: base (Coolify-compatible) + local host ports; skip host-network override.
+        docker compose -f compose.yaml -f compose.dev.yaml --profile apps up -d --build
         ./infra/scripts/wait-for-healthy.sh postgres redis keycloak minio api web worker
         set -a && source .env && set +a
         echo "Apps healthy. Web http://localhost:${WEB_PORT:-4200}  API http://localhost:${API_PORT:-5080}"

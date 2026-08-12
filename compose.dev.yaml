@@ -1,0 +1,66 @@
+# Local / CI host-port publish overlay.
+# Coolify must NOT load this file — use only compose.yaml there.
+#
+# Usage:
+#   docker compose -f compose.yaml -f compose.dev.yaml --profile apps up -d --build
+#   COMPOSE_FILE=compose.yaml:compose.dev.yaml  (local .env)
+#   task apps
+
+services:
+  postgres:
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  redis:
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+  keycloak:
+    ports:
+      - "${KEYCLOAK_HTTP_PORT:-8080}:8080"
+
+  minio:
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+
+  mailpit:
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+
+  otel-collector:
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8888:8888"   # collector metrics
+      - "8889:8889"   # prometheus exporter
+
+  prometheus:
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+
+  grafana:
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+
+  loki:
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+
+  tempo:
+    ports:
+      - "${TEMPO_PORT:-3200}:3200"
+
+  api:
+    ports:
+      - "${API_PORT:-5080}:5080"
+
+  web:
+    ports:
+      - "${WEB_PORT:-4200}:80"
+
+  proxy:
+    ports:
+      - "${PROXY_HTTP_PORT:-8088}:80"
+      - "${PROXY_HTTPS_PORT:-8443}:443"

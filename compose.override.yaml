@@ -4,8 +4,9 @@
 # Do not put production secrets here.
 #
 # Official self-host path (B-074 / W6-8) ignores this file:
-#   docker compose -f compose.yaml --profile apps up -d
+#   docker compose -f compose.yaml -f compose.dev.yaml --profile apps up -d
 #   (or: task apps)
+# Coolify: compose.yaml only (no custom networks / container_name / host ports).
 
 services:
   postgres:

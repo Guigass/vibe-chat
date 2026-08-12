@@ -34,7 +34,7 @@ Plataforma de **chat corporativo open-source e self-hosted**. Organizações ins
 
 ```bash
 cp .env.example .env   # se ainda não existir
-task apps              # docker compose -f compose.yaml --profile apps up -d --build
+task apps              # docker compose -f compose.yaml -f compose.dev.yaml --profile apps up -d --build
 # Web :4200 · API :5080 · seed automático em Development (Seed:Enabled)
 ```
 

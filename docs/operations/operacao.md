@@ -13,12 +13,12 @@ release e compatibilidade:
 
 ## Compose apps — caminho oficial (B-074 / W6-8)
 
-Deploy self-host/demo sobe **data plane + api + web + worker** via profile `apps` (fonte: `compose.yaml`, rede bridge). Dev com hot reload continua em `task setup` + `task dev`.
+Deploy self-host/demo sobe **data plane + api + web + worker** via profile `apps` (fonte: `compose.yaml` + `compose.dev.yaml` local, rede bridge). Dev com hot reload continua em `task setup` + `task dev`.
 
 ```bash
 cp .env.example .env
 task apps
-# equivalente: docker compose -f compose.yaml --profile apps up -d --build
+# equivalente: docker compose -f compose.yaml -f compose.dev.yaml --profile apps up -d --build
 # espera healthy: postgres redis keycloak minio api web worker
 ```
 
@@ -31,7 +31,8 @@ task apps
 - OIDC: `Authentication__Authority` = issuer público (`KEYCLOAK_ISSUER_URL`); discovery in-network via `Authentication__MetadataAddress` → `keycloak:8080`
 - Lab/demo: `ASPNETCORE_ENVIRONMENT=Development` + `SEED_ENABLED=true` (default) aplica migrate/seed no startup
 - Produção: `ASPNETCORE_ENVIRONMENT=Production`, `SEED_ENABLED=false`, secrets reais só via `.env` / secret manager (D-04)
-- `compose.override.yaml` (host networking) é opcional para DX em ambientes restritos — **não** faz parte do caminho oficial; `task apps` usa só `compose.yaml`
+- `compose.override.yaml` (host networking) é opcional para DX em ambientes restritos — **não** faz parte do caminho oficial; `task apps` usa `compose.yaml` + `compose.dev.yaml`
+- Coolify: apenas `compose.yaml` (sem redes custom, `container_name` ou `ports` de host); domínio no serviço `web`
 
 ## Componentes críticos
 
