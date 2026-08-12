@@ -29,9 +29,10 @@ describe('web nginx cache headers (B-165)', () => {
   });
 
   it('lets Keycloak provide the CSP for its own consoles', () => {
-    const keycloakLocation = conf.match(/location \/auth\/ \{[\s\S]*?\n    \}/)?.[0];
+    const keycloakLocation = conf.match(/location \^~ \/auth\/ \{[\s\S]*?\n    \}/)?.[0];
 
     expect(keycloakLocation).toBeDefined();
+    expect(keycloakLocation).toContain('location ^~ /auth/');
     expect(keycloakLocation).toContain('add_header X-Content-Type-Options');
     expect(keycloakLocation).not.toContain('security-headers.conf');
     expect(keycloakLocation).not.toContain('Content-Security-Policy');
