@@ -24,7 +24,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-DOC-CHECKER | Integridade documental | Contrato e baseline DOC-006 existem, mas a CI ainda não executa checker offline | Medium | Open | Implementar as regras de `qualidade-documental.md` sem alterar prioridade das waves |
 | OPS-PR-DRAFT | Tooling de PR | `open_git_pr` pode criar draft | Medium | Mitigated | Prompts convertem imediatamente para ready; monitorar |
 | OPS-DOCS-RACE | Corrida Docs | Merges #72+#73 (~20s) abriram Docs #76+#77; #77 foi re-draftado e ficou CONFLICTING | High | External action | Colar prompts 03/06 atualizados no dashboard (repo já em #78) |
-| OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` — `aria-label` da chip virava só o tooltip (`Bob`) e quebrava `getByLabel(/Reação 👍/i)`; SignalR ok | Critical | Open | Fix em #123 (`reactionAriaLabel`); aguardar E2E verde ≥2× em main |
+| OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | Open | PR deste run alinha `clickMessageToolbarButton` ao menu CDK; aguardar E2E verde ≥2× em main |
 
 ## Resolvidos
 
@@ -71,24 +71,28 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 ### OPS-E2E-REALTIME
 
-- Status: **Open** — causa raiz corrigida em [#123](https://github.com/Guigass/vibe-chat/pull/123);
-  aguarda E2E verde ≥2× em `main` para fechar.
-- Observado em: CI `E2E (Playwright)` em
-  [`realtime-events.spec.ts`](../../tests/e2e/specs/realtime-events.spec.ts) linha 66
-  (`getByLabel(/Reação 👍/i)` em alice após bob reagir).
+- Status: **Open** — `#123` corrigiu `reactionAriaLabel`; falha residual após `bdaf0d8`
+  (toolbar compacta coloca Reagir/Responder no menu CDK; helper E2E ainda buscava botões
+  inline no hover). Fix deste run em `tests/e2e/helpers/message-actions.ts`.
+- Observado em: CI `E2E (Playwright)` —
+  [`realtime-events.spec.ts`](../../tests/e2e/specs/realtime-events.spec.ts) linha 61
+  (`Reagir com 👍` no hover) e
+  [`reply-citing.spec.ts`](../../tests/e2e/specs/reply-citing.spec.ts) linha 41
+  (`Responder` no hover).
 - Base/head SHA: último green `ecb147c9` (2026-08-10T17:07Z); incident tip
   `654f68dc4fc8b6714b751a58c37cc5e975e0396d` (run
-  [#31488977720](https://github.com/Guigass/vibe-chat/actions/runs/31488977720)).
-- Reprodução: CI em `main` — 10 passed, 1 failed; falha persiste em retry interno
-  do Playwright e em docs-only merges (#119, #121).
-- Causa raiz: `aria-label` da chip usava
-  `reactionTooltip(emoji) || ('Reação ' + emoji)`; após `mouseenter` o tooltip
-  (`Bob`) substituía o nome acessível e o locator do E2E falhava — a reação
-  chegava via SignalR (visível na a11y tree como botão `"Bob"`).
-- Resultado esperado: reação propagada via SignalR visível em ambas as sessões;
-  `aria-label` estável `Reação {emoji}` (opcionalmente com `: {tooltip}`).
-- Resultado atual: fix `reactionAriaLabel` no bubble (#123); critérios 1–2 abaixo
-  ainda pendentes em `main`.
+  [#31488977720](https://github.com/Guigass/vibe-chat/actions/runs/31488977720));
+  pós-`bdaf0d8` run
+  [#31547493734](https://github.com/Guigass/vibe-chat/actions/runs/31547493734).
+- Reprodução: CI em `main` — 12 passed, 2 failed; falha em
+  `clickMessageToolbarButton` (`message-actions.ts:33`) ao não encontrar botões
+  que agora vivem no menu “Ações da mensagem”.
+- Causa raiz (parcial, #123): `aria-label` da chip usava tooltip-only após hover.
+- Causa raiz (residual, bdaf0d8): ações primárias migraram para menu CDK; helper
+  E2E não abria o menu antes de clicar.
+- Resultado esperado: reação/resposta via menu compacto; E2E passa em ambas as specs.
+- Resultado atual: helper alinhado ao fluxo de `timeline-toolbar-layout.spec.ts`;
+  critérios 1–2 abaixo ainda pendentes em `main`.
 - Impacto: `main` vermelho bloqueia auto-merge e viola invariante operacional.
 - Risk class: R1 (teste/a11y); severidade Critical por bloqueio de pipeline.
 - Owner automático: Build + QA.
