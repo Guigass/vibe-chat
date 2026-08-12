@@ -93,12 +93,12 @@ imediata: o Build só consome W11+ depois de W7–W10 `Done`.
 
 ## Baseline de planejamento
 
-- 97 itens `Planned` entre W7–W19 (B-178…B-183 catalogados em W19 — organização
-  do código; B-104/W7-6 Done via #82; B-076/W7-3 Done via #84;
-  B-165/W7-9 Done 2026-08-10; B-088/W9-1 Done; B-171 catalogado em W9-9;
-  B-173 catalogado em W9-10 — editar no composer; B-184 catalogado em W9-11 —
-  nav esquerda; B-167/B-185 catalogados em W11 — perfil e personalização visual;
-  B-169 catalogado em W14 — gate auditoria↔E2EE;
+- 98 itens `Planned` entre W7–W19 (B-186/W10-15 — membros do canal; B-178…B-183
+  catalogados em W19 — organização do código; B-104/W7-6 Done via #82;
+  B-076/W7-3 Done via #84; B-165/W7-9 Done 2026-08-10; B-088/W9-1 Done;
+  B-171 catalogado em W9-9; B-173 catalogado em W9-10 — editar no composer;
+  B-184 catalogado em W9-11 — nav esquerda; B-167/B-185 catalogados em W11 —
+  perfil e personalização visual; B-169 catalogado em W14 — gate auditoria↔E2EE;
   B-170 catalogado em W16 — performance/escalabilidade antes de HA;
   B-172 catalogado em W16 — backup de chat com tarefas e destinos remotos);
 - specs em correspondência 1:1 com itens Planned;

@@ -26,6 +26,8 @@ Exatamente o que D-07 revisado autoriza, nada além:
 
 - Guest em múltiplos canais com um convite; guest em DM em grupo; guest com upload
   desabilitado (configurável depois se houver demanda).
+- Adicionar/remover **membro do workspace** em canal privado e roster completo →
+  **B-186** (este item só trata externo/`Role.Guest`).
 
 ## Contratos
 

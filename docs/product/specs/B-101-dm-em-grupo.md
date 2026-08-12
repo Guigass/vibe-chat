@@ -21,6 +21,8 @@ efêmeros que ninguém arquiva.
 ## Fora de escopo
 
 - Promover DM em grupo para canal; papéis dentro da DM; convidar externo (é B-040).
+- Roster/add-remove de **canal privado** do workspace → **B-186** (este item é
+  só `GroupDm`).
 
 ## Contratos
 

@@ -11,7 +11,7 @@ Snapshot de 2026-07-27, após D-28:
 | Controle | Resultado |
 |----------|-----------|
 | Decisões de produto | D-01…D-28, 28 IDs únicos, nenhuma aberta |
-| Itens de produto `Planned` | 97 entre W7 e W19 (B-184 em W9-11 — nav esquerda; B-185 em W11 — personalização visual; B-178…B-183 em W19 — organização do código; B-173 em W9-10 — editar no composer; B-172 em W16 — backup de chat/destinos; B-171 em W9-9; B-170 em W16; B-169 em W14; B-168 em W9-8; B-167 em W11; B-165/W7-9 Done em 2026-08-10) |
+| Itens de produto `Planned` | 98 entre W7 e W19 (B-186 em W10-15 — membros do canal; B-184 em W9-11 — nav esquerda; B-185 em W11 — personalização visual; B-178…B-183 em W19 — organização do código; B-173 em W9-10 — editar no composer; B-172 em W16 — backup de chat/destinos; B-171 em W9-9; B-170 em W16; B-169 em W14; B-168 em W9-8; B-167 em W11; B-165/W7-9 Done em 2026-08-10) |
 | Specs de itens `Planned` | correspondência 1:1 |
 | IDs `Planned` sem spec | 0 |
 | Specs sem item `Planned` | 0 |

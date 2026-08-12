@@ -83,6 +83,7 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-108 | [Extender webhooks outbound](B-108-extender-webhooks.md) |
 | B-109 | [Núcleo plugin — bot/token + envio](B-109-api-integracao-envio-mensagens.md) |
 | B-110 | [Instalar/gerir plugins na instância](B-110-instalar-plugins.md) |
+| B-186 | [Membros do canal (lista + gestão)](B-186-membros-do-canal.md) |
 
 ### Wave 11 — Organização e comunicação
 

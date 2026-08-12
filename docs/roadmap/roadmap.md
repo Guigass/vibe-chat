@@ -293,6 +293,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W10-12 | B/C/D | Extender webhooks outbound (B-108) | B-048, B-069 | [B-108](../product/specs/B-108-extender-webhooks.md) | Planned |
 | W10-13 | B/C/D/E | Núcleo plugin — bot/token + envio msgs (B-109) | B-004, B-069, B-021 | [B-109](../product/specs/B-109-api-integracao-envio-mensagens.md) | Planned |
 | W10-14 | B/C/D | Instalar/gerir plugins na instância (B-110) | W10-13 | [B-110](../product/specs/B-110-instalar-plugins.md) | Planned |
+| W10-15 | B/D | Membros do canal — lista + add/remove em privado (B-186) | B-020 | [B-186](../product/specs/B-186-membros-do-canal.md) | Planned |
 
 ### Itens de maior risco nestas waves
 
@@ -301,6 +302,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W9-4 / B-091 | SSRF — o servidor passa a buscar URL fornecida pelo usuário | Allowlist de esquema, recusa de IP privado/loopback/link-local/metadata **após cada redirect**, timeout, limite de corpo, cache por tenant |
 | W10-10 / B-040 | Escalada de guest para o workspace | Suíte negativa cobrindo **todos** os endpoints de workspace, não uma amostra; membership de canal, nunca de workspace |
 | W10-7 / B-101 | Vazamento de histórico ao adicionar participante | Janela de visibilidade por `seq` de entrada, com teste dedicado |
+| W10-15 / B-186 | Remoção incompleta de membership de canal privado | Suíte: history + `JoinChannel` + listagem após remove/leave; último gestor bloqueado |
 | W10-13 / B-109 | Token de integração exfiltrado / bot sem escopo | Token só hash no DB; escopo explícito de canais; rate-limit; suíte security cross-tenant |
 | W10-14 / B-110 | Plugin confundido com runtime de código | Manifesto = config; sem carregar DLL/JS de terceiro; capabilities extras só em B-066 |
 

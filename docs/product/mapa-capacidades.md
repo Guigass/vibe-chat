@@ -12,7 +12,7 @@ organiza. Estados:
 
 | Capacidade | Estado | Próximo passo |
 |------------|--------|---------------|
-| Channels, spaces, DM 1:1, threads | Atual | Qualidade contínua |
+| Channels, spaces, DM 1:1, threads | Atual | Roster/gestão de membros → B-186 / W10-15 |
 | Grupos na lista de contatos (departamentos + pessoais) | Planned | B-166 / W11 |
 | Timeline rica, menções, anexos múltiplos, áudio, vídeo curto | Committed | Waves 8–9 |
 | Message bubble moderno (layout tipado + ações + preview) | Done | B-163 / W9-0 |

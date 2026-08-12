@@ -25,6 +25,7 @@ empresa pequena espera em 2026, mantendo a identidade visual própria
 | Canal de fórum (post = tópico) | — | posts layout | Forum Channels | — | Fora de escopo fase 2 |
 | Seguir thread / followed threads | sim | sim | — | — | **Falta** — B-102 |
 | Convidado externo | Connect | convidado | convite | — | **Falta** — B-040 |
+| Lista/gestão de membros do canal | sim | sim | sim | — | **Falta** — B-186 |
 
 Referências: Teams passou o layout padrão do primeiro canal para *threads* em maio/2026,
 com gesto “Follow thread” e uma visão agregada de threads seguidas. Discord separa

@@ -150,6 +150,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-108 | Extender webhooks outbound | Planned (W10-12) — mais eventos, multi-endpoint, filtros de canal, ping de teste; spec `docs/product/specs/B-108-extender-webhooks.md` |
 | B-109 | Núcleo plugin — bot/token + envio msgs | Planned (W10-13) — capability `messages.send`; base da trilha; spec `docs/product/specs/B-109-api-integracao-envio-mensagens.md` |
 | B-110 | Instalar/gerir plugins na instância | Planned (W10-14) — manifesto local, built-in Incoming Messages; deps B-109; spec `docs/product/specs/B-110-instalar-plugins.md` |
+| B-186 | Membros do canal (lista + gestão) | Planned (W10-15) — roster; add/remove em privado (`channel.manage`); distinto de guest B-040 e GroupDm B-101; [spec](../product/specs/B-186-membros-do-canal.md) |
 
 ## P3 — Capacidades condicionais e itens promovidos
 
@@ -212,7 +213,7 @@ Ordem daqui para frente: **safety lane** (`BUG-*` Alta) antes de inventar ou
 avançar feature de wave; depois **paridade de mensageria** na ordem das
 waves — 8 (composição; W8-9 / B-087 Done), 9 (leitura; W9-0 / B-163 Done; W9-1 / B-088 Done; B-094 fecha
 BUG-002 / não lidas persistentes; W9-11 / B-184 nav esquerda), 10 (notificações, organização, acesso e
-núcleo de plugins: B-109 → B-108 → B-110). Depois **Wave 19** (organização do
+núcleo de plugins: B-109 → B-108 → B-110; membros do canal B-186 / W10-15). Depois **Wave 19** (organização do
 código — recomendada antes de W11) ou seguir W11–W17; a trilha avançada de
 plugins continua em W15 com B-066 → B-111/B-136. Dentro de cada wave, seguir a
 ordem da tabela; itens sem dependência entre si podem ir em paralelo por trilhas
