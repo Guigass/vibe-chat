@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-11
 - **Fase:** Wave 9 — Leitura e paridade de bolha (Wave 8 completa)
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165)
-- **Próximo item elegível:** W9-7 / B-094; W9-6 / B-093 Done; W9-8 / B-168 (vídeo) após W8-1+W9-0; W9-9 / B-171 (painéis direita) após B-092/B-093; W9-10 / B-173 (editar no composer) após B-084/B-163; W9-5 / B-092 Done; W9-4 / B-091 Done; W9-3 / B-090 Done; W9-2 / B-089 Done; W9-1 / B-088 Done; W9-0 / B-163 Done; BUG-002 fecha em B-094 quando W9-7 elegível
+- **Próximo item elegível:** W9-8 / B-168 (vídeo); W9-9 / B-171 (painéis direita); W9-10 / B-173 (editar no composer); W9-7 / B-094 Done
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -79,8 +79,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W9-7 | Revisões (B-094); W9-6 / B-093 Done; safety lane Alta vazia |
-| 2 | W9-7+ | Demais itens Wave 9 Planned com spec (W9-8 / B-168; W9-9 / B-171; W9-10 / B-173 paralelos) |
+| 1 | W9-8 / W9-9 / W9-10 | Paridade Wave 9 (vídeo, painéis, editar composer); W9-7 / B-094 Done |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).

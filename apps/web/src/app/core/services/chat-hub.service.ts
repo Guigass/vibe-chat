@@ -141,6 +141,13 @@ export interface LinkPreviewReadyEvent {
   status: string;
 }
 
+export interface ReadCursorChangedEvent {
+  channelId: string;
+  userId: string;
+  lastReadSequence: number;
+  tenantId?: string;
+}
+
 interface ReactionChangedPayload {
   messageId?: string;
   channelId: string;
@@ -180,6 +187,13 @@ interface LinkPreviewReadyPayload {
   status?: string;
 }
 
+interface ReadCursorChangedPayload {
+  tenantId?: string;
+  channelId?: string;
+  userId?: string;
+  lastReadSequence?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ChatHubService {
   private readonly auth = inject(AuthService);
@@ -212,6 +226,7 @@ export class ChatHubService {
   private readonly reconnectedHandlers = new Set<() => void | Promise<void>>();
   private readonly thumbnailReadyHandlers = new Set<(event: AttachmentThumbnailReadyEvent) => void>();
   private readonly linkPreviewReadyHandlers = new Set<(event: LinkPreviewReadyEvent) => void>();
+  private readonly readCursorHandlers = new Set<(event: ReadCursorChangedEvent) => void>();
 
   readonly status = this.statusSignal.asReadonly();
   readonly typingUsers = this.typingSignal.asReadonly();
@@ -423,6 +438,22 @@ export class ChatHubService {
         status: payload.status ?? 'Ready',
       };
       for (const handler of this.linkPreviewReadyHandlers) {
+        handler(event);
+      }
+    });
+
+    connection.on('ReadCursorChanged', (raw: ReadCursorChangedPayload | string) => {
+      const payload = this.coercePayload<ReadCursorChangedPayload>(raw);
+      if (!payload?.channelId || payload.userId == null || payload.lastReadSequence == null) {
+        return;
+      }
+      const event: ReadCursorChangedEvent = {
+        tenantId: payload.tenantId ? String(payload.tenantId) : undefined,
+        channelId: String(payload.channelId),
+        userId: String(payload.userId),
+        lastReadSequence: Number(payload.lastReadSequence),
+      };
+      for (const handler of this.readCursorHandlers) {
         handler(event);
       }
     });
@@ -654,6 +685,11 @@ export class ChatHubService {
   onLinkPreviewReady(handler: (event: LinkPreviewReadyEvent) => void): () => void {
     this.linkPreviewReadyHandlers.add(handler);
     return () => this.linkPreviewReadyHandlers.delete(handler);
+  }
+
+  onReadCursorChanged(handler: (event: ReadCursorChangedEvent) => void): () => void {
+    this.readCursorHandlers.add(handler);
+    return () => this.readCursorHandlers.delete(handler);
   }
 
   onPresenceChanged(handler: (event: PresenceChangedEvent) => void): () => void {

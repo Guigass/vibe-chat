@@ -81,6 +81,14 @@ export class ChannelStore {
   readonly isDemo = this.usingDemo.asReadonly();
   readonly composerPrefill = this.composerPrefillSignal.asReadonly();
 
+  constructor() {
+    this.hub.onReadCursorChanged((event) => {
+      const me = this.auth.profile()?.id;
+      if (!me || event.userId !== me) return;
+      void this.syncChannelUnread(event.channelId);
+    });
+  }
+
   /** Ephemeral draft injection from AI suggest-reply (B-045); composer consumes once. */
   prefillComposer(text: string): void {
     this.composerPrefillSignal.set(text);
@@ -124,29 +132,45 @@ export class ChannelStore {
 
   async refreshUnreads(): Promise<void> {
     if (this.usingDemo()) return;
-    const channels = this.channelsSignal();
-    const activeId = this.activeChannelIdSignal();
-    const updated = await Promise.all(
-      channels.map(async (channel) => {
-        try {
-          const counts = await this.api.getUnreadCount(channel.id);
-          return { ...channel, unreadCount: counts.unreadCount, mentionCount: counts.mentionCount };
-        } catch {
-          return channel;
-        }
-      }),
-    );
-    const active = activeId ? updated.find((c) => idsEqual(c.id, activeId)) : undefined;
-    if (active && this.openedUnreadCountSignal() === 0 && active.unreadCount > 0) {
-      this.openedUnreadCountSignal.set(active.unreadCount);
+    const workspace = this.activeWorkspace();
+    if (!workspace) return;
+    try {
+      const rows = await this.api.getWorkspaceChannelUnreads(workspace.id);
+      const byId = new Map(rows.map((row) => [row.channelId.toLowerCase(), row]));
+      this.channelsSignal.update((list) =>
+        list.map((channel) => {
+          const row = byId.get(channel.id.toLowerCase());
+          if (!row) return channel;
+          return {
+            ...channel,
+            unreadCount: row.unreadCount,
+            mentionCount: row.mentionCount,
+          };
+        }),
+      );
+    } catch {
+      // keep current badges; next reconnect can retry
     }
-    this.channelsSignal.set(
-      updated.map((channel) =>
-        activeId && idsEqual(channel.id, activeId)
-          ? { ...channel, unreadCount: 0, mentionCount: 0 }
-          : channel,
-      ),
-    );
+  }
+
+  async syncChannelUnread(channelId: string): Promise<void> {
+    if (this.usingDemo()) return;
+    try {
+      const counts = await this.api.getUnreadCount(channelId);
+      this.patchChannel(channelId, {
+        unreadCount: counts.unreadCount,
+        mentionCount: counts.mentionCount,
+      });
+      if (idsEqual(channelId, this.activeChannelIdSignal())) {
+        this.openedUnreadCountSignal.set(counts.unreadCount);
+      }
+    } catch {
+      // best-effort
+    }
+  }
+
+  setOpenedUnreadCount(count: number): void {
+    this.openedUnreadCountSignal.set(Math.max(0, count));
   }
 
   async selectWorkspace(workspaceId: string): Promise<void> {
@@ -183,11 +207,6 @@ export class ChannelStore {
 
   selectChannel(channelId: string): void {
     this.setActiveChannel(channelId);
-    this.channelsSignal.update((list) =>
-      list.map((c) =>
-        idsEqual(c.id, channelId) ? { ...c, unreadCount: 0, mentionCount: 0 } : c,
-      ),
-    );
   }
 
   private setActiveChannel(channelId: string | null): void {

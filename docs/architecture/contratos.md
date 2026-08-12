@@ -232,7 +232,10 @@ Permissão `message.pin` (default: Member, Moderator, Admin, Bot — não Guest/
 | Tabela | `messaging.message_mentions` (`TenantId`, `MessageId`, `ChannelId`, `MentionedUserId?`, `Kind`: `User`/`Here`/`Channel`) |
 | Escrita | Mesma transação de `SendMessage` |
 | Autocomplete | `GET /api/v1/workspaces/{workspaceId}/channels/{channelId}/members?query=` — membership do canal; até 8 resultados |
-| Unread | `GET /api/v1/channels/{channelId}/unread-count` → `{ unreadCount, mentionCount }` |
+| Unread (por canal) | `GET /api/v1/channels/{channelId}/unread-count` → `{ unreadCount, mentionCount }` |
+| Unread (batch) | `GET /api/v1/workspaces/{workspaceId}/channels/unread` → `[{ channelId, unreadCount, mentionCount, lastReadSeq }]` |
+| Read cursor | `PUT /api/v1/channels/{channelId}/read-cursor` → `{ lastReadSequence, allowRetrograde? }`; monotônico salvo; retrocesso só com `allowRetrograde: true` (marcar como não lida) |
+| Hub | `ReadCursorChanged` — sincroniza badges multi-dispositivo do mesmo usuário |
 | Permissão | `@canal` exige `channel.mention_all` (default: quem pode postar) |
 | Hub `MessageCreated` | `mentionedUserIds: uuid[]`, `mentionKinds: string[]`; cada cliente deriva `mentionsMe` localmente; `clientMessageId` ecoa o `messageId` aceito do cliente (reconcilia UI otimista) |
 
