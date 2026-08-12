@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-12
 - **Fase:** Wave 9 — Leitura e paridade de bolha (Wave 8 completa)
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165)
-- **Próximo item elegível:** W9-8 / B-168 (vídeo); W9-9 / B-171 (painéis direita); W9-10 / B-173 (editar no composer); W9-7 / B-094 Done
+- **Próximo item elegível:** W9-8 / B-168 (vídeo); W9-9 / B-171 (painéis direita); W9-10 / B-173 (editar no composer); W9-11 / B-184 (nav esquerda); W9-7 / B-094 Done
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -26,7 +26,7 @@ O trabalho aberto concentra-se em:
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
 2. Wave 7 feature work completa (W7-9 / B-165 Done); sustentação authZ aberta
    (W7-10…W7-13 / B-174…B-177 — revisão API 2026-08-12);
-3. avançar Wave 9 de leitura/paridade (W9-0…W9-6 Done; próximo: W9-7 / B-094; W9-8 / B-168, W9-9 / B-171 e W9-10 / B-173 paralelos após deps); Wave 8 completa;
+3. avançar Wave 9 de leitura/paridade (W9-0…W9-6 Done; próximo: W9-7 / B-094; W9-8 / B-168, W9-9 / B-171, W9-10 / B-173 e W9-11 / B-184 paralelos após deps); Wave 8 completa;
 4. consumir o roadmap autorizado W11–W19 (Wave 19 = organização do código,
    recomendada antes de W11).
 
@@ -81,7 +81,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W9-8 / W9-9 / W9-10 | Paridade Wave 9 (vídeo, painéis, editar composer); W9-7 / B-094 Done |
+| 1 | W9-8 / W9-9 / W9-10 / W9-11 | Paridade Wave 9 (vídeo, painéis, editar composer, nav esquerda); W9-7 / B-094 Done |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
@@ -93,10 +93,11 @@ imediata: o Build só consome W11+ depois de W7–W10 `Done`.
 
 ## Baseline de planejamento
 
-- 95 itens `Planned` entre W7–W19 (B-178…B-183 catalogados em W19 — organização
+- 97 itens `Planned` entre W7–W19 (B-178…B-183 catalogados em W19 — organização
   do código; B-104/W7-6 Done via #82; B-076/W7-3 Done via #84;
   B-165/W7-9 Done 2026-08-10; B-088/W9-1 Done; B-171 catalogado em W9-9;
-  B-173 catalogado em W9-10 — editar no composer; B-167 catalogado em W11;
+  B-173 catalogado em W9-10 — editar no composer; B-184 catalogado em W9-11 —
+  nav esquerda; B-167/B-185 catalogados em W11 — perfil e personalização visual;
   B-169 catalogado em W14 — gate auditoria↔E2EE;
   B-170 catalogado em W16 — performance/escalabilidade antes de HA;
   B-172 catalogado em W16 — backup de chat com tarefas e destinos remotos);

@@ -114,6 +114,7 @@ sobre o `<input type="file">` que já existe, nunca como caminho único.
 | i18n | ~10 idiomas | muitos | muitos | muitos | **Falta** — B-100 (hoje PT-BR hardcoded) |
 | Acessibilidade WCAG AA | sim | sim | parcial | parcial | **Parcial** — B-103 |
 | Tema claro/escuro | sim | sim | sim | sim | **Temos** |
+| Wallpaper / cores pessoais | parcial | parcial | sim | sim | **Falta** — B-185 |
 | Webhooks / integrações | sim | sim | sim | Business API | **Parcial** — B-048 Done (`MessageCreated`); estender em **B-108** |
 | Bots / apps | sim | sim | sim | — | **Planejado em fases** — núcleo **B-109/B-110** (W10); plugins avançados **B-066/B-111** e registry governado **B-137** (W15) |
 

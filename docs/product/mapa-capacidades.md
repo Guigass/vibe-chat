@@ -34,6 +34,7 @@ organiza. Estados:
 | Busca FTS e resumo opcional | Atual | Filtros em B-098 |
 | Salvos, pins e seguir thread | Committed | Waves 9–10 |
 | Painéis de contexto (sidebar direita) | Planned | B-171 / W9-9 |
+| Barra de navegação (sidebar esquerda) | Planned | B-184 / W9-11 |
 | Decisões e action items vinculados | Planned | B-119 / W12 |
 | Digests e catch-up programado | Planned | B-122 / W12 |
 | Busca semântica/RAG autorizada | Planned | B-121 / W12 |
@@ -107,6 +108,7 @@ organiza. Estados:
 | Status personalizado e agenda | Planned | B-116 / W11 |
 | Emojis/stickers da organização | Later | Reavaliar depois de B-083 |
 | Perfis ricos (cargo, sobre, destaque, avatar) | Planned | B-167 / W11 |
+| Personalização visual (wallpaper/accent) | Planned | B-185 / W11 |
 | Diretório de expertise / skills | Later | Reavaliar depois de B-167 e B-128 |
 | Temas/branding por tenant | Planned | B-140 / W15 |
 

@@ -17,7 +17,7 @@ Regras do registro:
 
 | ID | Tela | Achado | Severidade | Status |
 |----|------|--------|------------|--------|
-| UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de contraste |
+| UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto — fecha em **B-184** (preferencial) ou **B-103** / correção R1 com teste de contraste |
 | UX-006 | Header | Botões de ícone (buscar, tema, densidade, painel) sem estado de hover/foco perceptível | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de foco |
 | UX-008 | Timeline / composer | Editar mensagem usa textarea inline na bolha em vez do composer | Média | Aberto — fecha em **B-173** |
 
@@ -88,7 +88,7 @@ fecha ao trocar de canal; testes unitários e E2E.
 
 Os rótulos em maiúsculas da sidebar usam um cinza claro sobre superfície clara.
 Verificar contra AA (4.5:1 para texto normal) e ajustar o token — entra junto de
-B-103, mas é corrigível antes.
+B-184 (refatoração da rail) ou B-103, mas é corrigível antes.
 
 ### UX-005 — Aviso de permissão com cara de erro
 

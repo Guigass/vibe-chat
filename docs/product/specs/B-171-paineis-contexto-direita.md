@@ -23,7 +23,7 @@ lista/preview truncam cedo, o encaixe visual com a timeline é irregular e o
 ## Fora de escopo
 
 - Novas capacidades (seguir thread B-102, busca filtrada, etc.).
-- Redesign da sidebar esquerda de canais.
+- Redesign da sidebar esquerda de canais (B-184).
 - Mudança de contratos API/hub.
 - Clonar visual Slack/Discord/WhatsApp.
 

@@ -63,6 +63,7 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-168 | [Anexo de vídeo (aceite, preview e visualização)](B-168-anexo-de-video.md) |
 | B-171 | [Painéis de contexto (sidebar direita) — largura e encaixe](B-171-paineis-contexto-direita.md) |
 | B-173 | [Editar mensagem no composer (não na bolha)](B-173-editar-mensagem-no-composer.md) |
+| B-184 | [Barra de navegação (sidebar esquerda) — compacto, filtro e blocos](B-184-barra-navegacao-esquerda.md) |
 
 ### Wave 10 — Notificações, organização e acesso
 
@@ -94,6 +95,9 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-153 | [Migração e importação assistida](B-153-migracao-importacao.md) |
 | B-154 | [Diagnóstico e support bundle](B-154-diagnostico-support-bundle.md) |
 | B-116 | [Status e disponibilidade](B-116-status-disponibilidade.md) |
+| B-166 | [Grupos na lista de contatos](B-166-grupos-contatos.md) |
+| B-167 | [Perfil público do membro](B-167-perfil-publico-membro.md) |
+| B-185 | [Personalização visual do usuário (wallpapers e cores)](B-185-personalizacao-visual-usuario.md) |
 | B-117 | [Inbox unificada](B-117-inbox-unificada.md) |
 | B-118 | [Canais por tópicos/fórum](B-118-canais-topicos-forum.md) |
 

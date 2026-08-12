@@ -33,7 +33,8 @@ preencher esses dados de forma pública no workspace.
 ## Fora de escopo
 
 - Status personalizado com expiração / disponibilidade (B-116).
-- Preferências pessoais (`locale` B-100, DND B-097, read receipts B-094).
+- Preferências pessoais (`locale` B-100, DND B-097, read receipts B-094,
+  wallpaper/accent B-185).
 - SCIM / sync IdP de atributos (B-128).
 - Diretório de expertise / skills tags (follow-up Later).
 - Guest fora do diretório do workspace (regra atual permanece).

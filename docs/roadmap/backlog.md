@@ -130,6 +130,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-168 | Anexo de vídeo | Planned (W9-8) — aceitar `video/mp4`/`webm`; prévia no composer; player tipado na bolha (B-163); sem transcode; soft-dep poster B-090 |
 | B-171 | Painéis de contexto (sidebar direita) | Planned (W9-9) — trilho direito um pouco maior e melhor encaixado (thread/pins/salvos/contexto); só UI/tokens; [spec](../product/specs/B-171-paineis-contexto-direita.md) |
 | B-173 | Editar mensagem no composer | Planned (W9-10) — tirar textarea inline da bolha; modo edição no composer (padrão B-084); atalho `↑` em B-099; políticas de janela/papéis em B-107; [spec](../product/specs/B-173-editar-mensagem-no-composer.md) |
+| B-184 | Barra de navegação (sidebar esquerda) | Planned (W9-11) — modo compacto da nav, filtro local, blocos mais claros; só UI; [spec](../product/specs/B-184-barra-navegacao-esquerda.md) |
 
 ### Wave 10 — Notificações, organização e acesso
 
@@ -188,7 +189,7 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 
 | Faixa | Tema | Estado |
 |-------|------|--------|
-| B-112…B-118, B-153/B-154, B-166/B-167 | Organização, onboarding, contatos, perfil, migração, diagnóstico, inbox e tópicos | Planned — W11 |
+| B-112…B-118, B-153/B-154, B-166/B-167, B-185 | Organização, onboarding, contatos, perfil, personalização visual, migração, diagnóstico, inbox e tópicos | Planned — W11 |
 | B-119…B-124 | Conhecimento, decisões, RAG, tarefas e formulários | Planned — W12 |
 | B-125…B-128, B-131, B-139, B-164 | Automações, incidentes, conectores, SSO e contratos | Planned — W13 |
 | B-129/B-130/B-132…B-134/B-146/B-169 | Segurança enterprise, SIEM, policies, auditoria de conteúdo (`contentAuditEnabled` + snapshot de body em `message.delete`) e capacidade | Planned — W14 |
@@ -210,7 +211,7 @@ ver `docs/product/bug-findings.md`), Wave 6, B-048, B-045, B-046, B-047 e B-075 
 Ordem daqui para frente: **safety lane** (`BUG-*` Alta) antes de inventar ou
 avançar feature de wave; depois **paridade de mensageria** na ordem das
 waves — 8 (composição; W8-9 / B-087 Done), 9 (leitura; W9-0 / B-163 Done; W9-1 / B-088 Done; B-094 fecha
-BUG-002 / não lidas persistentes), 10 (notificações, organização, acesso e
+BUG-002 / não lidas persistentes; W9-11 / B-184 nav esquerda), 10 (notificações, organização, acesso e
 núcleo de plugins: B-109 → B-108 → B-110). Depois **Wave 19** (organização do
 código — recomendada antes de W11) ou seguir W11–W17; a trilha avançada de
 plugins continua em W15 com B-066 → B-111/B-136. Dentro de cada wave, seguir a

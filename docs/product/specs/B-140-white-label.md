@@ -21,7 +21,7 @@ quebre segurança, acessibilidade ou suporte.
 
 - CSS/JS/HTML arbitrário.
 - Remover avisos de segurança/licença.
-- Branding por usuário.
+- Branding por usuário (wallpaper/accent pessoais → B-185).
 
 ## Contratos
 
