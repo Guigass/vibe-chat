@@ -285,6 +285,56 @@ v1.MapGet("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, Ht
     return Results.Ok(response);
 });
 
+v1.MapGet("/workspaces/{workspaceId:guid}/channels/unread", async (Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    var memberChannelIds = await db.ChannelMembers
+        .Where(x => x.UserId == profile.Id)
+        .Select(x => x.ChannelId)
+        .ToListAsync(ct);
+
+    var channels = await db.Channels
+        .Where(x => x.WorkspaceId == workspace.Id
+            && (x.Type == ChannelType.Public || x.Type == ChannelType.Announcement || memberChannelIds.Contains(x.Id)))
+        .Select(x => x.Id)
+        .ToListAsync(ct);
+
+    var cursors = await db.ReadCursors
+        .Where(x => x.UserId == profile.Id && channels.Contains(x.ChannelId))
+        .ToDictionaryAsync(x => x.ChannelId, x => x.LastReadSequence, ct);
+
+    var summaries = new List<ChannelUnreadSummaryResponse>(channels.Count);
+    foreach (var channelId in channels)
+    {
+        var lastRead = cursors.TryGetValue(channelId, out var seq) ? seq : 0L;
+        var unreadCount = await db.Messages.CountAsync(
+            x => x.ConversationId == channelId && x.Sequence > lastRead && x.DeletedAt == null,
+            ct);
+        var mentionCount = await (
+            from mention in db.MessageMentions.AsNoTracking()
+            join message in db.Messages.AsNoTracking() on mention.MessageId equals message.Id
+            where mention.ChannelId == channelId
+                && mention.MentionedUserId == profile.Id
+                && message.Sequence > lastRead
+                && message.DeletedAt == null
+            select mention.MessageId
+        ).Distinct().CountAsync(ct);
+        summaries.Add(new ChannelUnreadSummaryResponse(
+            channelId.Value,
+            unreadCount,
+            mentionCount,
+            lastRead));
+    }
+
+    return Results.Ok(summaries);
+});
+
 v1.MapGet("/workspaces/{workspaceId:guid}/spaces", async (Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
@@ -2819,10 +2869,19 @@ v1.MapPut("/channels/{channelId:guid}/read-cursor", async (Guid channelId, Upser
         db.ReadCursors.Add(cursor);
     }
 
-    cursor.LastReadSequence = Math.Max(cursor.LastReadSequence, request.LastReadSequence);
+    cursor.LastReadSequence = request.AllowRetrograde
+        ? request.LastReadSequence
+        : Math.Max(cursor.LastReadSequence, request.LastReadSequence);
     cursor.UpdatedAt = clock.UtcNow;
     await db.SaveChangesAsync(ct);
-    await publisher.PublishAsync(new RealtimeMessage("ReadCursorUpdated", channel.TenantId, channel.Id, new { tenantId = channel.TenantId.Value, channelId, userId = profile.Id.Value, cursor.LastReadSequence }), ct);
+    var payload = new
+    {
+        tenantId = channel.TenantId.Value,
+        channelId,
+        userId = profile.Id.Value,
+        lastReadSequence = cursor.LastReadSequence,
+    };
+    await publisher.PublishAsync(new RealtimeMessage("ReadCursorChanged", channel.TenantId, channel.Id, payload), ct);
     return Results.Ok(new ReadCursorResponse(channel.Id.Value, profile.Id.Value, cursor.LastReadSequence, cursor.UpdatedAt));
 });
 
@@ -5307,8 +5366,13 @@ public sealed record ThreadResponse(
     DateTimeOffset CreatedAt,
     int ReplyCount,
     MessageResponse? ParentMessage = null);
-public sealed record UpsertReadCursorRequest(long LastReadSequence);
+public sealed record UpsertReadCursorRequest(long LastReadSequence, bool AllowRetrograde = false);
 public sealed record ReadCursorResponse(Guid ChannelId, Guid UserId, long LastReadSequence, DateTimeOffset UpdatedAt);
+public sealed record ChannelUnreadSummaryResponse(
+    Guid ChannelId,
+    int UnreadCount,
+    int MentionCount,
+    long LastReadSeq);
 public sealed record SearchMessageHitResponse(
     Guid MessageId,
     Guid ChannelId,

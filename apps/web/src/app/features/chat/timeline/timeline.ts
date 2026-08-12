@@ -127,6 +127,7 @@ const NEAR_TOP_PX = 120;
                         [showThreadAction]="true"
                         [showPinAction]="true"
                         [showSaveAction]="true"
+                        [showMarkUnreadAction]="true"
                         [highlighted]="messages.highlightMessageId() === entry.message.id"
                         (edit)="onEdit(entry.message.id, $event)"
                         (delete)="onDelete(entry.message.id)"
@@ -140,6 +141,7 @@ const NEAR_TOP_PX = 120;
                         (unpin)="onUnpin(entry.message.id)"
                         (save)="onSave(entry.message.id)"
                         (unsave)="onUnsave(entry.message.id)"
+                        (markUnread)="onMarkUnread(entry.message)"
                       />
                     }
                   </div>
@@ -638,6 +640,11 @@ export class Timeline {
 
   async onUnsave(messageId: string): Promise<void> {
     await this.saved.unsaveMessage(messageId);
+  }
+
+  async onMarkUnread(message: ChatMessage): Promise<void> {
+    await this.messages.markMessageUnread(message);
+    this.unreadDismissed.set(false);
   }
 
   private afterChannelOpen(): void {

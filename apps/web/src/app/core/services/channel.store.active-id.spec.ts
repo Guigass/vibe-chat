@@ -6,7 +6,11 @@ import { AuthService } from '../auth/auth.service';
 import { ChatHubService } from './chat-hub.service';
 import { ChannelStore } from './channel.store';
 
-const chatHubMock = () => ({ joinChannel: vi.fn(), joinChannels: vi.fn() });
+const chatHubMock = () => ({
+  joinChannel: vi.fn(),
+  joinChannels: vi.fn(),
+  onReadCursorChanged: () => () => undefined,
+});
 
 describe('ChannelStore.activeChannelId (mic recording)', () => {
   it('keeps the same id when another channel unread is bumped', async () => {
@@ -61,12 +65,12 @@ describe('ChannelStore.activeChannelId (mic recording)', () => {
 
     const activeId = store.activeChannelId();
     expect(activeId).toBeTruthy();
-    expect(store.channels().find((c) => c.id === activeId)?.unreadCount).toBe(0);
+    expect(store.channels().find((c) => c.id === activeId)?.unreadCount).toBe(2);
 
     store.bumpUnread(activeId!);
     store.bumpUnread(activeId!.toUpperCase());
 
-    expect(store.channels().find((c) => c.id === activeId)?.unreadCount).toBe(2);
+    expect(store.channels().find((c) => c.id === activeId)?.unreadCount).toBe(4);
   });
 
   it('snapshots unreadCount when selecting a channel (B-088)', async () => {
@@ -93,6 +97,6 @@ describe('ChannelStore.activeChannelId (mic recording)', () => {
 
     store.selectChannel(ops!.id);
     expect(store.openedUnreadCount()).toBe(5);
-    expect(store.channels().find((c) => c.id === ops!.id)?.unreadCount).toBe(0);
+    expect(store.channels().find((c) => c.id === ops!.id)?.unreadCount).toBe(5);
   });
 });

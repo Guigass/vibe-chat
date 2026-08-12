@@ -24,7 +24,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-DOC-CHECKER | Integridade documental | Contrato e baseline DOC-006 existem, mas a CI ainda não executa checker offline | Medium | Open | Implementar as regras de `qualidade-documental.md` sem alterar prioridade das waves |
 | OPS-PR-DRAFT | Tooling de PR | `open_git_pr` pode criar draft | Medium | Mitigated | Prompts convertem imediatamente para ready; monitorar |
 | OPS-DOCS-RACE | Corrida Docs | Merges #72+#73 (~20s) abriram Docs #76+#77; #77 foi re-draftado e ficou CONFLICTING | High | External action | Colar prompts 03/06 atualizados no dashboard (repo já em #78) |
-| OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | Open | PR deste run alinha `clickMessageToolbarButton` ao menu CDK; aguardar E2E verde ≥2× em main |
+| OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
 
 ## Resolvidos
 
@@ -71,9 +71,8 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 ### OPS-E2E-REALTIME
 
-- Status: **Open** — `#123` corrigiu `reactionAriaLabel`; falha residual após `bdaf0d8`
-  (toolbar compacta coloca Reagir/Responder no menu CDK; helper E2E ainda buscava botões
-  inline no hover). Fix deste run em `tests/e2e/helpers/message-actions.ts`.
+- Status: **Resolved** — [#124](https://github.com/Guigass/vibe-chat/pull/124)
+  alinhou `clickMessageToolbarButton` ao menu CDK; CI verde em `bdef969`.
 - Observado em: CI `E2E (Playwright)` —
   [`realtime-events.spec.ts`](../../tests/e2e/specs/realtime-events.spec.ts) linha 61
   (`Reagir com 👍` no hover) e

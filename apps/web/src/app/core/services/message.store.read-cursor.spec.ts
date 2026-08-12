@@ -16,11 +16,13 @@ describe('MessageStore read cursor (BUG-002)', () => {
   let messageHandler: ((message: ChatMessage) => void) | null;
   let activeChannelId: ReturnType<typeof signal<string | null>>;
   let bumpUnread: ReturnType<typeof vi.fn>;
+  let syncChannelUnread: ReturnType<typeof vi.fn>;
   let store: MessageStore;
 
   beforeEach(() => {
     vi.useFakeTimers();
     upsertReadCursor = vi.fn().mockResolvedValue(undefined);
+    syncChannelUnread = vi.fn().mockResolvedValue(undefined);
     getMessages = vi.fn().mockResolvedValue({
       messages: [
         {
@@ -100,6 +102,7 @@ describe('MessageStore read cursor (BUG-002)', () => {
             }),
             bumpUnread,
             bumpMention: vi.fn(),
+            syncChannelUnread,
           },
         },
         {
@@ -119,11 +122,11 @@ describe('MessageStore read cursor (BUG-002)', () => {
     vi.useRealTimers();
   });
 
-  it('calls upsertReadCursor with max seq after loadChannel', async () => {
+  it('does not persist read cursor on loadChannel until the user reads', async () => {
     await store.loadChannel(channelId);
 
     expect(getMessages).toHaveBeenCalledWith(channelId, { take: 50 });
-    expect(upsertReadCursor).toHaveBeenCalledWith(channelId, 12);
+    expect(upsertReadCursor).not.toHaveBeenCalled();
   });
 
   it('debounces upsertReadCursor for remote messages on the active channel', async () => {
@@ -156,10 +159,11 @@ describe('MessageStore read cursor (BUG-002)', () => {
 
     expect(upsertReadCursor).not.toHaveBeenCalled();
 
-    await vi.advanceTimersByTimeAsync(500);
+    await vi.advanceTimersByTimeAsync(1000);
 
     expect(upsertReadCursor).toHaveBeenCalledTimes(1);
     expect(upsertReadCursor).toHaveBeenCalledWith(channelId, 14);
+    expect(syncChannelUnread).toHaveBeenCalledWith(channelId);
   });
 
   it('does not call upsertReadCursor for messages on inactive channels', async () => {
@@ -179,7 +183,7 @@ describe('MessageStore read cursor (BUG-002)', () => {
       seq: 20,
     });
 
-    await vi.advanceTimersByTimeAsync(500);
+    await vi.advanceTimersByTimeAsync(1000);
 
     expect(upsertReadCursor).not.toHaveBeenCalled();
   });
@@ -201,20 +205,21 @@ describe('MessageStore read cursor (BUG-002)', () => {
       seq: 21,
     });
 
-    await vi.advanceTimersByTimeAsync(500);
+    await vi.advanceTimersByTimeAsync(1000);
 
     expect(upsertReadCursor).not.toHaveBeenCalled();
     expect(bumpUnread).toHaveBeenCalledWith(channelId);
   });
 
   it('persists max seq when markViewedLatest is called', async () => {
-    store.setViewingLatest(false);
     await store.loadChannel(channelId);
     upsertReadCursor.mockClear();
+    syncChannelUnread.mockClear();
 
     store.markViewedLatest();
-    await vi.advanceTimersByTimeAsync(500);
+    await vi.advanceTimersByTimeAsync(1000);
 
     expect(upsertReadCursor).toHaveBeenCalledWith(channelId, 12);
+    expect(syncChannelUnread).toHaveBeenCalledWith(channelId);
   });
 });

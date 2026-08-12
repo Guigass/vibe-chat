@@ -27,7 +27,7 @@ Regras do registro:
 
 | ID      | Área              | Achado                                                                | Severidade | Status                                       |
 | ------- | ----------------- | --------------------------------------------------------------------- | ---------- | -------------------------------------------- |
-| BUG-002 | Sidebar / unread  | Badges de novas mensagens não limpam de forma persistente após reload | Média      | Aberto — alívio aplicado; fecha em **B-094** |
+| BUG-002 | Sidebar / unread  | Badges de novas mensagens não limpam de forma persistente após reload | Média      | **Done** — B-094 |
 | BUG-008 | Presence          | Minimizar a janela marca ausente na hora                              | Média      | Aberto                                       |
 | BUG-010 | Timeline / scroll | Ao abrir a conversa não rola até as mensagens mais recentes           | Média      | Done                                         |
 | BUG-011 | Admin / shell     | Membros não veem o botão Admin                                        | Média      | Aberto                                       |
@@ -66,8 +66,7 @@ Regras do registro:
 
 ### BUG-002 — Unread / notificações após reload
 
-- Status: **Aberto** — alívio safety lane aplicado; fecha em **B-094**
-  ([spec](specs/B-094-recibos-de-leitura.md)).
+- Status: **Done** — B-094 (persistência definitiva em `messaging.read_cursors`).
 - Severidade: **Média** (sintoma F5 do caminho principal mitigado; escopo
   completo de recibos/DM/mark-unread permanece em B-094).
 - Observado em: sidebar com badges após F5 / novo load; probe Playwright

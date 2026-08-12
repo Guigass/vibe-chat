@@ -814,11 +814,44 @@ export class ApiService {
     };
   }
 
-  async upsertReadCursor(channelId: string, lastReadSequence: number): Promise<void> {
+  async upsertReadCursor(
+    channelId: string,
+    lastReadSequence: number,
+    options?: { allowRetrograde?: boolean },
+  ): Promise<void> {
     await this.request(`/api/v1/channels/${channelId}/read-cursor`, {
       method: 'PUT',
-      body: JSON.stringify({ lastReadSequence }),
+      body: JSON.stringify({
+        lastReadSequence,
+        allowRetrograde: options?.allowRetrograde ?? false,
+      }),
     });
+  }
+
+  async getWorkspaceChannelUnreads(
+    workspaceId: string,
+  ): Promise<
+    Array<{
+      channelId: string;
+      unreadCount: number;
+      mentionCount: number;
+      lastReadSeq: number;
+    }>
+  > {
+    const rows = await this.request<
+      Array<{
+        channelId: string;
+        unreadCount: number;
+        mentionCount: number;
+        lastReadSeq: number;
+      }>
+    >(`/api/v1/workspaces/${workspaceId}/channels/unread`);
+    return (rows ?? []).map((row) => ({
+      channelId: String(row.channelId),
+      unreadCount: row.unreadCount ?? 0,
+      mentionCount: row.mentionCount ?? 0,
+      lastReadSeq: row.lastReadSeq ?? 0,
+    }));
   }
 
   async getUnreadCount(channelId: string): Promise<{ unreadCount: number; mentionCount: number }> {

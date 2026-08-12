@@ -50,7 +50,8 @@ export type MessageMenuActionId =
   | 'pin'
   | 'unpin'
   | 'save'
-  | 'unsave';
+  | 'unsave'
+  | 'mark-unread';
 
 export function menuActionsForMessage(options: {
   mine: boolean;
@@ -60,6 +61,7 @@ export function menuActionsForMessage(options: {
   isPinned?: boolean;
   showSave?: boolean;
   isSaved?: boolean;
+  showMarkUnread?: boolean;
   replyCount?: number;
   hasLinkPreview?: boolean;
 }): Array<{ id: MessageMenuActionId; label: string; danger?: boolean }> {
@@ -92,6 +94,9 @@ export function menuActionsForMessage(options: {
       id: options.isSaved ? 'unsave' : 'save',
       label: options.isSaved ? 'Remover dos salvos' : 'Salvar',
     });
+  }
+  if (options.showMarkUnread) {
+    items.push({ id: 'mark-unread', label: 'Marcar como não lida' });
   }
   if (options.mine) {
     items.push({ id: 'edit', label: 'Editar' });

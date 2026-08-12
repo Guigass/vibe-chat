@@ -123,6 +123,10 @@ export class MessageStore {
       void this.gapFillActiveChannel();
       void this.threads.gapFillActive();
     });
+    if (typeof window !== 'undefined') {
+      window.addEventListener('blur', this.flushPendingReadCursor);
+      window.addEventListener('pagehide', this.flushPendingReadCursor);
+    }
   }
 
   setReplyTarget(message: ChatMessage | null): void {
@@ -274,10 +278,6 @@ export class MessageStore {
       } else {
         const page = await this.api.getMessages(channelId, { take: 50 });
         this.applyChannelPage(channelId, page, { replace: true });
-        const maxSeq = maxSeqForChannel(this.messagesSignal(), channelId);
-        if (maxSeq > 0) {
-          void this.persistReadCursor(channelId, maxSeq);
-        }
       }
     } catch {
       this.messagesSignal.update((current) => {
@@ -570,20 +570,33 @@ export class MessageStore {
     }
   }
 
-  /** BUG-002: persist read cursor so unread badges survive F5 (B-094 alívio). */
+  /** B-094: persist read cursor when the user reaches the latest visible message. */
   private async persistReadCursor(channelId: string, seq: number): Promise<void> {
     if (!channelId || seq <= 0) return;
     if (this.channels.isDemo() || this.auth.isOfflineDemo()) return;
     try {
       await this.api.upsertReadCursor(channelId, seq);
+      await this.channels.syncChannelUnread(channelId);
     } catch {
       // best-effort; next load/ingest can retry
     }
   }
 
+  private readonly flushPendingReadCursor = (): void => {
+    const pending = this.pendingReadCursor;
+    if (!pending) return;
+    if (this.readCursorTimer) {
+      clearTimeout(this.readCursorTimer);
+      this.readCursorTimer = null;
+    }
+    this.pendingReadCursor = null;
+    void this.persistReadCursor(pending.channelId, pending.seq);
+  };
+
   private schedulePersistReadCursor(channelId: string, seq: number): void {
     if (!channelId || seq <= 0) return;
     if (this.channels.isDemo() || this.auth.isOfflineDemo()) return;
+    if (typeof document !== 'undefined' && !document.hasFocus()) return;
 
     const pending = this.pendingReadCursor;
     if (pending && pending.channelId === channelId) {
@@ -598,7 +611,22 @@ export class MessageStore {
       this.pendingReadCursor = null;
       this.readCursorTimer = null;
       if (next) void this.persistReadCursor(next.channelId, next.seq);
-    }, 500);
+    }, 1000);
+  }
+
+  async markMessageUnread(message: ChatMessage): Promise<void> {
+    const seq = message.seq ?? 0;
+    if (!message.channelId || seq <= 0) return;
+    if (this.channels.isDemo() || this.auth.isOfflineDemo()) return;
+    const targetSeq = Math.max(0, seq - 1);
+    try {
+      await this.api.upsertReadCursor(message.channelId, targetSeq, {
+        allowRetrograde: true,
+      });
+      await this.channels.syncChannelUnread(message.channelId);
+    } catch {
+      // best-effort
+    }
   }
 
   markThreadOpened(messageId: string, threadId: string): void {
