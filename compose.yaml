@@ -110,6 +110,10 @@ services:
       KC_HOSTNAME_PORT: ${KEYCLOAK_HTTP_PORT:-8080}
       KC_HOSTNAME_STRICT: "false"
       KC_HTTP_ENABLED: "true"
+      # Staging path-based: /auth (vazio no lab local)
+      KC_HTTP_RELATIVE_PATH: ${KEYCLOAK_HTTP_RELATIVE_PATH:-}
+      # Coolify / Traefik TLS termination — forwarded proto/host
+      KC_PROXY_HEADERS: ${KEYCLOAK_PROXY_HEADERS:-}
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
@@ -118,7 +122,7 @@ services:
       - "${KEYCLOAK_HTTP_PORT:-8080}:8080"
     volumes:
       - keycloak_data:/opt/keycloak/data
-      - ./infra/keycloak/realm-vibechat.json:/opt/keycloak/data/import/realm-vibechat.json:ro
+      - ${KEYCLOAK_REALM_IMPORT_FILE:-./infra/keycloak/realm-vibechat.json}:/opt/keycloak/data/import/realm-vibechat.json:ro
     networks:
       - vibechat-net
     depends_on:
@@ -269,7 +273,8 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-grafana_dev_password_change_me}
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
-      GF_SERVER_ROOT_URL: http://localhost:${GRAFANA_PORT:-3000}
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:${GRAFANA_PORT:-3000}}
+      GF_SERVER_SERVE_FROM_SUB_PATH: ${GRAFANA_SERVE_FROM_SUB_PATH:-false}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -278,6 +283,8 @@ services:
       - "${GRAFANA_PORT:-3000}:3000"
     networks:
       - vibechat-observability
+      # Path edge (/grafana) via web nginx on vibechat-net
+      - vibechat-net
     depends_on:
       prometheus:
         condition: service_healthy
@@ -359,7 +366,7 @@ services:
       ConnectionStrings__Redis: redis:6379
       # Public issuer must match browser token `iss`; discovery uses in-network MetadataAddress.
       Authentication__Authority: ${KEYCLOAK_ISSUER_URL:-http://localhost:8080/realms/vibechat}
-      Authentication__MetadataAddress: http://keycloak:8080/realms/${KEYCLOAK_REALM:-vibechat}/.well-known/openid-configuration
+      Authentication__MetadataAddress: http://keycloak:8080${KEYCLOAK_HTTP_RELATIVE_PATH:-}/realms/${KEYCLOAK_REALM:-vibechat}/.well-known/openid-configuration
       Authentication__Audience: ${OIDC_API_AUDIENCE:-vibechat-api}
       Authentication__RequireHttpsMetadata: "false"
       Minio__Endpoint: minio:9000
@@ -419,9 +426,11 @@ services:
         NODE_IMAGE: ${NODE_IMAGE:-node:22.22.3-alpine}
         NGINX_IMAGE: ${NGINX_IMAGE:-nginx:1.31.3-alpine}
         API_BASE_URL: ${API_BASE_URL:-http://localhost:5080}
-        KEYCLOAK_URL: http://localhost:${KEYCLOAK_HTTP_PORT:-8080}
+        KEYCLOAK_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:${KEYCLOAK_HTTP_PORT:-8080}}
+        KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:${KEYCLOAK_HTTP_PORT:-8080}}
         KEYCLOAK_REALM: ${KEYCLOAK_REALM:-vibechat}
         OIDC_WEB_CLIENT_ID: ${OIDC_WEB_CLIENT_ID:-vibechat-web}
+        GRAFANA_URL: ${GRAFANA_ROOT_URL:-http://localhost:${GRAFANA_PORT:-3000}}
     image: vibechat-web:local
     container_name: vibechat-web
     restart: unless-stopped

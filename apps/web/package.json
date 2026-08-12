@@ -5,9 +5,10 @@
   "scripts": {
     "ng": "ng",
     "write-version": "node scripts/write-web-version.mjs",
-    "prestart": "npm run write-version",
+    "write-public-config": "node scripts/write-public-config.mjs",
+    "prestart": "npm run write-version && npm run write-public-config",
     "start": "ng serve --host 0.0.0.0 --port 4200",
-    "prebuild": "npm run write-version",
+    "prebuild": "npm run write-version && npm run write-public-config",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",

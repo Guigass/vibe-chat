@@ -12,13 +12,17 @@ WORKDIR /app
 
 ARG API_BASE_URL=http://localhost:5080
 ARG KEYCLOAK_URL=http://localhost:8080
+ARG KEYCLOAK_PUBLIC_URL=
 ARG KEYCLOAK_REALM=vibechat
 ARG OIDC_WEB_CLIENT_ID=vibechat-web
+ARG GRAFANA_URL=http://localhost:3000
 
 ENV API_BASE_URL=${API_BASE_URL} \
     KEYCLOAK_URL=${KEYCLOAK_URL} \
+    KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL} \
     KEYCLOAK_REALM=${KEYCLOAK_REALM} \
-    OIDC_WEB_CLIENT_ID=${OIDC_WEB_CLIENT_ID}
+    OIDC_WEB_CLIENT_ID=${OIDC_WEB_CLIENT_ID} \
+    GRAFANA_URL=${GRAFANA_URL}
 
 COPY apps/web/package.json apps/web/package-lock.json* apps/web/pnpm-lock.yaml* apps/web/yarn.lock* ./
 RUN if [ -f package-lock.json ]; then npm ci; \

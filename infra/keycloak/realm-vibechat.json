@@ -180,16 +180,18 @@
       "baseUrl": "http://localhost:4200",
       "redirectUris": [
         "http://localhost:4200/*",
-        "http://127.0.0.1:4200/*"
+        "http://127.0.0.1:4200/*",
+        "https://vibechat.exclusivasex.com.br/*"
       ],
       "webOrigins": [
         "http://localhost:4200",
         "http://127.0.0.1:4200",
+        "https://vibechat.exclusivasex.com.br",
         "+"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:4200/*##http://127.0.0.1:4200/*",
+        "post.logout.redirect.uris": "http://localhost:4200/*##http://127.0.0.1:4200/*##https://vibechat.exclusivasex.com.br/*",
         "oauth2.device.authorization.grant.enabled": "false",
         "oidc.ciba.grant.enabled": "false",
         "backchannel.logout.session.required": "true",
@@ -578,6 +580,6 @@
   "internationalizationEnabled": false,
   "supportedLocales": [],
   "attributes": {
-    "frontendUrl": "http://localhost:8080"
+    "frontendUrl": ""
   }
 }
