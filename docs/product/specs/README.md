@@ -1,10 +1,10 @@
 # Specs de Feature — VibeChat
 
-Uma spec por item de backlog elegível ao Build (Waves 7–17). A automação de
+Uma spec por item de backlog elegível ao Build (Waves 7–19). A automação de
 Build **só** implementa item que tenha
 spec aqui; sem spec, o item não é elegível.
 
-Baseline atualizada em 2026-08-10: itens `Planned` W7–W17 com specs 1:1
+Baseline atualizada em 2026-08-12: itens `Planned` W7–W19 com specs 1:1
 (W7-9 / B-165 Done). Regras de auditoria:
 [`roadmap/qualidade-documental.md`](../../roadmap/qualidade-documental.md).
 
@@ -178,6 +178,17 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-160 | [Guardrails e políticas para bots](B-160-guardrails-politicas-bots.md) |
 | B-161 | [Runtime conversacional de bots](B-161-runtime-conversacional-bots.md) |
 | B-162 | [Avaliação, publicação e templates](B-162-avaliacao-publicacao-templates-bots.md) |
+
+### Wave 19 — Organização e decomposição do código
+
+| ID | Spec |
+|----|------|
+| B-178 | [Decompor composition root da API (`Program.cs`)](B-178-decompor-api-program.md) |
+| B-179 | [Decompor registro de Infrastructure](B-179-decompor-infrastructure.md) |
+| B-180 | [Decompor camada HTTP do web (`api.service.ts`)](B-180-decompor-api-service-web.md) |
+| B-181 | [Decompor stores e hub do web](B-181-decompor-stores-web.md) |
+| B-182 | [Decompor componentes de chat (`composer`, `message-bubble`)](B-182-decompor-componentes-chat.md) |
+| B-183 | [Arch test: limite de linhas por arquivo](B-183-arch-test-limite-arquivo.md) |
 
 ## Template
 
