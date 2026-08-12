@@ -24,6 +24,9 @@
   como navegação Angular. Verifique as exclusões em `apps/web/ngsw-config.json`.
 - Após publicar uma correção do Service Worker, recarregue a aplicação para o
   navegador ativar o novo manifesto antes de repetir o login.
+- Se o console administrativo permanecer em “Loading the Administration
+  Console”, confirme que `/auth/` não herda a CSP do shell Angular. O Keycloak
+  deve emitir seus próprios headers para os consoles admin/account.
 
 ### Sintoma: redirect loop no login
 

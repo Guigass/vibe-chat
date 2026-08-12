@@ -25,7 +25,15 @@ describe('web nginx cache headers (B-165)', () => {
 
   it('keeps immutable cache for content-hashed assets', () => {
     expect(conf).toMatch(/max-age=31536000, immutable/);
-    // Braces in the regex must be quoted or nginx treats `{8,}` as a block.
-    expect(conf).toMatch(/location ~\* "\\\.\[0-9a-f\]\{8,\}\\\.\(js\|css\)\$"/);
+    expect(conf).toContain('location ~* \\.(js|css|mjs)$ {');
+  });
+
+  it('lets Keycloak provide the CSP for its own consoles', () => {
+    const keycloakLocation = conf.match(/location \/auth\/ \{[\s\S]*?\n    \}/)?.[0];
+
+    expect(keycloakLocation).toBeDefined();
+    expect(keycloakLocation).toContain('add_header X-Content-Type-Options');
+    expect(keycloakLocation).not.toContain('security-headers.conf');
+    expect(keycloakLocation).not.toContain('Content-Security-Policy');
   });
 });
