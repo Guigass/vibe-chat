@@ -29,6 +29,10 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-105 | [Catálogo de configuração self-host](B-105-catalogo-configuracao.md) |
 | B-106 | [Admin shell — nav, filtros e visibilidade por papel](B-106-admin-shell.md) |
 | B-165 | [Controle de versão do cliente web (cache / PWA)](B-165-controle-versao-cliente-web.md) |
+| B-174 | [Filtro centralizado de permissões (`RequirePermission`)](B-174-filtro-centralizado-permissoes.md) |
+| B-175 | [Auditoria de cobertura authZ (membership vs permission)](B-175-auditoria-cobertura-authz.md) |
+| B-176 | [Fonte de verdade de roles (DB vs Keycloak)](B-176-fonte-verdade-roles.md) |
+| B-177 | [DevAuth fail-closed (sem fallback demo)](B-177-devauth-fail-closed.md) |
 
 ### Wave 8 — Composição de mensagem
 

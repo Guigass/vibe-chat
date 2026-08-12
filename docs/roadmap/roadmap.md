@@ -136,7 +136,9 @@ Fila explícita para a automação de Build depois da Wave 6. Enquanto houver li
 (spartan/ui + CDK; fecha UX-002). **W7-3 (B-076) Done** via [#84](https://github.com/Guigass/vibe-chat/pull/84)
 (Dependabot + `dependencias.md`). **W7-4 (CSP) Done**; **W7-5 (limite de body) Done**;
 **W7-8 (admin shell) Done**. **W7-9 / B-165 Done** (versão do cliente web /
-cache PWA; fecha UX-007). Wave 7 completa — seguir W8 (paridade composição).
+cache PWA; fecha UX-007). **W7-10…W7-13 Planned** — endurecimento authZ API
+(B-174…B-177). Wave 7 feature work completa; sustentação authZ aberta — seguir
+W8 (paridade composição) em paralelo quando elegível.
 
 | ID | Trilha | Tarefa | Deps | Spec/evidência | Status |
 |----|--------|--------|------|----------------|--------|
@@ -149,6 +151,14 @@ cache PWA; fecha UX-007). Wave 7 completa — seguir W8 (paridade composição).
 | W7-7 | A/G | Catálogo de configuração admin mínima no `.env`; Compose/template alinhados | W6-8, W0-2 | [B-105](../product/specs/B-105-catalogo-configuracao.md) | Done |
 | W7-8 | D/G | Admin shell — nav, toolbars, listagens, filtros e hide por papel; após saída do PrimeNG | W7-6 | [B-106](../product/specs/B-106-admin-shell.md) | Done |
 | W7-9 | D/A | Controle de versão do cliente web — buildId, update SW e anti-cache (B-165; fecha UX-007) | W4-7, W6-8 | [B-165](../product/specs/B-165-controle-versao-cliente-web.md) | **Done** |
+| W7-10 | B/E | Filtro centralizado `RequirePermission` na API Minimal (B-174) | P2-1, B-041 | [B-174](../product/specs/B-174-filtro-centralizado-permissoes.md) | Planned |
+| W7-11 | E | Auditoria authZ: matriz endpoint × membership/permission + gaps (B-175) | B-174 (recomendado) | [B-175](../product/specs/B-175-auditoria-cobertura-authz.md) | Planned |
+| W7-12 | G/B | Documentar fonte de verdade de roles — DB vs Keycloak (B-176) | B-002, P2-1 | [B-176](../product/specs/B-176-fonte-verdade-roles.md) | Planned |
+| W7-13 | B/E | DevAuth fail-closed — sem fallback silencioso para demo (B-177) | W1-1 | [B-177](../product/specs/B-177-devauth-fail-closed.md) | Planned |
+
+Revisão de authZ da API (2026-08-12): W7-10…W7-13 registram endurecimento após
+auditoria de permissões — filtro centralizado, cobertura de endpoints, docs de
+roles e DX segura em Development.
 
 ### Critérios de aceite W7-7 (resumo)
 
