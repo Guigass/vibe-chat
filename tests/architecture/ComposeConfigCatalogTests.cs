@@ -78,6 +78,21 @@ public sealed class ComposeConfigCatalogTests
     }
 
     [Fact]
+    public void Keycloak_waits_for_idempotent_schema_initializer()
+    {
+        var compose = ReadRepoFile("compose.yaml");
+        var keycloakBlock = ExtractServiceBlock(compose, "keycloak");
+        var initializerBlock = ExtractServiceBlock(compose, "keycloak-schema");
+        var initializer = ReadRepoFile(Path.Combine("infra", "compose", "postgres", "04-keycloak-schema.sh"));
+
+        keycloakBlock.Should().Contain("keycloak-schema:");
+        keycloakBlock.Should().Contain("condition: service_completed_successfully");
+        initializerBlock.Should().Contain("04-keycloak-schema.sh");
+        initializer.Should().Contain("CREATE SCHEMA IF NOT EXISTS %I AUTHORIZATION %I");
+        initializer.Should().Contain("*[!a-zA-Z0-9_]*");
+    }
+
+    [Fact]
     public void Staging_realm_emits_subject_and_imports_temporary_admin_without_committed_password()
     {
         using var realm = JsonDocument.Parse(ReadRepoFile(Path.Combine("infra", "keycloak", "realm-vibechat.staging.json")));

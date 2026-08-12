@@ -115,7 +115,8 @@ para lightweight tokens.
 Quando for necessário reimportar o realm sem apagar o schema anterior, altere
 `KEYCLOAK_DB_SCHEMA` para um nome de schema novo e faça o redeploy. Isso invalida
 as sessões e recria os usuários do realm importado; use apenas com autorização
-explícita no staging.
+explícita no staging. O serviço one-shot `keycloak-schema` valida o identificador
+e cria o schema de forma idempotente antes de liberar o startup do Keycloak.
 
 ### Variáveis do template fora das substituições do Compose
 

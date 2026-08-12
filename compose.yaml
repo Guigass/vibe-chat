@@ -102,12 +102,32 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      keycloak-schema:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080"]
       interval: 10s
       timeout: 5s
       retries: 30
       start_period: 60s
+
+  keycloak-schema:
+    image: ${POSTGRES_IMAGE:-postgres:17-alpine}
+    restart: "no"
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${KEYCLOAK_DB:-keycloak}
+      PGUSER: ${KEYCLOAK_DB_USER:-keycloak}
+      PGPASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak_dev_password_change_me}
+      KEYCLOAK_DB_SCHEMA: ${KEYCLOAK_DB_SCHEMA:-public}
+      KEYCLOAK_DB_USER: ${KEYCLOAK_DB_USER:-keycloak}
+    volumes:
+      - ./infra/compose/postgres/04-keycloak-schema.sh:/usr/local/bin/ensure-keycloak-schema.sh:ro
+    command: ["/bin/sh", "/usr/local/bin/ensure-keycloak-schema.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   minio:
     image: ${MINIO_IMAGE:-minio/minio:RELEASE.2024-12-18T13-15-44Z}
