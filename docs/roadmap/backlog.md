@@ -91,6 +91,10 @@ backlog ficam no **Registro de GAPs** (`roadmap.md`).
 | B-105 | Catálogo de configuração admin mínima no `.env` | **Done (W7-7)** — EMAIL__* injetado no api; retenção no worker; alias OpenRouter unificado; testes `ComposeConfigCatalogTests`; [spec](../product/specs/B-105-catalogo-configuracao.md) |
 | B-106 | Admin shell (nav, toolbars, listagens, filtros, visibilidade por papel) | Done (W7-8) — shell `/admin/*`, hide por claim (UX-005); matriz Admin/Auditor/Member; spec `docs/product/specs/B-106-admin-shell.md` |
 | B-165 | Controle de versão do cliente web (cache / PWA) | **Done** (W7-9) — buildId + `version.json` + SwUpdate/CTA + headers anti-cache; fecha UX-007; [spec](../product/specs/B-165-controle-versao-cliente-web.md) |
+| B-174 | Filtro centralizado `RequirePermission` na API | Planned (W7-10) — atributo/filtro Minimal API; reduz duplicação de `HasPermissionAsync`; arch/security test; [spec](../product/specs/B-174-filtro-centralizado-permissoes.md) |
+| B-175 | Auditoria cobertura authZ (membership vs permission) | Planned (W7-11) — matriz endpoint × gate; corrigir gaps; testes negativos; [spec](../product/specs/B-175-auditoria-cobertura-authz.md) |
+| B-176 | Fonte de verdade de roles — DB vs Keycloak | Planned (W7-12) — docs contratos/glossário/multi-tenant; JWT = identidade; membership = authZ; [spec](../product/specs/B-176-fonte-verdade-roles.md) |
+| B-177 | DevAuth fail-closed (sem fallback demo) | Planned (W7-13) — `X-Dev-User` inválido → 401; alice/bob/demo + `X-Dev-Email` intactos; [spec](../product/specs/B-177-devauth-fail-closed.md) |
 
 ## Paridade de mensageria — Waves 8 a 10
 

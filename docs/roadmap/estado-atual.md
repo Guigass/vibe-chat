@@ -3,7 +3,7 @@
 Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
-- **Data de corte:** 2026-08-11
+- **Data de corte:** 2026-08-12
 - **Fase:** Wave 9 — Leitura e paridade de bolha (Wave 8 completa)
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165)
 - **Próximo item elegível:** W9-8 / B-168 (vídeo); W9-9 / B-171 (painéis direita); W9-10 / B-173 (editar no composer); W9-7 / B-094 Done
@@ -24,7 +24,8 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
-2. Wave 7 completa (W7-9 / B-165 Done — versão do cliente web / cache PWA);
+2. Wave 7 feature work completa (W7-9 / B-165 Done); sustentação authZ aberta
+   (W7-10…W7-13 / B-174…B-177 — revisão API 2026-08-12);
 3. avançar Wave 9 de leitura/paridade (W9-0…W9-6 Done; próximo: W9-7 / B-094; W9-8 / B-168, W9-9 / B-171 e W9-10 / B-173 paralelos após deps); Wave 8 completa;
 4. consumir o roadmap autorizado W11–W17.
 
