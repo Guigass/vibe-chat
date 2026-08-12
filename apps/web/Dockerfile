@@ -16,13 +16,16 @@ ARG KEYCLOAK_PUBLIC_URL=
 ARG KEYCLOAK_REALM=vibechat
 ARG OIDC_WEB_CLIENT_ID=vibechat-web
 ARG GRAFANA_URL=http://localhost:3000
+# Local lab (task apps): true. Coolify/production: leave unset/false.
+ARG ENABLE_DEV_AUTH=false
 
 ENV API_BASE_URL=${API_BASE_URL} \
     KEYCLOAK_URL=${KEYCLOAK_URL} \
     KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL} \
     KEYCLOAK_REALM=${KEYCLOAK_REALM} \
     OIDC_WEB_CLIENT_ID=${OIDC_WEB_CLIENT_ID} \
-    GRAFANA_URL=${GRAFANA_URL}
+    GRAFANA_URL=${GRAFANA_URL} \
+    ENABLE_DEV_AUTH=${ENABLE_DEV_AUTH}
 
 COPY apps/web/package.json apps/web/package-lock.json* apps/web/pnpm-lock.yaml* apps/web/yarn.lock* ./
 RUN if [ -f package-lock.json ]; then npm ci; \

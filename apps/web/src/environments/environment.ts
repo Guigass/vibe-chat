@@ -17,8 +17,8 @@ export const environment = {
   // D-06: UI opt-in; production builds keep summarize hidden unless explicitly enabled.
   aiSummarizeEnabled: false,
   aiTranscribeEnabled: false,
-  // DevAuth / offline demo — only for local Development builds.
-  enableDevAuth: false,
+  // DevAuth / offline demo — lab only (ENABLE_DEV_AUTH build arg / public-config).
+  enableDevAuth: publicConfig.enableDevAuth,
   appVersion: webVersion.version,
   buildId: webVersion.buildId,
 };

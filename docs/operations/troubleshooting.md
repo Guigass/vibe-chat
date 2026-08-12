@@ -20,6 +20,10 @@
   desse container encaminha `/auth/*` para o Keycloak.
 - Confirme `KEYCLOAK_PUBLIC_URL` e `KEYCLOAK_HOSTNAME` com a URL pública
   `https://<dominio>/auth` e `KEYCLOAK_HTTP_RELATIVE_PATH=/auth`.
+- Staging path `/auth`: defina **também** `KC_HTTP_RELATIVE_PATH=/auth` no
+  container Keycloak (Coolify). Não passe string vazia — Keycloak 26 falha no
+  build com `KC_HTTP_RELATIVE_PATH=""`.
+- `KEYCLOAK_PROXY_HEADERS` deve ser `xforwarded` ou `forwarded` (nunca vazio).
 - O Service Worker não pode tratar `/auth/**` (nem as demais rotas de proxy)
   como navegação Angular. Verifique as exclusões em `apps/web/ngsw-config.json`.
 - Após publicar uma correção do Service Worker, recarregue a aplicação para o
@@ -28,6 +32,21 @@
   Console”, confirme que `location ^~ /auth/` tem precedência sobre a regex de
   assets Angular e não herda a CSP do shell. O Keycloak deve servir seus
   próprios JS/CSS e emitir seus próprios headers para os consoles admin/account.
+
+### Sintoma: botões Alice/Bob/Demo não aparecem no login (`task apps`)
+
+- DevAuth na UI é **build-time**: `ENABLE_DEV_AUTH=true` no `.env` e rebuild da
+  web (`docker compose ... --build web` ou `task apps`).
+- Staging/prod/Coolify devem manter `ENABLE_DEV_AUTH=false` (default Compose);
+  login oficial é só OIDC.
+- API DevAuth (`X-Dev-User`) só funciona com `ASPNETCORE_ENVIRONMENT=Development`.
+
+### Sintoma: Keycloak reinicia / unhealthy após atualizar `.env`
+
+- Logs com `Invalid value for option 'KC_PROXY_HEADERS'` → valor vazio; use
+  `xforwarded` (default do Compose) ou `forwarded`.
+- Logs com `Failed to run 'build' command` / NPE → `KC_HTTP_RELATIVE_PATH=""`;
+  no lab omita a var no container; no staging use `/auth`.
 
 ### Sintoma: redirect loop no login
 

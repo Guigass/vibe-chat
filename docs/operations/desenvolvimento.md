@@ -98,7 +98,9 @@ Endpoint (Development): `POST /api/v1/dev/seed`
 |------|------|
 | Keycloak OIDC | “Entrar com Keycloak” |
 | Demo UI | “Explorar demo local” |
-| DevAuth API | Header `X-Dev-User: alice\|bob\|demo` (somente Development). Convite dinâmico: `X-Dev-User` + `X-Dev-Email` (+ `X-Dev-Name` opcional) para testar claim de stub `pending:{email}` |
+| DevAuth (UI + API) | Botões Alice/Bob/Demo no login quando `ENABLE_DEV_AUTH=true` no build da web (`task apps` / `.env` lab). API: header `X-Dev-User: alice\|bob\|demo` (somente Development). Convite dinâmico: `X-Dev-User` + `X-Dev-Email` (+ `X-Dev-Name` opcional) para testar claim de stub `pending:{email}` |
+
+`ENABLE_DEV_AUTH` é **build-time** (Compose arg → `public-config`). Lab: `true`. Staging/prod/Coolify: `false` ou omitir (default). Mudança exige rebuild da imagem `web`.
 
 ### Cadastro e diretivas (B-068)
 
@@ -107,7 +109,7 @@ Endpoint (Development): `POST /api/v1/dev/seed`
 3. **Primeiro login vincula** — se o perfil ainda era stub `pending:{email}`, o SSO atualiza o `sub` e a membership já criada passa a valer.
 4. **Diretivas** — papéis existentes continuam editáveis na tabela de membros (`PUT .../members/{userId}/role`).
 
-DX sem Keycloak: DevAuth (`X-Dev-User`) e seed já criam alice/bob/demo com membership.
+DX sem Keycloak: DevAuth + seed já criam alice/bob/demo com membership.
 
 ## Fluxo de trabalho do desenvolvedor
 

@@ -78,7 +78,7 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 |----------|---------|-------|
 | `POSTGRES_*`, `DATABASE_URL` | postgres, api, worker/host | SoT; `DATABASE_URL` é do caminho host |
 | `REDIS_*`, `REDIS_URL` | redis, api, worker/host | Containers usam o endereço interno `redis:6379` |
-| `KEYCLOAK_*`, `OIDC_*` | keycloak, api, web | Realm, issuer, clients |
+| `KEYCLOAK_*`, `OIDC_*` | keycloak, api, web | Realm, issuer, clients. `KEYCLOAK_PROXY_HEADERS` default `xforwarded` (vazio quebra Keycloak 26). Lab: não injete `KC_HTTP_RELATIVE_PATH=""`. Staging path `/auth`: defina `KC_HTTP_RELATIVE_PATH=/auth` no container Coolify **e** `KEYCLOAK_HTTP_RELATIVE_PATH=/auth` para o MetadataAddress da API. |
 | `MINIO_*` | minio, api | Anexos S3-compatível |
 | `MAILPIT_*`, `SMTP_*` | mailpit (tools) | Dev only; prod usa `EMAIL__*` |
 | `OTEL_*`, `PROMETHEUS_*`, `GRAFANA_*`, `LOKI_*`, `TEMPO_*` | observability | Profile opcional |
@@ -96,7 +96,8 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 | `BOOTSTRAP_INITIAL_ADMIN_EMAIL` | `Bootstrap__InitialAdminEmail` | api | Email obrigatório quando o bootstrap está ativo; o primeiro login OIDC assume o perfil pendente de `WorkspaceOwner` |
 | `BOOTSTRAP_WORKSPACE_NAME` | `Bootstrap__WorkspaceName` | api | Nome do primeiro workspace; default `VibeChat Alpha` |
 | `BOOTSTRAP_WORKSPACE_SLUG` | `Bootstrap__WorkspaceSlug` | api | Slug do primeiro workspace; apenas letras ASCII, números e hífen |
-| `SEED_ENABLED` | `Seed__Enabled` | api | `false` em prod |
+| `SEED_ENABLED` | `Seed__Enabled` | api | `true` no lab; **`false` em staging/prod** |
+| `ENABLE_DEV_AUTH` | build arg web → `publicConfig.enableDevAuth` | web build | Lab: `true` (botões Alice/Bob/Demo no login). **Staging/prod/Coolify: `false` ou omitir** (default Compose). Rebuild da web após mudar. |
 | `AI__Enabled`, `AI__Provider` | `Ai__*` | api | Off default (D-06) |
 | `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL` | `Ai__OpenRouter__*` | api | Fallback env; BaseUrl permanece env; key pode ir ao DB criptografada (ADR-020) |
 | `EMAIL__*` | `Email__*` | api | Injetado no profile `apps`; senha fallback env ou envelope DB |
@@ -201,7 +202,7 @@ removeu alias duplicado `AI__OpenRouter__*` do template e adicionou testes de ca
 Antes de expor a instância:
 
 1. `cp .env.example .env` e substituir **todos** `*_change_me` / `CHANGE_ME` por secrets reais (D-04).
-2. `ASPNETCORE_ENVIRONMENT=Production` e `SEED_ENABLED=false`.
+2. `ASPNETCORE_ENVIRONMENT=Production`, `SEED_ENABLED=false` e `ENABLE_DEV_AUTH=false` (ou omitir — default do Compose).
 3. `AI__Enabled=false` (default) até opt-in explícito; `OPENROUTER_API_KEY` só se provider externo.
 4. `EMAIL__Enabled=false` (default) até SMTP real; nunca commitar `EMAIL__Smtp__Password`.
 5. `MessageRetention__Enabled=false` (default) até política legal/operacional aprovada (ADR-018).
@@ -218,4 +219,4 @@ cp .env.example .env
 task apps
 ```
 
-Produção: `ASPNETCORE_ENVIRONMENT=Production`, `SEED_ENABLED=false`, secrets reais só via `.env` ou secret manager (D-04). Ver também [`operacao.md`](./operacao.md) e [`runbooks/README.md`](./runbooks/README.md).
+Produção: `ASPNETCORE_ENVIRONMENT=Production`, `SEED_ENABLED=false`, `ENABLE_DEV_AUTH=false`, secrets reais só via `.env` ou secret manager (D-04). Ver também [`operacao.md`](./operacao.md) e [`runbooks/README.md`](./runbooks/README.md).

@@ -29,11 +29,11 @@ task apps
 | worker | — | process liveness (PID 1) |
 
 - OIDC: `Authentication__Authority` = issuer público (`KEYCLOAK_ISSUER_URL`); discovery in-network via `Authentication__MetadataAddress` → `keycloak:8080`
-- Lab/demo: `ASPNETCORE_ENVIRONMENT=Development` + `SEED_ENABLED=true` (default) aplica migrate/seed no startup
+- Lab/demo: `ASPNETCORE_ENVIRONMENT=Development` + `SEED_ENABLED=true` + `ENABLE_DEV_AUTH=true` (botões Alice/Bob/Demo no build da web; rebuild após mudar)
 - Primeiro boot de staging sem dados demo: `DATABASE_BOOTSTRAP_ON_STARTUP=true` + `SEED_ENABLED=false` aplica migrations e catálogo RLS. Depois, manter o switch conforme a política de release; produção prefere job de migration explícito.
-- Alpha/staging limpo: `DATABASE_BOOTSTRAP_ON_STARTUP=true`, `BOOTSTRAP_ENABLED=true`, `BOOTSTRAP_INITIAL_ADMIN_EMAIL=admin@vibechat.local`, `SEED_ENABLED=false`, realm de staging e `VIBECHAT_INITIAL_ADMIN_PASSWORD` no secret manager. A senha é temporária e deve ser trocada no primeiro login.
+- Alpha/staging limpo: `DATABASE_BOOTSTRAP_ON_STARTUP=true`, `BOOTSTRAP_ENABLED=true`, `BOOTSTRAP_INITIAL_ADMIN_EMAIL=admin@vibechat.local`, `SEED_ENABLED=false`, `ENABLE_DEV_AUTH=false`, realm de staging e `VIBECHAT_INITIAL_ADMIN_PASSWORD` no secret manager. A senha é temporária e deve ser trocada no primeiro login.
 - Reset do staging: remover a stack e seus volumes e criar uma stack nova. O realm é importado somente no banco vazio; não alternar schemas para forçar reimport.
-- Produção: `ASPNETCORE_ENVIRONMENT=Production`, `SEED_ENABLED=false`, secrets reais só via `.env` / secret manager (D-04)
+- Produção: `ASPNETCORE_ENVIRONMENT=Production`, `SEED_ENABLED=false`, `ENABLE_DEV_AUTH=false`, secrets reais só via `.env` / secret manager (D-04)
 - `compose.override.yaml` (host networking) é opcional para DX em ambientes restritos — **não** faz parte do caminho oficial; `task apps` usa `compose.yaml` + `compose.dev.yaml`
 - Coolify: apenas `compose.yaml` (sem redes custom, `container_name` ou `ports` de host); domínio no serviço `web`
 

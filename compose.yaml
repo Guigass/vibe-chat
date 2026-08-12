@@ -86,10 +86,12 @@ services:
       KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
       KC_HOSTNAME_STRICT: "false"
       KC_HTTP_ENABLED: "true"
-      # Staging path-based: /auth (vazio no lab local). Must match path in KC_HOSTNAME.
-      KC_HTTP_RELATIVE_PATH: ${KEYCLOAK_HTTP_RELATIVE_PATH:-}
-      # Coolify / Traefik TLS termination — forwarded proto/host
-      KC_PROXY_HEADERS: ${KEYCLOAK_PROXY_HEADERS:-}
+      # Do NOT set KC_HTTP_RELATIVE_PATH to "" — Keycloak 26 NPE on build.
+      # Staging (/auth): set container env KC_HTTP_RELATIVE_PATH=/auth in Coolify
+      # (and KEYCLOAK_HTTP_RELATIVE_PATH=/auth for API MetadataAddress interpolation).
+      # Coolify / Traefik TLS termination — forwarded proto/host.
+      # Default xforwarded: Keycloak 26 rejects an empty KC_PROXY_HEADERS value.
+      KC_PROXY_HEADERS: ${KEYCLOAK_PROXY_HEADERS:-xforwarded}
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
@@ -356,6 +358,8 @@ services:
         KEYCLOAK_REALM: ${KEYCLOAK_REALM:-vibechat}
         OIDC_WEB_CLIENT_ID: ${OIDC_WEB_CLIENT_ID:-vibechat-web}
         GRAFANA_URL: ${GRAFANA_ROOT_URL:-http://localhost:${GRAFANA_PORT:-3000}}
+        # Lab only — Alice/Bob/Demo buttons. Coolify must keep false/unset.
+        ENABLE_DEV_AUTH: ${ENABLE_DEV_AUTH:-false}
     image: vibechat-web:local
     restart: unless-stopped
     depends_on:

@@ -58,7 +58,7 @@ Abra http://localhost:4200
 
 - **Keycloak admin:** `admin` / valor de `KEYCLOAK_ADMIN_PASSWORD` no `.env`
 - **Modo demo local (UI):** botão “Explorar demo local” na tela de login (sem Keycloak)
-- **DevAuth (API Development):** header `X-Dev-User: alice|bob|demo`
+- **DevAuth (lab):** com `ENABLE_DEV_AUTH=true` no `.env`, `task apps` mostra Alice/Bob/Demo no login; API aceita `X-Dev-User: alice|bob|demo` em Development. Staging/prod: `ENABLE_DEV_AUTH=false` (só OIDC).
 
 Seed cria workspace demo, canal `#geral` e memberships para alice/bob.
 

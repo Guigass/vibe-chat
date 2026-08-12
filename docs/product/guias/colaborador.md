@@ -9,7 +9,9 @@ Visão de uso diário do VibeChat.
 1. A organização fornece a URL da instância.
 2. O login oficial usa OIDC/Keycloak.
 3. O usuário só acessa workspaces/canais em que possui membership.
-4. DevAuth existe apenas em Development e não representa login de produção.
+4. DevAuth (botões Alice/Bob/Demo e `X-Dev-User`) existe só no lab local
+   (`ENABLE_DEV_AUTH=true` + API Development) e não representa login de
+   staging/produção.
 
 Se o workspace esperado não aparecer, procure o administrador; criar outra conta
 não concede membership.

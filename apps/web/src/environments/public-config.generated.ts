@@ -5,4 +5,5 @@ export const publicConfig = {
   keycloakAuthority: "http://localhost:8080/realms/vibechat",
   keycloakClientId: "vibechat-web",
   grafanaUrl: "http://localhost:3000",
+  enableDevAuth: false,
 } as const;

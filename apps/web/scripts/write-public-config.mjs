@@ -14,6 +14,10 @@ const keycloakUrl = (process.env.KEYCLOAK_URL || process.env.KEYCLOAK_PUBLIC_URL
 const keycloakRealm = process.env.KEYCLOAK_REALM || 'vibechat';
 const oidcClientId = process.env.OIDC_WEB_CLIENT_ID || 'vibechat-web';
 const grafanaUrl = (process.env.GRAFANA_URL || process.env.GRAFANA_ROOT_URL || 'http://localhost:3000').replace(/\/$/, '');
+// Lab Compose only — never enable for Coolify/production images.
+const enableDevAuth = ['1', 'true', 'yes'].includes(
+  String(process.env.ENABLE_DEV_AUTH || '').trim().toLowerCase(),
+);
 
 const hubUrl = apiBaseUrl ? `${apiBaseUrl}/hubs/chat` : '/hubs/chat';
 const authority = `${keycloakUrl}/realms/${keycloakRealm}`;
@@ -25,8 +29,9 @@ export const publicConfig = {
   keycloakAuthority: ${JSON.stringify(authority)},
   keycloakClientId: ${JSON.stringify(oidcClientId)},
   grafanaUrl: ${JSON.stringify(grafanaUrl)},
+  enableDevAuth: ${enableDevAuth},
 } as const;
 `;
 
 writeFileSync(join(root, 'src', 'environments', 'public-config.generated.ts'), generated, 'utf8');
-console.log(`[write-public-config] api=${apiBaseUrl} keycloak=${authority} grafana=${grafanaUrl}`);
+console.log(`[write-public-config] api=${apiBaseUrl} keycloak=${authority} grafana=${grafanaUrl} enableDevAuth=${enableDevAuth}`);
