@@ -2,13 +2,13 @@ export type AttachmentPreviewKind = 'image' | 'pdf' | 'audio' | 'video' | 'file'
 
 export function classifyAttachmentPreview(
   contentType: string,
-  kind?: 'File' | 'Audio',
+  kind?: 'File' | 'Audio' | 'Video',
 ): AttachmentPreviewKind {
   const type = (contentType ?? '').trim().toLowerCase();
   if (kind === 'Audio' || type.startsWith('audio/')) return 'audio';
+  if (kind === 'Video' || type.startsWith('video/')) return 'video';
   if (type.startsWith('image/')) return 'image';
   if (type === 'application/pdf') return 'pdf';
-  if (type.startsWith('video/')) return 'video';
   return 'file';
 }
 
@@ -18,7 +18,7 @@ export function isGifContentType(contentType: string): boolean {
 
 export function attachmentFamilyIcon(
   contentType: string,
-  kind?: 'File' | 'Audio',
+  kind?: 'File' | 'Audio' | 'Video',
 ): string {
   switch (classifyAttachmentPreview(contentType, kind)) {
     case 'image':

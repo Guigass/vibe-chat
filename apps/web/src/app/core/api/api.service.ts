@@ -527,9 +527,11 @@ export class ApiService {
     fileName: string;
     contentType: string;
     sizeBytes: number;
-    kind?: 'File' | 'Audio';
+    kind?: 'File' | 'Audio' | 'Video';
     durationMs?: number;
     waveform?: number[];
+    width?: number;
+    height?: number;
   }): Promise<AttachmentUploadDto> {
     return this.request<AttachmentUploadDto>(`/api/v1/channels/${input.channelId}/attachments`, {
       method: 'POST',
@@ -540,6 +542,8 @@ export class ApiService {
         kind: input.kind,
         durationMs: input.durationMs,
         waveform: input.waveform,
+        width: input.width,
+        height: input.height,
       }),
     });
   }
@@ -1188,7 +1192,7 @@ export class ApiService {
       contentType: a.contentType,
       sizeBytes: a.sizeBytes,
       status: a.status,
-      kind: a.kind === 'Audio' ? 'Audio' : 'File',
+      kind: a.kind === 'Audio' ? 'Audio' : a.kind === 'Video' ? 'Video' : 'File',
       durationMs: a.durationMs,
       waveform: a.waveform,
       thumbnailStatus: a.thumbnailStatus ?? null,

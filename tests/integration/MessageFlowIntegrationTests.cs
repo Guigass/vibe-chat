@@ -1696,6 +1696,71 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Video_attachment_upload_links_to_message_with_metadata()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var content = new byte[] { 0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70 };
+        var initiate = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments",
+            new CreateAttachmentUploadRequest(
+                "clip.mp4",
+                "video/mp4",
+                content.Length,
+                Kind: "Video",
+                DurationMs: 15_000,
+                Width: 640,
+                Height: 360));
+        initiate.StatusCode.Should().Be(HttpStatusCode.OK);
+        var upload = await initiate.Content.ReadFromJsonAsync<AttachmentUploadDto>(JsonOptions);
+        upload.Should().NotBeNull();
+
+        using var putRequest = new HttpRequestMessage(HttpMethod.Put, upload!.UploadUrl)
+        {
+            Content = new ByteArrayContent(content)
+        };
+        using var putClient = new HttpClient();
+        (await putClient.SendAsync(putRequest)).IsSuccessStatusCode.Should().BeTrue();
+
+        var complete = await client.PostAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments/{upload.AttachmentId}/complete",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+        complete.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var messageId = Guid.NewGuid();
+        var send = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(messageId, $"idem-video-{messageId:N}", string.Empty, null, null, [upload.AttachmentId]));
+        send.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var accepted = await send.Content.ReadFromJsonAsync<MessageDto>(JsonOptions);
+        accepted.Should().NotBeNull();
+        accepted!.Attachments.Should().ContainSingle(a =>
+            a.Id == upload.AttachmentId
+            && a.Kind == "Video"
+            && a.DurationMs == 15_000
+            && a.Width == 640
+            && a.Height == 360);
+    }
+
+    [Fact]
+    public async Task Video_attachment_rejects_disallowed_mime_and_missing_duration()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var badMime = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments",
+            new CreateAttachmentUploadRequest("clip.mov", "video/quicktime", 1024, Kind: "Video", DurationMs: 5_000));
+        badMime.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var noDuration = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments",
+            new CreateAttachmentUploadRequest("clip.webm", "video/webm", 1024, Kind: "Video"));
+        noDuration.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Audio_attachment_upload_links_to_message_with_metadata()
     {
         using var client = factory.CreateClient();

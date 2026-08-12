@@ -37,6 +37,8 @@ import {
   attachmentIconKind,
   collectFilesFromClipboard,
   formatFileSize,
+  formatVideoDuration,
+  isVideoContentType,
   resolveContentType,
 } from './attachment-upload';
 import type { AttachmentIconKind, PendingAttachment } from './attachment-upload';
@@ -103,6 +105,12 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
                         <path d="M16 17H8" />
                       </svg>
                     }
+                    @case ('video') {
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5" />
+                        <rect x="2" y="6" width="14" height="12" rx="2" />
+                      </svg>
+                    }
                     @default {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
@@ -111,10 +119,26 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
                     }
                   }
                 </span>
+                @if (item.previewUrl) {
+                  <video
+                    class="composer__attachment-video"
+                    [src]="item.previewUrl"
+                    controls
+                    preload="metadata"
+                    [attr.aria-label]="'Prévia de ' + item.file.name"
+                  ></video>
+                }
                 <div class="composer__attachment-meta">
                   <span class="composer__attachment-name">{{ item.file.name }}</span>
-                  <span class="composer__attachment-size">{{ sizeFor(item) }}</span>
-                  @if (item.status === 'uploading' || item.status === 'queued') {
+                  <span class="composer__attachment-size">
+                    {{ sizeFor(item) }}
+                    @if (item.durationMs) {
+                      · {{ formatVideoDuration(item.durationMs) }}
+                    }
+                  </span>
+                  @if (item.status === 'validating') {
+                    <span class="composer__attachment-ready">Validando vídeo…</span>
+                  } @else if (item.status === 'uploading' || item.status === 'queued') {
                     <progress
                       class="composer__attachment-progress"
                       [value]="item.progress"
@@ -283,7 +307,7 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
                 multiple
                 [disabled]="messages.sending() || !attachments.canAcceptMore()"
                 (change)="onFileSelected($event)"
-                accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain"
+                accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,video/mp4,video/webm"
                 aria-label="Anexar arquivo"
               />
               <span class="composer__attach-face" aria-hidden="true">
@@ -522,6 +546,14 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
       height: 1.5rem;
       color: var(--vc-ink-muted);
     }
+    .composer__attachment-video {
+      width: 120px;
+      max-height: 72px;
+      border-radius: var(--vc-radius-sm);
+      background: #000;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
     .composer__attachment-meta {
       display: grid;
       gap: 0.1rem;
@@ -732,6 +764,7 @@ export class Composer {
   readonly messages = inject(MessageStore);
   readonly channels = inject(ChannelStore);
   readonly attachments = inject(AttachmentQueueService);
+  readonly formatVideoDuration = formatVideoDuration;
   readonly audioRecorder = inject(AudioRecorderService);
   readonly slash = inject(SlashCommandsService);
   private readonly hub = inject(ChatHubService);

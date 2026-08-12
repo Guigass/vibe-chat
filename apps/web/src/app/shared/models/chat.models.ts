@@ -69,7 +69,7 @@ export interface MessageAttachment {
   contentType: string;
   sizeBytes: number;
   status?: string;
-  kind?: 'File' | 'Audio';
+  kind?: 'File' | 'Audio' | 'Video';
   durationMs?: number;
   waveform?: number[];
   /** B-090 — Pending | Ready | Failed */

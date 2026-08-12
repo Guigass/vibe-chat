@@ -33,6 +33,8 @@ public sealed record EffectiveFilesSettings(
     IReadOnlyList<string> AllowedContentTypes,
     long AudioMaxSizeBytes,
     int AudioMaxDurationMs,
+    long VideoMaxSizeBytes,
+    int VideoMaxDurationMs,
     string Source);
 
 public sealed record EffectiveRateLimitSettings(
@@ -205,6 +207,8 @@ public sealed class FilesSettingsResolver(
                 allowed,
                 Math.Clamp(row.AudioMaxSizeBytes, 1, ceiling.AudioMaxSizeBytes),
                 Math.Clamp(row.AudioMaxDurationMs, 1_000, ceiling.AudioMaxDurationMs),
+                ceiling.VideoMaxSizeBytes,
+                ceiling.VideoMaxDurationMs,
                 "database");
         }
 
@@ -224,6 +228,8 @@ public sealed class FilesSettingsResolver(
             allowed,
             configuration.GetValue("Files:Audio:MaxSizeBytes", AttachmentPolicies.DefaultAudioMaxSizeBytes),
             configuration.GetValue("Files:Audio:MaxDurationMs", AttachmentPolicies.DefaultAudioMaxDurationMs),
+            configuration.GetValue("Files:Video:MaxSizeBytes", AttachmentPolicies.DefaultVideoMaxSizeBytes),
+            configuration.GetValue("Files:Video:MaxDurationMs", AttachmentPolicies.DefaultVideoMaxDurationMs),
             "env");
     }
 

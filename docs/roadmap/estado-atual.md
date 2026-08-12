@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-12
 - **Fase:** Wave 9 — Leitura e paridade de bolha (Wave 8 completa)
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165)
-- **Próximo item elegível:** W9-8 / B-168 (vídeo); W9-9 / B-171 (painéis direita); W9-10 / B-173 (editar no composer); W9-11 / B-184 (nav esquerda); W9-7 / B-094 Done
+- **Próximo item elegível:** W9-9 / B-171 (painéis direita); W9-10 / B-173 (editar no composer); W9-11 / B-184 (nav esquerda); W9-8 / B-168 Done
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo

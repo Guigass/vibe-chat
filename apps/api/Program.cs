@@ -1677,6 +1677,25 @@ v1.MapPost("/channels/{channelId:guid}/attachments", async (
 
         waveform = AttachmentPolicies.NormalizeWaveform(request.Waveform);
     }
+    else if (kind == AttachmentKind.Video)
+    {
+        maxSize = files.VideoMaxSizeBytes;
+        var maxDurationMs = files.VideoMaxDurationMs;
+        if (!AttachmentPolicies.IsAllowedVideoContentType(request.ContentType))
+        {
+            return Results.BadRequest(new { error = "Video content type is not allowed." });
+        }
+
+        if (!request.DurationMs.HasValue || request.DurationMs <= 0)
+        {
+            return Results.BadRequest(new { error = "durationMs is required for video attachments." });
+        }
+
+        if (request.DurationMs > maxDurationMs)
+        {
+            return Results.BadRequest(new { error = $"Video exceeds max duration of {maxDurationMs} ms." });
+        }
+    }
     else
     {
         if (!AttachmentPolicies.IsAllowedContentType(request.ContentType, allowed))
@@ -1707,8 +1726,10 @@ v1.MapPost("/channels/{channelId:guid}/attachments", async (
         Status = AttachmentStatus.PendingUpload,
         ReferenceCount = 1,
         Kind = kind,
-        DurationMs = kind == AttachmentKind.Audio ? request.DurationMs : null,
+        DurationMs = kind is AttachmentKind.Audio or AttachmentKind.Video ? request.DurationMs : null,
         Waveform = kind == AttachmentKind.Audio ? waveform : null,
+        Width = kind == AttachmentKind.Video ? request.Width : null,
+        Height = kind == AttachmentKind.Video ? request.Height : null,
         CreatedAt = now
     };
     db.Attachments.Add(attachment);
@@ -1784,9 +1805,12 @@ v1.MapPost("/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete"
     }
 
     var files = await filesSettings.ResolveAsync(channel.TenantId, ct);
-    var maxSize = attachment.Kind == AttachmentKind.Audio
-        ? files.AudioMaxSizeBytes
-        : files.MaxSizeBytes;
+    var maxSize = attachment.Kind switch
+    {
+        AttachmentKind.Audio => files.AudioMaxSizeBytes,
+        AttachmentKind.Video => files.VideoMaxSizeBytes,
+        _ => files.MaxSizeBytes
+    };
     if (stat.SizeBytes > maxSize || stat.SizeBytes > attachment.SizeBytes)
     {
         attachment.Status = AttachmentStatus.Failed;
@@ -5204,7 +5228,9 @@ public sealed record CreateAttachmentUploadRequest(
     long SizeBytes,
     string? Kind = null,
     int? DurationMs = null,
-    int[]? Waveform = null);
+    int[]? Waveform = null,
+    int? Width = null,
+    int? Height = null);
 public sealed record AttachmentResponse(
     Guid Id,
     string FileName,
