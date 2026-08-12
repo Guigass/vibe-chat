@@ -5,8 +5,11 @@ import {
   MAX_ATTACHMENTS_PER_MESSAGE,
   PendingAttachment,
   UPLOAD_CONCURRENCY,
+  extractVideoMetadata,
+  isVideoContentType,
   resolveContentType,
   validateAttachmentFile,
+  validateVideoAttachmentFile,
 } from './attachment-upload';
 import { normalizeAudioContentType } from './audio-recorder';
 import { RecordedAudio } from './audio-recorder.service';
@@ -47,18 +50,41 @@ export class AttachmentQueueService {
     const channelId = this.channels.activeChannel()?.id;
     if (!channelId || !files.length) return null;
 
-    const current = this.itemsSignal();
-    const remaining = MAX_ATTACHMENTS_PER_MESSAGE - current.length;
+    const remaining = MAX_ATTACHMENTS_PER_MESSAGE - this.itemsSignal().length;
     if (remaining <= 0) {
       return `No máximo ${MAX_ATTACHMENTS_PER_MESSAGE} anexos por mensagem.`;
     }
 
     const accepted = files.slice(0, remaining);
     const skipped = files.length - accepted.length;
+    void this.enqueueAccepted(channelId, accepted, skipped);
+    return skipped > 0 ? `No máximo ${MAX_ATTACHMENTS_PER_MESSAGE} anexos por mensagem.` : null;
+  }
+
+  private async enqueueAccepted(channelId: string, accepted: File[], skipped: number): Promise<void> {
     const next: PendingAttachment[] = [];
     const errors: string[] = [];
 
     for (const file of accepted) {
+      const contentType = resolveContentType(file);
+      if (isVideoContentType(contentType)) {
+        const syncError = validateVideoAttachmentFile(file, contentType);
+        if (syncError) {
+          errors.push(`${syncError.fileName}: ${syncError.reason}`);
+          continue;
+        }
+        const localId = crypto.randomUUID();
+        next.push({
+          localId,
+          file,
+          status: 'validating',
+          progress: 0,
+          uploadKind: 'Video',
+          previewUrl: URL.createObjectURL(file),
+        });
+        continue;
+      }
+
       const validation = validateAttachmentFile(file);
       if (validation) {
         errors.push(`${validation.fileName}: ${validation.reason}`);
@@ -73,28 +99,73 @@ export class AttachmentQueueService {
     }
 
     if (!next.length && errors.length) {
-      return errors.join(' ');
+      this.announce(errors.join(' '));
+      return;
     }
 
     this.itemsSignal.update((list) => [...list, ...next]);
     if (next.length) {
       const suffix = skipped > 0 ? ` (${skipped} ignorados pelo limite)` : '';
       this.announce(`${next.length} arquivo${next.length === 1 ? '' : 's'} adicionado${next.length === 1 ? '' : 's'}${suffix}`);
-      this.scheduleUploads(channelId);
+    }
+    if (errors.length) {
+      this.announce(errors.join(' '));
     }
 
-    if (errors.length) {
-      return errors.join(' ');
+    for (const item of next) {
+      if (item.uploadKind === 'Video') {
+        await this.validateVideoItem(channelId, item.localId);
+      }
     }
-    if (skipped > 0) {
-      return `No máximo ${MAX_ATTACHMENTS_PER_MESSAGE} anexos por mensagem.`;
+
+    this.scheduleUploads(channelId);
+  }
+
+  private async validateVideoItem(channelId: string, localId: string): Promise<void> {
+    const item = this.itemsSignal().find((row) => row.localId === localId);
+    if (!item || item.uploadKind !== 'Video') return;
+
+    try {
+      const metadata = await extractVideoMetadata(item.file);
+      const validation = validateVideoAttachmentFile(
+        item.file,
+        resolveContentType(item.file),
+        metadata.durationMs,
+      );
+      if (validation) {
+        this.revokePreview(item);
+        this.patch(localId, {
+          status: 'failed',
+          progress: 0,
+          error: validation.reason,
+          previewUrl: undefined,
+        });
+        return;
+      }
+      this.patch(localId, {
+        status: 'queued',
+        durationMs: metadata.durationMs,
+        width: metadata.width,
+        height: metadata.height,
+      });
+      this.scheduleUploads(channelId);
+    } catch (error) {
+      this.revokePreview(item);
+      const message = error instanceof Error ? error.message : 'Falha ao validar vídeo';
+      this.patch(localId, {
+        status: 'failed',
+        progress: 0,
+        error: message,
+        previewUrl: undefined,
+      });
     }
-    return null;
   }
 
   remove(localId: string): void {
     this.abortControllers.get(localId)?.abort();
     this.abortControllers.delete(localId);
+    const item = this.itemsSignal().find((row) => row.localId === localId);
+    if (item) this.revokePreview(item);
     this.itemsSignal.update((list) => list.filter((item) => item.localId !== localId));
   }
 
@@ -116,6 +187,9 @@ export class AttachmentQueueService {
       controller.abort();
     }
     this.abortControllers.clear();
+    for (const item of this.itemsSignal()) {
+      this.revokePreview(item);
+    }
     this.itemsSignal.set([]);
   }
 
@@ -216,7 +290,9 @@ export class AttachmentQueueService {
 
   private async runUploadQueue(channelId: string): Promise<void> {
     while (true) {
-      const queued = this.itemsSignal().filter((item) => item.status === 'queued');
+      const queued = this.itemsSignal().filter(
+        (item) => item.status === 'queued' && (item.uploadKind !== 'Video' || item.durationMs),
+      );
       if (!queued.length) return;
 
       const batch = queued.slice(0, UPLOAD_CONCURRENCY);
@@ -234,11 +310,16 @@ export class AttachmentQueueService {
 
     try {
       const contentType = resolveContentType(item.file);
+      const isVideo = item.uploadKind === 'Video' || isVideoContentType(contentType);
       const initiated = await this.api.initiateAttachmentUpload({
         channelId,
         fileName: item.file.name,
         contentType,
         sizeBytes: item.file.size,
+        kind: isVideo ? 'Video' : undefined,
+        durationMs: isVideo ? item.durationMs : undefined,
+        width: isVideo ? item.width : undefined,
+        height: isVideo ? item.height : undefined,
       });
 
       await this.api.uploadFileToPresignedUrl(
@@ -265,6 +346,12 @@ export class AttachmentQueueService {
       this.patch(localId, { status: 'failed', progress: 0, error: message });
     } finally {
       this.abortControllers.delete(localId);
+    }
+  }
+
+  private revokePreview(item: PendingAttachment): void {
+    if (item.previewUrl) {
+      URL.revokeObjectURL(item.previewUrl);
     }
   }
 

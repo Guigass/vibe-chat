@@ -12,7 +12,8 @@ public enum AttachmentStatus
 public enum AttachmentKind
 {
     File = 0,
-    Audio = 1
+    Audio = 1,
+    Video = 2
 }
 
 /// <summary>Derived thumbnail lifecycle (B-090). Null means not applicable (non-image/PDF).</summary>
@@ -103,6 +104,8 @@ public static class AttachmentPolicies
     public const long DefaultMaxSizeBytes = 10 * 1024 * 1024;
     public const long DefaultAudioMaxSizeBytes = 10 * 1024 * 1024;
     public const int DefaultAudioMaxDurationMs = 300_000;
+    public const long DefaultVideoMaxSizeBytes = 25 * 1024 * 1024;
+    public const int DefaultVideoMaxDurationMs = 60_000;
     public const int MaxWaveformPoints = 100;
     public const int DefaultMaxAttachmentsPerMessage = 10;
     public const int DefaultUploadTtlSeconds = 900;
@@ -131,6 +134,12 @@ public static class AttachmentPolicies
         "audio/mp4",
         "audio/webm;codecs=opus",
         "audio/ogg;codecs=opus"
+    };
+
+    public static readonly HashSet<string> DefaultAllowedVideoContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "video/mp4",
+        "video/webm"
     };
 
     public static string SanitizeFileName(string fileName)
@@ -199,6 +208,14 @@ public static class AttachmentPolicies
         || contentType.Trim().StartsWith("audio/webm", StringComparison.OrdinalIgnoreCase)
         || contentType.Trim().StartsWith("audio/ogg", StringComparison.OrdinalIgnoreCase)
         || contentType.Trim().StartsWith("audio/mp4", StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsAllowedVideoContentType(string contentType)
+    {
+        var type = contentType.Trim();
+        return DefaultAllowedVideoContentTypes.Contains(type, StringComparer.OrdinalIgnoreCase)
+            || type.StartsWith("video/webm", StringComparison.OrdinalIgnoreCase)
+            || type.Equals("video/mp4", StringComparison.OrdinalIgnoreCase);
+    }
 
     public static bool IsValidWaveform(int[]? waveform)
     {

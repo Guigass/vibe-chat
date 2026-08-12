@@ -143,6 +143,7 @@ import { AudioMessage } from '../audio-message/audio-message';
             <video
               controls
               preload="metadata"
+              [poster]="previewUrl() ?? undefined"
               [src]="downloadUrl()!"
               (error)="loadFailed.set(true)"
             >

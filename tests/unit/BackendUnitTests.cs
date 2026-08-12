@@ -471,6 +471,11 @@ public sealed class BackendUnitTests
         AttachmentPolicies.IsValidWaveform([101]).Should().BeFalse();
         AttachmentPolicies.NormalizeWaveform(Enumerable.Range(0, 200).Select(i => i % 100).ToArray())
             .Should().HaveCount(AttachmentPolicies.MaxWaveformPoints);
+        AttachmentPolicies.IsAllowedVideoContentType("video/mp4").Should().BeTrue();
+        AttachmentPolicies.IsAllowedVideoContentType("video/webm").Should().BeTrue();
+        AttachmentPolicies.IsAllowedVideoContentType("video/quicktime").Should().BeFalse();
+        AttachmentPolicies.DefaultVideoMaxSizeBytes.Should().Be(25 * 1024 * 1024);
+        AttachmentPolicies.DefaultVideoMaxDurationMs.Should().Be(60_000);
     }
 
     [Fact]

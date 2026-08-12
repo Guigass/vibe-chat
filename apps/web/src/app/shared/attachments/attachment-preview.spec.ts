@@ -26,6 +26,10 @@ describe('classifyAttachmentPreview', () => {
   it('prefers Audio kind over generic content type', () => {
     expect(classifyAttachmentPreview('application/octet-stream', 'Audio')).toBe('audio');
   });
+
+  it('prefers Video kind over generic content type', () => {
+    expect(classifyAttachmentPreview('application/octet-stream', 'Video')).toBe('video');
+  });
 });
 
 describe('attachment preview helpers', () => {

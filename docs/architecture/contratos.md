@@ -469,7 +469,7 @@ clona os campos de thumbnail junto com `StorageKey`.
 
 | Endpoint | Notas |
 |----------|-------|
-| `POST /api/v1/channels/{channelId}/attachments` | Body `{ fileName, contentType, sizeBytes, kind?, durationMs?, waveform? }` → URL pré-assinada PUT; exige membership + `file.upload`; `kind=Audio` exige `durationMs` e aceita `waveform` (0–100, ≤100 pts) |
+| `POST /api/v1/channels/{channelId}/attachments` | Body `{ fileName, contentType, sizeBytes, kind?, durationMs?, waveform?, width?, height? }` → URL pré-assinada PUT; exige membership + `file.upload`; `kind=Audio` exige `durationMs` e aceita `waveform` (0–100, ≤100 pts); `kind=Video` exige `durationMs`, aceita `width`/`height` |
 | `POST /api/v1/channels/{channelId}/attachments/{id}/complete` | Confirma objeto no MinIO; status `Ready`; image/PDF → `ThumbnailStatus=Pending` + outbox `files.attachment.ready` |
 | `GET /api/v1/channels/{channelId}/attachments/{id}/download` | URL pré-assinada GET do original; exige membership + `file.download` |
 | `GET /api/v1/channels/{channelId}/attachments/{id}/thumbnail` | URL pré-assinada GET da miniatura WebP; mesma authZ do download; `404` se não `Ready`; cross-tenant → 403 |
@@ -483,6 +483,9 @@ Limites (config `Files:*` / override tenant, default entre parênteses):
 |-------|---------|-----------|
 | `MaxSizeBytes` | `10485760` (10 MiB) | Por arquivo no `initiate`; tenant ≤ teto env |
 | `MaxAttachmentsPerMessage` | `10` | Contagem de `attachmentIds` no `SendMessage`; excedente → `400` `{ error: "TooManyAttachments", max }` |
+| `Files:Video:MaxSizeBytes` | `26214400` (25 MiB) | Por vídeo no `initiate`; teto env |
+| `Files:Video:MaxDurationMs` | `60000` | `durationMs` obrigatório para `kind=Video`; excedente → `400` |
+| `DefaultAllowedVideoContentTypes` | `video/mp4`, `video/webm` | Allowlist separada (espelha áudio) |
 
 ---
 

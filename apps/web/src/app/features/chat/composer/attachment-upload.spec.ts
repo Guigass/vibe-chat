@@ -5,6 +5,7 @@ import {
   collectFilesFromDataTransfer,
   resolveContentType,
   validateAttachmentFile,
+  validateVideoAttachmentFile,
 } from './attachment-upload';
 
 describe('attachment-upload validation', () => {
@@ -41,6 +42,23 @@ describe('attachment-upload validation', () => {
       files: [],
     } as unknown as DataTransfer;
     expect(collectFilesFromDataTransfer(dt)).toEqual([]);
+  });
+
+  it('rejects video above max size', () => {
+    const file = new File([new Uint8Array(26 * 1024 * 1024)], 'big.mp4', { type: 'video/mp4' });
+    const error = validateVideoAttachmentFile(file);
+    expect(error?.reason).toContain('excede');
+  });
+
+  it('rejects video above max duration when metadata known', () => {
+    const file = new File(['x'], 'long.webm', { type: 'video/webm' });
+    const error = validateVideoAttachmentFile(file, 'video/webm', 61_000);
+    expect(error?.reason).toContain('duração');
+  });
+
+  it('accepts allowed video mime within limits', () => {
+    const file = new File(['x'], 'clip.mp4', { type: 'video/mp4' });
+    expect(validateVideoAttachmentFile(file, 'video/mp4', 30_000)).toBeNull();
   });
 
   it('exports max attachment count of 10', () => {
