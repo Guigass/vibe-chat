@@ -46,6 +46,7 @@ describe('LoginPage DevAuth contrast (UX-001)', () => {
 
   it('exposes light ink tokens on the dark hero and labeled DevAuth actions', async () => {
     const fixture = TestBed.createComponent(LoginPage);
+    fixture.componentInstance.enableDevAuth = true;
     const host = fixture.nativeElement as HTMLElement;
     // Global light-theme tokens that previously made ghost ink invisible on the hero.
     document.documentElement.style.setProperty('--vc-ink', '#1c1917');
@@ -70,5 +71,16 @@ describe('LoginPage DevAuth contrast (UX-001)', () => {
       (el) => el.textContent?.trim(),
     );
     expect(labels).toEqual(['Alice', 'Bob', 'Demo']);
+  });
+
+  it('hides DevAuth actions when enableDevAuth is false', async () => {
+    const fixture = TestBed.createComponent(LoginPage);
+    fixture.componentInstance.enableDevAuth = false;
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('.login-hero__dev')).toBeNull();
+    expect(host.textContent).toContain('Entrar com Keycloak');
   });
 });

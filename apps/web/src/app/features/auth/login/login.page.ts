@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService, DevUserName } from '../../../core/auth/auth.service';
+import { environment } from '../../../../environments/environment';
 import { Button, ThemeToggle } from '../../../shared/ui';
 
 @Component({
@@ -15,6 +16,8 @@ export class LoginPage implements OnInit {
   private readonly router = inject(Router);
 
   readonly error = this.auth.error;
+  /** Overridable in unit tests; production builds keep this false. */
+  enableDevAuth = environment.enableDevAuth;
   loading = false;
 
   async ngOnInit(): Promise<void> {

@@ -107,16 +107,20 @@ export class AuthService {
 
   async init(): Promise<void> {
     try {
-      const devRaw = localStorage.getItem(DEV_KEY);
-      if (devRaw && (devRaw === 'demo' || devRaw === 'alice' || devRaw === 'bob')) {
-        this.enterDevUser(devRaw);
-        return;
-      }
-      const demoRaw = localStorage.getItem(DEMO_KEY);
-      if (demoRaw) {
-        this.offlineDemo.set(true);
-        this.applyOfflineDemo();
-        return;
+      if (!environment.enableDevAuth) {
+        this.clearDevAuthStorage();
+      } else {
+        const devRaw = localStorage.getItem(DEV_KEY);
+        if (devRaw && (devRaw === 'demo' || devRaw === 'alice' || devRaw === 'bob')) {
+          this.enterDevUser(devRaw);
+          return;
+        }
+        const demoRaw = localStorage.getItem(DEMO_KEY);
+        if (demoRaw) {
+          this.offlineDemo.set(true);
+          this.applyOfflineDemo();
+          return;
+        }
       }
       const user = await this.userManager.getUser();
       this.applyUser(user && !user.expired ? user : null);
@@ -139,6 +143,10 @@ export class AuthService {
   }
 
   enterDevUser(name: DevUserName): void {
+    if (!environment.enableDevAuth) {
+      this.clearDevAuthStorage();
+      return;
+    }
     localStorage.removeItem(DEMO_KEY);
     localStorage.setItem(DEV_KEY, name);
     const profile = DEV_PROFILES[name];
@@ -157,6 +165,10 @@ export class AuthService {
 
   /** Fallback visual sem API — não envia X-Dev-User. */
   enterOfflineDemo(): void {
+    if (!environment.enableDevAuth) {
+      this.clearDevAuthStorage();
+      return;
+    }
     localStorage.removeItem(DEV_KEY);
     localStorage.setItem(DEMO_KEY, '1');
     this.devUserSignal.set(null);
@@ -193,11 +205,7 @@ export class AuthService {
     }
 
     if (this.devProfile() || this.offlineDemo()) {
-      localStorage.removeItem(DEV_KEY);
-      localStorage.removeItem(DEMO_KEY);
-      this.devProfile.set(null);
-      this.devUserSignal.set(null);
-      this.offlineDemo.set(false);
+      this.clearDevAuthStorage();
       this.tenant.clear();
       window.location.href = '/login';
       return;
@@ -220,6 +228,14 @@ export class AuthService {
     }
     this.applyUser(user);
     return user.access_token;
+  }
+
+  private clearDevAuthStorage(): void {
+    localStorage.removeItem(DEV_KEY);
+    localStorage.removeItem(DEMO_KEY);
+    this.devProfile.set(null);
+    this.devUserSignal.set(null);
+    this.offlineDemo.set(false);
   }
 
   private applyOfflineDemo(): void {

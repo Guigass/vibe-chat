@@ -15,17 +15,19 @@
     <div class="login-hero__cta">
       <vc-button variant="primary" [loading]="loading" (click)="login()">Entrar com Keycloak</vc-button>
     </div>
-    <div class="login-hero__dev" aria-label="Usuários de desenvolvimento">
-      <p>Desenvolvimento (DevAuth)</p>
-      <div class="login-hero__dev-actions">
-        <vc-button variant="ghost" (click)="enterDev('alice')">Alice</vc-button>
-        <vc-button variant="ghost" (click)="enterDev('bob')">Bob</vc-button>
-        <vc-button variant="ghost" (click)="enterDev('demo')">Demo</vc-button>
+    @if (enableDevAuth) {
+      <div class="login-hero__dev" aria-label="Usuários de desenvolvimento">
+        <p>Desenvolvimento (DevAuth)</p>
+        <div class="login-hero__dev-actions">
+          <vc-button variant="ghost" (click)="enterDev('alice')">Alice</vc-button>
+          <vc-button variant="ghost" (click)="enterDev('bob')">Bob</vc-button>
+          <vc-button variant="ghost" (click)="enterDev('demo')">Demo</vc-button>
+        </div>
+        <button type="button" class="login-hero__offline" (click)="enterOfflineDemo()">
+          Explorar UI offline
+        </button>
       </div>
-      <button type="button" class="login-hero__offline" (click)="enterOfflineDemo()">
-        Explorar UI offline
-      </button>
-    </div>
+    }
     @if (error()) {
       <p class="login-hero__error" role="alert">{{ error() }}</p>
     }

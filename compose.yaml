@@ -80,11 +80,13 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/${KEYCLOAK_DB:-keycloak}
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak_dev_password_change_me}
+      # Full public URL when behind path proxy, e.g. https://host/auth (Keycloak 26
+      # hostname v2). Hostname-only is fine for local lab (compose.override sets port).
+      # Do NOT set KC_HOSTNAME_PORT here — it breaks HTTPS public URLs on Coolify.
       KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
-      KC_HOSTNAME_PORT: ${KEYCLOAK_HTTP_PORT:-8080}
       KC_HOSTNAME_STRICT: "false"
       KC_HTTP_ENABLED: "true"
-      # Staging path-based: /auth (vazio no lab local)
+      # Staging path-based: /auth (vazio no lab local). Must match path in KC_HOSTNAME.
       KC_HTTP_RELATIVE_PATH: ${KEYCLOAK_HTTP_RELATIVE_PATH:-}
       # Coolify / Traefik TLS termination — forwarded proto/host
       KC_PROXY_HEADERS: ${KEYCLOAK_PROXY_HEADERS:-}
@@ -314,7 +316,7 @@ services:
       RuntimeSettings__DatabaseOverridesEnabled: ${RuntimeSettings__DatabaseOverridesEnabled:-false}
       RuntimeSettings__Encryption__ActiveKeyVersion: ${RuntimeSettings__Encryption__ActiveKeyVersion:-1}
       RuntimeSettings__Encryption__Keys__1: ${RuntimeSettings__Encryption__Keys__1:-}
-      Seed__Enabled: ${SEED_ENABLED:-true}
+      Seed__Enabled: ${SEED_ENABLED:-false}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     depends_on:
       postgres:

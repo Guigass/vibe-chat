@@ -15,6 +15,7 @@ export const environment = {
   grafanaUrl: 'http://localhost:3000',
   aiSummarizeEnabled: true,
   aiTranscribeEnabled: true,
+  enableDevAuth: true,
   appVersion: `${webVersion.version}-dev`,
   buildId: webVersion.buildId,
 };
