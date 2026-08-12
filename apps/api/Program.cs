@@ -157,7 +157,8 @@ if (app.Environment.IsDevelopment())
 }
 
 // SEC-RLS-RUNTIME: roles + migrator migrate/RLS catalog + optional seed; runtime role validated.
-if (app.Configuration.GetValue("Seed:Enabled", false)
+if (app.Configuration.GetValue("Bootstrap:Enabled", false)
+    || app.Configuration.GetValue("Seed:Enabled", false)
     || app.Configuration.GetValue("Database:BootstrapOnStartup", app.Environment.IsDevelopment()))
 {
     await DatabaseBootstrap.MigrateSeedAndProtectAsync(

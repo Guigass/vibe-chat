@@ -214,6 +214,19 @@ public static class DatabaseBootstrap
         await ReassignBusinessObjectOwnershipAsync(bootstrap, migratorUser, logger, cancellationToken);
         await ApplyRlsCatalogAsync(migratorCs, configuration, logger, cancellationToken);
 
+        if (configuration.GetValue("Bootstrap:Enabled", false))
+        {
+            await using var scope = services.CreateAsyncScope();
+            await using var bootstrapContext = CreateMigratorContext(migratorCs);
+            var initialWorkspace = ActivatorUtilities.CreateInstance<InitialWorkspaceBootstrap>(
+                scope.ServiceProvider,
+                bootstrapContext,
+                scope.ServiceProvider.GetRequiredService<IClock>(),
+                scope.ServiceProvider.GetRequiredService<ILogger<InitialWorkspaceBootstrap>>(),
+                configuration);
+            await initialWorkspace.EnsureAsync(cancellationToken);
+        }
+
         if (configuration.GetValue("Seed:Enabled", false))
         {
             await using var scope = services.CreateAsyncScope();

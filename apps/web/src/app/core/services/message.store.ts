@@ -281,10 +281,9 @@ export class MessageStore {
       }
     } catch {
       this.messagesSignal.update((current) => {
-        const others = current.filter((m) => m.channelId !== channelId);
-        return [...others, ...this.demoMessages(channelId)];
+        return current.filter((message) => !idsEqual(message.channelId, channelId));
       });
-      this.patchPagination(channelId, defaultPagination());
+      this.patchPagination(channelId, { ...defaultPagination(), loadError: 'retry' });
     } finally {
       this.loadingSignal.set(false);
     }

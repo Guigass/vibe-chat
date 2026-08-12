@@ -2863,8 +2863,7 @@ public sealed class ChatHub(
 public sealed class SeedData(
     VibeChatDbContext dbContext,
     IClock clock,
-    ILogger<SeedData> logger,
-    IConfiguration? configuration = null)
+    ILogger<SeedData> logger)
 {
     public static readonly WorkspaceId DemoWorkspaceId = new(Guid.Parse("11111111-1111-1111-1111-111111111111"));
     public static readonly TenantId DemoTenantId = new(DemoWorkspaceId.Value);
@@ -2872,7 +2871,6 @@ public sealed class SeedData(
     public static readonly UserId DemoUserId = new(Guid.Parse("33333333-3333-3333-3333-333333333333"));
     public static readonly UserId AliceUserId = new(Guid.Parse("44444444-4444-4444-4444-444444444444"));
     public static readonly UserId BobUserId = new(Guid.Parse("55555555-5555-5555-5555-555555555555"));
-    public static readonly UserId InitialAdminUserId = new(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
     public static readonly Guid DemoSpaceGeralId = Guid.Parse("88888888-8888-8888-8888-888888888888");
     public static readonly Guid DemoSpaceEngenhariaId = Guid.Parse("99999999-9999-9999-9999-999999999999");
 
@@ -2898,29 +2896,6 @@ public sealed class SeedData(
             {
                 dbContext.UserProfiles.Add(user);
             }
-        }
-
-        UserId? initialAdminUserId = null;
-        var initialAdminEmail = configuration?["Seed:InitialAdminEmail"]?.Trim().ToLowerInvariant();
-        if (!string.IsNullOrWhiteSpace(initialAdminEmail))
-        {
-            var initialAdmin = await dbContext.UserProfiles
-                .FirstOrDefaultAsync(x => x.Email.ToLower() == initialAdminEmail, cancellationToken);
-            if (initialAdmin is null)
-            {
-                initialAdmin = new UserProfile
-                {
-                    Id = InitialAdminUserId,
-                    Subject = WorkspaceRolePolicies.PendingSubjectForEmail(initialAdminEmail),
-                    Email = initialAdminEmail,
-                    DisplayName = "Admin",
-                    CreatedAt = now,
-                    UpdatedAt = now
-                };
-                dbContext.UserProfiles.Add(initialAdmin);
-            }
-
-            initialAdminUserId = initialAdmin.Id;
         }
 
         if (!await dbContext.Spaces.IgnoreQueryFilters().AnyAsync(x => x.Id == DemoSpaceGeralId, cancellationToken))
@@ -2978,11 +2953,6 @@ public sealed class SeedData(
             (AliceUserId, Role.Member),
             (BobUserId, Role.Member)
         };
-        if (initialAdminUserId is { } adminUserId)
-        {
-            seededMemberships.Add((adminUserId, Role.WorkspaceOwner));
-        }
-
         foreach (var (userId, role) in seededMemberships)
         {
             if (!await dbContext.WorkspaceMembers.IgnoreQueryFilters().AnyAsync(x => x.WorkspaceId == DemoWorkspaceId && x.UserId == userId, cancellationToken))
@@ -3006,6 +2976,142 @@ public sealed class SeedData(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation("Demo seed data ensured");
+    }
+}
+
+/// <summary>
+/// Creates the minimum tenant data required for the first staging login.
+/// This deliberately contains no demo users, messages or AI fixtures.
+/// </summary>
+public sealed class InitialWorkspaceBootstrap(
+    VibeChatDbContext dbContext,
+    IClock clock,
+    ILogger<InitialWorkspaceBootstrap> logger,
+    IConfiguration configuration)
+{
+    public static readonly WorkspaceId WorkspaceId = new(Guid.Parse("a1000000-0000-0000-0000-000000000001"));
+    public static readonly TenantId TenantId = new(WorkspaceId.Value);
+    public static readonly UserId AdminUserId = new(Guid.Parse("a1000000-0000-0000-0000-000000000002"));
+    public static readonly Guid GeneralSpaceId = Guid.Parse("a1000000-0000-0000-0000-000000000003");
+    public static readonly ChannelId GeneralChannelId = new(Guid.Parse("a1000000-0000-0000-0000-000000000004"));
+
+    public async Task EnsureAsync(CancellationToken cancellationToken)
+    {
+        var email = configuration["Bootstrap:InitialAdminEmail"]?.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+        {
+            throw new InvalidOperationException(
+                "Bootstrap:InitialAdminEmail must be a valid non-empty email when Bootstrap:Enabled=true.");
+        }
+
+        var workspaceName = configuration["Bootstrap:WorkspaceName"]?.Trim();
+        if (string.IsNullOrWhiteSpace(workspaceName))
+        {
+            workspaceName = "VibeChat Alpha";
+        }
+
+        var workspaceSlug = configuration["Bootstrap:WorkspaceSlug"]?.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(workspaceSlug))
+        {
+            workspaceSlug = "vibechat-alpha";
+        }
+        if (workspaceSlug.Any(character => !char.IsAsciiLetterOrDigit(character) && character != '-'))
+        {
+            throw new InvalidOperationException(
+                "Bootstrap:WorkspaceSlug must contain only ASCII letters, numbers and hyphens.");
+        }
+
+        var now = clock.UtcNow;
+        var workspace = await dbContext.Workspaces.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(item => item.Id == WorkspaceId, cancellationToken);
+        if (workspace is null)
+        {
+            dbContext.Workspaces.Add(new Workspace
+            {
+                Id = WorkspaceId,
+                TenantId = TenantId,
+                Name = workspaceName,
+                Slug = workspaceSlug,
+                AiEnabled = false,
+                CreatedAt = now
+            });
+        }
+
+        var admin = await dbContext.UserProfiles
+            .FirstOrDefaultAsync(item => item.Id == AdminUserId || item.Email.ToLower() == email, cancellationToken);
+        if (admin is null)
+        {
+            admin = new UserProfile
+            {
+                Id = AdminUserId,
+                Subject = WorkspaceRolePolicies.PendingSubjectForEmail(email),
+                Email = email,
+                DisplayName = "Admin",
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+            dbContext.UserProfiles.Add(admin);
+        }
+
+        if (!await dbContext.Spaces.IgnoreQueryFilters().AnyAsync(item => item.Id == GeneralSpaceId, cancellationToken))
+        {
+            dbContext.Spaces.Add(new Space
+            {
+                Id = GeneralSpaceId,
+                TenantId = TenantId,
+                WorkspaceId = WorkspaceId,
+                Name = "Geral",
+                Order = 0,
+                CreatedAt = now
+            });
+        }
+
+        if (!await dbContext.Channels.IgnoreQueryFilters().AnyAsync(item => item.Id == GeneralChannelId, cancellationToken))
+        {
+            dbContext.Channels.Add(new Channel
+            {
+                Id = GeneralChannelId,
+                TenantId = TenantId,
+                WorkspaceId = WorkspaceId,
+                SpaceId = GeneralSpaceId,
+                Name = "geral",
+                Type = ChannelType.Public,
+                CreatedAt = now,
+                CreatedBy = admin.Id
+            });
+        }
+
+        if (!await dbContext.WorkspaceMembers.IgnoreQueryFilters().AnyAsync(
+                item => item.WorkspaceId == WorkspaceId && item.UserId == admin.Id,
+                cancellationToken))
+        {
+            dbContext.WorkspaceMembers.Add(new WorkspaceMember
+            {
+                Id = Guid.NewGuid(),
+                TenantId = TenantId,
+                WorkspaceId = WorkspaceId,
+                UserId = admin.Id,
+                Role = Role.WorkspaceOwner,
+                JoinedAt = now
+            });
+        }
+
+        if (!await dbContext.ChannelMembers.IgnoreQueryFilters().AnyAsync(
+                item => item.ChannelId == GeneralChannelId && item.UserId == admin.Id,
+                cancellationToken))
+        {
+            dbContext.ChannelMembers.Add(new ChannelMember
+            {
+                Id = Guid.NewGuid(),
+                TenantId = TenantId,
+                ChannelId = GeneralChannelId,
+                UserId = admin.Id,
+                JoinedAt = now
+            });
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Initial workspace bootstrap ensured for {AdminEmail}", email);
     }
 }
 

@@ -122,9 +122,15 @@ export class ChannelStore {
       }
       await this.refreshUnreads();
     } catch {
-      this.seedDemo();
-      this.usingDemo.set(true);
-      this.errorSignal.set('API indisponível — modo demonstração local');
+      this.workspacesSignal.set([]);
+      this.spacesSignal.set([]);
+      this.channelsSignal.set([]);
+      this.membersSignal.set([]);
+      this.presenceSignal.set({});
+      this.activeWorkspaceId.set(null);
+      this.activeChannelIdSignal.set(null);
+      this.usingDemo.set(false);
+      this.errorSignal.set('Não foi possível carregar o workspace. Tente novamente.');
     } finally {
       this.loadingSignal.set(false);
     }

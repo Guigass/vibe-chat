@@ -92,8 +92,11 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 | `API_PORT`, `WEB_PORT` | — | compose | Portas host |
 | `API_BASE_URL`, `WEB_BASE_URL` | — | web build | URLs públicas |
 | `DATABASE_BOOTSTRAP_ON_STARTUP` | `Database__BootstrapOnStartup` | api | `false` por default; `true` no primeiro boot de staging aplica migrations + catálogo RLS sem seed |
+| `BOOTSTRAP_ENABLED` | `Bootstrap__Enabled` | api | Cria idempotentemente o workspace inicial de staging, sem fixtures demo |
+| `BOOTSTRAP_INITIAL_ADMIN_EMAIL` | `Bootstrap__InitialAdminEmail` | api | Email obrigatório quando o bootstrap está ativo; o primeiro login OIDC assume o perfil pendente de `WorkspaceOwner` |
+| `BOOTSTRAP_WORKSPACE_NAME` | `Bootstrap__WorkspaceName` | api | Nome do primeiro workspace; default `VibeChat Alpha` |
+| `BOOTSTRAP_WORKSPACE_SLUG` | `Bootstrap__WorkspaceSlug` | api | Slug do primeiro workspace; apenas letras ASCII, números e hífen |
 | `SEED_ENABLED` | `Seed__Enabled` | api | `false` em prod |
-| `SEED_INITIAL_ADMIN_EMAIL` | `Seed__InitialAdminEmail` | api | Com seed ativo, cria um stub pendente como `WorkspaceOwner`; o primeiro login OIDC com esse email assume o perfil |
 | `AI__Enabled`, `AI__Provider` | `Ai__*` | api | Off default (D-06) |
 | `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL` | `Ai__OpenRouter__*` | api | Fallback env; BaseUrl permanece env; key pode ir ao DB criptografada (ADR-020) |
 | `EMAIL__*` | `Email__*` | api | Injetado no profile `apps`; senha fallback env ou envelope DB |
@@ -106,17 +109,19 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 ### Primeiro administrador do staging
 
 O realm de staging importa o usuário `admin` com senha temporária lida de
-`VIBECHAT_INITIAL_ADMIN_PASSWORD`; o valor não fica versionado. Defina também
-`SEED_ENABLED=true` e `SEED_INITIAL_ADMIN_EMAIL=admin@vibechat.local` para que o
-primeiro login assuma um membership real de `WorkspaceOwner` no workspace de
-alpha. O cliente `vibechat-web` mantém o mapper `subject` no access token, inclusive
-para lightweight tokens.
+`VIBECHAT_INITIAL_ADMIN_PASSWORD`; o valor não fica versionado. No primeiro boot
+de uma stack vazia, use `BOOTSTRAP_ENABLED=true`,
+`BOOTSTRAP_INITIAL_ADMIN_EMAIL=admin@vibechat.local` e `SEED_ENABLED=false`.
+Isso cria somente o workspace alpha, o espaço/canal `Geral` e o membership
+pendente de `WorkspaceOwner`; não cria Alice, Bob, mensagens ou IA demo. O
+primeiro login OIDC com o mesmo email assume esse perfil. O cliente
+`vibechat-web` mantém o mapper `subject` no access token, inclusive para
+lightweight tokens.
 
-Quando for necessário reimportar o realm sem apagar o schema anterior, altere
-`KEYCLOAK_DB_SCHEMA` para um nome de schema novo e faça o redeploy. Isso invalida
-as sessões e recria os usuários do realm importado; use apenas com autorização
-explícita no staging. O serviço one-shot `keycloak-schema` valida o identificador
-e cria o schema de forma idempotente antes de liberar o startup do Keycloak.
+O import do realm é operação de primeiro boot: o Keycloak não sobrescreve um
+realm já existente. Para recriar o staging, remova a stack e seus volumes e
+suba uma stack nova. O projeto não alterna schemas nem mantém um segundo estado
+do Keycloak como mecanismo de reset.
 
 ### Variáveis do template fora das substituições do Compose
 

@@ -66,30 +66,18 @@ public sealed class ComposeConfigCatalogTests
     }
 
     [Fact]
-    public void Staging_bootstrap_exposes_keycloak_schema_and_initial_owner_bindings()
+    public void Staging_bootstrap_exposes_initial_owner_without_enabling_demo_seed()
     {
         var compose = ReadRepoFile("compose.yaml");
         var keycloakBlock = ExtractServiceEnvironmentBlock(compose, "keycloak");
         var apiBlock = ExtractServiceEnvironmentBlock(compose, "api");
 
-        keycloakBlock.Should().Contain("KC_DB_SCHEMA: ${KEYCLOAK_DB_SCHEMA:-public}");
         keycloakBlock.Should().Contain("VIBECHAT_INITIAL_ADMIN_PASSWORD: ${VIBECHAT_INITIAL_ADMIN_PASSWORD:-}");
-        apiBlock.Should().Contain("Seed__InitialAdminEmail: ${SEED_INITIAL_ADMIN_EMAIL:-}");
-    }
-
-    [Fact]
-    public void Keycloak_waits_for_idempotent_schema_initializer()
-    {
-        var compose = ReadRepoFile("compose.yaml");
-        var keycloakBlock = ExtractServiceBlock(compose, "keycloak");
-        var initializerBlock = ExtractServiceBlock(compose, "keycloak-schema");
-        var initializer = ReadRepoFile(Path.Combine("infra", "compose", "postgres", "04-keycloak-schema.sh"));
-
-        keycloakBlock.Should().Contain("keycloak-schema:");
-        keycloakBlock.Should().Contain("condition: service_completed_successfully");
-        initializerBlock.Should().Contain("04-keycloak-schema.sh");
-        initializer.Should().Contain("CREATE SCHEMA IF NOT EXISTS %I AUTHORIZATION %I");
-        initializer.Should().Contain("*[!a-zA-Z0-9_]*");
+        apiBlock.Should().Contain("Bootstrap__Enabled: ${BOOTSTRAP_ENABLED:-false}");
+        apiBlock.Should().Contain("Bootstrap__InitialAdminEmail: ${BOOTSTRAP_INITIAL_ADMIN_EMAIL:-}");
+        apiBlock.Should().Contain("Bootstrap__WorkspaceName: ${BOOTSTRAP_WORKSPACE_NAME:-VibeChat Alpha}");
+        apiBlock.Should().Contain("Bootstrap__WorkspaceSlug: ${BOOTSTRAP_WORKSPACE_SLUG:-vibechat-alpha}");
+        apiBlock.Should().Contain("Seed__Enabled: ${SEED_ENABLED:-false}");
     }
 
     [Fact]

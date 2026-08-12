@@ -80,7 +80,6 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/${KEYCLOAK_DB:-keycloak}
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak_dev_password_change_me}
-      KC_DB_SCHEMA: ${KEYCLOAK_DB_SCHEMA:-public}
       # Full public URL when behind path proxy, e.g. https://host/auth (Keycloak 26
       # hostname v2). Hostname-only is fine for local lab (compose.override sets port).
       # Do NOT set KC_HOSTNAME_PORT here — it breaks HTTPS public URLs on Coolify.
@@ -102,32 +101,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      keycloak-schema:
-        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080"]
       interval: 10s
       timeout: 5s
       retries: 30
       start_period: 60s
-
-  keycloak-schema:
-    image: ${POSTGRES_IMAGE:-postgres:17-alpine}
-    restart: "no"
-    environment:
-      PGHOST: postgres
-      PGPORT: "5432"
-      PGDATABASE: ${KEYCLOAK_DB:-keycloak}
-      PGUSER: ${KEYCLOAK_DB_USER:-keycloak}
-      PGPASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak_dev_password_change_me}
-      KEYCLOAK_DB_SCHEMA: ${KEYCLOAK_DB_SCHEMA:-public}
-      KEYCLOAK_DB_USER: ${KEYCLOAK_DB_USER:-keycloak}
-    volumes:
-      - ./infra/compose/postgres/04-keycloak-schema.sh:/usr/local/bin/ensure-keycloak-schema.sh:ro
-    command: ["/bin/sh", "/usr/local/bin/ensure-keycloak-schema.sh"]
-    depends_on:
-      postgres:
-        condition: service_healthy
 
   minio:
     image: ${MINIO_IMAGE:-minio/minio:RELEASE.2024-12-18T13-15-44Z}
@@ -339,8 +318,11 @@ services:
       RuntimeSettings__Encryption__ActiveKeyVersion: ${RuntimeSettings__Encryption__ActiveKeyVersion:-1}
       RuntimeSettings__Encryption__Keys__1: ${RuntimeSettings__Encryption__Keys__1:-}
       Database__BootstrapOnStartup: ${DATABASE_BOOTSTRAP_ON_STARTUP:-false}
+      Bootstrap__Enabled: ${BOOTSTRAP_ENABLED:-false}
+      Bootstrap__InitialAdminEmail: ${BOOTSTRAP_INITIAL_ADMIN_EMAIL:-}
+      Bootstrap__WorkspaceName: ${BOOTSTRAP_WORKSPACE_NAME:-VibeChat Alpha}
+      Bootstrap__WorkspaceSlug: ${BOOTSTRAP_WORKSPACE_SLUG:-vibechat-alpha}
       Seed__Enabled: ${SEED_ENABLED:-false}
-      Seed__InitialAdminEmail: ${SEED_INITIAL_ADMIN_EMAIL:-}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     depends_on:
       postgres:

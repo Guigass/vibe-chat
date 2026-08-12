@@ -562,6 +562,21 @@ onload="this.media='all'">`. O CSP em
 
 ## Fechados
 
+### BUG-019 — Falha autenticada da API exibe dados locais fictícios
+
+- Status: **Done** (2026-08-12)
+- Severidade: **Alta**
+- Observado em: staging — após login OIDC, uma resposta inválida da API fazia o
+  shell mostrar `Atlantic Ops`, Alice e Bob, dando a impressão de que o backend
+  havia carregado corretamente.
+- Causa confirmada: `ChannelStore.load` e `MessageStore.loadChannel`
+  substituíam qualquer erro autenticado por fixtures locais. O fallback não era
+  limitado ao modo demo explicitamente selecionado.
+- Resolução: fixtures permanecem disponíveis apenas em DevAuth/offline demo;
+  falha autenticada limpa o estado, preserva `isDemo=false` e apresenta erro
+  recuperável. Regressão em `channel.store.fail-closed.spec.ts`.
+- Risco: R1.
+
 | ID      | Área                | Achado                                            | Severidade | Status |
 | ------- | ------------------- | ------------------------------------------------- | ---------- | ------ |
 | BUG-001 | Composer / timeline | Mensagens aparecem duplicadas ao enviar           | Alta       | Done   |
