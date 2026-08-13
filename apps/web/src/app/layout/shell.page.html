@@ -2,6 +2,7 @@
   class="shell"
   [class.shell--sidebar-collapsed]="!sidebarOpen()"
   [class.shell--narrow]="narrowViewport()"
+  [class.shell--nav-compact]="navCompact() && !narrowViewport()"
   [class.shell--context-open]="contextOpen() || pins.panelOpen() || saved.panelOpen()"
   [class.shell--thread-open]="threads.open()"
 >
@@ -16,20 +17,40 @@
 
   <aside class="shell__sidebar vc-anim-sidebar" [attr.aria-hidden]="!sidebarOpen()">
     <div class="shell__brand">
-      <span class="shell__wordmark">VibeChat</span>
-      <vc-icon-button label="Recolher barra lateral" (click)="toggleSidebar()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M4 6h16M4 12h10M4 18h16" />
-        </svg>
-      </vc-icon-button>
+      <span class="shell__wordmark">
+        <span class="shell__wordmark-full">VibeChat</span>
+        <span class="shell__wordmark-short" aria-hidden="true">V</span>
+      </span>
+      <div class="shell__brand-actions">
+        @if (!narrowViewport()) {
+          <vc-icon-button
+            [label]="navCompact() ? 'Expandir navegação' : 'Navegação compacta'"
+            (click)="toggleNavCompact()"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              @if (navCompact()) {
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              } @else {
+                <rect x="4" y="5" width="6" height="14" rx="1" />
+                <path d="M14 7h6M14 12h6M14 17h4" />
+              }
+            </svg>
+          </vc-icon-button>
+        }
+        <vc-icon-button label="Recolher barra lateral" (click)="toggleSidebar()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 6h16M4 12h10M4 18h16" />
+          </svg>
+        </vc-icon-button>
+      </div>
     </div>
 
-    <label class="shell__workspace">
+    <label class="shell__workspace" [attr.title]="channels.activeWorkspace()?.name">
       <span class="vc-sr-only">Workspace</span>
       <select
         [value]="channels.activeWorkspace()?.id || ''"
         (change)="onWorkspaceChange($event)"
-        aria-label="Selecionar workspace"
+        [attr.aria-label]="'Workspace: ' + (channels.activeWorkspace()?.name || '')"
       >
         @for (ws of channels.workspaces(); track ws.id) {
           <option [value]="ws.id">{{ ws.name }}</option>
@@ -37,7 +58,7 @@
       </select>
     </label>
 
-    <vc-channel-list />
+    <vc-channel-list [navCompact]="navCompact() && !narrowViewport()" />
 
     <footer class="shell__sidebar-footer">
       @if (canAccessAdmin()) {

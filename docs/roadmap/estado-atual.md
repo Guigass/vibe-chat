@@ -6,7 +6,7 @@ Snapshot factual para orientação rápida. Não substitui o
 - **Data de corte:** 2026-08-13
 - **Fase:** Wave 9 — Leitura e paridade de bolha (Wave 8 completa)
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
-- **Próximo item elegível:** W9-11 / B-184 (nav esquerda); W9-9 / B-171 Done; W9-10 / B-173 Done
+- **Próximo item elegível:** W10-1 / B-095 (Web Push); Wave 9 completa (B-184 Done)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -26,7 +26,7 @@ O trabalho aberto concentra-se em:
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
 2. Wave 7 feature work completa (W7-9 / B-165 Done); sustentação authZ aberta
    (W7-10…W7-13 / B-174…B-177 — revisão API 2026-08-12);
-3. avançar Wave 9 de leitura/paridade (W9-0…W9-10 Done; próximo: W9-11 / B-184); Wave 8 completa;
+3. avançar Wave 10 (Wave 9 completa — W9-11 / B-184 Done);
 4. consumir o roadmap autorizado W11–W19 (Wave 19 = organização do código,
    recomendada antes de W11).
 
@@ -81,7 +81,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W9-11 / B-184 | Paridade Wave 9 (nav esquerda); W9-9 / B-171 Done; W9-10 / B-173 Done |
+| 1 | W10-1 / B-095 | Wave 9 completa; Web Push (deps W8-4, W9-7 Done) |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).

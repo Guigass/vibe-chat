@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { Channel, PresenceStatus } from '../../models/chat.models';
 import { Badge } from '../badge/badge';
 
@@ -11,6 +11,9 @@ import { Badge } from '../badge/badge';
       type="button"
       class="vc-channel"
       [class.vc-channel--active]="active()"
+      [class.vc-channel--compact]="compact()"
+      [attr.aria-label]="compact() ? ariaLabel() : null"
+      [attr.title]="compact() ? ariaLabel() : null"
       (click)="select.emit()"
     >
       @if (presence()) {
@@ -106,14 +109,47 @@ import { Badge } from '../badge/badge';
       color: var(--vc-ink-subtle);
       font-weight: 400;
     }
+    .vc-channel--compact {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      padding: 0;
+      width: 2.25rem;
+      margin-inline: auto;
+    }
+    .vc-channel--compact .vc-channel__main,
+    .vc-channel--compact vc-badge {
+      display: none;
+    }
+    .vc-channel--compact.vc-channel--active::before {
+      left: -0.35rem;
+    }
+    .vc-channel--compact .vc-channel__hash,
+    .vc-channel--compact .vc-channel__presence {
+      font-size: 0.95rem;
+    }
   `,
 })
 export class ChannelItem {
   readonly channel = input.required<Channel>();
   readonly active = input(false);
   readonly hasDraft = input(false);
+  readonly compact = input(false);
   readonly presence = input<PresenceStatus | null>(null);
   readonly select = output<void>();
+
+  readonly ariaLabel = computed(() => {
+    const ch = this.channel();
+    const parts = [ch.isDirect ? `@${ch.name}` : `#${ch.name}`];
+    if (this.hasDraft()) {
+      parts.push('rascunho');
+    }
+    if (ch.mentionCount && ch.mentionCount > 0) {
+      parts.push(`${ch.mentionCount} menções`);
+    } else if (ch.unreadCount > 0) {
+      parts.push(`${ch.unreadCount} não lidas`);
+    }
+    return parts.join(', ');
+  });
 
   prefix(): string {
     if (this.channel().isDirect) return '@';

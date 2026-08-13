@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, input, inject } from '@angular/core';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { DraftStoreService } from '../../../core/services/draft-store.service';
 import { MessageStore } from '../../../core/services/message.store';
@@ -23,12 +23,17 @@ import { Badge, SidebarNav, Skeleton } from '../../../shared/ui';
           <button
             type="button"
             class="channel-list__saved"
+            [class.channel-list__saved--compact]="navCompact()"
             data-testid="saved-nav"
             [class.channel-list__saved--active]="saved.panelOpen()"
+            [attr.aria-label]="navCompact() ? 'Mensagens salvas' : null"
+            [attr.title]="navCompact() ? 'Mensagens salvas' : null"
             (click)="openSaved()"
           >
             <span class="channel-list__saved-mark" aria-hidden="true">✦</span>
-            <span class="channel-list__saved-label">Salvos</span>
+            @if (!navCompact()) {
+              <span class="channel-list__saved-label">Salvos</span>
+            }
             @if (saved.pendingCount() > 0) {
               <vc-badge tone="accent">{{ saved.pendingCount() }}</vc-badge>
             }
@@ -44,6 +49,7 @@ import { Badge, SidebarNav, Skeleton } from '../../../shared/ui';
           [activeId]="channels.activeChannelId() ?? null"
           [draftIds]="drafts.draftConversationIds()"
           [canCreate]="channels.canCreateChannel()"
+          [compact]="navCompact()"
           (select)="onSelect($event)"
           (openDm)="onOpenDm($event)"
           (createChannel)="onCreate($event)"
@@ -122,9 +128,20 @@ import { Badge, SidebarNav, Skeleton } from '../../../shared/ui';
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .channel-list__saved--compact {
+      grid-template-columns: 1fr auto;
+      width: 2.25rem;
+      margin-inline: auto;
+      padding: 0;
+      justify-items: center;
+    }
+    .channel-list__saved--compact .channel-list__saved-label {
+      display: none;
+    }
   `,
 })
 export class ChannelList {
+  readonly navCompact = input(false);
   readonly channels = inject(ChannelStore);
   readonly drafts = inject(DraftStoreService);
   readonly saved = inject(SavedStore);

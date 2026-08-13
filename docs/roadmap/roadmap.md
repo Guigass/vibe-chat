@@ -273,7 +273,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W9-8 | C/D | Anexo de vídeo — aceite, preview e visualização no chat (B-168) | W8-1, W9-0 | [B-168](../product/specs/B-168-anexo-de-video.md) | Done |
 | W9-9 | D | Refatorar painéis de contexto (sidebar direita) — largura e encaixe (B-171) | B-022, B-092, B-093 | [B-171](../product/specs/B-171-paineis-contexto-direita.md) | **Done** |
 | W9-10 | D | Editar mensagem no composer — sem textarea inline na bolha (B-173) | B-023, B-084, B-163 | [B-173](../product/specs/B-173-editar-mensagem-no-composer.md) | **Done** |
-| W9-11 | D | Refatorar barra de navegação (sidebar esquerda) — compacto, filtro e blocos (B-184) | B-020 | [B-184](../product/specs/B-184-barra-navegacao-esquerda.md) | Planned |
+| W9-11 | D | Refatorar barra de navegação (sidebar esquerda) — compacto, filtro e blocos (B-184) | B-020 | [B-184](../product/specs/B-184-barra-navegacao-esquerda.md) | **Done** |
 
 ### Wave 10 — Notificações, organização e acesso
 
