@@ -19,7 +19,7 @@ Regras do registro:
 |----|------|--------|------------|--------|
 | UX-004 | Sidebar | Rótulos de seção (`GERAL`, `ENGENHARIA`, `MENSAGENS DIRETAS`, `MEMBROS`) com contraste baixo no tema claro | Média | Aberto — fecha em **B-184** (preferencial) ou **B-103** / correção R1 com teste de contraste |
 | UX-006 | Header | Botões de ícone (buscar, tema, densidade, painel) sem estado de hover/foco perceptível | Média | Aberto — fecha em **B-103** ou em correção R1 anterior com teste de foco |
-| UX-008 | Timeline / composer | Editar mensagem usa textarea inline na bolha em vez do composer | Média | Aberto — fecha em **B-173** |
+| UX-008 | Timeline / composer | Editar mensagem usa textarea inline na bolha em vez do composer | Média | **Done** — B-173 |
 
 ## Detalhamento
 
@@ -123,6 +123,9 @@ já usa o composer; o atalho `↑` (B-099) também pressupõe edição no compos
 Correção esperada: **B-173** — modo edição no composer (barra de contexto +
 textarea), bolha só exibe body/badge “editada”. Políticas de janela/papéis
 permanecem em **B-107** (`messaging.edit.*` / `messaging.delete.*`).
+
+**Done** — B-173 / W9-10: menu/toolbar dispara `startEdit` no store; composer
+mostra “Editando…” + Salvar; bolha sem textarea inline.
 
 ## Fechados
 

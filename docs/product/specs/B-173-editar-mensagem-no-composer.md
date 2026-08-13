@@ -53,11 +53,11 @@ Inalterado: só quem já pode editar vê a ação; o servidor continua a gate.
 
 ## Aceite
 
-- [ ] “Editar” no menu/toolbar carrega o body no composer com barra de contexto
-- [ ] Bolha não entra em modo textarea; badge “editada” permanece após save
-- [ ] `Esc` / `×` cancelam sem persistir; draft do canal restaurado (B-086)
-- [ ] Thread: editar usa o composer da thread
-- [ ] Sem regressão de send/reply/anexo no composer
+- [x] “Editar” no menu/toolbar carrega o body no composer com barra de contexto
+- [x] Bolha não entra em modo textarea; badge “editada” permanece após save
+- [x] `Esc` / `×` cancelam sem persistir; draft do canal restaurado (B-086)
+- [x] Thread: editar usa o composer da thread
+- [x] Sem regressão de send/reply/anexo no composer
 
 ## Testes
 

@@ -51,6 +51,7 @@ export class MessageStore {
   private readonly loadingSignal = signal(false);
   private readonly sendingSignal = signal(false);
   private readonly replyTargetSignal = signal<ChatMessage | null>(null);
+  private readonly editingMessageSignal = signal<ChatMessage | null>(null);
   private readonly highlightMessageIdSignal = signal<string | null>(null);
   private readonly scrollRequestSignal = signal<MessageScrollRequest | null>(null);
   private readonly paginationSignal = signal<Record<string, ChannelPaginationState>>({});
@@ -71,6 +72,7 @@ export class MessageStore {
   readonly loading = this.loadingSignal.asReadonly();
   readonly sending = this.sendingSignal.asReadonly();
   readonly replyTarget = this.replyTargetSignal.asReadonly();
+  readonly editingMessage = this.editingMessageSignal.asReadonly();
   readonly highlightMessageId = this.highlightMessageIdSignal.asReadonly();
   readonly scrollRequest = this.scrollRequestSignal.asReadonly();
   readonly paginationForActive = computed(() => {
@@ -134,11 +136,41 @@ export class MessageStore {
       this.replyTargetSignal.set(null);
       return;
     }
+    this.editingMessageSignal.set(null);
     this.replyTargetSignal.set(message);
   }
 
   clearReplyTarget(): void {
     this.replyTargetSignal.set(null);
+  }
+
+  /** Enter composer edit mode (B-173). Mutual exclusion with reply cite. */
+  startEdit(message: ChatMessage | null): void {
+    if (
+      !message ||
+      message.deletedAt ||
+      !message.mine ||
+      message.status !== 'persisted'
+    ) {
+      this.editingMessageSignal.set(null);
+      return;
+    }
+    this.replyTargetSignal.set(null);
+    this.editingMessageSignal.set(message);
+  }
+
+  clearEdit(): void {
+    this.editingMessageSignal.set(null);
+  }
+
+  /** Last own persisted message in the active channel timeline (for ↑ shortcut). */
+  lastOwnPersistedMessage(): ChatMessage | null {
+    const list = this.forActiveChannel();
+    for (let i = list.length - 1; i >= 0; i--) {
+      const m = list[i];
+      if (m.mine && !m.deletedAt && m.status === 'persisted') return m;
+    }
+    return null;
   }
 
   jumpToMessage(messageId: string): void {
@@ -425,6 +457,7 @@ export class MessageStore {
           m.id === messageId ? { ...m, body: body.trim(), editedAt: new Date().toISOString() } : m,
         ),
       );
+      this.editingMessageSignal.set(null);
       return;
     }
 
@@ -436,6 +469,7 @@ export class MessageStore {
       editedAt: updated.editedAt ?? new Date().toISOString(),
       seq: updated.seq,
     });
+    this.editingMessageSignal.set(null);
   }
 
   async remove(messageId: string): Promise<void> {

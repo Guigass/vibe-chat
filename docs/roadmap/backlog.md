@@ -129,7 +129,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-094 | Recibos de leitura e não lidas | **Done** (W9-7) — cursor persistente; batch unread; mark-unread; hub `ReadCursorChanged` |
 | B-168 | Anexo de vídeo | Done (W9-8) — `video/mp4`/`webm`; limites 25 MB / 60 s; prévia no composer; player tipado na bolha (B-163); poster via B-090 quando Ready |
 | B-171 | Painéis de contexto (sidebar direita) | Planned (W9-9) — trilho direito um pouco maior e melhor encaixado (thread/pins/salvos/contexto); só UI/tokens; [spec](../product/specs/B-171-paineis-contexto-direita.md) |
-| B-173 | Editar mensagem no composer | Planned (W9-10) — tirar textarea inline da bolha; modo edição no composer (padrão B-084); atalho `↑` em B-099; políticas de janela/papéis em B-107; [spec](../product/specs/B-173-editar-mensagem-no-composer.md) |
+| B-173 | Editar mensagem no composer | **Done** (W9-10) — modo edição no composer (padrão B-084); bolha sem textarea inline; fecha UX-008; [spec](../product/specs/B-173-editar-mensagem-no-composer.md) |
 | B-184 | Barra de navegação (sidebar esquerda) | Planned (W9-11) — modo compacto da nav, filtro local, blocos mais claros; só UI; [spec](../product/specs/B-184-barra-navegacao-esquerda.md) |
 
 ### Wave 10 — Notificações, organização e acesso

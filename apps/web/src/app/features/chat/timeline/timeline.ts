@@ -134,7 +134,7 @@ const NEAR_TOP_PX = 120;
                         [showSaveAction]="true"
                         [showMarkUnreadAction]="true"
                         [highlighted]="messages.highlightMessageId() === entry.message.id"
-                        (edit)="onEdit(entry.message.id, $event)"
+                        (startEdit)="onStartEdit(entry.message)"
                         (delete)="onDelete(entry.message.id)"
                         (removeLinkPreview)="onRemoveLinkPreview(entry.message.id)"
                         (reply)="onReply(entry.message)"
@@ -562,8 +562,8 @@ export class Timeline {
     this.clearActiveUnread();
   }
 
-  async onEdit(messageId: string, body: string): Promise<void> {
-    await this.messages.edit(messageId, body);
+  onStartEdit(message: ChatMessage): void {
+    this.messages.startEdit(message);
   }
 
   async onDelete(messageId: string): Promise<void> {

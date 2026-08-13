@@ -18,6 +18,7 @@ describe('Composer audio submit (BUG-004)', () => {
   const errorMessage = signal<string | null>(null);
   const activeChannelId = signal<string | null>('channel-1');
   const replyTarget = signal<ChatMessage | null>(null);
+  const editingMessage = signal<ChatMessage | null>(null);
   const stop = vi.fn();
   const buildRecordedAudio = vi.fn();
   const reset = vi.fn();
@@ -25,8 +26,12 @@ describe('Composer audio submit (BUG-004)', () => {
   const start = vi.fn();
   const uploadRecordedAudio = vi.fn();
   const send = vi.fn();
+  const edit = vi.fn();
   const clearAttachments = vi.fn();
   const clearReplyTarget = vi.fn();
+  const clearEdit = vi.fn();
+  const startEdit = vi.fn();
+  const lastOwnPersistedMessage = vi.fn();
   const restoreReady = vi.fn();
   const draftGet = vi.fn().mockResolvedValue(null);
   const draftSaveNow = vi.fn().mockResolvedValue(undefined);
@@ -49,6 +54,7 @@ describe('Composer audio submit (BUG-004)', () => {
     errorMessage.set(null);
     activeChannelId.set('channel-1');
     replyTarget.set(null);
+    editingMessage.set(null);
     stop.mockReset();
     buildRecordedAudio.mockReset();
     reset.mockReset();
@@ -56,8 +62,12 @@ describe('Composer audio submit (BUG-004)', () => {
     start.mockReset();
     uploadRecordedAudio.mockReset();
     send.mockReset();
+    edit.mockReset();
     clearAttachments.mockReset();
     clearReplyTarget.mockReset();
+    clearEdit.mockReset();
+    startEdit.mockReset();
+    lastOwnPersistedMessage.mockReset();
     restoreReady.mockReset();
     draftGet.mockReset().mockResolvedValue(null);
     draftSaveNow.mockReset().mockResolvedValue(undefined);
@@ -71,6 +81,14 @@ describe('Composer audio submit (BUG-004)', () => {
     buildRecordedAudio.mockResolvedValue(recorded);
     uploadRecordedAudio.mockResolvedValue({ attachmentId: 'att-1' });
     send.mockResolvedValue(true);
+    edit.mockImplementation(async () => {
+      editingMessage.set(null);
+    });
+    clearEdit.mockImplementation(() => editingMessage.set(null));
+    startEdit.mockImplementation((message: ChatMessage | null) => {
+      replyTarget.set(null);
+      editingMessage.set(message);
+    });
 
     await TestBed.configureTestingModule({
       imports: [Composer],
@@ -117,8 +135,13 @@ describe('Composer audio submit (BUG-004)', () => {
           useValue: {
             sending: () => false,
             replyTarget: replyTarget.asReadonly(),
+            editingMessage: editingMessage.asReadonly(),
             send,
+            edit,
             clearReplyTarget,
+            clearEdit,
+            startEdit,
+            lastOwnPersistedMessage,
           },
         },
         {
@@ -243,5 +266,88 @@ describe('Composer audio submit (BUG-004)', () => {
     expect(send).not.toHaveBeenCalled();
     expect(composer.slash.notice()?.kind).toBe('error');
     expect(composer.draft()).toBe('/xpto');
+  });
+
+  it('loads body into composer and saves via edit (B-173)', async () => {
+    phase.set('idle');
+    composer.draft.set('rascunho anterior');
+
+    editingMessage.set({
+      id: 'message-edit',
+      conversationId: 'channel-1',
+      channelId: 'channel-1',
+      authorUserId: 'me',
+      authorName: 'Eu',
+      body: 'texto original',
+      createdAt: new Date().toISOString(),
+      status: 'persisted',
+      mine: true,
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(composer.draft()).toBe('texto original');
+    expect(fixture.nativeElement.textContent).toContain('Editando mensagem');
+    expect(composer.primarySubmitLabel()).toBe('Salvar');
+
+    composer.draft.set('texto editado');
+    await composer.onSubmit(new Event('submit'));
+
+    expect(edit).toHaveBeenCalledWith('message-edit', 'texto editado');
+    expect(send).not.toHaveBeenCalled();
+    expect(composer.draft()).toBe('rascunho anterior');
+  });
+
+  it('cancels edit with Esc and restores prior draft (B-173)', async () => {
+    phase.set('idle');
+    composer.draft.set('rascunho');
+
+    editingMessage.set({
+      id: 'message-edit',
+      conversationId: 'channel-1',
+      channelId: 'channel-1',
+      authorUserId: 'me',
+      authorName: 'Eu',
+      body: 'original',
+      createdAt: new Date().toISOString(),
+      status: 'persisted',
+      mine: true,
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    composer.draft.set('alteração local');
+    composer.cancelEdit();
+    fixture.detectChanges();
+
+    expect(clearEdit).toHaveBeenCalled();
+    expect(composer.draft()).toBe('rascunho');
+    expect(composer.primarySubmitLabel()).toBe('Enviar');
+  });
+
+  it('ArrowUp on empty composer starts edit of last own message (B-173)', async () => {
+    phase.set('idle');
+    composer.draft.set('');
+    const last: ChatMessage = {
+      id: 'last-own',
+      conversationId: 'channel-1',
+      channelId: 'channel-1',
+      authorUserId: 'me',
+      authorName: 'Eu',
+      body: 'última',
+      createdAt: new Date().toISOString(),
+      status: 'persisted',
+      mine: true,
+    };
+    lastOwnPersistedMessage.mockReturnValue(last);
+
+    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    textarea.focus();
+    textarea.setSelectionRange(0, 0);
+    const event = new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true });
+    Object.defineProperty(event, 'target', { value: textarea });
+    composer.onKeydown(event);
+
+    expect(startEdit).toHaveBeenCalledWith(last);
   });
 });

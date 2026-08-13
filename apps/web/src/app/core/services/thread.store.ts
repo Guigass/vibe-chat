@@ -27,6 +27,7 @@ export class ThreadStore {
   private readonly sendingSignal = signal(false);
   private readonly openSignal = signal(false);
   private readonly replyTargetSignal = signal<ChatMessage | null>(null);
+  private readonly editingMessageSignal = signal<ChatMessage | null>(null);
   private gapFillInFlight = false;
 
   readonly active = this.activeSignal.asReadonly();
@@ -35,6 +36,7 @@ export class ThreadStore {
   readonly sending = this.sendingSignal.asReadonly();
   readonly open = this.openSignal.asReadonly();
   readonly replyTarget = this.replyTargetSignal.asReadonly();
+  readonly editingMessage = this.editingMessageSignal.asReadonly();
   readonly sortedMessages = computed(() =>
     [...this.messagesSignal()].sort(
       (a, b) => (a.seq ?? 0) - (b.seq ?? 0) || a.createdAt.localeCompare(b.createdAt),
@@ -43,6 +45,7 @@ export class ThreadStore {
 
   constructor() {
     this.hub.onMessage((message) => this.ingestRemote(message));
+    this.hub.onMessageEdited((patch) => this.applyEdit(patch));
     this.hub.onMessageDeleted((patch) => this.applyDelete(patch.id));
     this.hub.onReactionChanged((event) => this.applyReactions(event.messageId, event.reactions));
     this.hub.onAttachmentThumbnailReady((event) => this.applyThumbnailReady(event));
@@ -53,6 +56,7 @@ export class ThreadStore {
     this.openSignal.set(true);
     this.loadingSignal.set(true);
     this.replyTargetSignal.set(null);
+    this.editingMessageSignal.set(null);
     try {
       if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
         const demo = this.demoThread(channelId, messageId);
@@ -79,6 +83,7 @@ export class ThreadStore {
     this.activeSignal.set(null);
     this.messagesSignal.set([]);
     this.replyTargetSignal.set(null);
+    this.editingMessageSignal.set(null);
   }
 
   setReplyTarget(message: ChatMessage | null): void {
@@ -86,11 +91,70 @@ export class ThreadStore {
       this.replyTargetSignal.set(null);
       return;
     }
+    this.editingMessageSignal.set(null);
     this.replyTargetSignal.set(message);
   }
 
   clearReplyTarget(): void {
     this.replyTargetSignal.set(null);
+  }
+
+  startEdit(message: ChatMessage | null): void {
+    if (
+      !message ||
+      message.deletedAt ||
+      !message.mine ||
+      message.status !== 'persisted'
+    ) {
+      this.editingMessageSignal.set(null);
+      return;
+    }
+    this.replyTargetSignal.set(null);
+    this.editingMessageSignal.set(message);
+  }
+
+  clearEdit(): void {
+    this.editingMessageSignal.set(null);
+  }
+
+  lastOwnPersistedMessage(): ChatMessage | null {
+    const parent = this.activeSignal()?.parentMessage;
+    const candidates = [
+      ...(parent ? [parent] : []),
+      ...this.sortedMessages(),
+    ];
+    for (let i = candidates.length - 1; i >= 0; i--) {
+      const m = candidates[i];
+      if (m.mine && !m.deletedAt && m.status === 'persisted') return m;
+    }
+    return null;
+  }
+
+  async edit(messageId: string, body: string): Promise<void> {
+    const thread = this.activeSignal();
+    const text = body.trim();
+    if (!thread || !text) return;
+
+    if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
+      this.applyEdit({
+        id: messageId,
+        channelId: thread.channelId,
+        body: text,
+        editedAt: new Date().toISOString(),
+      });
+      this.editingMessageSignal.set(null);
+      return;
+    }
+
+    const updated = await this.api.editMessage(thread.channelId, messageId, text);
+    this.applyEdit({
+      id: updated.id,
+      channelId: updated.channelId,
+      body: updated.body,
+      editedAt: updated.editedAt ?? new Date().toISOString(),
+      seq: updated.seq,
+    });
+    this.editingMessageSignal.set(null);
   }
 
   bumpReplyCount(threadId: string): void {
@@ -277,6 +341,46 @@ export class ThreadStore {
           ...active.parentMessage,
           body: '',
           deletedAt: active.parentMessage.deletedAt ?? new Date().toISOString(),
+        },
+      });
+    }
+    const editing = this.editingMessageSignal();
+    if (editing && idsEqual(editing.id, messageId)) {
+      this.editingMessageSignal.set(null);
+    }
+  }
+
+  private applyEdit(patch: {
+    id: string;
+    channelId: string;
+    body: string;
+    editedAt: string;
+    seq?: number;
+  }): void {
+    const patchList = (list: ChatMessage[]): ChatMessage[] =>
+      list.map((m) =>
+        idsEqual(m.id, patch.id)
+          ? {
+              ...m,
+              body: patch.body,
+              editedAt: patch.editedAt,
+              seq: patch.seq ?? m.seq,
+              deletedAt: null,
+            }
+          : m,
+      );
+
+    this.messagesSignal.update(patchList);
+    const active = this.activeSignal();
+    if (active?.parentMessage && idsEqual(active.parentMessage.id, patch.id)) {
+      this.activeSignal.set({
+        ...active,
+        parentMessage: {
+          ...active.parentMessage,
+          body: patch.body,
+          editedAt: patch.editedAt,
+          seq: patch.seq ?? active.parentMessage.seq,
+          deletedAt: null,
         },
       });
     }

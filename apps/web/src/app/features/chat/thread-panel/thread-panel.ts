@@ -47,6 +47,7 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
                 [showReplyAction]="true"
                 [highlighted]="messages.highlightMessageId() === parent.id"
                 (reply)="onReply(parent)"
+                (startEdit)="onStartEdit(parent)"
                 (quoteClick)="onQuoteClick($event)"
                 (react)="onReact(parent.id, $event)"
                 (removeLinkPreview)="onRemoveLinkPreview(parent.id)"
@@ -67,6 +68,7 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
                   [showReplyAction]="true"
                   [highlighted]="messages.highlightMessageId() === message.id"
                   (reply)="onReply(message)"
+                  (startEdit)="onStartEdit(message)"
                   (quoteClick)="onQuoteClick($event)"
                   (react)="onReact(message.id, $event)"
                   (removeLinkPreview)="onRemoveLinkPreview(message.id)"
@@ -94,10 +96,26 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
             </button>
           </div>
         }
+        @if (threads.editingMessage(); as editing) {
+          <div class="thread__reply" role="status">
+            <div class="thread__reply-meta">
+              <strong>Editando mensagem</strong>
+              <span>{{ citePreview(editing.body) }}</span>
+            </div>
+            <button
+              type="button"
+              class="ghost"
+              aria-label="Cancelar edição"
+              (click)="cancelEdit()"
+            >
+              ×
+            </button>
+          </div>
+        }
         <vc-textarea
           #threadTextarea
           [(value)]="draft"
-          placeholder="Responder na thread…"
+          [placeholder]="threads.editingMessage() ? 'Editar mensagem' : 'Responder na thread…'"
           [label]="''"
           (keydown)="onKeydown($event)"
         />
@@ -111,7 +129,7 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
           </p>
         }
         <vc-button type="submit" [disabled]="submitDisabled()" [loading]="threads.sending()">
-          Responder
+          {{ threads.editingMessage() ? 'Salvar' : 'Responder' }}
         </vc-button>
       </form>
     </div>
@@ -244,6 +262,7 @@ export class ThreadPanel {
   private lastTyping = 0;
   private boundConversationId: string | null = null;
   private restoringDraft = false;
+  private draftBeforeEdit: { body: string } | null = null;
 
   constructor() {
     effect(() => {
@@ -262,8 +281,20 @@ export class ThreadPanel {
     });
 
     effect(() => {
+      const editing = this.threads.editingMessage();
+      if (!editing) return;
+      untracked(() => {
+        if (!this.draftBeforeEdit) {
+          this.draftBeforeEdit = { body: this.draft() };
+        }
+        this.draft.set(editing.body);
+      });
+      queueMicrotask(() => this.threadTextarea()?.nativeElement()?.focus());
+    });
+
+    effect(() => {
       this.draft();
-      if (this.restoringDraft) return;
+      if (this.restoringDraft || this.threads.editingMessage()) return;
       const conversationId = untracked(() => this.boundConversationId);
       if (!conversationId) return;
       this.persistDraftSoon();
@@ -278,6 +309,30 @@ export class ThreadPanel {
     this.threads.setReplyTarget(message);
   }
 
+  onStartEdit(message: ChatMessage): void {
+    this.threads.startEdit(message);
+  }
+
+  cancelEdit(): void {
+    this.threads.clearEdit();
+    this.restoreDraftAfterEdit();
+    queueMicrotask(() => this.threadTextarea()?.nativeElement()?.focus());
+  }
+
+  private restoreDraftAfterEdit(): void {
+    const snapshot = this.draftBeforeEdit;
+    this.draftBeforeEdit = null;
+    this.restoringDraft = true;
+    try {
+      this.draft.set(snapshot?.body ?? '');
+    } finally {
+      this.restoringDraft = false;
+    }
+    if (this.boundConversationId) {
+      this.persistDraftSoon();
+    }
+  }
+
   onQuoteClick(messageId: string): void {
     this.messages.jumpToMessage(messageId);
   }
@@ -285,6 +340,20 @@ export class ThreadPanel {
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
     if (this.submitting()) return;
+
+    const editing = this.threads.editingMessage();
+    if (editing) {
+      const body = this.draft().trim();
+      if (!body || isMessageBodyTooLong(body)) return;
+      this.submitting.set(true);
+      try {
+        await this.threads.edit(editing.id, body);
+        this.restoreDraftAfterEdit();
+      } finally {
+        this.submitting.set(false);
+      }
+      return;
+    }
 
     const body = this.draft().trim();
     if (!body || isMessageBodyTooLong(body)) return;
@@ -316,6 +385,29 @@ export class ThreadPanel {
   }
 
   onKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape' && this.threads.editingMessage()) {
+      event.preventDefault();
+      this.cancelEdit();
+      return;
+    }
+
+    if (
+      event.key === 'ArrowUp' &&
+      !this.threads.editingMessage() &&
+      !this.draft().trim()
+    ) {
+      const textarea = this.threadTextarea()?.nativeElement();
+      const cursor = textarea?.selectionStart ?? 0;
+      if (cursor === 0) {
+        const last = this.threads.lastOwnPersistedMessage();
+        if (last) {
+          event.preventDefault();
+          this.threads.startEdit(last);
+          return;
+        }
+      }
+    }
+
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       void this.onSubmit(event);
@@ -342,6 +434,8 @@ export class ThreadPanel {
 
     this.boundConversationId = conversationId;
     this.threads.clearReplyTarget();
+    this.threads.clearEdit();
+    this.draftBeforeEdit = null;
 
     if (!conversationId) {
       this.restoringDraft = true;

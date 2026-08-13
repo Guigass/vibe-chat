@@ -38,9 +38,10 @@ test.describe(`realtime events (${AUTH_MODE})`, () => {
     const aliceBubble = alice.page.locator('article.vc-msg', { hasText: body }).last();
     await openMessageMoreMenu(aliceBubble, alice.page);
     await clickMessageMenuItem(alice.page, /^Editar$/i);
-    // Edit mode replaces the <p> body; locate the textarea on the page (not via hasText).
-    const editBox = alice.page.getByRole('textbox', { name: /Editar mensagem/i });
+    // B-173: edit mode loads body into the channel composer (not an inline bubble textarea).
+    const editBox = alice.page.locator('vc-composer textarea').first();
     await expect(editBox).toBeVisible({ timeout: 5_000 });
+    await expect(alice.page.getByText(/Editando mensagem/i)).toBeVisible();
     await editBox.fill(edited);
     await alice.page.getByRole('button', { name: /^Salvar$/i }).click();
 
@@ -49,6 +50,7 @@ test.describe(`realtime events (${AUTH_MODE})`, () => {
     await expect(
       bob.page.locator('article.vc-msg', { hasText: edited }).getByText(/editada/i),
     ).toBeVisible({ timeout: 15_000 });
+    await expect(alice.page.getByRole('button', { name: /^Enviar$/i })).toBeVisible();
 
     const editedMessageId = await alice.page
       .locator('article.vc-msg', { hasText: edited })

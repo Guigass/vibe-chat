@@ -17,10 +17,6 @@ import {
   MessageForwardedFrom,
   MessageLinkPreview,
   REACTION_EMOJI_OPTIONS,
-  isMessageBodyTooLong,
-  measureMessageBodyLength,
-  MESSAGE_BODY_COUNTER_THRESHOLD,
-  MESSAGE_BODY_MAX_LENGTH,
 } from '../../models/chat.models';
 import {
   classifyAttachmentPreview,
@@ -191,30 +187,6 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
           <div class="vc-msg__content">
             @if (message().deletedAt) {
               <p class="vc-msg__deleted">Mensagem removida</p>
-            } @else if (editing()) {
-              <div class="vc-msg__edit">
-                <textarea
-                  [value]="draft()"
-                  (input)="draft.set($any($event.target).value)"
-                  rows="3"
-                  aria-label="Editar mensagem"
-                ></textarea>
-                @if (showEditCounter()) {
-                  <p
-                    class="vc-msg__edit-counter"
-                    [class.vc-msg__edit-counter--over]="editTooLong()"
-                    aria-live="polite"
-                  >
-                    {{ editLength() }} / {{ maxLength }}
-                  </p>
-                }
-                <div class="vc-msg__edit-actions">
-                  <button type="button" [disabled]="editSaveDisabled()" (click)="saveEdit()">
-                    Salvar
-                  </button>
-                  <button type="button" class="ghost" (click)="cancelEdit()">Cancelar</button>
-                </div>
-              </div>
             } @else {
               @if (message().forwardedFrom; as origin) {
                 <p class="vc-msg__forwarded">
@@ -822,44 +794,6 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
       background: currentColor;
       box-shadow: -0.3rem 0 currentColor, 0.3rem 0 currentColor;
     }
-    .vc-msg__edit-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      align-items: center;
-      margin-top: 0.45rem;
-    }
-    .vc-msg__edit-actions button {
-      border: 0;
-      background: transparent;
-      color: var(--vc-ink-muted);
-      font-size: 0.75rem;
-      cursor: pointer;
-      padding: 0;
-    }
-    .vc-msg__edit-actions button:hover {
-      color: var(--vc-ink);
-    }
-    .vc-msg__edit textarea {
-      width: 100%;
-      resize: vertical;
-      min-height: 4rem;
-      border-radius: var(--vc-radius-sm);
-      border: 1px solid var(--vc-border);
-      background: var(--vc-surface);
-      color: var(--vc-ink);
-      font: inherit;
-      padding: 0.5rem 0.65rem;
-    }
-    .vc-msg__edit-counter {
-      margin: 0.35rem 0 0;
-      font-size: 0.72rem;
-      color: var(--vc-ink-subtle);
-      text-align: right;
-    }
-    .vc-msg__edit-counter--over {
-      color: var(--vc-danger);
-    }
     .vc-msg-menu {
       display: flex;
       flex-direction: column;
@@ -915,7 +849,6 @@ export class MessageBubble {
   readonly showSaveAction = input(false);
   readonly showMarkUnreadAction = input(false);
   readonly highlighted = input(false);
-  readonly edit = output<string>();
   readonly delete = output<void>();
   readonly removeLinkPreview = output<void>();
   readonly openThread = output<void>();
@@ -928,9 +861,8 @@ export class MessageBubble {
   readonly save = output<void>();
   readonly unsave = output<void>();
   readonly markUnread = output<void>();
+  readonly startEdit = output<void>();
 
-  readonly editing = signal(false);
-  readonly draft = signal('');
   readonly transcript = signal<string | null>(null);
   readonly downloadUrls = signal<Record<string, string>>({});
   readonly previewUrls = signal<Record<string, string>>({});
@@ -944,18 +876,13 @@ export class MessageBubble {
   readonly reactionTooltips = signal<Record<string, string>>({});
   readonly lightboxOpen = signal(false);
   readonly lightboxStartId = signal<string | null>(null);
-  readonly maxLength = MESSAGE_BODY_MAX_LENGTH;
   readonly avatarSize = computed(() => (this.theme.density() === 'compact' ? 28 : 34));
-  readonly editLength = computed(() => measureMessageBodyLength(this.draft()));
-  readonly editTooLong = computed(() => isMessageBodyTooLong(this.draft()));
-  readonly showEditCounter = computed(() => this.editLength() >= MESSAGE_BODY_COUNTER_THRESHOLD);
-  readonly editSaveDisabled = computed(() => !this.draft().trim() || this.editTooLong());
   readonly transcribeEnabled = computed(
     () => environment.aiTranscribeEnabled && environment.aiSummarizeEnabled,
   );
   readonly mentionLabels = computed(() => this.channels.mentionLabels());
   readonly showActions = computed(
-    () => !this.message().deletedAt && !this.editing() && this.message().status === 'persisted',
+    () => !this.message().deletedAt && this.message().status === 'persisted',
   );
   readonly menuItems = computed(() =>
     menuActionsForMessage({
@@ -1061,23 +988,6 @@ export class MessageBubble {
     return `#${raw}`;
   }
 
-  startEdit(): void {
-    this.draft.set(this.message().body);
-    this.editing.set(true);
-  }
-
-  cancelEdit(): void {
-    this.editing.set(false);
-    this.draft.set('');
-  }
-
-  saveEdit(): void {
-    const value = this.draft().trim();
-    if (!value || isMessageBodyTooLong(value)) return;
-    this.edit.emit(value);
-    this.editing.set(false);
-  }
-
   async download(attachment: MessageAttachment): Promise<void> {
     const channelId = this.message().channelId;
     if (!channelId) return;
@@ -1158,7 +1068,7 @@ export class MessageBubble {
         this.openThread.emit();
         break;
       case 'edit':
-        this.startEdit();
+        this.startEdit.emit();
         break;
       case 'remove-link-preview':
         this.removeLinkPreview.emit();

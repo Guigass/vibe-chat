@@ -168,6 +168,20 @@ describe('MessageBubble (B-163)', () => {
     });
   });
 
+  it('emits startEdit from menu without inline textarea (B-173)', async () => {
+    const { fixture } = await setup(baseMessage({ mine: true, status: 'persisted' }));
+    const startEditSpy = vi.fn();
+    fixture.componentInstance.startEdit.subscribe(startEditSpy);
+
+    fixture.componentInstance.onMenuAction('edit');
+    fixture.detectChanges();
+
+    expect(startEditSpy).toHaveBeenCalledTimes(1);
+    expect(fixture.nativeElement.querySelector('.vc-msg__edit')).toBeNull();
+    expect(fixture.nativeElement.querySelector('textarea')).toBeNull();
+    expect(fixture.nativeElement.querySelector('vc-markdown-body')).toBeTruthy();
+  });
+
   it('renders typed attachment preview instead of a plain download button for images', async () => {
     const { fixture } = await setup(
       baseMessage({

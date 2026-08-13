@@ -74,6 +74,22 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
             </button>
           </div>
         }
+        @if (messages.editingMessage(); as editing) {
+          <div class="composer__reply" role="status">
+            <div class="composer__reply-meta">
+              <strong>Editando mensagem</strong>
+              <span>{{ citePreview(editing.body) }}</span>
+            </div>
+            <button
+              type="button"
+              class="ghost"
+              aria-label="Cancelar edição"
+              (click)="cancelEdit()"
+            >
+              ×
+            </button>
+          </div>
+        }
         @if (attachments.items().length) {
           <ul class="composer__attachments" aria-label="Anexos pendentes">
             @for (item of attachments.items(); track item.localId) {
@@ -280,7 +296,11 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
             <vc-textarea
               #composerTextarea
               [(value)]="draft"
-              [placeholder]="'Mensagem em #' + (channels.activeChannel()?.name || 'channel')"
+              [placeholder]="
+                messages.editingMessage()
+                  ? 'Editar mensagem'
+                  : 'Mensagem em #' + (channels.activeChannel()?.name || 'channel')
+              "
               [label]="''"
               (keydown)="onKeydown($event)"
               (input)="onInput($event)"
@@ -301,6 +321,7 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
           </div>
 
           <div class="composer__actions">
+            @if (!messages.editingMessage()) {
             <label class="composer__attach">
               <input
                 type="file"
@@ -367,12 +388,13 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
             } @else {
               <span class="composer__mic-hint" title="Use o anexo para enviar áudio">Mic indisponível</span>
             }
+            }
             <vc-button
               type="submit"
               [disabled]="submitDisabled()"
               [loading]="messages.sending() || attachments.hasActiveUploads() || sendingAudio()"
             >
-              {{ audioSubmitLabel() }}
+              {{ primarySubmitLabel() }}
             </vc-button>
           </div>
         </div>
@@ -790,14 +812,18 @@ export class Composer {
   readonly showCounter = computed(() => this.bodyLength() >= MESSAGE_BODY_COUNTER_THRESHOLD);
   readonly readyCount = computed(() => this.attachments.readyAttachmentIds().length);
   readonly sendingAudio = signal(false);
-  /** Primary CTA while mic is active — the main Enviar was disabled with no text/attachments. */
-  readonly audioSubmitLabel = computed(() => {
+  /** Primary CTA — Salvar while editing (B-173); Enviar áudio while mic active. */
+  readonly primarySubmitLabel = computed(() => {
+    if (this.messages.editingMessage()) return 'Salvar';
     const phase = this.audioRecorder.phase();
     if (phase === 'recording' || phase === 'preview') return 'Enviar áudio';
     return 'Enviar';
   });
   readonly submitDisabled = computed(() => {
     if (this.submitting() || this.messages.sending() || this.sendingAudio()) return true;
+    if (this.messages.editingMessage()) {
+      return !this.draft().trim() || this.bodyTooLong();
+    }
     const phase = this.audioRecorder.phase();
     if (phase === 'recording' || phase === 'preview') return false;
     const hasText = !!this.draft().trim();
@@ -830,6 +856,8 @@ export class Composer {
   private mentionFetchTimer: ReturnType<typeof setTimeout> | null = null;
   private boundChannelId: string | null = null;
   private restoringDraft = false;
+  /** Draft body+attachments snapshot taken when entering edit mode (B-086 restore). */
+  private draftBeforeEdit: { body: string } | null = null;
 
   constructor() {
     effect(() => {
@@ -848,6 +876,25 @@ export class Composer {
       queueMicrotask(() => this.composerTextarea()?.nativeElement()?.focus());
     });
 
+    // B-173: entering edit mode loads body into composer and focuses textarea.
+    effect(() => {
+      const editing = this.messages.editingMessage();
+      if (!editing) return;
+      untracked(() => {
+        if (!this.draftBeforeEdit) {
+          this.draftBeforeEdit = { body: this.draft() };
+        }
+        this.draft.set(editing.body);
+        this.attachments.clear();
+        this.audioRecorder.reset();
+        this.closeMentionMenu();
+        this.closeSlashMenu();
+        this.validationError.set(null);
+        this.slash.clearNotice();
+      });
+      queueMicrotask(() => this.composerTextarea()?.nativeElement()?.focus());
+    });
+
     effect(() => {
       // Depend only on the id signal. Reading `activeChannel()` would re-run on every
       // channels list refresh (unread/presence) and abort an in-progress mic recording.
@@ -862,7 +909,7 @@ export class Composer {
     effect(() => {
       this.draft();
       this.attachments.items();
-      if (this.restoringDraft) return;
+      if (this.restoringDraft || this.messages.editingMessage()) return;
       const channelId = untracked(() => this.boundChannelId);
       if (!channelId) return;
       this.persistDraftSoon();
@@ -877,6 +924,27 @@ export class Composer {
 
   citePreview(body: string): string {
     return replyPreviewText(body);
+  }
+
+  cancelEdit(): void {
+    this.messages.clearEdit();
+    this.restoreDraftAfterEdit();
+    queueMicrotask(() => this.composerTextarea()?.nativeElement()?.focus());
+  }
+
+  private restoreDraftAfterEdit(): void {
+    const snapshot = this.draftBeforeEdit;
+    this.draftBeforeEdit = null;
+    this.restoringDraft = true;
+    try {
+      this.draft.set(snapshot?.body ?? '');
+    } finally {
+      this.restoringDraft = false;
+    }
+    const channelId = this.boundChannelId;
+    if (channelId) {
+      this.persistDraftSoon();
+    }
   }
 
   iconKindFor(file: File): AttachmentIconKind {
@@ -895,6 +963,7 @@ export class Composer {
   }
 
   onPaste(event: ClipboardEvent): void {
+    if (this.messages.editingMessage()) return;
     const files = collectFilesFromClipboard(event.clipboardData);
     if (!files.length) return;
     event.preventDefault();
@@ -902,6 +971,7 @@ export class Composer {
   }
 
   queueFiles(files: File[]): void {
+    if (this.messages.editingMessage()) return;
     const error = this.attachments.addFiles(files);
     this.validationError.set(error);
   }
@@ -952,6 +1022,22 @@ export class Composer {
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
     if (this.submitting() || this.sendingAudio()) return;
+
+    const editing = this.messages.editingMessage();
+    if (editing) {
+      const body = this.draft().trim();
+      if (!body || isMessageBodyTooLong(body)) return;
+      this.submitting.set(true);
+      try {
+        await this.messages.edit(editing.id, body);
+        this.restoreDraftAfterEdit();
+        this.validationError.set(null);
+        this.slash.clearNotice();
+      } finally {
+        this.submitting.set(false);
+      }
+      return;
+    }
 
     const phase = this.audioRecorder.phase();
     if (phase === 'recording' || phase === 'preview') {
@@ -1107,6 +1193,32 @@ export class Composer {
       }
     }
 
+    if (event.key === 'Escape' && this.messages.editingMessage()) {
+      event.preventDefault();
+      this.cancelEdit();
+      return;
+    }
+
+    // B-173: ↑ with empty composer (cursor at start) edits last own persisted message.
+    if (
+      event.key === 'ArrowUp' &&
+      !this.messages.editingMessage() &&
+      !this.draft().trim() &&
+      !this.slashOpen() &&
+      !this.mentionOpen()
+    ) {
+      const textarea = this.composerTextarea()?.nativeElement();
+      const cursor = textarea?.selectionStart ?? 0;
+      if (cursor === 0) {
+        const last = this.messages.lastOwnPersistedMessage();
+        if (last) {
+          event.preventDefault();
+          this.messages.startEdit(last);
+          return;
+        }
+      }
+    }
+
     const shortcut = handleMarkdownShortcut(event);
     if (shortcut) {
       event.preventDefault();
@@ -1173,6 +1285,8 @@ export class Composer {
     this.validationError.set(null);
     this.slash.clearNotice();
     this.messages.clearReplyTarget();
+    this.messages.clearEdit();
+    this.draftBeforeEdit = null;
     this.closeMentionMenu();
     this.closeSlashMenu();
     void this.ensureSlashCatalog();
@@ -1231,6 +1345,12 @@ export class Composer {
   }
 
   private syncComposerMenus(text: string, cursor: number): void {
+    if (this.messages.editingMessage()) {
+      this.closeSlashMenu();
+      this.syncMentionContext(text, cursor);
+      return;
+    }
+
     const slash = detectSlashQuery(text, cursor);
     if (slash) {
       this.closeMentionMenu();
