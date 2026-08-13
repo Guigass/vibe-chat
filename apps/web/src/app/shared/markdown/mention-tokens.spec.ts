@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   detectMentionQuery,
+  formatMentionPlainText,
   insertMentionToken,
   parseMentionTokens,
   userMentionToken,
@@ -21,6 +22,13 @@ describe('mention tokens', () => {
     const context = detectMentionQuery(text, text.length);
     expect(context?.query).toBe('ali');
     expect(context?.atIndex).toBe(6);
+  });
+
+  it('formats mention tokens as readable plain text', () => {
+    const userId = '55555555-5555-5555-5555-555555555555';
+    const text = `hey ${userMentionToken(userId)} <@here>`;
+    expect(formatMentionPlainText(text, { [userId]: 'Bob' })).toBe('hey @Bob @aqui');
+    expect(formatMentionPlainText(userMentionToken(userId), {})).toBe('@usuário');
   });
 
   it('inserts mention token replacing query', () => {

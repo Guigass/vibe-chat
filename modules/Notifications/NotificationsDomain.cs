@@ -128,20 +128,56 @@ public static class PushDispatchPolicies
         return text[..PreviewMaxChars].TrimEnd() + "…";
     }
 
-    public static string ChannelLabel(bool isDirect, string channelName) =>
-        isDirect ? channelName : "#" + channelName.TrimStart('#');
+    public static string DisplayAuthor(string? authorName)
+    {
+        var name = (authorName ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(name) || Guid.TryParse(name, out _))
+        {
+            return "Alguém";
+        }
+
+        return name;
+    }
+
+    public static string ChannelLabel(bool isDirect, string? channelName)
+    {
+        if (isDirect)
+        {
+            return "mensagem direta";
+        }
+
+        var name = (channelName ?? string.Empty).Trim().TrimStart('#');
+        if (string.IsNullOrEmpty(name)
+            || name.StartsWith("dm:", StringComparison.OrdinalIgnoreCase)
+            || Guid.TryParse(name, out _))
+        {
+            return "#canal";
+        }
+
+        return "#" + name;
+    }
+
+    public static string NotificationTitle(bool isDirect, string? authorName, string? channelName)
+    {
+        var author = DisplayAuthor(authorName);
+        if (isDirect)
+        {
+            return author == "Alguém" ? "Mensagem direta" : author;
+        }
+
+        return $"{author} · {ChannelLabel(false, channelName)}";
+    }
 
     public static string BuildNgswPayload(
         string authorName,
-        string channelLabel,
+        bool isDirect,
+        string channelName,
         string preview,
         Guid channelId,
         Guid messageId,
         long sequence)
     {
-        var title = string.IsNullOrWhiteSpace(authorName)
-            ? channelLabel
-            : $"{authorName} · {channelLabel}";
+        var title = NotificationTitle(isDirect, authorName, channelName);
         var url = $"/app?channel={channelId:D}&message={messageId:D}&seq={sequence}";
         return JsonSerializer.Serialize(new
         {
@@ -150,6 +186,7 @@ public static class PushDispatchPolicies
                 title,
                 body = preview,
                 icon = "/icons/icon-192x192.png",
+                tag = messageId.ToString("D"),
                 data = new
                 {
                     channelId,

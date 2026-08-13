@@ -5,9 +5,13 @@ import { AuthService } from '../auth/auth.service';
 import { ChatHubService } from './chat-hub.service';
 import { ChannelStore } from './channel.store';
 import { ChatMessage, PushDevice } from '../../shared/models/chat.models';
+import { formatMentionPlainText } from '../../shared/markdown/mention-tokens';
 
 export const PUSH_DISMISSED_KEY = 'vc.push.dismissed';
 export const PUSH_SENT_KEY = 'vc.push.sent';
+
+const GUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type PushPermissionHint = 'default' | 'granted' | 'denied' | 'unsupported';
 
@@ -150,14 +154,42 @@ export class PushNotificationService {
     const isDirect = !!channel?.isDirect || channel?.type === 'Direct';
     if (!isDirect && !message.mentionsMe) return;
 
-    const label = isDirect ? (channel?.peerDisplayName ?? channel?.name ?? 'DM') : `#${channel?.name ?? 'canal'}`;
     this.notice.set({
       channelId: message.channelId,
       messageId: message.id,
       seq: message.seq,
-      title: `${message.authorName} · ${label}`,
-      body: message.body.trim().slice(0, 80),
+      title: this.noticeTitle(message.authorName, channel, isDirect),
+      body: this.noticeBody(message.body),
     });
+  }
+
+  private noticeTitle(
+    authorName: string | undefined,
+    channel: { name?: string; peerDisplayName?: string | null } | undefined,
+    isDirect: boolean,
+  ): string {
+    const author = this.humanName(authorName) ?? 'Alguém';
+    if (isDirect) {
+      return author === 'Alguém'
+        ? this.humanName(channel?.peerDisplayName) ?? 'Mensagem direta'
+        : author;
+    }
+
+    const channelName = this.humanName(channel?.name?.replace(/^#/, ''));
+    return `${author} · #${channelName ?? 'canal'}`;
+  }
+
+  private noticeBody(body: string): string {
+    const labels = this.channels.mentionLabels();
+    return formatMentionPlainText(body, labels).trim().slice(0, 80);
+  }
+
+  private humanName(value?: string | null): string | null {
+    const text = value?.trim() ?? '';
+    if (!text || /^dm:/i.test(text) || GUID_RE.test(text)) {
+      return null;
+    }
+    return text;
   }
 
   private notificationPermission(): PushPermissionHint {

@@ -230,10 +230,12 @@ public sealed class PushDispatcher(
             return;
         }
 
+        var mentionNames = await LoadMentionDisplayNamesAsync(body, mentioned, cancellationToken);
         var payload = PushDispatchPolicies.BuildNgswPayload(
             authorName,
-            PushDispatchPolicies.ChannelLabel(isDirect, channel.Name),
-            PushDispatchPolicies.TruncatePreview(body),
+            isDirect,
+            channel.Name,
+            PushDispatchPolicies.TruncatePreview(MentionTokens.FormatPlainText(body, mentionNames)),
             channelId.Value,
             messageId,
             sequence);
@@ -305,6 +307,27 @@ public sealed class PushDispatcher(
             .Select(x => x.UserId)
             .Distinct()
             .ToListAsync(cancellationToken);
+    }
+
+    private async Task<IReadOnlyDictionary<UserId, string>> LoadMentionDisplayNamesAsync(
+        string body,
+        IReadOnlyList<Guid> mentioned,
+        CancellationToken cancellationToken)
+    {
+        var userIds = MentionTokens.ParseBody(body)
+            .Where(token => token.UserId.HasValue)
+            .Select(token => token.UserId.GetValueOrDefault())
+            .Concat(mentioned.Select(id => new UserId(id)))
+            .Distinct()
+            .ToList();
+        if (userIds.Count == 0)
+        {
+            return new Dictionary<UserId, string>();
+        }
+
+        return await dbContext.UserProfiles.AsNoTracking()
+            .Where(x => userIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id, x => x.DisplayName, cancellationToken);
     }
 
     private static IReadOnlyList<Guid> ParseMentionedUserIds(JsonNode? node)

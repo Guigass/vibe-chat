@@ -9,7 +9,7 @@ describe('web nginx cache headers (B-165)', () => {
   const conf = readFileSync(join(webRoot, 'nginx.conf'), 'utf8');
 
   it('disables long cache for shell, SW manifest and version.json', () => {
-    for (const path of ['/index.html', '/ngsw.json', '/version.json']) {
+    for (const path of ['/index.html', '/ngsw.json', '/ngsw-worker.js', '/vc-push-sw.js', '/version.json']) {
       expect(conf).toContain(`location = ${path}`);
     }
     expect(conf).toMatch(

@@ -191,6 +191,38 @@ public static partial class MentionTokens
         return tokens;
     }
 
+    public static string FormatPlainText(string body, IReadOnlyDictionary<UserId, string>? displayNames = null)
+    {
+        if (string.IsNullOrEmpty(body))
+        {
+            return string.Empty;
+        }
+
+        return UserTokenRegex().Replace(body, match =>
+        {
+            var raw = match.Groups[1].Value;
+            if (string.Equals(raw, "here", StringComparison.OrdinalIgnoreCase))
+            {
+                return "@aqui";
+            }
+
+            if (string.Equals(raw, "channel", StringComparison.OrdinalIgnoreCase))
+            {
+                return "@canal";
+            }
+
+            if (Guid.TryParse(raw, out var userId)
+                && displayNames is not null
+                && displayNames.TryGetValue(new UserId(userId), out var name)
+                && !string.IsNullOrWhiteSpace(name))
+            {
+                return "@" + name.Trim();
+            }
+
+            return "@usuário";
+        });
+    }
+
     [GeneratedRegex(@"<@([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|here|channel)>", RegexOptions.CultureInvariant)]
     private static partial Regex UserTokenRegex();
 }

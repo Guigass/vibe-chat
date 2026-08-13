@@ -395,6 +395,17 @@ public sealed class BackendUnitTests
     }
 
     [Fact]
+    public void Mention_tokens_format_plain_text_uses_display_names()
+    {
+        var userId = UserId.New();
+        var body = $"hey {MentionTokens.UserBodyToken(userId)} {MentionTokens.HereBodyToken}";
+        var names = new Dictionary<UserId, string> { [userId] = "Bob" };
+        MentionTokens.FormatPlainText(body, names).Should().Be("hey @Bob @aqui");
+        MentionTokens.FormatPlainText(MentionTokens.UserBodyToken(userId), null)
+            .Should().Be("@usuário");
+    }
+
+    [Fact]
     public void Permission_catalog_grants_mention_all_to_member()
     {
         RolePermissionCatalog.For(Role.Member).Should().Contain(Permissions.Channel.MentionAll);
@@ -676,7 +687,8 @@ public sealed class BackendUnitTests
         var messageId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var json = PushDispatchPolicies.BuildNgswPayload(
             "Alice",
-            PushDispatchPolicies.ChannelLabel(false, "geral"),
+            false,
+            "geral",
             preview,
             channelId,
             messageId,
@@ -688,12 +700,29 @@ public sealed class BackendUnitTests
         var notification = doc.RootElement.GetProperty("notification");
         notification.GetProperty("title").GetString().Should().Be("Alice · #geral");
         notification.GetProperty("body").GetString().Should().Be(preview);
+        notification.GetProperty("tag").GetString().Should().Be(messageId.ToString("D"));
         var data = notification.GetProperty("data");
         data.GetProperty("channelId").GetGuid().Should().Be(channelId);
         data.GetProperty("messageId").GetGuid().Should().Be(messageId);
         data.GetProperty("seq").GetInt64().Should().Be(42);
         data.GetProperty("onActionClick").GetProperty("default").GetProperty("url").GetString()
             .Should().Be($"/app?channel={channelId:D}&message={messageId:D}&seq=42");
+    }
+
+    [Fact]
+    public void Push_title_hides_internal_ids_and_dm_channel_name()
+    {
+        PushDispatchPolicies.NotificationTitle(false, "Alice", "geral")
+            .Should().Be("Alice · #geral");
+        PushDispatchPolicies.NotificationTitle(
+                true,
+                "Alice",
+                "dm:44444444-4444-4444-4444-444444444444:55555555-5555-5555-5555-555555555555")
+            .Should().Be("Alice");
+        PushDispatchPolicies.NotificationTitle(true, Guid.NewGuid().ToString(), "dm:x:y")
+            .Should().Be("Mensagem direta");
+        PushDispatchPolicies.ChannelLabel(true, "dm:aaaa:bbbb")
+            .Should().Be("mensagem direta");
     }
 
     [Fact]

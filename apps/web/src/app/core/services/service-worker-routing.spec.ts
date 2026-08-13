@@ -23,4 +23,11 @@ describe('service worker reverse-proxy routing', () => {
       expect(config.navigationUrls).toContain(`!${path}`);
     }
   });
+
+  it('wraps ngsw so a focused tab does not also toast the OS', () => {
+    const wrapper = readFileSync(join(webRoot, 'public/vc-push-sw.js'), 'utf8');
+    expect(wrapper).toContain("importScripts('./ngsw-worker.js')");
+    expect(wrapper).toContain('client.focused');
+    expect(wrapper).toContain('showNotification');
+  });
 });

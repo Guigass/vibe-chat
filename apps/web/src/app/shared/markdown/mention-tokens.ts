@@ -82,6 +82,22 @@ export function mentionLabel(
   return `@${labels[token.userId ?? ''] ?? 'usuário'}`;
 }
 
+export function formatMentionPlainText(
+  source: string,
+  labels: Record<string, string>,
+): string {
+  const tokens = parseMentionTokens(source);
+  if (tokens.length === 0) return source ?? '';
+
+  let result = '';
+  let cursor = 0;
+  for (const token of tokens) {
+    result += source.slice(cursor, token.start) + mentionLabel(token, labels);
+    cursor = token.end;
+  }
+  return result + source.slice(cursor);
+}
+
 export interface MentionAutocompleteItem {
   kind: 'user' | MentionSpecial;
   userId?: string;

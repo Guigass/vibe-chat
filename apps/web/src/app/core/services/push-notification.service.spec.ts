@@ -100,9 +100,17 @@ describe('PushNotificationService (B-095)', () => {
           useValue: {
             isDemo: () => false,
             activeChannelId: () => activeChannelId(),
+            mentionLabels: () => ({
+              '55555555-5555-5555-5555-555555555555': 'Bob',
+            }),
             channels: () => [
               { id: 'ch-other', name: 'random', isDirect: false },
-              { id: 'ch-dm', name: 'Bob', isDirect: true, peerDisplayName: 'Bob' },
+              {
+                id: 'ch-dm',
+                name: 'dm:44444444-4444-4444-4444-444444444444:55555555-5555-5555-5555-555555555555',
+                isDirect: true,
+                peerDisplayName: 'Bob',
+              },
             ],
           },
         },
@@ -182,7 +190,46 @@ describe('PushNotificationService (B-095)', () => {
 
     const notice = service.notice();
     expect(notice?.channelId).toBe('ch-other');
-    expect(notice?.title).toContain('Bob');
+    expect(notice?.title).toBe('Bob · #random');
     expect(notice?.body).toContain('alice olha isso');
+  });
+
+  it('shows human names instead of ids in in-app notices', () => {
+    const service = createService();
+    const bobId = '55555555-5555-5555-5555-555555555555';
+
+    messageHandler!({
+      id: 'm-mention',
+      conversationId: 'ch-other',
+      channelId: 'ch-other',
+      authorUserId: 'u-bob',
+      authorName: 'Alice',
+      body: `hey <@${bobId}> olha isso`,
+      createdAt: '2026-08-13T12:00:00.000Z',
+      status: 'persisted',
+      mine: false,
+      mentionsMe: true,
+      seq: 10,
+    });
+
+    expect(service.notice()?.title).toBe('Alice · #random');
+    expect(service.notice()?.body).toBe('hey @Bob olha isso');
+    expect(service.notice()?.body).not.toContain(bobId);
+
+    messageHandler!({
+      id: 'm-dm',
+      conversationId: 'ch-dm',
+      channelId: 'ch-dm',
+      authorUserId: 'u-alice',
+      authorName: 'Alice',
+      body: 'oi',
+      createdAt: '2026-08-13T12:00:00.000Z',
+      status: 'persisted',
+      mine: false,
+      seq: 11,
+    });
+
+    expect(service.notice()?.title).toBe('Alice');
+    expect(service.notice()?.title).not.toMatch(/dm:/i);
   });
 });
