@@ -153,7 +153,9 @@
   </div>
 
   @if (threads.open()) {
-    <vc-thread-panel />
+    <aside class="shell__context vc-anim-sidebar" aria-label="Thread">
+      <vc-thread-panel />
+    </aside>
   } @else if (saved.panelOpen()) {
     <aside class="shell__context vc-anim-sidebar" aria-label="Mensagens salvas">
       <vc-saved-panel />
@@ -167,7 +169,7 @@
       />
     </aside>
   } @else if (contextOpen()) {
-    <aside class="shell__context vc-anim-sidebar" aria-label="Contexto">
+    <aside class="shell__context shell__context--scroll vc-anim-sidebar" aria-label="Contexto">
       <header>
         <h2>Contexto</h2>
         <vc-icon-button label="Fechar painel" (click)="toggleContext()">

@@ -20,7 +20,7 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
   standalone: true,
   imports: [Button, EmptyState, IconButton, MessageBubble, Skeleton, Textarea],
   template: `
-    <aside class="thread" aria-label="Thread">
+    <div class="thread">
       <header class="thread__header">
         <div>
           <h2>Thread</h2>
@@ -114,7 +114,7 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
           Responder
         </vc-button>
       </form>
-    </aside>
+    </div>
   `,
   styles: `
     :host {
@@ -129,9 +129,6 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
       height: 100%;
       min-height: 0;
       overflow: hidden;
-      border-left: 1px solid var(--vc-border);
-      background: color-mix(in srgb, var(--vc-surface-elevated) 94%, transparent);
-      animation: vc-thread-in 220ms ease-out;
     }
     .thread__header {
       display: flex;
@@ -220,16 +217,6 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
     }
     .thread__counter--over {
       color: var(--vc-danger);
-    }
-    @keyframes vc-thread-in {
-      from {
-        opacity: 0;
-        transform: translateX(0.6rem);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
     }
   `,
 })
