@@ -4,12 +4,12 @@ import { DraftStoreService } from '../../../core/services/draft-store.service';
 import { MessageStore } from '../../../core/services/message.store';
 import { PinStore } from '../../../core/services/pin.store';
 import { SavedStore } from '../../../core/services/saved.store';
-import { Badge, SidebarNav, Skeleton } from '../../../shared/ui';
+import { Badge, SidebarNav, Skeleton, VcTooltip } from '../../../shared/ui';
 
 @Component({
   selector: 'vc-channel-list',
   standalone: true,
-  imports: [SidebarNav, Skeleton, Badge],
+  imports: [SidebarNav, Skeleton, Badge, VcTooltip],
   template: `
     <div class="channel-list">
       @if (channels.loading()) {
@@ -19,23 +19,36 @@ import { Badge, SidebarNav, Skeleton } from '../../../shared/ui';
           <vc-skeleton height="2rem" />
         </div>
       } @else {
-        <div class="channel-list__shortcuts">
+        <div class="channel-list__shortcuts" [class.channel-list__shortcuts--compact]="navCompact()">
           <button
             type="button"
             class="channel-list__saved"
             [class.channel-list__saved--compact]="navCompact()"
-            data-testid="saved-nav"
             [class.channel-list__saved--active]="saved.panelOpen()"
+            data-testid="saved-nav"
             [attr.aria-label]="navCompact() ? 'Mensagens salvas' : null"
-            [attr.title]="navCompact() ? 'Mensagens salvas' : null"
+            [vcTooltip]="navCompact() ? 'Mensagens salvas' : null"
+            [tooltipDisabled]="!navCompact()"
+            position="right"
             (click)="openSaved()"
           >
-            <span class="channel-list__saved-mark" aria-hidden="true">✦</span>
+            <span class="channel-list__saved-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5v15.2a.8.8 0 0 1-1.25.66L12 16.6l-4.75 3.76A.8.8 0 0 1 6 19.7V4.5Z" />
+              </svg>
+            </span>
             @if (!navCompact()) {
-              <span class="channel-list__saved-label">Salvos</span>
+              <span class="channel-list__saved-copy">
+                <span class="channel-list__saved-label">Salvos</span>
+                <span class="channel-list__saved-hint">Vista pessoal</span>
+              </span>
             }
             @if (saved.pendingCount() > 0) {
-              <vc-badge tone="accent">{{ saved.pendingCount() }}</vc-badge>
+              @if (navCompact()) {
+                <span class="channel-list__saved-dot" aria-hidden="true"></span>
+              } @else {
+                <vc-badge tone="accent">{{ saved.pendingCount() }}</vc-badge>
+              }
             }
           </button>
         </div>
@@ -75,68 +88,91 @@ import { Badge, SidebarNav, Skeleton } from '../../../shared/ui';
       padding: 0 var(--vc-space-4);
     }
     .channel-list__shortcuts {
-      padding: 0 var(--vc-space-3);
-      margin-bottom: 0.15rem;
+      padding: 0 var(--vc-space-3) var(--vc-space-2);
+    }
+    .channel-list__shortcuts--compact {
+      padding-inline: var(--vc-space-2);
     }
     .channel-list__saved {
       width: 100%;
       display: grid;
       grid-template-columns: auto 1fr auto;
       align-items: center;
-      gap: var(--vc-space-row);
-      min-height: var(--vc-density-row);
-      padding: 0 0.7rem;
-      border: 0;
+      gap: var(--vc-space-2);
+      min-height: calc(var(--vc-density-row) + 0.25rem);
+      padding: 0.4rem 0.65rem;
+      border: 1px solid var(--vc-border);
       border-radius: var(--vc-radius-md);
       background: transparent;
-      color: var(--vc-ink-muted);
+      color: var(--vc-ink);
       text-align: left;
       cursor: pointer;
       position: relative;
       font: inherit;
       transition:
         background var(--vc-dur-fast) var(--vc-ease-out),
+        border-color var(--vc-dur-fast) var(--vc-ease-out),
         color var(--vc-dur-fast) var(--vc-ease-out);
     }
     .channel-list__saved:hover {
-      background: color-mix(in srgb, var(--vc-brand) 10%, transparent);
-      color: var(--vc-ink);
+      border-color: color-mix(in srgb, var(--vc-brand) 45%, var(--vc-border));
+      background: color-mix(in srgb, var(--vc-brand) 8%, transparent);
     }
     .channel-list__saved--active {
-      background: color-mix(in srgb, var(--vc-brand) 16%, transparent);
-      color: var(--vc-ink);
+      border-color: color-mix(in srgb, var(--vc-brand) 55%, var(--vc-border));
+      background: color-mix(in srgb, var(--vc-brand) 12%, transparent);
     }
-    .channel-list__saved--active::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 20%;
-      bottom: 20%;
-      width: 3px;
-      border-radius: 999px;
-      background: var(--vc-brand);
+    .channel-list__saved-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 1.35rem;
+      height: 1.35rem;
+      color: var(--vc-brand);
     }
-    .channel-list__saved-mark {
-      font-size: 0.75rem;
-      opacity: 0.75;
-      width: 1rem;
-      text-align: center;
+    .channel-list__saved--active .channel-list__saved-icon svg path {
+      fill: var(--vc-brand);
+      stroke: var(--vc-brand);
+    }
+    .channel-list__saved-copy {
+      display: grid;
+      min-width: 0;
+      gap: 0.05rem;
     }
     .channel-list__saved-label {
-      font-weight: 500;
+      font-weight: 600;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .channel-list__saved-hint {
+      font-size: 0.7rem;
+      color: var(--vc-ink-subtle);
+      font-weight: 400;
+    }
     .channel-list__saved--compact {
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr;
       width: 2.25rem;
+      min-height: 2.25rem;
       margin-inline: auto;
       padding: 0;
       justify-items: center;
+      border-color: transparent;
+      background: transparent;
     }
-    .channel-list__saved--compact .channel-list__saved-label {
-      display: none;
+    .channel-list__saved--compact:hover,
+    .channel-list__saved--compact.channel-list__saved--active {
+      border-color: transparent;
+      background: color-mix(in srgb, var(--vc-brand) 12%, transparent);
+    }
+    .channel-list__saved-dot {
+      position: absolute;
+      top: 0.2rem;
+      right: 0.2rem;
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 50%;
+      background: var(--vc-brand);
+      box-shadow: 0 0 0 2px var(--vc-surface-elevated);
     }
   `,
 })

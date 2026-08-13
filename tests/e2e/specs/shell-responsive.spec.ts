@@ -11,7 +11,7 @@ async function expectCollapsedNarrowShell(page: Page): Promise<void> {
   await expect(shell).toHaveClass(/shell--sidebar-collapsed/);
   await expect(shell).toHaveClass(/shell--narrow/);
   await expect(page.locator('.shell__sidebar')).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Abrir barra lateral' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mostrar barra' })).toBeVisible();
   await expect(page.locator('vc-composer')).toBeInViewport();
   await expect(page.locator('.shell__header')).toBeInViewport();
   await expect(page.getByRole('heading', { name: /geral/i })).toBeVisible();
@@ -30,7 +30,7 @@ test.describe(`shell responsive sidebar (${AUTH_MODE})`, () => {
       await page.setViewportSize({ width, height: 720 });
       await expectCollapsedNarrowShell(page);
 
-      await page.getByRole('button', { name: 'Abrir barra lateral' }).click();
+      await page.getByRole('button', { name: 'Mostrar barra' }).click();
       await expect(page.locator('.shell')).not.toHaveClass(/shell--sidebar-collapsed/);
       await expect(page.locator('.shell__sidebar')).toBeVisible();
       await expect(page.locator('.shell__backdrop')).toBeVisible();
@@ -38,13 +38,13 @@ test.describe(`shell responsive sidebar (${AUTH_MODE})`, () => {
       await page.keyboard.press('Escape');
       await expectCollapsedNarrowShell(page);
 
-      await page.getByRole('button', { name: 'Abrir barra lateral' }).click();
+      await page.getByRole('button', { name: 'Mostrar barra' }).click();
       // Click the uncovered strip (sidebar is left-docked overlay).
       await page.locator('.shell__backdrop').click({ position: { x: width - 8, y: 24 } });
       await expectCollapsedNarrowShell(page);
 
-      await page.getByRole('button', { name: 'Abrir barra lateral' }).click();
-      await page.getByRole('button', { name: 'Recolher barra lateral' }).click();
+      await page.getByRole('button', { name: 'Mostrar barra' }).click();
+      await page.getByRole('button', { name: 'Esconder barra' }).click();
       await expectCollapsedNarrowShell(page);
 
       await session.context.close();
@@ -63,7 +63,7 @@ test.describe(`shell responsive sidebar (${AUTH_MODE})`, () => {
     await expect(shell).not.toHaveClass(/shell--sidebar-collapsed/);
     await expect(shell).not.toHaveClass(/shell--narrow/);
     await expect(page.locator('.shell__sidebar')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Abrir barra lateral' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Mostrar barra' })).toHaveCount(0);
 
     await session.context.close();
   });

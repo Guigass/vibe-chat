@@ -162,3 +162,90 @@ html[data-theme='dark'] {
 .vc-msg-menu__item--danger {
   color: var(--vc-danger);
 }
+
+/* Compact-rail tooltips (BrnTooltip overlay; lives outside encapsulation). */
+.vc-tooltip {
+  position: relative;
+  z-index: 50;
+  max-width: 16rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-md);
+  background: var(--vc-surface-elevated);
+  color: var(--vc-ink);
+  font-family: var(--vc-font-body);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.35;
+  box-shadow: var(--vc-shadow-soft, 0 8px 24px color-mix(in srgb, var(--vc-ink) 18%, transparent));
+  pointer-events: none;
+  animation: vc-tooltip-in var(--vc-dur-fast) var(--vc-ease-out);
+}
+
+.vc-tooltip[data-state='closed'] {
+  animation: vc-tooltip-out var(--vc-dur-fast) var(--vc-ease-out) forwards;
+}
+
+.vc-tooltip__arrow {
+  position: absolute;
+  display: flex;
+  pointer-events: none;
+}
+
+.vc-tooltip[data-side='top'] .vc-tooltip__arrow {
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.vc-tooltip[data-side='bottom'] .vc-tooltip__arrow {
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%) rotate(180deg);
+}
+
+.vc-tooltip[data-side='left'] .vc-tooltip__arrow {
+  right: -7px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+}
+
+.vc-tooltip[data-side='right'] .vc-tooltip__arrow {
+  left: -7px;
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.vc-tooltip__svg {
+  display: block;
+  fill: var(--vc-surface-elevated);
+  stroke: var(--vc-border);
+  stroke-width: 1;
+}
+
+@keyframes vc-tooltip-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes vc-tooltip-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-tooltip,
+  .vc-tooltip[data-state='closed'] {
+    animation: none;
+  }
+}

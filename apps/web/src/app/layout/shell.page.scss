@@ -42,13 +42,17 @@
 .shell__sidebar {
   display: grid;
   grid-template-rows: auto auto 1fr auto;
-  gap: var(--vc-space-4);
-  padding: var(--vc-space-4) 0;
+  gap: var(--vc-space-3);
+  padding: var(--vc-space-3) 0;
   border-right: 1px solid var(--vc-border);
   background: color-mix(in srgb, var(--vc-surface-elevated) 92%, transparent);
   min-height: 0;
   height: 100%;
   overflow: hidden;
+}
+
+.shell__sidebar--no-workspace {
+  grid-template-rows: auto 1fr auto;
 }
 
 .shell--sidebar-collapsed .shell__sidebar {
@@ -86,19 +90,6 @@
 
 .shell--nav-compact .shell__brand-actions {
   flex-direction: column;
-}
-
-.shell--nav-compact .shell__workspace {
-  padding-inline: var(--vc-space-2);
-}
-
-.shell--nav-compact .shell__workspace select {
-  min-height: 2.25rem;
-  padding-inline: 0.25rem;
-  font-size: 0.65rem;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
 }
 
 .shell--nav-compact .shell__sidebar-footer {

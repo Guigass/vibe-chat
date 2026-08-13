@@ -61,10 +61,12 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
     name: 'geral',
   });
   const workspaceRole = signal('Member');
+  const workspaces = signal([{ id: 'ws-1', name: 'Acme', role: 'Member' }]);
 
   beforeEach(async () => {
     activeChannel.set({ id: 'ch-1', name: 'geral' });
     workspaceRole.set('Member');
+    workspaces.set([{ id: 'ws-1', name: 'Acme', role: 'Member' }]);
     await TestBed.configureTestingModule({
       imports: [ShellPage],
       providers: [
@@ -82,8 +84,8 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
           useValue: {
             activeChannel: activeChannel.asReadonly(),
             activeChannelId: () => activeChannel()?.id ?? null,
-            activeWorkspace: () => ({ id: 'ws-1', name: 'Acme', role: workspaceRole() }),
-            workspaces: () => [{ id: 'ws-1', name: 'Acme', role: workspaceRole() }],
+            activeWorkspace: () => workspaces()[0] ? { ...workspaces()[0], role: workspaceRole() } : null,
+            workspaces: () => workspaces().map((w) => ({ ...w, role: workspaceRole() })),
             error: () => null,
             isDemo: () => true,
             load: vi.fn().mockResolvedValue(undefined),
@@ -166,7 +168,7 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
                 <a href="/admin">Admin</a>
               }
               @if (!sidebarOpen()) {
-                <button type="button" aria-label="Abrir barra lateral" (click)="toggleSidebar()"></button>
+                <button type="button" aria-label="Mostrar barra" (click)="toggleSidebar()"></button>
               }
             </div>
           `,
@@ -186,7 +188,7 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
     expect(fixture.componentInstance.narrowViewport()).toBe(true);
     expect(fixture.componentInstance.sidebarOpen()).toBe(false);
     expect(host.querySelector('.shell--sidebar-collapsed')).toBeTruthy();
-    expect(host.querySelector('[aria-label="Abrir barra lateral"]')).toBeTruthy();
+    expect(host.querySelector('[aria-label="Mostrar barra"]')).toBeTruthy();
     expect(host.querySelector('.shell__backdrop')).toBeNull();
 
     fixture.componentInstance.toggleSidebar();
@@ -247,5 +249,38 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('a[href="/admin"]')).toBeTruthy();
+  });
+
+  it('hides workspace selector when there is only one workspace', () => {
+    stubMatchMedia(false);
+    const fixture = TestBed.createComponent(ShellPage);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.showWorkspaceSelector()).toBe(false);
+  });
+
+  it('shows workspace selector with multiple workspaces on expanded desktop', () => {
+    stubMatchMedia(false);
+    workspaces.set([
+      { id: 'ws-1', name: 'Acme', role: 'Member' },
+      { id: 'ws-2', name: 'Beta', role: 'Member' },
+    ]);
+    const fixture = TestBed.createComponent(ShellPage);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.showWorkspaceSelector()).toBe(true);
+  });
+
+  it('hides workspace selector in compact nav even with multiple workspaces', () => {
+    stubMatchMedia(false);
+    workspaces.set([
+      { id: 'ws-1', name: 'Acme', role: 'Member' },
+      { id: 'ws-2', name: 'Beta', role: 'Member' },
+    ]);
+    const fixture = TestBed.createComponent(ShellPage);
+    fixture.componentInstance.navCompact.set(true);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.showWorkspaceSelector()).toBe(false);
   });
 });

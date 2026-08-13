@@ -47,8 +47,16 @@ Filtro da rail usa dados já autorizados no cliente (membership).
 ## UX
 
 - Desktop: toggle compacto ↔ expandido; expandido continua sendo o default.
-- Filtro no topo da lista; resultados agrupados por bloco; zero matches com
-  empty state curto.
+- Filtro no topo da lista **somente no modo aberto**; no compacto o filtro some
+  (filtrar exige expandir a rail). Resultados agrupados por bloco; zero matches
+  com empty state curto.
+- Seletor de workspace: só no modo aberto e quando há **mais de um** workspace.
+- Modo compacto: tooltips overlay (`vcTooltip` / BrnTooltip) no hover/focus dos
+  ícones — não usar `title` nativo; manter `aria-label`. Filtro, seletor de
+  workspace, pesquisa e “Novo channel” só no modo aberto.
+- Bloco de DMs na rail usa o rótulo **Recentes**.
+- Ícones de largura vs esconder: chevrons (`Encolher/Expandir menu`) para o
+  compacto; painel com seta (`Esconder/Mostrar barra`) para ocultar a rail.
 - Narrow (≤960px): overlay/backdrop/Escape intactos; compacto não quebra o
   colapso automático.
 - Contraste dos rótulos de seção: melhorar o que UX-004 apontou, sem esperar
@@ -80,4 +88,4 @@ filtro local não amplia o conjunto.
 
 Filtro client-side insuficiente em workspaces enormes — aceitável nesta fatia;
 escala server-side fica para follow-up se necessário. Compacto sem tooltip/nome
-acessível quebra a11y — exigir `aria-label`/title nos ícones.
+acessível quebra a11y — exigir `aria-label` + tooltip overlay nos ícones.

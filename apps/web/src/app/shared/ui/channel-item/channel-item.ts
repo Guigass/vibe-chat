@@ -1,11 +1,12 @@
 import { Component, computed, input, output } from '@angular/core';
 import { Channel, PresenceStatus } from '../../models/chat.models';
 import { Badge } from '../badge/badge';
+import { VcTooltip } from '../tooltip/tooltip';
 
 @Component({
   selector: 'vc-channel-item',
   standalone: true,
-  imports: [Badge],
+  imports: [Badge, VcTooltip],
   template: `
     <button
       type="button"
@@ -13,7 +14,9 @@ import { Badge } from '../badge/badge';
       [class.vc-channel--active]="active()"
       [class.vc-channel--compact]="compact()"
       [attr.aria-label]="compact() ? ariaLabel() : null"
-      [attr.title]="compact() ? ariaLabel() : null"
+      [vcTooltip]="compact() ? ariaLabel() : null"
+      [tooltipDisabled]="!compact()"
+      position="right"
       (click)="select.emit()"
     >
       @if (presence()) {

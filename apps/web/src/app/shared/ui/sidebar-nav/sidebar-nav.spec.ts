@@ -79,4 +79,49 @@ describe('SidebarNav (B-184)', () => {
     expect(fixture.nativeElement.querySelector('.vc-sidebar-nav__label')).toBeNull();
     expect(fixture.nativeElement.querySelector('.vc-channel--compact')).toBeTruthy();
   });
+
+  it('hides the filter in compact mode', () => {
+    fixture.componentInstance.filterQuery.set('eng');
+    fixture.componentRef.setInput('compact', true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('#vc-nav-filter')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.vc-sidebar-nav__filter')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Filtrar canais, recentes e membros"]')).toBeNull();
+    expect(fixture.componentInstance.filterQuery()).toBe('');
+  });
+
+  it('keeps the filter in expanded mode', () => {
+    expect(fixture.nativeElement.querySelector('#vc-nav-filter')).toBeTruthy();
+  });
+
+  it('uses overlay tooltip attrs instead of native title in compact mode', () => {
+    fixture.componentRef.setInput('compact', true);
+    fixture.detectChanges();
+
+    const channelBtn = fixture.nativeElement.querySelector('.vc-channel--compact') as HTMLButtonElement;
+    expect(channelBtn.getAttribute('title')).toBeNull();
+    expect(channelBtn.getAttribute('aria-label')).toContain('#roadmap');
+
+    const memberBtn = fixture.nativeElement.querySelector('.vc-sidebar-nav__member--compact') as HTMLButtonElement;
+    expect(memberBtn.getAttribute('title')).toBeNull();
+    expect(memberBtn.getAttribute('aria-label')).toContain('Bob');
+  });
+
+  it('labels the DM block as Recentes', () => {
+    expect(fixture.nativeElement.querySelector('[aria-label="Recentes"]')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Recentes');
+    expect(fixture.nativeElement.textContent).not.toContain('Mensagens diretas');
+  });
+
+  it('hides new-channel control in compact mode', () => {
+    fixture.componentRef.setInput('canCreate', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Novo channel');
+
+    fixture.componentRef.setInput('compact', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain('Novo channel');
+    expect(fixture.nativeElement.querySelector('[aria-label="Novo channel"]')).toBeNull();
+  });
 });

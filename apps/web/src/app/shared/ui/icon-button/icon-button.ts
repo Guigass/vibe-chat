@@ -1,15 +1,20 @@
 import { Component, input } from '@angular/core';
+import { VcTooltip } from '../tooltip/tooltip';
 
 @Component({
   selector: 'vc-icon-button',
   standalone: true,
+  imports: [VcTooltip],
   template: `
     <button
       class="vc-icon-btn"
       type="button"
       [disabled]="disabled()"
       [attr.aria-label]="label()"
-      [attr.title]="label()"
+      [attr.title]="overlayTooltip() ? null : label()"
+      [vcTooltip]="overlayTooltip() ? label() : null"
+      [tooltipDisabled]="!overlayTooltip()"
+      position="right"
     >
       <ng-content />
     </button>
@@ -42,4 +47,6 @@ import { Component, input } from '@angular/core';
 export class IconButton {
   readonly label = input.required<string>();
   readonly disabled = input(false);
+  /** When true, show BrnTooltip instead of native title (compact rail). */
+  readonly overlayTooltip = input(false);
 }

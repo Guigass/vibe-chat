@@ -34,6 +34,9 @@ import {
   Input,
   ThemeToggle,
   UpdateBanner,
+  VcTooltip,
+  provideVcTooltipDefaults,
+  provideVcTooltipGroup,
 } from '../shared/ui';
 import { AttachmentQueueService } from '../features/chat/composer/attachment-queue.service';
 import { collectFilesFromDataTransfer } from '../features/chat/composer/attachment-upload';
@@ -60,7 +63,9 @@ import { defaultSidebarOpen, readNavCompact, SHELL_NARROW_MEDIA_QUERY, writeNavC
     DensityControl,
     IconButton,
     Input,
+    VcTooltip,
   ],
+  providers: [provideVcTooltipDefaults(), ...provideVcTooltipGroup()],
   templateUrl: './shell.page.html',
   styleUrl: './shell.page.scss',
 })
@@ -91,6 +96,10 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly searchOpen = signal(false);
   readonly canAccessAdmin = computed(() =>
     this.channels.workspaces().some((workspace) => hasAdminDashboard(workspace.role)),
+  );
+  /** Workspace select: expanded rail only, and only when there is a choice. */
+  readonly showWorkspaceSelector = computed(
+    () => this.channels.workspaces().length > 1 && !(this.navCompact() && !this.narrowViewport()),
   );
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;

@@ -16,3 +16,4 @@ export { ConnectionBanner } from './connection-banner/connection-banner';
 export { UpdateBanner } from './update-banner/update-banner';
 export { ThemeToggle } from './theme-toggle/theme-toggle';
 export { DensityControl } from './density-control/density-control';
+export { VcTooltip, provideVcTooltipDefaults, provideVcTooltipGroup } from './tooltip/tooltip';

@@ -1,4 +1,4 @@
-import { Component, HostListener, computed, input, output, signal } from '@angular/core';
+import { Component, HostListener, computed, effect, input, output, signal } from '@angular/core';
 import {
   Channel,
   PresenceStatus,
@@ -9,7 +9,7 @@ import {
 import { ChannelItem } from '../channel-item/channel-item';
 import { Button } from '../button/button';
 import { Input } from '../input/input';
-import { IconButton } from '../icon-button/icon-button';
+import { VcTooltip } from '../tooltip/tooltip';
 
 function matchesFilter(text: string, query: string): boolean {
   if (!query) return true;
@@ -19,40 +19,19 @@ function matchesFilter(text: string, query: string): boolean {
 @Component({
   selector: 'vc-sidebar-nav',
   standalone: true,
-  imports: [ChannelItem, Button, Input, IconButton],
+  imports: [ChannelItem, Button, Input, VcTooltip],
   template: `
     <nav
       class="vc-sidebar-nav vc-anim-sidebar"
       [class.vc-sidebar-nav--compact]="compact()"
       aria-label="Spaces e channels"
     >
-      @if (compact()) {
-        <div class="vc-sidebar-nav__filter-compact">
-          @if (filterOpen()) {
-            <vc-input
-              controlId="vc-nav-filter"
-              ariaLabel="Filtrar canais, DMs e membros"
-              placeholder="Filtrar…"
-              [(value)]="filterQuery"
-            />
-          } @else {
-            <vc-icon-button
-              label="Filtrar canais, DMs e membros"
-              (click)="filterOpen.set(true)"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="7" />
-                <path d="M20 20l-3.5-3.5" />
-              </svg>
-            </vc-icon-button>
-          }
-        </div>
-      } @else {
+      @if (!compact()) {
         <div class="vc-sidebar-nav__filter">
           <vc-input
             controlId="vc-nav-filter"
-            ariaLabel="Filtrar canais, DMs e membros"
-            placeholder="Filtrar canais, DMs e membros…"
+            ariaLabel="Filtrar canais, recentes e membros"
+            placeholder="Filtrar canais, recentes e membros…"
             [(value)]="filterQuery"
           />
         </div>
@@ -85,20 +64,12 @@ function matchesFilter(text: string, query: string): boolean {
             </div>
           }
 
-          @if (canCreate() && !hasFilter()) {
+          @if (canCreate() && !hasFilter() && !compact()) {
             <div class="vc-sidebar-nav__create">
               @if (!createOpen()) {
-                @if (compact()) {
-                  <vc-icon-button label="Novo channel" (click)="createOpen.set(true)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                  </vc-icon-button>
-                } @else {
-                  <button type="button" class="vc-sidebar-nav__create-toggle" (click)="createOpen.set(true)">
-                    Novo channel
-                  </button>
-                }
+                <button type="button" class="vc-sidebar-nav__create-toggle" (click)="createOpen.set(true)">
+                  Novo channel
+                </button>
               } @else {
                 <form class="vc-sidebar-nav__form" (submit)="submitCreate($event)">
                   <vc-input
@@ -147,9 +118,9 @@ function matchesFilter(text: string, query: string): boolean {
       }
 
       @if (filteredDirects().length) {
-        <section class="vc-sidebar-nav__block" aria-label="Mensagens diretas">
+        <section class="vc-sidebar-nav__block" aria-label="Recentes">
           @if (!compact()) {
-            <p class="vc-sidebar-nav__label">Mensagens diretas</p>
+            <p class="vc-sidebar-nav__label">Recentes</p>
           }
           <ul>
             @for (channel of filteredDirects(); track channel.id) {
@@ -181,7 +152,9 @@ function matchesFilter(text: string, query: string): boolean {
                   class="vc-sidebar-nav__member"
                   [class.vc-sidebar-nav__member--compact]="compact()"
                   [attr.aria-label]="memberLabel(member)"
-                  [attr.title]="compact() ? memberLabel(member) : null"
+                  [vcTooltip]="compact() ? memberLabel(member) : null"
+                  [tooltipDisabled]="!compact()"
+                  position="right"
                   (click)="openDm.emit(member.userId)"
                 >
                   @if (compact()) {
@@ -208,24 +181,18 @@ function matchesFilter(text: string, query: string): boolean {
   styles: `
     .vc-sidebar-nav {
       display: grid;
-      gap: var(--vc-space-3);
+      gap: var(--vc-space-2);
       padding: 0 var(--vc-space-3);
     }
     .vc-sidebar-nav--compact {
       padding-inline: var(--vc-space-2);
       gap: var(--vc-space-2);
     }
-    .vc-sidebar-nav__filter,
-    .vc-sidebar-nav__filter-compact {
+    .vc-sidebar-nav__filter {
       position: sticky;
       top: 0;
       z-index: 1;
-      padding-bottom: var(--vc-space-2);
       background: inherit;
-    }
-    .vc-sidebar-nav__filter-compact {
-      display: grid;
-      justify-items: center;
     }
     .vc-sidebar-nav__empty {
       margin: 0;
@@ -236,7 +203,7 @@ function matchesFilter(text: string, query: string): boolean {
     }
     .vc-sidebar-nav__block {
       display: grid;
-      gap: 0.35rem;
+      gap: 0.15rem;
       padding-bottom: var(--vc-space-2);
       border-bottom: 1px solid color-mix(in srgb, var(--vc-border) 70%, transparent);
     }
@@ -249,8 +216,8 @@ function matchesFilter(text: string, query: string): boolean {
       gap: 0.15rem;
     }
     .vc-sidebar-nav__label {
-      margin: 0 0 var(--vc-space-1);
-      padding: 0 var(--vc-space-2);
+      margin: 0;
+      padding: 0.15rem var(--vc-space-2) 0;
       font-size: 0.72rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -266,36 +233,36 @@ function matchesFilter(text: string, query: string): boolean {
     }
     .vc-sidebar-nav__create {
       margin-top: var(--vc-space-1);
-      padding: 0 var(--vc-space-2);
-    }
-    .vc-sidebar-nav--compact .vc-sidebar-nav__create {
-      padding: 0;
-      display: grid;
-      justify-items: center;
     }
     .vc-sidebar-nav__create-toggle {
+      width: 100%;
       border: 0;
       background: transparent;
-      color: var(--vc-brand);
-      font: inherit;
-      font-weight: 600;
-      cursor: pointer;
-      padding: 0.35rem 0;
+      color: var(--vc-ink-muted);
       text-align: left;
+      padding: 0.35rem 0.7rem;
+      border-radius: var(--vc-radius-md);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.86rem;
+    }
+    .vc-sidebar-nav__create-toggle:hover {
+      background: color-mix(in srgb, var(--vc-brand) 10%, transparent);
+      color: var(--vc-ink);
     }
     .vc-sidebar-nav__form {
       display: grid;
       gap: var(--vc-space-2);
-      padding: var(--vc-space-3) 0;
-      border-top: 1px solid var(--vc-border);
-      border-bottom: 1px solid var(--vc-border);
+      padding: var(--vc-space-2);
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-md);
+      background: var(--vc-surface);
     }
     .vc-sidebar-nav__select {
       display: grid;
-      gap: 0.35rem;
-      font-size: 0.85rem;
+      gap: 0.25rem;
+      font-size: 0.82rem;
       color: var(--vc-ink-muted);
-      font-weight: 500;
     }
     .vc-sidebar-nav__select select {
       min-height: 2.5rem;
@@ -425,6 +392,16 @@ export class SidebarNav {
       && this.filteredDirects().length === 0
       && this.filteredMembers().length === 0,
   );
+
+  constructor() {
+    effect(() => {
+      if (this.compact()) {
+        this.filterQuery.set('');
+        this.filterOpen.set(false);
+        this.cancelCreate();
+      }
+    });
+  }
 
   @HostListener('window:keydown', ['$event'])
   onGlobalKeydown(event: KeyboardEvent): void {
