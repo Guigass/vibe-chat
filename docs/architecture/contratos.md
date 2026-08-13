@@ -652,6 +652,31 @@ public interface IEmailSender
 - Off by default; host/user/from/enabled override por tenant (`notifications.email_settings`); senha via env **ou** envelope AES-GCM no DB (ADR-020 / B-069)
 - Caso inicial: e-mail ao alterar papel de membro (`MemberRoleChangedEmailEvent` no outbox — fora do hot path de `SendMessage`)
 
+### Web Push (B-095 / ADR-022 / D-13)
+
+```csharp
+public interface IPushSender
+{
+    string Name { get; }
+    bool IsEnabled { get; }
+    Task<PushSendResult> SendAsync(PushDeliveryRequest request, CancellationToken ct);
+}
+```
+
+- Implementações: `NullPushSender` (default), `WebPushSender` (`Lib.Net.Http.WebPush` + VAPID) quando `Push:Enabled=true` e chaves válidas
+- Off by default; chaves só no env; GET devolve `{ enabled, publicKey? }` sem erro se off
+- Tabela `notifications.push_subscriptions` (RLS): `TenantId`, `UserId`, `Endpoint` (único por usuário), `P256dh`, `Auth`, `UserAgent?`, `CreatedAt`, `LastSeenAt`, `FailedAt`
+- Delivery best-effort no `OutboxProcessor` **após** realtime, apenas `MessageCreated`; 410/404 remove a linha; falha não reprocessa outbox
+- Destinatários: membership **atual** ∩ (DM `Direct` **ou** `mentionedUserIds`) ∩ `preferences.PushEnabled` ≠ false ∩ não-autor; `read_cursors` suprime se já lido
+- “Todas as mensagens” por canal / DND → B-097
+
+| Endpoint | AuthZ | Notas |
+|----------|-------|-------|
+| `GET /api/v1/notifications/push/public-key` | `message.read` | `{ enabled, publicKey? }` |
+| `GET /api/v1/notifications/push/subscriptions` | `message.read` | Só o actor |
+| `POST /api/v1/notifications/push/subscriptions` | `message.read` | Upsert por endpoint do actor |
+| `DELETE /api/v1/notifications/push/subscriptions/{id}` | `message.read` | 404 se não for do actor |
+
 ## AI
 
 ```csharp

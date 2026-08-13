@@ -26,6 +26,7 @@ testes nem uma revisão de segurança.
 | [018](../adrs/ADR-018-retencao-mensagens.md) | Soft-delete + purge configurável | settings, migration, worker purge e kill switch | Operacional: `MessageRetention__*` injetado no worker (B-105) |
 | [020](../adrs/ADR-020-runtime-settings-credenciais-criptografadas.md) | Settings runtime + AES-GCM | envelopes tipados, flag off default, rotate/reencrypt, Files/RateLimit tenant | Em implementação |
 | [021](../adrs/ADR-021-link-preview-ssrf.md) | Link preview + SSRF | outbox B-091, `LinkPreviewFetcher`, cache por tenant, ADR+threat model | **Alinhado** (W9-4) |
+| [022](../adrs/ADR-022-web-push-vapid.md) | Web Push VAPID | outbox B-095, `Push:Enabled=false`, payload mínimo, RLS | **Alinhado** (W10-1) |
 
 ## Gaps transversais derivados
 

@@ -2942,6 +2942,122 @@ v1.MapGet("/channels/{channelId:guid}/unread-count", async (Guid channelId, Http
     return Results.Ok(new { channelId, unreadCount = count, mentionCount });
 });
 
+v1.MapGet("/notifications/push/public-key", (IConfiguration config) =>
+{
+    var processEnabled = config.GetValue("Push:Enabled", false);
+    var publicKey = PushOptions.HasVapidKeys(config) ? config["Push:Vapid:PublicKey"]?.Trim() : null;
+    var enabled = processEnabled && !string.IsNullOrWhiteSpace(publicKey);
+    return Results.Ok(new PushPublicKeyResponse(enabled, enabled ? publicKey : null));
+}).RequirePermission(Permissions.Message.Read);
+
+v1.MapGet("/notifications/push/subscriptions", async (
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+    var rows = await db.PushSubscriptions.AsNoTracking()
+        .Where(x => x.UserId == profile.Id)
+        .OrderByDescending(x => x.LastSeenAt)
+        .Select(x => new PushSubscriptionResponse(x.Id, x.Endpoint, x.UserAgent, x.CreatedAt, x.LastSeenAt))
+        .ToArrayAsync(ct);
+    return Results.Ok(rows);
+}).RequirePermission(Permissions.Message.Read);
+
+v1.MapPost("/notifications/push/subscriptions", async (
+    PushSubscriptionRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+    if (!tenant.HasTenant)
+    {
+        return Results.Forbid();
+    }
+
+    var endpoint = request.Endpoint?.Trim() ?? string.Empty;
+    var p256dh = request.P256dh?.Trim() ?? string.Empty;
+    var auth = request.Auth?.Trim() ?? string.Empty;
+    if (endpoint.Length is < 8 or > 2048
+        || !Uri.TryCreate(endpoint, UriKind.Absolute, out var uri)
+        || (uri.Scheme != Uri.UriSchemeHttps && !(uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback)))
+    {
+        return Results.BadRequest(new { error = "InvalidEndpoint" });
+    }
+
+    if (p256dh.Length is < 8 or > 256 || auth.Length is < 8 or > 256)
+    {
+        return Results.BadRequest(new { error = "InvalidKeys" });
+    }
+
+    var userAgent = string.IsNullOrWhiteSpace(request.UserAgent)
+        ? http.Request.Headers.UserAgent.ToString()
+        : request.UserAgent.Trim();
+    if (userAgent.Length > 512)
+    {
+        userAgent = userAgent[..512];
+    }
+
+    var now = clock.UtcNow;
+    var existing = await db.PushSubscriptions.FirstOrDefaultAsync(
+        x => x.UserId == profile.Id && x.Endpoint == endpoint,
+        ct);
+    if (existing is not null)
+    {
+        existing.P256dh = p256dh;
+        existing.Auth = auth;
+        existing.UserAgent = userAgent;
+        existing.LastSeenAt = now;
+        existing.FailedAt = null;
+        await db.SaveChangesAsync(ct);
+        return Results.Ok(new PushSubscriptionResponse(existing.Id, existing.Endpoint, existing.UserAgent, existing.CreatedAt, existing.LastSeenAt));
+    }
+
+    var row = new PushSubscription
+    {
+        Id = Guid.NewGuid(),
+        TenantId = tenant.TenantId,
+        UserId = profile.Id,
+        Endpoint = endpoint,
+        P256dh = p256dh,
+        Auth = auth,
+        UserAgent = userAgent,
+        CreatedAt = now,
+        LastSeenAt = now
+    };
+    db.PushSubscriptions.Add(row);
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new PushSubscriptionResponse(row.Id, row.Endpoint, row.UserAgent, row.CreatedAt, row.LastSeenAt));
+}).RequirePermission(Permissions.Message.Read);
+
+v1.MapDelete("/notifications/push/subscriptions/{id:guid}", async (
+    Guid id,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+    var row = await db.PushSubscriptions.FirstOrDefaultAsync(x => x.Id == id && x.UserId == profile.Id, ct);
+    if (row is null)
+    {
+        return Results.NotFound();
+    }
+
+    db.PushSubscriptions.Remove(row);
+    await db.SaveChangesAsync(ct);
+    return Results.NoContent();
+}).RequirePermission(Permissions.Message.Read);
+
 v1.MapGet("/admin/dashboard", async (HttpContext http, VibeChatDbContext db, ITenantContext tenant, IDashboardQuery dashboard, IPresenceService presence, HealthCheckService health, IConfiguration config, IClock clock, IPermissionChecker permissions, CancellationToken ct) =>
 {
     var access = await ResolveAdminDashboardAccessAsync(http, db, tenant, permissions, clock, ct);
@@ -5229,6 +5345,14 @@ public sealed record ThreadResponse(
     int ReplyCount,
     MessageResponse? ParentMessage = null);
 public sealed record UpsertReadCursorRequest(long LastReadSequence, bool AllowRetrograde = false);
+public sealed record PushPublicKeyResponse(bool Enabled, string? PublicKey);
+public sealed record PushSubscriptionRequest(string Endpoint, string P256dh, string Auth, string? UserAgent);
+public sealed record PushSubscriptionResponse(
+    Guid Id,
+    string Endpoint,
+    string? UserAgent,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset LastSeenAt);
 public sealed record ReadCursorResponse(Guid ChannelId, Guid UserId, long LastReadSequence, DateTimeOffset UpdatedAt);
 public sealed record ChannelUnreadSummaryResponse(
     Guid ChannelId,

@@ -19,6 +19,7 @@ Use estes runbooks em incidente ou mudança. Detalhes de rotina ficam nos guias 
 | [incidentes.md](./incidentes.md) | Resposta a incidente (P0–P2), comunicação e pós-mortem |
 | [backup-restore.md](./backup-restore.md) | Ponte para backup + restore drill |
 | [tls-proxy.md](./tls-proxy.md) | TLS / nginx profile `proxy` (W5-2) |
+| [web-push-vapid.md](./web-push-vapid.md) | Gerar/rotacionar VAPID (B-095) |
 | [upgrade.md](./upgrade.md) | Upgrade de versão (apps + migrate + verificação) |
 
 ## Princípios

@@ -26,6 +26,8 @@ import {
   MessageLinkPreview,
   PinnedMessageItem,
   SavedMessageItem,
+  PushPublicKey,
+  PushDevice,
 } from '../../shared/models/chat.models';
 
 interface WorkspaceDto {
@@ -830,6 +832,31 @@ export class ApiService {
         allowRetrograde: options?.allowRetrograde ?? false,
       }),
     });
+  }
+
+  async getPushPublicKey(): Promise<PushPublicKey> {
+    return this.request<PushPublicKey>('/api/v1/notifications/push/public-key');
+  }
+
+  async listPushSubscriptions(): Promise<PushDevice[]> {
+    const rows = await this.request<PushDevice[]>('/api/v1/notifications/push/subscriptions');
+    return rows ?? [];
+  }
+
+  async registerPushSubscription(input: {
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+    userAgent?: string;
+  }): Promise<PushDevice> {
+    return this.request<PushDevice>('/api/v1/notifications/push/subscriptions', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deletePushSubscription(id: string): Promise<void> {
+    await this.request(`/api/v1/notifications/push/subscriptions/${id}`, { method: 'DELETE' });
   }
 
   async getWorkspaceChannelUnreads(

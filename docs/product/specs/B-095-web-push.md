@@ -66,14 +66,14 @@ Tabela nova `notifications.push_subscriptions`:
 
 ## Aceite
 
-- [ ] Opt-in registra assinatura e o teste chega no dispositivo
-- [ ] Menção em canal gera push; mensagem comum em canal “só menções” não gera
-- [ ] Ler no desktop impede o push no celular
-- [ ] Clicar abre a conversa na mensagem certa
-- [ ] Remover dispositivo para os pushes dele
-- [ ] Endpoint expirado (410) é removido sozinho
-- [ ] `Push:Enabled=false` desliga tudo, sem erro no cliente
-- [ ] Push nunca vaza conteúdo de canal do qual o usuário saiu
+- [x] Opt-in registra assinatura e o teste chega no dispositivo
+- [x] Menção em canal gera push; mensagem comum em canal “só menções” não gera
+- [x] Ler no desktop impede o push no celular
+- [x] Clicar abre a conversa na mensagem certa
+- [x] Remover dispositivo para os pushes dele
+- [x] Endpoint expirado (410) é removido sozinho
+- [x] `Push:Enabled=false` desliga tudo, sem erro no cliente
+- [x] Push nunca vaza conteúdo de canal do qual o usuário saiu
 
 ## Testes
 

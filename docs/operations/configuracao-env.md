@@ -103,6 +103,7 @@ Todas as substituições `${VAR}` observadas em `compose.yaml` e
 | `EMAIL__*` | `Email__*` | api | Injetado no profile `apps`; senha fallback env ou envelope DB |
 | `MessageRetention__*` | `MessageRetention__*` | worker | Injetado no profile `apps`; kill switch off default |
 | `LinkPreview__*` | `LinkPreview__*` | api + worker | B-091 / ADR-021; default Enabled; TimeoutMs 8000 |
+| `Push__Enabled`, `Push__Vapid__*` | `Push__*` | api + worker | B-095 / ADR-022; kill switch off default; VAPID secret só env |
 | `RuntimeSettings__DatabaseOverridesEnabled` | `RuntimeSettings__DatabaseOverridesEnabled` | api, worker | Default `false`; liga overrides DB + rotação |
 | `RuntimeSettings__Encryption__ActiveKeyVersion` | idem | api, worker | Versão ativa do keyring AES-GCM |
 | `RuntimeSettings__Encryption__Keys__{n}` | idem | api, worker | Chave mestra base64 (32 bytes); **nunca** no DB |

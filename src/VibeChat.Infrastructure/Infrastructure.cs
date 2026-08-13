@@ -72,6 +72,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<AiSettings> AiSettings => Set<AiSettings>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
     public DbSet<TenantEmailSettings> TenantEmailSettings => Set<TenantEmailSettings>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
     public DbSet<OutboundWebhookEndpoint> OutboundWebhookEndpoints => Set<OutboundWebhookEndpoint>();
     public DbSet<MessageRetentionSettings> MessageRetentionSettings => Set<MessageRetentionSettings>();
     public DbSet<TenantFilesSettings> TenantFilesSettings => Set<TenantFilesSettings>();
@@ -365,6 +366,20 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Username).HasMaxLength(256);
             entity.Property(x => x.From).HasMaxLength(320);
             MapEncryptedSecret(entity.OwnsOne(x => x.SmtpPassword), "SmtpPassword");
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<PushSubscription>(entity =>
+        {
+            entity.ToTable("push_subscriptions", "notifications");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Endpoint).HasMaxLength(2048);
+            entity.Property(x => x.P256dh).HasMaxLength(256);
+            entity.Property(x => x.Auth).HasMaxLength(256);
+            entity.Property(x => x.UserAgent).HasMaxLength(512);
+            entity.HasIndex(x => new { x.TenantId, x.UserId, x.Endpoint }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -2171,6 +2186,23 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     }
                 }
 
+                // B-095: web push after realtime — never on SendMessage hot path.
+                if (outbox.Type == nameof(MessageCreatedEvent))
+                {
+                    try
+                    {
+                        var push = scope.ServiceProvider.GetRequiredService<PushDispatcher>();
+                        await push.TryDispatchMessageCreatedAsync(root, cancellationToken);
+                    }
+                    catch (Exception pushEx)
+                    {
+                        logger.LogWarning(
+                            pushEx,
+                            "Web push failed for outbox {OutboxMessageId}; realtime already published",
+                            outbox.Id);
+                    }
+                }
+
                 outbox.ProcessedAt = now;
                 outbox.Error = null;
             }
@@ -3271,6 +3303,31 @@ public static class DependencyInjection
         // D-10 / B-043 / B-069 / ADR-020: email off by default; runtime tenant overrides via EmailSettingsResolver.
         services.AddScoped<EmailSettingsResolver>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+        // B-095 / ADR-022: Web Push off by default; recording sender for tests.
+        services.AddSingleton<RecordingPushSender>();
+        services.AddHttpClient(PushOptions.HttpClientName, client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(10);
+            client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "VibeChat-WebPush/1.0");
+        });
+        services.AddScoped<WebPushSender>();
+        services.AddScoped<IPushSender>(sp =>
+        {
+            var cfg = sp.GetRequiredService<IConfiguration>();
+            if (cfg.GetValue("Push:UseRecordingSender", false))
+            {
+                return sp.GetRequiredService<RecordingPushSender>();
+            }
+
+            if (!PushOptions.IsEffectivelyEnabled(cfg))
+            {
+                return new NullPushSender();
+            }
+
+            return sp.GetRequiredService<WebPushSender>();
+        });
+        services.AddScoped<PushDispatcher>();
 
         // B-048: outbound webhooks — tenant URL+HMAC secret; best-effort after MessageCreated outbox.
         services.AddHttpClient(OutboundWebhookDispatcher.HttpClientName, client =>

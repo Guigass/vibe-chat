@@ -83,6 +83,8 @@ ALTER TABLE IF EXISTS notifications.preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.preferences FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.email_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.email_settings FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS notifications.push_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS notifications.push_subscriptions FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS integrations.webhook_endpoints ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS integrations.webhook_endpoints FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS files.settings ENABLE ROW LEVEL SECURITY;
@@ -287,6 +289,11 @@ CREATE POLICY tenant_isolation_notification_preferences ON notifications.prefere
 
 DROP POLICY IF EXISTS tenant_isolation_email_settings ON notifications.email_settings;
 CREATE POLICY tenant_isolation_email_settings ON notifications.email_settings
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_push_subscriptions ON notifications.push_subscriptions;
+CREATE POLICY tenant_isolation_push_subscriptions ON notifications.push_subscriptions
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

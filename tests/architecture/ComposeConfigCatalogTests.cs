@@ -34,6 +34,14 @@ public sealed class ComposeConfigCatalogTests
         "Ai__OpenRouter__BaseUrl:"
     ];
 
+    private static readonly string[] PushBindings =
+    [
+        "Push__Enabled:",
+        "Push__Vapid__PublicKey:",
+        "Push__Vapid__PrivateKey:",
+        "Push__Vapid__Subject:"
+    ];
+
     [Fact]
     public void Apps_profile_api_injects_email_and_ai_bindings_from_env()
     {
@@ -110,6 +118,20 @@ public sealed class ComposeConfigCatalogTests
         {
             workerBlock.Should().Contain(binding,
                 because: $"B-105 requires {binding.TrimEnd(':')} on worker container");
+        }
+    }
+
+    [Fact]
+    public void Apps_profile_api_and_worker_inject_push_vapid_bindings()
+    {
+        var compose = ReadRepoFile("compose.yaml");
+        var apiBlock = ExtractServiceEnvironmentBlock(compose, "api");
+        var workerBlock = ExtractServiceEnvironmentBlock(compose, "worker");
+
+        foreach (var binding in PushBindings)
+        {
+            apiBlock.Should().Contain(binding, because: $"B-095 requires {binding.TrimEnd(':')} on api");
+            workerBlock.Should().Contain(binding, because: $"B-095 requires {binding.TrimEnd(':')} on worker");
         }
     }
 

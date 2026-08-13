@@ -9,7 +9,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
 import { ApiService } from '../core/api/api.service';
 import { ChannelStore } from '../core/services/channel.store';
@@ -18,6 +18,7 @@ import { MessageStore } from '../core/services/message.store';
 import { ThreadStore } from '../core/services/thread.store';
 import { PinStore } from '../core/services/pin.store';
 import { SavedStore } from '../core/services/saved.store';
+import { PushNotificationService } from '../core/services/push-notification.service';
 import { ChannelList } from '../features/chat/channel-list/channel-list';
 import { Composer } from '../features/chat/composer/composer';
 import { Timeline } from '../features/chat/timeline/timeline';
@@ -34,6 +35,9 @@ import {
   Input,
   ThemeToggle,
   UpdateBanner,
+  PushOptInBanner,
+  PushDevicesControl,
+  InAppNoticeBanner,
   VcTooltip,
   provideVcTooltipDefaults,
   provideVcTooltipGroup,
@@ -59,6 +63,9 @@ import { defaultSidebarOpen, readNavCompact, SHELL_NARROW_MEDIA_QUERY, writeNavC
     SuggestReplyButton,
     ConnectionBanner,
     UpdateBanner,
+    PushOptInBanner,
+    PushDevicesControl,
+    InAppNoticeBanner,
     ThemeToggle,
     DensityControl,
     IconButton,
@@ -77,7 +84,9 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly pins = inject(PinStore);
   readonly saved = inject(SavedStore);
   readonly hub = inject(ChatHubService);
+  readonly push = inject(PushNotificationService);
   private readonly api = inject(ApiService);
+  private readonly route = inject(ActivatedRoute);
   private readonly attachments = inject(AttachmentQueueService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -163,6 +172,7 @@ export class ShellPage implements OnInit, OnDestroy {
       this.channels.setPresence(event.userId, event.status);
     });
     await Promise.all([this.channels.load(), this.hub.connect()]);
+    await this.applyPushDeepLink();
     const active = this.channels.activeChannel();
     if (active) {
       await this.messages.loadChannel(active.id);
@@ -199,6 +209,10 @@ export class ShellPage implements OnInit, OnDestroy {
       }
       if (this.pins.panelOpen()) {
         this.pins.closePanel();
+        return;
+      }
+      if (this.push.devicesOpen()) {
+        this.push.devicesOpen.set(false);
         return;
       }
       if (this.narrowViewport() && this.sidebarOpen()) {
@@ -328,6 +342,13 @@ export class ShellPage implements OnInit, OnDestroy {
 
   readonly searchJumpNotice = signal<string | null>(null);
 
+  async openPushNotice(): Promise<void> {
+    const notice = this.push.notice();
+    if (!notice) return;
+    await this.jumpToPushTarget(notice.channelId, notice.messageId, notice.seq);
+    this.push.dismissNotice();
+  }
+
   async openSearchHit(hit: SearchMessageHit): Promise<void> {
     await this.channels.selectChannel(hit.channelId);
     const result = await this.messages.jumpToSequence(hit.channelId, hit.sequence, hit.messageId);
@@ -340,6 +361,25 @@ export class ShellPage implements OnInit, OnDestroy {
     }
     this.searchOpen.set(false);
     this.searchFocused.set(false);
+  }
+
+  private async applyPushDeepLink(): Promise<void> {
+    const params = this.route.snapshot.queryParamMap;
+    const channelId = params.get('channel');
+    const messageId = params.get('message');
+    const seqRaw = params.get('seq');
+    if (!channelId) return;
+    const seq = seqRaw ? Number(seqRaw) : NaN;
+    await this.jumpToPushTarget(channelId, messageId, Number.isFinite(seq) ? seq : undefined);
+  }
+
+  private async jumpToPushTarget(channelId: string, messageId: string | null, seq?: number): Promise<void> {
+    this.channels.selectChannel(channelId);
+    if (messageId && seq && seq > 0) {
+      await this.messages.jumpToSequence(channelId, seq, messageId);
+    } else if (messageId) {
+      this.messages.jumpToMessage(messageId);
+    }
   }
 
   private async runSearch(workspaceId: string, term: string, seq: number): Promise<void> {

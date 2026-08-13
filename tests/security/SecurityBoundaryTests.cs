@@ -972,7 +972,68 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
         post.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
+    [Fact]
+    public async Task Push_subscription_delete_of_another_user_returns_not_found()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var bob = factory.CreateClient();
+        bob.DefaultRequestHeaders.Add("X-Dev-User", "bob");
+
+        var create = await bob.PostAsJsonAsync(
+            "/api/v1/notifications/push/subscriptions",
+            new
+            {
+                endpoint = $"https://push.example.test/bob-{Guid.NewGuid():N}",
+                p256dh = "dGVzdC1wMjU2ZGgtYm9iLTIy",
+                auth = "dGVzdC1hdXRoLWtleS1ib2I="
+            });
+        create.StatusCode.Should().Be(HttpStatusCode.OK);
+        var row = await create.Content.ReadFromJsonAsync<PushSubscriptionDto>();
+        row.Should().NotBeNull();
+
+        var stolen = await alice.DeleteAsync($"/api/v1/notifications/push/subscriptions/{row!.Id}");
+        stolen.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        var list = await bob.GetFromJsonAsync<PushSubscriptionDto[]>(
+            "/api/v1/notifications/push/subscriptions");
+        list.Should().Contain(x => x.Id == row.Id);
+    }
+
+    [Fact]
+    public async Task Push_subscription_is_not_visible_cross_tenant()
+    {
+        var (foreignTenantId, _) = await SeedCrossTenantChannelAsync();
+        var foreignSubscriptionId = Guid.NewGuid();
+        await using (var db = factory.CreateMigratorDbContext())
+        {
+            db.PushSubscriptions.Add(new VibeChat.Notifications.PushSubscription
+            {
+                Id = foreignSubscriptionId,
+                TenantId = new TenantId(foreignTenantId),
+                UserId = SeedData.DemoUserId,
+                Endpoint = $"https://push.example.test/foreign-{foreignSubscriptionId:N}",
+                P256dh = "dGVzdC1wMjU2ZGgtZm9yZWlnbg==",
+                Auth = "dGVzdC1hdXRoLWZvcmVpZ24=",
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastSeenAt = DateTimeOffset.UtcNow
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var list = await alice.GetFromJsonAsync<PushSubscriptionDto[]>(
+            "/api/v1/notifications/push/subscriptions");
+        list.Should().NotContain(x => x.Id == foreignSubscriptionId);
+
+        var deleted = await alice.DeleteAsync($"/api/v1/notifications/push/subscriptions/{foreignSubscriptionId}");
+        deleted.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
     private sealed record ChannelDto(Guid Id, Guid WorkspaceId, string Name, string Type);
+    private sealed record PushSubscriptionDto(Guid Id, string Endpoint, string? UserAgent, DateTimeOffset CreatedAt, DateTimeOffset LastSeenAt);
     private sealed record ChannelMessagesResponseDto(
         MessageDto[] Messages,
         bool HasMoreBefore,

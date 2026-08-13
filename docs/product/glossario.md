@@ -48,6 +48,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Presence** | Estado online/away/offline do usuário, tipicamente no Redis com TTL. |
 | **Typing** | Indicador de “digitando…” com TTL curto no Redis. |
 | **Hub / Connection** | Conexão SignalR autenticada; grupos por tenant/workspace/channel. |
+| **Web Push** | Notificação do navegador via protocolo Web Push + VAPID da instância (D-13 / B-095). Opt-in por dispositivo; payload mínimo; off por default (`Push:Enabled`). Distinto de e-mail (B-043) e de preferências/DND (B-097). |
 | **Backplane** | Redis como backplane SignalR para fan-out entre instâncias da API. |
 
 ## Identidade e acesso

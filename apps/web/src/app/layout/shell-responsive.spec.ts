@@ -7,6 +7,7 @@ import { ApiService } from '../core/api/api.service';
 import { AuthService } from '../core/auth/auth.service';
 import { ChannelStore } from '../core/services/channel.store';
 import { ChatHubService } from '../core/services/chat-hub.service';
+import { PushNotificationService } from '../core/services/push-notification.service';
 import { MessageStore } from '../core/services/message.store';
 import { PinStore } from '../core/services/pin.store';
 import { SavedStore } from '../core/services/saved.store';
@@ -142,6 +143,23 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
             status: () => 'connected',
             connect: vi.fn().mockResolvedValue(undefined),
             onPresenceChanged: () => () => undefined,
+            onMessage: () => () => undefined,
+          },
+        },
+        {
+          provide: PushNotificationService,
+          useValue: {
+            bannerOpen: () => false,
+            permissionDenied: () => false,
+            devicesOpen: () => false,
+            devices: () => [],
+            notice: () => null,
+            busy: () => false,
+            dismissBanner: vi.fn(),
+            enablePush: vi.fn(),
+            toggleDevices: vi.fn(),
+            removeDevice: vi.fn(),
+            dismissNotice: vi.fn(),
           },
         },
         {

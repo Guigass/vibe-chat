@@ -429,3 +429,16 @@ export interface AiSuggestReplyResult {
   suggestion: string;
   generatedAt: string;
 }
+
+export interface PushPublicKey {
+  enabled: boolean;
+  publicKey?: string | null;
+}
+
+export interface PushDevice {
+  id: string;
+  endpoint: string;
+  userAgent?: string | null;
+  createdAt: string;
+  lastSeenAt: string;
+}

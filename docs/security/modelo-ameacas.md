@@ -58,6 +58,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 14. **Support bundle/repair** — exfiltração de secret/PII e ação administrativa
     destrutiva
 15. **Link preview / egress HTTP** — SSRF via URL em mensagem (B-091 / ADR-021)
+16. **Web Push** — prévia em tela bloqueada; chave VAPID vazada; push após sair do canal (B-095 / ADR-022)
 
 ## Controles mínimos obrigatórios (fase 1)
 
@@ -133,6 +134,19 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | AuthZ remoção | Autor ou `workspace.admin`; alheio → 403 |
 | Hot path | Fetch só no worker via outbox `MessageCreated` |
 
+### B-095 / ADR-022 — Web Push / VAPID
+
+| Item | Controle |
+|------|----------|
+| Kill switch | `Push:Enabled` off default (SoT env); sem chaves VAPID o sender é no-op |
+| Secrets | Privada só no env; API devolve só a pública; nunca logar `auth`/`p256dh`/privada |
+| Destinatários | Membership **no envio**; DM ou menção direta; autor excluído |
+| Cursor | `read_cursors.lastReadSeq >= sequence` suprime (já lido noutro dispositivo) |
+| Payload | Remetente + canal + prévia truncada; clique abre `/app?channel=&message=&seq=` |
+| Revogação | 410/404 remove a assinatura; DELETE só do actor; sair do canal não recebe |
+| Hot path | Worker via outbox `MessageCreated`; falha não reprocessa outbox |
+| Opt-in | Permissão só após ação do usuário (primeiro envio); “agora não” persiste |
+
 ## Ameaças priorizadas para a fatia vertical
 
 1. Leitura/escrita cross-tenant
@@ -144,6 +158,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 7. Abuso de export ZIP fora do tenant / por não-admin (B-046)
 8. Purge hard-delete sem authZ / kill switch / isolamento de tenant (B-047)
 9. SSRF via link preview (B-091 / ADR-021)
+10. Prévia de push em tela bloqueada / VAPID vazada / push pós-saída (B-095 / ADR-022)
 
 ## O que está fora (por ora)
 

@@ -4,6 +4,7 @@ import { ChatHubService } from './chat-hub.service';
 import { AuthService } from '../auth/auth.service';
 import { ChannelStore } from './channel.store';
 import { ThreadStore } from './thread.store';
+import { PushNotificationService } from './push-notification.service';
 import { ChatMessage } from '../../shared/models/chat.models';
 import {
   bumpChannelParentForThreadReply,
@@ -46,6 +47,7 @@ export class MessageStore {
   private readonly auth = inject(AuthService);
   private readonly channels = inject(ChannelStore);
   private readonly threads = inject(ThreadStore);
+  private readonly push = inject(PushNotificationService, { optional: true });
 
   private readonly messagesSignal = signal<ChatMessage[]>([]);
   private readonly loadingSignal = signal(false);
@@ -437,6 +439,7 @@ export class MessageStore {
         mine: true,
         clientMessageId,
       });
+      this.push?.recordSuccessfulSend();
       return true;
     } catch {
       this.patchByClientId(clientMessageId, { status: 'failed' });

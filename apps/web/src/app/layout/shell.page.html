@@ -97,6 +97,8 @@
   <div class="shell__main">
     <vc-connection-banner [status]="hub.status()" />
     <vc-update-banner />
+    <vc-push-opt-in-banner />
+    <vc-in-app-notice (open)="openPushNotice()" />
 
     <header class="shell__header">
       @if (!sidebarOpen()) {
@@ -160,6 +162,7 @@
         <vc-summarize-button />
         <vc-suggest-reply-button />
         <vc-density-control />
+        <vc-push-devices-control />
         <vc-theme-toggle />
         <vc-icon-button label="Painel de contexto" (click)="toggleContext()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

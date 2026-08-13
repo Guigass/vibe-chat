@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
+using System.Text.Json;
 using FluentAssertions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using VibeChat.Administration;
 using VibeChat.AI;
@@ -630,6 +632,116 @@ public sealed class BackendUnitTests
             tenantId.Value.ToString("D"),
             DateTimeOffset.UtcNow);
         actMissing.Should().Throw<CryptographicException>();
+    }
+
+    [Fact]
+    public void Push_should_notify_dm_and_mentions_but_not_author_or_plain_channel()
+    {
+        var author = Guid.NewGuid();
+        var bob = Guid.NewGuid();
+        var mentioned = new HashSet<Guid> { bob };
+
+        PushDispatchPolicies.ShouldNotify(isDirect: true, mentioned, bob, author).Should().BeTrue();
+        PushDispatchPolicies.ShouldNotify(isDirect: true, mentioned, author, author).Should().BeFalse();
+        PushDispatchPolicies.ShouldNotify(isDirect: false, mentioned, bob, author).Should().BeTrue();
+        PushDispatchPolicies.ShouldNotify(isDirect: false, mentioned, Guid.NewGuid(), author).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Push_cursor_suppresses_when_already_read()
+    {
+        PushDispatchPolicies.IsSuppressedByCursor(10, 10).Should().BeTrue();
+        PushDispatchPolicies.IsSuppressedByCursor(11, 10).Should().BeTrue();
+        PushDispatchPolicies.IsSuppressedByCursor(9, 10).Should().BeFalse();
+        PushDispatchPolicies.IsSuppressedByCursor(null, 10).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Push_enabled_pref_defaults_true_unless_explicitly_false()
+    {
+        PushDispatchPolicies.IsPushEnabled(null).Should().BeTrue();
+        PushDispatchPolicies.IsPushEnabled(true).Should().BeTrue();
+        PushDispatchPolicies.IsPushEnabled(false).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Push_preview_truncates_and_payload_is_ngsw_minimal()
+    {
+        var longBody = new string('x', 120);
+        var preview = PushDispatchPolicies.TruncatePreview(longBody);
+        preview.Length.Should().BeLessThanOrEqualTo(PushDispatchPolicies.PreviewMaxChars + 1);
+        preview.Should().EndWith("…");
+
+        var channelId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var messageId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var json = PushDispatchPolicies.BuildNgswPayload(
+            "Alice",
+            PushDispatchPolicies.ChannelLabel(false, "geral"),
+            preview,
+            channelId,
+            messageId,
+            42);
+        json.Should().NotContain("p256dh");
+        json.Should().NotContain("auth");
+
+        using var doc = JsonDocument.Parse(json);
+        var notification = doc.RootElement.GetProperty("notification");
+        notification.GetProperty("title").GetString().Should().Be("Alice · #geral");
+        notification.GetProperty("body").GetString().Should().Be(preview);
+        var data = notification.GetProperty("data");
+        data.GetProperty("channelId").GetGuid().Should().Be(channelId);
+        data.GetProperty("messageId").GetGuid().Should().Be(messageId);
+        data.GetProperty("seq").GetInt64().Should().Be(42);
+        data.GetProperty("onActionClick").GetProperty("default").GetProperty("url").GetString()
+            .Should().Be($"/app?channel={channelId:D}&message={messageId:D}&seq=42");
+    }
+
+    [Fact]
+    public void Push_options_kill_switch_and_placeholder_keys_are_off()
+    {
+        var off = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Push:Enabled"] = "false",
+            ["Push:Vapid:PublicKey"] = "Bnotplaceholder",
+            ["Push:Vapid:PrivateKey"] = "notplaceholder"
+        }).Build();
+        PushOptions.IsEffectivelyEnabled(off).Should().BeFalse();
+
+        var placeholders = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Push:Enabled"] = "true",
+            ["Push:Vapid:PublicKey"] = "CHANGE_ME",
+            ["Push:Vapid:PrivateKey"] = "CHANGE_ME"
+        }).Build();
+        PushOptions.HasVapidKeys(placeholders).Should().BeFalse();
+        PushOptions.IsEffectivelyEnabled(placeholders).Should().BeFalse();
+
+        var on = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Push:Enabled"] = "true",
+            ["Push:Vapid:PublicKey"] = "Breal-public-key",
+            ["Push:Vapid:PrivateKey"] = "real-private-key"
+        }).Build();
+        PushOptions.IsEffectivelyEnabled(on).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Null_push_sender_is_disabled_and_vapid_generator_creates_url_safe_keys()
+    {
+        var sender = new NullPushSender();
+        sender.IsEnabled.Should().BeFalse();
+        var result = await sender.SendAsync(
+            new PushDeliveryRequest("https://example.test/push", "p256", "auth", "{}"),
+            CancellationToken.None);
+        result.Status.Should().Be(PushSendStatus.Delivered);
+
+        var pair = VapidKeyGenerator.Create();
+        pair.PublicKey.Should().NotBeNullOrWhiteSpace();
+        pair.PrivateKey.Should().NotBeNullOrWhiteSpace();
+        pair.PublicKey.Should().NotBe(pair.PrivateKey);
+        pair.PublicKey.Should().NotContain("+");
+        pair.PublicKey.Should().NotContain("/");
+        pair.PublicKey.Should().NotContain("=");
     }
 
     private static RuntimeSecretProtector CreateTestProtector(int activeVersion = 1)

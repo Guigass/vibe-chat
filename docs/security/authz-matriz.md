@@ -69,6 +69,10 @@ para o gate de drift CI.
 | PUT | `/channels/{channelId:guid}/read-cursor` | permission | `message.read` | ✓ | ✓ | ✓ | |
 | GET | `/search/messages` | permission | `search.messages` + `message.read` | ✓ | ✓ | ✓ | |
 | GET | `/channels/{channelId:guid}/unread-count` | membership | — | ✓ | ✓ | ✓ | Contagem do caller |
+| GET | `/notifications/push/public-key` | permission | `message.read` | ✓ | ✓ | ✓ | `{ enabled, publicKey? }`; off sem erro |
+| GET | `/notifications/push/subscriptions` | permission | `message.read` | ✓ | ✓ | ✓ | Só o actor |
+| POST | `/notifications/push/subscriptions` | permission | `message.read` | ✓ | ✓ | ✓ | Upsert do actor |
+| DELETE | `/notifications/push/subscriptions/{id:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | 404 se não for do actor |
 | GET | `/admin/dashboard` | permission | `admin.dashboard` | ✗ | ✓ | ✓ | Gap B-175 fechado |
 | GET | `/admin/audit-events` | permission | `admin.dashboard` | ✗ | ✓ | ✓ | |
 | GET | `/admin/conversations` | permission | `admin.dashboard` | ✗ | ✓ | ✓ | |

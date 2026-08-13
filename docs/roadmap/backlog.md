@@ -136,7 +136,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 
 | ID | Item | Notas |
 |----|------|-------|
-| B-095 | Web Push | Planned (W10-1) — VAPID próprio, opt-in, payload mínimo (D-13) |
+| B-095 | Web Push | **Done** (W10-1) — VAPID próprio, opt-in, payload mínimo (D-13) |
 | B-096 | Enquetes | Planned (W10-2) — enquete é mensagem; anonimato é requisito de API |
 | B-097 | Preferências de notificação e DND | Planned (W10-3) — fuso IANA; matriz em tabela-verdade |
 | B-098 | Busca com filtros | Planned (W10-4) — filtro só restringe; membership no servidor |

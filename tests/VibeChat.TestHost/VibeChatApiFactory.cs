@@ -202,6 +202,12 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting(
             "RateLimit:HubPerMinute",
             RateLimitPolicies.MaxPerMinute.ToString());
+        var vapid = VapidKeyGenerator.Create();
+        builder.UseSetting("Push:Enabled", "true");
+        builder.UseSetting("Push:UseRecordingSender", "true");
+        builder.UseSetting("Push:Vapid:PublicKey", vapid.PublicKey);
+        builder.UseSetting("Push:Vapid:PrivateKey", vapid.PrivateKey);
+        builder.UseSetting("Push:Vapid:Subject", "mailto:test@localhost");
     }
 
     // Testcontainers give every run a clean stack; a reused local stack does not, so

@@ -76,6 +76,7 @@ public sealed class ArchitectureRulesTests
             "ai.settings",
             "notifications.preferences",
             "notifications.email_settings",
+            "notifications.push_subscriptions",
             "integrations.webhook_endpoints",
             "files.settings",
             "building_blocks.rate_limit_settings"

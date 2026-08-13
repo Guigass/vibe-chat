@@ -21,6 +21,7 @@ describe('MessageStore read cursor (BUG-002)', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.spyOn(document, 'hasFocus').mockReturnValue(true);
     upsertReadCursor = vi.fn().mockResolvedValue(undefined);
     syncChannelUnread = vi.fn().mockResolvedValue(undefined);
     getMessages = vi.fn().mockResolvedValue({
@@ -120,6 +121,7 @@ describe('MessageStore read cursor (BUG-002)', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it('does not persist read cursor on loadChannel until the user reads', async () => {

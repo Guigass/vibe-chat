@@ -1,3 +1,4 @@
+using System.Text.Json;
 using VibeChat.SharedKernel;
 
 namespace VibeChat.Notifications;
@@ -51,6 +52,121 @@ public sealed class NullEmailSender : IEmailSender
     public bool IsEnabled => false;
 
     public Task SendAsync(EmailMessage message, CancellationToken cancellationToken) => Task.CompletedTask;
+}
+
+public sealed class PushSubscription
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public UserId UserId { get; set; }
+    public string Endpoint { get; set; } = string.Empty;
+    public string P256dh { get; set; } = string.Empty;
+    public string Auth { get; set; } = string.Empty;
+    public string? UserAgent { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset LastSeenAt { get; set; }
+    public DateTimeOffset? FailedAt { get; set; }
+}
+
+public enum PushSendStatus
+{
+    Delivered = 0,
+    Gone = 1,
+    Failed = 2
+}
+
+public sealed record PushSendResult(PushSendStatus Status);
+
+public sealed record PushDeliveryRequest(string Endpoint, string P256dh, string Auth, string PayloadJson);
+
+public interface IPushSender
+{
+    string Name { get; }
+    bool IsEnabled { get; }
+    Task<PushSendResult> SendAsync(PushDeliveryRequest request, CancellationToken cancellationToken);
+}
+
+/// <summary>Default when Push:Enabled=false (D-13 / B-095).</summary>
+public sealed class NullPushSender : IPushSender
+{
+    public string Name => "Null";
+    public bool IsEnabled => false;
+
+    public Task<PushSendResult> SendAsync(PushDeliveryRequest request, CancellationToken cancellationToken) =>
+        Task.FromResult(new PushSendResult(PushSendStatus.Delivered));
+}
+
+public static class PushDispatchPolicies
+{
+    public const int PreviewMaxChars = 80;
+    public const int MaxSubscriptionsPerMessage = 50;
+    public const int SendConcurrency = 4;
+
+    public static bool ShouldNotify(bool isDirect, IReadOnlySet<Guid> mentionedUserIds, Guid userId, Guid authorId)
+    {
+        if (userId == authorId)
+        {
+            return false;
+        }
+
+        return isDirect || mentionedUserIds.Contains(userId);
+    }
+
+    public static bool IsSuppressedByCursor(long? lastReadSeq, long messageSeq) =>
+        lastReadSeq is long read && read >= messageSeq;
+
+    public static bool IsPushEnabled(bool? stored) => stored is not false;
+
+    public static string TruncatePreview(string body)
+    {
+        var text = (body ?? string.Empty).Trim();
+        if (text.Length <= PreviewMaxChars)
+        {
+            return text;
+        }
+
+        return text[..PreviewMaxChars].TrimEnd() + "…";
+    }
+
+    public static string ChannelLabel(bool isDirect, string channelName) =>
+        isDirect ? channelName : "#" + channelName.TrimStart('#');
+
+    public static string BuildNgswPayload(
+        string authorName,
+        string channelLabel,
+        string preview,
+        Guid channelId,
+        Guid messageId,
+        long sequence)
+    {
+        var title = string.IsNullOrWhiteSpace(authorName)
+            ? channelLabel
+            : $"{authorName} · {channelLabel}";
+        var url = $"/app?channel={channelId:D}&message={messageId:D}&seq={sequence}";
+        return JsonSerializer.Serialize(new
+        {
+            notification = new
+            {
+                title,
+                body = preview,
+                icon = "/icons/icon-192x192.png",
+                data = new
+                {
+                    channelId,
+                    messageId,
+                    seq = sequence,
+                    onActionClick = new
+                    {
+                        @default = new
+                        {
+                            operation = "navigateLastFocusedOrOpen",
+                            url
+                        }
+                    }
+                }
+            }
+        });
+    }
 }
 
 public sealed record MemberRoleChangedEmailEvent(

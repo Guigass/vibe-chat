@@ -316,6 +316,10 @@ services:
       Email__Smtp__UseStartTls: ${EMAIL__Smtp__UseStartTls:-false}
       LinkPreview__Enabled: ${LinkPreview__Enabled:-true}
       LinkPreview__TimeoutMs: ${LinkPreview__TimeoutMs:-8000}
+      Push__Enabled: ${Push__Enabled:-false}
+      Push__Vapid__PublicKey: ${Push__Vapid__PublicKey:-}
+      Push__Vapid__PrivateKey: ${Push__Vapid__PrivateKey:-}
+      Push__Vapid__Subject: ${Push__Vapid__Subject:-mailto:ops@localhost}
       RuntimeSettings__DatabaseOverridesEnabled: ${RuntimeSettings__DatabaseOverridesEnabled:-false}
       RuntimeSettings__Encryption__ActiveKeyVersion: ${RuntimeSettings__Encryption__ActiveKeyVersion:-1}
       RuntimeSettings__Encryption__Keys__1: ${RuntimeSettings__Encryption__Keys__1:-}
@@ -396,6 +400,10 @@ services:
       MessageRetention__IntervalMinutes: ${MessageRetention__IntervalMinutes:-60}
       LinkPreview__Enabled: ${LinkPreview__Enabled:-true}
       LinkPreview__TimeoutMs: ${LinkPreview__TimeoutMs:-8000}
+      Push__Enabled: ${Push__Enabled:-false}
+      Push__Vapid__PublicKey: ${Push__Vapid__PublicKey:-}
+      Push__Vapid__PrivateKey: ${Push__Vapid__PrivateKey:-}
+      Push__Vapid__Subject: ${Push__Vapid__Subject:-mailto:ops@localhost}
       RuntimeSettings__DatabaseOverridesEnabled: ${RuntimeSettings__DatabaseOverridesEnabled:-false}
       RuntimeSettings__Encryption__ActiveKeyVersion: ${RuntimeSettings__Encryption__ActiveKeyVersion:-1}
       RuntimeSettings__Encryption__Keys__1: ${RuntimeSettings__Encryption__Keys__1:-}

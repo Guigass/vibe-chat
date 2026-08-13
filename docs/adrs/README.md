@@ -27,6 +27,7 @@ original.
 | [019](ADR-019-qdrant-para-vetores-de-conhecimento.md) | Qdrant para vetores de conhecimento e bots | Accepted; implementação planejada em B-121/B-157 |
 | [020](ADR-020-runtime-settings-credenciais-criptografadas.md) | Settings runtime e credenciais criptografadas | Accepted |
 | [021](ADR-021-link-preview-ssrf.md) | Link preview com guarda SSRF | Accepted |
+| [022](ADR-022-web-push-vapid.md) | Web Push com VAPID da instância | Accepted |
 
 ## Quando criar um ADR
 
