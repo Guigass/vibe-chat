@@ -10,8 +10,14 @@ globs:
 
 - Pirâmide: unit → architecture → integration (Testcontainers) → security → e2e.
 - ADR-014 define a estratégia; critérios em `docs/product/criterios-aceite-fatia-vertical.md`.
-- Comandos: `task test`, `task test:integration`, `task test:architecture`, `task test:security`, `task test:e2e`, `task verify`.
+- Comandos: `task test`, `task test:integration`, `task test:architecture`,
+  `task test:security`, `task test:e2e`, `task test:e2e:ci`, `task verify`.
+- Agentes: **não** rodar `npm test` / `npx vitest` / `ng test` / `dotnet test`
+  no host — usar `task …` ou container (ver regra `docker-runtime`). Web Vitest:
+  `docker run --rm -v "$PWD/apps/web:/app" -w /app node:22.22.3 sh -lc
+  "npm ci && npm test -- --watch=false …"` (nunca reutilizar `node_modules` do Windows).
 - Correções de bug devem incluir regressão automatizada.
-- E2E Playwright: duas sessões (alice/bob); Demo UI ou DevAuth (`X-Dev-User`) em Development.
+- E2E Playwright: duas sessões (alice/bob); Demo UI ou DevAuth (`X-Dev-User`) em Development;
+  preferir `task ux:stack` / `task test:e2e:ci` a servir Angular no host.
 - Não skippar testes flaky sem issue rastreável.
-- Evidência: logs de CI, IDs de trace, artefatos Playwright.
+- Evidência: logs de CI, IDs de trace, artefatos Playwright, saída de `task`.

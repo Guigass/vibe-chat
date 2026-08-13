@@ -138,10 +138,13 @@ não óbvios de execução. Comandos padrão estão no `README.md` e `Taskfile.y
   ~40s para ficar healthy.
 - **`task dev` NÃO é o caminho neste ambiente** (e o interpretador do go-task /
   gosh não suporta `trap`/`kill 0` da recipe). Use Compose profile `apps`.
-- **Node/Angular no host** só para build/testes locais/CI (`npm ci`, `ng build`,
-  E2E). `infra/scripts/ci-e2e.sh` resolve Node incompatível via
-  `ensure_web_node` (`WEB_NODE_MIN=22.22.3`); prefira `task ux:stack` /
-  `task test:e2e:ci` a improvisar serve no host.
+- **Sem toolchain no host do desenvolvedor** — agentes no PC não usam nvm/fnm nem
+  `npm`/`ng`/`dotnet` locais para build/teste/serve. Preferir `task …` e
+  containers (ver `.cursor/rules/docker-runtime.mdc`). Em Cloud/CI, `npm ci` /
+  `ng build` / E2E no host só quando o update script ou o job já provisionou Node
+  compatível; `infra/scripts/ci-e2e.sh` resolve via `ensure_web_node`
+  (`WEB_NODE_MIN=22.22.3`). Prefira `task ux:stack` / `task test:e2e:ci` a
+  improvisar serve no host.
 - **Seed automático**: com `Seed:Enabled=true` (Development, já em
   `appsettings.Development.json`) a API aplica migrations e cria o tenant demo +
   `#geral` + alice/bob no startup. `task seed` só é necessário para re-seedar.

@@ -1,20 +1,40 @@
 ---
-description: Runtime obrigatório via Docker Compose — não rodar stack no host
+description: Runtime e toolchains via Docker Compose / task — sem Node/nvm no host
 alwaysApply: true
 ---
 
 # Docker Runtime — VibeChat
 
 Este projeto **sempre** roda em Docker. Compose na raiz é a fonte da verdade.
+Agentes **não** usam toolchain do host (nvm, fnm, Node/npm/ng/dotnet locais).
+
+## Operação
 
 - Subir e operar via `docker compose` / tasks (`task setup`, `task apps`,
   `task stop`, profiles `apps` / `tools` / `observability` / `proxy`).
 - Preferir profile `apps` (api + web + worker) para stack completa; data plane
   (`postgres`, `redis`, `keycloak`, `minio`) sempre em containers.
-- Não orientar `dotnet run`, `npm start` / `ng serve` ou processos soltos no
-  host como caminho de execução — use containers.
 - `compose.override.yaml` é opcional de DX; o caminho oficial usa `compose.yaml`.
 - Healthchecks e `.env` / `.env.example` do Compose; sem secrets reais.
 - Se Docker estiver indisponível, instalar/iniciar o daemon (ex.:
   `infra/scripts/agent-setup.sh` em Cloud) e seguir em Compose — não improvisar
   runtime no host.
+
+## O que NÃO fazer no host (PC do desenvolvedor ou agente local)
+
+- Não instalar/alternar Node com `nvm` / `fnm` / `n` / instalador do Windows.
+- Não rodar `npm` / `npx` / `ng` / `vitest` / `dotnet` / `dotnet run` /
+  `npm start` / `ng serve` no host como caminho de build, teste ou serve.
+- Não montar `node_modules` do Windows num container Linux e esperar nativos
+  (`lightningcss`, etc.) funcionarem — `npm ci` dentro da imagem quando precisar.
+
+## Como verificar / buildar
+
+- Preferir recipes do `Taskfile.yml`: `task apps`, `task verify`, `task test`,
+  `task test:e2e:ci`, `task ux:stack`, `task lint`, `task build`, etc.
+- Se a recipe ainda executa npm/dotnet no host, preferir o equivalente em
+  container (imagem oficial do serviço ou `node:22.22.3` / SDK .NET) em vez de
+  “consertar” o Node do PC.
+- Web unit tests Angular: container Node com workdir em `apps/web` e
+  `npm ci && npm test -- --watch=false` (deps instaladas **no** container).
+- Evidência = saída de `task …` / Compose, não de shell improvisado no host.

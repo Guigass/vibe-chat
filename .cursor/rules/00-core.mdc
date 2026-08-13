@@ -22,4 +22,5 @@ alwaysApply: true
 - Usar a classe de risco R0–R3 da spec; R3 começa em
   `docs/architecture/pacotes-decisao-r3.md` e exige ADR, threat model e rollback.
 - Respeitar `docs/roadmap/decisoes-pendentes.md` e `AGENTS.md`.
-- Runtime sempre em Docker Compose — ver regra `docker-runtime`.
+- Runtime sempre em Docker Compose / `task` — ver regra `docker-runtime`
+  (sem nvm/Node/npm/dotnet soltos no host).

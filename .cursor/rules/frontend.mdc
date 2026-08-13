@@ -18,3 +18,6 @@ globs:
 - Evitar visual Slack/Discord/WhatsApp; sem cards desnecessários.
 - Tratar reconnect SignalR, empty/error states e a11y (foco, contraste).
 - E2E em `tests/e2e` (Playwright); documentar caminhos Demo e DevAuth.
+- Verificação: `task apps` / `task ux:stack` / testes via Docker/`task` — **nunca**
+  `nvm use`, `npm start`, `ng serve` ou `ng test` no Node do host (regra
+  `docker-runtime`).
