@@ -162,24 +162,122 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
                 message().createdAt | date: 'shortTime'
               }}</time>
               @if (message().editedAt && !message().deletedAt) {
-                <span class="vc-msg__status">editada</span>
+                <span class="vc-msg__status" title="Editada" aria-label="Editada">
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                  </svg>
+                </span>
               }
               @if (message().isPinned && !message().deletedAt) {
-                <span class="vc-msg__status vc-msg__status--pin" aria-label="Mensagem fixada"
-                  >fixada</span
+                <span
+                  class="vc-msg__status vc-msg__status--pin"
+                  title="Mensagem fixada"
+                  aria-label="Mensagem fixada"
                 >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 17v5" />
+                    <path
+                      d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"
+                    />
+                  </svg>
+                </span>
               }
               @if (message().isSaved && !message().deletedAt) {
-                <span class="vc-msg__status vc-msg__status--saved" aria-label="Mensagem salva"
-                  >salva</span
+                <span
+                  class="vc-msg__status vc-msg__status--saved"
+                  title="Mensagem salva"
+                  aria-label="Mensagem salva"
                 >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  </svg>
+                </span>
               }
               @if (message().status === 'sending') {
-                <span class="vc-msg__status">enviando…</span>
+                <span class="vc-msg__status" title="Enviando…" aria-label="Enviando…">
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                </span>
               } @else if (message().status === 'sent') {
-                <span class="vc-msg__status">enviada</span>
+                <span class="vc-msg__status" title="Enviada" aria-label="Enviada">
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                </span>
               } @else if (message().status === 'failed') {
-                <span class="vc-msg__status vc-msg__status--fail">falhou</span>
+                <span
+                  class="vc-msg__status vc-msg__status--fail"
+                  title="Falhou"
+                  aria-label="Falhou"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" x2="12" y1="8" y2="12" />
+                    <line x1="12" x2="12.01" y1="16" y2="16" />
+                  </svg>
+                </span>
               }
             </header>
           }
@@ -189,14 +287,32 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
               <p class="vc-msg__deleted">Mensagem removida</p>
             } @else {
               @if (message().forwardedFrom; as origin) {
-                <p class="vc-msg__forwarded">
-                  Encaminhada de
-                  {{ formatForwardOrigin(origin) }}
-                  · {{ origin.authorName }} · {{ origin.createdAt | date: 'shortDate' }}
+                <p
+                  class="vc-msg__forwarded"
+                  title="Encaminhada de {{ formatForwardOrigin(origin) }} · {{ origin.authorName }} · {{
+                    origin.createdAt | date: 'shortDate'
+                  }}"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="15 14 20 9 15 4" />
+                    <path d="M4 20v-7a4 4 0 0 1 4-4h12" />
+                  </svg>
+                  <span>
+                    Encaminhada de
+                    {{ formatForwardOrigin(origin) }}
+                    · {{ origin.authorName }} · {{ origin.createdAt | date: 'shortDate' }}
+                  </span>
                 </p>
-              }
-              @if (message().editedAt && !message().deletedAt && !showMeta()) {
-                <span class="vc-msg__edited-badge">editada</span>
               }
               @if (message().replyTo; as cite) {
                 @if (cite.deleted) {
@@ -296,9 +412,74 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
             }
           </div>
           @if (!showMeta()) {
-            <time class="vc-msg__group-time" [attr.datetime]="message().createdAt">
-              {{ message().createdAt | date: 'shortTime' }}
-            </time>
+            <div class="vc-msg__group-meta">
+              @if (message().editedAt && !message().deletedAt) {
+                <span class="vc-msg__status" title="Editada" aria-label="Editada">
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                  </svg>
+                </span>
+              }
+              @if (message().isPinned && !message().deletedAt) {
+                <span
+                  class="vc-msg__status vc-msg__status--pin"
+                  title="Mensagem fixada"
+                  aria-label="Mensagem fixada"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 17v5" />
+                    <path
+                      d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"
+                    />
+                  </svg>
+                </span>
+              }
+              @if (message().isSaved && !message().deletedAt) {
+                <span
+                  class="vc-msg__status vc-msg__status--saved"
+                  title="Mensagem salva"
+                  aria-label="Mensagem salva"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  </svg>
+                </span>
+              }
+              <time [attr.datetime]="message().createdAt">
+                {{ message().createdAt | date: 'shortTime' }}
+              </time>
+            </div>
           }
         </div>
 
@@ -464,13 +645,16 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
       padding-left: 0.55rem;
       background: color-mix(in srgb, var(--vc-brand) 8%, var(--vc-msg-theirs));
     }
-    .vc-msg__group-time {
+    .vc-msg__group-meta {
       position: absolute;
       top: 50%;
-      left: -3.35rem;
-      width: 3rem;
+      /* Clear the ⋯ toolbar (1.5rem) + gap toward screen center. */
+      left: calc(100% + 1.9rem);
+      right: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.28rem;
       transform: translateY(-50%);
-      text-align: right;
       font-size: 0.68rem;
       color: var(--vc-ink-subtle);
       white-space: nowrap;
@@ -478,15 +662,18 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
       pointer-events: none;
       transition: opacity var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease);
     }
-    .vc-msg:hover .vc-msg__group-time,
-    .vc-msg:focus-within .vc-msg__group-time {
+    .vc-msg:hover .vc-msg__group-meta,
+    .vc-msg:focus-within .vc-msg__group-meta {
       opacity: 1;
     }
-    .vc-msg--mine .vc-msg__group-time {
-      left: calc(-3.35rem - 1.4rem);
+    /* Mine bubbles sit on the right — hover meta opens toward the screen center. */
+    .vc-msg--mine .vc-msg__group-meta {
+      left: auto;
+      right: calc(100% + 1.9rem);
+      flex-direction: row-reverse;
     }
     @media (prefers-reduced-motion: reduce) {
-      .vc-msg__group-time {
+      .vc-msg__group-meta {
         transition: none;
       }
     }
@@ -502,11 +689,17 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
       min-width: 0;
     }
     .vc-msg__forwarded {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
       margin: 0;
       min-width: 0;
       font-size: 0.78rem;
       color: var(--vc-ink-muted);
       overflow-wrap: anywhere;
+    }
+    .vc-msg__forwarded svg {
+      flex-shrink: 0;
     }
     .vc-msg__quote {
       display: grid;
@@ -544,7 +737,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
       display: flex;
       flex-wrap: wrap;
       gap: 0.45rem;
-      align-items: baseline;
+      align-items: center;
     }
     .vc-msg__meta strong {
       font-size: 0.88rem;
@@ -555,15 +748,18 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
       font-size: 0.72rem;
       color: var(--vc-ink-subtle);
     }
+    .vc-msg__status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .vc-msg__status--pin,
+    .vc-msg__status--saved {
+      color: color-mix(in srgb, var(--vc-brand) 72%, var(--vc-ink-subtle));
+    }
     .vc-msg__status--fail {
       color: var(--vc-danger);
-    }
-    .vc-msg__edited-badge {
-      align-self: flex-end;
-      font-size: 0.68rem;
-      color: var(--vc-ink-subtle);
-      font-weight: 500;
-      margin-top: -0.15rem;
     }
     p {
       margin: 0;

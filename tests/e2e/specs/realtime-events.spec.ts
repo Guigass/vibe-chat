@@ -48,7 +48,7 @@ test.describe(`realtime events (${AUTH_MODE})`, () => {
     await expect(alice.page.getByText(edited)).toBeVisible({ timeout: 15_000 });
     await expect(bob.page.getByText(edited)).toBeVisible({ timeout: 30_000 });
     await expect(
-      bob.page.locator('article.vc-msg', { hasText: edited }).getByText(/editada/i),
+      bob.page.locator('article.vc-msg', { hasText: edited }).getByLabel(/^Editada$/i),
     ).toBeVisible({ timeout: 15_000 });
     await expect(alice.page.getByRole('button', { name: /^Enviar$/i })).toBeVisible();
 

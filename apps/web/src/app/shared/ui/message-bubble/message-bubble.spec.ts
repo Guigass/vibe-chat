@@ -313,8 +313,74 @@ describe('MessageBubble (B-163)', () => {
 
   it('does not render a salva status tag for persisted messages', async () => {
     const { fixture } = await setup(baseMessage({ status: 'persisted' }));
-    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).not.toMatch(/\bsalva\b/);
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[aria-label="Mensagem salva"]')).toBeNull();
+    expect(root.textContent ?? '').not.toMatch(/\bsalva\b/);
+  });
+
+  it('renders icon status markers with title and aria-label', async () => {
+    const { fixture } = await setup(
+      baseMessage({
+        editedAt: new Date().toISOString(),
+        isPinned: true,
+        isSaved: true,
+        status: 'persisted',
+      }),
+    );
+    const root = fixture.nativeElement as HTMLElement;
+
+    const edited = root.querySelector('[aria-label="Editada"]') as HTMLElement;
+    const pinned = root.querySelector('[aria-label="Mensagem fixada"]') as HTMLElement;
+    const saved = root.querySelector('[aria-label="Mensagem salva"]') as HTMLElement;
+
+    expect(edited).toBeTruthy();
+    expect(edited.getAttribute('title')).toBe('Editada');
+    expect(edited.querySelector('svg')).toBeTruthy();
+
+    expect(pinned).toBeTruthy();
+    expect(pinned.getAttribute('title')).toBe('Mensagem fixada');
+    expect(pinned.querySelector('svg')).toBeTruthy();
+
+    expect(saved).toBeTruthy();
+    expect(saved.getAttribute('title')).toBe('Mensagem salva');
+    expect(saved.querySelector('svg')).toBeTruthy();
+
+    expect(root.textContent ?? '').not.toMatch(/\beditada\b/);
+    expect(root.textContent ?? '').not.toMatch(/\bfixada\b/);
+    expect(root.textContent ?? '').not.toMatch(/\bsalva\b/);
+  });
+
+  it('renders edited and saved icons in group hover meta when meta is hidden', async () => {
+    const { fixture } = await setup(
+      baseMessage({
+        editedAt: new Date().toISOString(),
+        isSaved: true,
+        isPinned: true,
+        mine: true,
+      }),
+      { showMeta: false, groupRole: 'end' },
+    );
+    const root = fixture.nativeElement as HTMLElement;
+    const cluster = root.querySelector('.vc-msg__group-meta') as HTMLElement;
+    expect(cluster).toBeTruthy();
+    expect(cluster.querySelector('[aria-label="Editada"]')).toBeTruthy();
+    expect(cluster.querySelector('[aria-label="Mensagem salva"]')).toBeTruthy();
+    expect(cluster.querySelector('[aria-label="Mensagem fixada"]')).toBeTruthy();
+    expect(cluster.querySelector('time')).toBeTruthy();
+    expect(root.querySelector('.vc-msg__edited-badge')).toBeNull();
+  });
+
+  it('places grouped hover meta toward the screen center', async () => {
+    const cmp = MessageBubble as unknown as { ɵcmp: { styles: string[] } };
+    const css = cmp.ɵcmp.styles.join('\n');
+    // Theirs (left): meta on the right of the bubble (toward center)
+    expect(css).toMatch(
+      /\.vc-msg__group-meta(?:\[[^\]]+\])?\s*{[^}]*left:\s*calc\(\s*100%\s*\+\s*1\.9rem\s*\)/s,
+    );
+    // Mine (right): meta on the left of the bubble (toward center)
+    expect(css).toMatch(
+      /\.vc-msg--mine(?:\[[^\]]+\])?\s+\.vc-msg__group-meta(?:\[[^\]]+\])?\s*{[^}]*right:\s*calc\(\s*100%\s*\+\s*1\.9rem\s*\)/s,
+    );
   });
 
   it('hides header and avatar when grouping continuation inputs are off', async () => {
@@ -328,7 +394,7 @@ describe('MessageBubble (B-163)', () => {
     expect(root.querySelector('vc-avatar')).toBeNull();
     expect(root.querySelector('.vc-msg--grouped')).toBeTruthy();
     expect(root.querySelector('.vc-msg--group-end')).toBeTruthy();
-    expect(root.querySelector('.vc-msg__group-time')).toBeTruthy();
+    expect(root.querySelector('.vc-msg__group-meta')).toBeTruthy();
   });
 
   it('applies plain surface styles for stack-embedded messages', async () => {
