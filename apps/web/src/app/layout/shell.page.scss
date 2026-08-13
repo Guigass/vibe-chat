@@ -308,18 +308,27 @@
 }
 
 .shell__context {
+  display: flex;
+  flex-direction: column;
   border-left: 1px solid var(--vc-border);
   background: var(--vc-surface-elevated);
-  padding: var(--vc-space-4);
   min-height: 0;
+  min-width: 0;
   height: 100%;
+  overflow: hidden;
+}
+
+.shell__context--scroll {
+  padding: var(--vc-space-4);
   overflow: auto;
 }
 
-.shell > vc-thread-panel {
+.shell__context > vc-thread-panel,
+.shell__context > vc-pins-panel,
+.shell__context > vc-saved-panel {
+  flex: 1 1 auto;
   min-height: 0;
-  height: 100%;
-  overflow: hidden;
+  min-width: 0;
 }
 
 .shell__context header {

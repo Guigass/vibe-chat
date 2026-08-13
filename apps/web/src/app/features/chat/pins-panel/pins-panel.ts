@@ -49,6 +49,8 @@ import { IconButton } from '../../../shared/ui';
       flex-direction: column;
       gap: var(--vc-space-3);
       height: 100%;
+      min-height: 0;
+      padding: var(--vc-space-4);
     }
 
     .pins-panel__header {
@@ -77,6 +79,8 @@ import { IconButton } from '../../../shared/ui';
       display: flex;
       flex-direction: column;
       gap: var(--vc-space-2);
+      flex: 1 1 auto;
+      min-height: 0;
       overflow: auto;
     }
 
