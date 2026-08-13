@@ -25,6 +25,7 @@ apenas a desenvolvimento.
 - Tornar toda configuração dinâmica.
 - Levar convites, papéis ou export para `.env`.
 - Definir credenciais reais.
+- Enxugar o `.env.example` (setup vs catálogo) — **B-187**.
 
 ## Contratos
 

@@ -65,22 +65,24 @@ Prioridade sobre P2 novo de diferenciação. Detalhe em `docs/roadmap/roadmap.md
 | Cadastro + diretivas | Keycloak autentica → perfil (stub pending ou espelho) → membership via invite admin; diretivas = papéis (B-068) | **Done** |
 | Secrets / integrações | Tokens, webhooks, AI/SMTP só para administradores (B-069, B-048) | **Done** (B-069 + B-048 MessageCreated) |
 | Auditoria de conversas | Viewer ADMIN completo por canal/DM/thread, além do audit log de ações (B-067) | **Done** |
-| UI | Polish admin com tokens VibeChat (B-073 histórico; **B-104** remove PrimeNG / D-15 + D-27; **B-106** admin shell) | B-073 Done; **B-104 Done** (#82) — spartan/ui + CDK; **B-106 Planned** — nav/toolbars/listagens/filtros após B-104 |
+| UI | Polish admin com tokens VibeChat (B-073 histórico; **B-104** remove PrimeNG / D-15 + D-27; **B-106** admin shell) | B-073 Done; **B-104 Done** (#82) — spartan/ui + CDK; **B-106 Done** — nav/toolbars/listagens/filtros |
 | Compose apps | API + Web (+ Worker) em containers no Compose como deploy oficial self-host (B-074); `task dev` só para DX com hot reload | **Done** — `task apps` |
 
 ### Fase 4 — Admin mínimo via `.env` (Wave 7 / B-105)
 
-Operação self-host com o menor atrito possível: o operador de infra não precisa da UI `/admin` para subir a plataforma nem para integrações sensíveis (AI, SMTP, retenção global).
+Operação self-host com o menor atrito possível: o operador de infra sobe a
+plataforma sem depender da UI `/admin` para bootstrap. Políticas por workspace
+continuam no admin (B-069 / ADR-020).
 
 | Tema | Entregáveis | Status |
 |------|-------------|--------|
-| Inventário | Todas as variáveis de Compose + API + Worker + Web catalogadas | Planned (W7-7) |
-| Contrato `.env` | `.env.example` completo, comentado, alinhado ao `compose.yaml` | Planned |
-| Matriz env vs admin | O que é infra (env) vs política por workspace (`/admin/settings`) | Planned — ver `docs/operations/configuracao-env.md` |
-| Gaps | `Files`, `RateLimit`, `Cors`, etc. expostos ou documentados como fixos | Planned |
-| Ops | `operacao.md` + runbooks referenciam o catálogo | Planned |
+| Inventário | Todas as variáveis de Compose + API + Worker + Web catalogadas | **Done** (W7-7 / B-105) |
+| Contrato `.env` | `.env.example` alinhado ao `compose.yaml`; catálogo em `configuracao-env.md` | **Done** (B-105); enxugar template = **B-187** Planned |
+| Matriz env vs admin | Infra (env) vs política por workspace (`/admin/settings`) | **Done** — `docs/operations/configuracao-env.md` |
+| Gaps | `Files`, `RateLimit`, `Cors`, etc. expostos ou documentados como fixos | **Done** (B-105) |
+| Ops | `operacao.md` + runbooks referenciam o catálogo | **Done** |
 
-**Fora de escopo:** substituir convites, papéis, auditoria de conversas ou export — permanecem em `/admin`.
+**Fora de escopo:** substituir convites, papéis, auditoria de conversas ou export — permanecem em `/admin`. Despejar infra (Postgres, IdP, MinIO) no DB — rejeitado (D-04 / ADR-020). Template de setup curto — B-187.
 
 ## Riscos principais
 

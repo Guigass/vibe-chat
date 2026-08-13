@@ -88,7 +88,8 @@ backlog ficam no **Registro de GAPs** (`roadmap.md`).
 | B-076 | Atualização automatizada de dependências | **Done (W7-3)** — [#84](https://github.com/Guigass/vibe-chat/pull/84); `.github/dependabot.yml` (nuget/npm/actions/docker/compose) + [`dependencias.md`](../operations/dependencias.md); PRs de bump já abertos pós-merge (#85…) |
 | B-077 | CSP no web | **Done (W7-4)** — `infra/nginx/security-headers.conf` no proxy + web; [spec](../product/specs/B-077-csp-web.md) |
 | B-078 | Limite de tamanho de body no envio | **Done (W7-5)** — `MessageBodyPolicies` (8000 UTF-16); 400 `MessageBodyTooLong`; contador no composer/thread/edit |
-| B-105 | Catálogo de configuração admin mínima no `.env` | **Done (W7-7)** — EMAIL__* injetado no api; retenção no worker; alias OpenRouter unificado; testes `ComposeConfigCatalogTests`; [spec](../product/specs/B-105-catalogo-configuracao.md) |
+| B-105 | Catálogo de configuração admin mínima no `.env` | **Done (W7-7)** — EMAIL__* injetado no api; retenção no worker; alias OpenRouter unificado; testes `ComposeConfigCatalogTests`; [spec](../product/specs/B-105-catalogo-configuracao.md). Follow-up: **B-187** (template enxuto) |
+| B-187 | Template `.env` enxuto (setup vs catálogo) | Planned (W7-14) — `.env.example` só o que o humano preenche; catálogo em `configuracao-env.md`; Compose defaults cobrem o resto; **não** mover infra para o DB (D-04 / ADR-020); [spec](../product/specs/B-187-env-enxuto.md) |
 | B-106 | Admin shell (nav, toolbars, listagens, filtros, visibilidade por papel) | Done (W7-8) — shell `/admin/*`, hide por claim (UX-005); matriz Admin/Auditor/Member; spec `docs/product/specs/B-106-admin-shell.md` |
 | B-165 | Controle de versão do cliente web (cache / PWA) | **Done** (W7-9) — buildId + `version.json` + SwUpdate/CTA + headers anti-cache; fecha UX-007; [spec](../product/specs/B-165-controle-versao-cliente-web.md) |
 | B-174 | Filtro centralizado `RequirePermission` na API | **Done** (W7-10) — filtro de grupo `/api/v1` + `RequirePermission`; gate CI; [spec](../product/specs/B-174-filtro-centralizado-permissoes.md) |
@@ -210,7 +211,8 @@ Pós-MVP: **P1.5** (B-070…B-072 Done; safety lane: BUG-006 Alta; BUG-002 alivi
 ver `docs/product/bug-findings.md`), Wave 6, B-048, B-045, B-046, B-047 e B-075 Done.
 
 Ordem daqui para frente: **safety lane** (`BUG-*` Alta) antes de inventar ou
-avançar feature de wave; depois **paridade de mensageria** na ordem das
+avançar feature de wave; **W7-14 / B-187** (template `.env` enxuto) enquanto
+houver linha `Planned` na Wave 7; depois **paridade de mensageria** na ordem das
 waves — 8 (composição; W8-9 / B-087 Done), 9 (leitura; W9-0 / B-163 Done; W9-1 / B-088 Done; B-094 fecha
 BUG-002 / não lidas persistentes; W9-11 / B-184 nav esquerda), 10 (notificações, organização, acesso e
 núcleo de plugins: B-109 → B-108 → B-110; membros do canal B-186 / W10-15). Depois **Wave 19** (organização do

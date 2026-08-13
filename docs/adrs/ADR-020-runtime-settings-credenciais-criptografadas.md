@@ -60,6 +60,7 @@ Isso emenda:
 | Registry genérico `settings[key]=value` | Perde tipagem, RLS por domínio e validação |
 | Secrets plaintext + RLS | Violação de defesa em profundidade (backups/DBA) |
 | Mover Postgres/OIDC/MinIO para o DB | Lockout/indisponibilidade; viola D-04 infra |
+| Enxugar `.env.example` dumpando config no DB | Mesmo lockout; B-187 enxuga o **template**, não a camada de infra |
 
 ## Rollback
 
@@ -75,3 +76,5 @@ Isso emenda:
 - **−** Operador deve provisionar keyring antes de habilitar a flag
 - **−** `workspace.admin` continua podendo alterar política **tenant-wide**
   (email/webhook/files/rate) — documentado e auditado
+- Template `.env` de setup vs catálogo operacional: follow-up **B-187** (não
+  amplia o que entra no DB)

@@ -138,8 +138,9 @@ Fila explícita para a automação de Build depois da Wave 6. Enquanto houver li
 **W7-8 (admin shell) Done**. **W7-9 / B-165 Done** (versão do cliente web /
 cache PWA; fecha UX-007). **W7-10 / B-174 Done**. **W7-11 / B-175 Done** (matriz
 authZ + gaps admin/typing). **W7-12 / B-176 Done** (fonte de verdade de roles —
-DB vs Keycloak). **W7-13 / B-177 Done** (DevAuth fail-closed). Wave 7
-sustentação authZ completa; seguir Wave 10 (paridade) quando elegível.
+DB vs Keycloak). **W7-13 / B-177 Done** (DevAuth fail-closed). Resta **W7-14 / B-187**
+(template `.env` enxuto — setup vs catálogo; não esvazia infra no DB).
+Sustentação authZ completa; B-187 é o próximo item elegível da Wave 7.
 
 | ID | Trilha | Tarefa | Deps | Spec/evidência | Status |
 |----|--------|--------|------|----------------|--------|
@@ -156,6 +157,7 @@ sustentação authZ completa; seguir Wave 10 (paridade) quando elegível.
 | W7-11 | E | Auditoria authZ: matriz endpoint × membership/permission + gaps (B-175) | B-174 (recomendado) | [B-175](../product/specs/B-175-auditoria-cobertura-authz.md); [authz-matriz](../security/authz-matriz.md) | **Done** |
 | W7-12 | G/B | Documentar fonte de verdade de roles — DB vs Keycloak (B-176) | B-002, P2-1 | [B-176](../product/specs/B-176-fonte-verdade-roles.md) | **Done** |
 | W7-13 | B/E | DevAuth fail-closed — sem fallback silencioso para demo (B-177) | W1-1 | [B-177](../product/specs/B-177-devauth-fail-closed.md) | **Done** |
+| W7-14 | A/G | Template `.env` enxuto — setup vs catálogo; infra permanece no env (B-187) | W7-7, B-069 | [B-187](../product/specs/B-187-env-enxuto.md) | Planned |
 
 Revisão de authZ da API (2026-08-12): W7-10…W7-13 registram endurecimento após
 auditoria de permissões — filtro centralizado, cobertura de endpoints, docs de
@@ -163,10 +165,13 @@ roles e DX segura em Development.
 
 ### Critérios de aceite W7-7 (resumo)
 
-- `.env.example` cobre **100%** das variáveis exigidas para `task apps` em produção (data plane + api + web + worker + proxy opcional)
-- Cada variável tem: descrição, serviço afetado, default, obrigatoriedade em prod, e se é secret (`CHANGE_ME` / `*_change_me`)
+B-105 fechou o catálogo. **B-187** altera o contrato do `.env.example` (setup
+curto); o inventário 100% permanece em `configuracao-env.md`.
+
+- `.env.example` (B-105) cobria **100%** das variáveis exigidas para `task apps`; após B-187 o template omite pins/aliases com default no Compose
+- Cada variável do **catálogo** tem: descrição, serviço afetado, default, obrigatoriedade em prod, e se é secret (`CHANGE_ME` / `*_change_me`)
 - Matriz **env vs admin UI** documentada: o que só o operador de infra mexe no `.env` vs o que o `workspace.admin` mexe em `/admin/settings`
-- Gaps entre `appsettings*.json`, `compose.yaml` e `.env.example` fechados ou listados como follow-up explícito
+- Gaps entre `appsettings*.json`, `compose.yaml` e `.env.example` fechados ou listados como follow-up explícito (B-187)
 - `docs/operations/operacao.md` aponta para o catálogo como fonte da verdade de configuração
 
 ### Critérios de aceite W7-8 (resumo)
@@ -185,6 +190,17 @@ roles e DX segura em Development.
 - `index.html` / manifesto SW / version sem cache longo no nginx de referência
 - Reload só após CTA do usuário (preserva rascunho em digitação)
 - UX-007 fechado; runbook de upgrade cobre o fluxo
+
+### Critérios de aceite W7-14 (resumo)
+
+- `.env.example` é contrato de **setup** (senhas, URLs, flags), não inventário
+  de pins/portas/profiles opcionais
+- Catálogo canônico permanece `docs/operations/configuracao-env.md`
+- Infra (Postgres, IdP, MinIO, Redis, kill switches, keyring, VAPID) **não**
+  vai para o DB; política/integração continua no admin (ADR-020)
+- `docker compose --env-file .env.example config --quiet` válido via defaults
+  do Compose
+- Docs de operação/admin não contradizem rotação SMTP/AI no `/admin/settings`
 
 ### Safety lane (bugs funcionais)
 
@@ -358,7 +374,7 @@ escreve aqui em vez de espalhar notas soltas pelas seções.
 ## Parallelismo sugerido por time de agentes
 
 ```text
-Agent-Infra     → W0-1, W0-2, W0-6, W5-*, W6-8, W7-7, W7-9 (headers cache web)
+Agent-Infra     → W0-1, W0-2, W0-6, W5-*, W6-8, W7-7, W7-9 (headers cache web), W7-14
 Agent-Backend   → W0-3, W1-*, W2-1..W2-4, W3-1, W3-3, W4-*, W6-1, W6-2, W6-4..W6-6,
                   W8-4, W9-4, W10-1, W10-7, W10-11, W10-12, W10-13, W10-14
 Agent-Frontend  → W0-4, W0-5, W1-4, W2-5, W4-7, W6-1..W6-3, W6-7, W7-6, W7-8, W7-9,

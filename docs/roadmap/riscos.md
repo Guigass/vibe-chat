@@ -23,7 +23,7 @@
 | R-17 | Secrets/webhooks expostos a membros | M | Crítico | **Mitigado (B-069/B-048/ADR-020)** — settings só `workspace.admin`; envelopes AES-GCM; rotate dedicado; máscara sem plaintext; nunca logar tokens | Security |
 | R-18 | Auditoria de conversa (break-glass de leitura) | M | Alto | B-067 authZ `admin.dashboard` + escopo tenant; testes security; ver `modelo-ameacas.md` | Security |
 | R-19 | Dependência UI comercial (PrimeNG/PrimeUI) | A | Alto | **Mitigado (B-104 / #82)** — `primeng` removido; spartan/ui (MIT) + CDK + tokens; UX-002 Done; polish do console admin em **B-106** | Frontend |
-| R-20 | Drift entre `.env.example`, Compose e appsettings | A | Alto | B-105 + catálogo canônico; smoke do profile `apps`; declarar aliases sem efeito | Infra / Docs |
+| R-20 | Drift entre `.env.example`, Compose e appsettings | A | Alto | B-105 + catálogo canônico; B-187 separa template de setup vs catálogo; smoke do profile `apps`; declarar aliases sem efeito | Infra / Docs |
 | R-21 | Roadmap marcar `Done` sem evidência ou ficar divergente do backlog/spec | M | Alto | `estado-atual.md`, programa DOC-*, revisão por wave e rastreabilidade ID↔spec | Produto / QA / Docs |
 | R-22 | Portfólio ambicioso diluir o chat principal | A | Alto | Waves 7–10 primeiro; W11–W17 em ordem; uma aposta arquitetural por vez | Product / Build agent |
 | R-23 | Conhecimento/tarefas divergirem da mensagem de origem | M | Alto | Referência canônica, propagação de edit/delete/retention e audit | Produto / Backend |

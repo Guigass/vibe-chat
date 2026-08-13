@@ -1,9 +1,15 @@
 # Configuração via `.env` — Admin mínimo
 
-Guia de referência para operar uma instância self-hosted com o **mínimo de dependência da UI `/admin`**. O operador de infra configura a plataforma via `.env`; o `workspace.admin` ajusta políticas por workspace na UI.
+Guia de referência para operar uma instância self-hosted. O operador de infra
+sobe a plataforma via `.env` + Compose; o `workspace.admin` ajusta políticas
+por workspace na UI. Infra permanece no env (D-04); política/integração pode
+ir ao admin + DB (ADR-020).
 
-**Status:** catálogo executável fechado em **W7-7 / B-105** (2026-08-07). Spec:
-[`B-105-catalogo-configuracao.md`](../product/specs/B-105-catalogo-configuracao.md).
+**Status:** catálogo executável fechado em **W7-7 / B-105** (2026-08-07).
+Follow-up **W7-14 / B-187** (Planned): `.env.example` vira template de setup
+curto; este arquivo permanece o inventário canônico. Specs:
+[`B-105-catalogo-configuracao.md`](../product/specs/B-105-catalogo-configuracao.md),
+[`B-187-env-enxuto.md`](../product/specs/B-187-env-enxuto.md).
 
 > Regra crítica: uma variável presente no `.env` só chega ao processo dentro do
 > container se o `compose.yaml` a mapear em `environment` ou a consumir em uma
@@ -12,7 +18,9 @@ Guia de referência para operar uma instância self-hosted com o **mínimo de de
 ## Objetivo da fase (B-105)
 
 1. **Inventariar** todas as variáveis de ambiente usadas por Compose, API, Worker e Web.
-2. **Completar** `.env.example` como contrato único de configuração operacional (placeholders, nunca secrets reais — D-04).
+2. **Completar** o catálogo operacional (este arquivo) e o `.env.example` como
+   template executável (placeholders, nunca secrets reais — D-04). B-187 enxuga
+   o template; o inventário não muda de arquivo.
 3. **Documentar** a matriz **env vs admin UI**: o que só muda com restart/redeploy vs o que o admin muda em runtime.
 4. **Fechar gaps** entre `appsettings*.json`, `compose.yaml` e `.env.example`.
 
@@ -24,6 +32,20 @@ Guia de referência para operar uma instância self-hosted com o **mínimo de de
 | **Política + integrações** | `workspace.admin` | `/admin/settings` + DB | AI workspace, SMTP (incl. senha criptografada), webhook, retenção, Files, RateLimit |
 
 Regra (B-069 / ADR-020): PUT geral **não** aceita secrets. Rotação de OpenRouter/SMTP/webhook usa endpoints dedicados; valores ficam em envelope AES-GCM (chave mestra só no env). Flag `RuntimeSettings__DatabaseOverridesEnabled=false` por default — rollback = desligar a flag no mesmo binário.
+
+Caminho self-host pretendido (B-187): provisionar o keyring, ligar a flag e
+configurar SMTP/AI/webhook/retenção/Files/RateLimit em `/admin/settings`. O
+`.env` fica com infra, URLs públicas, kill switches e a chave mestra. Não
+mover Postgres, Redis, Keycloak, MinIO, OIDC, TLS, seed, OTel ou VAPID para o DB.
+
+## Dois artefatos (B-187)
+
+| Artefato | Função |
+|----------|--------|
+| `.env.example` | Contrato de **setup**: o que o humano preenche (`CHANGE_ME`, URLs, flags de lab/staging). Defaults do Compose cobrem o omitido. |
+| Este catálogo | Inventário completo: pins, portas, profiles opcionais, aliases e matriz env vs admin. |
+
+Até B-187 fechar, o `.env.example` ainda lista o catálogo completo (legado B-105).
 
 ## Escopo
 
@@ -39,13 +61,16 @@ Regra (B-069 / ADR-020): PUT geral **não** aceita secrets. Rotação de OpenRou
 ### Fora
 
 - Substituir `/admin` para convites, papéis, auditoria de conversas ou export ZIP
-- Configuração dinâmica por tenant sem restart (permanece em DB + admin API)
+- Tornar **toda** configuração dinâmica / despejar infra no PostgreSQL (rejeitado em ADR-020 e B-105)
+- Enxugar o `.env.example` (B-187)
 - Secrets manager específico de cloud (apenas padrão: montar env ou arquivo `.env`)
 
 ## Inventário auditado
 
 Todas as substituições `${VAR}` observadas em `compose.yaml` e
-`compose.override.yaml` possuem entrada no `.env.example` na data do snapshot.
+`compose.override.yaml` possuem entrada no `.env.example` na data do snapshot
+B-105. Depois de B-187, substituições com `${VAR:-default}` podem omitir o
+template; o inventário canônico continua nesta página.
 
 ### Imagens e portas do Compose
 

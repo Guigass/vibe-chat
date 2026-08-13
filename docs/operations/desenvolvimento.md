@@ -49,8 +49,8 @@ task migrate
 Runbooks de operação (incidentes, TLS, backup drill, upgrade): [`runbooks/README.md`](./runbooks/README.md).
 
 Catálogo auditado de variáveis, gaps de injeção e matriz env vs admin UI:
-[`configuracao-env.md`](./configuracao-env.md) (inventário documental de
-2026-07-27; alinhamento executável em W7-7 / B-105).
+[`configuracao-env.md`](./configuracao-env.md) (B-105). Template de setup
+enxuto: [B-187](../product/specs/B-187-env-enxuto.md) (Planned).
 
 ## Serviços locais
 

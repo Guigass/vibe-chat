@@ -19,7 +19,7 @@ O operador não usa seu acesso de infraestrutura como autorização de produto.
 ## Bootstrap
 
 1. revisar requisitos e imagens;
-2. copiar `.env.example`;
+2. copiar `.env.example` (contrato de setup; catálogo em `configuracao-env.md`);
 3. substituir todos os `CHANGE_ME`;
 4. manter `SEED_ENABLED=false` em produção;
 5. manter IA/retention/live/registry off até configuração;

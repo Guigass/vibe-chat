@@ -4,8 +4,8 @@ Uma spec por item de backlog elegível ao Build (Waves 7–19). A automação de
 Build **só** implementa item que tenha
 spec aqui; sem spec, o item não é elegível.
 
-Baseline atualizada em 2026-08-12: itens `Planned` W7–W19 com specs 1:1
-(W7-9 / B-165 Done). Regras de auditoria:
+Baseline atualizada em 2026-08-13: itens `Planned` W7–W19 com specs 1:1
+(W7-14 / B-187 catalogado). Regras de auditoria:
 [`roadmap/qualidade-documental.md`](../../roadmap/qualidade-documental.md).
 
 Waves 11–17 estão autorizadas por D-16…D-28 e possuem specs executáveis. Todas
@@ -33,6 +33,7 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-175 | [Auditoria de cobertura authZ (membership vs permission)](B-175-auditoria-cobertura-authz.md) |
 | B-176 | [Fonte de verdade de roles (DB vs Keycloak)](B-176-fonte-verdade-roles.md) |
 | B-177 | [DevAuth fail-closed (sem fallback demo)](B-177-devauth-fail-closed.md) |
+| B-187 | [Template `.env` enxuto (setup vs catálogo)](B-187-env-enxuto.md) |
 
 ### Wave 8 — Composição de mensagem
 
