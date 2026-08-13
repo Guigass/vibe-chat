@@ -55,6 +55,64 @@
   display: none;
 }
 
+.shell--nav-compact {
+  --vc-sidebar-width: 4.5rem;
+}
+
+.shell__brand-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.shell__wordmark-short {
+  display: none;
+}
+
+.shell--nav-compact .shell__wordmark-full {
+  display: none;
+}
+
+.shell--nav-compact .shell__wordmark-short {
+  display: inline;
+}
+
+.shell--nav-compact .shell__brand {
+  flex-direction: column;
+  align-items: center;
+  gap: var(--vc-space-2);
+  padding-inline: var(--vc-space-2);
+}
+
+.shell--nav-compact .shell__brand-actions {
+  flex-direction: column;
+}
+
+.shell--nav-compact .shell__workspace {
+  padding-inline: var(--vc-space-2);
+}
+
+.shell--nav-compact .shell__workspace select {
+  min-height: 2.25rem;
+  padding-inline: 0.25rem;
+  font-size: 0.65rem;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.shell--nav-compact .shell__sidebar-footer {
+  flex-direction: column;
+  align-items: center;
+  padding-inline: var(--vc-space-2);
+  font-size: 0.78rem;
+}
+
+.shell--nav-compact .shell__sidebar-footer a,
+.shell--nav-compact .shell__sidebar-footer button {
+  padding: 0.25rem;
+}
+
 .shell__brand {
   display: flex;
   align-items: center;

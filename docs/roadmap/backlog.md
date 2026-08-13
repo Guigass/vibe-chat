@@ -130,7 +130,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-168 | Anexo de vídeo | Done (W9-8) — `video/mp4`/`webm`; limites 25 MB / 60 s; prévia no composer; player tipado na bolha (B-163); poster via B-090 quando Ready |
 | B-171 | Painéis de contexto (sidebar direita) | **Done** (W9-9) — trilho direito 372px; thread/pins/salvos/contexto unificados em `shell__context`; só UI/tokens; [spec](../product/specs/B-171-paineis-contexto-direita.md) |
 | B-173 | Editar mensagem no composer | **Done** (W9-10) — modo edição no composer (padrão B-084); bolha sem textarea inline; fecha UX-008; [spec](../product/specs/B-173-editar-mensagem-no-composer.md) |
-| B-184 | Barra de navegação (sidebar esquerda) | Planned (W9-11) — modo compacto da nav, filtro local, blocos mais claros; só UI; [spec](../product/specs/B-184-barra-navegacao-esquerda.md) |
+| B-184 | Barra de navegação (sidebar esquerda) | **Done** (W9-11) — modo compacto desktop, filtro local, blocos visuais; preferência `vc.navCompact` em localStorage; [spec](../product/specs/B-184-barra-navegacao-esquerda.md) |
 
 ### Wave 10 — Notificações, organização e acesso
 

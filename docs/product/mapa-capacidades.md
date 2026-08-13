@@ -34,7 +34,7 @@ organiza. Estados:
 | Busca FTS e resumo opcional | Atual | Filtros em B-098 |
 | Salvos, pins e seguir thread | Committed | Waves 9–10 |
 | Painéis de contexto (sidebar direita) | Done | B-171 / W9-9 |
-| Barra de navegação (sidebar esquerda) | Planned | B-184 / W9-11 |
+| Barra de navegação (sidebar esquerda) | **Done** | B-184 / W9-11 |
 | Decisões e action items vinculados | Planned | B-119 / W12 |
 | Digests e catch-up programado | Planned | B-122 / W12 |
 | Busca semântica/RAG autorizada | Planned | B-121 / W12 |

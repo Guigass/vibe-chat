@@ -38,7 +38,7 @@ import {
 import { AttachmentQueueService } from '../features/chat/composer/attachment-queue.service';
 import { collectFilesFromDataTransfer } from '../features/chat/composer/attachment-upload';
 import { hasAdminDashboard } from '../features/admin/admin-permissions';
-import { defaultSidebarOpen, SHELL_NARROW_MEDIA_QUERY } from './shell-viewport';
+import { defaultSidebarOpen, readNavCompact, SHELL_NARROW_MEDIA_QUERY, writeNavCompact } from './shell-viewport';
 
 @Component({
   selector: 'vc-shell-page',
@@ -79,6 +79,8 @@ export class ShellPage implements OnInit, OnDestroy {
   /** UX-003: tracks max-width 960px; sidebar starts collapsed on narrow. */
   readonly narrowViewport = signal(false);
   readonly sidebarOpen = signal(true);
+  /** B-184: icon-only desktop rail; persisted in localStorage. */
+  readonly navCompact = signal(readNavCompact());
   readonly contextOpen = signal(false);
   readonly fileDragActive = signal(false);
   readonly search = signal('');
@@ -236,6 +238,17 @@ export class ShellPage implements OnInit, OnDestroy {
 
   toggleSidebar(): void {
     this.sidebarOpen.update((v) => !v);
+  }
+
+  toggleNavCompact(): void {
+    if (this.narrowViewport()) {
+      return;
+    }
+    this.navCompact.update((v) => {
+      const next = !v;
+      writeNavCompact(next);
+      return next;
+    });
   }
 
   toggleContext(): void {
