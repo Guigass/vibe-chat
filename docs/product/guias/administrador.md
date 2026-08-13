@@ -26,6 +26,10 @@ Esconder opção na UI não concede nem remove permissão; API é autoritativa.
 - auditar convite e alteração;
 - autenticação continua no IdP.
 
+Atribuir realm role `admin` (ou equivalente) no Keycloak **não** concede
+`workspace.admin` / `admin.dashboard` no VibeChat. Papel de produto vive na
+membership (`workspace_members.role`); o admin altera em `/admin` (B-176).
+
 ### Planejado
 
 - guests por canal em W10;

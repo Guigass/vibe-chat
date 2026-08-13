@@ -98,7 +98,7 @@ Endpoint (Development): `POST /api/v1/dev/seed`
 |------|------|
 | Keycloak OIDC | “Entrar com Keycloak” |
 | Demo UI | “Explorar demo local” |
-| DevAuth (UI + API) | Botões Alice/Bob/Demo no login quando `ENABLE_DEV_AUTH=true` no build da web (`task apps` / `.env` lab). API: header `X-Dev-User: alice\|bob\|demo` (somente Development). Convite dinâmico: `X-Dev-User` + `X-Dev-Email` (+ `X-Dev-Name` opcional) para testar claim de stub `pending:{email}` |
+| DevAuth (UI + API) | Botões Alice/Bob/Demo no login quando `ENABLE_DEV_AUTH=true` no build da web (`task apps` / `.env` lab). API: header `X-Dev-User: alice\|bob\|demo` (somente Development). Valor desconhecido sem `X-Dev-Email` → **401** (B-177; sem fallback demo). Convite dinâmico: `X-Dev-User` + `X-Dev-Email` (+ `X-Dev-Name` opcional) para testar claim de stub `pending:{email}` |
 
 `ENABLE_DEV_AUTH` é **build-time** (Compose arg → `public-config`). Lab: `true`. Staging/prod/Coolify: `false` ou omitir (default). Mudança exige rebuild da imagem `web`.
 
@@ -108,6 +108,11 @@ Endpoint (Development): `POST /api/v1/dev/seed`
 2. **Admin provisiona membership** — em `/admin`, formulário “Convidar membro” (`POST /api/v1/workspaces/{id}/members`) com e-mail + papel (`Member`/`Moderator`/`Auditor`/`Admin`).
 3. **Primeiro login vincula** — se o perfil ainda era stub `pending:{email}`, o SSO atualiza o `sub` e a membership já criada passa a valer.
 4. **Diretivas** — papéis existentes continuam editáveis na tabela de membros (`PUT .../members/{userId}/role`).
+
+**Roles no Keycloak ≠ papéis no VibeChat (B-176):** atribuir realm role `admin`
+no IdP **não** eleva o usuário no produto. AuthZ de workspace vem de
+`workspace_members.role` (convite/alteração em `/admin`). Realm roles são
+opcionais para SSO futuro e não substituem membership.
 
 DX sem Keycloak: DevAuth + seed já criam alice/bob/demo com membership.
 

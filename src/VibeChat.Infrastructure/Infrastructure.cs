@@ -546,6 +546,9 @@ public sealed class PermissionChecker(VibeChatDbContext dbContext) : IPermission
     public async Task<bool> IsMemberAsync(TenantId tenantId, WorkspaceId workspaceId, UserId userId, CancellationToken cancellationToken) =>
         await dbContext.WorkspaceMembers.AnyAsync(x => x.TenantId == tenantId && x.WorkspaceId == workspaceId && x.UserId == userId, cancellationToken);
 
+    /// <summary>
+    /// Workspace roles from <c>tenancy.workspace_members</c> (B-176). JWT / <c>ICurrentUser.Roles</c> are not used.
+    /// </summary>
     public async Task<IReadOnlyCollection<Role>> GetRolesAsync(TenantId tenantId, UserId userId, CancellationToken cancellationToken) =>
         await dbContext.WorkspaceMembers.AsNoTracking()
             .Where(x => x.TenantId == tenantId && x.UserId == userId)
@@ -2704,6 +2707,7 @@ public sealed class ChatHub(
     IPresenceService presence,
     IChannelMembershipReader channels,
     IWorkspaceMembershipReader workspaces,
+    IPermissionChecker permissions,
     IRateLimiter rateLimiter,
     RateLimitSettingsResolver rateLimits,
     ITenantContext tenantContext,
@@ -2790,6 +2794,11 @@ public sealed class ChatHub(
             if (!await channels.CanAccessAsync(tenant, channel, userId, Context.ConnectionAborted))
             {
                 throw new HubException("Not authorized for channel.");
+            }
+
+            if (!await permissions.HasPermissionAsync(tenant, userId, Permissions.Message.Send, Context.ConnectionAborted))
+            {
+                throw new HubException("Not authorized to send typing.");
             }
 
             await typing.SetTypingAsync(tenant, channel, userId, displayName, Context.ConnectionAborted);

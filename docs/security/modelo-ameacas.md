@@ -32,9 +32,9 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | **Spoofing** | Roubo de token; JWT forjado; IdP broker mal configurado; linking por e-mail | OIDC Keycloak; validar issuer/aud/exp; HTTPS; rotação de chaves; app rejeita tokens do IdP externo; linking só com política explícita (B-164) |
 | **Tampering** | Alterar messageId/seq; forjar tenant_id | Constraints DB; tenant só do contexto; assinatura não necessária se SoT é DB |
 | **Repudiation** | Negar ação admin | Audit log; correlation ids |
-| **Information Disclosure** | Cross-tenant read; IDOR channel | RLS + membership checks; testes security |
+| **Information Disclosure** | Cross-tenant read; IDOR channel; Member em `/admin/*` | RLS + membership + `RequirePermission`; matriz [`authz-matriz.md`](authz-matriz.md); testes security |
 | **Denial of Service** | Flood de mensagens/hubs | Rate-limit Redis; limites de payload; timeouts |
-| **Elevation of Privilege** | Guest→admin; bypass membership | AuthZ centralizada; least privilege; reviews |
+| **Elevation of Privilege** | Guest→admin; bypass membership; typing sem `message.send` | AuthZ centralizada; least privilege; reviews |
 
 ## Superfícies de ataque
 
@@ -100,6 +100,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Membership | Bypass de `channel_members` **apenas** nesses endpoints admin |
 | Membro | Sem `admin.dashboard` → 403 (não vê body soft-deleted nem DMs alheias) |
 | Histórico normal | Continua redigindo body deletado + ACL de canal |
+| Dashboard/health/version | `GET /admin/dashboard`, `/admin/health-summary`, `/admin/version` também exigem `admin.dashboard` (B-175); membership sozinha → 403 |
 
 ### Export de workspace (B-046)
 

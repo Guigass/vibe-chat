@@ -18,6 +18,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using VibeChat.Administration;
 using VibeChat.AI;
+using VibeChat.Api;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
@@ -204,7 +205,8 @@ app.Use(async (context, next) =>
     }
 });
 
-var v1 = app.MapGroup("/api/v1").RequireAuthorization();
+// B-174: group filter enforces RequirePermissionAttribute metadata (fail-closed).
+var v1 = app.MapGroup("/api/v1").RequireAuthorization().AddEndpointFilter<RequirePermissionFilter>();
 
 v1.MapGet("/me", async (HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, IAuditWriter audit, CancellationToken ct) =>
 {
@@ -355,11 +357,11 @@ v1.MapGet("/workspaces/{workspaceId:guid}/spaces", async (Guid workspaceId, Http
     return Results.Ok(spaces);
 });
 
-v1.MapPost("/workspaces/{workspaceId:guid}/spaces", async (Guid workspaceId, CreateSpaceRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IAuditWriter audit, IClock clock, CancellationToken ct) =>
+v1.MapPost("/workspaces/{workspaceId:guid}/spaces", async (Guid workspaceId, CreateSpaceRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IAuditWriter audit, IClock clock, CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
-    if (workspace is null || !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Channel.Create, ct))
+    if (workspace is null)
     {
         return Results.Forbid();
     }
@@ -392,7 +394,7 @@ v1.MapPost("/workspaces/{workspaceId:guid}/spaces", async (Guid workspaceId, Cre
     });
     await db.SaveChangesAsync(ct);
     return Results.Created($"/api/v1/workspaces/{workspaceId}/spaces/{space.Id}", new SpaceResponse(space.Id, space.WorkspaceId.Value, space.Name, space.Order));
-});
+}).RequirePermission(Permissions.Channel.Create);
 
 v1.MapGet("/workspaces/{workspaceId:guid}/members", async (Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
 {
@@ -484,7 +486,7 @@ v1.MapGet("/workspaces/{workspaceId:guid}/roles", async (Guid workspaceId, HttpC
 
     return Results.Ok(new WorkspaceRolesResponse(
         WorkspaceRolePolicies.AssignableRoles.Select(r => r.ToString()).ToArray()));
-});
+}).RequirePermission(Permissions.Workspace.Admin);
 
 // B-068: admin invite / provision membership (no open self-signup).
 v1.MapPost("/workspaces/{workspaceId:guid}/members", async (
@@ -624,7 +626,7 @@ v1.MapPost("/workspaces/{workspaceId:guid}/members", async (
     return Results.Created(
         $"/api/v1/workspaces/{workspaceId}/members/{targetProfile.Id.Value}",
         new WorkspaceMemberResponse(targetProfile.Id.Value, targetProfile.DisplayName, targetProfile.Email, membership.Role.ToString()));
-});
+}).RequirePermission(Permissions.Workspace.Admin);
 
 v1.MapPut("/workspaces/{workspaceId:guid}/members/{userId:guid}/role", async (
     Guid workspaceId,
@@ -720,7 +722,7 @@ v1.MapPut("/workspaces/{workspaceId:guid}/members/{userId:guid}/role", async (
 
     await db.SaveChangesAsync(ct);
     return Results.Ok(new WorkspaceMemberResponse(targetProfile.Id.Value, targetProfile.DisplayName, targetProfile.Email, targetMembership.Role.ToString()));
-});
+}).RequirePermission(Permissions.Workspace.Admin);
 
 v1.MapGet("/workspaces/{workspaceId:guid}/presence", async (Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPresenceService presence, IClock clock, CancellationToken ct) =>
 {
@@ -791,13 +793,13 @@ v1.MapPost("/workspaces/{workspaceId:guid}/dms", async (Guid workspaceId, OpenDi
     return Results.Created(
         $"/api/v1/channels/{channel.Id.Value}",
         new ChannelResponse(channel.Id.Value, channel.WorkspaceId.Value, peerProfile.DisplayName, channel.Type.ToString(), peerProfile.Id.Value, peerProfile.DisplayName));
-});
+}).AllowPermissionGateExempt("membership-only open DM (B-021)");
 
-v1.MapPost("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, CreateChannelRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IAuditWriter audit, IClock clock, CancellationToken ct) =>
+v1.MapPost("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, CreateChannelRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IAuditWriter audit, IClock clock, CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
-    if (workspace is null || !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Channel.Create, ct))
+    if (workspace is null)
     {
         return Results.Forbid();
     }
@@ -851,7 +853,7 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, C
     return Results.Created(
         $"/api/v1/channels/{channel.Id.Value}",
         new ChannelResponse(channel.Id.Value, channel.WorkspaceId.Value, channel.Name, channel.Type.ToString(), null, null, channel.SpaceId, channel.Topic));
-});
+}).RequirePermission(Permissions.Channel.Create);
 
 v1.MapPut("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/topic", async (
     Guid workspaceId,
@@ -860,13 +862,12 @@ v1.MapPut("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/topic", asyn
     HttpContext http,
     VibeChatDbContext db,
     ITenantContext tenant,
-    IPermissionChecker permissions,
     IClock clock,
     CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
-    if (workspace is null || !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Channel.Create, ct))
+    if (workspace is null)
     {
         return Results.Forbid();
     }
@@ -898,7 +899,7 @@ v1.MapPut("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/topic", asyn
         channel.Type.ToString(),
         SpaceId: channel.SpaceId,
         Topic: channel.Topic));
-});
+}).RequirePermission(Permissions.Channel.Create);
 
 v1.MapGet("/workspaces/{workspaceId:guid}/commands", async (
     Guid workspaceId,
@@ -1104,7 +1105,7 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
     {
         return Results.Forbid();
     }
-});
+}).RequirePermission(Permissions.Message.Send);
 
 v1.MapPost("/workspaces/{workspaceId:guid}/messages/{messageId:guid}/forward", async (
     Guid workspaceId,
@@ -1244,7 +1245,7 @@ v1.MapPost("/workspaces/{workspaceId:guid}/messages/{messageId:guid}/forward", a
     {
         return Results.Forbid();
     }
-});
+}).RequirePermission(Permissions.Message.Send);
 
 v1.MapPost("/channels/{channelId:guid}/messages/{messageId:guid}/threads", async (
     Guid channelId,
@@ -1313,7 +1314,7 @@ v1.MapPost("/channels/{channelId:guid}/messages/{messageId:guid}/threads", async
         thread.CreatedBy.Value,
         thread.CreatedAt,
         replyCount));
-});
+}).RequirePermission(Permissions.Message.Send);
 
 v1.MapGet("/threads/{threadId:guid}", async (
     Guid threadId,
@@ -1610,7 +1611,7 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
     {
         return Results.Forbid();
     }
-});
+}).RequirePermission(Permissions.Message.Send);
 
 v1.MapPost("/channels/{channelId:guid}/attachments", async (
     Guid channelId,
@@ -1618,7 +1619,6 @@ v1.MapPost("/channels/{channelId:guid}/attachments", async (
     HttpContext http,
     VibeChatDbContext db,
     ITenantContext tenant,
-    IPermissionChecker permissions,
     IObjectStorage storage,
     FilesSettingsResolver filesSettings,
     IAuditWriter audit,
@@ -1628,12 +1628,6 @@ v1.MapPost("/channels/{channelId:guid}/attachments", async (
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
     if (channel is null)
-    {
-        return Results.Forbid();
-    }
-
-    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Files.Upload, ct)
-        || !await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Send, ct))
     {
         return Results.Forbid();
     }
@@ -1754,7 +1748,7 @@ v1.MapPost("/channels/{channelId:guid}/attachments", async (
         maxSize,
         attachment.FileName,
         attachment.ContentType));
-});
+}).RequirePermission(Permissions.Files.Upload, Permissions.Message.Send);
 
 v1.MapPost("/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete", async (
     Guid channelId,
@@ -1762,7 +1756,6 @@ v1.MapPost("/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete"
     HttpContext http,
     VibeChatDbContext db,
     ITenantContext tenant,
-    IPermissionChecker permissions,
     IObjectStorage storage,
     FilesSettingsResolver filesSettings,
     IOutboxWriter outbox,
@@ -1772,11 +1765,6 @@ v1.MapPost("/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete"
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
     if (channel is null)
-    {
-        return Results.Forbid();
-    }
-
-    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Files.Upload, ct))
     {
         return Results.Forbid();
     }
@@ -1846,7 +1834,7 @@ v1.MapPost("/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete"
     });
     await db.SaveChangesAsync(ct);
     return Results.Ok(ToAttachmentResponse(attachment));
-});
+}).RequirePermission(Permissions.Files.Upload);
 
 v1.MapGet("/channels/{channelId:guid}/attachments/{attachmentId:guid}/download", async (
     Guid channelId,
@@ -1854,7 +1842,6 @@ v1.MapGet("/channels/{channelId:guid}/attachments/{attachmentId:guid}/download",
     HttpContext http,
     VibeChatDbContext db,
     ITenantContext tenant,
-    IPermissionChecker permissions,
     IObjectStorage storage,
     FilesSettingsResolver filesSettings,
     IClock clock,
@@ -1863,12 +1850,6 @@ v1.MapGet("/channels/{channelId:guid}/attachments/{attachmentId:guid}/download",
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
     if (channel is null)
-    {
-        return Results.Forbid();
-    }
-
-    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Files.Download, ct)
-        || !await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Read, ct))
     {
         return Results.Forbid();
     }
@@ -1890,7 +1871,7 @@ v1.MapGet("/channels/{channelId:guid}/attachments/{attachmentId:guid}/download",
         attachment.FileName,
         attachment.ContentType,
         attachment.SizeBytes));
-});
+}).RequirePermission(Permissions.Files.Download, Permissions.Message.Read);
 
 v1.MapGet("/channels/{channelId:guid}/attachments/{attachmentId:guid}/thumbnail", async (
     Guid channelId,
@@ -1898,7 +1879,6 @@ v1.MapGet("/channels/{channelId:guid}/attachments/{attachmentId:guid}/thumbnail"
     HttpContext http,
     VibeChatDbContext db,
     ITenantContext tenant,
-    IPermissionChecker permissions,
     IObjectStorage storage,
     FilesSettingsResolver filesSettings,
     IClock clock,
@@ -1911,11 +1891,6 @@ v1.MapGet("/channels/{channelId:guid}/attachments/{attachmentId:guid}/thumbnail"
         return Results.Forbid();
     }
 
-    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Files.Download, ct)
-        || !await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Read, ct))
-    {
-        return Results.Forbid();
-    }
 
     var attachment = await db.Attachments.AsNoTracking()
         .FirstOrDefaultAsync(x => x.Id == attachmentId && x.ChannelId == channel.Id, ct);
@@ -1942,7 +1917,7 @@ v1.MapGet("/channels/{channelId:guid}/attachments/{attachmentId:guid}/thumbnail"
         attachment.Width,
         attachment.Height,
         attachment.PageCount));
-});
+}).RequirePermission(Permissions.Files.Download, Permissions.Message.Read);
 
 v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, EditMessageRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IClock clock, CancellationToken ct) =>
 {
@@ -2033,7 +2008,7 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid ch
         message.ReplyToMessageId?.Value,
         0,
         message.ConversationId.Value));
-});
+}).AllowPermissionGateExempt("conditional EditOwn vs authorship (B-023)");
 
 v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}/reactions", async (
     Guid channelId,
@@ -2042,7 +2017,6 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}/reactions", asyn
     HttpContext http,
     VibeChatDbContext db,
     ITenantContext tenant,
-    IPermissionChecker permissions,
     IOutboxWriter outbox,
     IClock clock,
     CancellationToken ct) =>
@@ -2050,11 +2024,6 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}/reactions", asyn
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
     if (channel is null)
-    {
-        return Results.Forbid();
-    }
-
-    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.React, ct))
     {
         return Results.Forbid();
     }
@@ -2136,7 +2105,7 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}/reactions", asyn
         .Select(x => new ReactionSummaryResponse(x.Emoji, x.Count, x.UserIds.Contains(profile.Id.Value)))
         .ToArray();
     return Results.Ok(new ToggleReactionResponse(messageId, channelId, emoji, added, summaries));
-});
+}).RequirePermission(Permissions.Message.React);
 
 v1.MapPost("/channels/{channelId:guid}/messages/{messageId:guid}/pin", async (
     Guid channelId,
@@ -2144,7 +2113,6 @@ v1.MapPost("/channels/{channelId:guid}/messages/{messageId:guid}/pin", async (
     HttpContext http,
     VibeChatDbContext db,
     ITenantContext tenant,
-    IPermissionChecker permissions,
     IOutboxWriter outbox,
     IAuditWriter audit,
     IConversationSequenceStore sequences,
@@ -2154,11 +2122,6 @@ v1.MapPost("/channels/{channelId:guid}/messages/{messageId:guid}/pin", async (
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
     if (channel is null)
-    {
-        return Results.Forbid();
-    }
-
-    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Pin, ct))
     {
         return Results.Forbid();
     }
@@ -2221,7 +2184,7 @@ v1.MapPost("/channels/{channelId:guid}/messages/{messageId:guid}/pin", async (
 
     await db.SaveChangesAsync(ct);
     return Results.Ok(new PinMessageResponse(messageId, channelId, true, count + 1));
-});
+}).RequirePermission(Permissions.Message.Pin);
 
 v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}/pin", async (
     Guid channelId,
@@ -2229,7 +2192,6 @@ v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}/pin", async (
     HttpContext http,
     VibeChatDbContext db,
     ITenantContext tenant,
-    IPermissionChecker permissions,
     IOutboxWriter outbox,
     IAuditWriter audit,
     IConversationSequenceStore sequences,
@@ -2239,11 +2201,6 @@ v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}/pin", async (
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
     if (channel is null)
-    {
-        return Results.Forbid();
-    }
-
-    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Pin, ct))
     {
         return Results.Forbid();
     }
@@ -2280,25 +2237,19 @@ v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}/pin", async (
 
     await db.SaveChangesAsync(ct);
     return Results.NoContent();
-});
+}).RequirePermission(Permissions.Message.Pin);
 
 v1.MapGet("/channels/{channelId:guid}/pins", async (
     Guid channelId,
     HttpContext http,
     VibeChatDbContext db,
     ITenantContext tenant,
-    IPermissionChecker permissions,
     IClock clock,
     CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
     if (channel is null)
-    {
-        return Results.Forbid();
-    }
-
-    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Read, ct))
     {
         return Results.Forbid();
     }
@@ -2335,7 +2286,7 @@ v1.MapGet("/channels/{channelId:guid}/pins", async (
         .ToArray();
 
     return Results.Ok(new ChannelPinsResponse(rows, rows.Length, PinPolicies.MaxPinnedPerChannel));
-});
+}).RequirePermission(Permissions.Message.Read);
 
 v1.MapPost("/workspaces/{workspaceId:guid}/saved", async (
     Guid workspaceId,
@@ -2399,7 +2350,7 @@ v1.MapPost("/workspaces/{workspaceId:guid}/saved", async (
     db.SavedMessages.Add(saved);
     await db.SaveChangesAsync(ct);
     return Results.Ok(await ToSavedMessageResponseAsync(db, saved, message, channel, profile.Id, ct));
-});
+}).RequirePermission(Permissions.Message.Read);
 
 v1.MapPatch("/workspaces/{workspaceId:guid}/saved/{messageId:guid}", async (
     Guid workspaceId,
@@ -2467,7 +2418,7 @@ v1.MapPatch("/workspaces/{workspaceId:guid}/saved/{messageId:guid}", async (
     }
 
     return Results.Ok(await ToSavedMessageResponseAsync(db, saved, message, channel, profile.Id, ct));
-});
+}).RequirePermission(Permissions.Message.Read);
 
 v1.MapDelete("/workspaces/{workspaceId:guid}/saved/{messageId:guid}", async (
     Guid workspaceId,
@@ -2496,7 +2447,7 @@ v1.MapDelete("/workspaces/{workspaceId:guid}/saved/{messageId:guid}", async (
     db.SavedMessages.Remove(saved);
     await db.SaveChangesAsync(ct);
     return Results.NoContent();
-});
+}).RequirePermission(Permissions.Message.Read);
 
 v1.MapGet("/workspaces/{workspaceId:guid}/saved", async (
     Guid workspaceId,
@@ -2663,18 +2614,12 @@ v1.MapGet("/channels/{channelId:guid}/messages/{messageId:guid}/reactions/{emoji
     HttpContext http,
     VibeChatDbContext db,
     ITenantContext tenant,
-    IPermissionChecker permissions,
     IClock clock,
     CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
     if (channel is null)
-    {
-        return Results.Forbid();
-    }
-
-    if (!await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.React, ct))
     {
         return Results.Forbid();
     }
@@ -2713,7 +2658,7 @@ v1.MapGet("/channels/{channelId:guid}/messages/{messageId:guid}/reactions/{emoji
         .ToArray();
 
     return Results.Ok(new ReactionUsersResponse(normalizedEmoji, users, users.Length));
-});
+}).RequirePermission(Permissions.Message.React);
 
 v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IAuditWriter audit, IClock clock, CancellationToken ct) =>
 {
@@ -2773,7 +2718,7 @@ v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid
     audit.Add(new AuditEvent { TenantId = channel.TenantId, ActorUserId = profile.Id, Action = AuditActions.MessageDelete, EntityType = "Message", EntityId = message.Id.ToString(), MetadataJson = JsonSerializer.Serialize(new { channelId, threadId = message.ThreadId, message.Sequence }) });
     await db.SaveChangesAsync(ct);
     return Results.NoContent();
-});
+}).AllowPermissionGateExempt("conditional DeleteOwn/DeleteAny (B-023)");
 
 v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}/link-preview", async (
     Guid channelId,
@@ -2821,7 +2766,7 @@ v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}/link-preview"
 
     await db.SaveChangesAsync(ct);
     return Results.NoContent();
-});
+}).AllowPermissionGateExempt("author or workspace.admin (B-091)");
 
 v1.MapGet("/channels/{channelId:guid}/messages/{messageId:guid}/link-preview/image", async (
     Guid channelId,
@@ -2908,7 +2853,7 @@ v1.MapPut("/channels/{channelId:guid}/read-cursor", async (Guid channelId, Upser
     };
     await publisher.PublishAsync(new RealtimeMessage("ReadCursorChanged", channel.TenantId, channel.Id, payload), ct);
     return Results.Ok(new ReadCursorResponse(channel.Id.Value, profile.Id.Value, cursor.LastReadSequence, cursor.UpdatedAt));
-});
+}).RequirePermission(Permissions.Message.Read);
 
 v1.MapGet("/search/messages", async (
     Guid workspaceId,
@@ -2918,7 +2863,6 @@ v1.MapGet("/search/messages", async (
     HttpContext http,
     VibeChatDbContext db,
     ITenantContext tenant,
-    IPermissionChecker permissions,
     ISearchQuery search,
     IClock clock,
     CancellationToken ct) =>
@@ -2926,12 +2870,6 @@ v1.MapGet("/search/messages", async (
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
     if (workspace is null)
-    {
-        return Results.Forbid();
-    }
-
-    if (!await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Search.Messages, ct)
-        || !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Message.Read, ct))
     {
         return Results.Forbid();
     }
@@ -2979,7 +2917,7 @@ v1.MapGet("/search/messages", async (
     {
         return Results.Problem(detail: ex.GetBaseException().Message, statusCode: StatusCodes.Status500InternalServerError);
     }
-}).RequireAuthorization();
+}).RequirePermission(Permissions.Search.Messages, Permissions.Message.Read);
 
 v1.MapGet("/channels/{channelId:guid}/unread-count", async (Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
 {
@@ -3004,21 +2942,15 @@ v1.MapGet("/channels/{channelId:guid}/unread-count", async (Guid channelId, Http
     return Results.Ok(new { channelId, unreadCount = count, mentionCount });
 });
 
-v1.MapGet("/admin/dashboard", async (HttpContext http, VibeChatDbContext db, ITenantContext tenant, IDashboardQuery dashboard, IPresenceService presence, HealthCheckService health, IConfiguration config, IClock clock, CancellationToken ct) =>
+v1.MapGet("/admin/dashboard", async (HttpContext http, VibeChatDbContext db, ITenantContext tenant, IDashboardQuery dashboard, IPresenceService presence, HealthCheckService health, IConfiguration config, IClock clock, IPermissionChecker permissions, CancellationToken ct) =>
 {
-    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
-    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
-    var membershipTenant = await db.WorkspaceMembers.IgnoreQueryFilters()
-        .Where(x => x.UserId == profile.Id)
-        .Select(x => x.TenantId)
-        .FirstOrDefaultAsync(ct);
-    if (membershipTenant.Value == Guid.Empty)
+    var access = await ResolveAdminDashboardAccessAsync(http, db, tenant, permissions, clock, ct);
+    if (access is null)
     {
         return Results.Forbid();
     }
 
-    tenant.SetTenant(membershipTenant);
-    await RlsSession.EnsureAppliedAsync(db, tenant, ct);
+    var (_, membershipTenant) = access.Value;
     var stats = await dashboard.GetStatsAsync(ct);
     var online = await presence.CountOnlineAsync(membershipTenant, ct);
     var failures = await db.OutboxMessages.IgnoreQueryFilters().CountAsync(x => x.ProcessedAt == null && x.Attempts > 0, ct);
@@ -3044,7 +2976,7 @@ v1.MapGet("/admin/dashboard", async (HttpContext http, VibeChatDbContext db, ITe
         new AdminHealthResponse(MapHealth("postgres"), MapHealth("redis"), MapHealth("minio")),
         typeof(Program).Assembly.GetName().Version?.ToString() ?? "0.1.0",
         config["Observability:GrafanaUrl"] ?? "http://localhost:3000"));
-});
+}).RequirePermission(Permissions.Admin.Dashboard);
 
 v1.MapGet("/admin/audit-events", async (
     int? limit,
@@ -3093,7 +3025,7 @@ v1.MapGet("/admin/audit-events", async (
         x.MetadataJson)).ToArray();
 
     return Results.Ok(new AuditEventsResponse(items));
-});
+}).RequirePermission(Permissions.Admin.Dashboard);
 
 // B-067: conversation audit viewer — admin.dashboard; bypass channel membership within tenant.
 v1.MapGet("/admin/conversations", async (
@@ -3151,7 +3083,7 @@ v1.MapGet("/admin/conversations", async (
     }).ToArray();
 
     return Results.Ok(new AdminConversationsResponse(items));
-});
+}).RequirePermission(Permissions.Admin.Dashboard);
 
 v1.MapGet("/admin/conversations/{channelId:guid}/messages", async (
     Guid channelId,
@@ -3241,7 +3173,7 @@ v1.MapGet("/admin/conversations/{channelId:guid}/messages", async (
         attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [])).ToArray();
 
     return Results.Ok(new AdminConversationMessagesResponse(items));
-});
+}).RequirePermission(Permissions.Admin.Dashboard);
 
 v1.MapGet("/admin/threads/{threadId:guid}/messages", async (
     Guid threadId,
@@ -3319,7 +3251,7 @@ v1.MapGet("/admin/threads/{threadId:guid}/messages", async (
         attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [])).ToArray();
 
     return Results.Ok(new AdminConversationMessagesResponse(items));
-});
+}).RequirePermission(Permissions.Admin.Dashboard);
 
 // B-069 / ADR-020: sensitive integration settings — admin-only, secrets always masked.
 v1.MapGet("/admin/settings", async (
@@ -3340,7 +3272,7 @@ v1.MapGet("/admin/settings", async (
 
     var (_, workspace) = access.Value;
     return Results.Ok(await settingsAdmin.BuildResponseAsync(workspace, ct));
-});
+}).RequirePermission(Permissions.Workspace.Admin);
 
 v1.MapPut("/admin/settings", async (
     UpdateSensitiveSettingsRequest request,
@@ -3700,7 +3632,7 @@ v1.MapPut("/admin/settings", async (
     }
 
     return Results.Ok(await settingsAdmin.BuildResponseAsync(workspace, ct));
-});
+}).RequirePermission(Permissions.Workspace.Admin);
 
 v1.MapPost("/admin/settings/credentials/openrouter/rotate", async (
     RotateCredentialRequest request,
@@ -3725,7 +3657,7 @@ v1.MapPost("/admin/settings/credentials/openrouter/rotate", async (
     return result.Ok
         ? Results.Ok(new { configured = result.Configured, mask = result.Mask, keyVersion = result.KeyVersion, rotatedAt = result.RotatedAt })
         : Results.Json(new { error = result.Error, message = result.Message }, statusCode: result.StatusCode);
-});
+}).RequirePermission(Permissions.Workspace.Admin);
 
 v1.MapPost("/admin/settings/credentials/smtp/rotate", async (
     RotateCredentialRequest request,
@@ -3750,7 +3682,7 @@ v1.MapPost("/admin/settings/credentials/smtp/rotate", async (
     return result.Ok
         ? Results.Ok(new { configured = result.Configured, mask = result.Mask, keyVersion = result.KeyVersion, rotatedAt = result.RotatedAt })
         : Results.Json(new { error = result.Error, message = result.Message }, statusCode: result.StatusCode);
-});
+}).RequirePermission(Permissions.Workspace.Admin);
 
 v1.MapPost("/admin/settings/credentials/webhook/rotate", async (
     RotateCredentialRequest request,
@@ -3775,7 +3707,7 @@ v1.MapPost("/admin/settings/credentials/webhook/rotate", async (
     return result.Ok
         ? Results.Ok(new { configured = result.Configured, mask = result.Mask, keyVersion = result.KeyVersion, rotatedAt = result.RotatedAt })
         : Results.Json(new { error = result.Error, message = result.Message }, statusCode: result.StatusCode);
-});
+}).RequirePermission(Permissions.Workspace.Admin);
 
 v1.MapPost("/admin/settings/encryption/reencrypt", async (
     RotateCredentialRequest request,
@@ -3803,7 +3735,7 @@ v1.MapPost("/admin/settings/encryption/reencrypt", async (
 
     var payload = await settingsAdmin.BuildResponseAsync(workspace, ct);
     return Results.Ok(new { reencrypted, settings = payload });
-});
+}).RequirePermission(Permissions.Workspace.Admin);
 
 // B-046: workspace compliance export (ZIP of JSON) — workspace.admin only (not Auditor).
 v1.MapGet("/admin/workspaces/{workspaceId:guid}/export", async (
@@ -3844,21 +3776,22 @@ v1.MapGet("/admin/workspaces/{workspaceId:guid}/export", async (
 
     var fileName = $"vibechat-export-{workspace.Slug}-{exportedAt:yyyyMMddHHmmss}.zip";
     return Results.File(zipBytes, "application/zip", fileName);
-});
+}).RequirePermission(Permissions.Workspace.Admin);
 
 v1.MapGet("/admin/health-summary", async (HealthCheckService health, CancellationToken ct) =>
 {
     var report = await health.CheckHealthAsync(ct);
     return Results.Ok(new { status = report.Status.ToString(), checks = report.Entries.ToDictionary(x => x.Key, x => x.Value.Status.ToString()) });
-});
+}).RequirePermission(Permissions.Admin.Dashboard);
 
-v1.MapGet("/admin/version", () => Results.Ok(new { name = "VibeChat.Api", version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "0.1.0" }));
+v1.MapGet("/admin/version", () => Results.Ok(new { name = "VibeChat.Api", version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "0.1.0" }))
+    .RequirePermission(Permissions.Admin.Dashboard);
 
-v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/summarize", async (Guid workspaceId, Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, ISummarizeChannelFeature summarize, IClock clock, CancellationToken ct) =>
+v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/summarize", async (Guid workspaceId, Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, ISummarizeChannelFeature summarize, IClock clock, CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
-    if (workspace is null || !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Ai.Summarize, ct))
+    if (workspace is null)
     {
         return Results.Forbid();
     }
@@ -3880,13 +3813,13 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/summariz
     }
 
     return Results.Ok(new AiSummaryResponse(result.Summary));
-});
+}).RequirePermission(Permissions.Ai.Summarize);
 
-v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/suggest-reply", async (Guid workspaceId, Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, ISuggestChannelReplyFeature suggestReply, IClock clock, CancellationToken ct) =>
+v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/suggest-reply", async (Guid workspaceId, Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, ISuggestChannelReplyFeature suggestReply, IClock clock, CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
-    if (workspace is null || !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Ai.SuggestReply, ct))
+    if (workspace is null)
     {
         return Results.Forbid();
     }
@@ -3908,7 +3841,7 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/suggest-
     }
 
     return Results.Ok(new AiSuggestReplyResponse(result.Suggestion));
-});
+}).RequirePermission(Permissions.Ai.SuggestReply);
 
 v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/messages/{messageId:guid}/attachments/{attachmentId:guid}/transcribe", async (
     Guid workspaceId,
@@ -3918,7 +3851,6 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/messages/{m
     HttpContext http,
     VibeChatDbContext db,
     ITenantContext tenant,
-    IPermissionChecker permissions,
     ITranscribeAttachmentFeature transcribe,
     IAuditWriter audit,
     IClock clock,
@@ -3926,7 +3858,7 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/messages/{m
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
     var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
-    if (workspace is null || !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Ai.Transcribe, ct))
+    if (workspace is null)
     {
         return Results.Forbid();
     }
@@ -3970,7 +3902,7 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/messages/{m
     await db.SaveChangesAsync(ct);
 
     return Results.Ok(new AiTranscribeResponse(result.Text, result.Language ?? "und", result.Provider ?? "Unknown"));
-});
+}).RequirePermission(Permissions.Ai.Transcribe);
 
 if (app.Environment.IsDevelopment())
 {
@@ -3983,7 +3915,7 @@ if (app.Environment.IsDevelopment())
         var seed = new SeedData(seedDb, clock, logs.CreateLogger<SeedData>());
         await seed.SeedAsync(ct);
         return Results.Ok(new { seeded = true });
-    }).AllowAnonymous();
+    }).AllowAnonymous().AllowPermissionGateExempt("Development seed; AllowAnonymous lab-only");
 }
 
 app.MapHub<ChatHub>("/hubs/chat").RequireAuthorization();
@@ -4267,112 +4199,17 @@ static async Task WriteZipJsonEntryAsync<T>(
     await JsonSerializer.SerializeAsync(stream, payload, jsonOptions, ct);
 }
 
-static async Task<UserProfile> EnsureProfileAsync(ClaimsPrincipal principal, VibeChatDbContext db, IClock clock, CancellationToken ct)
-{
-    var subject = principal.FindFirstValue(ClaimTypes.NameIdentifier) ?? principal.FindFirstValue("sub") ?? throw new UnauthorizedAccessException("Missing subject.");
-    var profile = await db.UserProfiles.FirstOrDefaultAsync(x => x.Subject == subject, ct);
-    if (profile is not null)
-    {
-        profile.Email = principal.FindFirstValue(ClaimTypes.Email) ?? principal.FindFirstValue("email") ?? profile.Email;
-        profile.DisplayName = principal.FindFirstValue("name") ?? profile.DisplayName;
-        profile.UpdatedAt = clock.UtcNow;
-        await db.SaveChangesAsync(ct);
-        return profile;
-    }
+static Task<UserProfile> EnsureProfileAsync(ClaimsPrincipal principal, VibeChatDbContext db, IClock clock, CancellationToken ct) =>
+    RequestAuth.EnsureProfileAsync(principal, db, clock, ct);
 
-    var email = (principal.FindFirstValue(ClaimTypes.Email) ?? principal.FindFirstValue("email") ?? string.Empty).Trim();
-    var displayName = principal.FindFirstValue("name") ?? subject;
+static Task BeginRlsUserAsync(VibeChatDbContext db, ITenantContext tenant, UserId userId, CancellationToken ct) =>
+    RequestAuth.BeginRlsUserAsync(db, tenant, userId, ct);
 
-    // B-068: claim pending invite stub created by admin (subject pending:{email}).
-    if (!string.IsNullOrWhiteSpace(email))
-    {
-        var normalizedEmail = email.ToLowerInvariant();
-        var pendingSubject = WorkspaceRolePolicies.PendingSubjectForEmail(normalizedEmail);
-        var pending = await db.UserProfiles.FirstOrDefaultAsync(
-            x => x.Subject == pendingSubject || (x.Email.ToLower() == normalizedEmail && x.Subject.StartsWith("pending:")),
-            ct);
-        if (pending is not null)
-        {
-            pending.Subject = subject;
-            pending.Email = email;
-            pending.DisplayName = string.IsNullOrWhiteSpace(displayName) ? pending.DisplayName : displayName;
-            pending.UpdatedAt = clock.UtcNow;
-            await db.SaveChangesAsync(ct);
-            return pending;
-        }
-    }
+static Task<Workspace?> ResolveWorkspaceAsync(WorkspaceId workspaceId, UserId userId, VibeChatDbContext db, ITenantContext tenant, CancellationToken ct) =>
+    RequestAuth.ResolveWorkspaceAsync(workspaceId, userId, db, tenant, ct);
 
-    var userId = Guid.TryParse(principal.FindFirstValue("vibechat_user_id"), out var claimId) ? new UserId(claimId) : UserId.New();
-    profile = new UserProfile
-    {
-        Id = userId,
-        Subject = subject,
-        Email = string.IsNullOrWhiteSpace(email) ? $"{subject}@unknown.local" : email,
-        DisplayName = displayName,
-        CreatedAt = clock.UtcNow,
-        UpdatedAt = clock.UtcNow
-    };
-    db.UserProfiles.Add(profile);
-    await db.SaveChangesAsync(ct);
-    return profile;
-}
-
-static async Task BeginRlsUserAsync(VibeChatDbContext db, ITenantContext tenant, UserId userId, CancellationToken ct)
-{
-    tenant.SetUser(userId);
-    await RlsSession.EnsureAppliedAsync(db, tenant, ct);
-}
-
-static async Task<Workspace?> ResolveWorkspaceAsync(WorkspaceId workspaceId, UserId userId, VibeChatDbContext db, ITenantContext tenant, CancellationToken ct)
-{
-    await BeginRlsUserAsync(db, tenant, userId, ct);
-
-    var workspace = await db.Workspaces.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == workspaceId, ct);
-    if (workspace is null)
-    {
-        return null;
-    }
-
-    var isMember = await db.WorkspaceMembers.IgnoreQueryFilters().AnyAsync(x => x.TenantId == workspace.TenantId && x.WorkspaceId == workspace.Id && x.UserId == userId, ct);
-    if (!isMember)
-    {
-        return null;
-    }
-
-    tenant.SetTenant(workspace.TenantId);
-    await RlsSession.EnsureAppliedAsync(db, tenant, ct);
-    return workspace;
-}
-
-static async Task<Channel?> ResolveChannelAsync(ChannelId channelId, UserId userId, VibeChatDbContext db, ITenantContext tenant, CancellationToken ct)
-{
-    await BeginRlsUserAsync(db, tenant, userId, ct);
-
-    var channel = await db.Channels.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == channelId, ct);
-    if (channel is null)
-    {
-        return null;
-    }
-
-    var isWorkspaceMember = await db.WorkspaceMembers.IgnoreQueryFilters().AnyAsync(x => x.TenantId == channel.TenantId && x.WorkspaceId == channel.WorkspaceId && x.UserId == userId, ct);
-    if (!isWorkspaceMember)
-    {
-        return null;
-    }
-
-    if (channel.Type is ChannelType.Private or ChannelType.Direct or ChannelType.Group)
-    {
-        var isChannelMember = await db.ChannelMembers.IgnoreQueryFilters().AnyAsync(x => x.TenantId == channel.TenantId && x.ChannelId == channel.Id && x.UserId == userId, ct);
-        if (!isChannelMember)
-        {
-            return null;
-        }
-    }
-
-    tenant.SetTenant(channel.TenantId);
-    await RlsSession.EnsureAppliedAsync(db, tenant, ct);
-    return channel;
-}
+static Task<Channel?> ResolveChannelAsync(ChannelId channelId, UserId userId, VibeChatDbContext db, ITenantContext tenant, CancellationToken ct) =>
+    RequestAuth.ResolveChannelAsync(channelId, userId, db, tenant, ct);
 
 static string BuildDirectChannelName(UserId left, UserId right)
 {
@@ -5139,7 +4976,8 @@ public sealed class DevAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> 
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var name = "demo";
+        // B-177: no silent demo fallback — resolve name only from header/query.
+        string? name = null;
         if (Request.Headers.TryGetValue("X-Dev-User", out var headerValues) && !string.IsNullOrWhiteSpace(headerValues))
         {
             name = headerValues.ToString();
@@ -5147,6 +4985,11 @@ public sealed class DevAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> 
         else if (Request.Query.TryGetValue("devUser", out var queryValues) && !string.IsNullOrWhiteSpace(queryValues))
         {
             name = queryValues.ToString();
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return Task.FromResult(AuthenticateResult.Fail("Missing X-Dev-User or devUser."));
         }
 
         var key = name.ToLowerInvariant();
@@ -5189,16 +5032,8 @@ public sealed class DevAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> 
         }
         else
         {
-            // Unknown X-Dev-User without X-Dev-Email keeps demo fallback (prior behavior).
-            claims =
-            [
-                new Claim(ClaimTypes.NameIdentifier, "dev:demo"),
-                new Claim("sub", "dev:demo"),
-                new Claim("vibechat_user_id", SeedData.DemoUserId.Value.ToString()),
-                new Claim(ClaimTypes.Email, "demo@vibechat.local"),
-                new Claim("name", "Demo"),
-                new Claim(ClaimTypes.Role, Role.WorkspaceOwner.ToString())
-            ];
+            // B-177: unknown X-Dev-User without X-Dev-Email → fail closed (401).
+            return Task.FromResult(AuthenticateResult.Fail($"Unknown X-Dev-User '{key}'. Use alice|bob|demo or X-Dev-Email."));
         }
 
         var identity = new ClaimsIdentity(claims, SchemeName);

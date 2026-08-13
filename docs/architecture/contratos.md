@@ -38,7 +38,10 @@ public interface ITenantContext
 }
 ```
 
-`TenantId` e `UserId` vêm exclusivamente do token/contexto autenticado (`ICurrentUser` carrega identity/roles do principal).
+`TenantId` e `UserId` vêm exclusivamente do token/contexto autenticado.
+`ICurrentUser` carrega **identidade** do principal (`sub`, email, display name).
+Claims JWT de role (`ClaimTypes.Role` / `ICurrentUser.Roles`) **não** autorizam
+ações de produto — ver B-176 e a seção abaixo.
 Tipos de principal, sessão, device e delegação seguem
 [`modelo-identidade-principals.md`](modelo-identidade-principals.md).
 
@@ -50,6 +53,14 @@ Não existe `IMembershipQuery` monolítico. AuthZ combina:
 
 1. **Membership** — leitores de domínio por bounded context
 2. **Permissões** — `IPermissionChecker` + `RolePermissionCatalog` em BuildingBlocks
+
+**Fonte de verdade de papéis (B-176):** autorização de produto vem de
+`tenancy.workspace_members.role` + `RolePermissionCatalog`. O JWT (Keycloak)
+prova identidade (`sub`, email); realm roles do IdP são opcionais para SSO futuro
+e **não** substituem membership. `PermissionChecker.GetRolesAsync` /
+`HasPermissionAsync` leem só o DB. `GET /api/v1/me` e `GET /api/v1/workspaces`
+expõem o papel da membership (não claims JWT). Sync Keycloak → membership é
+B-128 (SCIM), fora do escopo atual.
 
 ```csharp
 // modules/Tenancy
@@ -73,8 +84,13 @@ public interface IPermissionChecker
 ```
 
 Implementação concreta: `PermissionChecker` em Infrastructure também satisfaz os leitores de
-membership. Endpoints tipicamente checam membership + `HasPermissionAsync` (ex.:
-`Permissions.Message.Send`) no composition root — não há `CanPostAsync` como porta separada.
+membership. Endpoints tipicamente checam membership + permissão. Em Minimal APIs (B-174),
+mutações e superfícies sensíveis declaram `RequirePermission(permission)` (metadata
+`RequirePermissionAttribute`); o filtro de grupo `/api/v1` resolve tenant via
+`ResolveWorkspaceAsync` / `ResolveChannelAsync` / membership admin e chama
+`HasPermissionAsync` — **nunca** a partir de `tenantId` do body. Checagens condicionais
+(EditOwn/DeleteOwn vs DeleteAny, autor vs admin) permanecem no handler.
+Matriz endpoint × gate: [`docs/security/authz-matriz.md`](../security/authz-matriz.md) (B-175).
 
 ---
 
@@ -435,6 +451,8 @@ Hub (além de `JoinChannel` / `LeaveChannel` / `SendTyping`):
 
 | Método | Notas |
 |--------|-------|
+| `JoinChannel(tenantId, channelId)` | Membership do canal |
+| `SendTyping(tenantId, channelId, displayName)` | Membership + `message.send` (B-175); Auditor sem send → `HubException` |
 | `Heartbeat(tenantId)` | Renova presença online (TTL ~45s); authZ via membership no tenant |
 | `SetAway(tenantId)` | Marca away; authZ via membership no tenant |
 
@@ -522,7 +540,9 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 
 | Endpoint | Notas |
 |----------|-------|
-| `GET /api/v1/admin/dashboard` | Métricas operacionais (auth obrigatória) |
+| `GET /api/v1/admin/dashboard` | Métricas operacionais; exige `admin.dashboard` (Member → 403; B-175) |
+| `GET /api/v1/admin/health-summary` | Status dos health checks (postgres/redis/minio); exige `admin.dashboard` (B-175); distinto de `GET /health` anônimo |
+| `GET /api/v1/admin/version` | Versão da API; exige `admin.dashboard` (B-175) |
 | `GET /api/v1/admin/audit-events?limit=&action=` | Lista eventos de `audit.audit_events` do tenant do actor; exige `admin.dashboard`; `limit` 1–200 (default 50); nunca retorna eventos de outro tenant |
 | `GET /api/v1/admin/conversations?workspaceId=&limit=` | Lista canais/DMs do tenant para auditoria (B-067); exige `admin.dashboard`; **não** exige `channel_members`; `limit` 1–200 (default 100) |
 | `GET /api/v1/admin/conversations/{channelId}/messages?after=&limit=` | Histórico admin do canal/DM (root); body **visível** mesmo com soft-delete; inclui `deletedBy` / anexos; exige `admin.dashboard`; canal fora do tenant → 403 |
@@ -738,8 +758,8 @@ Sem autenticação, sem `tenant_id`, sem secret.
 O cliente embute o mesmo `version`/`buildId` no bootstrap e compara com
 `/version.json` (boot, focus/visibility, intervalo longo) e com
 `SwUpdate.versionUpdates` quando o service worker está ativo. Reload só após
-CTA explícito do usuário. `GET /api/v1/admin/version` permanece admin e descreve
-a API — não é dependência do caminho de update do PWA.
+CTA explícito do usuário. `GET /api/v1/admin/version` exige `admin.dashboard` e
+descreve a API — não é dependência do caminho de update do PWA.
 
 Nginx de referência (`apps/web/nginx.conf`): `index.html`, `ngsw.json` e
 `version.json` usam `Cache-Control: no-cache, no-store, must-revalidate`;

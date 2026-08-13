@@ -7,7 +7,8 @@
 ```text
 ┌──────────────────────────────────────────┐
 │ Camada 1 — Identidade (Keycloak / JWT)   │
-│  sub, roles, tenant claim mapeada        │
+│  sub, email, tenant claim mapeada        │
+│  (realm roles NÃO autorizam produto)     │
 └─────────────────┬────────────────────────┘
                   ▼
 ┌──────────────────────────────────────────┐
@@ -17,7 +18,9 @@
                   ▼
 ┌──────────────────────────────────────────┐
 │ Camada 3 — Autorização de domínio        │
-│  Membership / CanPost / CanAccess        │
+│  workspace_members.role (DB) +           │
+│  RolePermissionCatalog / membership      │
+│  Matriz: docs/security/authz-matriz.md   │
 └─────────────────┬────────────────────────┘
                   ▼
 ┌──────────────────────────────────────────┐
@@ -34,6 +37,9 @@
 └──────────────────────────────────────────┘
 ```
 
+**Nota (B-176):** a Camada 1 autentica; a Camada 3 autoriza. Papel de produto
+vive em `tenancy.workspace_members.role`, não em claims JWT nem em realm roles
+do Keycloak. Atribuir `admin` no IdP não eleva o usuário no VibeChat.
 ## Regras não negociáveis
 
 1. **Tenant do token/contexto** — ignorar tentativas de override do cliente
@@ -108,9 +114,17 @@ em `SEC-RLS-RUNTIME` (`RlsSession` + `03-rls.sql` + roles Compose); ver
 - Acesso SQL direto é break-glass — fora do app; playbooks em `operacao.md`
 - Nunca compartilhar credenciais de role bypass entre app e humanos no dia a dia
 
+## Cobertura authZ (B-175)
+
+Matriz endpoint × gate (membership vs `RequirePermission` vs condicional):
+[`authz-matriz.md`](authz-matriz.md). Inclui API `/api/v1` e hub SignalR.
+Superfícies `/admin/*` sensíveis exigem `admin.dashboard` ou `workspace.admin`
+— membership sozinha não basta.
+
 ## Checklist de review de PR
 
 - [ ] Novos endpoints usam TenantContext?
 - [ ] Novas tabelas com RLS + tenant_id?
 - [ ] Novas keys Redis/MinIO prefixadas?
 - [ ] Teste negativo cross-tenant adicionado?
+- [ ] Endpoint novo listado em `authz-matriz.md` com o gate correto?

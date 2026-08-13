@@ -29,9 +29,9 @@ Documentação; sem alteração de API.
 
 ## Aceite
 
-- [ ] Contratos e glossário descrevem a separação identidade vs autorização.
-- [ ] `multi-tenant.md` referencia a matriz de camadas com nota sobre DB roles.
-- [ ] Realm/docs Keycloak não contradizem o modelo DB-first.
+- [x] Contratos e glossário descrevem a separação identidade vs autorização.
+- [x] `multi-tenant.md` referencia a matriz de camadas com nota sobre DB roles.
+- [x] Realm/docs Keycloak não contradizem o modelo DB-first.
 
 ## Evidência
 

@@ -39,13 +39,14 @@ de body/query solta. Falha fechada: sem tenant/membro → 403.
 
 ## Aceite
 
-- [ ] Atributo/filtro aplicado e registrado no pipeline da API.
-- [ ] Handlers de mutação críticos (mensagem, admin, settings, invite/role) usam
+- [x] Atributo/filtro aplicado e registrado no pipeline da API.
+- [x] Handlers de mutação críticos (mensagem, admin, settings, invite/role) usam
   o filtro ou helper unificado.
-- [ ] Teste CI impede regressão de endpoint sem gate.
-- [ ] `task test:security` verde.
+- [x] Teste CI impede regressão de endpoint sem gate
+  (`ArchitectureRulesTests.Mutable_api_v1_maps_declare_RequirePermission_or_exempt`).
+- [x] `task test:architecture` verde.
 
 ## Evidência
 
-- Saída de `task test:security` e arch tests.
+- Saída de `task test:architecture`.
 - Lista de endpoints migrados no PR.

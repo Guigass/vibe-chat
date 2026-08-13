@@ -91,10 +91,10 @@ backlog ficam no **Registro de GAPs** (`roadmap.md`).
 | B-105 | Catálogo de configuração admin mínima no `.env` | **Done (W7-7)** — EMAIL__* injetado no api; retenção no worker; alias OpenRouter unificado; testes `ComposeConfigCatalogTests`; [spec](../product/specs/B-105-catalogo-configuracao.md) |
 | B-106 | Admin shell (nav, toolbars, listagens, filtros, visibilidade por papel) | Done (W7-8) — shell `/admin/*`, hide por claim (UX-005); matriz Admin/Auditor/Member; spec `docs/product/specs/B-106-admin-shell.md` |
 | B-165 | Controle de versão do cliente web (cache / PWA) | **Done** (W7-9) — buildId + `version.json` + SwUpdate/CTA + headers anti-cache; fecha UX-007; [spec](../product/specs/B-165-controle-versao-cliente-web.md) |
-| B-174 | Filtro centralizado `RequirePermission` na API | Planned (W7-10) — atributo/filtro Minimal API; reduz duplicação de `HasPermissionAsync`; arch/security test; [spec](../product/specs/B-174-filtro-centralizado-permissoes.md) |
-| B-175 | Auditoria cobertura authZ (membership vs permission) | Planned (W7-11) — matriz endpoint × gate; corrigir gaps; testes negativos; [spec](../product/specs/B-175-auditoria-cobertura-authz.md) |
-| B-176 | Fonte de verdade de roles — DB vs Keycloak | Planned (W7-12) — docs contratos/glossário/multi-tenant; JWT = identidade; membership = authZ; [spec](../product/specs/B-176-fonte-verdade-roles.md) |
-| B-177 | DevAuth fail-closed (sem fallback demo) | Planned (W7-13) — `X-Dev-User` inválido → 401; alice/bob/demo + `X-Dev-Email` intactos; [spec](../product/specs/B-177-devauth-fail-closed.md) |
+| B-174 | Filtro centralizado `RequirePermission` na API | **Done** (W7-10) — filtro de grupo `/api/v1` + `RequirePermission`; gate CI; [spec](../product/specs/B-174-filtro-centralizado-permissoes.md) |
+| B-175 | Auditoria cobertura authZ (membership vs permission) | **Done** (W7-11) — [authz-matriz](../security/authz-matriz.md); admin dashboard/health/version + hub typing; [spec](../product/specs/B-175-auditoria-cobertura-authz.md) |
+| B-176 | Fonte de verdade de roles — DB vs Keycloak | **Done** (W7-12) — docs contratos/glossário/multi-tenant; JWT = identidade; membership = authZ; [spec](../product/specs/B-176-fonte-verdade-roles.md) |
+| B-177 | DevAuth fail-closed (sem fallback demo) | **Done** (W7-13) — `X-Dev-User` inválido → 401; alice/bob/demo + `X-Dev-Email` intactos; [spec](../product/specs/B-177-devauth-fail-closed.md) |
 
 ## Paridade de mensageria — Waves 8 a 10
 
@@ -105,7 +105,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 
 | ID | Item | Notas |
 |----|------|-------|
-| B-079 | Anexos múltiplos, drag & drop, colar, progresso | Planned (W8-1) — hoje é 1 arquivo por botão; drag é enhancement, nunca caminho único (WCAG 2.2 · 2.5.7) |
+| B-079 | Anexos múltiplos, drag & drop, colar, progresso | **Done (W8-1)** — múltiplos anexos; drag/colar enhancement (WCAG 2.2 · 2.5.7); nunca caminho único |
 | B-080 | Mensagem de áudio | Done (W8-2) — MIME negociado no cliente, waveform nos metadados, transcrição opt-in (D-12 / D-06) |
 | B-081 | Formatação de texto | Done (W8-3) — Markdown restrito; `body` continua Markdown no banco |
 | B-082 | Menções | Done (W8-4) — token `<@userId>`, `message_mentions`, badge separado |

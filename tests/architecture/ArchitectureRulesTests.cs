@@ -114,6 +114,71 @@ public sealed class ArchitectureRulesTests
     }
 
     [Fact]
+    public void Mutable_api_v1_maps_declare_RequirePermission_or_exempt()
+    {
+        // B-174: offline gate — between each v1.Map(Post|Put|Patch|Delete) and the next
+        // v1.Map* / app.Map* / app.Run, RequirePermission or AllowPermissionGateExempt must appear.
+        var programPath = FindRepoFile(Path.Combine("apps", "api", "Program.cs"));
+        var source = File.ReadAllText(programPath);
+        var mapPattern = new System.Text.RegularExpressions.Regex(
+            @"\bv1\.Map(?<verb>Post|Put|Patch|Delete)\s*\(\s*""(?<path>[^""]+)""",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+        var matches = mapPattern.Matches(source).Cast<System.Text.RegularExpressions.Match>().ToArray();
+        var boundaryPattern = new System.Text.RegularExpressions.Regex(
+            @"\b(?:v1\.Map|app\.Map|app\.Run)\b",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        var violations = new List<string>();
+        for (var i = 0; i < matches.Length; i++)
+        {
+            var map = matches[i];
+            var regionStart = map.Index;
+            var regionEnd = source.Length;
+            var nextBoundary = boundaryPattern.Match(source, map.Index + map.Length);
+            if (nextBoundary.Success)
+            {
+                regionEnd = nextBoundary.Index;
+            }
+
+            var region = source[regionStart..regionEnd];
+            if (region.Contains(".RequirePermission(", StringComparison.Ordinal)
+                || region.Contains(".AllowPermissionGateExempt(", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            violations.Add($"{map.Groups["verb"].Value} {map.Groups["path"].Value}");
+        }
+
+        violations.Should().BeEmpty(
+            "B-174: mutable Map* must chain RequirePermission or AllowPermissionGateExempt. Missing:\n"
+            + string.Join('\n', violations));
+    }
+
+    [Fact]
+    public void Api_v1_maps_are_listed_in_authz_matriz()
+    {
+        // B-175: every Minimal API path under /api/v1 must appear in the authZ matrix.
+        var programPath = FindRepoFile(Path.Combine("apps", "api", "Program.cs"));
+        var matrizPath = FindRepoFile(Path.Combine("docs", "security", "authz-matriz.md"));
+        var source = File.ReadAllText(programPath);
+        var matriz = File.ReadAllText(matrizPath);
+        var mapPattern = new System.Text.RegularExpressions.Regex(
+            @"\bv1\.Map(?:Get|Post|Put|Patch|Delete)\s*\(\s*""(?<path>[^""]+)""",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        var missing = mapPattern.Matches(source)
+            .Select(m => m.Groups["path"].Value)
+            .Distinct(StringComparer.Ordinal)
+            .Where(path => !matriz.Contains($"`{path}`", StringComparison.Ordinal))
+            .ToArray();
+
+        missing.Should().BeEmpty(
+            "B-175: each v1.Map* path must be listed in docs/security/authz-matriz.md. Missing:\n"
+            + string.Join('\n', missing));
+    }
+
+    [Fact]
     public void Nginx_configs_include_documented_csp()
     {
         var headersPath = FindRepoFile(Path.Combine("infra", "nginx", "security-headers.conf"));

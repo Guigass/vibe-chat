@@ -4,9 +4,9 @@ Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
 - **Data de corte:** 2026-08-13
-- **Fase:** Wave 9 — Leitura e paridade de bolha (Wave 8 completa)
+- **Fase:** Wave 10 — Notificações, organização e acesso (Waves 7–9 completas)
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
-- **Próximo item elegível:** W10-1 / B-095 (Web Push); Wave 9 completa (B-184 Done)
+- **Próximo item elegível:** W10-1 / B-095 (Web Push); W7-13 / B-177 Done
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -24,8 +24,7 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
-2. Wave 7 feature work completa (W7-9 / B-165 Done); sustentação authZ aberta
-   (W7-10…W7-13 / B-174…B-177 — revisão API 2026-08-12);
+2. Wave 7 sustentação authZ completa (W7-13 / B-177 Done);
 3. avançar Wave 10 (Wave 9 completa — W9-11 / B-184 Done);
 4. consumir o roadmap autorizado W11–W19 (Wave 19 = organização do código,
    recomendada antes de W11).
@@ -81,10 +80,14 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W10-1 / B-095 | Wave 9 completa; Web Push (deps W8-4, W9-7 Done) |
+| 1 | W10-1 / B-095 | Wave 7–9 completas; Web Push (deps W8-4, W9-7 Done) |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
+W7-10 / B-174 **Done** (filtro `RequirePermission` na API Minimal).
+W7-11 / B-175 **Done** (matriz authZ + gaps admin/typing).
+W7-12 / B-176 **Done** (fonte de verdade de roles — DB vs Keycloak).
+W7-13 / B-177 **Done** (DevAuth fail-closed).
 W8-9 / B-087 **Done** (slash commands + discovery + topic).
 
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W19. Wave 19
@@ -93,10 +96,10 @@ imediata: o Build só consome W11+ depois de W7–W10 `Done`.
 
 ## Baseline de planejamento
 
-- 96 itens `Planned` entre W7–W19 (B-186/W10-15 — membros do canal; B-178…B-183
+- 95 itens `Planned` entre W7–W19 (B-186/W10-15 — membros do canal; B-178…B-183
   catalogados em W19 — organização do código; B-104/W7-6 Done via #82;
   B-076/W7-3 Done via #84; B-165/W7-9 Done 2026-08-10; B-088/W9-1 Done;
-  B-171/W9-9 Done via #129; B-173/W9-10 Done;
+  B-171/W9-9 Done via #129; B-173/W9-10 Done; B-177/W7-13 Done;
   B-184 catalogado em W9-11 — nav esquerda; B-167/B-185 catalogados em W11 —
   perfil e personalização visual; B-169 catalogado em W14 — gate auditoria↔E2EE;
   B-170 catalogado em W16 — performance/escalabilidade antes de HA;

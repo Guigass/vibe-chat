@@ -9,7 +9,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Tenant** | Unidade de isolamento lógico de dados e configuração. Corresponde tipicamente a uma organização/cliente. Todas as queries de negócio filtram por `tenant_id`; no PostgreSQL, reforçado por **RLS**. |
 | **Workspace** | Espaço de trabalho colaborativo dentro de um tenant. Agrupa people, spaces e configurações. Um tenant pode ter um ou mais workspaces. |
 | **Membership** | Vínculo usuário ↔ workspace (ou space/channel), com papéis e permissões. |
-| **Role / Permissão** | Papel (ex.: owner, admin, member, guest) e claims que autorizam ações. |
+| **Role / Permissão** | Papel de **workspace** em `workspace_members.role` (ex.: Owner, Admin, Member, Guest, Auditor) + capabilities do `RolePermissionCatalog` (`workspace.admin`, `admin.dashboard`, etc.). Fonte de verdade da authZ de produto (B-176). Claims JWT / realm roles do Keycloak **não** concedem papel de workspace. Distinto de **roles de banco** (`vibechat_app` / migrator — RLS) e de **realm roles** do IdP (identidade/SSO opcional). |
 | **Contact group / Grupo de contatos** | Agrupamento da **lista de pessoas** do workspace para navegação (B-166). Kind `department` (departamento compartilhado, ex.: Vendas, Estoque, TI; admin) ou `personal` (só o dono). **Não** é Space, **não** concede acesso a canal/DM e **não** substitui membership de autorização nem grupos SCIM (B-128). |
 
 ## Estrutura de conversa

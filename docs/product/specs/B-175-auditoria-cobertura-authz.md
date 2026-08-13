@@ -38,11 +38,14 @@ aplicável.
 
 ## Aceite
 
-- [ ] Matriz endpoint × authZ publicada e linkada no roadmap.
-- [ ] Gaps de mutação/leitura sensível corrigidos ou justificados na matriz.
-- [ ] Testes security cobrem regressões dos gaps fechados.
-- [ ] `task test:security` verde.
+- [x] Matriz endpoint × authZ publicada e linkada no roadmap.
+- [x] Gaps de mutação/leitura sensível corrigidos ou justificados na matriz.
+- [x] Testes security cobrem regressões dos gaps fechados.
+- [x] `task test:security` verde.
 
 ## Evidência
 
-- Matriz em docs + saída de `task test:security`.
+- Matriz: [`docs/security/authz-matriz.md`](../../security/authz-matriz.md)
+- Gaps fechados: `admin/dashboard|health-summary|version` → `admin.dashboard`;
+  hub `SendTyping` → `message.send`
+- Saída de `task test:architecture` + `task test:security`

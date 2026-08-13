@@ -58,13 +58,13 @@
       },
       {
         "name": "user",
-        "description": "Standard VibeChat user",
+        "description": "Optional IdP realm role for SSO grouping; does NOT grant VibeChat workspace permissions (authZ = workspace_members.role in DB)",
         "composite": false,
         "clientRole": false
       },
       {
         "name": "admin",
-        "description": "VibeChat tenant/workspace admin",
+        "description": "Optional IdP realm role; does NOT elevate VibeChat workspace admin — use membership role via /admin (B-176)",
         "composite": false,
         "clientRole": false
       }

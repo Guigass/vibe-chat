@@ -149,9 +149,10 @@ não óbvios de execução. Comandos padrão estão no `README.md` e `Taskfile.y
   `appsettings.Development.json`) a API aplica migrations e cria o tenant demo +
   `#geral` + alice/bob no startup. `task seed` só é necessário para re-seedar.
 - **Login rápido sem Keycloak**: na tela de login use os botões DevAuth
-  (Alice/Bob/Demo) ou o header `X-Dev-User: alice|bob|demo`. É o caminho mais
-  simples para exercitar envio de mensagem ponta a ponta (persiste em
-  `messaging.messages`).
+  (Alice/Bob/Demo) ou o header `X-Dev-User: alice|bob|demo`. Valor desconhecido
+  sem `X-Dev-Email` retorna **401** (B-177; sem fallback para demo). Convite
+  dinâmico: `X-Dev-User` + `X-Dev-Email`. É o caminho mais simples para
+  exercitar envio de mensagem ponta a ponta (persiste em `messaging.messages`).
 - **Redis**: no Compose, a app usa o serviço `redis` da rede; falha de Redis é
   não-fatal (degrada presença/typing).
 - **CRLF / `.env`**: scripts shell de infra e `DATABASE_URL` precisam de LF e de

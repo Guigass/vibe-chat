@@ -43,6 +43,10 @@ public interface ICurrentUser
     string Subject { get; }
     string Email { get; }
     string DisplayName { get; }
+    /// <summary>
+    /// Roles parsed from JWT <c>ClaimTypes.Role</c> (identity only).
+    /// Product authZ uses <see cref="IPermissionChecker"/> / <c>workspace_members.role</c> (B-176), not this collection.
+    /// </summary>
     IReadOnlyCollection<Role> Roles { get; }
     ClaimsPrincipal Principal { get; }
 }

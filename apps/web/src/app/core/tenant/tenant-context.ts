@@ -19,7 +19,6 @@ export class TenantContext {
   readonly snapshot = this.state.asReadonly();
   readonly tenantId = computed(() => this.state().tenantId);
   readonly userId = computed(() => this.state().userId);
-  readonly isAdmin = computed(() => this.state().roles.includes('admin') || this.state().roles.includes('vibechat-admin'));
 
   setContext(partial: Partial<TenantState>): void {
     this.state.update((current) => ({ ...current, ...partial }));

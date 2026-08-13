@@ -21,6 +21,30 @@ namespace VibeChat.SecurityTests;
 public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
 {
     [Fact]
+    public async Task Unknown_dev_user_without_email_returns_401()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", $"unknown-{Guid.NewGuid():N}");
+
+        var response = await client.GetAsync("/api/v1/me");
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Known_dev_users_alice_and_demo_return_200()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        var aliceMe = await alice.GetAsync("/api/v1/me");
+        aliceMe.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+        var demoMe = await demo.GetAsync("/api/v1/me");
+        demoMe.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task Cross_tenant_access_is_denied()
     {
         var (_, foreignChannelId) = await SeedCrossTenantChannelAsync();
@@ -116,6 +140,113 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
         var history = await alice.GetAsync(
             $"/api/v1/admin/conversations/{SeedData.DemoChannelId.Value}/messages?limit=10");
         history.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Member_cannot_read_admin_dashboard_health_or_version()
+    {
+        // B-175: /admin/* sensitive reads require admin.dashboard, not membership alone.
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var dashboard = await alice.GetAsync("/api/v1/admin/dashboard");
+        dashboard.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var health = await alice.GetAsync("/api/v1/admin/health-summary");
+        health.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var version = await alice.GetAsync("/api/v1/admin/version");
+        version.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Auditor_with_dashboard_can_read_admin_dashboard_health_and_version()
+    {
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var elevate = await demo.PutAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/members/{SeedData.AliceUserId.Value}/role",
+            new { role = "Auditor" });
+        elevate.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        try
+        {
+            using var alice = factory.CreateClient();
+            alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+            var dashboard = await alice.GetAsync("/api/v1/admin/dashboard");
+            dashboard.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var health = await alice.GetAsync("/api/v1/admin/health-summary");
+            health.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var version = await alice.GetAsync("/api/v1/admin/version");
+            version.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+        finally
+        {
+            var restore = await demo.PutAsJsonAsync(
+                $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/members/{SeedData.AliceUserId.Value}/role",
+                new { role = "Member" });
+            restore.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+    }
+
+    [Fact]
+    public async Task Cross_tenant_member_cannot_read_foreign_admin_dashboard()
+    {
+        // Alice has no membership in the foreign tenant — admin surfaces stay 403.
+        _ = await SeedCrossTenantChannelAsync();
+
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var dashboard = await alice.GetAsync("/api/v1/admin/dashboard");
+        // Alice is Member on demo tenant only — still no admin.dashboard.
+        dashboard.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var health = await alice.GetAsync("/api/v1/admin/health-summary");
+        health.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Auditor_cannot_send_typing_on_hub()
+    {
+        // B-175: SendTyping requires message.send; Auditor has dashboard/read but not send.
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var elevate = await demo.PutAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/members/{SeedData.AliceUserId.Value}/role",
+            new { role = "Auditor" });
+        elevate.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        try
+        {
+            await using var hub = CreateHubConnection("alice");
+            await hub.StartAsync();
+
+            await hub.InvokeAsync(
+                "JoinChannel",
+                SeedData.DemoTenantId.Value,
+                SeedData.DemoChannelId.Value);
+
+            var typing = async () => await hub.InvokeAsync(
+                "SendTyping",
+                SeedData.DemoTenantId.Value,
+                SeedData.DemoChannelId.Value,
+                "Alice");
+            await typing.Should().ThrowAsync<HubException>()
+                .WithMessage("*Not authorized*");
+        }
+        finally
+        {
+            var restore = await demo.PutAsJsonAsync(
+                $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/members/{SeedData.AliceUserId.Value}/role",
+                new { role = "Member" });
+            restore.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
     }
 
     [Fact]

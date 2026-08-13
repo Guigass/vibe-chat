@@ -27,11 +27,14 @@ do fallback demo devem usar `demo`, `alice`, `bob` ou `X-Dev-Email`.
 
 ## Aceite
 
-- [ ] Usuário dev inválido → 401.
-- [ ] alice/bob/demo e `X-Dev-Email` continuam funcionando.
-- [ ] `task test:security` e E2E DevAuth verdes.
-- [ ] `AGENTS.md` atualizado.
+- [x] Usuário dev inválido → 401.
+- [x] alice/bob/demo e `X-Dev-Email` continuam funcionando.
+- [x] `task test:security` e E2E DevAuth verdes.
+- [x] `AGENTS.md` atualizado.
 
 ## Evidência
 
-- Testes + saída CI.
+- Testes security: `Unknown_dev_user_without_email_returns_401`,
+  `Known_dev_users_alice_and_demo_return_200`; invite com `X-Dev-Email` em
+  integration (Carol / B-068).
+- Saída CI / `task test:security`.
