@@ -33,7 +33,7 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-175 | [Auditoria de cobertura authZ (membership vs permission)](B-175-auditoria-cobertura-authz.md) |
 | B-176 | [Fonte de verdade de roles (DB vs Keycloak)](B-176-fonte-verdade-roles.md) |
 | B-177 | [DevAuth fail-closed (sem fallback demo)](B-177-devauth-fail-closed.md) |
-| B-187 | [Template `.env` enxuto (setup vs catálogo)](B-187-env-enxuto.md) |
+| B-187 | [Instalação configurável no admin (integração no DB)](B-187-env-enxuto.md) |
 
 ### Wave 8 — Composição de mensagem
 

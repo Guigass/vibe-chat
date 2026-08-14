@@ -139,7 +139,7 @@ Fila explícita para a automação de Build depois da Wave 6. Enquanto houver li
 cache PWA; fecha UX-007). **W7-10 / B-174 Done**. **W7-11 / B-175 Done** (matriz
 authZ + gaps admin/typing). **W7-12 / B-176 Done** (fonte de verdade de roles —
 DB vs Keycloak). **W7-13 / B-177 Done** (DevAuth fail-closed). Resta **W7-14 / B-187**
-(template `.env` enxuto — setup vs catálogo; não esvazia infra no DB).
+(instalação configurável no admin: SMTP/IA/webhook/retenção na UI; infra no env).
 Sustentação authZ completa; B-187 é o próximo item elegível da Wave 7.
 
 | ID | Trilha | Tarefa | Deps | Spec/evidência | Status |
@@ -157,7 +157,7 @@ Sustentação authZ completa; B-187 é o próximo item elegível da Wave 7.
 | W7-11 | E | Auditoria authZ: matriz endpoint × membership/permission + gaps (B-175) | B-174 (recomendado) | [B-175](../product/specs/B-175-auditoria-cobertura-authz.md); [authz-matriz](../security/authz-matriz.md) | **Done** |
 | W7-12 | G/B | Documentar fonte de verdade de roles — DB vs Keycloak (B-176) | B-002, P2-1 | [B-176](../product/specs/B-176-fonte-verdade-roles.md) | **Done** |
 | W7-13 | B/E | DevAuth fail-closed — sem fallback silencioso para demo (B-177) | W1-1 | [B-177](../product/specs/B-177-devauth-fail-closed.md) | **Done** |
-| W7-14 | A/G | Template `.env` enxuto — setup vs catálogo; infra permanece no env (B-187) | W7-7, B-069 | [B-187](../product/specs/B-187-env-enxuto.md) | Planned |
+| W7-14 | A/G | Instalação configurável no admin — integração no DB; infra permanece no env (B-187) | W7-7, B-069 | [B-187](../product/specs/B-187-env-enxuto.md) | Planned |
 
 Revisão de authZ da API (2026-08-12): W7-10…W7-13 registram endurecimento após
 auditoria de permissões — filtro centralizado, cobertura de endpoints, docs de
@@ -165,10 +165,11 @@ roles e DX segura em Development.
 
 ### Critérios de aceite W7-7 (resumo)
 
-B-105 fechou o catálogo. **B-187** altera o contrato do `.env.example` (setup
-curto); o inventário 100% permanece em `configuracao-env.md`.
+B-105 fechou o catálogo. **B-187** fecha o caminho admin para integração
+(SMTP/IA/webhook/retenção/Files/RateLimit) sem tirar infra do `.env`.
 
-- `.env.example` (B-105) cobria **100%** das variáveis exigidas para `task apps`; após B-187 o template omite pins/aliases com default no Compose
+- `.env.example` (B-105) cobre as variáveis de **infra** para `task apps`; B-187
+  tira só detalhe de integração que passou ao `/admin/settings`
 - Cada variável do **catálogo** tem: descrição, serviço afetado, default, obrigatoriedade em prod, e se é secret (`CHANGE_ME` / `*_change_me`)
 - Matriz **env vs admin UI** documentada: o que só o operador de infra mexe no `.env` vs o que o `workspace.admin` mexe em `/admin/settings`
 - Gaps entre `appsettings*.json`, `compose.yaml` e `.env.example` fechados ou listados como follow-up explícito (B-187)
@@ -193,14 +194,14 @@ curto); o inventário 100% permanece em `configuracao-env.md`.
 
 ### Critérios de aceite W7-14 (resumo)
 
-- `.env.example` é contrato de **setup** (senhas, URLs, flags), não inventário
-  de pins/portas/profiles opcionais
-- Catálogo canônico permanece `docs/operations/configuracao-env.md`
+- Instalação nova configura SMTP/IA/webhook/retenção/Files/RateLimit em
+  `/admin/settings` (keyring válido + overrides)
+- `.env.example` **mantém** infra, portas, pins, URLs e kill switches
+- Sai do template só detalhe de integração (`EMAIL__Smtp__*`, `SMTP_*`,
+  `OPENROUTER_API_KEY`, política de retenção — não o kill switch)
 - Infra (Postgres, IdP, MinIO, Redis, kill switches, keyring, VAPID) **não**
-  vai para o DB; política/integração continua no admin (ADR-020)
-- `docker compose --env-file .env.example config --quiet` válido via defaults
-  do Compose
-- Docs de operação/admin não contradizem rotação SMTP/AI no `/admin/settings`
+  vai para o DB (ADR-020)
+- `docker compose --env-file .env.example config --quiet` continua válido
 
 ### Safety lane (bugs funcionais)
 

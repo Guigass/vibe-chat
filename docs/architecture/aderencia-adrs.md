@@ -32,7 +32,7 @@ testes nem uma revisão de segurança.
 
 | Gap | ADRs afetados | Dono no roadmap |
 |-----|---------------|------------------|
-| Tornar configuração declarada efetiva nos containers | ADR-012, ADR-018 e D-10 | **Done** — B-105 / W7-7; template de setup enxuto = B-187 |
+| Tornar configuração declarada efetiva nos containers | ADR-012, ADR-018 e D-10 | **Done** — B-105 / W7-7; integração no admin = B-187 |
 | Ampliar teste de dependências para todos os assemblies | ADR-001, ADR-014 | Registro futuro `GAP-*` |
 | CSP no caminho oficial | defesa em profundidade associada a ADR-007/014 | B-077 / W7-4 |
 | Validar body antes da persistência | ADR-005/010/014 | B-078 / W7-5 |

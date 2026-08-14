@@ -12,7 +12,7 @@ follow-ups invisíveis.
 | Contrato implementado | `architecture/contratos.md` |
 | Modelo persistido | migrations + `modelo-dominio.md` |
 | Evento implementado | Contracts + outbox + `contratos.md` |
-| Configuração | `.env.example` (setup) + `operations/configuracao-env.md` (catálogo; B-105 / B-187) |
+| Configuração | `.env.example` (infra) + `operations/configuracao-env.md` (catálogo; B-105). Integração no admin: B-187 |
 | Flag | catálogo deste documento + configuração efetiva |
 | Permissão | RolePermissionCatalog + glossário/contratos |
 
@@ -152,6 +152,6 @@ Antes do merge:
 - eventos: Contracts, outbox, webhook, schema registry e SDK;
 - flags: configuração, admin, docs e métricas;
 - variáveis: catálogo operacional (`configuracao-env.md`), Compose (defaults),
-  appsettings e `.env.example` (setup; B-187);
+  appsettings e `.env.example` (infra; integração no admin = B-187);
 - roles: domínio, Keycloak mapping, API e admin;
 - MIME/limites: Files, frontend, proxy e docs.

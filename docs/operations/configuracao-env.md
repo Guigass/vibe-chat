@@ -6,8 +6,9 @@ por workspace na UI. Infra permanece no env (D-04); política/integração pode
 ir ao admin + DB (ADR-020).
 
 **Status:** catálogo executável fechado em **W7-7 / B-105** (2026-08-07).
-Follow-up **W7-14 / B-187** (Planned): `.env.example` vira template de setup
-curto; este arquivo permanece o inventário canônico. Specs:
+Follow-up **W7-14 / B-187** (Planned): instalação nova configura SMTP/IA/webhook/
+retenção/Files/RateLimit no `/admin` quando o keyring for válido; este arquivo
+permanece o inventário canônico; **infra não sai do `.env`**. Specs:
 [`B-105-catalogo-configuracao.md`](../product/specs/B-105-catalogo-configuracao.md),
 [`B-187-env-enxuto.md`](../product/specs/B-187-env-enxuto.md).
 
@@ -19,8 +20,8 @@ curto; este arquivo permanece o inventário canônico. Specs:
 
 1. **Inventariar** todas as variáveis de ambiente usadas por Compose, API, Worker e Web.
 2. **Completar** o catálogo operacional (este arquivo) e o `.env.example` como
-   template executável (placeholders, nunca secrets reais — D-04). B-187 enxuga
-   o template; o inventário não muda de arquivo.
+   template executável (placeholders, nunca secrets reais — D-04). B-187 leva
+   integração ao admin; o inventário de infra não muda de arquivo.
 3. **Documentar** a matriz **env vs admin UI**: o que só muda com restart/redeploy vs o que o admin muda em runtime.
 4. **Fechar gaps** entre `appsettings*.json`, `compose.yaml` e `.env.example`.
 
@@ -33,19 +34,21 @@ curto; este arquivo permanece o inventário canônico. Specs:
 
 Regra (B-069 / ADR-020): PUT geral **não** aceita secrets. Rotação de OpenRouter/SMTP/webhook usa endpoints dedicados; valores ficam em envelope AES-GCM (chave mestra só no env). Flag `RuntimeSettings__DatabaseOverridesEnabled=false` por default — rollback = desligar a flag no mesmo binário.
 
-Caminho self-host pretendido (B-187): provisionar o keyring, ligar a flag e
-configurar SMTP/AI/webhook/retenção/Files/RateLimit em `/admin/settings`. O
-`.env` fica com infra, URLs públicas, kill switches e a chave mestra. Não
-mover Postgres, Redis, Keycloak, MinIO, OIDC, TLS, seed, OTel ou VAPID para o DB.
+Caminho self-host pretendido (B-187): keyring demo (lab) ou chave real (prod) →
+overrides só com chave válida → SMTP/AI/webhook/retenção/Files/RateLimit em
+`/admin/settings`. O `.env` **mantém** infra, URLs, portas, pins, kill switches
+e a chave mestra. Não mover Postgres, Redis, Keycloak, MinIO, OIDC, TLS, seed,
+OTel ou VAPID para o DB. Não apagar pins/portas do template só para “enxugar”.
 
 ## Dois artefatos (B-187)
 
 | Artefato | Função |
 |----------|--------|
-| `.env.example` | Contrato de **setup**: o que o humano preenche (`CHANGE_ME`, URLs, flags de lab/staging). Defaults do Compose cobrem o omitido. |
-| Este catálogo | Inventário completo: pins, portas, profiles opcionais, aliases e matriz env vs admin. |
+| `.env.example` | Setup de **infra** (senhas, URLs, portas, pins, kill switches, keyring). Detalhe SMTP/IA sai quando B-187 fechar. |
+| Este catálogo | Inventário completo + matriz env vs admin. |
 
-Até B-187 fechar, o `.env.example` ainda lista o catálogo completo (legado B-105).
+Até B-187 fechar: o template ainda lista SMTP/`EMAIL__Smtp`/`OPENROUTER_API_KEY`;
+o admin ainda exige flag+keyring válidos para gravar secrets.
 
 ## Escopo
 
@@ -62,15 +65,15 @@ Até B-187 fechar, o `.env.example` ainda lista o catálogo completo (legado B-1
 
 - Substituir `/admin` para convites, papéis, auditoria de conversas ou export ZIP
 - Tornar **toda** configuração dinâmica / despejar infra no PostgreSQL (rejeitado em ADR-020 e B-105)
-- Enxugar o `.env.example` (B-187)
+- Levar integração ao `/admin` sem tirar infra do `.env` (B-187)
 - Secrets manager específico de cloud (apenas padrão: montar env ou arquivo `.env`)
 
 ## Inventário auditado
 
 Todas as substituições `${VAR}` observadas em `compose.yaml` e
 `compose.override.yaml` possuem entrada no `.env.example` na data do snapshot
-B-105. Depois de B-187, substituições com `${VAR:-default}` podem omitir o
-template; o inventário canônico continua nesta página.
+B-105. B-187 não omite pins/portas; omite só detalhe de integração que passou
+ao admin. O inventário canônico continua nesta página.
 
 ### Imagens e portas do Compose
 

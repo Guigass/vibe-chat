@@ -13,7 +13,7 @@ um caso realmente fora desses defaults também for R4 em `agents/autonomia.md`.
 | D-01 | **Licença open-source** | Define adoção, SaaS wrappers, obrigações de copyleft | Founder / Legal | **Decidido (2026-07-24)** — Apache-2.0 definitiva (`LICENSE`) |
 | D-02 | **Marca e naming** | Evita conflito de marca; identidade pública | Founder / Brand | **Decidido (2026-07-24)** — produto **VibeChat**; assets visuais em `apps/web/public/` (ver design-system § Assets de marca); domínios oficiais ainda fora do escopo de agentes |
 | D-03 | **Política de retenção e exclusão** | Delete, export, LGPD/GDPR, backups | Legal / DPO | **Decidido (2026-07-24)** — soft-delete de mensagens; hard-delete/purge configurável depois (90 dias sugerido, feature flag); export workspace em P2 — ver ADR-018 |
-| D-04 | **Credenciais e secrets de produção** | Segurança operacional; nunca em git | Ops / Security | **Decidido (2026-07-24)**, **emendado (2026-08-10 / 2026-08-13)** — infra só `.env`/secret manager; integrações externas podem ir ao DB com AES-GCM (ADR-020); template de setup enxuto em B-187 (não dump no DB); placeholders `CHANGE_ME` |
+| D-04 | **Credenciais e secrets de produção** | Segurança operacional; nunca em git | Ops / Security | **Decidido (2026-07-24)**, **emendado (2026-08-10 / 2026-08-13)** — infra só `.env`/secret manager; integrações externas podem ir ao DB com AES-GCM (ADR-020); B-187 fecha o caminho admin na instalação nova (não dump de infra); placeholders `CHANGE_ME` |
 | D-05 | **Modo de deploy alvo oficial** | Expectativa de suporte | Platform owner | **Decidido (2026-07-24)** — fase 1 = **Docker Compose**; K8s só quando ADR-017 justificar |
 | D-06 | **Uso de IA com provedores externos** | PII sai do perímetro | Legal + Security | **Decidido (2026-07-24)** — IA externa **off por default**; só com flag + key; mock local default; nunca no hot path de `SendMessage` (ADR-012) |
 | D-07 | **Política de guests** | Compliance e authZ | Produto + Legal | **Decidido (2026-07-24)**, **revisado (2026-07-25)** — guests entram na Wave 10 por convite com escopo de canal e validade; ver registro D-07 |
@@ -86,13 +86,13 @@ Escolha: Secrets de infraestrutura/bootstrap apenas via .env / secrets manager; 
          Credenciais de integrações externas (OpenRouter, SMTP password, webhook HMAC)
          podem ser persistidas criptografadas no PostgreSQL (ADR-020), com chave mestra
          versionada só no env; API nunca devolve plaintext.
-         O `.env.example` é contrato de setup, não inventário de pins — catálogo em
-         configuracao-env.md (B-105); enxugar o template é B-187. Não mover
+         O `.env.example` permanece contrato de **infra**. Integração (SMTP/IA)
+         vai ao admin quando o keyring for válido — B-187. Não mover
          Postgres/OIDC/MinIO/Redis/kill switches/keyring/VAPID para o DB.
 Data: 2026-07-24; emendada 2026-08-10 (ADR-020); emendada 2026-08-13 (B-187)
 Owner: Ops / Security
 Impacto em código/docs: .env.example com placeholders + RuntimeSettings__Encryption__*;
-  CI/compose sem credenciais reais; B-069/R-17 atualizados; B-187 template curto
+  CI/compose sem credenciais reais; B-069/R-17 atualizados; B-187 admin+DB para integração
 ```
 
 ### D-05
@@ -489,7 +489,7 @@ Impacto:
 - Features sensíveis (retenção/IA) com **feature flags** e defaults seguros
 - Usar placeholders em `.env.example`, nunca valores reais de produção
 - Catálogo operacional: B-105 → `docs/operations/configuracao-env.md`; template
-  de setup enxuto: B-187 (não despejar infra no DB)
+  de instalação no admin: B-187 (não despejar infra no DB)
 - Não inventar marca/logo/domínio — usar assets em `apps/web/public/` e o inventário do design-system
 - Decisão técnica reversível: agente decide, documenta evidência e cria ADR quando
   necessário; não abrir D-*.
