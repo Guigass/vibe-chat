@@ -2,9 +2,12 @@ import { TestBed } from '@angular/core/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { MessageBubble } from './message-bubble';
 import { ApiService } from '../../../core/api/api.service';
+import { AuthService } from '../../../core/auth/auth.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { MessageStore } from '../../../core/services/message.store';
 import { ThemeService } from '../../../core/services/theme.service';
 import type { ChatMessage } from '../../models/chat.models';
+import { userMentionToken } from '../../markdown/mention-tokens';
 
 function baseMessage(overrides: Partial<ChatMessage> = {}): ChatMessage {
   return {
@@ -30,6 +33,7 @@ describe('MessageBubble (B-163)', () => {
       getAttachmentThumbnail: ReturnType<typeof vi.fn>;
       getLinkPreviewImage: ReturnType<typeof vi.fn>;
     }> = {},
+    channelOverrides: { mentionLabels?: Record<string, string> } = {},
   ) {
     TestBed.resetTestingModule();
     const getAttachmentDownload =
@@ -45,6 +49,8 @@ describe('MessageBubble (B-163)', () => {
         expiresAt: new Date().toISOString(),
         contentType: 'image/webp',
       });
+    const openDirectMessage = vi.fn().mockResolvedValue({ id: 'dm-1' });
+    const loadChannel = vi.fn().mockResolvedValue(undefined);
     await TestBed.configureTestingModule({
       imports: [MessageBubble],
       providers: [
@@ -61,10 +67,19 @@ describe('MessageBubble (B-163)', () => {
         {
           provide: ChannelStore,
           useValue: {
-            mentionLabels: () => ({}),
+            mentionLabels: () => channelOverrides.mentionLabels ?? {},
             activeWorkspace: () => ({ id: 'w1' }),
             isDemo: () => true,
+            openDirectMessage,
           },
+        },
+        {
+          provide: MessageStore,
+          useValue: { loadChannel },
+        },
+        {
+          provide: AuthService,
+          useValue: { profile: () => ({ id: 'u-alice', name: 'Alice' }) },
         },
         {
           provide: ThemeService,
@@ -82,7 +97,7 @@ describe('MessageBubble (B-163)', () => {
       fixture.componentRef.setInput(key, value);
     }
     fixture.detectChanges();
-    return { fixture, getAttachmentDownload };
+    return { fixture, getAttachmentDownload, openDirectMessage, loadChannel };
   }
 
   it('keeps the action toolbar in the DOM but hidden without hover/focus styles active', async () => {
@@ -412,5 +427,27 @@ describe('MessageBubble (B-163)', () => {
     const css = cmp.ɵcmp.styles.join('\n');
     expect(css).toMatch(/vc-msg--plain/);
     expect(root.querySelector('.vc-msg__body')).toBeTruthy();
+  });
+
+  it('opens a DM when a mention chip is clicked', async () => {
+    const bob = '55555555-5555-5555-5555-555555555555';
+    const { fixture, openDirectMessage, loadChannel } = await setup(
+      baseMessage({
+        mine: false,
+        body: `oi ${userMentionToken(bob)}`,
+      }),
+      {},
+      {},
+      { mentionLabels: { [bob]: 'Bob' } },
+    );
+
+    const chip = fixture.nativeElement.querySelector('button.vc-md__mention') as HTMLButtonElement;
+    expect(chip).toBeTruthy();
+    expect(chip.textContent).toContain('@Bob');
+    chip.click();
+    await fixture.whenStable();
+
+    expect(openDirectMessage).toHaveBeenCalledWith(bob);
+    expect(loadChannel).toHaveBeenCalledWith('dm-1');
   });
 });

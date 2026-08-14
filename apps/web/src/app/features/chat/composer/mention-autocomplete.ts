@@ -14,7 +14,8 @@ import { MentionAutocompleteItem } from '../../../shared/markdown/mention-tokens
               role="option"
               [attr.aria-selected]="index === activeIndex()"
               [class.is-active]="index === activeIndex()"
-              (mousedown.prevent)="select.emit(item)"
+              (mousedown)="onPick($event, item)"
+              (click)="onPick($event, item)"
             >
               <span class="mention-menu__name">{{ item.displayName }}</span>
               @if (item.subtitle) {
@@ -27,6 +28,9 @@ import { MentionAutocompleteItem } from '../../../shared/markdown/mention-tokens
     }
   `,
   styles: `
+    :host {
+      display: block;
+    }
     .mention-menu {
       list-style: none;
       margin: 0;
@@ -73,5 +77,11 @@ export class MentionAutocomplete {
 
   trackItem(item: MentionAutocompleteItem): string {
     return item.kind === 'user' ? `user-${item.userId}` : item.kind;
+  }
+
+  onPick(event: Event, item: MentionAutocompleteItem): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.select.emit(item);
   }
 }

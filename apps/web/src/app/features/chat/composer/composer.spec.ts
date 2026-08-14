@@ -11,6 +11,7 @@ import { MessageStore } from '../../../core/services/message.store';
 import { ChatMessage } from '../../../shared/models/chat.models';
 import { AttachmentQueueService } from './attachment-queue.service';
 import { AudioRecorderService, RecordedAudio } from './audio-recorder.service';
+import { AuthService } from '../../../core/auth/auth.service';
 import { Composer } from './composer';
 
 describe('Composer audio submit (BUG-004)', () => {
@@ -154,11 +155,16 @@ describe('Composer audio submit (BUG-004)', () => {
             consumeComposerPrefill: () => null,
             isDemo: () => false,
             members: () => [],
+            mentionLabels: () => ({}),
           },
         },
         {
           provide: ChatHubService,
           useValue: { sendTyping: vi.fn() },
+        },
+        {
+          provide: AuthService,
+          useValue: { profile: () => ({ id: 'u-alice', name: 'Alice' }) },
         },
         {
           provide: ApiService,
@@ -349,5 +355,58 @@ describe('Composer audio submit (BUG-004)', () => {
     composer.onKeydown(event);
 
     expect(startEdit).toHaveBeenCalledWith(last);
+  });
+
+  it('opens mention autocomplete after typing @ (B-082)', async () => {
+    phase.set('idle');
+    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    textarea.focus();
+    textarea.value = '@';
+    textarea.setSelectionRange(1, 1);
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(composer.mentionOpen()).toBe(true);
+    expect(composer.mentionItems().map((item) => item.displayName)).toEqual(['@aqui', '@canal']);
+    const menu = fixture.nativeElement.querySelector('[aria-label="Menções"]') as HTMLElement | null;
+    expect(menu).toBeTruthy();
+    expect(menu?.textContent).toContain('@aqui');
+    expect(menu?.textContent).toContain('@canal');
+  });
+
+  it('Enter with mention menu open inserts the mention and does not send', async () => {
+    phase.set('idle');
+    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    textarea.focus();
+    textarea.value = '@';
+    textarea.setSelectionRange(1, 1);
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+
+    const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    composer.onKeydown(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(send).not.toHaveBeenCalled();
+    expect(composer.draft()).toContain('@aqui');
+    expect(composer.draft()).not.toContain('<@');
+    expect(composer.mentionOpen()).toBe(false);
+  });
+
+  it('keeps @Name in the composer and sends a stable <@userId> token', async () => {
+    phase.set('idle');
+    const bob = '55555555-5555-5555-5555-555555555555';
+    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    textarea.value = '@';
+    textarea.setSelectionRange(1, 1);
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+
+    composer.applyMention({ kind: 'user', userId: bob, displayName: 'Bob' });
+    expect(composer.draft()).toContain('@Bob');
+    expect(composer.draft()).not.toContain(bob);
+
+    await composer.onSubmit(new Event('submit'));
+    expect(send).toHaveBeenCalledWith(expect.stringContaining(`<@${bob}>`), []);
   });
 });

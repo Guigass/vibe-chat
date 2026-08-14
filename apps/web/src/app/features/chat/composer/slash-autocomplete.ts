@@ -25,6 +25,9 @@ import { SlashCommandDef } from '../../../shared/markdown/slash-tokens';
     }
   `,
   styles: `
+    :host {
+      display: block;
+    }
     .slash-menu {
       list-style: none;
       margin: 0;

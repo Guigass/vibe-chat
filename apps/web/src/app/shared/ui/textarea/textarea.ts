@@ -27,7 +27,7 @@ const TEXTAREA_MAX_HEIGHT_PX = 192; // ~12rem
         [disabled]="disabled()"
         [value]="value()"
         (input)="onInput($event)"
-        (keydown)="keydown.emit($event)"
+        (keydown)="onKeydown($event)"
       ></textarea>
     </label>
   `,
@@ -84,6 +84,7 @@ export class Textarea {
   readonly placeholder = input('');
   readonly disabled = input(false);
   readonly keydown = output<KeyboardEvent>();
+  readonly textInput = output<Event>();
 
   constructor() {
     effect(() => {
@@ -96,10 +97,18 @@ export class Textarea {
     return this.controlRef()?.nativeElement ?? null;
   }
 
+  onKeydown(event: KeyboardEvent): void {
+    this.keydown.emit(event);
+    if (event.defaultPrevented) {
+      event.stopPropagation();
+    }
+  }
+
   onInput(event: Event): void {
     const el = event.target as HTMLTextAreaElement;
     this.value.set(el.value);
     this.autosize(el);
+    this.textInput.emit(event);
   }
 
   private autosize(el: HTMLTextAreaElement | null): void {

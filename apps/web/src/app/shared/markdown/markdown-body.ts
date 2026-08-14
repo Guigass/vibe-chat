@@ -1,4 +1,4 @@
-import { Component, computed, HostListener, input } from '@angular/core';
+import { Component, computed, HostListener, input, output } from '@angular/core';
 import { MarkdownDocument, parseRestrictedMarkdown } from './restricted-markdown';
 import { MarkdownBlocks } from './markdown-blocks';
 
@@ -8,7 +8,11 @@ import { MarkdownBlocks } from './markdown-blocks';
   imports: [MarkdownBlocks],
   template: `
     <div class="vc-md" (copy)="onCopy($event)">
-      <vc-markdown-blocks [blocks]="document().blocks" [mentionLabels]="mentionLabels()" />
+      <vc-markdown-blocks
+        [blocks]="document().blocks"
+        [mentionLabels]="mentionLabels()"
+        (mentionClick)="mentionClick.emit($event)"
+      />
     </div>
   `,
   styles: `
@@ -114,6 +118,7 @@ import { MarkdownBlocks } from './markdown-blocks';
 export class MarkdownBody {
   readonly source = input.required<string>();
   readonly mentionLabels = input<Record<string, string>>({});
+  readonly mentionClick = output<string>();
   readonly document = computed<MarkdownDocument>(() => parseRestrictedMarkdown(this.source()));
 
   @HostListener('copy', ['$event'])

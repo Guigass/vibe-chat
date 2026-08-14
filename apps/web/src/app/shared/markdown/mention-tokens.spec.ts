@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   detectMentionQuery,
+  encodeMentionPlainText,
+  filterMentionItems,
   formatMentionPlainText,
   insertMentionToken,
   parseMentionTokens,
@@ -17,11 +19,9 @@ describe('mention tokens', () => {
     expect(tokens[0].userId).toBe(userId);
   });
 
-  it('detects mention query at cursor', () => {
-    const text = 'hello @ali';
-    const context = detectMentionQuery(text, text.length);
-    expect(context?.query).toBe('ali');
-    expect(context?.atIndex).toBe(6);
+  it('detects a bare @ when the cursor is after it', () => {
+    expect(detectMentionQuery('@', 1)).toEqual({ query: '', atIndex: 0 });
+    expect(detectMentionQuery('@', 0)).toBeNull();
   });
 
   it('formats mention tokens as readable plain text', () => {
@@ -35,6 +35,28 @@ describe('mention tokens', () => {
     const userId = '55555555-5555-5555-5555-555555555555';
     const result = insertMentionToken('Oi @al', 3, 2, userMentionToken(userId));
     expect(result.value).toBe(`Oi ${userMentionToken(userId)} `);
+  });
+
+  it('omits the current user from autocomplete suggestions', () => {
+    const me = '44444444-4444-4444-4444-444444444444';
+    const items = filterMentionItems(
+      [
+        { kind: 'here', displayName: '@aqui' },
+        { kind: 'user', userId: me, displayName: 'Alice' },
+        { kind: 'user', userId: '55555555-5555-5555-5555-555555555555', displayName: 'Bob' },
+      ],
+      '',
+      { excludeUserId: me },
+    );
+    expect(items.map((item) => item.displayName)).toEqual(['@aqui', 'Bob']);
+  });
+
+  it('encodes composer display mentions back to stable tokens', () => {
+    const bob = '55555555-5555-5555-5555-555555555555';
+    expect(encodeMentionPlainText('oi @Bob, vê @aqui', { [bob]: 'Bob' })).toBe(
+      `oi ${userMentionToken(bob)}, vê <@here>`,
+    );
+    expect(formatMentionPlainText(`oi ${userMentionToken(bob)}`, { [bob]: 'Bob' })).toBe('oi @Bob');
   });
 });
 

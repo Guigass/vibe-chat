@@ -73,6 +73,73 @@ export function insertMentionToken(
   return { value, cursor };
 }
 
+export function composerMentionDisplay(item: MentionAutocompleteItem): string {
+  if (item.kind === 'here') return '@aqui';
+  if (item.kind === 'channel') return '@canal';
+  const name = (item.displayName ?? '').replace(/^@/, '').trim();
+  return name ? `@${name}` : '@usuário';
+}
+
+function mentionBoundaryBefore(source: string, index: number): boolean {
+  if (index <= 0) return true;
+  const prev = source[index - 1];
+  return !prev.trim() || /[\s([{'"`]/.test(prev);
+}
+
+function mentionBoundaryAfter(source: string, index: number): boolean {
+  if (index >= source.length) return true;
+  return /[\s.,!?;:)\]}'"`]/.test(source[index]);
+}
+
+/** Inverse of formatMentionPlainText: `@Bob` / `@aqui` → `<@uuid>` / `<@here>`. */
+export function encodeMentionPlainText(
+  source: string,
+  labels: Record<string, string>,
+): string {
+  if (!source) return source ?? '';
+
+  const names = Object.entries(labels)
+    .filter(([, name]) => !!name.trim())
+    .sort((a, b) => b[1].length - a[1].length);
+
+  let result = '';
+  let i = 0;
+  while (i < source.length) {
+    const tokenMatch = source.slice(i).match(/^<@([0-9a-fA-F-]{36}|here|channel)>/i);
+    if (tokenMatch) {
+      result += tokenMatch[0];
+      i += tokenMatch[0].length;
+      continue;
+    }
+
+    if (source[i] === '@' && mentionBoundaryBefore(source, i)) {
+      if (source.startsWith('@aqui', i) && mentionBoundaryAfter(source, i + 5)) {
+        result += '<@here>';
+        i += 5;
+        continue;
+      }
+      if (source.startsWith('@canal', i) && mentionBoundaryAfter(source, i + 6)) {
+        result += '<@channel>';
+        i += 6;
+        continue;
+      }
+      const named = names.find(([, name]) => {
+        const label = `@${name}`;
+        return source.startsWith(label, i) && mentionBoundaryAfter(source, i + label.length);
+      });
+      if (named) {
+        result += userMentionToken(named[0]);
+        i += named[1].length + 1;
+        continue;
+      }
+    }
+
+    result += source[i];
+    i += 1;
+  }
+  return result;
+}
+
 export function mentionLabel(
   token: MentionTokenMatch,
   labels: Record<string, string>,
@@ -109,11 +176,15 @@ export interface MentionAutocompleteItem {
 export function filterMentionItems(
   items: MentionAutocompleteItem[],
   query: string,
-  limit = 8,
+  options: { limit?: number; excludeUserId?: string | null } = {},
 ): MentionAutocompleteItem[] {
+  const limit = options.limit ?? 8;
+  const excludeUserId = options.excludeUserId;
   const q = query.trim().toLowerCase();
   const specials = items.filter((item) => item.kind !== 'user');
-  const users = items.filter((item) => item.kind === 'user');
+  const users = items.filter(
+    (item) => item.kind === 'user' && (!excludeUserId || item.userId !== excludeUserId),
+  );
 
   const filteredUsers = q
     ? users.filter(

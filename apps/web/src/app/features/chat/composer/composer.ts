@@ -6,12 +6,13 @@ import {
   updateTextareaSelection,
 } from '../../../shared/markdown/markdown-format';
 import {
+  composerMentionDisplay,
   detectMentionQuery,
+  encodeMentionPlainText,
   filterMentionItems,
+  formatMentionPlainText,
   insertMentionToken,
   MentionAutocompleteItem,
-  specialMentionToken,
-  userMentionToken,
 } from '../../../shared/markdown/mention-tokens';
 import {
   detectSlashQuery,
@@ -20,6 +21,7 @@ import {
   looksLikeSlashCommand,
   SlashCommandDef,
 } from '../../../shared/markdown/slash-tokens';
+import { AuthService } from '../../../core/auth/auth.service';
 import { ApiService } from '../../../core/api/api.service';
 import { MessageStore } from '../../../core/services/message.store';
 import { replyPreviewText } from '../../../core/services/message-sync';
@@ -303,7 +305,7 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
               "
               [label]="''"
               (keydown)="onKeydown($event)"
-              (input)="onInput($event)"
+              (textInput)="onInput()"
               (paste)="onPaste($event)"
             />
             <vc-mention-autocomplete
@@ -413,12 +415,15 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
   styles: `
     :host {
       display: block;
+      position: relative;
+      z-index: 6;
       flex: 0 0 auto;
     }
     .composer {
       padding: var(--vc-composer-pad);
       border-top: 1px solid var(--vc-border);
       background: color-mix(in srgb, var(--vc-surface-elevated) 88%, transparent);
+      overflow: visible;
     }
     .composer__main {
       display: grid;
@@ -459,7 +464,7 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
       border: 1px solid var(--vc-border);
       border-radius: var(--vc-radius-md);
       background: var(--vc-composer-bg);
-      overflow: hidden;
+      overflow: visible;
       transition:
         border-color var(--vc-dur-fast) var(--vc-ease-out),
         box-shadow var(--vc-dur-fast) var(--vc-ease-out);
@@ -498,7 +503,7 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
       left: 0;
       right: 0;
       bottom: calc(100% + 0.35rem);
-      z-index: 4;
+      z-index: 20;
     }
     .composer__format {
       display: flex;
@@ -791,6 +796,7 @@ export class Composer {
   readonly slash = inject(SlashCommandsService);
   private readonly hub = inject(ChatHubService);
   private readonly api = inject(ApiService);
+  private readonly auth = inject(AuthService);
   private readonly drafts = inject(DraftStoreService);
 
   readonly formatDuration = formatDuration;
@@ -801,6 +807,7 @@ export class Composer {
   readonly mentionActiveIndex = signal(0);
   readonly mentionRemoteItems = signal<MentionAutocompleteItem[]>([]);
   readonly mentionContext = signal<{ query: string; atIndex: number } | null>(null);
+  private readonly mentionAliases = signal<Record<string, string>>({});
   readonly slashOpen = signal(false);
   readonly slashActiveIndex = signal(0);
   readonly slashCatalog = signal<SlashCommandDef[]>([]);
@@ -843,7 +850,9 @@ export class Composer {
       { kind: 'channel', displayName: '@canal', subtitle: 'Notifica todos os membros' },
       ...this.mentionRemoteItems(),
     ];
-    return filterMentionItems(base, context.query);
+    return filterMentionItems(base, context.query, {
+      excludeUserId: this.auth.profile()?.id,
+    });
   });
   readonly slashItems = computed(() => {
     const context = this.slashContext();
@@ -884,7 +893,7 @@ export class Composer {
         if (!this.draftBeforeEdit) {
           this.draftBeforeEdit = { body: this.draft() };
         }
-        this.draft.set(editing.body);
+        this.draft.set(this.toComposerDisplay(editing.body));
         this.attachments.clear();
         this.audioRecorder.reset();
         this.closeMentionMenu();
@@ -1022,10 +1031,11 @@ export class Composer {
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
     if (this.submitting() || this.sendingAudio()) return;
+    if (this.mentionOpen() || this.slashOpen()) return;
 
     const editing = this.messages.editingMessage();
     if (editing) {
-      const body = this.draft().trim();
+      const body = this.toSendBody(this.draft());
       if (!body || isMessageBodyTooLong(body)) return;
       this.submitting.set(true);
       try {
@@ -1059,12 +1069,13 @@ export class Composer {
       return;
     }
 
-    const body = this.draft().trim();
-    if (looksLikeSlashCommand(body)) {
-      await this.runSlashCommand(body);
+    const display = this.draft().trim();
+    if (looksLikeSlashCommand(display)) {
+      await this.runSlashCommand(display);
       return;
     }
 
+    const body = this.toSendBody(display);
     if (isMessageBodyTooLong(body)) return;
 
     this.submitting.set(true);
@@ -1085,7 +1096,7 @@ export class Composer {
 
       const ok = await this.messages.send(body, attachmentIds);
       if (!ok) {
-        this.draft.set(body);
+        this.draft.set(display);
         this.persistDraftSoon();
       }
     } finally {
@@ -1132,10 +1143,10 @@ export class Composer {
     }
   }
 
-  onInput(event: Event): void {
-    const textarea = event.target as HTMLTextAreaElement;
-    const cursor = textarea.selectionStart ?? textarea.value.length;
-    this.syncComposerMenus(textarea.value, cursor);
+  onInput(): void {
+    const textarea = this.composerTextarea()?.nativeElement();
+    if (!textarea) return;
+    this.syncComposerMenus(textarea.value, textarea.selectionStart ?? textarea.value.length);
   }
 
   onKeydown(event: KeyboardEvent): void {
@@ -1166,7 +1177,7 @@ export class Composer {
       }
     }
 
-    if (this.mentionOpen()) {
+    if (this.mentionOpen() || this.hasActiveMentionQuery()) {
       if (event.key === 'ArrowDown') {
         event.preventDefault();
         const max = this.mentionItems().length;
@@ -1186,9 +1197,14 @@ export class Composer {
         this.closeMentionMenu();
         return;
       }
-      if ((event.key === 'Enter' || event.key === 'Tab') && this.mentionItems().length) {
+      if (event.key === 'Enter' || event.key === 'Tab') {
         event.preventDefault();
-        this.applyMention(this.mentionItems()[this.mentionActiveIndex()]);
+        event.stopPropagation();
+        const items = this.mentionItems();
+        if (items.length) {
+          const index = Math.min(Math.max(this.mentionActiveIndex(), 0), items.length - 1);
+          this.applyMention(items[index]);
+        }
         return;
       }
     }
@@ -1253,11 +1269,15 @@ export class Composer {
     const textarea = this.composerTextarea()?.nativeElement();
     if (!context || !textarea) return;
 
-    const token =
-      item.kind === 'user' && item.userId
-        ? userMentionToken(item.userId)
-        : specialMentionToken(item.kind === 'here' ? 'here' : 'channel');
-    const result = insertMentionToken(this.draft(), context.atIndex, context.query.length, token);
+    if (item.kind === 'user' && item.userId) {
+      const name = item.displayName.replace(/^@/, '').trim();
+      if (name) {
+        this.mentionAliases.update((current) => ({ ...current, [item.userId!]: name }));
+      }
+    }
+
+    const display = composerMentionDisplay(item);
+    const result = insertMentionToken(this.draft(), context.atIndex, context.query.length, display);
     this.draft.set(result.value);
     this.closeMentionMenu();
     updateTextareaSelection(textarea, result.value, result.cursor, result.cursor);
@@ -1306,15 +1326,16 @@ export class Composer {
     this.restoringDraft = true;
     try {
       const saved = await this.drafts.get(channelId);
-      this.draft.set(saved?.body ?? '');
+      const body = this.toComposerDisplay(saved?.body ?? '');
+      this.draft.set(body);
       this.attachments.restoreReady(saved?.attachments ?? []);
-      if (saved && (saved.selectionStart != null || saved.selectionEnd != null)) {
+      if (saved && body === saved.body && (saved.selectionStart != null || saved.selectionEnd != null)) {
         queueMicrotask(() => {
           const textarea = this.composerTextarea()?.nativeElement();
           if (!textarea) return;
-          const start = saved.selectionStart ?? saved.body.length;
+          const start = saved.selectionStart ?? body.length;
           const end = saved.selectionEnd ?? start;
-          updateTextareaSelection(textarea, saved.body, start, end);
+          updateTextareaSelection(textarea, body, start, end);
         });
       }
     } finally {
@@ -1376,6 +1397,27 @@ export class Composer {
     this.mentionOpen.set(true);
     this.mentionActiveIndex.set(0);
     this.scheduleMentionFetch(context.query);
+  }
+
+  private mentionLabelMap(): Record<string, string> {
+    return { ...this.channels.mentionLabels(), ...this.mentionAliases() };
+  }
+
+  private toComposerDisplay(source: string): string {
+    return formatMentionPlainText(source, this.mentionLabelMap());
+  }
+
+  private toSendBody(source: string): string {
+    return encodeMentionPlainText(source.trim(), this.mentionLabelMap());
+  }
+
+  private hasActiveMentionQuery(): boolean {
+    const textarea = this.composerTextarea()?.nativeElement();
+    if (!textarea) return this.mentionContext() !== null;
+    return detectMentionQuery(
+      textarea.value,
+      textarea.selectionStart ?? textarea.value.length,
+    ) !== null;
   }
 
   private async ensureSlashCatalog(): Promise<void> {

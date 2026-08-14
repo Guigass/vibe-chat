@@ -29,7 +29,9 @@ import { AttachmentPreview } from '../attachment-preview/attachment-preview';
 import { ImageLightbox, type LightboxImage } from '../image-lightbox/image-lightbox';
 import { MarkdownBody } from '../../markdown/markdown-body';
 import { ApiService } from '../../../core/api/api.service';
+import { AuthService } from '../../../core/auth/auth.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { MessageStore } from '../../../core/services/message.store';
 import { ThemeService } from '../../../core/services/theme.service';
 import { EmojiPicker } from '../emoji-picker/emoji-picker';
 import { rememberRecentEmoji } from '../../emoji/emoji-data';
@@ -329,7 +331,11 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
                 }
               }
               @if (message().body) {
-                <vc-markdown-body [source]="message().body" [mentionLabels]="mentionLabels()" />
+                <vc-markdown-body
+                  [source]="message().body"
+                  [mentionLabels]="mentionLabels()"
+                  (mentionClick)="onMentionClick($event)"
+                />
               }
               @if (visibleLinkPreview(); as preview) {
                 @if ((preview.status ?? '').toLowerCase() === 'pending') {
@@ -1027,7 +1033,9 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
 })
 export class MessageBubble {
   private readonly api = inject(ApiService);
+  private readonly auth = inject(AuthService);
   private readonly channels = inject(ChannelStore);
+  private readonly messages = inject(MessageStore);
   private readonly theme = inject(ThemeService);
   private readonly contextMenu = viewChild(CdkContextMenuTrigger);
 
@@ -1077,6 +1085,15 @@ export class MessageBubble {
     () => environment.aiTranscribeEnabled && environment.aiSummarizeEnabled,
   );
   readonly mentionLabels = computed(() => this.channels.mentionLabels());
+
+  async onMentionClick(userId: string): Promise<void> {
+    const me = this.auth.profile()?.id;
+    if (!userId || userId === me) return;
+    const channel = await this.channels.openDirectMessage(userId);
+    if (channel) {
+      await this.messages.loadChannel(channel.id);
+    }
+  }
   readonly showActions = computed(
     () => !this.message().deletedAt && this.message().status === 'persisted',
   );

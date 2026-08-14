@@ -1,4 +1,4 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { highlightCode, MarkdownBlock } from './restricted-markdown';
 import { MarkdownInlines } from './markdown-inlines';
 
@@ -10,7 +10,13 @@ import { MarkdownInlines } from './markdown-inlines';
     @for (block of blocks(); track $index) {
       @switch (block.kind) {
         @case ('paragraph') {
-          <p><vc-markdown-inlines [inlines]="block.inlines" [mentionLabels]="mentionLabels()" /></p>
+          <p>
+            <vc-markdown-inlines
+              [inlines]="block.inlines"
+              [mentionLabels]="mentionLabels()"
+              (mentionClick)="mentionClick.emit($event)"
+            />
+          </p>
         }
         @case ('code') {
           <div class="vc-md__code-block">
@@ -34,19 +40,37 @@ import { MarkdownInlines } from './markdown-inlines';
           </div>
         }
         @case ('quote') {
-          <blockquote><vc-markdown-blocks [blocks]="block.blocks" [mentionLabels]="mentionLabels()" /></blockquote>
+          <blockquote>
+            <vc-markdown-blocks
+              [blocks]="block.blocks"
+              [mentionLabels]="mentionLabels()"
+              (mentionClick)="mentionClick.emit($event)"
+            />
+          </blockquote>
         }
         @case ('ul') {
           <ul>
             @for (item of block.items; track $index) {
-              <li><vc-markdown-blocks [blocks]="item" [mentionLabels]="mentionLabels()" /></li>
+              <li>
+                <vc-markdown-blocks
+                  [blocks]="item"
+                  [mentionLabels]="mentionLabels()"
+                  (mentionClick)="mentionClick.emit($event)"
+                />
+              </li>
             }
           </ul>
         }
         @case ('ol') {
           <ol>
             @for (item of block.items; track $index) {
-              <li><vc-markdown-blocks [blocks]="item" [mentionLabels]="mentionLabels()" /></li>
+              <li>
+                <vc-markdown-blocks
+                  [blocks]="item"
+                  [mentionLabels]="mentionLabels()"
+                  (mentionClick)="mentionClick.emit($event)"
+                />
+              </li>
             }
           </ol>
         }
@@ -57,6 +81,7 @@ import { MarkdownInlines } from './markdown-inlines';
 export class MarkdownBlocks {
   readonly blocks = input.required<MarkdownBlock[]>();
   readonly mentionLabels = input<Record<string, string>>({});
+  readonly mentionClick = output<string>();
   readonly copied = signal<string | null>(null);
 
   tokensFor(block: Extract<MarkdownBlock, { kind: 'code' }>) {
