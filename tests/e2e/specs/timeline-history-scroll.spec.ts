@@ -23,6 +23,8 @@ test.describe(`timeline history scroll (${AUTH_MODE})`, () => {
       filler.setAttribute('aria-hidden', 'true');
       el.prepend(filler);
       el.scrollTop = 0;
+      // Sync Timeline.nearBottom latch (B-184 / OPS-E2E-NAV).
+      el.dispatchEvent(new Event('scroll', { bubbles: true }));
     });
 
     const topBefore = await bob.page.locator('.timeline').evaluate((el) => el.scrollTop);

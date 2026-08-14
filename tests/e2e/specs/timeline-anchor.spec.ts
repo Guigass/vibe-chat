@@ -57,13 +57,15 @@ test.describe(`stable timeline anchoring (${AUTH_MODE})`, () => {
     const { page } = session;
     await selectChannelGeral(page);
 
-    const directMessage = page.getByRole("button", { name: /^Bob$/i }).first();
+    const directMessage = page
+      .getByRole("button", { name: /Mensagem para Bob/i })
+      .first();
     await expect(directMessage).toBeVisible();
     await directMessage.click();
     await expect(page.getByRole("heading", { name: /Bob/i })).toBeVisible();
     await page.addStyleTag({ content: tallTimelineCss });
 
-    await page.getByRole("button", { name: /^geral$/i }).click();
+    await page.getByRole("button", { name: /#?\s*geral/i }).click();
     await expect(page.getByRole("heading", { name: /geral/i })).toBeVisible();
     await expect
       .poll(() =>
