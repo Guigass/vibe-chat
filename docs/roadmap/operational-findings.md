@@ -89,9 +89,9 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 - Reprodução: CI em `main` — 13 passed, 2 failed; regressão contínua em ≥6 pushes
   consecutivos desde #131.
 - Causa raiz: B-184 refatorou a sidebar esquerda (modo compacto, blocos,
-  filtro); specs ainda assumiam botão DM “Bob” visível na rail e scroll estável ao
-  receber mensagem (B-088) sem sincronizar o latch `nearBottom` após `scrollTop`
-  programático.
+  filtro); specs ainda assumiam botão DM “Bob” visível na rail. O scroll em
+  histórico falhava porque o `TimelineStickyBottomPin` ainda estava ativo quando
+  a lista crescia (ResizeObserver antes do microtask) — corrigido em `timeline.ts`.
 - Resultado esperado: DM acessível na nova nav; leitor em histórico não é
   arrastado; E2E passa em ambas as specs.
 - Resultado atual: specs corrigidas; validação via `task test:e2e:ci`.
