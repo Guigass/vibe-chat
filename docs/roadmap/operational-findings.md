@@ -24,6 +24,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-DOC-CHECKER | Integridade documental | Contrato e baseline DOC-006 existem, mas a CI ainda não executa checker offline | Medium | Open | Implementar as regras de `qualidade-documental.md` sem alterar prioridade das waves |
 | OPS-PR-DRAFT | Tooling de PR | `open_git_pr` pode criar draft | Medium | Mitigated | Prompts convertem imediatamente para ready; monitorar |
 | OPS-DOCS-RACE | Corrida Docs | Merges #72+#73 (~20s) abriram Docs #76+#77; #77 foi re-draftado e ficou CONFLICTING | High | External action | Colar prompts 03/06 atualizados no dashboard (repo já em #78) |
+| OPS-E2E-NAV | CI / E2E | `main` vermelho desde #131 (B-184): `timeline-anchor.spec.ts` (botão Bob ausente) + `timeline-history-scroll.spec.ts` (scrollTop ~3200 vs &lt;120) | Critical | Open | Build: alinhar specs E2E à nav compacta B-184 ou restaurar comportamento de scroll |
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
 
 ## Resolvidos
@@ -68,6 +69,37 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   9. threat model, catálogo de configuração e runbook de rotação são atualizados.
 - Rollback: reverter roles/policies apenas em ambiente de teste; com dados,
   preferir roll-forward de grants sem desabilitar RLS.
+
+### OPS-E2E-NAV
+
+- Status: **Open** — regressão pós-#131 (B-184 nav esquerda compacta).
+- Observado em: CI `E2E (Playwright)` —
+  [`timeline-anchor.spec.ts`](../../tests/e2e/specs/timeline-anchor.spec.ts) linha 61
+  (`getByRole('button', { name: /^Bob$/i })` não encontrado) e
+  [`timeline-history-scroll.spec.ts`](../../tests/e2e/specs/timeline-history-scroll.spec.ts)
+  linha 40 (`scrollTop` ~3200 vs esperado &lt;120; `timeline-jump` ausente).
+- Base/head SHA: último green `e109fb19` (2026-08-13T12:08Z); incident tip
+  `6cfff162093f52162bd1926c7a0ec0d82234f01d` (#131 B-184, run
+  [#31700054154](https://github.com/Guigass/vibe-chat/actions/runs/31700054154));
+  HEAD incidente `33f77f92eed4a2c96fb42d8f4dc6493c43641325` (run
+  [#31797011938](https://github.com/Guigass/vibe-chat/actions/runs/31797011938),
+  2026-08-14T11:38Z).
+- Reprodução: CI em `main` — 13 passed, 2 failed; regressão contínua em ≥6 pushes
+  consecutivos desde #131.
+- Causa raiz provável: B-184 refatorou a sidebar esquerda (modo compacto, blocos,
+  filtro); specs ainda assumem botão DM “Bob” visível na rail e scroll estável ao
+  receber mensagem (B-088).
+- Resultado esperado: DM acessível na nova nav; leitor em histórico não é
+  arrastado; E2E passa em ambas as specs.
+- Resultado atual: `main` vermelho; Build & test / gitleaks / dep-audit verdes.
+- Impacto: bloqueia auto-merge e viola invariante “main verde”.
+- Risk class: R1 (teste/UI); severidade Critical por bloqueio de pipeline.
+- Owner automático: Build + QA.
+- Critério de resolução:
+  1. `E2E (Playwright)` verde em `main` por ≥2 runs consecutivos;
+  2. `timeline-anchor.spec.ts` e `timeline-history-scroll.spec.ts` passam via
+     `task test:e2e:ci`;
+  3. finding marcado Resolved citando PR de fix.
 
 ### OPS-E2E-REALTIME
 
