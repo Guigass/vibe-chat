@@ -4,112 +4,168 @@
 
 ## Problema
 
-Uma instalação nova ainda exige SMTP, chave de IA, retenção e detalhes de
-integração no `.env`. O `/admin/settings` (B-069 / ADR-020) já persiste isso no
-DB, mas o caminho não fecha: o keyring lab é `CHANGE_ME` (criptografia
-indisponível) e `RuntimeSettings:DatabaseOverridesEnabled` fica `false`. O
-operador não configura a instância na UI.
+Uma instalação nova ainda exige SMTP, IA, retenção, push, link preview e
+kill switches no `.env`. O `/admin/settings` (B-069 / ADR-020) já persiste
+política no DB, mas o caminho não fecha: o keyring lab é `CHANGE_ME` e
+`RuntimeSettings:DatabaseOverridesEnabled` fica `false`. O operador não
+configura o produto na UI.
 
-O `.env.example` mistura infra (que **precisa** continuar no env) com política
-de integração (que **já pode** ir ao admin). Enxugar o template inteiro — pins,
-portas, profiles, connection strings — **não** é o objetivo: isso só esconde
-infra sem habilitar o admin.
+O `.env` deve ser **só infra** (subir Postgres, IdP, MinIO, Redis, URLs,
+pins). Tudo que é política, integração ou feature flag vai ao admin + DB.
+
+Enxugar pins/portas/connection strings **não** é o objetivo.
 
 ## Escopo
 
-Habilitar o caminho **admin + DB** só no que ADR-020 já permite. Infra permanece
-no `.env`.
+Regra: **env = infra/bootstrap**. **DB = produto.** Sem registry genérico.
 
-### Vai ao `/admin/settings` + DB (quando o keyring for válido)
+### Permanece no `.env` (infra — precisa existir antes do login)
+
+- Postgres, Redis, Keycloak, MinIO, OIDC, URLs públicas, CORS de MinIO
+- Portas de host, pins de imagem, profiles `tools` / `observability` / `proxy`
+- Seed / bootstrap / DevAuth (primeiro boot, não política de runtime)
+- TLS / proxy / OTel (stack de operação)
+- Keyring AES-GCM (`RuntimeSettings:Encryption:*`) — chave mestra **não**
+  pode viver no banco que ela destrava
+- `RuntimeSettings:DatabaseOverridesEnabled` — fail-safe para ignorar o DB
+
+### Vai ao `/admin/settings` + DB (quando overrides estiverem ligados)
+
+Integração (secrets exigem keyring válido; PUT geral não aceita secret):
 
 - SMTP (host, porta, from, TLS, senha criptografada)
-- OpenRouter API key (envelope AES-GCM); provider/workspace toggle já na UI
+- OpenRouter: API key (envelope) **e** `baseUrl` (https; sem IP privado —
+  mesma guarda de webhook). Provider/workspace toggle já na UI
 - Webhook URL + signing secret
-- Retenção por tenant (`retentionDays` etc.)
-- Files e RateLimit por tenant (sob teto env)
+- VAPID (privada em envelope; pública no GET; subject). Sem VAPID válido o
+  push continua no-op
 
-### Permanece no `.env` (não limpar)
+Política / limites (não são secrets):
 
-- Postgres, Redis, Keycloak, MinIO, OIDC, URLs públicas, CORS, seed/bootstrap
-- Portas de host, pins de imagem, profiles `tools` / `observability` / `proxy`
-- Kill switches de processo: `AI__Enabled`, `EMAIL__Enabled`,
-  `MessageRetention__Enabled`, `Push__Enabled`
-- Keyring AES-GCM (`RuntimeSettings:Encryption:*`) e VAPID
-- `OPENROUTER_BASE_URL` (ADR-020)
+- Retenção por tenant (`enabled`, `retentionDays`) + knobs do job
+  (default days, batch, intervalo)
+- Files e RateLimit por tenant. Teto = constantes de código
+  (`AttachmentPolicies` / `RateLimitPolicies`), **não** env
+- Link preview: timeout + kill switch de processo (toggle por tenant já existe)
+
+Kill switches de **instância** (booleanos, default `false` exceto link
+preview `true` como hoje; **não** exigem keyring):
+
+- `Ai:Enabled`
+- `Email:Enabled`
+- `MessageRetention:Enabled`
+- `Push:Enabled`
+- `LinkPreview:Enabled`
+
+Singleton tipada `administration.process_settings` (sem `tenant_id`): flags,
+`openRouterBaseUrl`, knobs de retenção/link-preview, envelopes VAPID.
+PUT existente grava os booleanos/`baseUrl`/knobs; VAPID rota por
+`POST .../credentials/vapid/rotate`.
+
+Dois níveis permanecem onde já existem: processo (instância) **e** política
+tenant/workspace (`ai.workspaceEnabled`, `email.enabled`, `retention.enabled`,
+`linkPreview.enabled`).
 
 ### Lab / primeira instalação
 
-- Provisionar keyring de **demo** no `.env.example` (32 bytes em base64,
-  claramente fake — mesmo espírito das senhas `*_change_me`).
+- Keyring **demo** no `.env.example` (32 bytes base64, claramente fake).
 - Ligar `RuntimeSettings:DatabaseOverridesEnabled` **quando o keyring for
-  válido**. Placeholder `CHANGE_ME*` ou chave ausente → overrides **off**
-  (fail-safe). Produção: gerar chave real, depois ligar.
-- Tirar do template só o detalhe de integração que passou ao admin:
-  `EMAIL__Smtp__*`, aliases `SMTP_*`, `OPENROUTER_API_KEY`,
-  `MessageRetention__DefaultRetentionDays` / `BatchSize` / `IntervalMinutes`.
-  Kill switches e infra **ficam**.
-- Documentar o fluxo: `cp .env.example .env` → `task apps` → login admin →
-  SMTP/IA/webhook/retenção/Files/RateLimit na UI.
+  válido**. `CHANGE_ME*` ou chave ausente → overrides **off**.
+- Tirar do template **tudo que não é infra**, inclusive:
+  `EMAIL__*`, `SMTP_*`, `AI__*`, `OPENROUTER_*`, `MessageRetention__*`,
+  `LinkPreview__*`, `Push__*`.
+- Compose pode manter `${…:-}` como fallback de um release; o template não
+  pede que o operador preencha.
+- Fluxo: `cp .env.example .env` → `task apps` → login admin → produto inteiro
+  na UI (flags, SMTP, IA, webhook, retenção, files, rate limit, push/VAPID,
+  link preview).
 
-O catálogo canônico continua `docs/operations/configuracao-env.md`. Não exigir
-que o template omita pins/portas.
+O catálogo canônico continua `docs/operations/configuracao-env.md`. Pins e
+portas de infra **ficam** no template.
 
 ## Fora de escopo
 
-- Mover Postgres, Redis, Keycloak, MinIO, OIDC, CORS/proxy/TLS, seed, OTel,
-  BaseUrl OpenRouter, keyring ou VAPID para o banco (D-04 / ADR-020).
+- Mover Postgres, Redis, Keycloak, MinIO, OIDC, CORS/proxy/TLS, seed, OTel
+  ou keyring para o banco (D-04).
 - Apagar pins, portas ou vars de profile opcional do `.env.example`.
 - Ligar overrides com keyring vazio ou `CHANGE_ME`.
 - Registry genérico `settings[key]=value`.
 - Secret manager de cloud.
-- Redesign da UI `/admin/settings`.
+- Redesign da UI `/admin/settings` (estender seções que já existem).
 
 ## Contratos
 
-Sem endpoint novo. Precedência inalterada (ADR-020): kill switch/teto env →
-override DB → fallback env → default seguro. PUT geral não aceita secrets;
-rotação continua nos endpoints dedicados. API nunca devolve plaintext.
+Sem endpoint novo, salvo `POST /api/v1/admin/settings/credentials/vapid/rotate`
+(mesmo shape dos outros rotate). Kill switches, `baseUrl` e knobs entram no
+PUT geral.
+
+Precedência (emenda ADR-020 / B-187), para **produto**:
+
+1. `DatabaseOverridesEnabled=false` → defaults de código (features off,
+   link preview on). Env de produto deixa de ser contrato.
+2. Flag on + linha no DB → **SoT DB**.
+3. Flag on sem linha → default de código.
+
+PUT geral não aceita secrets. API nunca devolve plaintext. `processSource` /
+`Source` = `database` | `default`. Worker lê a mesma singleton.
+
+AuthZ inalterada: `workspace.admin`. Gate de processo afeta a instância
+(self-host: o admin é o operador). Audit `settings.change` /
+`settings.credential.rotate`.
 
 ## UX
 
-Não muda o chat. `/admin/settings` já mostra fonte (`env` / `workspace` /
-`default`) e o gate “Overrides DB” + estado do keyring. B-187 faz esse gate
-funcionar no lab e deixa a instalação nova configurar integrações na UI, sem
-pedir SMTP/IA no `.env`.
+Não muda o chat. `/admin/settings` já mostra fonte e o gate “Overrides DB”.
+B-187 faz o gate funcionar no lab e deixa a instalação nova configurar o
+**produto** na UI, sem pedir SMTP/IA/push/flags no `.env`.
 
 ## Multi-tenant e authZ
 
-Inalterado: `workspace.admin` em settings; secrets mascarados; RLS nas tabelas
-de settings. Keyring demo no template não é secret de produção.
+Inalterado: `workspace.admin`; secrets mascarados; RLS nas tabelas
+tenant-aware. `process_settings` é singleton da instância; role runtime
+lê/grava só via API admin. Keyring demo no template não é secret de
+produção. Defaults seguros: IA/e-mail/retenção/push **off**; link preview
+**on** (ADR-021).
 
 ## Aceite
 
-- [ ] Lab: keyring demo válido no `.env.example`; overrides ligados só com
-      chave válida; `CHANGE_ME` / vazio → off.
-- [ ] Instalação nova configura SMTP, OpenRouter, webhook, retenção, Files e
-      RateLimit em `/admin/settings` sem essas vars no `.env`.
-- [ ] `.env.example` **mantém** infra, portas, pins, URLs, kill switches, VAPID
-      e keyring.
-- [ ] `.env.example` **remove** `EMAIL__Smtp__*`, `SMTP_*`, `OPENROUTER_API_KEY`
-      e detalhe de retenção (não o kill switch).
-- [ ] Catálogo e guia do admin descrevem: integração na UI; infra no env.
+- [ ] Lab: keyring demo válido; overrides só com chave válida;
+      `CHANGE_ME` / vazio → off.
+- [ ] Instalação nova configura **todo o produto** em `/admin/settings`
+      (SMTP, OpenRouter key+baseUrl, webhook, retenção, Files, RateLimit,
+      link preview, VAPID, cinco kill switches) **sem** essas vars no `.env`.
+- [ ] `.env.example` **só** infra: data plane, OIDC, URLs, portas, pins,
+      seed/bootstrap, OTel/proxy, keyring, flag de overrides.
+- [ ] `.env.example` **não** lista `EMAIL__*`, `SMTP_*`, `AI__*`,
+      `OPENROUTER_*`, `MessageRetention__*`, `LinkPreview__*`, `Push__*`.
+- [ ] Com overrides on, PUT/rotate persistem; GET devolve fonte `database`;
+      worker/API honram o valor.
+- [ ] Flag off: consumidores usam default de código (não exigem env de produto).
+- [ ] Catálogo e guia: produto na UI; infra no env.
 - [ ] `docker compose --env-file .env.example config --quiet` continua válido.
 - [ ] Sem secret real no template.
 
 ## Testes
 
-- Keyring demo → `IsEncryptionAvailable`; placeholder `CHANGE_ME*` → false.
-- Com flag+key: rotate OpenRouter/SMTP no admin não retorna 503
+- Keyring demo → `IsEncryptionAvailable`; `CHANGE_ME*` → false.
+- Com flag+key: rotate OpenRouter/SMTP/VAPID no admin não retorna 503
   `RuntimeSettingsDisabled`.
-- `ComposeConfigCatalogTests`: bindings Compose de EMAIL/AI/retenção/push
-  permanecem; template **não** precisa listar `EMAIL__Smtp__*` /
-  `OPENROUTER_API_KEY`; **precisa** continuar declarando infra usada sem default.
+- Com flag on: PUT dos process flags + `openRouterBaseUrl` grava a singleton;
+  sem linha, default de código.
+- `openRouterBaseUrl` / webhook: `http` interno e IP privado recusados.
+- Flag off: PUT de produto é no-op; features no default seguro.
+- `ComposeConfigCatalogTests`: template **não** precisa listar vars de
+  produto; **precisa** declarar infra usada sem default.
 - Settings mascarados; nenhum secret real no git.
 
 ## Riscos
 
-- Keyring demo no git: só lab, rotulado como fake; produção troca antes de
-  ligar overrides.
-- Overrides sem chave: fail-closed (já em `RuntimeSecretProtector`).
-- Operador procura SMTP no `.env`: catálogo + comentário no template apontam
-  `/admin/settings`.
+- Keyring demo no git: só lab; produção troca antes de ligar overrides.
+- Overrides sem chave: fail-closed para secrets. Flags/knobs não dependem
+  do keyring.
+- `workspace.admin` liga purge/IA/push na instância: auditado; rollback =
+  desligar `DatabaseOverridesEnabled`.
+- `openRouterBaseUrl` na UI: guarda https + IP público (mesmo espírito do
+  webhook); não é allowlist de vendor.
+- Operador procura SMTP/flags no `.env`: catálogo + comentário no template
+  apontam `/admin/settings`.

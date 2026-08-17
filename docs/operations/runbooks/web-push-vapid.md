@@ -1,7 +1,8 @@
 # Web Push — chaves VAPID (B-095 / ADR-022)
 
-Kill switch: `Push__Enabled=false` (default). Sem isso, o worker não envia e o
-cliente não pede permissão.
+Kill switch e chaves VAPID: `/admin/settings` quando overrides on (B-187).
+Sem o gate (ou sem VAPID válido) o worker não envia e o cliente não pede
+permissão. Keyring continua só no env.
 
 ## Gerar um par
 
@@ -12,27 +13,25 @@ formato VAPID (P-256, base64url). Em lab:
 ./infra/scripts/generate-vapid-keys.sh
 ```
 
-O script roda num container `mcr.microsoft.com/dotnet/sdk` e imprime as linhas
-para o `.env`. **Não** redirecione a saída para um arquivo versionado.
+O script roda num container `mcr.microsoft.com/dotnet/sdk` e imprime o par.
+**Não** redirecione a saída para um arquivo versionado.
 
-Coloque no `.env` (nunca no git):
+Cole em `/admin/settings` (Substituir VAPID) — nunca no git:
 
 ```text
-Push__Enabled=true
-Push__Vapid__PublicKey=...
-Push__Vapid__PrivateKey=...
-Push__Vapid__Subject=mailto:ops@example.com
+PublicKey=...
+PrivateKey=...
+Subject=mailto:ops@example.com
 ```
 
-Reinicie **api** e **worker**. `Subject`: `mailto:` de contato da instância ou a
-URL pública.
+`Subject`: `mailto:` de contato da instância ou a URL pública.
 
 ## Rotação
 
 1. Gerar um par novo.
-2. Atualizar o `.env` / secret manager.
-3. Reiniciar api + worker.
-4. Assinaturas antigas deixam de funcionar; o usuário opta de novo.
-5. Não logar a chave privada.
+2. Rotate em `/admin/settings` (não precisa reiniciar).
+3. Assinaturas antigas deixam de funcionar; o usuário opta de novo.
+4. Não logar a chave privada.
 
-Rollback imediato: `Push__Enabled=false`.
+Rollback imediato: desligar o kill switch no admin **ou**
+`RuntimeSettings:DatabaseOverridesEnabled=false` (volta ao default: push off).

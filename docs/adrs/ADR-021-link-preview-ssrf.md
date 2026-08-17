@@ -24,8 +24,9 @@ A spec e o pacote R3 exigem ADR, threat model, flag e rollback no mesmo PR.
    - HTML ≤ 1,5 MB / imagem ≤ 512 KB; sem cookies/credenciais; UA `VibeChat-LinkPreview/1.0`.
 4. **Imagem** armazenada no MinIO (`ImageKey`); a API só expõe URL assinada —
    sem hotlink.
-5. **Flags:** `LinkPreview:Enabled` (processo, default `true` conforme spec) e
-   toggle por tenant em admin (`messaging.link_preview_settings`).
+5. **Flags:** `LinkPreview:Enabled` (processo, default `true`) e toggle por
+   tenant em admin. B-187: processo + timeout no DB de instância quando
+   overrides on; senão default de código.
 6. **Remoção:** `DELETE .../messages/{id}/link-preview` — autor ou
    `workspace.admin` (soft-remove na junction).
 

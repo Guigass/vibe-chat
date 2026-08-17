@@ -86,7 +86,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Rotação | `POST /admin/settings/credentials/{openrouter\|smtp\|webhook}/rotate` — `workspace.admin`; body `{ value }`; resposta só máscara/versão |
 | Re-encrypt | `POST /admin/settings/encryption/reencrypt` — regrava envelopes para `ActiveKeyVersion` |
 | Resposta | Nunca retorna secret em claro; só máscara / `*Configured` / `keyVersion` / `rotatedAt` |
-| SoT | Infra/kill switches em env; credenciais externas (OpenRouter, SMTP password, webhook HMAC) em envelope AES-GCM no DB (ADR-020) quando `RuntimeSettings:DatabaseOverridesEnabled`; chave mestra só no env |
+| SoT | Infra (Postgres, IdP, MinIO, keyring) em env; produto (kill switches, VAPID, OpenRouter, SMTP, webhook) no DB quando `RuntimeSettings:DatabaseOverridesEnabled` (B-187 / ADR-020); chave mestra só no env |
 | Em repouso | AES-256-GCM + AAD tenant/workspace/kind; dual-read temporário do webhook plaintext legado |
 | Audit | `settings.change`, `settings.credential.rotate`, `settings.encryption.reencrypt` — sem valor/ciphertext/nonce/tag |
 | Webhooks | Delivery `MessageCreated` via outbox + HMAC; URL/secret só admin; mask no GET |
@@ -118,7 +118,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Item | Controle |
 |------|----------|
 | AuthZ | `retention.*` via `GET/PUT /admin/settings` exige `workspace.admin` (membro/Auditor → 403) |
-| Kill switch | Processo `MessageRetention:Enabled` off default (SoT env); sem ele o worker não hard-deleta |
+| Kill switch | Processo `MessageRetention:Enabled` off default (SoT DB de instância com overrides — B-187); sem ele o worker não hard-deleta |
 | Escopo | Purge só mensagens do tenant da política; `TenantContext` no job |
 | Cascata | Remove reactions; detach `attachments.MessageId` (sem delete MinIO neste slice) |
 | Audit | `message.purge` em `audit.audit_events` |
@@ -138,8 +138,8 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 
 | Item | Controle |
 |------|----------|
-| Kill switch | `Push:Enabled` off default (SoT env); sem chaves VAPID o sender é no-op |
-| Secrets | Privada só no env; API devolve só a pública; nunca logar `auth`/`p256dh`/privada |
+| Kill switch | `Push:Enabled` off default (SoT DB de instância com overrides — B-187); sem chaves VAPID o sender é no-op |
+| Secrets | Privada em envelope no DB; API devolve só a pública; nunca logar `auth`/`p256dh`/privada |
 | Destinatários | Membership **no envio**; DM ou menção direta; autor excluído |
 | Cursor | `read_cursors.lastReadSeq >= sequence` suprime (já lido noutro dispositivo) |
 | Payload | Remetente + canal + prévia truncada; clique abre `/app?channel=&message=&seq=` |

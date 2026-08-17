@@ -1,14 +1,13 @@
 # Configuração via `.env` — Admin mínimo
 
 Guia de referência para operar uma instância self-hosted. O operador de infra
-sobe a plataforma via `.env` + Compose; o `workspace.admin` ajusta políticas
-por workspace na UI. Infra permanece no env (D-04); política/integração pode
-ir ao admin + DB (ADR-020).
+sobe a plataforma via `.env` + Compose; o `workspace.admin` configura o
+**produto** na UI. `.env` = infra (D-04); produto = admin + DB (ADR-020 / B-187).
 
 **Status:** catálogo executável fechado em **W7-7 / B-105** (2026-08-07).
-Follow-up **W7-14 / B-187** (Planned): instalação nova configura SMTP/IA/webhook/
-retenção/Files/RateLimit no `/admin` quando o keyring for válido; este arquivo
-permanece o inventário canônico; **infra não sai do `.env`**. Specs:
+Follow-up **W7-14 / B-187** (Planned): `.env` só infra; produto inteiro no
+`/admin` quando overrides on. Este arquivo permanece o inventário canônico.
+Specs:
 [`B-105-catalogo-configuracao.md`](../product/specs/B-105-catalogo-configuracao.md),
 [`B-187-env-enxuto.md`](../product/specs/B-187-env-enxuto.md).
 
@@ -21,7 +20,7 @@ permanece o inventário canônico; **infra não sai do `.env`**. Specs:
 1. **Inventariar** todas as variáveis de ambiente usadas por Compose, API, Worker e Web.
 2. **Completar** o catálogo operacional (este arquivo) e o `.env.example` como
    template executável (placeholders, nunca secrets reais — D-04). B-187 leva
-   integração ao admin; o inventário de infra não muda de arquivo.
+   produto ao admin; o inventário de infra não muda de arquivo.
 3. **Documentar** a matriz **env vs admin UI**: o que só muda com restart/redeploy vs o que o admin muda em runtime.
 4. **Fechar gaps** entre `appsettings*.json`, `compose.yaml` e `.env.example`.
 
@@ -29,25 +28,24 @@ permanece o inventário canônico; **infra não sai do `.env`**. Specs:
 
 | Camada | Quem configura | Onde | Exemplos |
 |--------|----------------|------|----------|
-| **Infra / plataforma** | Operador de infra | `.env` / secret manager | Postgres, Redis, Keycloak, MinIO, OIDC issuer, kill switches, keyring AES-GCM, BaseUrl OpenRouter |
-| **Política + integrações** | `workspace.admin` | `/admin/settings` + DB | AI workspace, SMTP (incl. senha criptografada), webhook, retenção, Files, RateLimit |
+| **Infra / plataforma** | Operador de infra | `.env` / secret manager | Postgres, Redis, Keycloak, MinIO, OIDC issuer, keyring AES-GCM, URLs, pins, seed/bootstrap, OTel/proxy |
+| **Produto** | `workspace.admin` | `/admin/settings` + DB | SMTP, OpenRouter (key+baseUrl), webhook, retenção, Files, RateLimit, link preview, VAPID, kill switches (B-187) |
 
 Regra (B-069 / ADR-020): PUT geral **não** aceita secrets. Rotação de OpenRouter/SMTP/webhook usa endpoints dedicados; valores ficam em envelope AES-GCM (chave mestra só no env). Flag `RuntimeSettings__DatabaseOverridesEnabled=false` por default — rollback = desligar a flag no mesmo binário.
 
 Caminho self-host pretendido (B-187): keyring demo (lab) ou chave real (prod) →
-overrides só com chave válida → SMTP/AI/webhook/retenção/Files/RateLimit em
-`/admin/settings`. O `.env` **mantém** infra, URLs, portas, pins, kill switches
-e a chave mestra. Não mover Postgres, Redis, Keycloak, MinIO, OIDC, TLS, seed,
-OTel ou VAPID para o DB. Não apagar pins/portas do template só para “enxugar”.
+overrides só com chave válida → **produto** em `/admin/settings`. O `.env` é
+**só infra**. Não mover Postgres, Redis, Keycloak, MinIO, OIDC, TLS, seed,
+OTel ou keyring para o DB. Não apagar pins/portas do template só para “enxugar”.
 
 ## Dois artefatos (B-187)
 
 | Artefato | Função |
 |----------|--------|
-| `.env.example` | Setup de **infra** (senhas, URLs, portas, pins, kill switches, keyring). Detalhe SMTP/IA sai quando B-187 fechar. |
+| `.env.example` | Setup de **infra** (senhas de data plane, URLs, portas, pins, keyring). Produto sai quando B-187 fechar. |
 | Este catálogo | Inventário completo + matriz env vs admin. |
 
-Até B-187 fechar: o template ainda lista SMTP/`EMAIL__Smtp`/`OPENROUTER_API_KEY`;
+Até B-187 fechar: o template ainda lista SMTP/IA/retenção/push/link-preview;
 o admin ainda exige flag+keyring válidos para gravar secrets.
 
 ## Escopo
@@ -65,14 +63,14 @@ o admin ainda exige flag+keyring válidos para gravar secrets.
 
 - Substituir `/admin` para convites, papéis, auditoria de conversas ou export ZIP
 - Tornar **toda** configuração dinâmica / despejar infra no PostgreSQL (rejeitado em ADR-020 e B-105)
-- Levar integração ao `/admin` sem tirar infra do `.env` (B-187)
+- Levar o **produto** ao `/admin` sem tirar infra do `.env` (B-187)
 - Secrets manager específico de cloud (apenas padrão: montar env ou arquivo `.env`)
 
 ## Inventário auditado
 
 Todas as substituições `${VAR}` observadas em `compose.yaml` e
 `compose.override.yaml` possuem entrada no `.env.example` na data do snapshot
-B-105. B-187 não omite pins/portas; omite só detalhe de integração que passou
+B-105. B-187 não omite pins/portas; omite **todo** var de produto que passou
 ao admin. O inventário canônico continua nesta página.
 
 ### Imagens e portas do Compose
@@ -126,12 +124,12 @@ ao admin. O inventário canônico continua nesta página.
 | `BOOTSTRAP_WORKSPACE_SLUG` | `Bootstrap__WorkspaceSlug` | api | Slug do primeiro workspace; apenas letras ASCII, números e hífen |
 | `SEED_ENABLED` | `Seed__Enabled` | api | `true` no lab; **`false` em staging/prod** |
 | `ENABLE_DEV_AUTH` | build arg web → `publicConfig.enableDevAuth` | web build | Lab: `true` (botões Alice/Bob/Demo no login). **Staging/prod/Coolify: `false` ou omitir** (default Compose). Rebuild da web após mudar. |
-| `AI__Enabled`, `AI__Provider` | `Ai__*` | api | Off default (D-06) |
-| `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL` | `Ai__OpenRouter__*` | api | Fallback env; BaseUrl permanece env; key pode ir ao DB criptografada (ADR-020) |
-| `EMAIL__*` | `Email__*` | api | Injetado no profile `apps`; senha fallback env ou envelope DB |
-| `MessageRetention__*` | `MessageRetention__*` | worker | Injetado no profile `apps`; kill switch off default |
-| `LinkPreview__*` | `LinkPreview__*` | api + worker | B-091 / ADR-021; default Enabled; TimeoutMs 8000 |
-| `Push__Enabled`, `Push__Vapid__*` | `Push__*` | api + worker | B-095 / ADR-022; kill switch off default; VAPID secret só env |
+| `AI__Enabled`, `AI__Provider` | `Ai__*` | api | B-187: sai do template; SoT admin+DB |
+| `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL` | `Ai__OpenRouter__*` | api | B-187: sai do template; key+baseUrl no admin |
+| `EMAIL__*` | `Email__*` | api | B-187: sai do template; SMTP no admin |
+| `MessageRetention__*` | `MessageRetention__*` | worker | B-187: sai do template; processo + knobs no admin |
+| `LinkPreview__*` | `LinkPreview__*` | api + worker | B-187: sai do template; processo + timeout no admin |
+| `Push__Enabled`, `Push__Vapid__*` | `Push__*` | api + worker | B-187: sai do template; kill switch + VAPID no admin |
 | `RuntimeSettings__DatabaseOverridesEnabled` | `RuntimeSettings__DatabaseOverridesEnabled` | api, worker | Default `false`; liga overrides DB + rotação |
 | `RuntimeSettings__Encryption__ActiveKeyVersion` | idem | api, worker | Versão ativa do keyring AES-GCM |
 | `RuntimeSettings__Encryption__Keys__{n}` | idem | api, worker | Chave mestra base64 (32 bytes); **nunca** no DB |
@@ -170,12 +168,12 @@ do Keycloak como mecanismo de reset.
 | Roles PostgreSQL | `POSTGRES_APP_*`, `POSTGRES_MIGRATOR_*`, `POSTGRES_BACKUP_*` + `DATABASE_*_URL` | Entregue em `SEC-RLS-RUNTIME`; API/Worker usam app role |
 | Projeto Compose | `COMPOSE_PROJECT_NAME` | Consumida pelo Docker Compose CLI |
 
-### Chaves de aplicação — teto env vs admin
+### Chaves de aplicação — teto de código vs admin
 
 | Seção appsettings | Chaves | Status |
 |-------------------|--------|--------|
-| `Files` | `MaxSizeBytes`, TTLs, `AllowedContentTypes`, `Audio:*` | Teto env (Compose injeta `Files__MaxSizeBytes`); override por tenant em `files.settings` (ADR-020) |
-| `RateLimit` | `SendPerMinute`, `HubPerMinute` | Teto env; override por tenant em `building_blocks.rate_limit_settings` |
+| `Files` | `MaxSizeBytes`, TTLs, `AllowedContentTypes`, `Audio:*` | Teto de **código** (`AttachmentPolicies`); override por tenant em `files.settings` (B-187) |
+| `RateLimit` | `SendPerMinute`, `HubPerMinute` | Teto de código; override por tenant |
 | `Cors` | `Origins` | Default em código; proxy TLS (profile `proxy`) cobre origem pública |
 | `Authentication` | `RequireHttpsMetadata` | `"false"` no Compose dev/self-host; produção com TLS usa proxy + issuer HTTPS |
 | `Minio` | `Endpoint`, `UseSsl` | Mapeado no Compose (`Minio__*`); rede interna `minio:9000`, público via `MINIO_ENDPOINT` |
@@ -187,10 +185,13 @@ do Keycloak como mecanismo de reset.
 | Área | Endpoint / tabela | Motivo |
 |------|-------------------|--------|
 | Webhooks | `PUT` + `POST .../credentials/webhook/rotate` → `integrations.webhook_endpoints` | URL e secret criptografado (B-048 / ADR-020) |
-| Retenção por tenant | `retention.*` em admin settings | Política de negócio (B-047) |
-| AI workspace | `ai.workspaceEnabled` + rotate OpenRouter | Liga/desliga IA + key criptografada |
+| Retenção | `retention.*` + knobs de processo | Política tenant + job de instância (B-047 / B-187) |
+| AI | `ai.*` + rotate OpenRouter | Flag, provider, key, baseUrl |
+| Kill switches | `*.processEnabled` (B-187) | Singleton `administration.process_settings` |
 | SMTP | `email.*` + rotate SMTP | Host/port/from + senha criptografada |
-| Files / RateLimit | `files.*` / `rateLimit.*` | Limites por tenant sob teto env |
+| Link preview | processo + timeout + toggle tenant | B-091 / B-187 |
+| Push / VAPID | `push.*` + rotate VAPID | Kill switch + chaves da instância |
+| Files / RateLimit | `files.*` / `rateLimit.*` | Limites por tenant sob teto de código |
 
 ## Critérios de aceite (B-105)
 
@@ -232,13 +233,13 @@ Antes de expor a instância:
 
 1. `cp .env.example .env` e substituir **todos** `*_change_me` / `CHANGE_ME` por secrets reais (D-04).
 2. `ASPNETCORE_ENVIRONMENT=Production`, `SEED_ENABLED=false` e `ENABLE_DEV_AUTH=false` (ou omitir — default do Compose).
-3. `AI__Enabled=false` (default) até opt-in explícito; `OPENROUTER_API_KEY` só se provider externo.
-4. `EMAIL__Enabled=false` (default) até SMTP real; nunca commitar `EMAIL__Smtp__Password`.
-5. `MessageRetention__Enabled=false` (default) até política legal/operacional aprovada (ADR-018).
+3. Produto (IA/e-mail/retenção/push) **off por default**; ligar em `/admin/settings` (B-187).
+4. Nunca commitar senha SMTP / VAPID / OpenRouter; rotação no admin.
+5. Purge: processo + política do tenant; default false até política legal/operacional aprovada (ADR-018).
 6. Issuer OIDC (`KEYCLOAK_ISSUER_URL`) e URLs públicas (`API_BASE_URL`, `WEB_BASE_URL`, `MINIO_ENDPOINT`) apontam para hostname TLS real.
 7. Validar parse: `docker compose --env-file .env config --quiet`.
 8. Subir: `task apps` e confirmar `/health` + login OIDC.
-9. `/admin/settings`: secrets mascarados; `processSource`/`Source` = `env` para kill switches globais.
+9. `/admin/settings`: secrets mascarados; produto com fonte `database` quando overrides on.
 
 ## Bootstrap rápido (hoje)
 

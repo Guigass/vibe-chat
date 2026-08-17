@@ -82,7 +82,7 @@ continuam no admin (B-069 / ADR-020).
 | Gaps | `Files`, `RateLimit`, `Cors`, etc. expostos ou documentados como fixos | **Done** (B-105) |
 | Ops | `operacao.md` + runbooks referenciam o catálogo | **Done** |
 
-**Fora de escopo:** substituir convites, papéis, auditoria de conversas ou export — permanecem em `/admin`. Despejar infra (Postgres, IdP, MinIO) no DB — rejeitado (D-04 / ADR-020). Integração na UI na instalação nova — B-187.
+**Fora de escopo:** substituir convites, papéis, auditoria de conversas ou export — permanecem em `/admin`. Despejar infra (Postgres, IdP, MinIO, keyring) no DB — rejeitado (D-04 / ADR-020). Produto na UI na instalação nova — B-187.
 
 ## Riscos principais
 

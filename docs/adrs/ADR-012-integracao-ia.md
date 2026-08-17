@@ -22,8 +22,10 @@ IAiCompletionProvider → NullAiProvider (default, Ai:Enabled=false)
 - Segredos de API: env/secret store **ou** envelope AES-GCM por workspace no
   PostgreSQL (ADR-020), com chave mestra só no env; API admin nunca devolve
   plaintext — só máscara + rotação dedicada
-- `Ai:Enabled` permanece kill switch global de processo (SoT env)
-- `OpenRouter:BaseUrl` permanece no env (sem URL arbitrária na UI)
+- `Ai:Enabled` permanece kill switch global de processo (default `false`);
+  SoT DB quando overrides on (B-187); senão default de código
+- `OpenRouter:BaseUrl` pode ir ao DB (B-187) com guarda https + IP público;
+  default de código se overrides off
 - Logs sem prompts completos por padrão (redação)
 - Documentar como adicionar features em `docs/operations/adicionar-feature-ia.md`
 
@@ -33,7 +35,9 @@ OpenRouter é o adapter inicial (múltiplos modelos); outros providers implement
 
 A decisão original “só env” é emendada para permitir a API key OpenRouter
 criptografada em `ai.settings` quando `RuntimeSettings:DatabaseOverridesEnabled=true`.
-Infraestrutura (Postgres, OIDC, MinIO) e o kill switch `Ai:Enabled` **não** mudam.
+Infraestrutura (Postgres, OIDC, MinIO, keyring) **não** muda. Kill switch
+`Ai:Enabled`, API key e BaseUrl podem ir ao DB na emenda B-187 / ADR-020
+(default continua `false`).
 
 ## Alternativas consideradas
 

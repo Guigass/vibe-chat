@@ -50,9 +50,10 @@ Não muda a UI de chat. `/admin/settings` deve indicar a fonte efetiva
 
 ## Multi-tenant e authZ
 
-Ambiente define limites e kill switches globais. Política por workspace continua
-protegida por `workspace.admin`; secrets nunca retornam em claro. Uma configuração
-de tenant não pode alterar outro tenant.
+Ambiente define limites de **infra**. Política por workspace continua
+protegida por `workspace.admin`; secrets nunca retornam em claro. Uma
+configuração de tenant não pode alterar outro tenant. Follow-up B-187:
+produto (incluindo kill switches) passa ao admin+DB; env só infra.
 
 ## Aceite
 

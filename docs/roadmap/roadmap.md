@@ -194,13 +194,14 @@ B-105 fechou o catálogo. **B-187** fecha o caminho admin para integração
 
 ### Critérios de aceite W7-14 (resumo)
 
-- Instalação nova configura SMTP/IA/webhook/retenção/Files/RateLimit em
-  `/admin/settings` (keyring válido + overrides)
-- `.env.example` **mantém** infra, portas, pins, URLs e kill switches
-- Sai do template só detalhe de integração (`EMAIL__Smtp__*`, `SMTP_*`,
-  `OPENROUTER_API_KEY`, política de retenção — não o kill switch)
-- Infra (Postgres, IdP, MinIO, Redis, kill switches, keyring, VAPID) **não**
-  vai para o DB (ADR-020)
+- Instalação nova configura o **produto** em `/admin/settings` (overrides on):
+  SMTP, IA (key+baseUrl), webhook, retenção, Files, RateLimit, link preview,
+  VAPID e kill switches
+- `.env.example` **só** infra: data plane, OIDC, URLs, portas, pins,
+  seed/bootstrap, OTel/proxy, keyring
+- Sai do template **todo** var de produto (`EMAIL__*`, `AI__*`, `OPENROUTER_*`,
+  `MessageRetention__*`, `LinkPreview__*`, `Push__*`)
+- Infra (Postgres, IdP, MinIO, Redis, keyring) **não** vai para o DB (ADR-020)
 - `docker compose --env-file .env.example config --quiet` continua válido
 
 ### Safety lane (bugs funcionais)

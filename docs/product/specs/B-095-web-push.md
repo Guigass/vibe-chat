@@ -61,7 +61,8 @@ Tabela nova `notifications.push_subscriptions`:
 - O worker resolve destinatários **pela membership no momento do envio**, não pela
   lista gravada — quem saiu do canal não recebe push do canal.
 - Prévia respeita a visibilidade: mensagem de canal privado só vai para membros.
-- Chaves VAPID são secret (D-04): env, nunca em log, nunca no repo.
+- Chaves VAPID são secret (D-04): nunca em log, nunca no repo. SoT: admin+DB
+  quando overrides on (B-187); keyring só no env.
 - `modelo-ameacas.md` ganha a entrada de vazamento por prévia em tela bloqueada.
 
 ## Aceite

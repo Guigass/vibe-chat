@@ -499,9 +499,9 @@ Limites (config `Files:*` / override tenant, default entre parênteses):
 
 | Chave | Default | Validação |
 |-------|---------|-----------|
-| `MaxSizeBytes` | `10485760` (10 MiB) | Por arquivo no `initiate`; tenant ≤ teto env |
+| `MaxSizeBytes` | `10485760` (10 MiB) | Por arquivo no `initiate`; tenant ≤ teto de código |
 | `MaxAttachmentsPerMessage` | `10` | Contagem de `attachmentIds` no `SendMessage`; excedente → `400` `{ error: "TooManyAttachments", max }` |
-| `Files:Video:MaxSizeBytes` | `26214400` (25 MiB) | Por vídeo no `initiate`; teto env |
+| `Files:Video:MaxSizeBytes` | `26214400` (25 MiB) | Por vídeo no `initiate`; teto de código |
 | `Files:Video:MaxDurationMs` | `60000` | `durationMs` obrigatório para `kind=Video`; excedente → `400` |
 | `DefaultAllowedVideoContentTypes` | `video/mp4`, `video/webm` | Allowlist separada (espelha áudio) |
 
@@ -548,11 +548,12 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 | `GET /api/v1/admin/conversations/{channelId}/messages?after=&limit=` | Histórico admin do canal/DM (root); body **visível** mesmo com soft-delete; inclui `deletedBy` / anexos; exige `admin.dashboard`; canal fora do tenant → 403 |
 | `GET /api/v1/admin/threads/{threadId}/messages?after=&limit=` | Histórico admin de replies da thread; mesma authZ e semântica de body |
 | `GET /api/v1/admin/settings?workspaceId=` | Settings sensíveis mascarados (B-069 / ADR-020); exige `workspace.admin` (Auditor com só `admin.dashboard` → 403); `workspaceId` opcional (default: primeiro workspace do actor) |
-| `PUT /api/v1/admin/settings` | Atualiza flags não-secretas (AI/email/webhooks/retention/linkPreview/files/rateLimit); mesma authZ; rejeita secrets no body (`SecretsNotWritable`); audit `settings.change` |
+| `PUT /api/v1/admin/settings` | Atualiza flags não-secretas (AI/email/webhooks/retention/linkPreview/files/rateLimit/`openRouterBaseUrl`/`*.processEnabled`); mesma authZ; rejeita secrets no body (`SecretsNotWritable`); audit `settings.change` |
 | `POST /api/v1/admin/settings/credentials/openrouter/rotate` | Rotaciona API key OpenRouter (envelope AES-GCM em `ai.settings`); body `{ workspaceId?, value }`; resposta `{ configured, mask, keyVersion, rotatedAt }`; `503` se keyring indisponível |
 | `POST /api/v1/admin/settings/credentials/smtp/rotate` | Rotaciona senha SMTP do tenant (envelope em `notifications.email_settings`); mesma forma de resposta |
 | `POST /api/v1/admin/settings/credentials/webhook/rotate` | Rotaciona signing secret do webhook (envelope em `integrations.webhook_endpoints`); mesma forma |
-| `POST /api/v1/admin/settings/encryption/reencrypt` | Regrava envelopes do workspace/tenant para `ActiveKeyVersion`; migra plaintext legado de webhook; audit `settings.encryption.reencrypt` |
+| `POST /api/v1/admin/settings/credentials/vapid/rotate` | Rotaciona VAPID da instância (envelope em `administration.process_settings`); body `{ workspaceId?, publicKey, privateKey, subject? }`; resposta máscara/versão; `503` se keyring indisponível (B-187) |
+| `POST /api/v1/admin/settings/encryption/reencrypt` | Regrava envelopes do workspace/tenant/instância para `ActiveKeyVersion`; migra plaintext legado de webhook; audit `settings.encryption.reencrypt` |
 | `GET /api/v1/admin/workspaces/{workspaceId}/export` | Export compliance do workspace (B-046); ZIP `application/zip` com JSON (`manifest`, `workspace`, `members`, `spaces`, `channels`, `threads`, `messages`, `attachments` metadata); corpos soft-deleted incluídos (paridade B-067); **sem** binários MinIO; exige `workspace.admin` (Auditor → 403); audit `workspace.export`; workspace fora do tenant/membership → 403 |
 
 `AuditEventResponse`: `id`, `action`, `entityType`, `entityId`, `actorUserId`, `occurredAt`, `metadataJson`.
@@ -586,20 +587,25 @@ body de mensagem.
 | Campo | Notas |
 |-------|-------|
 | `workspaceId` | Workspace alvo (AI workspace settings) |
-| `ai.processEnabled` / `processSource` | Flag de processo (`Ai:Enabled`) — SoT env; somente leitura |
+| `ai.processEnabled` / `processSource` | Flag de processo (`Ai:Enabled`) — B-187: gravável; SoT DB quando overrides on |
 | `ai.workspaceEnabled` / `provider` | `ai.settings` do workspace — gravável via PUT |
+| `ai.openRouterBaseUrl` | BaseUrl OpenRouter da instância (B-187); https + IP público |
 | `ai.apiKeyConfigured` / `apiKeyMask` / `apiKeyKeyVersion` / `apiKeyRotatedAt` / `apiKeySource` | Máscara `••••last4`; **nunca** valor em claro; rotação via endpoint dedicado |
 | `email.*` | Enabled/host/port/user/from/startTls (override tenant); senha só máscara/versão/fonte |
+| `email.processEnabled` / `processSource` | Kill switch de processo (`Email:Enabled`) — B-187: gravável; SoT DB quando overrides on |
 | `webhooks.status` | `unconfigured` \| `disabled` \| `active` (B-048) |
 | `webhooks.enabled` / `url` / `urlConfigured` | Endpoint HTTP do tenant; URL gravável via PUT |
 | `webhooks.secretConfigured` / `secretMask` / `secretKeyVersion` / `secretRotatedAt` / `secretSource` | HMAC secret mascarado; rotação via endpoint dedicado |
 | `webhooks.message` | Texto de status para UI admin |
-| `retention.processEnabled` / `processSource` | Kill switch de processo (`MessageRetention:Enabled`) — SoT env; somente leitura |
+| `retention.processEnabled` / `processSource` | Kill switch de processo (`MessageRetention:Enabled`) — B-187: gravável; SoT DB quando overrides on |
 | `retention.enabled` / `retentionDays` | Política do tenant em `messaging.message_retention_settings` — gravável |
-| `retention.defaultRetentionDays` | Default operacional (sugerido 90; ADR-018 / D-03) |
+| `retention.defaultRetentionDays` / `batchSize` / `intervalMinutes` | Knobs do job (instância, B-187) |
 | `retention.message` | Texto de status para UI admin |
-| `files.*` | Limites por tenant (`files.settings`); teto = env/`AttachmentPolicies`; gravável |
-| `rateLimit.sendPerMinute` / `hubPerMinute` | Limites por tenant; efetivo = `min(DB, env)`; gravável |
+| `files.*` | Limites por tenant (`files.settings`); teto = código/`AttachmentPolicies`; gravável |
+| `rateLimit.sendPerMinute` / `hubPerMinute` | Limites por tenant; efetivo = `min(DB, teto de código)`; gravável |
+| `linkPreview.processEnabled` / `processSource` / `timeoutMs` | Processo + timeout (B-187); toggle tenant já gravável |
+| `push.processEnabled` / `processSource` | Kill switch de processo (`Push:Enabled`) — B-187 |
+| `push.vapidPublicKey` / `vapidConfigured` / `vapidMask` / `vapidSource` | Pública visível; privada só máscara; rotate dedicado |
 | `encryption.activeKeyVersion` / `credentialsUsingActiveKey` / `databaseOverridesEnabled` | Metadata do keyring (sem nomes de variáveis com valor) |
 
 Regras:
@@ -609,8 +615,9 @@ Regras:
 - PUT geral **nunca** aceita secrets (`SecretsNotWritable`); usar `POST .../credentials/*/rotate`
 - Membro comum e Auditor (sem `workspace.admin`) → `403` em GET/PUT/rotate/reencrypt
 - Tenant do actor; nunca aceitar `tenantId` do body
-- Retenção (B-047): `retentionDays` entre 1 e 3650; purge hard-delete só com **processo** `MessageRetention:Enabled=true` **e** `retention.enabled=true` no tenant; job no worker; audit `message.purge`
-- Files/RateLimit: admin pode restringir, não ultrapassar teto do env
+- Retenção (B-047): `retentionDays` entre 1 e 3650; purge hard-delete só com **processo** `MessageRetention:Enabled=true` **e** `retention.enabled=true` no tenant; job no worker; audit `message.purge`. B-187: o gate de processo pode vir do DB (`administration.process_settings`) quando overrides on
+- Kill switches de processo (B-187): `Ai` / `Email` / `MessageRetention` / `Push` / `LinkPreview` na singleton de instância; PUT geral; default seguro; flag off → default de código
+- Files/RateLimit: admin pode restringir, não ultrapassar teto de **código** (B-187; env deixa de ser teto de produto)
 
 ### Retenção / purge (B-047)
 
@@ -664,7 +671,7 @@ public interface IPushSender
 ```
 
 - Implementações: `NullPushSender` (default), `WebPushSender` (`Lib.Net.Http.WebPush` + VAPID) quando `Push:Enabled=true` e chaves válidas
-- Off by default; chaves só no env; GET devolve `{ enabled, publicKey? }` sem erro se off
+- Off by default; chaves no DB quando overrides on (B-187); GET devolve `{ enabled, publicKey? }` sem erro se off
 - Tabela `notifications.push_subscriptions` (RLS): `TenantId`, `UserId`, `Endpoint` (único por usuário), `P256dh`, `Auth`, `UserAgent?`, `CreatedAt`, `LastSeenAt`, `FailedAt`
 - Delivery best-effort no `OutboxProcessor` **após** realtime, apenas `MessageCreated`; 410/404 remove a linha; falha não reprocessa outbox
 - Destinatários: membership **atual** ∩ (DM `Direct` **ou** `mentionedUserIds`) ∩ `preferences.PushEnabled` ≠ false ∩ não-autor; `read_cursors` suprime se já lido

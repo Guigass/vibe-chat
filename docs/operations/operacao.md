@@ -98,14 +98,13 @@ Cobre `GET /health`, `GET /me`, history e `POST .../messages` no canal demo.
 
 - Infra e bootstrap via variáveis de ambiente (`.env` na raiz; ver `.env.example`)
 - **Catálogo:** [`configuracao-env.md`](./configuracao-env.md) — inventário e
-  matriz env vs admin (B-105). Integração na UI (SMTP/IA): **B-187** (Planned)
-- Separar: `ConnectionStrings__`, `Authentication__`, `Minio__`, `Redis__`, `Otel__`, `AI__`, `Email__`, `MessageRetention__`
-- Feature flags: `AI__Enabled=false` default; `MessageRetention__Enabled=false` default
-- Secrets de **infra** (DB, MinIO, Keycloak, keyring AES-GCM, VAPID): só env/secret manager (D-04)
-- Credenciais de **integração** (OpenRouter, senha SMTP, HMAC de webhook): env
-  como fallback **ou** envelope no DB via `/admin/settings` quando
-  `RuntimeSettings:DatabaseOverridesEnabled=true` (ADR-020)
-- Políticas por workspace (webhook URL, retenção em dias, toggle de AI): `/admin/settings` + DB — não substituem o `.env` de infra
+  matriz env vs admin (B-105). Produto na UI, `.env` só infra: **B-187** (Planned)
+- Separar: `ConnectionStrings__`, `Authentication__`, `Minio__`, `Redis__`, `Otel__`
+- Feature flags: IA/e-mail/retenção/push **off** por default; B-187: SoT no admin+DB
+- Secrets de **infra** (DB, MinIO, Keycloak, keyring AES-GCM): só env/secret manager (D-04)
+- Credenciais de **produto** (OpenRouter, SMTP, HMAC, VAPID): envelope no DB via
+  `/admin/settings` quando `RuntimeSettings:DatabaseOverridesEnabled=true` (ADR-020)
+- Políticas (webhook, retenção, AI, files, rate, flags): `/admin/settings` + DB
 
 ## Rotina operacional
 

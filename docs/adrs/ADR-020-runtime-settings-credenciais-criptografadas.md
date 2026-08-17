@@ -28,7 +28,9 @@ Isso emenda:
    - `OutboundWebhookEndpoint` (tenant): URL + envelope signing secret;
    - `MessageRetentionSettings` (tenant): política de purge;
    - `TenantFilesSettings` (tenant): limites de anexos;
-   - `TenantRateLimitSettings` (tenant): `SendPerMinute` / `HubPerMinute`.
+   - `TenantRateLimitSettings` (tenant): `SendPerMinute` / `HubPerMinute`;
+   - `ProcessSettings` (instância, B-187): kill switches, OpenRouter baseUrl,
+     knobs de retenção/link-preview, envelopes VAPID.
 
 2. **Criptografia AES-256-GCM** (`System.Security.Cryptography` apenas):
    - keyring versionado no env (`RuntimeSettings:Encryption:ActiveKeyVersion` +
@@ -38,8 +40,9 @@ Isso emenda:
    - AAD: `vibechat/runtime-secret/v1|{kind}|{tenant}|{workspace}|{entity}`;
    - nunca retornar/logar plaintext, ciphertext, nonce ou tag.
 
-3. **Precedência**: kill switch/teto do env → override DB → fallback env (só se
-   não houver envelope) → default seguro. Envelope inválido falha fechado.
+3. **Precedência**: teto de código (Files/RateLimit) → override DB →
+   fallback env legado (só se não houver envelope/linha) → default seguro.
+   Envelope inválido falha fechado. Produto em B-187: ver emenda.
 
 4. **Feature flag** `RuntimeSettings:DatabaseOverridesEnabled` (default `false`).
    Com flag off, consumidores usam comportamento legado/env; envelopes já
@@ -49,8 +52,8 @@ Isso emenda:
    Auditor/membro → 403. RLS FORCE nas novas tabelas.
 
 6. **Fora de escopo no DB**: connection strings, OIDC, MinIO keys, Redis,
-   CORS/proxy/TLS, seed, OTel, BaseUrl OpenRouter, kill switches
-   `Ai:Enabled` / `MessageRetention:Enabled`.
+   CORS/proxy/TLS, seed, OTel e keyring. Produto (integração, flags, VAPID,
+   BaseUrl OpenRouter) entra na emenda B-187.
 
 ## Alternativas consideradas
 
@@ -60,7 +63,7 @@ Isso emenda:
 | Registry genérico `settings[key]=value` | Perde tipagem, RLS por domínio e validação |
 | Secrets plaintext + RLS | Violação de defesa em profundidade (backups/DBA) |
 | Mover Postgres/OIDC/MinIO para o DB | Lockout/indisponibilidade; viola D-04 infra |
-| Enxugar `.env.example` dumpando config no DB | Mesmo lockout; B-187 leva **integração** ao admin, não a camada de infra |
+| Enxugar `.env.example` dumpando config no DB | Lockout de infra; B-187 leva **produto** ao admin, **não** Postgres/OIDC/MinIO/keyring |
 
 ## Rollback
 
@@ -76,5 +79,27 @@ Isso emenda:
 - **−** Operador deve provisionar keyring antes de habilitar a flag
 - **−** `workspace.admin` continua podendo alterar política **tenant-wide**
   (email/webhook/files/rate) — documentado e auditado
-- Instalação nova configurar SMTP/IA/webhook no `/admin` (keyring válido):
-  follow-up **B-187** (não amplia o que entra no DB; não apaga infra do `.env`)
+- Instalação nova configura o **produto** no `/admin` (overrides ligados):
+  follow-up **B-187** (`.env` só infra)
+
+## Emenda (B-187, 2026-08-17)
+
+`.env` fica só infra/bootstrap. Produto (SMTP, OpenRouter key+baseUrl,
+webhook, retenção, Files/RateLimit, link preview, VAPID, kill switches)
+vive no DB quando `DatabaseOverridesEnabled=true`.
+
+`administration.process_settings` (singleton, sem `tenant_id`): flags
+`Ai` / `Email` / `MessageRetention` / `Push` / `LinkPreview`,
+`openRouterBaseUrl`, knobs de retenção e timeout de preview, envelopes
+VAPID. Não-secrets no PUT geral; VAPID rota em endpoint dedicado.
+Teto de Files/RateLimit = constantes de código, não env.
+
+Precedência de produto:
+
+1. Flag off → default de código (IA/e-mail/retenção/push off; link preview on).
+2. Flag on + linha no DB → SoT DB.
+3. Flag on sem linha → default de código.
+
+Keyring permanece só no env. `openRouterBaseUrl` na UI: https e IP público
+(mesma guarda de webhook). Tabela de processo não é tenant-aware; escrita
+só via API admin + audit.

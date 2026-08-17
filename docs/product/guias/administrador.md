@@ -42,12 +42,13 @@ membership (`workspace_members.role`); o admin altera em `/admin` (B-176).
 
 O admin pode consultar estado mascarado e mudar políticas autorizadas.
 
-- AI/SMTP secret: fallback env **ou** envelope no DB (rotate em `/admin/settings`
-  quando `RuntimeSettings:DatabaseOverridesEnabled=true` e o keyring for válido —
-  ADR-020). Infra (Postgres, IdP, MinIO, keyring) nunca vai para o admin.
-  B-187 (Planned): instalação nova configura isso na UI; não pede SMTP/IA no `.env`.
+- AI/SMTP/VAPID: fallback de código **ou** envelope no DB (rotate em
+  `/admin/settings` quando overrides on e keyring válido — ADR-020). Infra
+  (Postgres, IdP, MinIO, keyring) nunca vai para o admin. B-187: `.env` só
+  infra; produto inteiro na UI.
 - Webhook secret: gravável com retorno mascarado.
-- Retenção por workspace: admin; kill switch do processo: operador.
+- Retenção por workspace: admin; kill switch do processo: admin na UI quando
+  overrides on (B-187), senão operador via env.
 - Export: `workspace.admin`.
 - Auditor sem `workspace.admin` não lê settings sensíveis.
 

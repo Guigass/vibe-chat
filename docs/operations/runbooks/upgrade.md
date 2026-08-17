@@ -67,5 +67,5 @@ task load:smoke
 ## Notas
 
 - Keycloak: upgrade de major exige leitura do guia upstream; realm export em `infra/keycloak` é complemento, não substituto do DB
-- Feature flags (ex.: `AI__Enabled=false`) devem permanecer explícitas no `.env` de prod (D-06)
+- Feature flags (ex.: IA/retenção/push off default) — B-187: ligar em `/admin/settings` quando overrides on; env permanece fallback/rollback (D-06)
 - Após upgrade que mude superfície de auth/RLS: rodar `task test:security` em CI/staging
