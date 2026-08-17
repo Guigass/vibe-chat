@@ -30,7 +30,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 | ID | Categoria | Evidência | Severidade | Status | Resolução |
 |----|-----------|-----------|------------|--------|----------|
-| OPS-E2E-NAV | CI / E2E | Specs alinhadas à nav B-184 (`openDirectMessage`) + latch B-088 (wheel/scroll + `timeline-jump`) | Critical | Resolved | Helper `Mensagem para {nome}`; history-scroll desarma o latch antes do envio |
+| OPS-E2E-NAV | CI / E2E | Specs alinhadas à nav B-184 (`openDirectMessage`) + latch B-088 (wheel/scroll + `timeline-jump`) | Critical | Resolved | [#134](https://github.com/Guigass/vibe-chat/pull/134) — helper `Mensagem para {nome}`; history-scroll desarma o latch antes do envio |
 | SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 + #73 — roles/FORCE + SET LOCAL na txn + validação de role app |
 
 ## Formato de detalhe
@@ -72,7 +72,8 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 ### OPS-E2E-NAV
 
-- Status: **Resolved** — specs E2E alinhadas à nav B-184 e ao contrato B-088
+- Status: **Resolved** — [#134](https://github.com/Guigass/vibe-chat/pull/134)
+  alinhou as specs E2E à nav B-184 e ao contrato B-088
   (helper `openDirectMessage` por `aria-label` “Mensagem para {nome}”;
   `timeline-history-scroll` dispara wheel/scroll e espera `timeline-jump`
   antes do envio remoto). Próximo elegível: W7-14 / B-187.
