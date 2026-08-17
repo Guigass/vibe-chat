@@ -21,7 +21,7 @@
       <strong [class.settings__status-on]="s.ai.processEnabled" [class.settings__status-off]="!s.ai.processEnabled">
         {{ s.ai.processEnabled ? 'ligado' : 'desligado' }}
       </strong>
-      <span class="settings__status-src">env</span>
+      <span class="settings__status-src">{{ s.ai.processSource }}</span>
     </div>
     <div class="settings__status-item">
       <span class="settings__status-label">Retenção (processo)</span>
@@ -31,7 +31,7 @@
       >
         {{ s.retention.processEnabled ? 'ligado' : 'desligado' }}
       </strong>
-      <span class="settings__status-src">env</span>
+      <span class="settings__status-src">{{ s.retention.processSource }}</span>
     </div>
     <div class="settings__status-item">
       <span class="settings__status-label">Link preview</span>
@@ -41,7 +41,7 @@
       >
         {{ s.linkPreview.processEnabled ? 'ligado' : 'desligado' }}
       </strong>
-      <span class="settings__status-src">env</span>
+      <span class="settings__status-src">{{ s.linkPreview.processSource }}</span>
     </div>
     <div class="settings__status-item">
       <span class="settings__status-label">Overrides DB</span>
@@ -88,6 +88,15 @@
           <input
             form="admin-settings-form"
             type="checkbox"
+            name="aiProcessEnabled"
+            [checked]="s.ai.processEnabled"
+          />
+          <span>Kill switch da instância (IA)</span>
+        </label>
+        <label class="settings__check">
+          <input
+            form="admin-settings-form"
+            type="checkbox"
             name="aiWorkspaceEnabled"
             [checked]="s.ai.workspaceEnabled"
           />
@@ -99,6 +108,16 @@
             <option value="Mock" [selected]="s.ai.provider === 'Mock'">Mock</option>
             <option value="OpenRouter" [selected]="s.ai.provider === 'OpenRouter'">OpenRouter</option>
           </select>
+        </label>
+        <label class="settings__field">
+          <span>OpenRouter base URL</span>
+          <input
+            form="admin-settings-form"
+            name="openRouterBaseUrl"
+            type="url"
+            [value]="s.ai.openRouterBaseUrl ?? ''"
+            autocomplete="off"
+          />
         </label>
       </fieldset>
       <form class="settings__cred" (submit)="rotateCredential('openrouter', $event)">
@@ -133,6 +152,15 @@
         </p>
       </div>
       <fieldset class="settings__fields" [disabled]="settingsBusy()">
+        <label class="settings__check">
+          <input
+            form="admin-settings-form"
+            type="checkbox"
+            name="emailProcessEnabled"
+            [checked]="s.email.processEnabled === true"
+          />
+          <span>Kill switch da instância (e-mail)</span>
+        </label>
         <label class="settings__check">
           <input
             form="admin-settings-form"
@@ -369,6 +397,15 @@
           <input
             form="admin-settings-form"
             type="checkbox"
+            name="retentionProcessEnabled"
+            [checked]="s.retention.processEnabled"
+          />
+          <span>Kill switch da instância (purge)</span>
+        </label>
+        <label class="settings__check">
+          <input
+            form="admin-settings-form"
+            type="checkbox"
             name="retentionEnabled"
             [checked]="s.retention.enabled"
           />
@@ -385,6 +422,39 @@
             [value]="s.retention.retentionDays"
           />
         </label>
+        <label class="settings__field settings__field--narrow">
+          <span>Default (dias)</span>
+          <input
+            form="admin-settings-form"
+            name="retentionDefaultDays"
+            type="number"
+            min="1"
+            max="3650"
+            [value]="s.retention.defaultRetentionDays"
+          />
+        </label>
+        <label class="settings__field settings__field--narrow">
+          <span>Batch</span>
+          <input
+            form="admin-settings-form"
+            name="retentionBatchSize"
+            type="number"
+            min="1"
+            max="2000"
+            [value]="s.retention.batchSize ?? 500"
+          />
+        </label>
+        <label class="settings__field settings__field--narrow">
+          <span>Intervalo (min)</span>
+          <input
+            form="admin-settings-form"
+            name="retentionIntervalMinutes"
+            type="number"
+            min="1"
+            max="1440"
+            [value]="s.retention.intervalMinutes ?? 60"
+          />
+        </label>
       </fieldset>
     </div>
 
@@ -398,13 +468,79 @@
           <input
             form="admin-settings-form"
             type="checkbox"
+            name="linkPreviewProcessEnabled"
+            [checked]="s.linkPreview.processEnabled"
+          />
+          <span>Kill switch da instância (preview)</span>
+        </label>
+        <label class="settings__check">
+          <input
+            form="admin-settings-form"
+            type="checkbox"
             name="linkPreviewEnabled"
             [checked]="s.linkPreview.enabled"
           />
           <span>Preview de links habilitado neste tenant</span>
         </label>
+        <label class="settings__field settings__field--narrow">
+          <span>Timeout (ms)</span>
+          <input
+            form="admin-settings-form"
+            name="linkPreviewTimeoutMs"
+            type="number"
+            min="500"
+            max="15000"
+            [value]="s.linkPreview.timeoutMs"
+          />
+        </label>
       </fieldset>
     </div>
+
+    @if (s.push; as push) {
+      <div class="settings__block">
+        <div class="settings__block-head">
+          <h3 class="settings__block-title">Web Push / VAPID</h3>
+          <p class="settings__meta">
+            {{ push.vapidConfigured ? (push.vapidMask ?? 'configurado') : 'não configurado' }}
+            @if (push.vapidSource) {
+              · <code>{{ push.vapidSource }}</code>
+            }
+          </p>
+        </div>
+        <fieldset class="settings__fields" [disabled]="settingsBusy()">
+          <label class="settings__check">
+            <input
+              form="admin-settings-form"
+              type="checkbox"
+              name="pushProcessEnabled"
+              [checked]="push.processEnabled"
+            />
+            <span>Kill switch da instância (push)</span>
+          </label>
+        </fieldset>
+        <form id="admin-vapid-form" class="settings__cred" (submit)="rotateVapid($event)">
+          <label class="settings__field">
+            <span>Chave pública</span>
+            <input name="publicKey" type="text" value="" autocomplete="off" />
+          </label>
+          <label class="settings__field">
+            <span>Chave privada</span>
+            <input name="privateKey" type="password" value="" autocomplete="new-password" />
+          </label>
+          <label class="settings__field">
+            <span>Subject</span>
+            <input name="subject" type="text" [value]="push.vapidSubject ?? 'mailto:ops@localhost'" autocomplete="off" />
+          </label>
+          <button
+            type="submit"
+            class="admin-btn admin-btn--ghost"
+            [disabled]="credentialBusy() !== null || !push.secretsWritable"
+          >
+            {{ credentialBusy() === 'vapid' ? 'Substituindo…' : 'Substituir VAPID' }}
+          </button>
+        </form>
+      </div>
+    }
 
     <div class="settings__block settings__block--actions">
       <div class="settings__block-head">

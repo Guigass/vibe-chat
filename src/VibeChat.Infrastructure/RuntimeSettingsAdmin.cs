@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using VibeChat.Administration;
 using VibeChat.AI;
@@ -28,7 +27,6 @@ public sealed record CredentialRotateResult(
 
 public sealed class RuntimeSettingsAdminService(
     VibeChatDbContext db,
-    IConfiguration config,
     EmailSettingsResolver emailSettings,
     AiSettingsResolver aiSettings,
     FilesSettingsResolver filesSettings,
@@ -38,7 +36,8 @@ public sealed class RuntimeSettingsAdminService(
     IOptions<RuntimeSettingsOptions> runtimeOptions,
     IRuntimeSettingsCacheInvalidator cacheInvalidator,
     IAuditWriter audit,
-    IClock clock)
+    IClock clock,
+    ProcessSettingsResolver processSettings)
 {
     private readonly RuntimeSettingsOptions _runtime = runtimeOptions.Value;
 
@@ -51,23 +50,18 @@ public sealed class RuntimeSettingsAdminService(
         var webhook = await webhooks.ResolveAsync(workspace.TenantId, ct);
         var files = await filesSettings.ResolveAsync(workspace.TenantId, ct);
         var rate = await rateLimits.ResolveAsync(workspace.TenantId, ct);
+        var process = await processSettings.ResolveAsync(ct);
         var filesCeiling = filesSettings.ReadCeiling();
 
-        var processRetentionEnabled = config.GetValue("MessageRetention:Enabled", false);
-        var defaultRetentionDays = config.GetValue(
-            "MessageRetention:DefaultRetentionDays",
-            MessageRetentionSettings.DefaultRetentionDays);
-        if (defaultRetentionDays is < MessageRetentionSettings.MinRetentionDays or > MessageRetentionSettings.MaxRetentionDays)
-        {
-            defaultRetentionDays = MessageRetentionSettings.DefaultRetentionDays;
-        }
+        var processRetentionEnabled = process.MessageRetentionEnabled;
+        var defaultRetentionDays = process.RetentionDefaultDays;
 
         var retention = await db.MessageRetentionSettings.AsNoTracking()
             .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
         var retentionEnabled = retention?.Enabled ?? false;
         var retentionDays = retention?.RetentionDays > 0 ? retention.RetentionDays : defaultRetentionDays;
         var retentionMessage = !processRetentionEnabled
-            ? "Purge desligado no processo (MessageRetention:Enabled=false). Política do tenant é gravável, mas o worker não hard-deleta."
+            ? "Purge desligado no processo. Política do tenant é gravável, mas o worker não hard-deleta."
             : retentionEnabled
                 ? $"Purge ativo: soft-deletes com mais de {retentionDays} dias serão hard-deleted pelo worker."
                 : "Purge do tenant desligado — soft-deletes permanecem até habilitar.";
@@ -96,17 +90,26 @@ public sealed class RuntimeSettingsAdminService(
             {
                 credentialsOnActive++;
             }
+
+            if (process.VapidKeyVersion == av)
+            {
+                credentialsOnActive++;
+            }
         }
+
+        var linkPreviewTenantEnabled = (await db.TenantLinkPreviewSettings.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct))?.Enabled ?? true;
 
         return new
         {
             workspaceId = workspace.Id.Value,
             ai = new
             {
-                processEnabled = ai.ProcessEnabled,
-                processSource = "env",
+                processEnabled = process.AiEnabled,
+                processSource = process.Source,
                 workspaceEnabled = ai.WorkspaceEnabled,
                 provider = ai.Provider,
+                openRouterBaseUrl = process.OpenRouterBaseUrl,
                 apiKeyConfigured = ai.ApiKeyConfigured,
                 apiKeyMask = ai.ApiKeyMask,
                 apiKeySource = ai.ApiKeySource,
@@ -116,6 +119,8 @@ public sealed class RuntimeSettingsAdminService(
             },
             email = new
             {
+                processEnabled = process.EmailEnabled,
+                processSource = process.Source,
                 enabled = smtp.Enabled,
                 source = smtp.Source,
                 smtpHost = smtp.Host,
@@ -148,25 +153,36 @@ public sealed class RuntimeSettingsAdminService(
             retention = new
             {
                 processEnabled = processRetentionEnabled,
-                processSource = "env",
+                processSource = process.Source,
                 enabled = retentionEnabled,
                 retentionDays,
                 defaultRetentionDays,
+                batchSize = process.RetentionBatchSize,
+                intervalMinutes = process.RetentionIntervalMinutes,
                 message = retentionMessage
             },
             linkPreview = new
             {
-                processEnabled = config.GetValue("LinkPreview:Enabled", true),
-                processSource = "env",
-                enabled = (await db.TenantLinkPreviewSettings.AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct))?.Enabled ?? true,
-                timeoutMs = Math.Clamp(
-                    config.GetValue("LinkPreview:TimeoutMs", LinkPreviewPolicies.DefaultTimeoutMs),
-                    500,
-                    15_000),
-                message = config.GetValue("LinkPreview:Enabled", true)
+                processEnabled = process.LinkPreviewEnabled,
+                processSource = process.Source,
+                enabled = linkPreviewTenantEnabled,
+                timeoutMs = process.LinkPreviewTimeoutMs,
+                message = process.LinkPreviewEnabled
                     ? "Worker busca Open Graph da primeira URL (guarda SSRF)."
-                    : "Link preview desligado no processo (LinkPreview:Enabled=false)."
+                    : "Link preview desligado no processo."
+            },
+            push = new
+            {
+                processEnabled = process.PushEnabled,
+                processSource = process.Source,
+                vapidPublicKey = process.VapidConfigured ? process.VapidPublicKey : null,
+                vapidConfigured = process.VapidConfigured,
+                vapidMask = process.VapidMask,
+                vapidSource = process.VapidSource,
+                vapidKeyVersion = process.VapidKeyVersion,
+                vapidRotatedAt = process.VapidRotatedAt,
+                vapidSubject = process.VapidSubject,
+                secretsWritable = DatabaseOverridesEnabled && protector.IsEncryptionAvailable
             },
             files = new
             {
@@ -186,8 +202,8 @@ public sealed class RuntimeSettingsAdminService(
                 source = rate.Source,
                 sendPerMinute = rate.SendPerMinute,
                 hubPerMinute = rate.HubPerMinute,
-                ceilingSendPerMinute = config.GetValue("RateLimit:SendPerMinute", RateLimitPolicies.DefaultSendPerMinute),
-                ceilingHubPerMinute = config.GetValue("RateLimit:HubPerMinute", RateLimitPolicies.DefaultHubPerMinute)
+                ceilingSendPerMinute = RateLimitPolicies.MaxPerMinute,
+                ceilingHubPerMinute = RateLimitPolicies.MaxPerMinute
             },
             encryption = new
             {
@@ -468,6 +484,22 @@ public sealed class RuntimeSettingsAdminService(
                 }
             }
 
+            var processRow = await db.ProcessSettings
+                .FirstOrDefaultAsync(x => x.Id == ProcessSettings.SingletonId, ct);
+            if (processRow?.VapidPrivateKey.IsPresent == true)
+            {
+                previousVersions.Add(processRow.VapidPrivateKey.KeyVersion!.Value);
+                processRow.VapidPrivateKey.CopyFrom(protector.Reencrypt(
+                    processRow.VapidPrivateKey,
+                    RuntimeSecretKinds.VapidPrivateKey,
+                    ProcessSecretScope.TenantId,
+                    workspaceId: null,
+                    ProcessSecretScope.EntityId,
+                    now));
+                processRow.UpdatedAt = now;
+                count++;
+            }
+
             audit.Add(new AuditEvent
             {
                 TenantId = workspace.TenantId,
@@ -500,6 +532,7 @@ public sealed class RuntimeSettingsAdminService(
 
         cacheInvalidator.InvalidateTenant(workspace.TenantId);
         cacheInvalidator.InvalidateWorkspace(workspace.TenantId, workspace.Id);
+        cacheInvalidator.InvalidateProcess();
         return (true, 200, null, null, count);
     }
 
@@ -623,14 +656,8 @@ public sealed class RuntimeSettingsAdminService(
             return;
         }
 
-        var ceilingSend = Math.Clamp(
-            config.GetValue("RateLimit:SendPerMinute", RateLimitPolicies.DefaultSendPerMinute),
-            RateLimitPolicies.MinPerMinute,
-            RateLimitPolicies.MaxPerMinute);
-        var ceilingHub = Math.Clamp(
-            config.GetValue("RateLimit:HubPerMinute", RateLimitPolicies.DefaultHubPerMinute),
-            RateLimitPolicies.MinPerMinute,
-            RateLimitPolicies.MaxPerMinute);
+        var ceilingSend = RateLimitPolicies.MaxPerMinute;
+        var ceilingHub = RateLimitPolicies.MaxPerMinute;
 
         var row = await db.TenantRateLimitSettings.FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
         if (row is null)
@@ -671,7 +698,240 @@ public sealed class RuntimeSettingsAdminService(
             row.UpdatedAt = clock.UtcNow;
         }
     }
+
+    public async Task<(bool Ok, int Status, string? Error, string? Message)> ApplyProcessAsync(
+        UpdateSensitiveProcessRequest? request,
+        List<string> changes,
+        CancellationToken ct)
+    {
+        if (request is null || !DatabaseOverridesEnabled)
+        {
+            return (true, 200, null, null);
+        }
+
+        if (request.OpenRouterBaseUrl is { } rawBase && rawBase.Trim().Length > 0
+            && !OpenRouterBaseUrlPolicies.IsValid(rawBase))
+        {
+            return (false, 400, "InvalidOpenRouterBaseUrl", "OpenRouter base URL must be https with a public host.");
+        }
+
+        var row = await EnsureProcessRowAsync(ct);
+
+        if (request.AiProcessEnabled is { } aiEnabled && row.AiEnabled != aiEnabled)
+        {
+            row.AiEnabled = aiEnabled;
+            changes.Add("ai.processEnabled");
+        }
+
+        if (request.EmailProcessEnabled is { } emailEnabled && row.EmailEnabled != emailEnabled)
+        {
+            row.EmailEnabled = emailEnabled;
+            changes.Add("email.processEnabled");
+        }
+
+        if (request.RetentionProcessEnabled is { } retentionEnabled && row.MessageRetentionEnabled != retentionEnabled)
+        {
+            row.MessageRetentionEnabled = retentionEnabled;
+            changes.Add("retention.processEnabled");
+        }
+
+        if (request.PushProcessEnabled is { } pushEnabled && row.PushEnabled != pushEnabled)
+        {
+            row.PushEnabled = pushEnabled;
+            changes.Add("push.processEnabled");
+        }
+
+        if (request.LinkPreviewProcessEnabled is { } previewEnabled && row.LinkPreviewEnabled != previewEnabled)
+        {
+            row.LinkPreviewEnabled = previewEnabled;
+            changes.Add("linkPreview.processEnabled");
+        }
+
+        if (request.OpenRouterBaseUrl is not null)
+        {
+            var normalized = request.OpenRouterBaseUrl.Trim().Length == 0
+                ? ProcessSettingsDefaults.OpenRouterBaseUrl
+                : OpenRouterBaseUrlPolicies.Normalize(request.OpenRouterBaseUrl);
+            if (!string.Equals(row.OpenRouterBaseUrl, normalized, StringComparison.Ordinal))
+            {
+                row.OpenRouterBaseUrl = normalized;
+                changes.Add("ai.openRouterBaseUrl");
+            }
+        }
+
+        if (request.RetentionDefaultDays is { } days)
+        {
+            var clamped = Math.Clamp(days, MessageRetentionSettings.MinRetentionDays, MessageRetentionSettings.MaxRetentionDays);
+            if (row.RetentionDefaultDays != clamped)
+            {
+                row.RetentionDefaultDays = clamped;
+                changes.Add("retention.defaultRetentionDays");
+            }
+        }
+
+        if (request.RetentionBatchSize is { } batch)
+        {
+            var clamped = Math.Clamp(batch, 1, 2000);
+            if (row.RetentionBatchSize != clamped)
+            {
+                row.RetentionBatchSize = clamped;
+                changes.Add("retention.batchSize");
+            }
+        }
+
+        if (request.RetentionIntervalMinutes is { } interval)
+        {
+            var clamped = Math.Clamp(interval, 1, 24 * 60);
+            if (row.RetentionIntervalMinutes != clamped)
+            {
+                row.RetentionIntervalMinutes = clamped;
+                changes.Add("retention.intervalMinutes");
+            }
+        }
+
+        if (request.LinkPreviewTimeoutMs is { } timeout)
+        {
+            var clamped = Math.Clamp(timeout, 500, 15_000);
+            if (row.LinkPreviewTimeoutMs != clamped)
+            {
+                row.LinkPreviewTimeoutMs = clamped;
+                changes.Add("linkPreview.timeoutMs");
+            }
+        }
+
+        if (changes.Any(c => c.StartsWith("ai.", StringComparison.Ordinal)
+            || c.StartsWith("email.process", StringComparison.Ordinal)
+            || c.StartsWith("retention.", StringComparison.Ordinal)
+            || c.StartsWith("push.", StringComparison.Ordinal)
+            || c.StartsWith("linkPreview.process", StringComparison.Ordinal)
+            || c.StartsWith("linkPreview.timeout", StringComparison.Ordinal)))
+        {
+            row.UpdatedAt = clock.UtcNow;
+        }
+
+        return (true, 200, null, null);
+    }
+
+    public async Task<CredentialRotateResult> RotateVapidAsync(
+        Workspace workspace,
+        UserId actorUserId,
+        string publicKey,
+        string privateKey,
+        string? subject,
+        CancellationToken ct)
+    {
+        if (!DatabaseOverridesEnabled)
+        {
+            return new CredentialRotateResult(false, 503, "RuntimeSettingsDisabled",
+                "RuntimeSettings:DatabaseOverridesEnabled is false.", false, null, null, null);
+        }
+
+        if (!protector.IsEncryptionAvailable)
+        {
+            return new CredentialRotateResult(false, 503, "RuntimeSecretEncryptionUnavailable",
+                "Encryption keyring is not configured.", false, null, null, null);
+        }
+
+        var trimmedPublic = publicKey.Trim();
+        var trimmedPrivate = privateKey.Trim();
+        if (trimmedPublic.Length is < 16 or > 256 || trimmedPrivate.Length is < 16 or > 256)
+        {
+            return new CredentialRotateResult(false, 400, "InvalidVapidKeys",
+                "VAPID public and private keys are required.", false, null, null, null);
+        }
+
+        var trimmedSubject = string.IsNullOrWhiteSpace(subject)
+            ? ProcessSettingsDefaults.VapidSubject
+            : subject.Trim();
+        if (trimmedSubject.Length > 256
+            || !(trimmedSubject.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase)
+                || trimmedSubject.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+        {
+            return new CredentialRotateResult(false, 400, "InvalidVapidSubject",
+                "VAPID subject must be a mailto: or https:// URI.", false, null, null, null);
+        }
+
+        var now = clock.UtcNow;
+        EncryptedSecretEnvelope envelope;
+        try
+        {
+            envelope = protector.Protect(
+                trimmedPrivate,
+                RuntimeSecretKinds.VapidPrivateKey,
+                ProcessSecretScope.TenantId,
+                workspaceId: null,
+                ProcessSecretScope.EntityId,
+                now);
+        }
+        catch (CryptographicException)
+        {
+            return new CredentialRotateResult(false, 503, "RuntimeSecretEncryptionUnavailable",
+                "Encryption keyring is not configured.", false, null, null, null);
+        }
+
+        var row = await EnsureProcessRowAsync(ct);
+        row.VapidPublicKey = trimmedPublic;
+        row.VapidPrivateKey.CopyFrom(envelope);
+        row.VapidSubject = trimmedSubject;
+        row.UpdatedAt = now;
+
+        audit.Add(new AuditEvent
+        {
+            TenantId = workspace.TenantId,
+            ActorUserId = actorUserId,
+            Action = AuditActions.SettingsCredentialRotate,
+            EntityType = "ProcessSettings",
+            EntityId = ProcessSecretScope.EntityId,
+            MetadataJson = JsonSerializer.Serialize(new
+            {
+                workspaceId = workspace.Id.Value,
+                kind = RuntimeSecretKinds.VapidPrivateKey,
+                keyVersion = envelope.KeyVersion
+            })
+        });
+        await db.SaveChangesAsync(ct);
+        cacheInvalidator.InvalidateProcess();
+
+        return new CredentialRotateResult(
+            true,
+            200,
+            null,
+            null,
+            true,
+            SecretMasking.MaskFromSuffix(envelope.MaskSuffix),
+            envelope.KeyVersion,
+            envelope.RotatedAt);
+    }
+
+    private async Task<ProcessSettings> EnsureProcessRowAsync(CancellationToken ct)
+    {
+        var row = await db.ProcessSettings.FirstOrDefaultAsync(x => x.Id == ProcessSettings.SingletonId, ct);
+        if (row is not null)
+        {
+            return row;
+        }
+
+        row = new ProcessSettings
+        {
+            Id = ProcessSettings.SingletonId,
+            UpdatedAt = clock.UtcNow
+        };
+        db.ProcessSettings.Add(row);
+        return row;
+    }
 }
+
+public sealed record UpdateSensitiveProcessRequest(
+    bool? AiProcessEnabled = null,
+    bool? EmailProcessEnabled = null,
+    bool? RetentionProcessEnabled = null,
+    bool? PushProcessEnabled = null,
+    bool? LinkPreviewProcessEnabled = null,
+    string? OpenRouterBaseUrl = null,
+    int? RetentionDefaultDays = null,
+    int? RetentionBatchSize = null,
+    int? RetentionIntervalMinutes = null,
+    int? LinkPreviewTimeoutMs = null);
 
 public sealed record UpdateFilesSettingsRequest(
     long? MaxSizeBytes = null,

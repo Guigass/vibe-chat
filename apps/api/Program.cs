@@ -2942,11 +2942,11 @@ v1.MapGet("/channels/{channelId:guid}/unread-count", async (Guid channelId, Http
     return Results.Ok(new { channelId, unreadCount = count, mentionCount });
 });
 
-v1.MapGet("/notifications/push/public-key", (IConfiguration config) =>
+v1.MapGet("/notifications/push/public-key", async (ProcessSettingsResolver processSettings, CancellationToken ct) =>
 {
-    var processEnabled = config.GetValue("Push:Enabled", false);
-    var publicKey = PushOptions.HasVapidKeys(config) ? config["Push:Vapid:PublicKey"]?.Trim() : null;
-    var enabled = processEnabled && !string.IsNullOrWhiteSpace(publicKey);
+    var process = await processSettings.ResolveAsync(ct);
+    var publicKey = process.VapidConfigured ? process.VapidPublicKey?.Trim() : null;
+    var enabled = process.PushEnabled && !string.IsNullOrWhiteSpace(publicKey);
     return Results.Ok(new PushPublicKeyResponse(enabled, enabled ? publicKey : null));
 }).RequirePermission(Permissions.Message.Read);
 
@@ -3416,12 +3416,13 @@ v1.MapPut("/admin/settings", async (
     // ADR-020: secrets never via general PUT — use dedicated rotate endpoints.
     if (request.Ai?.ApiKey is not null
         || request.Email?.SmtpPassword is not null
-        || request.Webhooks?.Secret is not null)
+        || request.Webhooks?.Secret is not null
+        || request.Push?.VapidPrivateKey is not null)
     {
         return Results.BadRequest(new
         {
             error = "SecretsNotWritable",
-            message = "Use POST /admin/settings/credentials/{openrouter|smtp|webhook}/rotate to rotate secrets."
+            message = "Use POST /admin/settings/credentials/{openrouter|smtp|webhook|vapid}/rotate to rotate secrets."
         });
     }
 
@@ -3726,6 +3727,24 @@ v1.MapPut("/admin/settings", async (
 
     await settingsAdmin.ApplyFilesAsync(workspace, request.Files, changes, ct);
     await settingsAdmin.ApplyRateLimitAsync(workspace, request.RateLimit, changes, ct);
+    var processResult = await settingsAdmin.ApplyProcessAsync(
+        new UpdateSensitiveProcessRequest(
+            request.Ai?.ProcessEnabled,
+            request.Email?.ProcessEnabled,
+            request.Retention?.ProcessEnabled,
+            request.Push?.ProcessEnabled,
+            request.LinkPreview?.ProcessEnabled,
+            request.Ai?.OpenRouterBaseUrl,
+            request.Retention?.DefaultRetentionDays,
+            request.Retention?.BatchSize,
+            request.Retention?.IntervalMinutes,
+            request.LinkPreview?.TimeoutMs),
+        changes,
+        ct);
+    if (!processResult.Ok)
+    {
+        return Results.Json(new { error = processResult.Error, message = processResult.Message }, statusCode: processResult.Status);
+    }
 
     if (changes.Count > 0)
     {
@@ -3745,6 +3764,7 @@ v1.MapPut("/admin/settings", async (
         await db.SaveChangesAsync(ct);
         cacheInvalidator.InvalidateTenant(workspace.TenantId);
         cacheInvalidator.InvalidateWorkspace(workspace.TenantId, workspace.Id);
+        cacheInvalidator.InvalidateProcess();
     }
 
     return Results.Ok(await settingsAdmin.BuildResponseAsync(workspace, ct));
@@ -3820,6 +3840,36 @@ v1.MapPost("/admin/settings/credentials/webhook/rotate", async (
     var (profile, workspace) = access.Value;
     var result = await settingsAdmin.RotateAsync(
         workspace, profile.Id, RuntimeSecretKinds.WebhookSigningSecret, request.Value ?? string.Empty, ct);
+    return result.Ok
+        ? Results.Ok(new { configured = result.Configured, mask = result.Mask, keyVersion = result.KeyVersion, rotatedAt = result.RotatedAt })
+        : Results.Json(new { error = result.Error, message = result.Message }, statusCode: result.StatusCode);
+}).RequirePermission(Permissions.Workspace.Admin);
+
+v1.MapPost("/admin/settings/credentials/vapid/rotate", async (
+    RotateVapidRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPermissionChecker permissions,
+    RuntimeSettingsAdminService settingsAdmin,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var access = await ResolveSensitiveSettingsAccessAsync(
+        http, db, tenant, permissions, request.WorkspaceId, clock, ct);
+    if (access is null)
+    {
+        return Results.Forbid();
+    }
+
+    var (profile, workspace) = access.Value;
+    var result = await settingsAdmin.RotateVapidAsync(
+        workspace,
+        profile.Id,
+        request.PublicKey ?? string.Empty,
+        request.PrivateKey ?? string.Empty,
+        request.Subject,
+        ct);
     return result.Ok
         ? Results.Ok(new { configured = result.Configured, mask = result.Mask, keyVersion = result.KeyVersion, rotatedAt = result.RotatedAt })
         : Results.Json(new { error = result.Error, message = result.Message }, statusCode: result.StatusCode);
@@ -5428,7 +5478,9 @@ public sealed record AdminDashboardResponse(
 public sealed record UpdateAiSensitiveSettingsRequest(
     bool? WorkspaceEnabled = null,
     string? Provider = null,
-    string? ApiKey = null);
+    string? ApiKey = null,
+    bool? ProcessEnabled = null,
+    string? OpenRouterBaseUrl = null);
 public sealed record UpdateEmailSensitiveSettingsRequest(
     bool? Enabled = null,
     string? SmtpHost = null,
@@ -5436,15 +5488,26 @@ public sealed record UpdateEmailSensitiveSettingsRequest(
     string? SmtpUsername = null,
     string? SmtpPassword = null,
     string? SmtpFrom = null,
-    bool? UseStartTls = null);
+    bool? UseStartTls = null,
+    bool? ProcessEnabled = null);
 public sealed record UpdateWebhooksSensitiveSettingsRequest(
     bool? Enabled = null,
     string? Url = null,
     string? Secret = null);
 public sealed record UpdateRetentionSensitiveSettingsRequest(
     bool? Enabled = null,
-    int? RetentionDays = null);
-public sealed record UpdateLinkPreviewSettingsRequest(bool? Enabled = null);
+    int? RetentionDays = null,
+    bool? ProcessEnabled = null,
+    int? DefaultRetentionDays = null,
+    int? BatchSize = null,
+    int? IntervalMinutes = null);
+public sealed record UpdateLinkPreviewSettingsRequest(
+    bool? Enabled = null,
+    bool? ProcessEnabled = null,
+    int? TimeoutMs = null);
+public sealed record UpdatePushSettingsRequest(
+    bool? ProcessEnabled = null,
+    string? VapidPrivateKey = null);
 public sealed record UpdateSensitiveSettingsRequest(
     Guid? WorkspaceId = null,
     UpdateAiSensitiveSettingsRequest? Ai = null,
@@ -5453,9 +5516,15 @@ public sealed record UpdateSensitiveSettingsRequest(
     UpdateRetentionSensitiveSettingsRequest? Retention = null,
     UpdateLinkPreviewSettingsRequest? LinkPreview = null,
     UpdateFilesSettingsRequest? Files = null,
-    UpdateRateLimitSettingsRequest? RateLimit = null);
+    UpdateRateLimitSettingsRequest? RateLimit = null,
+    UpdatePushSettingsRequest? Push = null);
 public sealed record RotateCredentialRequest(
     Guid? WorkspaceId = null,
     string? Value = null);
+public sealed record RotateVapidRequest(
+    Guid? WorkspaceId = null,
+    string? PublicKey = null,
+    string? PrivateKey = null,
+    string? Subject = null);
 
 public partial class Program;

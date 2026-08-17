@@ -5,8 +5,8 @@ sobe a plataforma via `.env` + Compose; o `workspace.admin` configura o
 **produto** na UI. `.env` = infra (D-04); produto = admin + DB (ADR-020 / B-187).
 
 **Status:** catálogo executável fechado em **W7-7 / B-105** (2026-08-07).
-Follow-up **W7-14 / B-187** (Planned): `.env` só infra; produto inteiro no
-`/admin` quando overrides on. Este arquivo permanece o inventário canônico.
+**W7-14 / B-187 Done:** `.env.example` só infra; produto no `/admin` + DB quando
+overrides on. Este arquivo permanece o inventário canônico.
 Specs:
 [`B-105-catalogo-configuracao.md`](../product/specs/B-105-catalogo-configuracao.md),
 [`B-187-env-enxuto.md`](../product/specs/B-187-env-enxuto.md).
@@ -31,7 +31,7 @@ Specs:
 | **Infra / plataforma** | Operador de infra | `.env` / secret manager | Postgres, Redis, Keycloak, MinIO, OIDC issuer, keyring AES-GCM, URLs, pins, seed/bootstrap, OTel/proxy |
 | **Produto** | `workspace.admin` | `/admin/settings` + DB | SMTP, OpenRouter (key+baseUrl), webhook, retenção, Files, RateLimit, link preview, VAPID, kill switches (B-187) |
 
-Regra (B-069 / ADR-020): PUT geral **não** aceita secrets. Rotação de OpenRouter/SMTP/webhook usa endpoints dedicados; valores ficam em envelope AES-GCM (chave mestra só no env). Flag `RuntimeSettings__DatabaseOverridesEnabled=false` por default — rollback = desligar a flag no mesmo binário.
+Regra (B-069 / ADR-020): PUT geral **não** aceita secrets. Rotação de OpenRouter/SMTP/webhook/VAPID usa endpoints dedicados; valores ficam em envelope AES-GCM (chave mestra só no env). Rollback = desligar `RuntimeSettings__DatabaseOverridesEnabled` no mesmo binário.
 
 Caminho self-host pretendido (B-187): keyring demo (lab) ou chave real (prod) →
 overrides só com chave válida → **produto** em `/admin/settings`. O `.env` é
@@ -42,11 +42,10 @@ OTel ou keyring para o DB. Não apagar pins/portas do template só para “enxug
 
 | Artefato | Função |
 |----------|--------|
-| `.env.example` | Setup de **infra** (senhas de data plane, URLs, portas, pins, keyring). Produto sai quando B-187 fechar. |
+| `.env.example` | Setup de **infra** (senhas de data plane, URLs, portas, pins, keyring demo de lab). |
 | Este catálogo | Inventário completo + matriz env vs admin. |
 
-Até B-187 fechar: o template ainda lista SMTP/IA/retenção/push/link-preview;
-o admin ainda exige flag+keyring válidos para gravar secrets.
+B-187 fechou: o template não lista SMTP/IA/retenção/push/link-preview; o lab liga overrides com keyring demo válido.
 
 ## Escopo
 
@@ -56,7 +55,7 @@ o admin ainda exige flag+keyring válidos para gravar secrets.
 - Variáveis do profile `apps` (API, Web, Worker)
 - Variáveis dos profiles opcionais (`tools`, `observability`, `proxy`)
 - Mapeamento `VAR_ENV` → `Section__Key` do ASP.NET Core
-- Defaults seguros para produção (`SEED_ENABLED=false`, `AI__Enabled=false`, etc.)
+- Defaults seguros para produção (`SEED_ENABLED=false`; produto off no admin)
 - Checklist de bootstrap: `cp .env.example .env` → ajustar `CHANGE_ME` → `task apps`
 
 ### Fora
@@ -106,7 +105,7 @@ ao admin. O inventário canônico continua nesta página.
 | `REDIS_*`, `REDIS_URL` | redis, api, worker/host | Containers usam o endereço interno `redis:6379` |
 | `KEYCLOAK_*`, `OIDC_*` | keycloak, api, web | Realm, issuer, clients. `KEYCLOAK_PROXY_HEADERS` default `xforwarded` (vazio quebra Keycloak 26). Lab: não injete `KC_HTTP_RELATIVE_PATH=""`. Staging path `/auth`: defina `KC_HTTP_RELATIVE_PATH=/auth` no container Coolify **e** `KEYCLOAK_HTTP_RELATIVE_PATH=/auth` para o MetadataAddress da API. |
 | `MINIO_*` | minio, api | Anexos S3-compatível |
-| `MAILPIT_*`, `SMTP_*` | mailpit (tools) | Dev only; prod usa `EMAIL__*` |
+| `MAILPIT_*` | mailpit (tools) | Dev only; SMTP de produto no `/admin/settings` |
 | `OTEL_*`, `PROMETHEUS_*`, `GRAFANA_*`, `LOKI_*`, `TEMPO_*` | observability | Profile opcional |
 | `TLS_*`, `PROXY_*` | proxy | Profile opcional (W5-2) |
 
@@ -162,9 +161,9 @@ do Keycloak como mecanismo de reset.
 | Imagens .NET | `DOTNET_IMAGE`, `DOTNET_SDK_IMAGE` | Não substituídas diretamente pelo Compose |
 | MinIO | `MINIO_REGION` | Não consumida pelo Compose |
 | Observabilidade host | `OTEL_EXPORTER_OTLP_ENDPOINT` | Containers recebem endpoint interno fixo |
-| SMTP | `SMTP_*`, `EMAIL__*` | Aliases `SMTP_*` são fallback legado no código; **SoT:** `EMAIL__*` injetado no api |
-| Retenção | `MessageRetention__*` | Worker profile `apps` |
-| IA duplicada | ~~`AI__OpenRouter__*`~~ | Removido do template; Compose usa `OPENROUTER_*` → `Ai__OpenRouter__*` |
+| SMTP | (produto) | SoT: `/admin/settings` (B-187); Compose pode manter `${EMAIL__*:}` de release |
+| Retenção | (produto) | SoT: `/admin/settings`; Compose pode manter fallback de release |
+| IA duplicada | (produto) | SoT: `/admin/settings`; Compose pode manter `OPENROUTER_*` de release |
 | Roles PostgreSQL | `POSTGRES_APP_*`, `POSTGRES_MIGRATOR_*`, `POSTGRES_BACKUP_*` + `DATABASE_*_URL` | Entregue em `SEC-RLS-RUNTIME`; API/Worker usam app role |
 | Projeto Compose | `COMPOSE_PROJECT_NAME` | Consumida pelo Docker Compose CLI |
 
@@ -224,8 +223,8 @@ O Docker CLI local também avisou que não conseguia ler o config global do usu�
 isso não alterou o código de saída nem o parse do projeto.
 
 DOC-007 considera concluídos o inventário, a matriz env/admin e a prova de parse.
-B-105 fechou a injeção de `EMAIL__*` no api, confirmou `MessageRetention__*` no worker,
-removeu alias duplicado `AI__OpenRouter__*` do template e adicionou testes de catálogo.
+B-105 fechou a injeção de `EMAIL__*` no api (histórico). **B-187** tirou produto do
+`.env.example`; SMTP/IA/retenção/push/VAPID passam ao `/admin/settings`.
 
 ## Checklist de produção (profile `apps`)
 

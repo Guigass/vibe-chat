@@ -98,7 +98,7 @@ Cobre `GET /health`, `GET /me`, history e `POST .../messages` no canal demo.
 
 - Infra e bootstrap via variáveis de ambiente (`.env` na raiz; ver `.env.example`)
 - **Catálogo:** [`configuracao-env.md`](./configuracao-env.md) — inventário e
-  matriz env vs admin (B-105). Produto na UI, `.env` só infra: **B-187** (Planned)
+  matriz env vs admin (B-105). Produto na UI, `.env` só infra: **B-187** (Done)
 - Separar: `ConnectionStrings__`, `Authentication__`, `Minio__`, `Redis__`, `Otel__`
 - Feature flags: IA/e-mail/retenção/push **off** por default; B-187: SoT no admin+DB
 - Secrets de **infra** (DB, MinIO, Keycloak, keyring AES-GCM): só env/secret manager (D-04)

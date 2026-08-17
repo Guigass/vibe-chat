@@ -77,6 +77,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<MessageRetentionSettings> MessageRetentionSettings => Set<MessageRetentionSettings>();
     public DbSet<TenantFilesSettings> TenantFilesSettings => Set<TenantFilesSettings>();
     public DbSet<TenantRateLimitSettings> TenantRateLimitSettings => Set<TenantRateLimitSettings>();
+    public DbSet<ProcessSettings> ProcessSettings => Set<ProcessSettings>();
     public DbSet<LinkPreview> LinkPreviews => Set<LinkPreview>();
     public DbSet<MessageLinkPreview> MessageLinkPreviews => Set<MessageLinkPreview>();
     public DbSet<TenantLinkPreviewSettings> TenantLinkPreviewSettings => Set<TenantLinkPreviewSettings>();
@@ -417,6 +418,17 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.HasKey(x => x.TenantId);
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ProcessSettings>(entity =>
+        {
+            entity.ToTable("process_settings", "administration");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.OpenRouterBaseUrl).HasMaxLength(2048);
+            entity.Property(x => x.VapidPublicKey).HasMaxLength(256);
+            entity.Property(x => x.VapidSubject).HasMaxLength(256);
+            MapEncryptedSecret(entity.OwnsOne(x => x.VapidPrivateKey), "VapidPrivateKey");
         });
 
         modelBuilder.Entity<LinkPreview>(entity =>
@@ -1371,7 +1383,8 @@ public sealed class SummarizeChannelFeature(
             new AiCompletionRequest(
                 "Summarize recent channel messages without exposing sensitive details.",
                 prompt,
-                runtime.ApiKey),
+                runtime.ApiKey,
+                runtime.OpenRouterBaseUrl),
             cancellationToken);
 
         if (string.Equals(activeProvider.Name, "OpenRouter", StringComparison.OrdinalIgnoreCase)
@@ -1448,7 +1461,8 @@ public sealed class SuggestChannelReplyFeature(
             new AiCompletionRequest(
                 "Suggest one short, professional reply to the recent channel messages without exposing sensitive details.",
                 prompt,
-                runtime.ApiKey),
+                runtime.ApiKey,
+                runtime.OpenRouterBaseUrl),
             cancellationToken);
 
         if (string.Equals(activeProvider.Name, "OpenRouter", StringComparison.OrdinalIgnoreCase)
@@ -1532,7 +1546,8 @@ public sealed class TranscribeAttachmentFeature(
             new AiCompletionRequest(
                 "Transcribe the described audio attachment without exposing sensitive details. Return plain text only.",
                 prompt,
-                runtime.ApiKey),
+                runtime.ApiKey,
+                runtime.OpenRouterBaseUrl),
             cancellationToken);
 
         if (string.Equals(activeProvider.Name, "OpenRouter", StringComparison.OrdinalIgnoreCase)
@@ -2286,12 +2301,7 @@ public sealed class EmailSettingsResolver(
     {
         var row = await dbContext.TenantEmailSettings.AsNoTracking()
             .FirstOrDefaultAsync(x => x.TenantId == tenantId, cancellationToken);
-        if (row is not null)
-        {
-            return row.Enabled;
-        }
-
-        return configuration.GetValue("Email:Enabled", false);
+        return row?.Enabled ?? false;
     }
 
     public async Task<EffectiveSmtpSettings> ResolveAsync(TenantId tenantId, CancellationToken cancellationToken)
@@ -2299,19 +2309,19 @@ public sealed class EmailSettingsResolver(
         var row = await dbContext.TenantEmailSettings.AsNoTracking()
             .FirstOrDefaultAsync(x => x.TenantId == tenantId, cancellationToken);
 
-        var envHost = configuration["Email:Smtp:Host"] ?? configuration["SMTP_HOST"] ?? "localhost";
-        var envPort = configuration.GetValue("Email:Smtp:Port", configuration.GetValue("SMTP_PORT", 1025));
-        var envFrom = configuration["Email:Smtp:From"] ?? configuration["SMTP_FROM"] ?? "noreply@localhost";
-        var envUser = configuration["Email:Smtp:Username"] ?? configuration["SMTP_USERNAME"] ?? string.Empty;
         var envPassword = configuration["Email:Smtp:Password"] ?? configuration["SMTP_PASSWORD"] ?? string.Empty;
-        var envTls = configuration.GetValue("Email:Smtp:UseStartTls", configuration.GetValue("SMTP_USE_STARTTLS", false));
-        var envEnabled = configuration.GetValue("Email:Enabled", false);
 
         if (row is null)
         {
             return new EffectiveSmtpSettings(
-                envEnabled, envHost, envPort, envUser, envPassword, envFrom, envTls,
-                Source: "env",
+                false,
+                "localhost",
+                1025,
+                string.Empty,
+                envPassword,
+                "noreply@localhost",
+                false,
+                Source: SecretMasking.IsConfigured(envPassword) ? "env" : ProcessSettingsDefaults.SourceDefault,
                 PasswordSource: SecretMasking.IsConfigured(envPassword) ? "env" : "none",
                 PasswordKeyVersion: null,
                 PasswordRotatedAt: null,
@@ -2352,11 +2362,11 @@ public sealed class EmailSettingsResolver(
 
         return new EffectiveSmtpSettings(
             row.Enabled,
-            string.IsNullOrWhiteSpace(row.Host) ? envHost : row.Host,
-            row.Port > 0 ? row.Port : envPort,
-            string.IsNullOrWhiteSpace(row.Username) ? envUser : row.Username,
+            string.IsNullOrWhiteSpace(row.Host) ? "localhost" : row.Host,
+            row.Port > 0 ? row.Port : 1025,
+            string.IsNullOrWhiteSpace(row.Username) ? string.Empty : row.Username,
             password,
-            string.IsNullOrWhiteSpace(row.From) ? envFrom : row.From,
+            string.IsNullOrWhiteSpace(row.From) ? "noreply@localhost" : row.From,
             row.UseStartTls,
             Source: "tenant",
             PasswordSource: passwordSource,
@@ -2381,37 +2391,27 @@ public sealed record EffectiveSmtpSettings(
     string? PasswordMask = null);
 
 public sealed class SmtpEmailSender(
-    IConfiguration configuration,
     EmailSettingsResolver settingsResolver,
+    ProcessSettingsResolver processSettings,
     ILogger<SmtpEmailSender> logger) : IEmailSender
 {
     public string Name => "Smtp";
-    public bool IsEnabled => configuration.GetValue("Email:Enabled", false);
+    public bool IsEnabled => true;
 
     public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {
-        EffectiveSmtpSettings smtp;
-        if (message.TenantId is { } tenantGuid && tenantGuid != Guid.Empty)
-        {
-            smtp = await settingsResolver.ResolveAsync(new TenantId(tenantGuid), cancellationToken);
-        }
-        else if (!IsEnabled)
+        var process = await processSettings.ResolveAsync(cancellationToken);
+        if (!process.EmailEnabled)
         {
             return;
         }
-        else
+
+        if (message.TenantId is not { } tenantGuid || tenantGuid == Guid.Empty)
         {
-            smtp = new EffectiveSmtpSettings(
-                true,
-                configuration["Email:Smtp:Host"] ?? configuration["SMTP_HOST"] ?? "localhost",
-                configuration.GetValue("Email:Smtp:Port", configuration.GetValue("SMTP_PORT", 1025)),
-                configuration["Email:Smtp:Username"] ?? configuration["SMTP_USERNAME"] ?? string.Empty,
-                configuration["Email:Smtp:Password"] ?? configuration["SMTP_PASSWORD"] ?? string.Empty,
-                configuration["Email:Smtp:From"] ?? configuration["SMTP_FROM"] ?? "noreply@localhost",
-                configuration.GetValue("Email:Smtp:UseStartTls", configuration.GetValue("SMTP_USE_STARTTLS", false)),
-                "env");
+            return;
         }
 
+        var smtp = await settingsResolver.ResolveAsync(new TenantId(tenantGuid), cancellationToken);
         if (!smtp.Enabled)
         {
             return;
@@ -2543,21 +2543,20 @@ public sealed class MessageRetentionOptions
 /// </summary>
 public sealed class MessageRetentionPurgeProcessor(
     IServiceScopeFactory scopeFactory,
-    IConfiguration configuration,
     ILogger<MessageRetentionPurgeProcessor> logger)
 {
     public async Task<int> ProcessBatchAsync(CancellationToken cancellationToken)
     {
-        var options = configuration.GetSection(MessageRetentionOptions.SectionName).Get<MessageRetentionOptions>()
-            ?? new MessageRetentionOptions();
-        if (!options.Enabled)
+        using var scope = scopeFactory.CreateScope();
+        var process = await scope.ServiceProvider.GetRequiredService<ProcessSettingsResolver>()
+            .ResolveAsync(cancellationToken);
+        if (!process.MessageRetentionEnabled)
         {
             return 0;
         }
 
-        var batchSize = Math.Clamp(options.BatchSize <= 0 ? 500 : options.BatchSize, 1, 2000);
+        var batchSize = process.RetentionBatchSize;
 
-        using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
         var clock = scope.ServiceProvider.GetRequiredService<IClock>();
         var now = clock.UtcNow;
@@ -2583,7 +2582,7 @@ public sealed class MessageRetentionPurgeProcessor(
             await RlsSession.EnsureAppliedAsync(db, tenant, cancellationToken);
 
             var days = Math.Clamp(
-                policy.RetentionDays <= 0 ? MessageRetentionSettings.DefaultRetentionDays : policy.RetentionDays,
+                policy.RetentionDays <= 0 ? process.RetentionDefaultDays : policy.RetentionDays,
                 MessageRetentionSettings.MinRetentionDays,
                 MessageRetentionSettings.MaxRetentionDays);
             var cutoff = now.AddDays(-days);
@@ -2709,17 +2708,26 @@ public sealed class MessageRetentionPurgeProcessor(
 
 public sealed class MessageRetentionPurgeDispatcher(
     MessageRetentionPurgeProcessor processor,
-    IConfiguration configuration,
+    IServiceScopeFactory scopeFactory,
     ILogger<MessageRetentionPurgeDispatcher> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var options = configuration.GetSection(MessageRetentionOptions.SectionName).Get<MessageRetentionOptions>()
-            ?? new MessageRetentionOptions();
-        var intervalMinutes = Math.Clamp(options.IntervalMinutes <= 0 ? 60 : options.IntervalMinutes, 1, 24 * 60);
-
         while (!stoppingToken.IsCancellationRequested)
         {
+            var intervalMinutes = ProcessSettingsDefaults.RetentionIntervalMinutes;
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                var process = await scope.ServiceProvider.GetRequiredService<ProcessSettingsResolver>()
+                    .ResolveAsync(stoppingToken);
+                intervalMinutes = process.RetentionIntervalMinutes;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogWarning(ex, "Failed to resolve retention interval");
+            }
+
             try
             {
                 await processor.ProcessBatchAsync(stoppingToken);
@@ -3015,6 +3023,26 @@ public sealed class SeedData(
                 new Message { Id = new MessageId(Guid.Parse("77777777-7777-7777-7777-777777777777")), TenantId = DemoTenantId, ConversationId = DemoChannelId, AuthorId = AliceUserId, Sequence = 2, Body = "AI summaries are enabled with the mock provider.", CreatedAt = now });
         }
 
+        if (!await dbContext.ProcessSettings.AnyAsync(x => x.Id == ProcessSettings.SingletonId, cancellationToken))
+        {
+            dbContext.ProcessSettings.Add(new ProcessSettings
+            {
+                Id = ProcessSettings.SingletonId,
+                AiEnabled = true,
+                EmailEnabled = false,
+                MessageRetentionEnabled = true,
+                PushEnabled = true,
+                LinkPreviewEnabled = true,
+                OpenRouterBaseUrl = ProcessSettingsDefaults.OpenRouterBaseUrl,
+                RetentionDefaultDays = ProcessSettingsDefaults.RetentionDefaultDays,
+                RetentionBatchSize = ProcessSettingsDefaults.RetentionBatchSize,
+                RetentionIntervalMinutes = ProcessSettingsDefaults.RetentionIntervalMinutes,
+                LinkPreviewTimeoutMs = ProcessSettingsDefaults.LinkPreviewTimeoutMs,
+                VapidSubject = ProcessSettingsDefaults.VapidSubject,
+                UpdatedAt = now
+            });
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation("Demo seed data ensured");
     }
@@ -3236,6 +3264,7 @@ public static class DependencyInjection
         services.AddMemoryCache();
         services.AddSingleton<RuntimeSecretProtector>();
         services.AddSingleton<IRuntimeSettingsCacheInvalidator, RuntimeSettingsCacheInvalidator>();
+        services.AddScoped<ProcessSettingsResolver>();
         services.AddScoped<AiSettingsResolver>();
         services.AddScoped<FilesSettingsResolver>();
         services.AddScoped<RateLimitSettingsResolver>();
@@ -3271,34 +3300,12 @@ public static class DependencyInjection
             });
 
         // ADR-020: never capture API key in DefaultRequestHeaders — set per HttpRequestMessage.
-        services.AddHttpClient<OpenRouterAiProvider>((sp, client) =>
+        services.AddHttpClient<OpenRouterAiProvider>((_, client) =>
         {
-            var cfg = sp.GetRequiredService<IConfiguration>();
-            client.BaseAddress = new Uri(cfg["Ai:OpenRouter:BaseUrl"] ?? "https://openrouter.ai/api/v1");
+            client.BaseAddress = new Uri(ProcessSettingsDefaults.OpenRouterBaseUrl);
         });
 
-        services.AddScoped<IAiCompletionProvider>(sp =>
-        {
-            var cfg = sp.GetRequiredService<IConfiguration>();
-            // D-06: AI off by default; OpenRouter only when Enabled + Provider=OpenRouter + key (env fallback).
-            if (!cfg.GetValue("Ai:Enabled", false))
-            {
-                return new NullAiProvider();
-            }
-
-            if (string.Equals(cfg["Ai:Provider"], "OpenRouter", StringComparison.OrdinalIgnoreCase))
-            {
-                var apiKey = cfg["Ai:OpenRouter:ApiKey"];
-                if (string.IsNullOrWhiteSpace(apiKey))
-                {
-                    return new NullAiProvider();
-                }
-
-                return sp.GetRequiredService<OpenRouterAiProvider>();
-            }
-
-            return new MockAiProvider();
-        });
+        services.AddScoped<IAiCompletionProvider>(_ => new MockAiProvider());
 
         // D-10 / B-043 / B-069 / ADR-020: email off by default; runtime tenant overrides via EmailSettingsResolver.
         services.AddScoped<EmailSettingsResolver>();
@@ -3318,11 +3325,6 @@ public static class DependencyInjection
             if (cfg.GetValue("Push:UseRecordingSender", false))
             {
                 return sp.GetRequiredService<RecordingPushSender>();
-            }
-
-            if (!PushOptions.IsEffectivelyEnabled(cfg))
-            {
-                return new NullPushSender();
             }
 
             return sp.GetRequiredService<WebPushSender>();

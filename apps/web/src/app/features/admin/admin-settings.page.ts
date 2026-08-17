@@ -4,7 +4,7 @@ import { SensitiveSettings } from '../../shared/models/chat.models';
 import { AdminContextService } from './admin-context.service';
 import { AdminAreaId } from './admin-permissions';
 
-type CredentialKind = 'openrouter' | 'smtp' | 'webhook';
+type CredentialKind = 'openrouter' | 'smtp' | 'webhook' | 'vapid';
 
 @Component({
   selector: 'vc-admin-settings',
@@ -89,7 +89,10 @@ export class AdminSettingsPage implements OnInit {
     }
     const workspaceEnabled = data.get('aiWorkspaceEnabled') === 'on';
     const provider = String(data.get('aiProvider') ?? current.ai.provider).trim();
+    const aiProcessEnabled = data.get('aiProcessEnabled') === 'on';
+    const openRouterBaseUrl = String(data.get('openRouterBaseUrl') ?? current.ai.openRouterBaseUrl ?? '').trim();
     const emailEnabled = data.get('emailEnabled') === 'on';
+    const emailProcessEnabled = data.get('emailProcessEnabled') === 'on';
     const smtpHost = String(data.get('smtpHost') ?? '').trim();
     const smtpPort = Number(data.get('smtpPort') ?? current.email.smtpPort);
     const smtpUsername = String(data.get('smtpUsername') ?? '').trim();
@@ -98,8 +101,19 @@ export class AdminSettingsPage implements OnInit {
     const webhookEnabled = data.get('webhookEnabled') === 'on';
     const webhookUrl = String(data.get('webhookUrl') ?? '').trim();
     const retentionEnabled = data.get('retentionEnabled') === 'on';
+    const retentionProcessEnabled = data.get('retentionProcessEnabled') === 'on';
     const retentionDays = Number(data.get('retentionDays') ?? current.retention.retentionDays);
+    const retentionDefaultDays = Number(
+      data.get('retentionDefaultDays') ?? current.retention.defaultRetentionDays,
+    );
+    const retentionBatchSize = Number(data.get('retentionBatchSize') ?? current.retention.batchSize ?? 500);
+    const retentionIntervalMinutes = Number(
+      data.get('retentionIntervalMinutes') ?? current.retention.intervalMinutes ?? 60,
+    );
     const linkPreviewEnabled = data.get('linkPreviewEnabled') === 'on';
+    const linkPreviewProcessEnabled = data.get('linkPreviewProcessEnabled') === 'on';
+    const linkPreviewTimeoutMs = Number(data.get('linkPreviewTimeoutMs') ?? current.linkPreview.timeoutMs);
+    const pushProcessEnabled = data.get('pushProcessEnabled') === 'on';
     const maxSizeBytes = Number(data.get('maxSizeBytes') ?? current.files.maxSizeBytes);
     const maxAttachmentsPerMessage = Number(
       data.get('maxAttachmentsPerMessage') ?? current.files.maxAttachmentsPerMessage,
@@ -113,9 +127,10 @@ export class AdminSettingsPage implements OnInit {
     try {
       const updated = await this.api.updateAdminSensitiveSettings({
         workspaceId,
-        ai: { workspaceEnabled, provider },
+        ai: { workspaceEnabled, provider, processEnabled: aiProcessEnabled, openRouterBaseUrl },
         email: {
           enabled: emailEnabled,
+          processEnabled: emailProcessEnabled,
           smtpHost,
           smtpPort: Number.isFinite(smtpPort) ? smtpPort : current.email.smtpPort,
           smtpUsername,
@@ -128,13 +143,24 @@ export class AdminSettingsPage implements OnInit {
         },
         retention: {
           enabled: retentionEnabled,
+          processEnabled: retentionProcessEnabled,
           retentionDays: Number.isFinite(retentionDays)
             ? retentionDays
             : current.retention.retentionDays,
+          defaultRetentionDays: Number.isFinite(retentionDefaultDays)
+            ? retentionDefaultDays
+            : current.retention.defaultRetentionDays,
+          batchSize: Number.isFinite(retentionBatchSize) ? retentionBatchSize : 500,
+          intervalMinutes: Number.isFinite(retentionIntervalMinutes) ? retentionIntervalMinutes : 60,
         },
         linkPreview: {
           enabled: linkPreviewEnabled,
+          processEnabled: linkPreviewProcessEnabled,
+          timeoutMs: Number.isFinite(linkPreviewTimeoutMs)
+            ? linkPreviewTimeoutMs
+            : current.linkPreview.timeoutMs,
         },
+        push: { processEnabled: pushProcessEnabled },
         files: {
           maxSizeBytes: Number.isFinite(maxSizeBytes) ? maxSizeBytes : current.files.maxSizeBytes,
           maxAttachmentsPerMessage: Number.isFinite(maxAttachmentsPerMessage)
@@ -203,6 +229,60 @@ export class AdminSettingsPage implements OnInit {
       await this.loadSettings();
       this.credentialFeedback.set(
         `Credencial ${kind} substituída${result.mask ? ` (${result.mask})` : ''}.`,
+      );
+    } catch (err) {
+      const status = (err as { status?: number } | null)?.status;
+      this.credentialError.set(
+        status === 403
+          ? 'Sem permissão para rotacionar credenciais.'
+          : status === 503
+            ? 'Criptografia indisponível (RuntimeSettings desligado ou keyring ausente).'
+            : 'Falha ao substituir a credencial.',
+      );
+    } finally {
+      this.credentialBusy.set(null);
+    }
+  }
+
+  async rotateVapid(event: Event): Promise<void> {
+    event.preventDefault();
+    const current = this.settings();
+    const workspaceId = this.ctx.workspace()?.id ?? current?.workspaceId;
+    if (!workspaceId || this.credentialBusy()) {
+      return;
+    }
+
+    const form = event.target as HTMLFormElement;
+    const data = new FormData(form);
+    const publicKey = String(data.get('publicKey') ?? '').trim();
+    const privateKey = String(data.get('privateKey') ?? '').trim();
+    const subject = String(data.get('subject') ?? '').trim();
+    if (!publicKey || !privateKey) {
+      this.credentialError.set('Informe as chaves VAPID pública e privada.');
+      return;
+    }
+
+    this.credentialBusy.set('vapid');
+    this.credentialFeedback.set(null);
+    this.credentialError.set(null);
+    try {
+      const result = await this.api.rotateAdminVapidCredential({
+        workspaceId,
+        publicKey,
+        privateKey,
+        subject: subject || undefined,
+      });
+      const publicInput = form.elements.namedItem('publicKey') as HTMLInputElement | null;
+      const privateInput = form.elements.namedItem('privateKey') as HTMLInputElement | null;
+      if (publicInput) {
+        publicInput.value = '';
+      }
+      if (privateInput) {
+        privateInput.value = '';
+      }
+      await this.loadSettings();
+      this.credentialFeedback.set(
+        `VAPID substituído${result.mask ? ` (${result.mask})` : ''}.`,
       );
     } catch (err) {
       const status = (err as { status?: number } | null)?.status;

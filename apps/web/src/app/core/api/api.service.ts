@@ -17,6 +17,7 @@ import {
   CredentialRotateResult,
   ReencryptSettingsResult,
   RotateCredentialInput,
+  RotateVapidInput,
   SearchMessagesResult,
   SensitiveSettings,
   Space,
@@ -1035,6 +1036,13 @@ export class ApiService {
 
   async rotateAdminWebhookCredential(input: RotateCredentialInput): Promise<CredentialRotateResult> {
     return this.request<CredentialRotateResult>('/api/v1/admin/settings/credentials/webhook/rotate', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async rotateAdminVapidCredential(input: RotateVapidInput): Promise<CredentialRotateResult> {
+    return this.request<CredentialRotateResult>('/api/v1/admin/settings/credentials/vapid/rotate', {
       method: 'POST',
       body: JSON.stringify(input),
     });

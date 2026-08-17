@@ -282,6 +282,7 @@ export interface SensitiveSettings {
     processSource: string;
     workspaceEnabled: boolean;
     provider: string;
+    openRouterBaseUrl?: string;
     apiKeyConfigured: boolean;
     apiKeyMask: string | null;
     apiKeySource?: string;
@@ -290,6 +291,8 @@ export interface SensitiveSettings {
     secretsWritable: boolean;
   };
   email: {
+    processEnabled?: boolean;
+    processSource?: string;
     enabled: boolean;
     source: string;
     smtpHost: string;
@@ -324,6 +327,8 @@ export interface SensitiveSettings {
     enabled: boolean;
     retentionDays: number;
     defaultRetentionDays: number;
+    batchSize?: number;
+    intervalMinutes?: number;
     message: string;
   };
   linkPreview: {
@@ -332,6 +337,18 @@ export interface SensitiveSettings {
     enabled: boolean;
     timeoutMs: number;
     message: string;
+  };
+  push?: {
+    processEnabled: boolean;
+    processSource: string;
+    vapidPublicKey: string | null;
+    vapidConfigured: boolean;
+    vapidMask: string | null;
+    vapidSource?: string;
+    vapidKeyVersion?: number | null;
+    vapidRotatedAt?: string | null;
+    vapidSubject?: string;
+    secretsWritable: boolean;
   };
   files: {
     source: string;
@@ -365,9 +382,12 @@ export interface UpdateSensitiveSettingsInput {
   ai?: {
     workspaceEnabled?: boolean;
     provider?: string;
+    processEnabled?: boolean;
+    openRouterBaseUrl?: string;
   };
   email?: {
     enabled?: boolean;
+    processEnabled?: boolean;
     smtpHost?: string;
     smtpPort?: number;
     smtpUsername?: string;
@@ -381,9 +401,18 @@ export interface UpdateSensitiveSettingsInput {
   retention?: {
     enabled?: boolean;
     retentionDays?: number;
+    processEnabled?: boolean;
+    defaultRetentionDays?: number;
+    batchSize?: number;
+    intervalMinutes?: number;
   };
   linkPreview?: {
     enabled?: boolean;
+    processEnabled?: boolean;
+    timeoutMs?: number;
+  };
+  push?: {
+    processEnabled?: boolean;
   };
   files?: {
     maxSizeBytes?: number;
@@ -403,6 +432,13 @@ export interface UpdateSensitiveSettingsInput {
 export interface RotateCredentialInput {
   workspaceId?: string;
   value: string;
+}
+
+export interface RotateVapidInput {
+  workspaceId?: string;
+  publicKey: string;
+  privateKey: string;
+  subject?: string;
 }
 
 export interface CredentialRotateResult {

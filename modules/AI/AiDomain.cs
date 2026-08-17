@@ -29,7 +29,7 @@ public sealed class AiSettings
 }
 
 /// <param name="ApiKey">Optional per-call OpenRouter key (ADR-020). Never log.</param>
-public sealed record AiCompletionRequest(string SystemPrompt, string UserPrompt, string? ApiKey = null);
+public sealed record AiCompletionRequest(string SystemPrompt, string UserPrompt, string? ApiKey = null, string? BaseUrl = null);
 public sealed record AiCompletionResponse(string Text, int PromptTokens, int CompletionTokens, int LatencyMs);
 
 /// <summary>Result of channel summarize. When Ok is false, Error is a stable code (e.g. AiDisabled, ProviderError).</summary>
@@ -88,7 +88,10 @@ public sealed class OpenRouterAiProvider(HttpClient httpClient) : IAiCompletionP
     public async Task<AiCompletionResponse> CompleteAsync(AiCompletionRequest request, CancellationToken cancellationToken)
     {
         var started = DateTimeOffset.UtcNow;
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, "/chat/completions")
+        var baseUrl = string.IsNullOrWhiteSpace(request.BaseUrl)
+            ? (httpClient.BaseAddress?.ToString()?.TrimEnd('/') ?? "https://openrouter.ai/api/v1")
+            : request.BaseUrl.Trim().TrimEnd('/');
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, new Uri($"{baseUrl}/chat/completions"))
         {
             Content = JsonContent.Create(new
             {

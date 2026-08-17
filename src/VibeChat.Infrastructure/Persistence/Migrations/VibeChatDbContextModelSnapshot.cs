@@ -173,6 +173,62 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("rate_limit_settings", "building_blocks");
                 });
 
+            modelBuilder.Entity("VibeChat.Administration.ProcessSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedNever()
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("AiEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("EmailEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("LinkPreviewTimeoutMs")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("LinkPreviewEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("MessageRetentionEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OpenRouterBaseUrl")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<bool>("PushEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("RetentionBatchSize")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RetentionDefaultDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RetentionIntervalMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VapidPublicKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("VapidSubject")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("process_settings", "administration");
+                });
+
             modelBuilder.Entity("VibeChat.Conversations.Channel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1207,6 +1263,54 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("SmtpPassword")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("VibeChat.Administration.ProcessSettings", b =>
+                {
+                    b.OwnsOne("VibeChat.SharedKernel.EncryptedSecretEnvelope", "VapidPrivateKey", b1 =>
+                        {
+                            b1.Property<int>("ProcessSettingsId")
+                                .HasColumnType("integer");
+
+                            b1.Property<byte[]>("Ciphertext")
+                                .HasColumnType("bytea")
+                                .HasColumnName("VapidPrivateKeyCiphertext");
+
+                            b1.Property<short?>("FormatVersion")
+                                .HasColumnType("smallint")
+                                .HasColumnName("VapidPrivateKeyFormatVersion");
+
+                            b1.Property<int?>("KeyVersion")
+                                .HasColumnType("integer")
+                                .HasColumnName("VapidPrivateKeyKeyVersion");
+
+                            b1.Property<string>("MaskSuffix")
+                                .HasMaxLength(8)
+                                .HasColumnType("character varying(8)")
+                                .HasColumnName("VapidPrivateKeyMaskSuffix");
+
+                            b1.Property<byte[]>("Nonce")
+                                .HasColumnType("bytea")
+                                .HasColumnName("VapidPrivateKeyNonce");
+
+                            b1.Property<DateTimeOffset?>("RotatedAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("VapidPrivateKeyRotatedAt");
+
+                            b1.Property<byte[]>("Tag")
+                                .HasColumnType("bytea")
+                                .HasColumnName("VapidPrivateKeyTag");
+
+                            b1.HasKey("ProcessSettingsId");
+
+                            b1.ToTable("process_settings", "administration");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ProcessSettingsId");
+                        });
+
+                    b.Navigation("VapidPrivateKey")
                         .IsRequired();
                 });
 #pragma warning restore 612, 618

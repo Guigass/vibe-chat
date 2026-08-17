@@ -4,8 +4,8 @@ Uma spec por item de backlog elegível ao Build (Waves 7–19). A automação de
 Build **só** implementa item que tenha
 spec aqui; sem spec, o item não é elegível.
 
-Baseline atualizada em 2026-08-13: itens `Planned` W7–W19 com specs 1:1
-(W7-14 / B-187 catalogado). Regras de auditoria:
+Baseline atualizada em 2026-08-17: itens `Planned` W8–W19 com specs 1:1
+(W7-14 / B-187 Done). Regras de auditoria:
 [`roadmap/qualidade-documental.md`](../../roadmap/qualidade-documental.md).
 
 Waves 11–17 estão autorizadas por D-16…D-28 e possuem specs executáveis. Todas

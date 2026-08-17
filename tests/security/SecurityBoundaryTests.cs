@@ -332,6 +332,16 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
             new { workspaceId = SeedData.DemoWorkspaceId.Value, value = "member-cannot-rotate" });
         rotate.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
+        var vapid = await alice.PostAsJsonAsync(
+            "/api/v1/admin/settings/credentials/vapid/rotate",
+            new
+            {
+                workspaceId = SeedData.DemoWorkspaceId.Value,
+                publicKey = "Bmember-cannot-rotate-public",
+                privateKey = "member-cannot-rotate-private"
+            });
+        vapid.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
         var reencrypt = await alice.PostAsJsonAsync(
             "/api/v1/admin/settings/encryption/reencrypt",
             new { workspaceId = SeedData.DemoWorkspaceId.Value });
@@ -374,6 +384,16 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
                 "/api/v1/admin/settings/credentials/smtp/rotate",
                 new { workspaceId = SeedData.DemoWorkspaceId.Value, value = "auditor-cannot-rotate" });
             rotate.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+            var vapid = await alice.PostAsJsonAsync(
+                "/api/v1/admin/settings/credentials/vapid/rotate",
+                new
+                {
+                    workspaceId = SeedData.DemoWorkspaceId.Value,
+                    publicKey = "Bauditor-cannot-rotate-public",
+                    privateKey = "auditor-cannot-rotate-private"
+                });
+            vapid.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
             var reencrypt = await alice.PostAsJsonAsync(
                 "/api/v1/admin/settings/encryption/reencrypt",

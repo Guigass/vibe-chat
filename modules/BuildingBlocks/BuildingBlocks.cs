@@ -288,7 +288,7 @@ public static class RateLimitPolicies
     public const int MaxPerMinute = 10_000;
 }
 
-/// <summary>Tenant-level rate limits (ADR-020). Effective = min(DB, env ceiling).</summary>
+/// <summary>Tenant-level rate limits (ADR-020). Effective = min(DB, code ceiling).</summary>
 public sealed class TenantRateLimitSettings
 {
     public TenantId TenantId { get; set; }

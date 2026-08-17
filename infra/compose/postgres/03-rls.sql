@@ -332,7 +332,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'app', 'public'
+      'identity', 'administration', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, app_role);
@@ -351,7 +351,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'app', 'public'
+      'identity', 'administration', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, backup_role);

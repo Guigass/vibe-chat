@@ -7,6 +7,7 @@ using Lib.Net.Http.WebPush.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using VibeChat.Administration;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
 using VibeChat.Messaging;
@@ -20,16 +21,6 @@ namespace VibeChat.Infrastructure;
 public static class PushOptions
 {
     public const string HttpClientName = "WebPush";
-
-    public static bool IsProcessEnabled(IConfiguration configuration) =>
-        configuration.GetValue("Push:Enabled", false);
-
-    public static bool HasVapidKeys(IConfiguration configuration) =>
-        SecretMasking.IsConfigured(configuration["Push:Vapid:PublicKey"])
-        && SecretMasking.IsConfigured(configuration["Push:Vapid:PrivateKey"]);
-
-    public static bool IsEffectivelyEnabled(IConfiguration configuration) =>
-        IsProcessEnabled(configuration) && HasVapidKeys(configuration);
 }
 
 public readonly record struct VapidKeyPair(string PublicKey, string PrivateKey);
@@ -81,26 +72,27 @@ public sealed class RecordingPushSender : IPushSender
 
 public sealed class WebPushSender(
     IHttpClientFactory httpClientFactory,
-    IConfiguration configuration,
+    ProcessSettingsResolver processSettings,
     ILogger<WebPushSender> logger) : IPushSender
 {
     public string Name => "WebPush";
-    public bool IsEnabled => PushOptions.IsEffectivelyEnabled(configuration);
+    public bool IsEnabled => true;
 
     public async Task<PushSendResult> SendAsync(PushDeliveryRequest request, CancellationToken cancellationToken)
     {
-        if (!IsEnabled)
+        var process = await processSettings.ResolveAsync(cancellationToken);
+        if (!process.PushEnabled
+            || !SecretMasking.IsConfigured(process.VapidPublicKey)
+            || !SecretMasking.IsConfigured(process.VapidPrivateKey))
         {
             return new PushSendResult(PushSendStatus.Delivered);
         }
 
-        var publicKey = configuration["Push:Vapid:PublicKey"]!.Trim();
-        var privateKey = configuration["Push:Vapid:PrivateKey"]!.Trim();
-        var subject = configuration["Push:Vapid:Subject"];
-        if (string.IsNullOrWhiteSpace(subject))
-        {
-            subject = "mailto:ops@localhost";
-        }
+        var publicKey = process.VapidPublicKey!.Trim();
+        var privateKey = process.VapidPrivateKey!.Trim();
+        var subject = string.IsNullOrWhiteSpace(process.VapidSubject)
+            ? ProcessSettingsDefaults.VapidSubject
+            : process.VapidSubject;
 
         var client = new PushServiceClient(httpClientFactory.CreateClient(PushOptions.HttpClientName));
         var vapid = new VapidAuthentication(publicKey, privateKey) { Subject = subject };
@@ -138,12 +130,13 @@ public sealed class PushDispatcher(
     IChannelMembershipReader memberships,
     IPushSender pushSender,
     IClock clock,
-    IConfiguration configuration,
+    ProcessSettingsResolver processSettings,
     ILogger<PushDispatcher> logger)
 {
     public async Task TryDispatchMessageCreatedAsync(JsonObject root, CancellationToken cancellationToken)
     {
-        if (!configuration.GetValue("Push:Enabled", false) || !pushSender.IsEnabled)
+        var process = await processSettings.ResolveAsync(cancellationToken);
+        if (!process.PushEnabled || !pushSender.IsEnabled)
         {
             return;
         }

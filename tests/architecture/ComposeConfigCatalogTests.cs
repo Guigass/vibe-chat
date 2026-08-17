@@ -4,63 +4,19 @@ using FluentAssertions;
 
 namespace VibeChat.ArchitectureTests;
 
-/// <summary>B-105 — self-host config catalog: compose injects promised env bindings.</summary>
+/// <summary>B-105 / B-187 — infra catalog in .env.example; product may stay as compose fallbacks.</summary>
 public sealed class ComposeConfigCatalogTests
 {
-    private static readonly string[] ApiEmailBindings =
+    private static readonly string[] ProductEnvPrefixes =
     [
-        "Email__Enabled:",
-        "Email__Smtp__Host:",
-        "Email__Smtp__Port:",
-        "Email__Smtp__Username:",
-        "Email__Smtp__Password:",
-        "Email__Smtp__From:",
-        "Email__Smtp__UseStartTls:"
+        "EMAIL__",
+        "SMTP_",
+        "AI__",
+        "OPENROUTER_",
+        "MessageRetention__",
+        "LinkPreview__",
+        "Push__"
     ];
-
-    private static readonly string[] WorkerRetentionBindings =
-    [
-        "MessageRetention__Enabled:",
-        "MessageRetention__DefaultRetentionDays:",
-        "MessageRetention__BatchSize:",
-        "MessageRetention__IntervalMinutes:"
-    ];
-
-    private static readonly string[] ApiAiBindings =
-    [
-        "Ai__Enabled:",
-        "Ai__Provider:",
-        "Ai__OpenRouter__ApiKey:",
-        "Ai__OpenRouter__BaseUrl:"
-    ];
-
-    private static readonly string[] PushBindings =
-    [
-        "Push__Enabled:",
-        "Push__Vapid__PublicKey:",
-        "Push__Vapid__PrivateKey:",
-        "Push__Vapid__Subject:"
-    ];
-
-    [Fact]
-    public void Apps_profile_api_injects_email_and_ai_bindings_from_env()
-    {
-        var compose = ReadRepoFile("compose.yaml");
-        var apiBlock = ExtractServiceEnvironmentBlock(compose, "api");
-
-        foreach (var binding in ApiEmailBindings)
-        {
-            apiBlock.Should().Contain(binding, because: $"B-105 requires {binding.TrimEnd(':')} on api container");
-        }
-
-        foreach (var binding in ApiAiBindings)
-        {
-            apiBlock.Should().Contain(binding, because: $"B-105 requires {binding.TrimEnd(':')} on api container");
-        }
-
-        apiBlock.Should().Contain("Ai__OpenRouter__ApiKey: ${OPENROUTER_API_KEY",
-            because: "canonical OpenRouter secret uses OPENROUTER_API_KEY in .env.example");
-    }
 
     [Fact]
     public void Apps_profile_api_exposes_safe_database_bootstrap_switch()
@@ -109,64 +65,55 @@ public sealed class ComposeConfigCatalogTests
     }
 
     [Fact]
-    public void Apps_profile_worker_injects_message_retention_bindings_from_env()
-    {
-        var compose = ReadRepoFile("compose.yaml");
-        var workerBlock = ExtractServiceEnvironmentBlock(compose, "worker");
-
-        foreach (var binding in WorkerRetentionBindings)
-        {
-            workerBlock.Should().Contain(binding,
-                because: $"B-105 requires {binding.TrimEnd(':')} on worker container");
-        }
-    }
-
-    [Fact]
-    public void Apps_profile_api_and_worker_inject_push_vapid_bindings()
-    {
-        var compose = ReadRepoFile("compose.yaml");
-        var apiBlock = ExtractServiceEnvironmentBlock(compose, "api");
-        var workerBlock = ExtractServiceEnvironmentBlock(compose, "worker");
-
-        foreach (var binding in PushBindings)
-        {
-            apiBlock.Should().Contain(binding, because: $"B-095 requires {binding.TrimEnd(':')} on api");
-            workerBlock.Should().Contain(binding, because: $"B-095 requires {binding.TrimEnd(':')} on worker");
-        }
-    }
-
-    [Fact]
-    public void Env_example_declares_substitutions_used_by_apps_profile()
+    public void Env_example_declares_infra_substitutions_used_without_default()
     {
         var compose = ReadRepoFile("compose.yaml");
         var envExample = ReadRepoFile(".env.example");
         var appsSection = ExtractAppsProfileSection(compose);
 
-        var referenced = Regex.Matches(appsSection, @"\$\{([A-Za-z0-9_]+)")
-            .Select(m => m.Groups[1].Value)
+        var required = Regex.Matches(appsSection, @"\$\{([A-Za-z0-9_]+)(:-([^}]*)?)?\}")
+            .Select(m => new
+            {
+                Key = m.Groups[1].Value,
+                HasDefaultClause = m.Groups[2].Success,
+                DefaultValue = m.Groups[3].Value
+            })
+            .Where(x => !x.HasDefaultClause || string.IsNullOrEmpty(x.DefaultValue))
+            .Select(x => x.Key)
             .Distinct()
+            .Where(key => !IsProductEnvKey(key))
             .OrderBy(x => x)
             .ToArray();
 
-        referenced.Should().NotBeEmpty(because: "apps profile must reference env substitutions");
+        required.Should().NotBeEmpty(because: "apps profile must reference infra substitutions");
 
-        foreach (var key in referenced)
+        foreach (var key in required)
         {
             envExample.Should().MatchRegex($"(?m)^{Regex.Escape(key)}=",
-                because: $".env.example must declare {key} used by profile apps");
+                because: $".env.example must declare infra {key} used without a compose default");
         }
     }
 
     [Fact]
-    public void Env_example_documents_canonical_email_and_openrouter_keys()
+    public void Env_example_is_infra_only_and_has_lab_keyring()
     {
         var envExample = ReadRepoFile(".env.example");
 
-        envExample.Should().Contain("EMAIL__Enabled=");
-        envExample.Should().Contain("OPENROUTER_API_KEY=");
-        envExample.Should().NotContain("AI__OpenRouter__ApiKey=",
-            because: "duplicate OpenRouter alias removed; compose maps OPENROUTER_* only");
+        foreach (var prefix in ProductEnvPrefixes)
+        {
+            envExample.Should().NotMatchRegex(
+                $"(?m)^{Regex.Escape(prefix)}",
+                because: $"B-187 removes product var {prefix}* from .env.example");
+        }
+
+        envExample.Should().Contain("RuntimeSettings__DatabaseOverridesEnabled=true");
+        envExample.Should().Contain("RuntimeSettings__Encryption__Keys__1=");
+        envExample.Should().NotContain("CHANGE_ME_base64_32_bytes");
+        envExample.Should().Contain("VmliZUNoYXRMYWJLZXlyaW5nRGVtb09ubHkhISEhISE=");
     }
+
+    private static bool IsProductEnvKey(string key) =>
+        ProductEnvPrefixes.Any(prefix => key.StartsWith(prefix, StringComparison.Ordinal));
 
     private static string ExtractAppsProfileSection(string compose)
     {

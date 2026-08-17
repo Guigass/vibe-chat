@@ -9,15 +9,18 @@ const baseSettings: SensitiveSettings = {
   workspaceId: 'ws-1',
   ai: {
     processEnabled: true,
-    processSource: 'env',
+    processSource: 'database',
     workspaceEnabled: true,
     provider: 'Mock',
+    openRouterBaseUrl: 'https://openrouter.ai/api/v1',
     apiKeyConfigured: true,
     apiKeyMask: '••••ey99',
     apiKeySource: 'env',
     secretsWritable: true,
   },
   email: {
+    processEnabled: false,
+    processSource: 'database',
     enabled: false,
     source: 'env',
     smtpHost: 'smtp.example.test',
@@ -42,18 +45,30 @@ const baseSettings: SensitiveSettings = {
   },
   retention: {
     processEnabled: true,
-    processSource: 'env',
+    processSource: 'database',
     enabled: false,
     retentionDays: 90,
     defaultRetentionDays: 90,
+    batchSize: 500,
+    intervalMinutes: 60,
     message: 'off',
   },
   linkPreview: {
     processEnabled: true,
-    processSource: 'env',
+    processSource: 'database',
     enabled: true,
     timeoutMs: 4000,
     message: 'Worker busca Open Graph da primeira URL (guarda SSRF).',
+  },
+  push: {
+    processEnabled: true,
+    processSource: 'database',
+    vapidPublicKey: 'Bpublic',
+    vapidConfigured: true,
+    vapidMask: '••••key1',
+    vapidSource: 'database',
+    vapidSubject: 'mailto:ops@localhost',
+    secretsWritable: true,
   },
   files: {
     source: 'env',
@@ -90,6 +105,7 @@ describe('AdminSettingsPage', () => {
     rotateAdminOpenRouterCredential: ReturnType<typeof vi.fn>;
     rotateAdminSmtpCredential: ReturnType<typeof vi.fn>;
     rotateAdminWebhookCredential: ReturnType<typeof vi.fn>;
+    rotateAdminVapidCredential: ReturnType<typeof vi.fn>;
     reencryptAdminSettings: ReturnType<typeof vi.fn>;
     downloadWorkspaceExport: ReturnType<typeof vi.fn>;
   };
@@ -106,6 +122,12 @@ describe('AdminSettingsPage', () => {
       }),
       rotateAdminSmtpCredential: vi.fn(),
       rotateAdminWebhookCredential: vi.fn(),
+      rotateAdminVapidCredential: vi.fn().mockResolvedValue({
+        configured: true,
+        mask: '••••key1',
+        keyVersion: 1,
+        rotatedAt: new Date().toISOString(),
+      }),
       reencryptAdminSettings: vi.fn(),
       downloadWorkspaceExport: vi.fn(),
     };
@@ -136,7 +158,8 @@ describe('AdminSettingsPage', () => {
     expect(host.textContent).not.toContain('sk-test');
     expect(host.textContent).toContain('Salvar configurações');
     expect(host.textContent).toContain('Substituir chave');
-    expect(host.textContent).toContain('Integrações');
+    expect(host.textContent).toContain('Kill switch da instância (IA)');
+    expect(host.textContent).toContain('Web Push / VAPID');
   });
 
   it('saves non-secret settings and keeps credential inputs separate', async () => {
@@ -149,7 +172,15 @@ describe('AdminSettingsPage', () => {
     expect(api.updateAdminSensitiveSettings).toHaveBeenCalledWith(
       expect.objectContaining({
         workspaceId: 'ws-1',
-        ai: expect.objectContaining({ provider: 'Mock' }),
+        ai: expect.objectContaining({
+          provider: 'Mock',
+          processEnabled: true,
+          openRouterBaseUrl: 'https://openrouter.ai/api/v1',
+        }),
+        email: expect.objectContaining({ processEnabled: false }),
+        retention: expect.objectContaining({ processEnabled: true }),
+        linkPreview: expect.objectContaining({ processEnabled: true }),
+        push: expect.objectContaining({ processEnabled: true }),
         webhooks: expect.not.objectContaining({ secret: expect.anything() }),
       }),
     );
@@ -171,6 +202,27 @@ describe('AdminSettingsPage', () => {
     });
     expect(input.value).toBe('');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('••••ey88');
+  });
+
+  it('rotates vapid keys from the push form', async () => {
+    const form = (fixture.nativeElement as HTMLElement).querySelector(
+      '#admin-vapid-form',
+    ) as HTMLFormElement;
+    const publicInput = form.querySelector('input[name="publicKey"]') as HTMLInputElement;
+    const privateInput = form.querySelector('input[name="privateKey"]') as HTMLInputElement;
+    publicInput.value = 'Bpublic-rotated';
+    privateInput.value = 'private-rotated-key';
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.rotateAdminVapidCredential).toHaveBeenCalledWith({
+      workspaceId: 'ws-1',
+      publicKey: 'Bpublic-rotated',
+      privateKey: 'private-rotated-key',
+      subject: 'mailto:ops@localhost',
+    });
+    expect(privateInput.value).toBe('');
   });
 
   it('surfaces 503 when encryption is unavailable', async () => {

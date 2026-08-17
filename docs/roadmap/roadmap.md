@@ -138,9 +138,9 @@ Fila explícita para a automação de Build depois da Wave 6. Enquanto houver li
 **W7-8 (admin shell) Done**. **W7-9 / B-165 Done** (versão do cliente web /
 cache PWA; fecha UX-007). **W7-10 / B-174 Done**. **W7-11 / B-175 Done** (matriz
 authZ + gaps admin/typing). **W7-12 / B-176 Done** (fonte de verdade de roles —
-DB vs Keycloak). **W7-13 / B-177 Done** (DevAuth fail-closed). Resta **W7-14 / B-187**
+DB vs Keycloak). **W7-13 / B-177 Done** (DevAuth fail-closed). **W7-14 / B-187 Done**
 (instalação configurável no admin: SMTP/IA/webhook/retenção na UI; infra no env).
-Sustentação authZ completa; B-187 é o próximo item elegível da Wave 7.
+Sustentação Wave 7 completa; próximo elegível: W10-2 / B-096.
 
 | ID | Trilha | Tarefa | Deps | Spec/evidência | Status |
 |----|--------|--------|------|----------------|--------|
@@ -157,7 +157,7 @@ Sustentação authZ completa; B-187 é o próximo item elegível da Wave 7.
 | W7-11 | E | Auditoria authZ: matriz endpoint × membership/permission + gaps (B-175) | B-174 (recomendado) | [B-175](../product/specs/B-175-auditoria-cobertura-authz.md); [authz-matriz](../security/authz-matriz.md) | **Done** |
 | W7-12 | G/B | Documentar fonte de verdade de roles — DB vs Keycloak (B-176) | B-002, P2-1 | [B-176](../product/specs/B-176-fonte-verdade-roles.md) | **Done** |
 | W7-13 | B/E | DevAuth fail-closed — sem fallback silencioso para demo (B-177) | W1-1 | [B-177](../product/specs/B-177-devauth-fail-closed.md) | **Done** |
-| W7-14 | A/G | Instalação configurável no admin — integração no DB; infra permanece no env (B-187) | W7-7, B-069 | [B-187](../product/specs/B-187-env-enxuto.md) | Planned |
+| W7-14 | A/G | Instalação configurável no admin — integração no DB; infra permanece no env (B-187) | W7-7, B-069 | [B-187](../product/specs/B-187-env-enxuto.md) | **Done** |
 
 Revisão de authZ da API (2026-08-12): W7-10…W7-13 registram endurecimento após
 auditoria de permissões — filtro centralizado, cobertura de endpoints, docs de

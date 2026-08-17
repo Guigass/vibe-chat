@@ -129,21 +129,21 @@ produção. Defaults seguros: IA/e-mail/retenção/push **off**; link preview
 
 ## Aceite
 
-- [ ] Lab: keyring demo válido; overrides só com chave válida;
+- [x] Lab: keyring demo válido; overrides só com chave válida;
       `CHANGE_ME` / vazio → off.
-- [ ] Instalação nova configura **todo o produto** em `/admin/settings`
+- [x] Instalação nova configura **todo o produto** em `/admin/settings`
       (SMTP, OpenRouter key+baseUrl, webhook, retenção, Files, RateLimit,
       link preview, VAPID, cinco kill switches) **sem** essas vars no `.env`.
-- [ ] `.env.example` **só** infra: data plane, OIDC, URLs, portas, pins,
+- [x] `.env.example` **só** infra: data plane, OIDC, URLs, portas, pins,
       seed/bootstrap, OTel/proxy, keyring, flag de overrides.
-- [ ] `.env.example` **não** lista `EMAIL__*`, `SMTP_*`, `AI__*`,
+- [x] `.env.example` **não** lista `EMAIL__*`, `SMTP_*`, `AI__*`,
       `OPENROUTER_*`, `MessageRetention__*`, `LinkPreview__*`, `Push__*`.
-- [ ] Com overrides on, PUT/rotate persistem; GET devolve fonte `database`;
+- [x] Com overrides on, PUT/rotate persistem; GET devolve fonte `database`;
       worker/API honram o valor.
-- [ ] Flag off: consumidores usam default de código (não exigem env de produto).
-- [ ] Catálogo e guia: produto na UI; infra no env.
-- [ ] `docker compose --env-file .env.example config --quiet` continua válido.
-- [ ] Sem secret real no template.
+- [x] Flag off: consumidores usam default de código (não exigem env de produto).
+- [x] Catálogo e guia: produto na UI; infra no env.
+- [x] `docker compose --env-file .env.example config --quiet` continua válido.
+- [x] Sem secret real no template.
 
 ## Testes
 

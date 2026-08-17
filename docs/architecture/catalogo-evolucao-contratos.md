@@ -12,7 +12,7 @@ follow-ups invisíveis.
 | Contrato implementado | `architecture/contratos.md` |
 | Modelo persistido | migrations + `modelo-dominio.md` |
 | Evento implementado | Contracts + outbox + `contratos.md` |
-| Configuração | `.env.example` (infra) + `operations/configuracao-env.md` (catálogo; B-105). Integração no admin: B-187 |
+| Configuração | `.env.example` (infra) + `operations/configuracao-env.md` (catálogo; B-105). Integração no admin: **B-187 Done** |
 | Flag | catálogo deste documento + configuração efetiva |
 | Permissão | RolePermissionCatalog + glossário/contratos |
 

@@ -10,19 +10,17 @@ using VibeChat.SharedKernel;
 
 namespace VibeChat.Infrastructure;
 
-public sealed class LinkPreviewSettingsResolver(IConfiguration configuration, VibeChatDbContext dbContext)
+public sealed class LinkPreviewSettingsResolver(
+    ProcessSettingsResolver processSettings,
+    VibeChatDbContext dbContext)
 {
-    public bool IsProcessEnabled() => configuration.GetValue("LinkPreview:Enabled", true);
-
-    public int TimeoutMs() =>
-        Math.Clamp(
-            configuration.GetValue("LinkPreview:TimeoutMs", LinkPreviewPolicies.DefaultTimeoutMs),
-            500,
-            15_000);
+    public async Task<EffectiveProcessSettings> ResolveProcessAsync(CancellationToken cancellationToken) =>
+        await processSettings.ResolveAsync(cancellationToken);
 
     public async Task<bool> IsEnabledForTenantAsync(TenantId tenantId, CancellationToken cancellationToken)
     {
-        if (!IsProcessEnabled())
+        var process = await processSettings.ResolveAsync(cancellationToken);
+        if (!process.LinkPreviewEnabled)
         {
             return false;
         }
@@ -122,7 +120,8 @@ public sealed class LinkPreviewGenerator(
         dbContext.MessageLinkPreviews.Add(junction);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var result = await fetcher.FetchAsync(url, settings.TimeoutMs(), cancellationToken);
+        var process = await settings.ResolveProcessAsync(cancellationToken);
+        var result = await fetcher.FetchAsync(url, process.LinkPreviewTimeoutMs, cancellationToken);
         preview.FetchedAt = clock.UtcNow;
         preview.ExpiresAt = preview.FetchedAt.AddDays(LinkPreviewPolicies.CacheTtlDays);
         preview.Status = result.Status;

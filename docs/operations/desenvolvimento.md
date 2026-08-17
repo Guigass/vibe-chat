@@ -50,7 +50,7 @@ Runbooks de operação (incidentes, TLS, backup drill, upgrade): [`runbooks/READ
 
 Catálogo auditado de variáveis, gaps de injeção e matriz env vs admin UI:
 [`configuracao-env.md`](./configuracao-env.md) (B-105). Integração configurável
-no admin: [B-187](../product/specs/B-187-env-enxuto.md) (Planned).
+no admin: [B-187](../product/specs/B-187-env-enxuto.md) (Done).
 
 ## Serviços locais
 

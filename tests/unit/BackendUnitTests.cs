@@ -726,32 +726,53 @@ public sealed class BackendUnitTests
     }
 
     [Fact]
-    public void Push_options_kill_switch_and_placeholder_keys_are_off()
+    public void Lab_demo_keyring_is_available_and_change_me_is_not()
     {
-        var off = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        var demo = new RuntimeSecretProtector(Options.Create(new RuntimeSettingsOptions
         {
-            ["Push:Enabled"] = "false",
-            ["Push:Vapid:PublicKey"] = "Bnotplaceholder",
-            ["Push:Vapid:PrivateKey"] = "notplaceholder"
-        }).Build();
-        PushOptions.IsEffectivelyEnabled(off).Should().BeFalse();
+            DatabaseOverridesEnabled = true,
+            Encryption = new RuntimeEncryptionOptions
+            {
+                ActiveKeyVersion = 1,
+                Keys = new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["1"] = ProcessSettingsDefaults.LabDemoKeyBase64
+                }
+            }
+        }));
+        demo.IsEncryptionAvailable.Should().BeTrue();
 
-        var placeholders = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        var changeMe = new RuntimeSecretProtector(Options.Create(new RuntimeSettingsOptions
         {
-            ["Push:Enabled"] = "true",
-            ["Push:Vapid:PublicKey"] = "CHANGE_ME",
-            ["Push:Vapid:PrivateKey"] = "CHANGE_ME"
-        }).Build();
-        PushOptions.HasVapidKeys(placeholders).Should().BeFalse();
-        PushOptions.IsEffectivelyEnabled(placeholders).Should().BeFalse();
+            DatabaseOverridesEnabled = true,
+            Encryption = new RuntimeEncryptionOptions
+            {
+                ActiveKeyVersion = 1,
+                Keys = new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["1"] = "CHANGE_ME_base64_32_bytes"
+                }
+            }
+        }));
+        changeMe.IsEncryptionAvailable.Should().BeFalse();
+    }
 
-        var on = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["Push:Enabled"] = "true",
-            ["Push:Vapid:PublicKey"] = "Breal-public-key",
-            ["Push:Vapid:PrivateKey"] = "real-private-key"
-        }).Build();
-        PushOptions.IsEffectivelyEnabled(on).Should().BeTrue();
+    [Fact]
+    public void OpenRouter_base_url_rejects_http_and_private_hosts()
+    {
+        OpenRouterBaseUrlPolicies.IsValid("https://openrouter.ai/api/v1").Should().BeTrue();
+        OpenRouterBaseUrlPolicies.IsValid("http://openrouter.ai/api/v1").Should().BeFalse();
+        OpenRouterBaseUrlPolicies.IsValid("https://127.0.0.1/api").Should().BeFalse();
+        OpenRouterBaseUrlPolicies.IsValid("https://10.0.0.8/api").Should().BeFalse();
+        OpenRouterBaseUrlPolicies.IsValid("https://localhost/api").Should().BeFalse();
+        OpenRouterBaseUrlPolicies.IsValid("not-a-url").Should().BeFalse();
+    }
+
+    [Fact]
+    public void Secret_masking_treats_change_me_vapid_as_unconfigured()
+    {
+        SecretMasking.IsConfigured("CHANGE_ME").Should().BeFalse();
+        SecretMasking.IsConfigured("Breal-public-key").Should().BeTrue();
     }
 
     [Fact]

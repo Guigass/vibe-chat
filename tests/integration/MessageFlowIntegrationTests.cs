@@ -4,6 +4,7 @@ using System.Text.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using VibeChat.Administration;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
@@ -1418,6 +1419,137 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Admin_can_persist_process_flags_and_rotate_vapid()
+    {
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+        var vapid = VapidKeyGenerator.Create();
+
+        var put = await demo.PutAsJsonAsync(
+            "/api/v1/admin/settings",
+            new
+            {
+                workspaceId,
+                ai = new
+                {
+                    processEnabled = true,
+                    openRouterBaseUrl = "https://openrouter.ai/api/v1"
+                },
+                email = new { processEnabled = false },
+                retention = new { processEnabled = true, batchSize = 250 },
+                linkPreview = new { processEnabled = true, timeoutMs = 6000 },
+                push = new { processEnabled = true }
+            });
+        put.StatusCode.Should().Be(HttpStatusCode.OK);
+        var settings = await put.Content.ReadFromJsonAsync<SensitiveSettingsDto>(JsonOptions);
+        settings!.Ai.ProcessEnabled.Should().BeTrue();
+        settings.Ai.ProcessSource.Should().Be("database");
+        settings.Ai.OpenRouterBaseUrl.Should().Be("https://openrouter.ai/api/v1");
+        settings.Retention.ProcessEnabled.Should().BeTrue();
+        settings.Retention.BatchSize.Should().Be(250);
+        settings.LinkPreview.TimeoutMs.Should().Be(6000);
+        settings.Push.ProcessEnabled.Should().BeTrue();
+
+        var rejected = await demo.PutAsJsonAsync(
+            "/api/v1/admin/settings",
+            new { workspaceId, ai = new { openRouterBaseUrl = "http://127.0.0.1/v1" } });
+        rejected.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var rotate = await demo.PostAsJsonAsync(
+            "/api/v1/admin/settings/credentials/vapid/rotate",
+            new
+            {
+                workspaceId,
+                publicKey = vapid.PublicKey,
+                privateKey = vapid.PrivateKey,
+                subject = "mailto:ops@localhost"
+            });
+        rotate.StatusCode.Should().Be(HttpStatusCode.OK);
+        var rotated = await rotate.Content.ReadFromJsonAsync<CredentialRotateDto>(JsonOptions);
+        rotated!.Configured.Should().BeTrue();
+        (await rotate.Content.ReadAsStringAsync()).Should().NotContain(vapid.PrivateKey);
+
+        var get = await demo.GetAsync($"/api/v1/admin/settings?workspaceId={workspaceId}");
+        var after = await get.Content.ReadFromJsonAsync<SensitiveSettingsDto>(JsonOptions);
+        after!.Push.VapidConfigured.Should().BeTrue();
+        after.Push.VapidSource.Should().Be("database");
+        after.Push.VapidPublicKey.Should().Be(vapid.PublicKey);
+
+        await using (var db = factory.CreateMigratorDbContext())
+        {
+            var row = await db.ProcessSettings.SingleAsync(x => x.Id == ProcessSettings.SingletonId);
+            row.RetentionBatchSize = 500;
+            row.LinkPreviewTimeoutMs = 8000;
+            row.VapidPublicKey = string.Empty;
+            row.VapidPrivateKey.Clear();
+            await db.SaveChangesAsync();
+        }
+
+        factory.Services.GetRequiredService<IRuntimeSettingsCacheInvalidator>().InvalidateProcess();
+    }
+
+    [Fact]
+    public async Task Process_settings_without_row_use_code_defaults()
+    {
+        using (factory.CreateClient())
+        {
+        }
+
+        await using (var db = factory.CreateMigratorDbContext())
+        {
+            var row = await db.ProcessSettings.SingleOrDefaultAsync(x => x.Id == ProcessSettings.SingletonId);
+            if (row is not null)
+            {
+                db.ProcessSettings.Remove(row);
+                await db.SaveChangesAsync();
+            }
+        }
+
+        factory.Services.GetRequiredService<IRuntimeSettingsCacheInvalidator>().InvalidateProcess();
+
+        try
+        {
+            using var demo = factory.CreateClient();
+            demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+            var get = await demo.GetAsync(
+                $"/api/v1/admin/settings?workspaceId={SeedData.DemoWorkspaceId.Value}");
+            get.StatusCode.Should().Be(HttpStatusCode.OK);
+            var settings = await get.Content.ReadFromJsonAsync<SensitiveSettingsDto>(JsonOptions);
+            settings!.Ai.ProcessEnabled.Should().BeFalse();
+            settings.Ai.ProcessSource.Should().Be("default");
+            settings.Retention.ProcessEnabled.Should().BeFalse();
+            settings.LinkPreview.ProcessEnabled.Should().BeTrue();
+            settings.Push.ProcessEnabled.Should().BeFalse();
+        }
+        finally
+        {
+            await using var db = factory.CreateMigratorDbContext();
+            if (!await db.ProcessSettings.AnyAsync(x => x.Id == ProcessSettings.SingletonId))
+            {
+                db.ProcessSettings.Add(new ProcessSettings
+                {
+                    Id = ProcessSettings.SingletonId,
+                    AiEnabled = true,
+                    MessageRetentionEnabled = true,
+                    PushEnabled = true,
+                    LinkPreviewEnabled = true,
+                    OpenRouterBaseUrl = ProcessSettingsDefaults.OpenRouterBaseUrl,
+                    RetentionDefaultDays = ProcessSettingsDefaults.RetentionDefaultDays,
+                    RetentionBatchSize = ProcessSettingsDefaults.RetentionBatchSize,
+                    RetentionIntervalMinutes = ProcessSettingsDefaults.RetentionIntervalMinutes,
+                    LinkPreviewTimeoutMs = ProcessSettingsDefaults.LinkPreviewTimeoutMs,
+                    VapidSubject = ProcessSettingsDefaults.VapidSubject,
+                    UpdatedAt = DateTimeOffset.UtcNow
+                });
+                await db.SaveChangesAsync();
+            }
+
+            factory.Services.GetRequiredService<IRuntimeSettingsCacheInvalidator>().InvalidateProcess();
+        }
+    }
+
+    [Fact]
     public async Task Admin_can_configure_message_retention_and_purge_soft_deletes()
     {
         using var demo = factory.CreateClient();
@@ -2346,6 +2478,8 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         EmailSensitiveSettingsDto Email,
         WebhooksSensitiveSettingsDto Webhooks,
         RetentionSensitiveSettingsDto Retention,
+        LinkPreviewSettingsDto LinkPreview,
+        PushSettingsDto Push,
         FilesSettingsDto Files,
         RateLimitSettingsDto RateLimit,
         EncryptionSettingsDto Encryption);
@@ -2354,6 +2488,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         string ProcessSource,
         bool WorkspaceEnabled,
         string Provider,
+        string? OpenRouterBaseUrl,
         bool ApiKeyConfigured,
         string? ApiKeyMask,
         string? ApiKeySource,
@@ -2386,7 +2521,23 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         bool Enabled,
         int RetentionDays,
         int DefaultRetentionDays,
+        int BatchSize,
+        int IntervalMinutes,
         string Message);
+    private sealed record LinkPreviewSettingsDto(
+        bool ProcessEnabled,
+        string ProcessSource,
+        bool Enabled,
+        int TimeoutMs,
+        string Message);
+    private sealed record PushSettingsDto(
+        bool ProcessEnabled,
+        string ProcessSource,
+        string? VapidPublicKey,
+        bool VapidConfigured,
+        string? VapidMask,
+        string? VapidSource,
+        bool SecretsWritable);
     private sealed record FilesSettingsDto(
         string Source,
         long MaxSizeBytes,

@@ -24,4 +24,5 @@ public static class RuntimeSecretKinds
     public const string OpenRouterApiKey = "openrouter-api-key";
     public const string SmtpPassword = "smtp-password";
     public const string WebhookSigningSecret = "webhook-signing-secret";
+    public const string VapidPrivateKey = "vapid-private-key";
 }

@@ -3,10 +3,10 @@
 Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
-- **Data de corte:** 2026-08-13
-- **Fase:** Wave 7 — W7-14 / B-187 (instalação configurável no admin); depois Wave 10
+- **Data de corte:** 2026-08-17
+- **Fase:** Wave 10 — W10-2 / B-096 (enquetes); Wave 7 sustentação Done
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
-- **Próximo item elegível:** W7-14 / B-187 (instalação configurável no admin); em seguida W10-2 / B-096
+- **Próximo item elegível:** W10-2 / B-096 (enquetes)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -24,9 +24,8 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
-2. W7-14 / B-187 (SMTP/IA/webhook/retenção no `/admin`; infra permanece no env);
-3. avançar Wave 10 (W10-1 / B-095 Done; seguinte W10-2 / B-096);
-4. consumir o roadmap autorizado W11–W19 (Wave 19 = organização do código,
+2. avançar Wave 10 (W10-1 / B-095 Done; seguinte W10-2 / B-096);
+3. consumir o roadmap autorizado W11–W19 (Wave 19 = organização do código,
    recomendada antes de W11).
 
 ## Runtime e fronteiras
@@ -80,8 +79,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W7-14 / B-187 | Única linha `Planned` na Wave 7; integração no admin/DB; **não** limpar infra do `.env` |
-| 2 | W10-2 / B-096 | W10-1 / B-095 Done; enquetes sem dependência extra |
+| 1 | W10-2 / B-096 | W10-1 / B-095 Done; enquetes sem dependência extra |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
@@ -89,7 +87,7 @@ W7-10 / B-174 **Done** (filtro `RequirePermission` na API Minimal).
 W7-11 / B-175 **Done** (matriz authZ + gaps admin/typing).
 W7-12 / B-176 **Done** (fonte de verdade de roles — DB vs Keycloak).
 W7-13 / B-177 **Done** (DevAuth fail-closed).
-W7-14 / B-187 **Planned** (instalação configurável no admin; catálogo permanece em
+W7-14 / B-187 **Done** (instalação configurável no admin; catálogo permanece em
 `configuracao-env.md`; D-04/ADR-020 intactos — infra no env).
 W8-9 / B-087 **Done** (slash commands + discovery + topic).
 W10-1 / B-095 **Done** (Web Push VAPID, opt-in, outbox/worker, kill switch off default).
@@ -100,8 +98,7 @@ imediata: o Build só consome W11+ depois de W7–W10 `Done`.
 
 ## Baseline de planejamento
 
-- 95 itens `Planned` entre W7–W19 (B-187/W7-14 — instalação configurável no admin;
-  B-186/W10-15 — membros do canal; B-178…B-183
+- 94 itens `Planned` entre W8–W19 (B-186/W10-15 — membros do canal; B-178…B-183
   catalogados em W19 — organização do código; B-104/W7-6 Done via #82;
   B-076/W7-3 Done via #84; B-165/W7-9 Done 2026-08-10; B-088/W9-1 Done;
   B-171/W9-9 Done via #129; B-173/W9-10 Done; B-177/W7-13 Done;
@@ -127,7 +124,7 @@ imediata: o Build só consome W11+ depois de W7–W10 `Done`.
 | Gap | Situação em 2026-07-27 | Tratamento |
 |-----|-------------------------|------------|
 | `.env.example` contém chaves não injetadas pelo `compose.yaml` | **Fechado** (B-105) — EMAIL__* no api; retenção no worker; aliases documentados | B-105 Done |
-| `.env.example` mistura infra com detalhe de integração (SMTP/IA) | **Aberto** — B-187: levar integração ao `/admin` + DB (keyring válido); **manter** pins/portas/infra no template | B-187 Planned |
+| `.env.example` mistura infra com detalhe de integração (SMTP/IA) | **Fechado** — B-187: integração no `/admin` + DB; pins/portas/infra no template | B-187 Done |
 | CSP ausente no proxy/web | **Fechado** — `infra/nginx/security-headers.conf` (B-077) | B-077 Done |
 | Limite de mensagem só no banco | Registrado no roadmap | B-078 |
 | Dependências sem bot de atualização | **Fechado** (#84) — Dependabot ativo; triagem em `dependencias.md` | B-076 Done |

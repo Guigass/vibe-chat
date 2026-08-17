@@ -77,7 +77,7 @@ continuam no admin (B-069 / ADR-020).
 | Tema | Entregáveis | Status |
 |------|-------------|--------|
 | Inventário | Todas as variáveis de Compose + API + Worker + Web catalogadas | **Done** (W7-7 / B-105) |
-| Contrato `.env` | `.env.example` alinhado ao `compose.yaml`; catálogo em `configuracao-env.md` | **Done** (B-105); integração no admin = **B-187** Planned |
+| Contrato `.env` | `.env.example` alinhado ao `compose.yaml`; catálogo em `configuracao-env.md` | **Done** (B-105); integração no admin = **B-187 Done** |
 | Matriz env vs admin | Infra (env) vs política por workspace (`/admin/settings`) | **Done** — `docs/operations/configuracao-env.md` |
 | Gaps | `Files`, `RateLimit`, `Cors`, etc. expostos ou documentados como fixos | **Done** (B-105) |
 | Ops | `operacao.md` + runbooks referenciam o catálogo | **Done** |
