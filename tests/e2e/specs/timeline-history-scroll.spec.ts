@@ -24,6 +24,7 @@ test.describe(`timeline history scroll (${AUTH_MODE})`, () => {
       el.prepend(filler);
       el.scrollTop = 0;
     });
+    await bob.page.locator('.timeline').dispatchEvent('scroll');
 
     const topBefore = await bob.page.locator('.timeline').evaluate((el) => el.scrollTop);
     expect(topBefore).toBeLessThan(80);

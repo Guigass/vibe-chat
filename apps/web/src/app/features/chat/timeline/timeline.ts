@@ -472,6 +472,11 @@ export class Timeline {
       // Latch before microtask: after DOM growth, remasuring distance falsely
       // reports "away" even when the user was stuck at the bottom (BUG-018).
       const stick = shouldStickTimelineToBottom(ownArrival, this.nearBottom());
+      // Drop the bottom pin before the list grows — ResizeObserver can fire
+      // synchronously on append and would drag readers in history (B-088).
+      if (!stick) {
+        this.stickyBottomPin.setPinned(false);
+      }
 
       queueMicrotask(() => {
         if (this.isScrollRequestForChannel(this.messages.scrollRequest(), channelId)) return;
