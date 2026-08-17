@@ -16,17 +16,40 @@ test.describe(`timeline history scroll (${AUTH_MODE})`, () => {
     await selectChannelGeral(alice.page);
     await selectChannelGeral(bob.page);
 
-    await bob.page.locator('.timeline').evaluate((el) => {
-      const filler = document.createElement('div');
-      filler.dataset.e2eFiller = '1';
-      filler.style.cssText = 'flex:0 0 3000px;min-height:3000px;height:3000px;';
-      filler.setAttribute('aria-hidden', 'true');
-      el.prepend(filler);
-      el.scrollTop = 0;
+    const bobTimeline = bob.page.locator('.timeline');
+    await bob.page.addStyleTag({
+      content: `
+        .timeline__list::before {
+          content: '';
+          display: block;
+          flex: 0 0 3000px;
+          min-height: 3000px;
+          height: 3000px;
+        }
+      `,
     });
+    await bob.page.evaluate(
+      () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
+    );
+    // Real user input: wheel cancels TimelineScrollAnchorController (B-088); scroll
+    // releases nearBottom. Stay below NEAR_TOP (120) so we don't trigger load-older.
+    await bobTimeline.hover();
+    await bob.page.mouse.wheel(0, -1800);
+    await bobTimeline.evaluate((el) => {
+      const max = Math.max(0, el.scrollHeight - el.clientHeight);
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 400) {
+        el.scrollTop = max > 800 ? 400 : 0;
+      }
+    });
+    await bobTimeline.dispatchEvent('wheel', { deltaY: -400 });
+    await bobTimeline.dispatchEvent('scroll');
 
-    const topBefore = await bob.page.locator('.timeline').evaluate((el) => el.scrollTop);
-    expect(topBefore).toBeLessThan(80);
+    await expect
+      .poll(() =>
+        bobTimeline.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight),
+      )
+      .toBeGreaterThan(400);
+    await expect(bob.page.getByTestId('timeline-jump')).toBeVisible();
 
     const composer = alice.page.locator('textarea').first();
     await expect(composer).toBeVisible();
@@ -36,8 +59,10 @@ test.describe(`timeline history scroll (${AUTH_MODE})`, () => {
     await expect(alice.page.getByText(uniqueBody)).toBeVisible({ timeout: 15_000 });
     await expect(bob.page.getByText(uniqueBody)).toBeVisible({ timeout: 30_000 });
 
-    const topAfter = await bob.page.locator('.timeline').evaluate((el) => el.scrollTop);
-    expect(topAfter).toBeLessThan(120);
+    const distanceAfter = await bobTimeline.evaluate(
+      (el) => el.scrollHeight - el.scrollTop - el.clientHeight,
+    );
+    expect(distanceAfter).toBeGreaterThan(400);
 
     await expect(bob.page.getByTestId('timeline-jump')).toBeVisible();
     await expect(bob.page.getByTestId('timeline-jump')).toContainText(/Ir para a mais recente/i);

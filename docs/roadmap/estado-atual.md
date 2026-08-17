@@ -3,9 +3,9 @@
 Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
-- **Data de corte:** 2026-08-13
+- **Data de corte:** 2026-08-17
 - **Fase:** Wave 7 — W7-14 / B-187 (instalação configurável no admin); depois Wave 10
-- **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
+- **Safety lane obrigatória:** OPS-E2E-NAV Resolved; sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
 - **Próximo item elegível:** W7-14 / B-187 (instalação configurável no admin); em seguida W10-2 / B-096
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
@@ -23,7 +23,7 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 
 O trabalho aberto concentra-se em:
 
-1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
+1. safety lane Critical/Alta esvaziada (OPS-E2E-NAV Resolved; BUG-006 Done; BUG-002 aliviado, fecha em B-094);
 2. W7-14 / B-187 (SMTP/IA/webhook/retenção no `/admin`; infra permanece no env);
 3. avançar Wave 10 (W10-1 / B-095 Done; seguinte W10-2 / B-096);
 4. consumir o roadmap autorizado W11–W19 (Wave 19 = organização do código,
@@ -118,7 +118,7 @@ imediata: o Build só consome W11+ depois de W7–W10 `Done`.
   DOC-016…DOC-021;
 - enforcement automático de DOC-006 ainda exige implementação na fase de código;
 - B-153/B-154 adicionam migração/importação e diagnóstico seguro à Wave 11;
-- safety lane Alta vazia (BUG-006 Done); BUG-002 aliviado para Média
+- safety lane Alta vazia (OPS-E2E-NAV Resolved; BUG-006 Done); BUG-002 aliviado para Média
   (fecha em B-094);
 - três ações R4 do GitHub permanecem em `operational-findings.md`.
 

@@ -110,10 +110,22 @@ export async function openUserSession(
   return { context, page };
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export async function selectChannelGeral(page: Page): Promise<void> {
-  const channel = page.getByText(/^#?\s*geral$/i).first();
-  if (await channel.isVisible().catch(() => false)) {
-    await channel.click().catch(() => undefined);
-  }
-  await page.getByRole('heading', { name: /geral/i }).waitFor({ state: 'visible', timeout: 20_000 });
+  const channel = page.getByRole('button', { name: /^(#\s*)?geral\b/i }).first();
+  await channel.click();
+  await page.getByRole('heading', { name: /#?\s*geral/i }).waitFor({ state: 'visible', timeout: 20_000 });
+}
+
+/** B-184: member buttons use aria-label "Mensagem para {displayName}". */
+export async function openDirectMessage(page: Page, displayName: string): Promise<void> {
+  const escaped = escapeRegExp(displayName);
+  const button = page.getByRole('button', { name: new RegExp(`Mensagem para ${escaped}`, 'i') }).first();
+  await button.click();
+  await page
+    .getByRole('heading', { name: new RegExp(escaped, 'i') })
+    .waitFor({ state: 'visible', timeout: 20_000 });
 }

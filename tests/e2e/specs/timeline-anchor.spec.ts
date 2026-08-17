@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
   AUTH_MODE,
+  openDirectMessage,
   openUserSession,
   selectChannelGeral,
 } from "../helpers/auth";
@@ -57,14 +58,10 @@ test.describe(`stable timeline anchoring (${AUTH_MODE})`, () => {
     const { page } = session;
     await selectChannelGeral(page);
 
-    const directMessage = page.getByRole("button", { name: /^Bob$/i }).first();
-    await expect(directMessage).toBeVisible();
-    await directMessage.click();
-    await expect(page.getByRole("heading", { name: /Bob/i })).toBeVisible();
+    await openDirectMessage(page, "Bob");
     await page.addStyleTag({ content: tallTimelineCss });
 
-    await page.getByRole("button", { name: /^geral$/i }).click();
-    await expect(page.getByRole("heading", { name: /geral/i })).toBeVisible();
+    await selectChannelGeral(page);
     await expect
       .poll(() =>
         page

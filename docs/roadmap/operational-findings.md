@@ -24,13 +24,13 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-DOC-CHECKER | Integridade documental | Contrato e baseline DOC-006 existem, mas a CI ainda não executa checker offline | Medium | Open | Implementar as regras de `qualidade-documental.md` sem alterar prioridade das waves |
 | OPS-PR-DRAFT | Tooling de PR | `open_git_pr` pode criar draft | Medium | Mitigated | Prompts convertem imediatamente para ready; monitorar |
 | OPS-DOCS-RACE | Corrida Docs | Merges #72+#73 (~20s) abriram Docs #76+#77; #77 foi re-draftado e ficou CONFLICTING | High | External action | Colar prompts 03/06 atualizados no dashboard (repo já em #78) |
-| OPS-E2E-NAV | CI / E2E | `main` vermelho desde #131 (B-184): `timeline-anchor.spec.ts` (botão Bob ausente) + `timeline-history-scroll.spec.ts` (scrollTop ~3200 vs &lt;120) | Critical | Open | Build: alinhar specs E2E à nav compacta B-184 ou restaurar comportamento de scroll |
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
 
 ## Resolvidos
 
 | ID | Categoria | Evidência | Severidade | Status | Resolução |
 |----|-----------|-----------|------------|--------|----------|
+| OPS-E2E-NAV | CI / E2E | Specs alinhadas à nav B-184 (`openDirectMessage`) + latch B-088 (wheel/scroll + `timeline-jump`) | Critical | Resolved | Helper `Mensagem para {nome}`; history-scroll desarma o latch antes do envio |
 | SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 + #73 — roles/FORCE + SET LOCAL na txn + validação de role app |
 
 ## Formato de detalhe
@@ -72,7 +72,10 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 ### OPS-E2E-NAV
 
-- Status: **Open** — regressão pós-#131 (B-184 nav esquerda compacta).
+- Status: **Resolved** — specs E2E alinhadas à nav B-184 e ao contrato B-088
+  (helper `openDirectMessage` por `aria-label` “Mensagem para {nome}”;
+  `timeline-history-scroll` dispara wheel/scroll e espera `timeline-jump`
+  antes do envio remoto). Próximo elegível: W7-14 / B-187.
 - Observado em: CI `E2E (Playwright)` —
   [`timeline-anchor.spec.ts`](../../tests/e2e/specs/timeline-anchor.spec.ts) linha 61
   (`getByRole('button', { name: /^Bob$/i })` não encontrado) e
@@ -91,7 +94,9 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   receber mensagem (B-088).
 - Resultado esperado: DM acessível na nova nav; leitor em histórico não é
   arrastado; E2E passa em ambas as specs.
-- Resultado atual: `main` vermelho; Build & test / gitleaks / dep-audit verdes.
+- Resultado atual: specs alinhadas; `timeline-anchor` (DM Bob) e
+  `timeline-history-scroll` passam com DevAuth. Critério 1 (CI `main` verde
+  em ≥2 runs) confirma no merge.
 - Impacto: bloqueia auto-merge e viola invariante “main verde”.
 - Risk class: R1 (teste/UI); severidade Critical por bloqueio de pipeline.
 - Owner automático: Build + QA.
