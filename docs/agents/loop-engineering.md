@@ -3,7 +3,8 @@
 Contrato de desenho do sistema que seleciona, executa, verifica e encerra o
 trabalho dos agentes. Complementa [`autonomia.md`](autonomia.md) e
 [`operacao-24x7.md`](operacao-24x7.md); não altera decisões de produto, classes
-de risco nem os gates de segurança.
+de risco nem os gates de segurança. Índice de prompts, regras e consumidores:
+[`docs/specs/README.md`](../specs/README.md).
 
 ## Objetivo
 

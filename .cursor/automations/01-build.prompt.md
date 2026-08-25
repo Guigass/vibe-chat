@@ -48,9 +48,15 @@ audit suspicion into code. Lower-severity findings do not overtake roadmap work.
 
 ## Step B — Prefer the next eligible roadmap item
 
-Scan in order: W0 → W1 → W2 → W3 → W4 → W5 → W6 → W7 → W8 → W9
-→ W10 in `roadmap.md`, then W11 → W12 → W13 → W14 → W15 → W16 → W17
-in `horizonte-ambicioso.md`.
+Scan in order — same as [`operacao-24x7.md`](../../docs/agents/operacao-24x7.md)
+§ Seleção:
+
+1. W0 → W1 → … → W10 in `roadmap.md`;
+2. **Wave 19** (W19-1…W19-6) in `horizonte-ambicioso.md` — recommended before W11;
+3. W11 → W12 → … → W18 in `horizonte-ambicioso.md`.
+
+Within each wave, pick the first eligible row in table order. W7-6 (B-104) precedes
+W7-3…W7-5 by design.
 
 Eligible when:
 
