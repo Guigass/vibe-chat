@@ -4,6 +4,7 @@ using System.Text.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using VibeChat.Administration;
 using VibeChat.Infrastructure;
 using VibeChat.Messaging;
 using VibeChat.Notifications;
@@ -51,17 +52,36 @@ public sealed class PushNotificationIntegrationTests(VibeChatApiFactory factory)
     [Fact]
     public async Task Kill_switch_returns_enabled_false_without_error()
     {
-        await using var disabled = factory.WithWebHostBuilder(builder =>
-            builder.UseSetting("Push:Enabled", "false"));
-        using var client = disabled.CreateClient();
+        using var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
 
-        var response = await client.GetAsync("/api/v1/notifications/push/public-key");
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var key = await response.Content.ReadFromJsonAsync<PushPublicKeyDto>(JsonOptions);
-        key.Should().NotBeNull();
-        key!.Enabled.Should().BeFalse();
-        key.PublicKey.Should().BeNull();
+        // B-187: push kill switch is process_settings.PushEnabled, not Push:Enabled env.
+        await using (var db = factory.CreateMigratorDbContext())
+        {
+            var row = await db.ProcessSettings.SingleAsync(x => x.Id == ProcessSettings.SingletonId);
+            row.PushEnabled = false;
+            await db.SaveChangesAsync();
+        }
+
+        factory.Services.GetRequiredService<IRuntimeSettingsCacheInvalidator>().InvalidateProcess();
+
+        try
+        {
+            var response = await client.GetAsync("/api/v1/notifications/push/public-key");
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var key = await response.Content.ReadFromJsonAsync<PushPublicKeyDto>(JsonOptions);
+            key.Should().NotBeNull();
+            key!.Enabled.Should().BeFalse();
+            key.PublicKey.Should().BeNull();
+        }
+        finally
+        {
+            await using var db = factory.CreateMigratorDbContext();
+            var row = await db.ProcessSettings.SingleAsync(x => x.Id == ProcessSettings.SingletonId);
+            row.PushEnabled = true;
+            await db.SaveChangesAsync();
+            factory.Services.GetRequiredService<IRuntimeSettingsCacheInvalidator>().InvalidateProcess();
+        }
     }
 
     [Fact]

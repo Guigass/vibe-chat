@@ -15,6 +15,7 @@ paths = [
   '''^compose\.override\.yaml$''',
   '''^apps/api/appsettings\.Development\.json$''',
   '''^apps/worker/appsettings\.Development\.json$''',
+  '''^modules/Administration/ProcessSettings\.cs$''',
   '''^tests/''',
   '''^\.github/''',
 ]
