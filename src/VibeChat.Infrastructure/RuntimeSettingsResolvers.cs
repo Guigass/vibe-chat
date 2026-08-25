@@ -409,7 +409,8 @@ public sealed class FilesSettingsResolver(
 public sealed class RateLimitSettingsResolver(
     VibeChatDbContext dbContext,
     IOptions<RuntimeSettingsOptions> runtimeOptions,
-    IMemoryCache cache)
+    IMemoryCache cache,
+    IConfiguration configuration)
 {
     private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(30);
 
@@ -438,9 +439,11 @@ public sealed class RateLimitSettingsResolver(
         EffectiveRateLimitSettings effective;
         if (row is null)
         {
+            var send = configuration.GetValue("RateLimit:SendPerMinute", RateLimitPolicies.DefaultSendPerMinute);
+            var hub = configuration.GetValue("RateLimit:HubPerMinute", RateLimitPolicies.DefaultHubPerMinute);
             effective = new EffectiveRateLimitSettings(
-                RateLimitPolicies.DefaultSendPerMinute,
-                RateLimitPolicies.DefaultHubPerMinute,
+                Math.Clamp(Math.Min(send, ceilingSend), RateLimitPolicies.MinPerMinute, RateLimitPolicies.MaxPerMinute),
+                Math.Clamp(Math.Min(hub, ceilingHub), RateLimitPolicies.MinPerMinute, RateLimitPolicies.MaxPerMinute),
                 ProcessSettingsDefaults.SourceDefault);
         }
         else
