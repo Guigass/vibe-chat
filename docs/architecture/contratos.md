@@ -604,7 +604,7 @@ body de mensagem.
 | `files.*` | Limites por tenant (`files.settings`); teto = código/`AttachmentPolicies`; gravável |
 | `rateLimit.sendPerMinute` / `hubPerMinute` | Limites por tenant; efetivo = `min(DB, teto de código)`; gravável |
 | `linkPreview.processEnabled` / `processSource` / `timeoutMs` | Processo + timeout (B-187); toggle tenant já gravável |
-| `push.processEnabled` / `processSource` | Kill switch de processo (`Push:Enabled`) — B-187 |
+| `push.processEnabled` / `processSource` | Kill switch de processo (`process_settings.PushEnabled`) — B-187 |
 | `push.vapidPublicKey` / `vapidConfigured` / `vapidMask` / `vapidSource` | Pública visível; privada só máscara; rotate dedicado |
 | `encryption.activeKeyVersion` / `credentialsUsingActiveKey` / `databaseOverridesEnabled` | Metadata do keyring (sem nomes de variáveis com valor) |
 
@@ -748,7 +748,7 @@ public interface IRateLimiter
 }
 ```
 
-Fase 1: Redis fixed-window (`INCR` + `EXPIRE`). Keys: `t:{tenantId}:rl:send:{userId}`, `t:{tenantId}:rl:hub:{userId}`. Aplicado em `POST .../messages` (429) e hub `JoinChannel`/`SendTyping`/`Heartbeat`/`SetAway` (`HubException`). Config efetiva: `min(tenant DB, RateLimit:* env)` (ADR-020). Sem Redis configurado: fail-open.
+Fase 1: Redis fixed-window (`INCR` + `EXPIRE`). Keys: `t:{tenantId}:rl:send:{userId}`, `t:{tenantId}:rl:hub:{userId}`. Aplicado em `POST .../messages` (429) e hub `JoinChannel`/`SendTyping`/`Heartbeat`/`SetAway` (`HubException`). Config efetiva (ADR-020): com row DB → `min(tenant DB, teto de código)`; sem row → `RateLimit:*` appsettings clamp ao teto de código; flag `DatabaseOverridesEnabled` off → defaults de código. Sem Redis configurado: fail-open.
 
 ---
 

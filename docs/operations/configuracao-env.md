@@ -172,7 +172,7 @@ do Keycloak como mecanismo de reset.
 | Seção appsettings | Chaves | Status |
 |-------------------|--------|--------|
 | `Files` | `MaxSizeBytes`, TTLs, `AllowedContentTypes`, `Audio:*` | Teto de **código** (`AttachmentPolicies`); override por tenant em `files.settings` (B-187) |
-| `RateLimit` | `SendPerMinute`, `HubPerMinute` | Teto de código; override por tenant |
+| `RateLimit` | `SendPerMinute`, `HubPerMinute` | Teto de código; override por tenant; sem row DB usa appsettings (clamp ao teto) — útil em hosts de teste |
 | `Cors` | `Origins` | Default em código; proxy TLS (profile `proxy`) cobre origem pública |
 | `Authentication` | `RequireHttpsMetadata` | `"false"` no Compose dev/self-host; produção com TLS usa proxy + issuer HTTPS |
 | `Minio` | `Endpoint`, `UseSsl` | Mapeado no Compose (`Minio__*`); rede interna `minio:9000`, público via `MINIO_ENDPOINT` |
