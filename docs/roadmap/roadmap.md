@@ -370,6 +370,7 @@ escreve aqui em vez de espalhar notas soltas pelas seções.
 | `GAP-signalr-groups` | C | Grupos SignalR `t:{tenantId}:c:{channelId}` e `t:{tenantId}` (presence) | #47 |
 | `GAP-redis-keys` | C | Keys de presence/typing/rate-limit com prefixo `t:{tenantId}:` | #49 |
 | `GAP-web-node-boot` | A | `BOOT_ONLY` / `task ux:stack` + `ensure_web_node` com piso Angular CLI (`^22.22.3 \|\| ^24.15 \|\| >=26`) | #61 |
+| `GAP-harness-catalog` | G | Índice canônico `docs/specs/README.md`; alinhamento perfis econômico vs 24/7; scan W19 antes de W11 no Build | #135 |
 
 ---
 

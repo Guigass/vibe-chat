@@ -18,7 +18,7 @@ estado de entrega e a operação do VibeChat.
 | Revisar segurança | [Multi-tenancy](security/multi-tenant.md) → [modelo de ameaças](security/modelo-ameacas.md) → [ciclo de dados](security/ciclo-vida-dados.md) |
 | Desenvolver localmente | [Desenvolvimento](operations/desenvolvimento.md) → [configuração](operations/configuracao-env.md) |
 | Operar uma instância | [Operação](operations/operacao.md) → [runbooks](operations/runbooks/README.md) |
-| Trabalhar como agente | [`AGENTS.md`](../AGENTS.md) → [orientações](agents/orientacoes.md) |
+| Trabalhar como agente | [`AGENTS.md`](../AGENTS.md) → [orientações](agents/orientacoes.md) → [catálogo do harness](specs/README.md) |
 | Operar agentes 24/7 | [Contrato de autonomia](agents/autonomia.md) → [runbook 24/7](agents/operacao-24x7.md) → [roadmap](roadmap/roadmap.md) |
 
 ## Fontes canônicas
@@ -78,6 +78,7 @@ gap, não defendida apenas pelo texto.
 
 - [Contrato de autonomia](agents/autonomia.md)
 - [Operação autônoma 24/7](agents/operacao-24x7.md)
+- [Catálogo do harness (prompts, regras, contratos)](specs/README.md)
 - [Estado atual](roadmap/estado-atual.md)
 - [Roadmap executável](roadmap/roadmap.md)
 - [Horizonte ambicioso](roadmap/horizonte-ambicioso.md)
