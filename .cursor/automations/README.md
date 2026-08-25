@@ -86,7 +86,8 @@ Cadência, lease, concorrência, watchdog e recuperação estão no
 [`runbook 24/7`](../../docs/agents/operacao-24x7.md).
 Integridade de specs, riscos, IDs e links segue o contrato em
 [`qualidade-documental.md`](../../docs/roadmap/qualidade-documental.md);
-o checker executável permanece registrado como `OPS-DOC-CHECKER`.
+índice do harness em [`docs/specs/README.md`](../../docs/specs/README.md).
+O checker executável permanece registrado como `OPS-DOC-CHECKER`.
 
 > **Draft = pipeline parado.** Build e Docs devem abrir PR **ready for review**.
 > Se `open_git_pr` criar draft, o agente roda `gh pr ready <n>` antes de encerrar.

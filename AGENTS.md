@@ -19,7 +19,7 @@ técnicas reversíveis são feitas pelo agente e registradas em ADR quando neces
 3. Planejar mudanças grandes antes de codar (escopo, contratos, testes, docs).
 4. Em automações/long-running work, seguir
    `docs/agents/loop-engineering.md`: um Work-Item, estado durável, verificação e
-   stop reason explícito.
+   stop reason explícito. Índice das specs do harness: `docs/specs/README.md`.
 
 ## Regras universais
 

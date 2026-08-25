@@ -77,7 +77,7 @@ Build = 1. Segurança contra trabalho duplicado prevalece sobre velocidade.
    principal;
 2. consumir `roadmap.md` até W10;
 3. consumir **Wave 19** em `horizonte-ambicioso.md` (recomendada antes de W11);
-4. consumir `horizonte-ambicioso.md` de W11 a W18;
+4. consumir `horizonte-ambicioso.md` de W11 a W18 (W18 = bots/IA; spec obrigatória);
 5. dentro da primeira wave não terminal, pegar a primeira linha elegível;
 6. item posterior só ultrapassa `BLOCKED-TECH` se não depender dele e não tocar
    os mesmos contratos/módulos;
@@ -220,7 +220,8 @@ spec, backlog e status; depois retornar à seleção.
 
 ## Estado terminal
 
-Quando W7–W17 estiverem `Done`, `Rejected` ou `External action`, Build entra em
-manutenção: regressões, segurança, dependências, performance medida, UX
-observada e drift documental. Wave 18 (bots/IA) só entra com visão, ADR e specs
-em `horizonte-ambicioso.md` / `plataforma-bots-ia.md` — não inventar fora disso.
+Quando **todo item executável** em W7–W10, W19, W11–W18 estiver `Done`, `Rejected`
+ou `External action`, Build entra em manutenção: regressões, segurança, dependências,
+performance medida, UX observada e drift documental. Wave 18 (bots/IA) exige spec,
+ADR e threat model em `horizonte-ambicioso.md` / `plataforma-bots-ia.md` — não
+inventar fora disso.

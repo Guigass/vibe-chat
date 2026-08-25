@@ -156,8 +156,16 @@ Decisões técnicas reversíveis são do agente e podem exigir ADR. Parar soment
 condições `R4 — Externo` de `autonomia.md`; blocker técnico segue o protocolo de
 três tentativas e não bloqueia outras trilhas.
 
-Pipeline Cloud (Build → QA+Merge → Docs): prompts em `.cursor/automations/`.
-Build não marca `Done`; QA não abre feature; Docs não implementa o próximo item.
+Pipeline Cloud: prompts em `.cursor/automations/`; índice em
+[`docs/specs/README.md`](../specs/README.md).
+
+**Perfil econômico ativo** ([`autonomia.md`](autonomia.md) § Perfil temporário):
+Build implementa, testa e marca o item `Done` no **mesmo PR**; Docs / Close (03) está
+**inativa**; QA não abre feature nem altera o SHA revisado.
+
+**Perfil 24/7 completo** ([`go-live-2026-08-05.md`](go-live-2026-08-05.md)): Build abre
+PR de feature; Docs (03) fecha roadmap pós-merge em PR separado. Usar somente após
+Readiness `PASS` com gates externos resolvidos.
 
 ## Definition of Done (agente)
 
