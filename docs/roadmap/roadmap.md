@@ -299,7 +299,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
 | W10-1 | B/C/D | Web Push (B-095) | W8-4, W9-7, D-13 | [B-095](../product/specs/B-095-web-push.md) | **Done** |
-| W10-2 | C/D | Enquetes (B-096) | — | [B-096](../product/specs/B-096-enquetes.md) | Planned |
+| W10-2 | C/D | Enquetes (B-096) | W8-9 | [B-096](../product/specs/B-096-enquetes.md) | Planned |
 | W10-3 | B/D | Preferências de notificação e DND (B-097) | W10-1 | [B-097](../product/specs/B-097-preferencias-notificacao-dnd.md) | Planned |
 | W10-4 | C/D | Busca com filtros (B-098) | W9-2 | [B-098](../product/specs/B-098-busca-com-filtros.md) | Planned |
 | W10-5 | D | Paleta de comandos e atalhos (B-099) | W8-9, W10-4, W9-10 | [B-099](../product/specs/B-099-paleta-de-comandos.md) | Planned |

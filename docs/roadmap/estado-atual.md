@@ -79,7 +79,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W10-2 / B-096 | W10-1 / B-095 Done; enquetes sem dependência extra |
+| 1 | W10-2 / B-096 | W10-1 / B-095 Done; W8-9 / B-087 Done (slash `/enquete`) |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
