@@ -53,7 +53,7 @@ com gesto “Follow thread” e uma visão agregada de threads seguidas. Discord
 | Rascunho persistente por conversa | sim | sim | sim | sim | **Falta** — B-086 |
 | Agendar envio | sim | sim | — | — | Fora de escopo fase 2 |
 | Comandos slash | sim | sim | sim | — | **Falta** — B-087 |
-| Enquete | sim (workflow) | sim | sim | sim | **Falta** — B-096 |
+| Enquete | sim (workflow) | sim | sim | sim | **Done** — B-096 |
 
 Nota de pesquisa (áudio): o caminho web é `MediaRecorder` com detecção de MIME em
 runtime — Chrome/Firefox preferem `audio/webm;codecs=opus`, Safari exige `audio/mp4`.
