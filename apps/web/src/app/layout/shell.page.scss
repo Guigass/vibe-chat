@@ -330,6 +330,29 @@
   gap: 0.35rem;
 }
 
+.shell__dnd-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid var(--vc-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--vc-ink) 8%, var(--vc-surface));
+  color: var(--vc-ink-muted);
+  font: inherit;
+  font-size: 0.76rem;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+}
+
+.shell__dnd-pill span {
+  font-weight: 600;
+  color: var(--vc-ink);
+}
+
+.shell__dnd-pill:hover {
+  background: color-mix(in srgb, var(--vc-ink) 14%, var(--vc-surface));
+}
+
 .shell__hint {
   margin: 0;
   padding: 0.45rem var(--vc-space-4);

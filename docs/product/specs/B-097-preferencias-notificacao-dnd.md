@@ -62,13 +62,26 @@ admin — a auditoria não cobre preferência pessoal. Canal de outro tenant no
 
 ## Aceite
 
-- [ ] Global “só menções” impede push de mensagem comum
-- [ ] Canal em “todas” fura a preferência global
-- [ ] Silenciar por 1 h volta sozinho
-- [ ] DND das 20h às 8h suprime push nesse intervalo, no fuso certo
-- [ ] Contato prioritário fura o DND
-- [ ] Ocultar prévia tira o texto da notificação
-- [ ] Ler preferência de outro usuário → 403
+- [x] Global “só menções” impede push de mensagem comum
+- [x] Canal em “todas” fura a preferência global
+- [x] Silenciar por 1 h volta sozinho
+- [x] DND das 20h às 8h suprime push nesse intervalo, no fuso certo
+- [x] Contato prioritário fura o DND
+- [x] Ocultar prévia tira o texto da notificação
+- [x] Ler preferência de outro usuário → 403
+
+## Nota de implementação
+
+O endpoint de preferências não tem parâmetro de usuário-alvo — ele sempre resolve
+para o próprio ator — então "ler preferência de outro usuário" é estruturalmente
+impossível em vez de checado em runtime; `tests/security` cobre o mesmo risco
+provando que a escrita de um usuário nunca aparece na leitura de outro.
+
+`DigestEnabled` é persistido (coluna + toggle na UI de preferências), mas o envio
+do resumo por e-mail do que foi perdido durante o DND **não** foi implementado
+nesta entrega — exigiria fila de mensagens suprimidas + worker periódico + template
+de e-mail, sem critério de aceite nem teste definidos aqui. Fica como item futuro
+quando houver demanda.
 
 ## Testes
 

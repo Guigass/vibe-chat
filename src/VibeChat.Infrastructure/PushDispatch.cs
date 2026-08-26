@@ -162,10 +162,34 @@ public sealed class PushDispatcher(
         var isDirect = channel.Type == ChannelType.Direct;
         var candidateIds = await LoadCandidateUserIdsAsync(tenantId, channel, cancellationToken);
         var mentionedSet = mentioned.ToHashSet();
-        var recipients = new List<UserId>();
+
+        // B-097: batch-load global + per-channel preferences for every candidate up front — the
+        // old two-loop shape only loaded preferences for users that a hardcoded mention/DM check
+        // already let through, which would have hidden the "All" level's plain-channel messages.
+        var prefs = await dbContext.NotificationPreferences.AsNoTracking()
+            .Where(x => candidateIds.Contains(x.UserId))
+            .ToDictionaryAsync(x => x.UserId, cancellationToken);
+        var channelOverrides = await dbContext.ChannelNotificationPreferences.AsNoTracking()
+            .Where(x => x.ChannelId == channelId && candidateIds.Contains(x.UserId))
+            .ToDictionaryAsync(x => x.UserId, cancellationToken);
+        var cursors = await dbContext.ReadCursors.AsNoTracking()
+            .Where(x => x.ChannelId == channelId && candidateIds.Contains(x.UserId))
+            .ToDictionaryAsync(x => x.UserId, cancellationToken);
+
+        var now = clock.UtcNow;
+        var eligible = new List<UserId>();
+        var hidePreviewUserIds = new HashSet<Guid>();
         foreach (var userId in candidateIds)
         {
-            if (!PushDispatchPolicies.ShouldNotify(isDirect, mentionedSet, userId.Value, authorId))
+            prefs.TryGetValue(userId, out var pref);
+            var globalLevel = pref?.Level ?? NotificationLevel.MentionsAndDms;
+            channelOverrides.TryGetValue(userId, out var channelOverride);
+            var effectiveLevel = PushDispatchPolicies.ResolveEffectiveLevel(
+                globalLevel,
+                channelOverride is null ? null : (channelOverride.Level, channelOverride.MutedUntil),
+                now);
+            var isMentioned = mentionedSet.Contains(userId.Value);
+            if (!PushDispatchPolicies.ShouldNotifyForLevel(effectiveLevel, isDirect, isMentioned, userId.Value == authorId))
             {
                 continue;
             }
@@ -175,26 +199,19 @@ public sealed class PushDispatcher(
                 continue;
             }
 
-            recipients.Add(userId);
-        }
-
-        if (recipients.Count == 0)
-        {
-            return;
-        }
-
-        var prefs = await dbContext.NotificationPreferences.AsNoTracking()
-            .Where(x => recipients.Contains(x.UserId))
-            .ToDictionaryAsync(x => x.UserId, cancellationToken);
-        var cursors = await dbContext.ReadCursors.AsNoTracking()
-            .Where(x => x.ChannelId == channelId && recipients.Contains(x.UserId))
-            .ToDictionaryAsync(x => x.UserId, cancellationToken);
-
-        var eligible = new List<UserId>();
-        foreach (var userId in recipients)
-        {
-            prefs.TryGetValue(userId, out var pref);
             if (!PushDispatchPolicies.IsPushEnabled(pref?.PushEnabled))
+            {
+                continue;
+            }
+
+            var isDndSuppressed = PushDispatchPolicies.IsWithinDnd(
+                pref?.DndEnabled ?? false,
+                pref?.DndStart,
+                pref?.DndEnd,
+                pref?.DndDays ?? 0,
+                pref?.TimeZone,
+                now);
+            if (isDndSuppressed && !PushDispatchPolicies.IsPriorityBypass(isDirect, authorId, pref?.PriorityContactUserIds ?? []))
             {
                 continue;
             }
@@ -206,6 +223,10 @@ public sealed class PushDispatcher(
             }
 
             eligible.Add(userId);
+            if (pref?.HidePreview == true)
+            {
+                hidePreviewUserIds.Add(userId.Value);
+            }
         }
 
         if (eligible.Count == 0)
@@ -224,20 +245,19 @@ public sealed class PushDispatcher(
         }
 
         var mentionNames = await LoadMentionDisplayNamesAsync(body, mentioned, cancellationToken);
+        var preview = PushDispatchPolicies.TruncatePreview(MentionTokens.FormatPlainText(body, mentionNames));
         var payload = PushDispatchPolicies.BuildNgswPayload(
-            authorName,
-            isDirect,
-            channel.Name,
-            PushDispatchPolicies.TruncatePreview(MentionTokens.FormatPlainText(body, mentionNames)),
-            channelId.Value,
-            messageId,
-            sequence);
-        var now = clock.UtcNow;
+            authorName, isDirect, channel.Name, preview, channelId.Value, messageId, sequence);
+        var hiddenPreviewPayload = PushDispatchPolicies.BuildNgswPayload(
+            authorName, isDirect, channel.Name, string.Empty, channelId.Value, messageId, sequence);
         var gone = new List<PushSubscriptionEntity>();
         foreach (var subscription in subscriptions)
         {
+            var subscriptionPayload = hidePreviewUserIds.Contains(subscription.UserId.Value)
+                ? hiddenPreviewPayload
+                : payload;
             var result = await pushSender.SendAsync(
-                new PushDeliveryRequest(subscription.Endpoint, subscription.P256dh, subscription.Auth, payload),
+                new PushDeliveryRequest(subscription.Endpoint, subscription.P256dh, subscription.Auth, subscriptionPayload),
                 cancellationToken);
             if (result.Status == PushSendStatus.Gone)
             {

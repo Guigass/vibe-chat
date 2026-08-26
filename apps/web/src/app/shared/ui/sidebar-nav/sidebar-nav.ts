@@ -1,6 +1,7 @@
 import { Component, HostListener, computed, effect, input, output, signal } from '@angular/core';
 import {
   Channel,
+  ChannelMuteAction,
   PresenceStatus,
   Space,
   SpaceGroup,
@@ -56,7 +57,10 @@ function matchesFilter(text: string, query: string): boolean {
                       [active]="channel.id === activeId()"
                       [hasDraft]="draftIds().has(channel.id)"
                       [compact]="compact()"
+                      [muted]="mutedIds().has(channel.id)"
+                      [channelHasOverride]="overrideIds().has(channel.id)"
                       (select)="select.emit(channel.id)"
+                      (muteAction)="channelMuteAction.emit({ channelId: channel.id, action: $event })"
                     />
                   </li>
                 }
@@ -131,7 +135,10 @@ function matchesFilter(text: string, query: string): boolean {
                   [hasDraft]="draftIds().has(channel.id)"
                   [compact]="compact()"
                   [presence]="presenceOf(channel.peerUserId)"
+                  [muted]="mutedIds().has(channel.id)"
+                  [channelHasOverride]="overrideIds().has(channel.id)"
                   (select)="select.emit(channel.id)"
+                  (muteAction)="channelMuteAction.emit({ channelId: channel.id, action: $event })"
                 />
               </li>
             }
@@ -343,10 +350,13 @@ export class SidebarNav {
   readonly presence = input<Record<string, PresenceStatus>>({});
   readonly activeId = input<string | null>(null);
   readonly draftIds = input<ReadonlySet<string>>(new Set());
+  readonly mutedIds = input<ReadonlySet<string>>(new Set());
+  readonly overrideIds = input<ReadonlySet<string>>(new Set());
   readonly canCreate = input(false);
   readonly compact = input(false);
   readonly select = output<string>();
   readonly openDm = output<string>();
+  readonly channelMuteAction = output<{ channelId: string; action: ChannelMuteAction }>();
   readonly createChannel = output<{
     name: string;
     type: string;

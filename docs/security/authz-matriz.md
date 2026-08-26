@@ -77,6 +77,10 @@ para o gate de drift CI.
 | GET | `/notifications/push/subscriptions` | permission | `message.read` | ✓ | ✓ | ✓ | Só o actor |
 | POST | `/notifications/push/subscriptions` | permission | `message.read` | ✓ | ✓ | ✓ | Upsert do actor |
 | DELETE | `/notifications/push/subscriptions/{id:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | 404 se não for do actor |
+| GET | `/notifications/preferences` | permission | `message.read` | ✓ | ✓ | ✓ | Preferência global do actor + overrides de canal |
+| PUT | `/notifications/preferences` | permission | `message.read` | ✓ | ✓ | ✓ | Upsert; sempre `(tenant, actor)` |
+| PUT | `/notifications/preferences/channels/{channelId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | Canal de outro tenant → 403 |
+| DELETE | `/notifications/preferences/channels/{channelId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | Canal de outro tenant → 403 |
 | GET | `/admin/dashboard` | permission | `admin.dashboard` | ✗ | ✓ | ✓ | Gap B-175 fechado |
 | GET | `/admin/audit-events` | permission | `admin.dashboard` | ✗ | ✓ | ✓ | |
 | GET | `/admin/conversations` | permission | `admin.dashboard` | ✗ | ✓ | ✓ | |

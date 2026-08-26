@@ -3,6 +3,13 @@ using VibeChat.SharedKernel;
 
 namespace VibeChat.Notifications;
 
+public enum NotificationLevel
+{
+    All = 0,
+    MentionsAndDms = 1,
+    None = 2
+}
+
 public sealed class NotificationPreference
 {
     public Guid Id { get; set; }
@@ -10,6 +17,40 @@ public sealed class NotificationPreference
     public UserId UserId { get; set; }
     public bool EmailEnabled { get; set; } = true;
     public bool PushEnabled { get; set; } = true;
+
+    /// <summary>Global notification level (B-097). Channel overrides take precedence when active.</summary>
+    public NotificationLevel Level { get; set; } = NotificationLevel.MentionsAndDms;
+    public bool HidePreview { get; set; }
+    public bool DndEnabled { get; set; }
+    public TimeOnly? DndStart { get; set; }
+    public TimeOnly? DndEnd { get; set; }
+
+    /// <summary>Bitmask, Sunday=1 .. Saturday=64. 0 or null means every day.</summary>
+    public short DndDays { get; set; }
+
+    /// <summary>IANA time zone id; DND is always computed live against it, never a fixed offset.</summary>
+    public string? TimeZone { get; set; }
+
+    /// <summary>Stored but not yet sent (B-097 follow-up) — see spec note.</summary>
+    public bool DigestEnabled { get; set; }
+
+    /// <summary>DM authors who bypass DND.</summary>
+    public Guid[] PriorityContactUserIds { get; set; } = [];
+}
+
+/// <summary>
+/// Per-channel notification override (B-097). Row presence means an override is active;
+/// absence means "use the global default". <see cref="MutedUntil"/> is evaluated live at
+/// read time — no cleanup job needed for temporary mutes to expire on their own.
+/// </summary>
+public sealed class ChannelNotificationPreference
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public UserId UserId { get; set; }
+    public ChannelId ChannelId { get; set; }
+    public NotificationLevel Level { get; set; }
+    public DateTimeOffset? MutedUntil { get; set; }
 }
 
 /// <summary>
@@ -102,15 +143,87 @@ public static class PushDispatchPolicies
     public const int MaxSubscriptionsPerMessage = 50;
     public const int SendConcurrency = 4;
 
-    public static bool ShouldNotify(bool isDirect, IReadOnlySet<Guid> mentionedUserIds, Guid userId, Guid authorId)
+    /// <summary>
+    /// B-097: resolves the effective notification level for one candidate. A channel override whose
+    /// <see cref="ChannelNotificationPreference.MutedUntil"/> has already passed is treated as
+    /// expired and falls back to the global level — no cleanup job required.
+    /// </summary>
+    public static NotificationLevel ResolveEffectiveLevel(
+        NotificationLevel globalLevel,
+        (NotificationLevel Level, DateTimeOffset? MutedUntil)? channelOverride,
+        DateTimeOffset nowUtc)
     {
-        if (userId == authorId)
+        if (channelOverride is { } o && (o.MutedUntil is null || o.MutedUntil > nowUtc))
+        {
+            return o.Level;
+        }
+
+        return globalLevel;
+    }
+
+    public static bool ShouldNotifyForLevel(NotificationLevel level, bool isDirect, bool isMentioned, bool isAuthor)
+    {
+        if (isAuthor || level == NotificationLevel.None)
         {
             return false;
         }
 
-        return isDirect || mentionedUserIds.Contains(userId);
+        if (isDirect)
+        {
+            return true;
+        }
+
+        return level == NotificationLevel.All || isMentioned;
     }
+
+    /// <summary>
+    /// Computes DND live against the IANA time zone on every call — never a stored fixed offset,
+    /// so DST transitions stay correct. Fails open (returns false) on an invalid/empty time zone.
+    /// </summary>
+    public static bool IsWithinDnd(
+        bool dndEnabled,
+        TimeOnly? start,
+        TimeOnly? end,
+        short dndDays,
+        string? timeZoneId,
+        DateTimeOffset nowUtc)
+    {
+        if (!dndEnabled || start is null || end is null || string.IsNullOrWhiteSpace(timeZoneId))
+        {
+            return false;
+        }
+
+        TimeZoneInfo tz;
+        try
+        {
+            tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+        }
+        catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
+        {
+            return false;
+        }
+
+        var local = TimeZoneInfo.ConvertTime(nowUtc, tz);
+        if (dndDays != 0)
+        {
+            var dayBit = (short)(1 << (int)local.DayOfWeek);
+            if ((dndDays & dayBit) == 0)
+            {
+                return false;
+            }
+        }
+
+        var timeOfDay = TimeOnly.FromDateTime(local.DateTime);
+        var startValue = start.Value;
+        var endValue = end.Value;
+        return startValue <= endValue
+            ? timeOfDay >= startValue && timeOfDay < endValue
+            : timeOfDay >= startValue || timeOfDay < endValue;
+    }
+
+    /// <summary>Only a DM from a marked priority contact bypasses DND.</summary>
+    public static bool IsPriorityBypass(bool isDirect, Guid authorId, IReadOnlyCollection<Guid> priorityContactUserIds) =>
+        isDirect && priorityContactUserIds.Contains(authorId);
 
     public static bool IsSuppressedByCursor(long? lastReadSeq, long messageSeq) =>
         lastReadSeq is long read && read >= messageSeq;

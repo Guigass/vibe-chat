@@ -509,3 +509,32 @@ export interface PushDevice {
   createdAt: string;
   lastSeenAt: string;
 }
+
+export type NotificationLevel = 'All' | 'MentionsAndDms' | 'None';
+
+/** "OneHour" | "EightHours" | "UntilTomorrow" | "Indefinite" | null (no mute, e.g. an "All" override). */
+export type ChannelMuteDuration = 'OneHour' | 'EightHours' | 'UntilTomorrow' | 'Indefinite';
+
+export interface ChannelNotificationOverride {
+  channelId: string;
+  level: NotificationLevel;
+  mutedUntil?: string | null;
+}
+
+export type ChannelMuteAction =
+  | { kind: 'mute'; duration: ChannelMuteDuration }
+  | { kind: 'all' }
+  | { kind: 'default' };
+
+export interface NotificationPreferences {
+  level: NotificationLevel;
+  hidePreview: boolean;
+  dndEnabled: boolean;
+  dndStart?: string | null;
+  dndEnd?: string | null;
+  dndDays: number;
+  timeZone?: string | null;
+  digestEnabled: boolean;
+  priorityContactUserIds: string[];
+  channelOverrides: ChannelNotificationOverride[];
+}

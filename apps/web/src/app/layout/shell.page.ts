@@ -19,12 +19,14 @@ import { ThreadStore } from '../core/services/thread.store';
 import { PinStore } from '../core/services/pin.store';
 import { SavedStore } from '../core/services/saved.store';
 import { PushNotificationService } from '../core/services/push-notification.service';
+import { NotificationPreferencesStore } from '../core/services/notification-preferences.store';
 import { ChannelList } from '../features/chat/channel-list/channel-list';
 import { Composer } from '../features/chat/composer/composer';
 import { Timeline } from '../features/chat/timeline/timeline';
 import { PinsPanel } from '../features/chat/pins-panel/pins-panel';
 import { SavedPanel } from '../features/chat/saved-panel/saved-panel';
 import { ThreadPanel } from '../features/chat/thread-panel/thread-panel';
+import { NotificationPreferencesPanel } from '../features/chat/notification-preferences-panel/notification-preferences-panel';
 import { SuggestReplyButton } from '../features/ai/suggest-reply-button';
 import { SummarizeButton } from '../features/ai/summarize-button';
 import { SearchMessageHit } from '../shared/models/chat.models';
@@ -59,6 +61,7 @@ import { defaultSidebarOpen, readNavCompact, SHELL_NARROW_MEDIA_QUERY, writeNavC
     ThreadPanel,
     PinsPanel,
     SavedPanel,
+    NotificationPreferencesPanel,
     SummarizeButton,
     SuggestReplyButton,
     ConnectionBanner,
@@ -85,6 +88,7 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly saved = inject(SavedStore);
   readonly hub = inject(ChatHubService);
   readonly push = inject(PushNotificationService);
+  readonly notificationPrefs = inject(NotificationPreferencesStore);
   private readonly api = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly attachments = inject(AttachmentQueueService);
@@ -171,7 +175,7 @@ export class ShellPage implements OnInit, OnDestroy {
     this.unsubPresence = this.hub.onPresenceChanged((event) => {
       this.channels.setPresence(event.userId, event.status);
     });
-    await Promise.all([this.channels.load(), this.hub.connect()]);
+    await Promise.all([this.channels.load(), this.hub.connect(), this.notificationPrefs.load()]);
     await this.applyPushDeepLink();
     const active = this.channels.activeChannel();
     if (active) {
@@ -209,6 +213,10 @@ export class ShellPage implements OnInit, OnDestroy {
       }
       if (this.pins.panelOpen()) {
         this.pins.closePanel();
+        return;
+      }
+      if (this.notificationPrefs.panelOpen()) {
+        this.notificationPrefs.closePanel();
         return;
       }
       if (this.push.devicesOpen()) {

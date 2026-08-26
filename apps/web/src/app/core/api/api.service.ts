@@ -30,6 +30,10 @@ import {
   PollSummary,
   PushPublicKey,
   PushDevice,
+  NotificationPreferences,
+  ChannelNotificationOverride,
+  NotificationLevel,
+  ChannelMuteDuration,
 } from '../../shared/models/chat.models';
 
 interface WorkspaceDto {
@@ -929,6 +933,34 @@ export class ApiService {
 
   async deletePushSubscription(id: string): Promise<void> {
     await this.request(`/api/v1/notifications/push/subscriptions/${id}`, { method: 'DELETE' });
+  }
+
+  async getNotificationPreferences(): Promise<NotificationPreferences> {
+    return this.request<NotificationPreferences>('/api/v1/notifications/preferences');
+  }
+
+  async updateNotificationPreferences(
+    patch: Omit<NotificationPreferences, 'channelOverrides'>,
+  ): Promise<NotificationPreferences> {
+    return this.request<NotificationPreferences>('/api/v1/notifications/preferences', {
+      method: 'PUT',
+      body: JSON.stringify(patch),
+    });
+  }
+
+  async muteChannelNotifications(
+    channelId: string,
+    level: NotificationLevel,
+    duration?: ChannelMuteDuration,
+  ): Promise<ChannelNotificationOverride> {
+    return this.request<ChannelNotificationOverride>(
+      `/api/v1/notifications/preferences/channels/${channelId}`,
+      { method: 'PUT', body: JSON.stringify({ level, duration: duration ?? null }) },
+    );
+  }
+
+  async clearChannelNotificationOverride(channelId: string): Promise<void> {
+    await this.request(`/api/v1/notifications/preferences/channels/${channelId}`, { method: 'DELETE' });
   }
 
   async getWorkspaceChannelUnreads(
