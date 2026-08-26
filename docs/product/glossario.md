@@ -36,6 +36,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Read cursor** | Posição de leitura persistente por (`tenant`, `user`, `channel`) em `messaging.read_cursors` (`lastReadSeq`). Fonte da verdade das **não lidas** (badge, divisor, push); sobrevive a F5 e multi-dispositivo (B-094). Não confundir com estado só em memória no client. |
 | **Unread / Não lidas** | Contagem derivada de `maxSeq - lastReadSeq` (e menções). Badge na sidebar hidrata do servidor; só zera de forma definitiva ao avançar o cursor. |
 | **Reaction** | Reação emoji (ou similar) a uma mensagem. |
+| **Enquete / Poll** | Mensagem com pergunta e 2–10 opções (`messaging.polls`). Voto único ou múltiplo; anônima ou visível; prazo opcional. Auditor lê e não vota. |
 | **Attachment** | Arquivo associado a mensagem; bytes no object storage (MinIO); metadados no PostgreSQL. |
 | **Announcement / Anúncio** | Mensagem ou conversa de broadcast com regras de publicação e, opcionalmente, confirmação de leitura; não é sinônimo de notificação push. |
 | **Action item** | Ação estruturada derivada de uma conversa e ligada à mensagem de origem; pode evoluir para tarefa, mas preserva evidência. |

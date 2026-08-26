@@ -924,6 +924,7 @@ v1.MapGet("/workspaces/{workspaceId:guid}/commands", async (
         ("convidar", "Convida alguém para o workspace", "/convidar <email>", Permissions.Workspace.Admin),
         ("resumir", "Resume as mensagens recentes do canal", "/resumir", Permissions.Ai.Summarize),
         ("apagar", "Apaga a sua última mensagem neste canal", "/apagar", Permissions.Message.DeleteOwn),
+        ("enquete", "Cria uma enquete no canal", "/enquete", Permissions.Message.Send),
         ("ajuda", "Lista os comandos disponíveis", "/ajuda", null),
     };
 
@@ -942,6 +943,247 @@ v1.MapGet("/workspaces/{workspaceId:guid}/commands", async (
     return Results.Ok(allowed);
 });
 
+v1.MapPost("/channels/{channelId:guid}/polls", async (
+    Guid channelId,
+    CreatePollRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPollWriter polls,
+    IPermissionChecker permissions,
+    IRateLimiter rateLimiter,
+    RateLimitSettingsResolver rateLimits,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var rate = await rateLimits.ResolveAsync(channel.TenantId, ct);
+    var allowed = await rateLimiter.TryAcquireAsync(
+        RateLimitKeys.SendMessage(channel.TenantId, profile.Id),
+        rate.SendPerMinute,
+        TimeSpan.FromMinutes(1),
+        ct);
+    if (!allowed)
+    {
+        return Results.StatusCode(StatusCodes.Status429TooManyRequests);
+    }
+
+    if (request.MessageId == Guid.Empty || string.IsNullOrWhiteSpace(request.IdempotencyKey))
+    {
+        return Results.BadRequest(new { error = "messageId and idempotencyKey are required." });
+    }
+
+    try
+    {
+        var result = await polls.CreateAsync(new CreatePollCommand(
+            channel.TenantId,
+            profile.Id,
+            channel.Id,
+            new MessageId(request.MessageId),
+            request.IdempotencyKey,
+            request.Question,
+            request.Options ?? [],
+            request.AllowMultiple,
+            request.Anonymous,
+            request.ClosesAt), ct);
+
+        var canVote = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Send, ct);
+        var poll = await PollQuery.LoadAsync(db, result.MessageId, profile.Id, includeVoters: true, canVote, ct);
+        return Results.Accepted(
+            $"/api/v1/channels/{channel.Id.Value}/messages?after={result.Sequence - 1}",
+            new MessageResponse(
+                result.MessageId.Value,
+                channel.Id.Value,
+                result.Sequence,
+                profile.Id.Value,
+                PollPolicies.Normalize(request.Question),
+                result.CreatedAt,
+                null,
+                null,
+                profile.DisplayName,
+                [],
+                null,
+                null,
+                0,
+                channel.Id.Value,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                poll));
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
+    }
+}).RequirePermission(Permissions.Message.Send);
+
+v1.MapPost("/polls/{pollId:guid}/votes", async (
+    Guid pollId,
+    CastPollVoteRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPollWriter polls,
+    IPermissionChecker permissions,
+    IRateLimiter rateLimiter,
+    RateLimitSettingsResolver rateLimits,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+    var pollRow = await db.Polls.AsNoTracking().FirstOrDefaultAsync(x => x.MessageId == new MessageId(pollId), ct);
+    if (pollRow is null)
+    {
+        return Results.Forbid();
+    }
+
+    var channel = await ResolveChannelAsync(pollRow.ChannelId, profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var rate = await rateLimits.ResolveAsync(channel.TenantId, ct);
+    if (!await rateLimiter.TryAcquireAsync(
+            RateLimitKeys.SendMessage(channel.TenantId, profile.Id),
+            rate.SendPerMinute,
+            TimeSpan.FromMinutes(1),
+            ct))
+    {
+        return Results.StatusCode(StatusCodes.Status429TooManyRequests);
+    }
+
+    try
+    {
+        await polls.VoteAsync(new CastPollVoteCommand(
+            channel.TenantId,
+            profile.Id,
+            new MessageId(pollId),
+            request.OptionIds ?? []), ct);
+        var canVote = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Send, ct);
+        var poll = await PollQuery.LoadAsync(db, new MessageId(pollId), profile.Id, includeVoters: true, canVote, ct);
+        return Results.Ok(poll);
+    }
+    catch (PollClosedException)
+    {
+        return Results.Conflict(new { error = "PollClosed" });
+    }
+    catch (PollNotFoundException)
+    {
+        return Results.NotFound();
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
+    }
+}).RequirePermission(Permissions.Message.Send);
+
+v1.MapDelete("/polls/{pollId:guid}/votes", async (
+    Guid pollId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPollWriter polls,
+    IPermissionChecker permissions,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+    var pollRow = await db.Polls.AsNoTracking().FirstOrDefaultAsync(x => x.MessageId == new MessageId(pollId), ct);
+    if (pollRow is null)
+    {
+        return Results.Forbid();
+    }
+
+    var channel = await ResolveChannelAsync(pollRow.ChannelId, profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    try
+    {
+        await polls.UnvoteAsync(channel.TenantId, profile.Id, new MessageId(pollId), ct);
+        var canVote = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Send, ct);
+        var poll = await PollQuery.LoadAsync(db, new MessageId(pollId), profile.Id, includeVoters: true, canVote, ct);
+        return Results.Ok(poll);
+    }
+    catch (PollClosedException)
+    {
+        return Results.Conflict(new { error = "PollClosed" });
+    }
+    catch (PollNotFoundException)
+    {
+        return Results.NotFound();
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
+    }
+}).RequirePermission(Permissions.Message.Send);
+
+v1.MapPost("/polls/{pollId:guid}/close", async (
+    Guid pollId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IPollWriter polls,
+    IPermissionChecker permissions,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+    var pollRow = await db.Polls.AsNoTracking().FirstOrDefaultAsync(x => x.MessageId == new MessageId(pollId), ct);
+    if (pollRow is null)
+    {
+        return Results.Forbid();
+    }
+
+    var channel = await ResolveChannelAsync(pollRow.ChannelId, profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var asAdmin = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Workspace.Admin, ct);
+    try
+    {
+        await polls.CloseAsync(channel.TenantId, profile.Id, new MessageId(pollId), asAdmin, ct);
+        var canVote = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Send, ct);
+        var poll = await PollQuery.LoadAsync(db, new MessageId(pollId), profile.Id, includeVoters: true, canVote, ct);
+        return Results.Ok(poll);
+    }
+    catch (PollNotFoundException)
+    {
+        return Results.NotFound();
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
+    }
+}).RequirePermission(Permissions.Message.Send);
+
 v1.MapGet("/channels/{channelId:guid}/messages", async (
     Guid channelId,
     long? after,
@@ -951,6 +1193,7 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (
     HttpContext http,
     VibeChatDbContext db,
     ITenantContext tenant,
+    IPermissionChecker permissions,
     IClock clock,
     CancellationToken ct) =>
 {
@@ -972,7 +1215,8 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (
     }
 
     var take = Math.Clamp(limit ?? 50, 1, 100);
-    var page = await ListChannelMessagesAsync(channel, profile, db, take, after, before, around, ct);
+    var canVote = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Send, ct);
+    var page = await ListChannelMessagesAsync(channel, profile, db, take, after, before, around, canVote, ct);
     return Results.Ok(page);
 });
 
@@ -1451,6 +1695,7 @@ v1.MapGet("/threads/{threadId:guid}/messages", async (
         profile.Id,
         ct);
     var linkPreviewByMessage = await LoadLinkPreviewsByMessageAsync(db, messageIds, ct);
+    var pollsByMessage = await PollQuery.LoadByMessageIdsAsync(db, messageIds, profile.Id, canVote: false, includeVoters: true, ct);
     var messages = rows.Select(x => new MessageResponse(
         x.Id.Value,
         channel.Id.Value,
@@ -1471,7 +1716,9 @@ v1.MapGet("/threads/{threadId:guid}/messages", async (
         x.ForwardedFromMessageId?.Value,
         x.ForwardedFromChannelId?.Value,
         x.ForwardedFromMessageId is MessageId ffid && forwardedFromById.TryGetValue(ffid.Value, out var forwarded) ? forwarded : null,
-        x.DeletedAt == null && linkPreviewByMessage.TryGetValue(x.Id.Value, out var preview) ? preview : null)).ToArray();
+        x.DeletedAt == null && linkPreviewByMessage.TryGetValue(x.Id.Value, out var preview) ? preview : null,
+        false,
+        x.DeletedAt == null && pollsByMessage.TryGetValue(x.Id.Value, out var poll) ? poll : null)).ToArray();
     return Results.Ok(messages);
 });
 
@@ -3218,7 +3465,7 @@ v1.MapGet("/admin/conversations/{channelId:guid}/messages", async (
         return Results.Forbid();
     }
 
-    var (_, tenantId) = access.Value;
+    var (profile, tenantId) = access.Value;
     var channelKey = new ChannelId(channelId);
     var channel = await db.Channels.IgnoreQueryFilters().AsNoTracking()
         .FirstOrDefaultAsync(x => x.Id == channelKey && x.TenantId == tenantId, ct);
@@ -3270,6 +3517,7 @@ v1.MapGet("/admin/conversations/{channelId:guid}/messages", async (
             .ToDictionaryAsync(x => x.ThreadId, x => x.Count, ct);
 
     var attachmentsByMessage = await LoadAttachmentsByMessageAsync(db, channel.Id, messageIds, ct);
+    var pollsByMessage = await PollQuery.LoadByMessageIdsAsync(db, messageIds, profile.Id, canVote: false, includeVoters: true, ct);
     var items = rows.Select(x => new AdminConversationMessageResponse(
         x.Id.Value,
         x.ChannelId.Value,
@@ -3286,7 +3534,8 @@ v1.MapGet("/admin/conversations/{channelId:guid}/messages", async (
         x.ThreadId,
         x.ReplyToMessageId?.Value,
         x.ThreadId is Guid tid && replyCounts.TryGetValue(tid, out var count) ? count : 0,
-        attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [])).ToArray();
+        attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [],
+        pollsByMessage.TryGetValue(x.Id.Value, out var poll) ? poll : null)).ToArray();
 
     return Results.Ok(new AdminConversationMessagesResponse(items));
 }).RequirePermission(Permissions.Admin.Dashboard);
@@ -4861,6 +5110,7 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
     long? after,
     long? before,
     long? around,
+    bool canVote,
     CancellationToken ct)
 {
     ChannelMessageRow[] rows;
@@ -4963,6 +5213,7 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
         profile.Id,
         ct);
     var linkPreviewByMessage = await LoadLinkPreviewsByMessageAsync(db, messageIds, ct);
+    var pollsByMessage = await PollQuery.LoadByMessageIdsAsync(db, messageIds, profile.Id, canVote, includeVoters: true, ct);
     var pinnedIds = messageIds.Length == 0
         ? new HashSet<Guid>()
         : (await db.PinnedMessages.AsNoTracking()
@@ -4991,7 +5242,8 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
         x.ForwardedFromChannelId?.Value,
         x.ForwardedFromMessageId is MessageId ffid && forwardedFromById.TryGetValue(ffid.Value, out var forwarded) ? forwarded : null,
         x.DeletedAt == null && linkPreviewByMessage.TryGetValue(x.Id.Value, out var preview) ? preview : null,
-        pinnedIds.Contains(x.Id.Value))).ToArray();
+        pinnedIds.Contains(x.Id.Value),
+        x.DeletedAt == null && pollsByMessage.TryGetValue(x.Id.Value, out var poll) ? poll : null)).ToArray();
 
     return new ChannelMessagesResponse(messages, hasMoreBefore, hasMoreAfter);
 }
@@ -5223,6 +5475,15 @@ public sealed record OpenDirectMessageRequest(Guid UserId);
 public sealed record CreateSpaceRequest(string Name, int? Order = null);
 public sealed record CreateChannelRequest(string Name, string Type, Guid? SpaceId = null);
 public sealed record SendMessageRequest(Guid MessageId, string IdempotencyKey, string Body, Guid? ReplyToMessageId, Guid? ThreadId, Guid[]? AttachmentIds = null);
+public sealed record CreatePollRequest(
+    Guid MessageId,
+    string IdempotencyKey,
+    string Question,
+    string[] Options,
+    bool AllowMultiple = false,
+    bool Anonymous = false,
+    DateTimeOffset? ClosesAt = null);
+public sealed record CastPollVoteRequest(Guid[] OptionIds);
 public sealed record EditMessageRequest(string Body);
 public sealed record CreateAttachmentUploadRequest(
     string FileName,
@@ -5334,7 +5595,8 @@ public sealed record MessageResponse(
     Guid? ForwardedFromChannelId = null,
     ForwardedFromResponse? ForwardedFrom = null,
     LinkPreviewResponse? LinkPreview = null,
-    bool IsPinned = false);
+    bool IsPinned = false,
+    PollDto? Poll = null);
 
 public sealed record PinMessageResponse(Guid MessageId, Guid ChannelId, bool Pinned, int PinCount);
 public sealed record PinnedMessageResponse(
@@ -5460,7 +5722,8 @@ public sealed record AdminConversationMessageResponse(
     Guid? ThreadId,
     Guid? ReplyToMessageId,
     int ReplyCount,
-    AttachmentResponse[] Attachments);
+    AttachmentResponse[] Attachments,
+    PollDto? Poll = null);
 public sealed record AdminConversationMessagesResponse(AdminConversationMessageResponse[] Items);
 public sealed record AdminHealthResponse(string Postgres, string Redis, string Storage);
 public sealed record AdminDashboardResponse(

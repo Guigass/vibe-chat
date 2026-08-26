@@ -873,6 +873,103 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("saved_messages", "messaging");
                 });
 
+            modelBuilder.Entity("VibeChat.Messaging.Poll", b =>
+                {
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("AllowMultiple")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("Anonymous")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ChannelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("ClosesAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("TenantId", "ChannelId");
+
+                    b.HasIndex("TenantId", "ClosedAt", "ClosesAt");
+
+                    b.ToTable("polls", "messaging");
+                });
+
+            modelBuilder.Entity("VibeChat.Messaging.PollOption", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PollId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "PollId", "Position")
+                        .IsUnique();
+
+                    b.ToTable("poll_options", "messaging");
+                });
+
+            modelBuilder.Entity("VibeChat.Messaging.PollVote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OptionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PollId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "PollId", "OptionId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("poll_votes", "messaging");
+                });
+
             modelBuilder.Entity("VibeChat.Messaging.Reaction", b =>
                 {
                     b.Property<Guid>("Id")

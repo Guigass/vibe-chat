@@ -211,6 +211,50 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
           <p class="composer__validation" role="alert">{{ validationError() }}</p>
         }
 
+        @if (pollComposerOpen()) {
+          <form class="composer__poll" (submit)="submitPoll($event)">
+            <label>
+              Pergunta
+              <input
+                type="text"
+                maxlength="500"
+                [value]="pollQuestion()"
+                (input)="pollQuestion.set($any($event.target).value)"
+              />
+            </label>
+            @for (option of pollOptions(); track $index; let i = $index) {
+              <label>
+                Opção {{ i + 1 }}
+                <input
+                  type="text"
+                  maxlength="100"
+                  [value]="option"
+                  (input)="setPollOption(i, $any($event.target).value)"
+                />
+              </label>
+            }
+            <div class="composer__poll-actions">
+              <button type="button" class="ghost" (click)="addPollOption()" [disabled]="pollOptions().length >= 10">
+                Mais opção
+              </button>
+              <label class="composer__poll-toggle">
+                <input type="checkbox" [checked]="pollAllowMultiple()" (change)="pollAllowMultiple.set($any($event.target).checked)" />
+                Vários votos
+              </label>
+              <label class="composer__poll-toggle">
+                <input type="checkbox" [checked]="pollAnonymous()" (change)="pollAnonymous.set($any($event.target).checked)" />
+                Anônima
+              </label>
+              <label>
+                Prazo (opcional)
+                <input type="datetime-local" [value]="pollClosesAt()" (input)="pollClosesAt.set($any($event.target).value)" />
+              </label>
+              <button type="submit" class="ghost">Publicar enquete</button>
+              <button type="button" class="ghost" (click)="closePollComposer()">Cancelar</button>
+            </div>
+          </form>
+        }
+
         @if (slash.notice(); as notice) {
           <aside
             class="composer__notice"
@@ -339,6 +383,20 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
                 </svg>
               </span>
             </label>
+            @if (!channels.activeChannel()?.isDirect) {
+              <vc-icon-button
+                label="Enquete"
+                [disabled]="messages.sending() || messages.editingMessage() !== null"
+                (click)="openPollComposer()"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 19V9" />
+                  <path d="M10 19V5" />
+                  <path d="M16 19v-7" />
+                  <path d="M22 19V8" />
+                </svg>
+              </vc-icon-button>
+            }
             @if (audioRecorder.supported) {
               @if (audioRecorder.phase() === 'idle') {
                 <vc-icon-button
@@ -767,6 +825,37 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
     .composer__counter--over {
       color: var(--vc-danger);
     }
+    .composer__poll {
+      display: grid;
+      gap: 0.4rem;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--vc-line);
+      border-radius: var(--vc-radius-sm);
+    }
+    .composer__poll label {
+      display: grid;
+      gap: 0.2rem;
+      font-size: 0.75rem;
+      color: var(--vc-ink-muted);
+    }
+    .composer__poll input[type='text'] {
+      border: 1px solid var(--vc-line);
+      border-radius: 0.4rem;
+      background: transparent;
+      color: inherit;
+      padding: 0.35rem 0.5rem;
+    }
+    .composer__poll-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .composer__poll-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
     @media (max-width: 720px) {
       .composer__shell {
         grid-template-columns: 1fr;
@@ -808,6 +897,12 @@ export class Composer {
   readonly mentionRemoteItems = signal<MentionAutocompleteItem[]>([]);
   readonly mentionContext = signal<{ query: string; atIndex: number } | null>(null);
   private readonly mentionAliases = signal<Record<string, string>>({});
+  readonly pollComposerOpen = signal(false);
+  readonly pollQuestion = signal('');
+  readonly pollOptions = signal<string[]>(['', '']);
+  readonly pollAllowMultiple = signal(false);
+  readonly pollAnonymous = signal(false);
+  readonly pollClosesAt = signal('');
   readonly slashOpen = signal(false);
   readonly slashActiveIndex = signal(0);
   readonly slashCatalog = signal<SlashCommandDef[]>([]);
@@ -1441,6 +1536,9 @@ export class Composer {
     this.validationError.set(null);
     try {
       const result = await this.slash.execute(raw);
+      if (result.openPollComposer) {
+        this.openPollComposer(result.pollQuestion, result.pollOptions);
+      }
       if (result.clearDraft) {
         const channelId = this.boundChannelId;
         this.draft.set('');
@@ -1502,5 +1600,62 @@ export class Composer {
     this.slashOpen.set(false);
     this.slashContext.set(null);
     this.slashActiveIndex.set(0);
+  }
+
+  openPollComposer(question = '', options?: string[]): void {
+    this.pollQuestion.set(question);
+    this.pollOptions.set(options && options.length >= 2 ? options : ['', '']);
+    this.pollAllowMultiple.set(false);
+    this.pollAnonymous.set(false);
+    this.pollClosesAt.set('');
+    this.pollComposerOpen.set(true);
+  }
+
+  closePollComposer(): void {
+    this.pollComposerOpen.set(false);
+    this.pollQuestion.set('');
+    this.pollOptions.set(['', '']);
+    this.pollClosesAt.set('');
+  }
+
+  setPollOption(index: number, value: string): void {
+    this.pollOptions.update((items) => items.map((item, i) => (i === index ? value : item)));
+  }
+
+  addPollOption(): void {
+    this.pollOptions.update((items) => (items.length >= 10 ? items : [...items, '']));
+  }
+
+  async submitPoll(event: Event): Promise<void> {
+    event.preventDefault();
+    const question = this.pollQuestion().trim();
+    const options = this.pollOptions().map((item) => item.trim()).filter(Boolean);
+    if (question.length < 1 || question.length > 500 || options.length < 2 || options.length > 10) {
+      this.validationError.set('Informe uma pergunta e 2 a 10 opções.');
+      return;
+    }
+    if (options.some((option) => option.length > 100)) {
+      this.validationError.set('Cada opção deve ter no máximo 100 caracteres.');
+      return;
+    }
+    const closesLocal = this.pollClosesAt().trim();
+    const closesAt = closesLocal ? new Date(closesLocal).toISOString() : null;
+    if (closesAt && Number.isNaN(Date.parse(closesAt))) {
+      this.validationError.set('Prazo inválido.');
+      return;
+    }
+    const ok = await this.messages.createPoll({
+      question,
+      options,
+      allowMultiple: this.pollAllowMultiple(),
+      anonymous: this.pollAnonymous(),
+      closesAt,
+    });
+    if (!ok) {
+      this.validationError.set('Não foi possível criar a enquete.');
+      return;
+    }
+    this.validationError.set(null);
+    this.closePollComposer();
   }
 }

@@ -1702,7 +1702,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             $"/api/v1/workspaces/{workspaceId}/commands",
             JsonOptions);
         aliceCommands.Should().NotBeNull();
-        aliceCommands!.Select(c => c.Name).Should().Contain(new[] { "dm", "topico", "resumir", "apagar", "ajuda" });
+        aliceCommands!.Select(c => c.Name).Should().Contain(new[] { "dm", "topico", "resumir", "apagar", "enquete", "ajuda" });
         aliceCommands.Select(c => c.Name).Should().NotContain("convidar");
 
         using var demo = factory.CreateClient();

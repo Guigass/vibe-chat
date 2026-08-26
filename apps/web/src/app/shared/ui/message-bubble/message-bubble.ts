@@ -34,6 +34,7 @@ import { ChannelStore } from '../../../core/services/channel.store';
 import { MessageStore } from '../../../core/services/message.store';
 import { ThemeService } from '../../../core/services/theme.service';
 import { EmojiPicker } from '../emoji-picker/emoji-picker';
+import { PollCard } from '../poll-card/poll-card';
 import { rememberRecentEmoji } from '../../emoji/emoji-data';
 import { environment } from '../../../../environments/environment';
 
@@ -117,6 +118,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
     ImageLightbox,
     MarkdownBody,
     EmojiPicker,
+    PollCard,
     CdkContextMenuTrigger,
     CdkMenuTrigger,
     CdkMenu,
@@ -330,7 +332,14 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
                   </button>
                 }
               }
-              @if (message().body) {
+              @if (message().poll; as poll) {
+                <vc-poll-card
+                  [poll]="poll"
+                  [canClose]="canClosePoll()"
+                  (toggle)="onPollToggle($event)"
+                  (close)="onPollClose()"
+                />
+              } @else if (message().body) {
                 <vc-markdown-body
                   [source]="message().body"
                   [mentionLabels]="mentionLabels()"
@@ -1093,6 +1102,25 @@ export class MessageBubble {
     if (channel) {
       await this.messages.loadChannel(channel.id);
     }
+  }
+
+  readonly canClosePoll = computed(() => {
+    const poll = this.message().poll;
+    const me = this.auth.profile()?.id;
+    const role = this.channels.activeWorkspace()?.role?.toLowerCase();
+    return !!poll && !poll.closedAt && (this.message().mine || role === 'admin' || role === 'workspaceowner');
+  });
+
+  onPollToggle(optionId: string): void {
+    const poll = this.message().poll;
+    if (!poll) return;
+    void this.messages.votePoll(poll, optionId);
+  }
+
+  onPollClose(): void {
+    const poll = this.message().poll;
+    if (!poll) return;
+    void this.messages.closePoll(poll.id, this.message().id);
   }
   readonly showActions = computed(
     () => !this.message().deletedAt && this.message().status === 'persisted',

@@ -87,6 +87,7 @@ describe('MessageStore read cursor (BUG-002)', () => {
             onReactionChanged: () => () => undefined,
             onAttachmentThumbnailReady: () => () => undefined,
             onLinkPreviewReady: () => () => undefined,
+            onPollChanged: () => () => undefined,
             onReconnected: () => () => undefined,
           },
         },

@@ -5,7 +5,7 @@ import { AuthService } from '../auth/auth.service';
 import { ChannelStore } from './channel.store';
 import { ThreadStore } from './thread.store';
 import { PushNotificationService } from './push-notification.service';
-import { ChatMessage } from '../../shared/models/chat.models';
+import { ChatMessage, PollSummary } from '../../shared/models/chat.models';
 import {
   bumpChannelParentForThreadReply,
   findMessageByCorrelators,
@@ -68,6 +68,7 @@ export class MessageStore {
   private unsubReactions: (() => void) | null = null;
   private unsubThumbnail: (() => void) | null = null;
   private unsubLinkPreview: (() => void) | null = null;
+  private unsubPoll: (() => void) | null = null;
   private unsubReconnected: (() => void) | null = null;
 
   readonly messages = this.messagesSignal.asReadonly();
@@ -123,6 +124,7 @@ export class MessageStore {
     this.unsubLinkPreview = this.hub.onLinkPreviewReady((event) =>
       this.applyLinkPreviewReady(event),
     );
+    this.unsubPoll = this.hub.onPollChanged((event) => this.applyPoll(event.messageId, event.poll));
     this.unsubReconnected = this.hub.onReconnected(() => {
       void this.gapFillActiveChannel();
       void this.threads.gapFillActive();
@@ -448,6 +450,76 @@ export class MessageStore {
     } finally {
       this.sendingSignal.set(false);
     }
+  }
+
+  async createPoll(input: {
+    question: string;
+    options: string[];
+    allowMultiple: boolean;
+    anonymous: boolean;
+    closesAt?: string | null;
+  }): Promise<boolean> {
+    const channel = this.channels.activeChannel();
+    if (!channel || channel.isDirect) return false;
+    if (this.channels.isDemo() || this.auth.isOfflineDemo()) return false;
+
+    this.sendingSignal.set(true);
+    try {
+      const persisted = await this.api.createPoll({
+        channelId: channel.id,
+        clientMessageId: crypto.randomUUID(),
+        idempotencyKey: crypto.randomUUID(),
+        question: input.question,
+        options: input.options,
+        allowMultiple: input.allowMultiple,
+        anonymous: input.anonymous,
+        closesAt: input.closesAt,
+      });
+      this.ingestRemote(this.normalize(persisted));
+      return true;
+    } catch {
+      return false;
+    } finally {
+      this.sendingSignal.set(false);
+    }
+  }
+
+  async votePoll(poll: PollSummary, optionId: string): Promise<void> {
+    if (!poll.canVote || poll.closedAt) return;
+    const nextIds = poll.allowMultiple
+      ? poll.options.some((option) => option.id === optionId && option.votedByMe)
+        ? poll.options.filter((option) => option.votedByMe && option.id !== optionId).map((option) => option.id)
+        : [...poll.options.filter((option) => option.votedByMe).map((option) => option.id), optionId]
+      : [optionId];
+
+    try {
+      const updated =
+        poll.allowMultiple && nextIds.length === 0
+          ? await this.api.unvotePoll(poll.id)
+          : await this.api.votePoll(poll.id, nextIds);
+      this.applyPoll(poll.messageId, updated);
+    } catch {
+      /* keep current card */
+    }
+  }
+
+  async closePoll(pollId: string, messageId: string): Promise<void> {
+    try {
+      const updated = await this.api.closePoll(pollId);
+      this.applyPoll(messageId, updated);
+    } catch {
+      /* keep current card */
+    }
+  }
+
+  private applyPoll(messageId: string, poll: PollSummary): void {
+    this.messagesSignal.update((list) =>
+      list.map((message) =>
+        idsEqual(message.id, messageId) || idsEqual(message.id, poll.messageId)
+          ? { ...message, poll }
+          : message,
+      ),
+    );
   }
 
   async edit(messageId: string, body: string): Promise<void> {

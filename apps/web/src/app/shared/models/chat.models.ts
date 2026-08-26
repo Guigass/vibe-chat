@@ -148,6 +148,37 @@ export interface ChatMessage {
   isPinned?: boolean;
   /** B-093 personal saved marker. */
   isSaved?: boolean;
+  /** B-096 channel poll card. */
+  poll?: PollSummary | null;
+}
+
+export interface PollVoter {
+  userId: string;
+  displayName: string;
+}
+
+export interface PollOptionSummary {
+  id: string;
+  text: string;
+  position: number;
+  voteCount: number;
+  percent: number;
+  votedByMe: boolean;
+  voters?: PollVoter[] | null;
+}
+
+export interface PollSummary {
+  id: string;
+  messageId: string;
+  channelId: string;
+  question: string;
+  allowMultiple: boolean;
+  anonymous: boolean;
+  closesAt?: string | null;
+  closedAt?: string | null;
+  totalVotes: number;
+  canVote: boolean;
+  options: PollOptionSummary[];
 }
 
 export interface PinnedMessageItem {

@@ -56,6 +56,7 @@ describe('MessageStore targeted timeline scroll (BUG-013)', () => {
             onReactionChanged: () => () => undefined,
             onAttachmentThumbnailReady: () => () => undefined,
             onLinkPreviewReady: () => () => undefined,
+            onPollChanged: () => () => undefined,
             onReconnected: () => () => undefined,
           },
         },

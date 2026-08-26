@@ -20,6 +20,9 @@ export interface SlashExecResult {
   ok: boolean;
   clearDraft: boolean;
   notice: SlashNotice | null;
+  openPollComposer?: boolean;
+  pollQuestion?: string;
+  pollOptions?: string[];
 }
 
 const DEMO_COMMANDS: SlashCommandDef[] = [
@@ -28,6 +31,7 @@ const DEMO_COMMANDS: SlashCommandDef[] = [
   { name: 'convidar', description: 'Convida alguém para o workspace', usage: '/convidar <email>' },
   { name: 'resumir', description: 'Resume as mensagens recentes do canal', usage: '/resumir' },
   { name: 'apagar', description: 'Apaga a sua última mensagem neste canal', usage: '/apagar' },
+  { name: 'enquete', description: 'Cria uma enquete no canal', usage: '/enquete' },
   { name: 'ajuda', description: 'Lista os comandos disponíveis', usage: '/ajuda' },
 ];
 
@@ -99,6 +103,8 @@ export class SlashCommandsService {
         return this.runResumir(workspace.id, channel.id);
       case 'apagar':
         return this.runApagar();
+      case 'enquete':
+        return this.runEnquete(parsed, channel.isDirect === true);
       default:
         return this.fail(`Comando desconhecido: /${parsed.name}.`, false);
     }
@@ -267,6 +273,45 @@ export class SlashCommandsService {
     } catch (err) {
       return this.fail(this.errorMessage(err, 'Não foi possível apagar a mensagem.'), false);
     }
+  }
+
+  private runEnquete(parsed: ParsedSlashCommand, isDirect: boolean): SlashExecResult {
+    if (isDirect) {
+      return this.fail('Enquetes só estão disponíveis em canais.', false);
+    }
+
+    const parts = parsed.argsRaw
+      .split('|')
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (parts.length >= 3) {
+      const [question, ...options] = parts;
+      if (
+        question.length > 500 ||
+        options.length > 10 ||
+        options.some((option) => option.length > 100)
+      ) {
+        return this.fail('Pergunta até 500 e 2–10 opções de até 100 caracteres.', false);
+      }
+      this.notice.set(null);
+      return {
+        ok: true,
+        clearDraft: true,
+        notice: null,
+        openPollComposer: true,
+        pollQuestion: question,
+        pollOptions: options,
+      };
+    }
+
+    this.notice.set(null);
+    return {
+      ok: true,
+      clearDraft: true,
+      notice: null,
+      openPollComposer: true,
+      pollQuestion: parts[0] ?? '',
+    };
   }
 
   private fail(text: string, clearDraft: boolean): SlashExecResult {

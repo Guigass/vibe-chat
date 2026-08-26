@@ -85,6 +85,68 @@ public static class SavedMessagePolicies
     public const int MaxPageSize = 100;
 }
 
+/// <summary>Channel poll (B-096). Primary key is the host message id.</summary>
+public sealed class Poll
+{
+    public MessageId MessageId { get; set; }
+    public TenantId TenantId { get; set; }
+    public ChannelId ChannelId { get; set; }
+    public UserId CreatedByUserId { get; set; }
+    public string Question { get; set; } = string.Empty;
+    public bool AllowMultiple { get; set; }
+    public bool Anonymous { get; set; }
+    public DateTimeOffset? ClosesAt { get; set; }
+    public DateTimeOffset? ClosedAt { get; set; }
+}
+
+public sealed class PollOption
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public MessageId PollId { get; set; }
+    public string Text { get; set; } = string.Empty;
+    public int Position { get; set; }
+}
+
+public sealed class PollVote
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public MessageId PollId { get; set; }
+    public Guid OptionId { get; set; }
+    public UserId UserId { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public static class PollPolicies
+{
+    public const int MinOptions = 2;
+    public const int MaxOptions = 10;
+    public const int MaxQuestionLength = 500;
+    public const int MaxOptionLength = 100;
+
+    public static string Normalize(string? value) => value?.Trim() ?? string.Empty;
+
+    public static bool IsValidQuestion(string question) =>
+        question.Length is >= 1 and <= MaxQuestionLength;
+
+    public static bool IsValidOption(string text) =>
+        text.Length is >= 1 and <= MaxOptionLength;
+
+    public static bool IsValidOptionCount(int count) =>
+        count is >= MinOptions and <= MaxOptions;
+}
+
+public sealed class PollClosedException : InvalidOperationException
+{
+    public PollClosedException() : base("PollClosed") { }
+}
+
+public sealed class PollNotFoundException : InvalidOperationException
+{
+    public PollNotFoundException() : base("PollNotFound") { }
+}
+
 public static class SystemEventTokens
 {
     public const string PinPrefix = "<system:pin:";
@@ -400,6 +462,37 @@ public sealed record PinChangedEvent(
     MessageId MessageId,
     UserId ByUserId,
     bool Pinned) : IntegrationEvent(TenantId);
+
+public sealed record PollChangedEvent(
+    TenantId TenantId,
+    ChannelId ChannelId,
+    MessageId PollId) : IntegrationEvent(TenantId);
+
+public sealed record CreatePollCommand(
+    TenantId TenantId,
+    UserId UserId,
+    ChannelId ChannelId,
+    MessageId MessageId,
+    string IdempotencyKey,
+    string Question,
+    IReadOnlyList<string> Options,
+    bool AllowMultiple,
+    bool Anonymous,
+    DateTimeOffset? ClosesAt);
+
+public sealed record CastPollVoteCommand(
+    TenantId TenantId,
+    UserId UserId,
+    MessageId PollId,
+    IReadOnlyList<Guid> OptionIds);
+
+public interface IPollWriter
+{
+    Task<MessageSendResult> CreateAsync(CreatePollCommand command, CancellationToken cancellationToken);
+    Task VoteAsync(CastPollVoteCommand command, CancellationToken cancellationToken);
+    Task UnvoteAsync(TenantId tenantId, UserId userId, MessageId pollId, CancellationToken cancellationToken);
+    Task CloseAsync(TenantId tenantId, UserId userId, MessageId pollId, bool asAdmin, CancellationToken cancellationToken);
+}
 
 public interface IConversationSequenceStore
 {

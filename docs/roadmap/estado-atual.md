@@ -3,10 +3,10 @@
 Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
-- **Data de corte:** 2026-08-17
-- **Fase:** Wave 10 — W10-2 / B-096 (enquetes); Wave 7 sustentação Done
+- **Data de corte:** 2026-08-26
+- **Fase:** Wave 10 — W10-3 / B-097 (preferências/DND); W10-2 / B-096 Done
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
-- **Próximo item elegível:** W10-2 / B-096 (enquetes)
+- **Próximo item elegível:** W10-3 / B-097 (preferências de notificação e DND)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -24,7 +24,7 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
-2. avançar Wave 10 (W10-1 / B-095 Done; seguinte W10-2 / B-096);
+2. avançar Wave 10 (W10-1 / B-095 e W10-2 / B-096 Done; seguinte W10-3 / B-097);
 3. consumir o roadmap autorizado W11–W19 (Wave 19 = organização do código,
    recomendada antes de W11).
 
@@ -79,7 +79,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W10-2 / B-096 | W10-1 / B-095 Done; W8-9 / B-087 Done (slash `/enquete`) |
+| 1 | W10-3 / B-097 | W10-1 / B-095 Done; W10-2 / B-096 Done |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
@@ -91,6 +91,7 @@ W7-14 / B-187 **Done** (instalação configurável no admin; catálogo permanece
 `configuracao-env.md`; D-04/ADR-020 intactos — infra no env).
 W8-9 / B-087 **Done** (slash commands + discovery + topic).
 W10-1 / B-095 **Done** (Web Push VAPID, opt-in, outbox/worker, kill switch off default).
+W10-2 / B-096 **Done** (enquetes: mensagem + `polls`/`votes`, `/enquete`, worker de prazo).
 
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W19. Wave 19
 (organização do código) é recomendada antes de W11. Ele não altera a prioridade
@@ -98,11 +99,11 @@ imediata: o Build só consome W11+ depois de W7–W10 `Done`.
 
 ## Baseline de planejamento
 
-- 94 itens `Planned` entre W8–W19 (B-186/W10-15 — membros do canal; B-178…B-183
+- 93 itens `Planned` entre W8–W19 (B-186/W10-15 — membros do canal; B-178…B-183
   catalogados em W19 — organização do código; B-104/W7-6 Done via #82;
   B-076/W7-3 Done via #84; B-165/W7-9 Done 2026-08-10; B-088/W9-1 Done;
   B-171/W9-9 Done via #129; B-173/W9-10 Done; B-177/W7-13 Done;
-  B-184 catalogado em W9-11 — nav esquerda; B-095/W10-1 Done; B-167/B-185 catalogados em W11 —
+  B-184 catalogado em W9-11 — nav esquerda; B-095/W10-1 Done; B-096/W10-2 Done; B-167/B-185 catalogados em W11 —
   perfil e personalização visual; B-169 catalogado em W14 — gate auditoria↔E2EE;
   B-170 catalogado em W16 — performance/escalabilidade antes de HA;
   B-172 catalogado em W16 — backup de chat com tarefas e destinos remotos);

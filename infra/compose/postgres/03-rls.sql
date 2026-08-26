@@ -4,7 +4,7 @@
 -- Session GUCs (SET LOCAL / set_config is_local preferred inside transactions):
 --   app.tenant_id  — required for tenant-scoped reads/writes (fail closed when unset)
 --   app.user_id    — bootstrap membership discovery before tenant is known
---   app.job_role   — 'outbox' | 'retention' for worker cross-tenant claim paths only
+--   app.job_role   — 'outbox' | 'retention' | 'polls' for worker cross-tenant claim paths only
 --
 -- Column names match EF defaults ("TenantId").
 
@@ -200,10 +200,40 @@ CREATE POLICY tenant_isolation_pinned_messages ON messaging.pinned_messages
 
 ALTER TABLE IF EXISTS messaging.saved_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.saved_messages FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.polls ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.polls FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.poll_options ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.poll_options FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.poll_votes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.poll_votes FORCE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS tenant_isolation_saved_messages ON messaging.saved_messages;
 CREATE POLICY tenant_isolation_saved_messages ON messaging.saved_messages
     USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_polls ON messaging.polls;
+CREATE POLICY tenant_isolation_polls ON messaging.polls
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR app.current_job_role() = 'polls'
+    )
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_poll_options ON messaging.poll_options;
+CREATE POLICY tenant_isolation_poll_options ON messaging.poll_options
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR app.current_job_role() = 'polls'
+    )
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_poll_votes ON messaging.poll_votes;
+CREATE POLICY tenant_isolation_poll_votes ON messaging.poll_votes
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR app.current_job_role() = 'polls'
+    )
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
 DROP POLICY IF EXISTS tenant_isolation_message_mentions ON messaging.message_mentions;

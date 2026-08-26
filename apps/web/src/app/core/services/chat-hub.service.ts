@@ -10,6 +10,7 @@ import { AuthService } from '../auth/auth.service';
 import { TenantContext } from '../tenant/tenant-context';
 import {
   ChatMessage,
+  PollSummary,
   PresenceStatus,
   ReactionSummary,
   TypingState,
@@ -70,6 +71,7 @@ interface MessageCreatedPayload {
     contentType: string;
     sizeBytes: number;
   }>;
+  poll?: PollSummary | null;
 }
 
 interface MessageEditedPayload {
@@ -112,6 +114,12 @@ export interface ReactionChangedEvent {
   added: boolean;
   reactions: ReactionSummary[];
   topUsers?: string[];
+}
+
+export interface PollChangedEvent {
+  messageId: string;
+  channelId: string;
+  poll: PollSummary;
 }
 
 export interface PinChangedEvent {
@@ -225,6 +233,7 @@ export class ChatHubService {
   private readonly deletedHandlers = new Set<(event: MessageDeleteEvent) => void>();
   private readonly reactionHandlers = new Set<(event: ReactionChangedEvent) => void>();
   private readonly pinHandlers = new Set<(event: PinChangedEvent) => void>();
+  private readonly pollHandlers = new Set<(event: PollChangedEvent) => void>();
   private readonly presenceHandlers = new Set<(event: PresenceChangedEvent) => void>();
   private readonly reconnectedHandlers = new Set<() => void | Promise<void>>();
   private readonly thumbnailReadyHandlers = new Set<(event: AttachmentThumbnailReadyEvent) => void>();
@@ -389,6 +398,19 @@ export class ChatHubService {
         }),
       };
       for (const handler of this.reactionHandlers) {
+        handler(event);
+      }
+    });
+
+    connection.on('PollChanged', (raw: { messageId?: string; channelId?: string; poll?: PollSummary } | string) => {
+      const payload = this.coercePayload<{ messageId?: string; channelId?: string; poll?: PollSummary }>(raw);
+      if (!payload?.messageId || !payload.channelId || !payload.poll) return;
+      const event: PollChangedEvent = {
+        messageId: String(payload.messageId),
+        channelId: String(payload.channelId),
+        poll: payload.poll,
+      };
+      for (const handler of this.pollHandlers) {
         handler(event);
       }
     });
@@ -680,6 +702,11 @@ export class ChatHubService {
     return () => this.pinHandlers.delete(handler);
   }
 
+  onPollChanged(handler: (event: PollChangedEvent) => void): () => void {
+    this.pollHandlers.add(handler);
+    return () => this.pollHandlers.delete(handler);
+  }
+
   onAttachmentThumbnailReady(handler: (event: AttachmentThumbnailReadyEvent) => void): () => void {
     this.thumbnailReadyHandlers.add(handler);
     return () => this.thumbnailReadyHandlers.delete(handler);
@@ -828,6 +855,7 @@ export class ChatHubService {
         sizeBytes: a.sizeBytes,
         status: 'Ready',
       })),
+      poll: payload.poll ?? null,
     };
   }
 }
