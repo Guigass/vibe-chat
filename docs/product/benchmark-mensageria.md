@@ -92,9 +92,9 @@ sobre o `<input type="file">` que já existe, nunca como caminho único.
 | Capacidade | Slack | Teams | Discord | WhatsApp | VibeChat |
 |---|---|---|---|---|---|
 | Notificação do navegador / push | sim | sim | sim | sim | **Falta** — B-095 |
-| Preferência por canal | sim | sim | sim | sim | **Falta** — B-097 |
-| Não perturbe / horário de silêncio | sim | sim | sim | sim | **Falta** — B-097 |
-| Badge de menção vs. mensagem comum | sim | sim | sim | sim | **Falta** — B-082 + B-097 |
+| Preferência por canal | sim | sim | sim | sim | **Done** — B-097 |
+| Não perturbe / horário de silêncio | sim | sim | sim | sim | **Done** — B-097 |
+| Badge de menção vs. mensagem comum | sim | sim | sim | sim | **Done** — B-082 + B-097 |
 | Resumo/catch-up com IA | sim | sim | — | — | **Temos** (summarize, flag) |
 
 ## 5. Busca e navegação
