@@ -26,6 +26,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-DOCS-RACE | Corrida Docs | Merges #72+#73 (~20s) abriram Docs #76+#77; #77 foi re-draftado e ficou CONFLICTING | High | External action | Colar prompts 03/06 atualizados no dashboard (repo já em #78) |
 | OPS-E2E-NAV | CI / E2E | `main` vermelho desde #131 (B-184): `timeline-anchor.spec.ts` (botão Bob ausente) + `timeline-history-scroll.spec.ts` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — specs alinhadas à nav B-184 (`Mensagem para …`) + dispatch de scroll para latch `nearBottom` |
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
+| OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | Open | Build fix regressão de scroll/anchor na timeline após preferências/DND (#142) |
 
 ## Resolvidos
 
@@ -134,6 +135,38 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   1. `E2E (Playwright)` verde em `main` por ≥2 runs consecutivos;
   2. `realtime-events.spec.ts` passa localmente via `task test:e2e:ci`;
   3. finding marcado Resolved citando PR de fix.
+
+### OPS-E2E-B097
+
+- Status: **Open** — regressão pós-merge de
+  [#142](https://github.com/Guigass/vibe-chat/pull/142) (B-097 preferências/DND).
+- Observado em: CI `E2E (Playwright)` run
+  [#32965658072](https://github.com/Guigass/vibe-chat/actions/runs/32965658072)
+  (2026-08-26T11:53Z) —
+  [`timeline-anchor.spec.ts`](../../tests/e2e/specs/timeline-anchor.spec.ts) linha 79
+  (scrollTop ~2780 vs esperado &lt;5; timeout 15s) e
+  [`timeline-history-scroll.spec.ts`](../../tests/e2e/specs/timeline-history-scroll.spec.ts)
+  linha 41 (scrollTop ~3200 vs esperado &lt;120; `timeline-jump` ausente).
+- Base/head SHA: último green `b73e685` (2026-08-26T00:40Z, pós-#141); incident tip
+  `944e22786a5bdee0c6b251334dd22ede5c07d282` (#142, 2026-08-26T11:53Z).
+- Reprodução: CI em `main` — 13 passed, 2 failed; Build/gitleaks/dep-audit verdes;
+  regressão imediata após squash de #142 (não flaky — falha estável em retry).
+- Causa provável: alterações de UI em `shell.page`, `channel-list`, `channel-item`
+  e painel de preferências (#142) impactam layout/scroll da timeline; causa raiz
+  a confirmar pelo Build.
+- Resultado esperado: timeline ancora no conteúdo mais recente; leitor em histórico
+  não é arrastado; E2E passa em ambas as specs.
+- Resultado atual: `main` vermelho; #143 (docs-close B-097) bloqueado em E2E.
+- Impacto: bloqueia auto-merge e viola invariante “main verde”.
+- Risk class: R1 (teste/UI); severidade Critical por bloqueio de pipeline.
+- Owner automático: Build + QA.
+- Critério de resolução:
+  1. `E2E (Playwright)` verde em `main` por ≥2 runs consecutivos;
+  2. `timeline-anchor.spec.ts` e `timeline-history-scroll.spec.ts` passam via
+     `task test:e2e:ci`;
+  3. finding marcado Resolved citando PR de fix.
+- Rollback: revert de #142 restauraria CI mas descarta B-097 — não seguro; preferir
+  fix forward.
 
 ### OPS-DOCS-RACE
 
