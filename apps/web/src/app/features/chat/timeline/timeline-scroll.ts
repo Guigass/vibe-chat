@@ -22,6 +22,7 @@ export class TimelineStickyBottomPin {
   private resizeObserver: ResizeObserver | null = null;
   private frameId: number | null = null;
   private pinned = false;
+  private observedList: HTMLElement | null = null;
 
   constructor(private readonly getScroller: () => HTMLElement | null) {}
 
@@ -66,7 +67,13 @@ export class TimelineStickyBottomPin {
     }
 
     const list = scroller.querySelector<HTMLElement>('.timeline__list');
-    if (list) this.resizeObserver.observe(list);
+    if (list && list !== this.observedList) {
+      if (this.observedList) this.resizeObserver.unobserve(this.observedList);
+      this.observedList = list;
+      this.resizeObserver.observe(list);
+      // A remounted list is a new box — snap once if still latched.
+      this.schedulePin();
+    }
   }
 
   private schedulePin(): void {
@@ -92,6 +99,7 @@ export class TimelineStickyBottomPin {
     }
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
+    this.observedList = null;
   }
 }
 

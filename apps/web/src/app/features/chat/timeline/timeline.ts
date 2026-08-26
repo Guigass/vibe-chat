@@ -51,7 +51,7 @@ const NEAR_TOP_PX = 120;
       (touchstart)="cancelPendingAnchor()"
       (keydown)="cancelPendingAnchor()"
     >
-      @if (messages.loading()) {
+      @if (messages.loading() && !messages.forActiveChannel().length) {
         <div class="timeline__loading">
           <vc-skeleton height="3.5rem" />
           <vc-skeleton height="3.5rem" width="80%" />
@@ -411,6 +411,7 @@ export class Timeline {
   private lastMessageCount = 0;
   private lastTailId: string | null = null;
   private unreadAnnouncedFor: string | null = null;
+  private wasLoading = false;
 
   readonly timelineItems = computed((): TimelineItem[] =>
     buildTimelineItems(this.messages.forActiveChannel(), {
@@ -496,6 +497,26 @@ export class Timeline {
           this.setNearBottom(false);
           this.messages.setViewingLatest(false);
         }
+      });
+    });
+
+    effect(() => {
+      const loading = this.messages.loading();
+      const finishedLoading = this.wasLoading && !loading;
+      this.wasLoading = loading;
+      if (!finishedLoading) return;
+      queueMicrotask(() => {
+        if (!this.nearBottom() || this.messages.loading()) return;
+        if (this.messages.forActiveChannel().length === 0) return;
+        if (
+          this.isScrollRequestForChannel(
+            this.messages.scrollRequest(),
+            this.channels.activeChannelId(),
+          )
+        ) {
+          return;
+        }
+        this.afterChannelOpen();
       });
     });
 
