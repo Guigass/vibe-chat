@@ -1128,6 +1128,60 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
         deleted.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task Notification_preferences_are_isolated_per_user()
+    {
+        // B-097: the endpoint has no target-user route param — it always resolves to the caller's
+        // own row — so "reading another user's preference" is structurally impossible; this proves
+        // one user's write never leaks into another user's read (no admin override either).
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var bob = factory.CreateClient();
+        bob.DefaultRequestHeaders.Add("X-Dev-User", "bob");
+
+        var putAlice = await alice.PutAsJsonAsync(
+            "/api/v1/notifications/preferences",
+            new
+            {
+                level = "All",
+                hidePreview = true,
+                dndEnabled = false,
+                dndDays = 0,
+                digestEnabled = true,
+                priorityContactUserIds = Array.Empty<Guid>()
+            });
+        putAlice.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var bobPrefs = await bob.GetFromJsonAsync<NotificationPreferencesDto>("/api/v1/notifications/preferences");
+        bobPrefs.Should().NotBeNull();
+        bobPrefs!.Level.Should().Be("MentionsAndDms");
+        bobPrefs.HidePreview.Should().BeFalse();
+        bobPrefs.DigestEnabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Cross_tenant_cannot_mute_channel_notifications()
+    {
+        var (_, foreignChannelId) = await SeedCrossTenantChannelAsync();
+
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var put = await alice.PutAsJsonAsync(
+            $"/api/v1/notifications/preferences/channels/{foreignChannelId}",
+            new { level = "None", duration = "OneHour" });
+        put.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var delete = await alice.DeleteAsync($"/api/v1/notifications/preferences/channels/{foreignChannelId}");
+        delete.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    private sealed record NotificationPreferencesDto(
+        string Level,
+        bool HidePreview,
+        bool DndEnabled,
+        bool DigestEnabled);
+
     private sealed record ChannelDto(Guid Id, Guid WorkspaceId, string Name, string Type);
     private sealed record PushSubscriptionDto(Guid Id, string Endpoint, string? UserAgent, DateTimeOffset CreatedAt, DateTimeOffset LastSeenAt);
     private sealed record ChannelMessagesResponseDto(

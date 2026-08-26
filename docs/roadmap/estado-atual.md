@@ -4,9 +4,9 @@ Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
 - **Data de corte:** 2026-08-26
-- **Fase:** Wave 10 — W10-3 / B-097 (preferências/DND); W10-2 / B-096 Done
+- **Fase:** Wave 10 — W10-3 / B-097 Done (preferências/DND); seguinte W10-4 / B-098
 - **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
-- **Próximo item elegível:** W10-3 / B-097 (preferências de notificação e DND)
+- **Próximo item elegível:** W10-4 / B-098 (busca com filtros)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -24,7 +24,7 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
-2. avançar Wave 10 (W10-1 / B-095 e W10-2 / B-096 Done; seguinte W10-3 / B-097);
+2. avançar Wave 10 (W10-1 / B-095, W10-2 / B-096, W10-3 / B-097 Done; seguinte W10-4 / B-098);
 3. consumir o roadmap autorizado W11–W19 (Wave 19 = organização do código,
    recomendada antes de W11).
 
@@ -79,7 +79,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W10-3 / B-097 | W10-1 / B-095 Done; W10-2 / B-096 Done |
+| 1 | W10-4 / B-098 | W9-2 / B-089 Done |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).

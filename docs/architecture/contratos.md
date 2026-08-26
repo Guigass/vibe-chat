@@ -692,8 +692,7 @@ public interface IPushSender
 - Off by default; chaves no DB quando overrides on (B-187); GET devolve `{ enabled, publicKey? }` sem erro se off
 - Tabela `notifications.push_subscriptions` (RLS): `TenantId`, `UserId`, `Endpoint` (único por usuário), `P256dh`, `Auth`, `UserAgent?`, `CreatedAt`, `LastSeenAt`, `FailedAt`
 - Delivery best-effort no `OutboxProcessor` **após** realtime, apenas `MessageCreated`; 410/404 remove a linha; falha não reprocessa outbox
-- Destinatários: membership **atual** ∩ (DM `Direct` **ou** `mentionedUserIds`) ∩ `preferences.PushEnabled` ≠ false ∩ não-autor; `read_cursors` suprime se já lido
-- “Todas as mensagens” por canal / DND → B-097
+- Destinatários: membership **atual** ∩ nível efetivo (ver B-097) ∩ `preferences.PushEnabled` ≠ false ∩ não-autor; `read_cursors` suprime se já lido
 
 | Endpoint | AuthZ | Notas |
 |----------|-------|-------|
@@ -701,6 +700,41 @@ public interface IPushSender
 | `GET /api/v1/notifications/push/subscriptions` | `message.read` | Só o actor |
 | `POST /api/v1/notifications/push/subscriptions` | `message.read` | Upsert por endpoint do actor |
 | `DELETE /api/v1/notifications/push/subscriptions/{id}` | `message.read` | 404 se não for do actor |
+
+### Preferências de notificação e DND (B-097)
+
+`notifications.preferences` (estende a linha por `(TenantId, UserId)` de B-095):
+`Level` (`All`\|`MentionsAndDms`\|`None`, default `MentionsAndDms`), `HidePreview`,
+`DndEnabled`, `DndStart`/`DndEnd` (`time`), `DndDays` (bitmask domingo=1…sábado=64;
+`0` = todos os dias), `TimeZone` (IANA), `DigestEnabled`, `PriorityContactUserIds`
+(`uuid[]`).
+
+`notifications.channel_preferences` (RLS, único por `ChannelId`+`UserId`):
+`Level`, `MutedUntil?`. Linha presente = override ativo; ausente = "usar o padrão".
+`MutedUntil` expirado é ignorado na leitura (dispatcher e API) — sem job de limpeza,
+o silêncio "volta sozinho".
+
+Nível efetivo por destinatário = override de canal não expirado, senão `Level`
+global. `None` nunca notifica; DM notifica em `All`/`MentionsAndDms`; canal comum só
+com `All` ou menção. DND (`PushDispatchPolicies.IsWithinDnd`) é recalculado a cada
+envio contra o fuso IANA armazenado — nunca offset fixo — e suprime o push a menos
+que o autor da DM esteja em `PriorityContactUserIds`. `HidePreview` troca o corpo da
+notificação por vazio por destinatário (o payload passa a variar por assinatura, não
+mais um único payload por mensagem).
+
+`DigestEnabled` é persistido e exposto na UI, mas o envio do resumo por e-mail do
+que foi perdido durante o DND **não** está implementado nesta entrega — ver nota em
+[B-097](../product/specs/B-097-preferencias-notificacao-dnd.md).
+
+| Endpoint | AuthZ | Notas |
+|----------|-------|-------|
+| `GET /api/v1/notifications/preferences` | `message.read` | Preferência global do actor + `channelOverrides[]` |
+| `PUT /api/v1/notifications/preferences` | `message.read` | Upsert; valida `TimeZone` quando `DndEnabled=true`; `PriorityContactUserIds` filtrado a membros do tenant |
+| `PUT /api/v1/notifications/preferences/channels/{channelId}` | `message.read` | `{ level, duration? }`; canal de outro tenant → 403 |
+| `DELETE /api/v1/notifications/preferences/channels/{channelId}` | `message.read` | Remove override (volta ao padrão); canal de outro tenant → 403 |
+
+Estritamente por `(tenant, user)` — ninguém, nem admin, lê ou escreve a preferência
+de outro usuário (sem trilha de auditoria para preferência pessoal, por desenho).
 
 ## AI
 

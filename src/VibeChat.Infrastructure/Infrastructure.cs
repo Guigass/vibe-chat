@@ -71,6 +71,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<AiUsageRecord> AiUsageRecords => Set<AiUsageRecord>();
     public DbSet<AiSettings> AiSettings => Set<AiSettings>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+    public DbSet<ChannelNotificationPreference> ChannelNotificationPreferences => Set<ChannelNotificationPreference>();
     public DbSet<TenantEmailSettings> TenantEmailSettings => Set<TenantEmailSettings>();
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
     public DbSet<OutboundWebhookEndpoint> OutboundWebhookEndpoints => Set<OutboundWebhookEndpoint>();
@@ -394,6 +395,21 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.HasKey(x => x.Id);
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Level).HasConversion<string>().HasMaxLength(32);
+            entity.Property(x => x.TimeZone).HasMaxLength(64);
+            entity.Property(x => x.PriorityContactUserIds).HasColumnType("uuid[]");
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ChannelNotificationPreference>(entity =>
+        {
+            entity.ToTable("channel_preferences", "notifications");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.Level).HasConversion<string>().HasMaxLength(32);
+            entity.HasIndex(x => new { x.ChannelId, x.UserId }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

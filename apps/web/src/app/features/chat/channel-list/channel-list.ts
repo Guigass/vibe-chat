@@ -4,6 +4,8 @@ import { DraftStoreService } from '../../../core/services/draft-store.service';
 import { MessageStore } from '../../../core/services/message.store';
 import { PinStore } from '../../../core/services/pin.store';
 import { SavedStore } from '../../../core/services/saved.store';
+import { NotificationPreferencesStore } from '../../../core/services/notification-preferences.store';
+import { ChannelMuteAction } from '../../../shared/models/chat.models';
 import { Badge, SidebarNav, Skeleton, VcTooltip } from '../../../shared/ui';
 
 @Component({
@@ -61,11 +63,14 @@ import { Badge, SidebarNav, Skeleton, VcTooltip } from '../../../shared/ui';
           [presence]="channels.presence()"
           [activeId]="channels.activeChannelId() ?? null"
           [draftIds]="drafts.draftConversationIds()"
+          [mutedIds]="notificationPrefs.mutedChannelIds()"
+          [overrideIds]="notificationPrefs.channelsWithOverride()"
           [canCreate]="channels.canCreateChannel()"
           [compact]="navCompact()"
           (select)="onSelect($event)"
           (openDm)="onOpenDm($event)"
           (createChannel)="onCreate($event)"
+          (channelMuteAction)="onChannelMuteAction($event)"
         />
       }
     </div>
@@ -181,8 +186,20 @@ export class ChannelList {
   readonly channels = inject(ChannelStore);
   readonly drafts = inject(DraftStoreService);
   readonly saved = inject(SavedStore);
+  readonly notificationPrefs = inject(NotificationPreferencesStore);
   private readonly messages = inject(MessageStore);
   private readonly pins = inject(PinStore);
+
+  async onChannelMuteAction(event: { channelId: string; action: ChannelMuteAction }): Promise<void> {
+    const { channelId, action } = event;
+    if (action.kind === 'default') {
+      await this.notificationPrefs.unmuteChannel(channelId);
+    } else if (action.kind === 'all') {
+      await this.notificationPrefs.muteChannel(channelId, 'All');
+    } else {
+      await this.notificationPrefs.muteChannel(channelId, 'None', action.duration);
+    }
+  }
 
   openSaved(): void {
     this.pins.closePanel();

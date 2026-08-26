@@ -648,14 +648,12 @@ public sealed class BackendUnitTests
     [Fact]
     public void Push_should_notify_dm_and_mentions_but_not_author_or_plain_channel()
     {
-        var author = Guid.NewGuid();
-        var bob = Guid.NewGuid();
-        var mentioned = new HashSet<Guid> { bob };
+        const NotificationLevel level = NotificationLevel.MentionsAndDms;
 
-        PushDispatchPolicies.ShouldNotify(isDirect: true, mentioned, bob, author).Should().BeTrue();
-        PushDispatchPolicies.ShouldNotify(isDirect: true, mentioned, author, author).Should().BeFalse();
-        PushDispatchPolicies.ShouldNotify(isDirect: false, mentioned, bob, author).Should().BeTrue();
-        PushDispatchPolicies.ShouldNotify(isDirect: false, mentioned, Guid.NewGuid(), author).Should().BeFalse();
+        PushDispatchPolicies.ShouldNotifyForLevel(level, isDirect: true, isMentioned: true, isAuthor: false).Should().BeTrue();
+        PushDispatchPolicies.ShouldNotifyForLevel(level, isDirect: true, isMentioned: false, isAuthor: true).Should().BeFalse();
+        PushDispatchPolicies.ShouldNotifyForLevel(level, isDirect: false, isMentioned: true, isAuthor: false).Should().BeTrue();
+        PushDispatchPolicies.ShouldNotifyForLevel(level, isDirect: false, isMentioned: false, isAuthor: false).Should().BeFalse();
     }
 
     [Fact]
@@ -673,6 +671,98 @@ public sealed class BackendUnitTests
         PushDispatchPolicies.IsPushEnabled(null).Should().BeTrue();
         PushDispatchPolicies.IsPushEnabled(true).Should().BeTrue();
         PushDispatchPolicies.IsPushEnabled(false).Should().BeFalse();
+    }
+
+    [Theory]
+    // level, isDirect, isMentioned, isAuthor, expected
+    [InlineData(NotificationLevel.None, true, true, false, false)]
+    [InlineData(NotificationLevel.None, false, true, false, false)]
+    [InlineData(NotificationLevel.MentionsAndDms, true, false, false, true)]
+    [InlineData(NotificationLevel.MentionsAndDms, false, true, false, true)]
+    [InlineData(NotificationLevel.MentionsAndDms, false, false, false, false)]
+    [InlineData(NotificationLevel.All, false, false, false, true)]
+    [InlineData(NotificationLevel.All, true, false, false, true)]
+    [InlineData(NotificationLevel.All, false, false, true, false)]
+    public void ShouldNotifyForLevel_matches_decision_matrix(
+        NotificationLevel level, bool isDirect, bool isMentioned, bool isAuthor, bool expected)
+    {
+        PushDispatchPolicies.ShouldNotifyForLevel(level, isDirect, isMentioned, isAuthor).Should().Be(expected);
+    }
+
+    [Fact]
+    public void ResolveEffectiveLevel_falls_back_to_global_when_channel_override_expired()
+    {
+        var now = DateTimeOffset.Parse("2026-08-26T12:00:00Z");
+
+        PushDispatchPolicies.ResolveEffectiveLevel(NotificationLevel.MentionsAndDms, null, now)
+            .Should().Be(NotificationLevel.MentionsAndDms);
+
+        PushDispatchPolicies.ResolveEffectiveLevel(
+                NotificationLevel.MentionsAndDms,
+                (NotificationLevel.None, now.AddHours(1)),
+                now)
+            .Should().Be(NotificationLevel.None, "mute has not expired yet");
+
+        PushDispatchPolicies.ResolveEffectiveLevel(
+                NotificationLevel.MentionsAndDms,
+                (NotificationLevel.None, now.AddHours(-1)),
+                now)
+            .Should().Be(NotificationLevel.MentionsAndDms, "mute expired — falls back to global");
+
+        PushDispatchPolicies.ResolveEffectiveLevel(
+                NotificationLevel.MentionsAndDms,
+                (NotificationLevel.All, null),
+                now)
+            .Should().Be(NotificationLevel.All, "indefinite override never expires");
+    }
+
+    [Fact]
+    public void IsWithinDnd_handles_overnight_window_and_day_mask_in_user_timezone()
+    {
+        const string tz = "America/Sao_Paulo";
+        var start = new TimeOnly(20, 0);
+        var end = new TimeOnly(8, 0);
+
+        // 2026-08-26 22:00 UTC-3 (America/Sao_Paulo has no DST) -> 19:00 local, before the window.
+        PushDispatchPolicies.IsWithinDnd(true, start, end, dndDays: 0, tz, DateTimeOffset.Parse("2026-08-26T22:00:00Z"))
+            .Should().BeFalse();
+
+        // 2026-08-27 01:00 UTC -> 22:00 local same day, inside the overnight window.
+        PushDispatchPolicies.IsWithinDnd(true, start, end, dndDays: 0, tz, DateTimeOffset.Parse("2026-08-27T01:00:00Z"))
+            .Should().BeTrue();
+
+        // 2026-08-27 09:00 UTC -> 06:00 local, inside the window (wraps past midnight).
+        PushDispatchPolicies.IsWithinDnd(true, start, end, dndDays: 0, tz, DateTimeOffset.Parse("2026-08-27T09:00:00Z"))
+            .Should().BeTrue();
+
+        // 2026-08-27 13:00 UTC -> 10:00 local, outside the window.
+        PushDispatchPolicies.IsWithinDnd(true, start, end, dndDays: 0, tz, DateTimeOffset.Parse("2026-08-27T13:00:00Z"))
+            .Should().BeFalse();
+
+        PushDispatchPolicies.IsWithinDnd(false, start, end, dndDays: 0, tz, DateTimeOffset.Parse("2026-08-27T01:00:00Z"))
+            .Should().BeFalse("DND disabled");
+
+        PushDispatchPolicies.IsWithinDnd(true, start, end, dndDays: 0, timeZoneId: null, DateTimeOffset.Parse("2026-08-27T01:00:00Z"))
+            .Should().BeFalse("missing time zone fails open");
+
+        PushDispatchPolicies.IsWithinDnd(true, start, end, dndDays: 0, "Not/AZone", DateTimeOffset.Parse("2026-08-27T01:00:00Z"))
+            .Should().BeFalse("invalid time zone fails open");
+
+        // 2026-08-27 01:00 UTC is a Wednesday in America/Sao_Paulo (bit 1<<3 = 8); mask only includes Monday (1<<1 = 2).
+        PushDispatchPolicies.IsWithinDnd(true, start, end, dndDays: 2, tz, DateTimeOffset.Parse("2026-08-27T01:00:00Z"))
+            .Should().BeFalse("day not in mask");
+    }
+
+    [Fact]
+    public void IsPriorityBypass_only_bypasses_for_dm_from_marked_contact()
+    {
+        var priority = Guid.NewGuid();
+        var stranger = Guid.NewGuid();
+        var priorityContacts = new[] { priority };
+
+        PushDispatchPolicies.IsPriorityBypass(isDirect: true, priority, priorityContacts).Should().BeTrue();
+        PushDispatchPolicies.IsPriorityBypass(isDirect: false, priority, priorityContacts).Should().BeFalse();
+        PushDispatchPolicies.IsPriorityBypass(isDirect: true, stranger, priorityContacts).Should().BeFalse();
     }
 
     [Fact]

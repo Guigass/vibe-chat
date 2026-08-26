@@ -3305,6 +3305,204 @@ v1.MapDelete("/notifications/push/subscriptions/{id:guid}", async (
     return Results.NoContent();
 }).RequirePermission(Permissions.Message.Read);
 
+// B-097: notification preferences + DND. Strictly per (tenant, user) — nobody, including admin,
+// reads or writes another user's row (no audit trail for personal preference by design).
+v1.MapGet("/notifications/preferences", async (
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+    var pref = await db.NotificationPreferences.AsNoTracking()
+        .FirstOrDefaultAsync(x => x.UserId == profile.Id, ct);
+    var overrides = await db.ChannelNotificationPreferences.AsNoTracking()
+        .Where(x => x.UserId == profile.Id)
+        .Select(x => new ChannelNotificationOverrideResponse(x.ChannelId.Value, x.Level.ToString(), x.MutedUntil))
+        .ToArrayAsync(ct);
+    return Results.Ok(new NotificationPreferencesResponse(
+        (pref?.Level ?? NotificationLevel.MentionsAndDms).ToString(),
+        pref?.HidePreview ?? false,
+        pref?.DndEnabled ?? false,
+        pref?.DndStart,
+        pref?.DndEnd,
+        pref?.DndDays ?? (short)0,
+        pref?.TimeZone,
+        pref?.DigestEnabled ?? false,
+        pref?.PriorityContactUserIds ?? [],
+        overrides));
+}).RequirePermission(Permissions.Message.Read);
+
+v1.MapPut("/notifications/preferences", async (
+    UpdateNotificationPreferencesRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+    if (!tenant.HasTenant)
+    {
+        return Results.Forbid();
+    }
+
+    if (!Enum.TryParse<NotificationLevel>(request.Level, ignoreCase: true, out var level)
+        || !Enum.IsDefined(level))
+    {
+        return Results.BadRequest(new { error = "InvalidLevel" });
+    }
+
+    if (request.DndDays is < 0 or > 127)
+    {
+        return Results.BadRequest(new { error = "InvalidDndDays" });
+    }
+
+    if (request.DndEnabled)
+    {
+        if (request.DndStart is null || request.DndEnd is null || string.IsNullOrWhiteSpace(request.TimeZone)
+            || !IsValidTimeZone(request.TimeZone))
+        {
+            return Results.BadRequest(new { error = "DndRequiresWindowAndValidTimeZone" });
+        }
+    }
+
+    var requestedContactIds = (request.PriorityContactUserIds ?? [])
+        .Distinct()
+        .Take(50)
+        .Select(id => new UserId(id))
+        .ToArray();
+    var priorityContacts = requestedContactIds.Length == 0
+        ? []
+        : await db.WorkspaceMembers.AsNoTracking()
+            .Where(x => x.TenantId == tenant.TenantId && requestedContactIds.Contains(x.UserId))
+            .Select(x => x.UserId.Value)
+            .Distinct()
+            .ToArrayAsync(ct);
+
+    var pref = await db.NotificationPreferences.FirstOrDefaultAsync(x => x.UserId == profile.Id, ct);
+    if (pref is null)
+    {
+        pref = new NotificationPreference { Id = Guid.NewGuid(), TenantId = tenant.TenantId, UserId = profile.Id };
+        db.NotificationPreferences.Add(pref);
+    }
+
+    pref.Level = level;
+    pref.HidePreview = request.HidePreview;
+    pref.DndEnabled = request.DndEnabled;
+    pref.DndStart = request.DndStart;
+    pref.DndEnd = request.DndEnd;
+    pref.DndDays = request.DndDays;
+    pref.TimeZone = request.TimeZone;
+    pref.DigestEnabled = request.DigestEnabled;
+    pref.PriorityContactUserIds = priorityContacts;
+    await db.SaveChangesAsync(ct);
+
+    var overrides = await db.ChannelNotificationPreferences.AsNoTracking()
+        .Where(x => x.UserId == profile.Id)
+        .Select(x => new ChannelNotificationOverrideResponse(x.ChannelId.Value, x.Level.ToString(), x.MutedUntil))
+        .ToArrayAsync(ct);
+    return Results.Ok(new NotificationPreferencesResponse(
+        pref.Level.ToString(), pref.HidePreview, pref.DndEnabled, pref.DndStart, pref.DndEnd,
+        pref.DndDays, pref.TimeZone, pref.DigestEnabled, pref.PriorityContactUserIds, overrides));
+}).RequirePermission(Permissions.Message.Read);
+
+v1.MapPut("/notifications/preferences/channels/{channelId:guid}", async (
+    Guid channelId,
+    UpdateChannelNotificationPreferenceRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    if (!Enum.TryParse<NotificationLevel>(request.Level, ignoreCase: true, out var level)
+        || !Enum.IsDefined(level))
+    {
+        return Results.BadRequest(new { error = "InvalidLevel" });
+    }
+
+    DateTimeOffset? mutedUntil = null;
+    if (request.Duration is not null)
+    {
+        var now = clock.UtcNow;
+        switch (request.Duration)
+        {
+            case "OneHour":
+                mutedUntil = now.AddHours(1);
+                break;
+            case "EightHours":
+                mutedUntil = now.AddHours(8);
+                break;
+            case "UntilTomorrow":
+                var globalPref = await db.NotificationPreferences.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.UserId == profile.Id, ct);
+                mutedUntil = NextLocalMidnightUtc(now, globalPref?.TimeZone);
+                break;
+            case "Indefinite":
+                mutedUntil = null;
+                break;
+            default:
+                return Results.BadRequest(new { error = "InvalidDuration" });
+        }
+    }
+
+    var row = await db.ChannelNotificationPreferences
+        .FirstOrDefaultAsync(x => x.ChannelId == channel.Id && x.UserId == profile.Id, ct);
+    if (row is null)
+    {
+        row = new ChannelNotificationPreference
+        {
+            Id = Guid.NewGuid(),
+            TenantId = channel.TenantId,
+            UserId = profile.Id,
+            ChannelId = channel.Id
+        };
+        db.ChannelNotificationPreferences.Add(row);
+    }
+
+    row.Level = level;
+    row.MutedUntil = mutedUntil;
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new ChannelNotificationOverrideResponse(channel.Id.Value, row.Level.ToString(), row.MutedUntil));
+}).RequirePermission(Permissions.Message.Read);
+
+v1.MapDelete("/notifications/preferences/channels/{channelId:guid}", async (
+    Guid channelId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var row = await db.ChannelNotificationPreferences
+        .FirstOrDefaultAsync(x => x.ChannelId == channel.Id && x.UserId == profile.Id, ct);
+    if (row is not null)
+    {
+        db.ChannelNotificationPreferences.Remove(row);
+        await db.SaveChangesAsync(ct);
+    }
+
+    return Results.NoContent();
+}).RequirePermission(Permissions.Message.Read);
+
 v1.MapGet("/admin/dashboard", async (HttpContext http, VibeChatDbContext db, ITenantContext tenant, IDashboardQuery dashboard, IPresenceService presence, HealthCheckService health, IConfiguration config, IClock clock, IPermissionChecker permissions, CancellationToken ct) =>
 {
     var access = await ResolveAdminDashboardAccessAsync(http, db, tenant, permissions, clock, ct);
@@ -4626,6 +4824,40 @@ static Task<Workspace?> ResolveWorkspaceAsync(WorkspaceId workspaceId, UserId us
 static Task<Channel?> ResolveChannelAsync(ChannelId channelId, UserId userId, VibeChatDbContext db, ITenantContext tenant, CancellationToken ct) =>
     RequestAuth.ResolveChannelAsync(channelId, userId, db, tenant, ct);
 
+static bool IsValidTimeZone(string timeZoneId)
+{
+    try
+    {
+        TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+        return true;
+    }
+    catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
+    {
+        return false;
+    }
+}
+
+/// <summary>Next local midnight for "silenciar até amanhã" (B-097), converted back to UTC.</summary>
+static DateTimeOffset NextLocalMidnightUtc(DateTimeOffset nowUtc, string? timeZoneId)
+{
+    var tz = TimeZoneInfo.Utc;
+    if (!string.IsNullOrWhiteSpace(timeZoneId))
+    {
+        try
+        {
+            tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+        }
+        catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
+        {
+            tz = TimeZoneInfo.Utc;
+        }
+    }
+
+    var local = TimeZoneInfo.ConvertTime(nowUtc, tz);
+    var nextMidnightLocal = local.Date.AddDays(1);
+    return new DateTimeOffset(nextMidnightLocal, tz.GetUtcOffset(nextMidnightLocal));
+}
+
 static string BuildDirectChannelName(UserId left, UserId right)
 {
     var a = left.Value;
@@ -5665,6 +5897,34 @@ public sealed record PushSubscriptionResponse(
     string? UserAgent,
     DateTimeOffset CreatedAt,
     DateTimeOffset LastSeenAt);
+
+public sealed record ChannelNotificationOverrideResponse(Guid ChannelId, string Level, DateTimeOffset? MutedUntil);
+
+public sealed record NotificationPreferencesResponse(
+    string Level,
+    bool HidePreview,
+    bool DndEnabled,
+    TimeOnly? DndStart,
+    TimeOnly? DndEnd,
+    short DndDays,
+    string? TimeZone,
+    bool DigestEnabled,
+    Guid[] PriorityContactUserIds,
+    ChannelNotificationOverrideResponse[] ChannelOverrides);
+
+public sealed record UpdateNotificationPreferencesRequest(
+    string Level,
+    bool HidePreview,
+    bool DndEnabled,
+    TimeOnly? DndStart,
+    TimeOnly? DndEnd,
+    short DndDays,
+    string? TimeZone,
+    bool DigestEnabled,
+    Guid[]? PriorityContactUserIds);
+
+/// <summary>Duration: "OneHour" | "EightHours" | "UntilTomorrow" | "Indefinite" | null (no mute, e.g. an "All" override).</summary>
+public sealed record UpdateChannelNotificationPreferenceRequest(string Level, string? Duration);
 public sealed record ReadCursorResponse(Guid ChannelId, Guid UserId, long LastReadSequence, DateTimeOffset UpdatedAt);
 public sealed record ChannelUnreadSummaryResponse(
     Guid ChannelId,
