@@ -5,7 +5,7 @@ Snapshot factual para orientação rápida. Não substitui o
 
 - **Data de corte:** 2026-08-26
 - **Fase:** Wave 10 — W10-3 / B-097 Done (preferências/DND); seguinte W10-4 / B-098
-- **Safety lane obrigatória:** sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
+- **Safety lane obrigatória:** OPS-E2E-B097 Resolved neste PR (scroll/anchor após #142); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
 - **Próximo item elegível:** W10-4 / B-098 (busca com filtros)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 

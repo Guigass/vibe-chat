@@ -301,7 +301,12 @@ export class MessageStore {
   }
 
   async loadChannel(channelId: string): Promise<void> {
-    this.loadingSignal.set(true);
+    const hasCached = this.messagesSignal().some((message) => idsEqual(message.channelId, channelId));
+    // Keep a cached timeline mounted so channel switches do not destroy
+    // `.timeline__list` and drop the sticky-bottom pin (OPS-E2E-B097).
+    if (!hasCached) {
+      this.loadingSignal.set(true);
+    }
     try {
       await this.hub.joinChannel(channelId);
       if (this.channels.isDemo()) {

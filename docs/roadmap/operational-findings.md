@@ -26,13 +26,14 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-DOCS-RACE | Corrida Docs | Merges #72+#73 (~20s) abriram Docs #76+#77; #77 foi re-draftado e ficou CONFLICTING | High | External action | Colar prompts 03/06 atualizados no dashboard (repo já em #78) |
 | OPS-E2E-NAV | CI / E2E | `main` vermelho desde #131 (B-184): `timeline-anchor.spec.ts` (botão Bob ausente) + `timeline-history-scroll.spec.ts` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — specs alinhadas à nav B-184 (`Mensagem para …`) + dispatch de scroll para latch `nearBottom` |
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
-| OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | Open | Build fix regressão de scroll/anchor na timeline após preferências/DND (#142) |
+| OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — `loadChannel` não desmonta lista com cache; pin reobserva `.timeline__list` no remount |
 
 ## Resolvidos
 
 | ID | Categoria | Evidência | Severidade | Status | Resolução |
 |----|-----------|-----------|------------|--------|----------|
 | SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 + #73 — roles/FORCE + SET LOCAL na txn + validação de role app |
+| OPS-E2E-B097 | CI / E2E | `main` RED pós-#142: timeline-anchor (distância ~2780) + history-scroll (scrollTop ~3200) | Critical | Resolved | `loadChannel` não desmonta lista com cache; pin reobserva `.timeline__list` no remount |
 
 ## Formato de detalhe
 
@@ -138,8 +139,10 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 ### OPS-E2E-B097
 
-- Status: **Open** — regressão pós-merge de
-  [#142](https://github.com/Guigass/vibe-chat/pull/142) (B-097 preferências/DND).
+- Status: **Resolved** — `loadChannel` deixa de ligar `loading` quando o canal
+  já tem mensagens em cache; a timeline não troca a lista por skeleton nesse
+  caso; `TimelineStickyBottomPin` reobserva um `.timeline__list` remountado e
+  o efeito de loading volta a âncorar só se o latch `nearBottom` seguir ativo.
 - Observado em: CI `E2E (Playwright)` run
   [#32965658072](https://github.com/Guigass/vibe-chat/actions/runs/32965658072)
   (2026-08-26T11:53Z) —
@@ -151,12 +154,14 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   `944e22786a5bdee0c6b251334dd22ede5c07d282` (#142, 2026-08-26T11:53Z).
 - Reprodução: CI em `main` — 13 passed, 2 failed; Build/gitleaks/dep-audit verdes;
   regressão imediata após squash de #142 (não flaky — falha estável em retry).
-- Causa provável: alterações de UI em `shell.page`, `channel-list`, `channel-item`
-  e painel de preferências (#142) impactam layout/scroll da timeline; causa raiz
-  a confirmar pelo Build.
+- Causa raiz: `loadChannel` sempre ligava `loading=true`. O template da timeline
+  destruía `.timeline__list` no skeleton; o pin ficava no nó morto e
+  `afterChannelOpen` âncorava o skeleton. #142 piorou o timing (prefs +
+  `selectChannelGeral` refetch). Com cache, a lista permanece montada.
 - Resultado esperado: timeline ancora no conteúdo mais recente; leitor em histórico
   não é arrastado; E2E passa em ambas as specs.
-- Resultado atual: `main` vermelho; #143 (docs-close B-097) bloqueado em E2E.
+- Resultado atual: fix forward no store/pin; validação via unitários +
+  `task test:e2e:ci` no PR.
 - Impacto: bloqueia auto-merge e viola invariante “main verde”.
 - Risk class: R1 (teste/UI); severidade Critical por bloqueio de pipeline.
 - Owner automático: Build + QA.
