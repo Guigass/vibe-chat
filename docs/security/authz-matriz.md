@@ -44,6 +44,10 @@ para o gate de drift CI.
 | GET | `/workspaces/{workspaceId:guid}/commands` | membership | (filtra por perm) | ✓ | ✓ | ✓ | Discovery; itens filtrados por permissão |
 | GET | `/channels/{channelId:guid}/messages` | membership | — | ✓ | ✓ | ✓ | Timeline; membership-only justificado (leitura de canal) |
 | POST | `/channels/{channelId:guid}/messages` | permission | `message.send` | ✓ | ✗ | ✓ | |
+| POST | `/channels/{channelId:guid}/polls` | permission | `message.send` + membership | ✓ | ✗ | ✓ | B-096; não DM/thread |
+| POST | `/polls/{pollId:guid}/votes` | permission | `message.send` + membership | ✓ | ✗ | ✓ | Fechada → 409; outro tenant → 403 |
+| DELETE | `/polls/{pollId:guid}/votes` | permission | `message.send` + membership | ✓ | ✗ | ✓ | |
+| POST | `/polls/{pollId:guid}/close` | permission | `message.send` + autor ou `workspace.admin` | ✓* | ✗ | ✓ | *autor ou admin; tenant via send |
 | POST | `/workspaces/{workspaceId:guid}/messages/{messageId:guid}/forward` | permission | `message.send` | ✓ | ✗ | ✓ | |
 | POST | `/channels/{channelId:guid}/messages/{messageId:guid}/threads` | permission | `message.send` | ✓ | ✗ | ✓ | Get-or-create + reply |
 | GET | `/threads/{threadId:guid}` | membership | — | ✓ | ✓ | ✓ | |

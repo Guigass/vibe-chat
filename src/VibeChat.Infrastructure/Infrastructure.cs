@@ -83,6 +83,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<TenantLinkPreviewSettings> TenantLinkPreviewSettings => Set<TenantLinkPreviewSettings>();
     public DbSet<PinnedMessage> PinnedMessages => Set<PinnedMessage>();
     public DbSet<SavedMessage> SavedMessages => Set<SavedMessage>();
+    public DbSet<Poll> Polls => Set<Poll>();
+    public DbSet<PollOption> PollOptions => Set<PollOption>();
+    public DbSet<PollVote> PollVotes => Set<PollVote>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -257,6 +260,42 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Note).HasMaxLength(SavedMessagePolicies.MaxNoteLength);
             entity.HasIndex(x => new { x.TenantId, x.UserId, x.MessageId }).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.UserId, x.CompletedAt, x.CreatedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<Poll>(entity =>
+        {
+            entity.ToTable("polls", "messaging");
+            entity.HasKey(x => x.MessageId);
+            entity.Property(x => x.MessageId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.CreatedByUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Question).HasMaxLength(PollPolicies.MaxQuestionLength);
+            entity.HasIndex(x => new { x.TenantId, x.ChannelId });
+            entity.HasIndex(x => new { x.TenantId, x.ClosedAt, x.ClosesAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<PollOption>(entity =>
+        {
+            entity.ToTable("poll_options", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.PollId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.Text).HasMaxLength(PollPolicies.MaxOptionLength);
+            entity.HasIndex(x => new { x.TenantId, x.PollId, x.Position }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<PollVote>(entity =>
+        {
+            entity.ToTable("poll_votes", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.PollId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.HasIndex(x => new { x.TenantId, x.PollId, x.OptionId, x.UserId }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -2140,6 +2179,7 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     nameof(MessageDeletedEvent) => "MessageDeleted",
                     nameof(ReactionChangedEvent) => "ReactionChanged",
                     nameof(PinChangedEvent) => "PinChanged",
+                    nameof(PollChangedEvent) => "PollChanged",
                     _ => outbox.Type
                 };
 
@@ -2631,6 +2671,30 @@ public sealed class MessageRetentionPurgeProcessor(
             if (mentions.Count > 0)
             {
                 db.MessageMentions.RemoveRange(mentions);
+            }
+
+            var pollVotes = await db.PollVotes.IgnoreQueryFilters()
+                .Where(x => x.TenantId == policy.TenantId && messageIds.Contains(x.PollId))
+                .ToListAsync(cancellationToken);
+            if (pollVotes.Count > 0)
+            {
+                db.PollVotes.RemoveRange(pollVotes);
+            }
+
+            var pollOptions = await db.PollOptions.IgnoreQueryFilters()
+                .Where(x => x.TenantId == policy.TenantId && messageIds.Contains(x.PollId))
+                .ToListAsync(cancellationToken);
+            if (pollOptions.Count > 0)
+            {
+                db.PollOptions.RemoveRange(pollOptions);
+            }
+
+            var polls = await db.Polls.IgnoreQueryFilters()
+                .Where(x => x.TenantId == policy.TenantId && messageIds.Contains(x.MessageId))
+                .ToListAsync(cancellationToken);
+            if (polls.Count > 0)
+            {
+                db.Polls.RemoveRange(polls);
             }
 
             // Shared StorageKey (B-085): remove this message's attachment row and keep siblings.
@@ -3233,6 +3297,8 @@ public static class DependencyInjection
         services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
         services.AddScoped<IConversationSequenceStore, ConversationSequenceStore>();
         services.AddScoped<IMessageWriter, MessageWriter>();
+        services.AddScoped<IPollWriter, PollWriter>();
+        services.AddSingleton<PollCloseProcessor>();
         services.AddScoped<ISearchIndexer, PostgresSearchIndexer>();
         services.AddScoped<ISearchQuery, PostgresSearchQuery>();
         services.AddSingleton<IRateLimiter, RedisRateLimiter>();

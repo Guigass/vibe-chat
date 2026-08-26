@@ -27,6 +27,7 @@ import {
   MessageLinkPreview,
   PinnedMessageItem,
   SavedMessageItem,
+  PollSummary,
   PushPublicKey,
   PushDevice,
 } from '../../shared/models/chat.models';
@@ -156,6 +157,29 @@ interface MessageDto {
   reactions?: ReactionSummaryDto[] | null;
   linkPreview?: LinkPreviewDto | null;
   isPinned?: boolean;
+  poll?: PollDto | null;
+}
+
+interface PollDto {
+  id: string;
+  messageId: string;
+  channelId: string;
+  question: string;
+  allowMultiple: boolean;
+  anonymous: boolean;
+  closesAt?: string | null;
+  closedAt?: string | null;
+  totalVotes: number;
+  canVote: boolean;
+  options: Array<{
+    id: string;
+    text: string;
+    position: number;
+    voteCount: number;
+    percent: number;
+    votedByMe: boolean;
+    voters?: Array<{ userId: string; displayName: string }> | null;
+  }>;
 }
 
 interface ForwardMessageResponseDto {
@@ -460,6 +484,53 @@ export class ApiService {
       }),
     });
     return this.mapMessage(dto, this.auth.profile()?.id);
+  }
+
+  async createPoll(input: {
+    channelId: string;
+    clientMessageId: string;
+    idempotencyKey: string;
+    question: string;
+    options: string[];
+    allowMultiple: boolean;
+    anonymous: boolean;
+    closesAt?: string | null;
+  }): Promise<ChatMessage> {
+    const dto = await this.request<MessageDto>(`/api/v1/channels/${input.channelId}/polls`, {
+      method: 'POST',
+      body: JSON.stringify({
+        messageId: input.clientMessageId,
+        idempotencyKey: input.idempotencyKey,
+        question: input.question,
+        options: input.options,
+        allowMultiple: input.allowMultiple,
+        anonymous: input.anonymous,
+        closesAt: input.closesAt ?? null,
+      }),
+    });
+    return this.mapMessage(dto, this.auth.profile()?.id);
+  }
+
+  async votePoll(pollId: string, optionIds: string[]): Promise<PollSummary> {
+    const dto = await this.request<PollDto>(`/api/v1/polls/${pollId}/votes`, {
+      method: 'POST',
+      body: JSON.stringify({ optionIds }),
+    });
+    return this.mapPoll(dto)!;
+  }
+
+  async unvotePoll(pollId: string): Promise<PollSummary> {
+    const dto = await this.request<PollDto>(`/api/v1/polls/${pollId}/votes`, {
+      method: 'DELETE',
+    });
+    return this.mapPoll(dto)!;
+  }
+
+  async closePoll(pollId: string): Promise<PollSummary> {
+    const dto = await this.request<PollDto>(`/api/v1/polls/${pollId}/close`, {
+      method: 'POST',
+    });
+    return this.mapPoll(dto)!;
   }
 
   async forwardMessage(input: {
@@ -1204,6 +1275,35 @@ export class ApiService {
       })),
       linkPreview: this.mapLinkPreview(m.linkPreview),
       isPinned: !!m.isPinned,
+      poll: this.mapPoll(m.poll),
+    };
+  }
+
+  private mapPoll(poll?: PollDto | null): PollSummary | null {
+    if (!poll?.id || !poll.options) return null;
+    return {
+      id: String(poll.id),
+      messageId: String(poll.messageId || poll.id),
+      channelId: String(poll.channelId),
+      question: poll.question,
+      allowMultiple: !!poll.allowMultiple,
+      anonymous: !!poll.anonymous,
+      closesAt: poll.closesAt ?? null,
+      closedAt: poll.closedAt ?? null,
+      totalVotes: poll.totalVotes ?? 0,
+      canVote: !!poll.canVote,
+      options: poll.options.map((option) => ({
+        id: String(option.id),
+        text: option.text,
+        position: option.position,
+        voteCount: option.voteCount,
+        percent: option.percent,
+        votedByMe: !!option.votedByMe,
+        voters: option.voters?.map((voter) => ({
+          userId: String(voter.userId),
+          displayName: voter.displayName,
+        })),
+      })),
     };
   }
 

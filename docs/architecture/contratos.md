@@ -240,6 +240,23 @@ Permissão `message.pin` (default: Member, Moderator, Admin, Bot — não Guest/
 | Hub | Nenhum (estado pessoal) |
 | AuthZ | Nenhum admin lê salvos de terceiros; cross-tenant → **403** |
 
+### Enquetes (B-096)
+
+Enquete é uma mensagem (`seq` + outbox `MessageCreated` + idempotência). Discriminator = linha em `messaging.polls` (PK = `MessageId`). O `Body` da mensagem replica a pergunta (preview/FTS). Só canal com membership (não thread, não DM).
+
+| Artefato | Contrato |
+|----------|----------|
+| Tabelas | `messaging.polls` (`TenantId`, `MessageId`, `ChannelId`, `CreatedByUserId`, `Question` 1–500, `AllowMultiple`, `Anonymous`, `ClosesAt?`, `ClosedAt?`); `messaging.poll_options` (`TenantId`, `Id`, `PollId`, `Text` 1–100, `Position` único por enquete); `messaging.poll_votes` (`TenantId`, `Id`, `PollId`, `OptionId`, `UserId`, `CreatedAt`); unique `(TenantId, PollId, OptionId, UserId)` |
+| `POST /api/v1/channels/{channelId}/polls` | Body `{ messageId, idempotencyKey, question, options[2–10], allowMultiple?, anonymous?, closesAt? }`; membership + `message.send`; DM/grupo → **403**; `closesAt` no passado → **400**; **202** + `MessageResponse.poll` |
+| `POST /api/v1/polls/{pollId}/votes` | Body `{ optionIds: uuid[] }`; membership + `message.send`; único: 1 opção (substitui); múltiplo: conjunto completo; fechada → **409**; outra tenant / invisível → **403** |
+| `DELETE /api/v1/polls/{pollId}/votes` | Retira todos os votos do caller; fechada → **409**; invisível → **403** |
+| `POST /api/v1/polls/{pollId}/close` | Autor ou `workspace.admin`; idempotente se já fechada; invisível → **403** |
+| History / admin | `MessageDto.poll` / `AdminConversationMessageResponse.poll` agregado (contagens, `%`, `canVote`, `closedAt`); anônima **sem** `userId`/`voters` |
+| Hub | Outbox `PollChangedEvent` → `PollChanged` (`messageId`, `channelId`, `poll`) |
+| Worker | `PollCloseDispatcher` (30s, job_role `polls`): `ClosedAt IS NULL AND ClosesAt <= now()`; atraso ≤60s; audit `poll.close` com `actor=system` |
+| Audit | `poll.create`, `poll.vote`, `poll.unvote`, `poll.close` |
+| Slash | `/enquete` no catálogo só com `message.send` |
+
 ### Menções (B-082)
 
 | Artefato | Contrato |
@@ -434,7 +451,8 @@ Nomes de eventos hub (cliente):
 
 | Evento | Quando |
 |--------|--------|
-| `MessageCreated` | Nova mensagem — payload inclui `messageId`, `clientMessageId` (mesmo UUID do `messageId` do comando), `channelId`, `conversationId`, `threadId?`, `parentMessageId?`, `replyToMessageId?`, `replyTo?`, `forwardedFromMessageId?`, `forwardedFromChannelId?`, `forwardedFrom?`, `sequence`, `authorId`, `body`, menções/anexos |
+| `MessageCreated` | Nova mensagem — payload inclui `messageId`, `clientMessageId` (mesmo UUID do `messageId` do comando), `channelId`, `conversationId`, `threadId?`, `parentMessageId?`, `replyToMessageId?`, `replyTo?`, `forwardedFromMessageId?`, `forwardedFromChannelId?`, `forwardedFrom?`, `sequence`, `authorId`, `body`, menções/anexos; em enquete, `poll` agregado |
+| `PollChanged` | Voto, desvoto ou encerramento de enquete (B-096) — `messageId`, `channelId`, `poll` (mesmo shape do history) |
 | `MessageEdited` | Edição |
 | `MessageDeleted` | Soft delete |
 | `ReactionChanged` | Toggle de reação (payload com resumo agregado) |
@@ -560,9 +578,9 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 
 `AdminConversationResponse`: `id`, `workspaceId`, `name`, `type`, `spaceId`, `peerUserId`, `peerDisplayName`.
 
-`AdminConversationMessageResponse`: `id`, `channelId`, `conversationId`, `sequence`, `authorId`, `authorName`, `body` (sempre o valor persistido), `createdAt`, `editedAt`, `deletedAt`, `deletedBy`, `deletedByName`, `threadId`, `replyToMessageId`, `replyCount`, `attachments`.
+`AdminConversationMessageResponse`: `id`, `channelId`, `conversationId`, `sequence`, `authorId`, `authorName`, `body` (sempre o valor persistido), `createdAt`, `editedAt`, `deletedAt`, `deletedBy`, `deletedByName`, `threadId`, `replyToMessageId`, `replyCount`, `attachments`, `poll?` (B-096; anônima sem votantes).
 
-Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `settings.change`, `settings.credential.rotate`, `settings.encryption.reencrypt`, `workspace.export`, `message.purge`.
+Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `settings.change`, `settings.credential.rotate`, `settings.encryption.reencrypt`, `workspace.export`, `message.purge`, `poll.create`, `poll.vote`, `poll.unvote`, `poll.close`.
 
 **Planned (B-169) — metadata de `message.delete`:** quando `contentAuditEnabled=true`,
 `metadataJson` inclui `channelId`, `threadId?`, `sequence`, `authorId`, `body`

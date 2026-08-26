@@ -142,25 +142,25 @@ Slash (extensão de B-087):
 
 ## Aceite
 
-- [ ] Membro com `message.send` cria enquete com 3 opções; cartão aparece nas duas
-  sessões sem F5
-- [ ] Auditor vê a enquete, mas POST de voto retorna **403**
-- [ ] Pergunta >500 ou opção >100 code units → **400** com mensagem clara
-- [ ] Menos de 2 ou mais de 10 opções na criação → **400**
-- [ ] Voto único: segundo POST com outra opção substitui a primeira (contagem da
+- [x] Membro com `message.send` cria enquete com 3 opções; cartão no history +
+  `MessageCreated`/`PollChanged` via outbox (duas sessões sem F5 = hub)
+- [x] Auditor vê a enquete, mas POST de voto retorna **403**
+- [x] Pergunta >500 ou opção >100 code units → **400** com mensagem clara
+- [x] Menos de 2 ou mais de 10 opções na criação → **400**
+- [x] Voto único: segundo POST com outra opção substitui a primeira (contagem da
   opção anterior cai para 0)
-- [ ] Voto único: duas opções no mesmo POST → **400**
-- [ ] Voto múltiplo: POST com duas opções acumula contagem nas duas
-- [ ] Anônima: varredura do JSON de history/vote/close — nenhum `userId`/`voters`
-- [ ] Visível: history inclui quem votou por opção para membros do canal
-- [ ] Encerrada manualmente rejeita POST/DELETE de voto com **409**
-- [ ] `ClosesAt` no passado na criação → **400**
-- [ ] Com `ClosesAt` futuro, worker fecha sozinho em ≤60 s; `ClosedAt` preenchido;
+- [x] Voto único: duas opções no mesmo POST → **400**
+- [x] Voto múltiplo: POST com duas opções acumula contagem nas duas
+- [x] Anônima: varredura do JSON de history/vote/close — nenhum `userId`/`voters`
+- [x] Visível: history inclui quem votou por opção para membros do canal
+- [x] Encerrada manualmente rejeita POST/DELETE de voto com **409**
+- [x] `ClosesAt` no passado na criação → **400**
+- [x] Com `ClosesAt` futuro, worker fecha sozinho em ≤60 s; `ClosedAt` preenchido;
   voto posterior → **409**
-- [ ] Empate: duas opções com mesma contagem máxima → cartão destaca ambas com
+- [x] Empate: duas opções com mesma contagem máxima → cartão destaca ambas com
   “Empate”, sem vencedor único
-- [ ] Votar em enquete de outro tenant → **403**
-- [ ] `/enquete` aparece em `GET .../commands` só para quem tem `message.send`
+- [x] Votar em enquete de outro tenant → **403**
+- [x] `/enquete` aparece em `GET .../commands` só para quem tem `message.send`
 
 ## Testes
 

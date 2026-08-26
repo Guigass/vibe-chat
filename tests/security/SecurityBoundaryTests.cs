@@ -106,6 +106,82 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Cross_tenant_cannot_create_or_vote_on_polls()
+    {
+        var (foreignTenantId, foreignChannelId) = await SeedCrossTenantChannelAsync();
+        var foreignPollId = await SeedForeignPollAsync(foreignTenantId, foreignChannelId);
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var create = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{foreignChannelId}/polls",
+            new CreatePollRequest(
+                Guid.NewGuid(),
+                $"sec-poll-{Guid.NewGuid():N}",
+                "Cross tenant?",
+                ["Sim", "Não"]));
+        create.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var vote = await client.PostAsJsonAsync(
+            $"/api/v1/polls/{foreignPollId}/votes",
+            new CastPollVoteRequest([Guid.NewGuid()]));
+        vote.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Auditor_can_read_poll_but_cannot_vote()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var created = await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{SeedData.DemoChannelId.Value}/polls",
+            new CreatePollRequest(
+                Guid.NewGuid(),
+                $"sec-auditor-poll-{Guid.NewGuid():N}",
+                "Auditor vê?",
+                ["Sim", "Não"]));
+        created.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var poll = await created.Content.ReadFromJsonAsync<MessageResponse>();
+        poll.Should().NotBeNull();
+        poll!.Poll.Should().NotBeNull();
+        var optionId = poll.Poll!.Options[0].Id;
+
+        var elevate = await demo.PutAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/members/{SeedData.AliceUserId.Value}/role",
+            new { role = "Auditor" });
+        elevate.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        try
+        {
+            var history = await alice.GetAsync(
+                $"/api/v1/channels/{SeedData.DemoChannelId.Value}/messages?limit=100");
+            history.StatusCode.Should().Be(HttpStatusCode.OK);
+            var page = await history.Content.ReadFromJsonAsync<ChannelMessagesResponseDto>();
+            page!.Messages.Should().Contain(m => m.Id == poll.Id && m.Poll != null);
+
+            var vote = await alice.PostAsJsonAsync(
+                $"/api/v1/polls/{poll.Id}/votes",
+                new CastPollVoteRequest([optionId]));
+            vote.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+            var commands = await alice.GetFromJsonAsync<SlashCommandResponse[]>(
+                $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/commands");
+            commands!.Select(c => c.Name).Should().NotContain("enquete");
+        }
+        finally
+        {
+            var restore = await demo.PutAsJsonAsync(
+                $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/members/{SeedData.AliceUserId.Value}/role",
+                new { role = "Member" });
+            restore.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+    }
+
+    [Fact]
     public async Task Channel_members_autocomplete_cross_tenant_returns_forbidden()
     {
         var (foreignTenantId, foreignChannelId) = await SeedCrossTenantChannelAsync();
@@ -1059,7 +1135,16 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
         bool HasMoreBefore,
         bool HasMoreAfter);
 
-    private sealed record MessageDto(Guid Id, Guid ChannelId, long Sequence, Guid AuthorId, string Body, DateTimeOffset CreatedAt);
+    private sealed record MessageDto(
+        Guid Id,
+        Guid ChannelId,
+        long Sequence,
+        Guid AuthorId,
+        string Body,
+        DateTimeOffset CreatedAt,
+        PollDto? Poll = null);
+    private sealed record PollDto(Guid Id, Guid MessageId, string Question, PollOptionDto[] Options);
+    private sealed record PollOptionDto(Guid Id, string Text, int Position, int VoteCount);
     private sealed record AttachmentUploadDto(Guid AttachmentId, string UploadUrl);
     private sealed record SearchMessageHitDto(Guid MessageId, Guid ChannelId, string BodyPreview);
     private sealed record SearchMessagesDto(string Query, int Limit, SearchMessageHitDto[] Items);
@@ -1244,6 +1329,43 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
 
         await db.SaveChangesAsync();
         return (tenantId.Value, channelId.Value);
+    }
+
+    private async Task<Guid> SeedForeignPollAsync(Guid tenantId, Guid channelId)
+    {
+        await using var db = factory.CreateMigratorDbContext();
+        var now = DateTimeOffset.UtcNow;
+        var messageId = MessageId.New();
+        db.Messages.Add(new Message
+        {
+            Id = messageId,
+            TenantId = new TenantId(tenantId),
+            ConversationId = new ChannelId(channelId),
+            Sequence = 1,
+            AuthorId = SeedData.DemoUserId,
+            Body = "Foreign poll",
+            CreatedAt = now
+        });
+        db.Polls.Add(new Poll
+        {
+            MessageId = messageId,
+            TenantId = new TenantId(tenantId),
+            ChannelId = new ChannelId(channelId),
+            CreatedByUserId = SeedData.DemoUserId,
+            Question = "Foreign poll",
+            AllowMultiple = false,
+            Anonymous = false
+        });
+        db.PollOptions.Add(new PollOption
+        {
+            Id = Guid.NewGuid(),
+            TenantId = new TenantId(tenantId),
+            PollId = messageId,
+            Text = "A",
+            Position = 0
+        });
+        await db.SaveChangesAsync();
+        return messageId.Value;
     }
 
     private async Task<Guid> SeedReadyAttachmentInChannelAsync(Guid channelId, string fileName)
