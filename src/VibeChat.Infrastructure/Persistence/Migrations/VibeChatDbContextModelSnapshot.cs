@@ -682,6 +682,9 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.HasIndex("ConversationId", "Sequence")
                         .IsUnique();
 
+                    b.HasIndex("TenantId", "ConversationId", "CreatedAt")
+                        .HasDatabaseName("ix_messages_tenant_channel_created");
+
                     b.ToTable("messages", "messaging");
                 });
 

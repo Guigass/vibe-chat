@@ -180,6 +180,8 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.ForwardedFromChannelId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new ChannelId(v.Value) : null);
             entity.Property(x => x.Body).HasMaxLength(8000);
             entity.HasIndex(x => new { x.ConversationId, x.Sequence }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.ConversationId, x.CreatedAt })
+                .HasDatabaseName("ix_messages_tenant_channel_created");
             entity.HasIndex(x => x.ThreadId);
             entity.HasIndex(x => x.ForwardedFromMessageId);
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);

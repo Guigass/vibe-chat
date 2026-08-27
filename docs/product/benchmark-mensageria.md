@@ -102,8 +102,8 @@ sobre o `<input type="file">` que já existe, nunca como caminho único.
 | Capacidade | Slack | Teams | Discord | WhatsApp | VibeChat |
 |---|---|---|---|---|---|
 | Busca full-text | sim | sim | sim | sim | **Temos** |
-| Filtros (autor, canal, data, tipo) | sim | sim | sim | sim | **Falta** — B-098 |
-| Filtrar só anexos / só links | sim | sim | sim | sim | **Falta** — B-098 |
+| Filtros (autor, canal, data, tipo) | sim | sim | sim | sim | **Done** — B-098 |
+| Filtrar só anexos / só links | sim | sim | sim | sim | **Done** — B-098 |
 | Atalhos de teclado | extensos | sim | extensos | poucos | **Temos** (2) |
 | Paleta de comandos (Ctrl+K) | sim | sim | sim | — | **Falta** — B-099 |
 

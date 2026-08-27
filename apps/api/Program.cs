@@ -3106,6 +3106,14 @@ v1.MapGet("/search/messages", async (
     Guid workspaceId,
     string? q,
     Guid? channelId,
+    Guid? authorId,
+    string? from,
+    string? to,
+    bool? hasAttachment,
+    bool? hasLink,
+    string? attachmentKind,
+    string? sort,
+    string? cursor,
     int? limit,
     HttpContext http,
     VibeChatDbContext db,
@@ -3133,6 +3141,36 @@ v1.MapGet("/search/messages", async (
         scopedChannel = channel.Id;
     }
 
+    UserId? scopedAuthor = null;
+    if (authorId is not null)
+    {
+        var authorVisible = await db.WorkspaceMembers.AsNoTracking().AnyAsync(
+            m => m.WorkspaceId == workspace.Id && m.UserId == new UserId(authorId.Value),
+            ct);
+        if (!authorVisible)
+        {
+            return Results.Forbid();
+        }
+
+        scopedAuthor = new UserId(authorId.Value);
+    }
+
+    if (!SearchPolicies.TryParseInstant(from, endOfDay: false, out var fromInstant)
+        || !SearchPolicies.TryParseInstant(to, endOfDay: true, out var toInstant))
+    {
+        return Results.BadRequest(new { error = "InvalidDateRange" });
+    }
+
+    if (!SearchPolicies.TryParseAttachmentKind(attachmentKind, out var kind))
+    {
+        return Results.BadRequest(new { error = "InvalidAttachmentKind" });
+    }
+
+    if (!string.IsNullOrWhiteSpace(cursor) && !SearchCursorCodec.TryDecode(cursor, out _))
+    {
+        return Results.BadRequest(new { error = "InvalidCursor" });
+    }
+
     try
     {
         var page = await search.SearchMessagesAsync(
@@ -3142,7 +3180,15 @@ v1.MapGet("/search/messages", async (
                 workspace.Id,
                 q ?? string.Empty,
                 scopedChannel,
-                SearchPolicies.NormalizeLimit(limit)),
+                SearchPolicies.NormalizeLimit(limit),
+                scopedAuthor,
+                fromInstant,
+                toInstant,
+                hasAttachment,
+                hasLink,
+                kind,
+                SearchPolicies.ParseSort(sort),
+                cursor),
             ct);
 
         return Results.Ok(new SearchMessagesResponse(
@@ -3158,7 +3204,9 @@ v1.MapGet("/search/messages", async (
                 x.AuthorDisplayName,
                 x.BodyPreview,
                 x.CreatedAt,
-                x.Rank)).ToArray()));
+                x.Rank)).ToArray(),
+            page.Total,
+            page.Cursor));
     }
     catch (Exception ex)
     {
@@ -5942,7 +5990,12 @@ public sealed record SearchMessageHitResponse(
     string BodyPreview,
     DateTimeOffset CreatedAt,
     double Rank);
-public sealed record SearchMessagesResponse(string Query, int Limit, SearchMessageHitResponse[] Items);
+public sealed record SearchMessagesResponse(
+    string Query,
+    int Limit,
+    SearchMessageHitResponse[] Items,
+    int Total = 0,
+    string? Cursor = null);
 public sealed record AiSummaryResponse(string Summary);
 public sealed record AiSuggestReplyResponse(string Suggestion);
 public sealed record AiTranscribeResponse(string Text, string Language, string Provider);

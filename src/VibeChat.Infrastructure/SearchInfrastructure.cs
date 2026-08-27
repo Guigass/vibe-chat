@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using VibeChat.Conversations;
+using VibeChat.Files;
 using VibeChat.Search;
 using VibeChat.SharedKernel;
 
@@ -46,15 +47,19 @@ public sealed class PostgresSearchQuery(VibeChatDbContext dbContext) : ISearchQu
     {
         var term = SearchPolicies.NormalizeTerm(query.Term);
         var limit = SearchPolicies.NormalizeLimit(query.Limit);
-        if (term.Length < SearchPolicies.MinTermLength)
+        var hasTerm = term.Length >= SearchPolicies.MinTermLength;
+        if (!hasTerm && !SearchPolicies.HasStructuredFilter(query))
         {
             return new SearchResultPage(term, [], limit);
         }
 
         var channelFilter = query.ChannelId;
+        var authorFilter = query.AuthorId;
+        var createdFrom = query.From;
+        var createdTo = query.To;
         const string config = SearchPolicies.TextConfig;
 
-        var candidateQuery =
+        var joined =
             from message in dbContext.Messages.AsNoTracking()
             from thread in dbContext.MessageThreads.AsNoTracking()
                 .Where(t => message.ThreadId != null && t.Id == message.ThreadId.Value)
@@ -66,8 +71,9 @@ public sealed class PostgresSearchQuery(VibeChatDbContext dbContext) : ISearchQu
                 && channel.WorkspaceId == query.WorkspaceId
                 && message.DeletedAt == null
                 && (channelFilter == null || channel.Id == channelFilter)
-                && EF.Functions.ToTsVector(config, message.Body)
-                    .Matches(EF.Functions.PlainToTsQuery(config, term))
+                && (authorFilter == null || message.AuthorId == authorFilter)
+                && (createdFrom == null || message.CreatedAt >= createdFrom)
+                && (createdTo == null || message.CreatedAt <= createdTo)
                 && (
                     (
                         (channel.Type == ChannelType.Public || channel.Type == ChannelType.Announcement)
@@ -85,25 +91,146 @@ public sealed class PostgresSearchQuery(VibeChatDbContext dbContext) : ISearchQu
                             && cm.UserId == query.UserId)
                     )
                 )
-            select new
-            {
-                message.Id,
-                ChannelId = channel.Id,
-                ChannelName = channel.Name,
-                ChannelType = channel.Type,
-                message.Sequence,
-                message.AuthorId,
-                message.Body,
-                message.CreatedAt,
-                Rank = EF.Functions.ToTsVector(config, message.Body)
-                    .Rank(EF.Functions.PlainToTsQuery(config, term))
-            };
+            select new { message, channel };
 
-        var rows = await candidateQuery
-            .OrderByDescending(x => x.Rank)
-            .ThenByDescending(x => x.CreatedAt)
-            .Take(limit)
-            .ToListAsync(cancellationToken);
+        if (hasTerm)
+        {
+            joined = joined.Where(x =>
+                EF.Functions.ToTsVector(config, x.message.Body)
+                    .Matches(EF.Functions.PlainToTsQuery(config, term)));
+        }
+
+        if (query.HasAttachment == true)
+        {
+            joined = joined.Where(x => dbContext.Attachments.Any(a =>
+                a.TenantId == query.TenantId
+                && a.MessageId == x.message.Id
+                && a.Status == AttachmentStatus.Ready));
+        }
+        else if (query.HasAttachment == false)
+        {
+            joined = joined.Where(x => !dbContext.Attachments.Any(a =>
+                a.TenantId == query.TenantId
+                && a.MessageId == x.message.Id
+                && a.Status == AttachmentStatus.Ready));
+        }
+
+        if (query.HasLink == true)
+        {
+            joined = joined.Where(x =>
+                x.message.Body.Contains("http://")
+                || x.message.Body.Contains("https://")
+                || dbContext.MessageLinkPreviews.Any(p =>
+                    p.TenantId == query.TenantId
+                    && p.MessageId == x.message.Id
+                    && p.RemovedAt == null));
+        }
+        else if (query.HasLink == false)
+        {
+            joined = joined.Where(x =>
+                !x.message.Body.Contains("http://")
+                && !x.message.Body.Contains("https://")
+                && !dbContext.MessageLinkPreviews.Any(p =>
+                    p.TenantId == query.TenantId
+                    && p.MessageId == x.message.Id
+                    && p.RemovedAt == null));
+        }
+
+        var attachmentKind = query.AttachmentKind?.Trim().ToLowerInvariant();
+        if (attachmentKind == "audio")
+        {
+            joined = joined.Where(x => dbContext.Attachments.Any(a =>
+                a.TenantId == query.TenantId
+                && a.MessageId == x.message.Id
+                && a.Status == AttachmentStatus.Ready
+                && a.Kind == AttachmentKind.Audio));
+        }
+        else if (attachmentKind == "image")
+        {
+            joined = joined.Where(x => dbContext.Attachments.Any(a =>
+                a.TenantId == query.TenantId
+                && a.MessageId == x.message.Id
+                && a.Status == AttachmentStatus.Ready
+                && a.ContentType.StartsWith("image/")));
+        }
+        else if (attachmentKind == "document")
+        {
+            joined = joined.Where(x => dbContext.Attachments.Any(a =>
+                a.TenantId == query.TenantId
+                && a.MessageId == x.message.Id
+                && a.Status == AttachmentStatus.Ready
+                && a.Kind == AttachmentKind.File
+                && !a.ContentType.StartsWith("image/")));
+        }
+
+        var total = await joined.CountAsync(cancellationToken);
+
+        SearchPageCursor? pageCursor = null;
+        if (!string.IsNullOrWhiteSpace(query.Cursor)
+            && SearchCursorCodec.TryDecode(query.Cursor, out var decodedCursor))
+        {
+            pageCursor = decodedCursor;
+            var cursorCreated = decodedCursor.CreatedAt;
+            if (query.Sort == SearchSort.Date)
+            {
+                joined = joined.Where(x => x.message.CreatedAt < cursorCreated);
+            }
+        }
+
+        var candidateQuery = hasTerm
+            ? joined.Select(x => new
+            {
+                x.message.Id,
+                ChannelId = x.channel.Id,
+                ChannelName = x.channel.Name,
+                ChannelType = x.channel.Type,
+                x.message.Sequence,
+                x.message.AuthorId,
+                x.message.Body,
+                x.message.CreatedAt,
+                Rank = EF.Functions.ToTsVector(config, x.message.Body)
+                    .Rank(EF.Functions.PlainToTsQuery(config, term))
+            })
+            : joined.Select(x => new
+            {
+                x.message.Id,
+                ChannelId = x.channel.Id,
+                ChannelName = x.channel.Name,
+                ChannelType = x.channel.Type,
+                x.message.Sequence,
+                x.message.AuthorId,
+                x.message.Body,
+                x.message.CreatedAt,
+                Rank = 0f
+            });
+
+        if (pageCursor is not null && query.Sort != SearchSort.Date)
+        {
+            var cursorRank = (float)pageCursor.Rank;
+            var cursorCreated = pageCursor.CreatedAt;
+            candidateQuery = candidateQuery.Where(x =>
+                x.Rank < cursorRank
+                || (x.Rank == cursorRank && x.CreatedAt < cursorCreated));
+        }
+
+        var rows = query.Sort == SearchSort.Date
+            ? await candidateQuery
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(limit + 1)
+                .ToListAsync(cancellationToken)
+            : await candidateQuery
+                .OrderByDescending(x => x.Rank)
+                .ThenByDescending(x => x.CreatedAt)
+                .Take(limit + 1)
+                .ToListAsync(cancellationToken);
+
+        string? nextCursor = null;
+        if (rows.Count > limit)
+        {
+            var last = rows[limit - 1];
+            nextCursor = SearchCursorCodec.Encode(new SearchPageCursor(query.Sort, last.Rank, last.CreatedAt, last.Id.Value));
+            rows = rows.Take(limit).ToList();
+        }
 
         var authorIds = rows.Select(x => x.AuthorId).Distinct().ToArray();
         var authors = await dbContext.UserProfiles.AsNoTracking()
@@ -123,7 +250,7 @@ public sealed class PostgresSearchQuery(VibeChatDbContext dbContext) : ISearchQu
             row.CreatedAt,
             row.Rank)).ToArray();
 
-        return new SearchResultPage(term, items, limit);
+        return new SearchResultPage(term, items, limit, total, nextCursor);
     }
 
     private static string FormatChannelName(string name, string type)

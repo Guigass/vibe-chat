@@ -141,8 +141,9 @@ authZ + gaps admin/typing). **W7-12 / B-176 Done** (fonte de verdade de roles �
 DB vs Keycloak). **W7-13 / B-177 Done** (DevAuth fail-closed). **W7-14 / B-187 Done**
 (instalação configurável no admin: SMTP/IA/webhook/retenção na UI; infra no env).
 Sustentação Wave 7 completa. **W10-3 / B-097 Done** (preferências de notificação e
-DND: nível global, override por canal com silenciar/expiração automática, DND com
-fuso IANA, contato prioritário, ocultar prévia); próximo elegível: W10-4 / B-098.
+DND). **W10-4 / B-098 Done** (busca com filtros: autor/canal/data/anexo/link,
+sintaxe `de:`/`em:`/`antes:`/`tem:`, paginação e ordenação); próximo elegível:
+W10-5 / B-099.
 
 | ID | Trilha | Tarefa | Deps | Spec/evidência | Status |
 |----|--------|--------|------|----------------|--------|
@@ -303,7 +304,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W10-1 | B/C/D | Web Push (B-095) | W8-4, W9-7, D-13 | [B-095](../product/specs/B-095-web-push.md) | **Done** |
 | W10-2 | C/D | Enquetes (B-096) | W8-9 | [B-096](../product/specs/B-096-enquetes.md) | **Done** |
 | W10-3 | B/D | Preferências de notificação e DND (B-097) | W10-1 | [B-097](../product/specs/B-097-preferencias-notificacao-dnd.md) | **Done** — nível/canal/DND/prioridade/ocultar prévia; envio de resumo por e-mail (`DigestEnabled`) fica para item futuro |
-| W10-4 | C/D | Busca com filtros (B-098) | W9-2 | [B-098](../product/specs/B-098-busca-com-filtros.md) | Planned |
+| W10-4 | C/D | Busca com filtros (B-098) | W9-2 | [B-098](../product/specs/B-098-busca-com-filtros.md) | **Done** |
 | W10-5 | D | Paleta de comandos e atalhos (B-099) | W8-9, W10-4, W9-10 | [B-099](../product/specs/B-099-paleta-de-comandos.md) | Planned |
 | W10-6 | D/G | Internacionalização (B-100) | D-14 | [B-100](../product/specs/B-100-i18n.md) | Planned |
 | W10-7 | B/C/D | DM em grupo (B-101) | B-021 | [B-101](../product/specs/B-101-dm-em-grupo.md) | Planned |
