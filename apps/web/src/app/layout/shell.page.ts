@@ -29,7 +29,17 @@ import { ThreadPanel } from '../features/chat/thread-panel/thread-panel';
 import { NotificationPreferencesPanel } from '../features/chat/notification-preferences-panel/notification-preferences-panel';
 import { SuggestReplyButton } from '../features/ai/suggest-reply-button';
 import { SummarizeButton } from '../features/ai/summarize-button';
-import { SearchMessageHit } from '../shared/models/chat.models';
+import { SearchMessageHit, WorkspaceMember } from '../shared/models/chat.models';
+import {
+  applySearchOperator,
+  hasSearchFilter,
+  highlightSearchParts,
+  parseSearchQuery,
+  removeSearchChip,
+  type SearchChip,
+  type SearchSort,
+} from '../shared/search/search-query';
+import { readRecentSearches, writeRecentSearch } from '../shared/search/search-recent';
 import {
   ConnectionBanner,
   DensityControl,
@@ -107,6 +117,19 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly searchLoading = signal(false);
   readonly searchError = signal<string | null>(null);
   readonly searchOpen = signal(false);
+  readonly searchScope = signal<'workspace' | 'channel'>('workspace');
+  readonly searchSort = signal<SearchSort>('relevance');
+  readonly searchTotal = signal(0);
+  readonly searchCursor = signal<string | null>(null);
+  readonly searchRecent = signal<string[]>([]);
+  readonly parsedSearch = computed(() => parseSearchQuery(this.search()));
+  readonly searchChips = computed(() => this.parsedSearch().chips);
+  readonly searchSuggestions = computed(() => this.buildSearchSuggestions());
+  readonly searchGroups = computed(() => this.groupSearchHits(this.searchResults()));
+  readonly searchCanRun = computed(() => {
+    const parsed = this.parsedSearch();
+    return parsed.term.length >= 2 || hasSearchFilter(parsed);
+  });
   readonly canAccessAdmin = computed(() =>
     this.channels.workspaces().some((workspace) => hasAdminDashboard(workspace.role)),
   );
@@ -147,18 +170,24 @@ export class ShellPage implements OnInit, OnDestroy {
     });
 
     effect(() => {
-      const term = this.search().trim();
+      const raw = this.search();
+      const parsed = parseSearchQuery(raw);
       const workspaceId = this.channels.activeWorkspace()?.id;
+      const canRun = parsed.term.length >= 2 || hasSearchFilter(parsed);
+      this.searchSort();
+      this.searchScope();
       if (this.searchTimer) {
         clearTimeout(this.searchTimer);
         this.searchTimer = null;
       }
 
-      if (!workspaceId || term.length < 2 || this.auth.isOfflineDemo() || this.channels.isDemo()) {
+      if (!workspaceId || !canRun || this.auth.isOfflineDemo() || this.channels.isDemo()) {
         this.searchResults.set([]);
         this.searchError.set(null);
         this.searchLoading.set(false);
-        this.searchOpen.set(this.searchFocused() && term.length >= 2);
+        this.searchTotal.set(0);
+        this.searchCursor.set(null);
+        this.searchOpen.set(this.searchFocused());
         return;
       }
 
@@ -166,7 +195,7 @@ export class ShellPage implements OnInit, OnDestroy {
       this.searchOpen.set(true);
       const seq = ++this.searchSeq;
       this.searchTimer = setTimeout(() => {
-        void this.runSearch(workspaceId, term, seq);
+        void this.runSearch(workspaceId, parsed, seq);
       }, 280);
     });
   }
@@ -197,6 +226,7 @@ export class ShellPage implements OnInit, OnDestroy {
       event.preventDefault();
       this.searchFocused.set(true);
       this.searchOpen.set(true);
+      this.refreshRecentSearches();
       const el = document.getElementById('vc-search') as HTMLInputElement | null;
       el?.focus();
       return;
@@ -358,6 +388,10 @@ export class ShellPage implements OnInit, OnDestroy {
   }
 
   async openSearchHit(hit: SearchMessageHit): Promise<void> {
+    const userId = this.auth.profile()?.id;
+    if (userId && this.search().trim()) {
+      this.searchRecent.set(writeRecentSearch(userId, this.search().trim()));
+    }
     await this.channels.selectChannel(hit.channelId);
     const result = await this.messages.jumpToSequence(hit.channelId, hit.sequence, hit.messageId);
     if (result === 'deleted') {
@@ -369,6 +403,135 @@ export class ShellPage implements OnInit, OnDestroy {
     }
     this.searchOpen.set(false);
     this.searchFocused.set(false);
+  }
+
+  onSearchFocus(): void {
+    this.searchFocused.set(true);
+    this.searchOpen.set(true);
+    this.refreshRecentSearches();
+  }
+
+  removeSearchChip(chip: SearchChip): void {
+    this.search.set(removeSearchChip(this.search(), chip));
+  }
+
+  applySuggestion(value: string): void {
+    const active = this.parsedSearch().activeOperator;
+    if (!active) {
+      this.search.set(value);
+      return;
+    }
+    this.search.set(applySearchOperator(this.search(), active.op, value));
+  }
+
+  applyRecent(query: string): void {
+    this.search.set(query);
+  }
+
+  setSearchScope(scope: 'workspace' | 'channel'): void {
+    this.searchScope.set(scope);
+  }
+
+  setSearchSort(sort: SearchSort): void {
+    this.searchSort.set(sort);
+  }
+
+  highlightParts(text: string): Array<{ text: string; hit: boolean }> {
+    return highlightSearchParts(text, this.parsedSearch().term);
+  }
+
+  async loadMoreSearch(): Promise<void> {
+    const workspaceId = this.channels.activeWorkspace()?.id;
+    const cursor = this.searchCursor();
+    if (!workspaceId || !cursor) {
+      return;
+    }
+    const seq = ++this.searchSeq;
+    await this.runSearch(workspaceId, this.parsedSearch(), seq, cursor);
+  }
+
+  private refreshRecentSearches(): void {
+    const userId = this.auth.profile()?.id;
+    this.searchRecent.set(userId ? readRecentSearches(userId) : []);
+  }
+
+  private resolveAuthorId(token: string | undefined, members: WorkspaceMember[]): string | undefined {
+    if (!token) return undefined;
+    const needle = token.replace(/^@/, '').toLowerCase();
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(needle)) {
+      return needle;
+    }
+    const exact = members.find((m) => m.displayName.toLowerCase() === needle);
+    if (exact) return exact.userId;
+    return members.find((m) => m.displayName.toLowerCase().startsWith(needle))?.userId;
+  }
+
+  private resolveChannelId(token: string | undefined): string | undefined {
+    if (!token) return undefined;
+    const needle = token.replace(/^#/, '').toLowerCase();
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(needle)) {
+      return needle;
+    }
+    const channels = this.channels.channels();
+    const exact = channels.find((c) => c.name.toLowerCase() === needle);
+    if (exact) return exact.id;
+    return channels.find((c) => c.name.toLowerCase().startsWith(needle))?.id;
+  }
+
+  private buildSearchSuggestions(): Array<{ value: string; label: string }> {
+    const active = this.parsedSearch().activeOperator;
+    if (!active) {
+      return [];
+    }
+    const q = active.query.replace(/^[@#]/, '').toLowerCase();
+    if (active.op === 'de') {
+      return this.channels
+        .members()
+        .filter((m) => !q || m.displayName.toLowerCase().includes(q))
+        .slice(0, 8)
+        .map((m) => ({ value: m.displayName, label: m.displayName }));
+    }
+    if (active.op === 'em') {
+      return this.channels
+        .channels()
+        .filter((c) => !c.isDirect)
+        .filter((c) => !q || c.name.toLowerCase().includes(q))
+        .slice(0, 8)
+        .map((c) => ({ value: c.name, label: `#${c.name}` }));
+    }
+    if (active.op === 'tem') {
+      return [
+        { value: 'anexo', label: 'tem:anexo' },
+        { value: 'link', label: 'tem:link' },
+        { value: 'imagem', label: 'tem:imagem' },
+        { value: 'audio', label: 'tem:audio' },
+        { value: 'documento', label: 'tem:documento' },
+      ].filter((item) => !q || item.value.startsWith(q));
+    }
+    if (active.op === 'antes' || active.op === 'depois') {
+      const today = new Date().toISOString().slice(0, 10);
+      return [{ value: today, label: today }];
+    }
+    return [];
+  }
+
+  private groupSearchHits(items: SearchMessageHit[]): Array<{
+    channelId: string;
+    channelName: string;
+    count: number;
+    items: SearchMessageHit[];
+  }> {
+    const groups = new Map<string, { channelId: string; channelName: string; items: SearchMessageHit[] }>();
+    for (const hit of items) {
+      const current = groups.get(hit.channelId) ?? {
+        channelId: hit.channelId,
+        channelName: hit.channelName,
+        items: [],
+      };
+      current.items.push(hit);
+      groups.set(hit.channelId, current);
+    }
+    return [...groups.values()].map((group) => ({ ...group, count: group.items.length }));
   }
 
   private async applyPushDeepLink(): Promise<void> {
@@ -390,19 +553,48 @@ export class ShellPage implements OnInit, OnDestroy {
     }
   }
 
-  private async runSearch(workspaceId: string, term: string, seq: number): Promise<void> {
+  private async runSearch(
+    workspaceId: string,
+    parsed: ReturnType<typeof parseSearchQuery>,
+    seq: number,
+    cursor?: string,
+  ): Promise<void> {
     try {
-      const result = await this.api.searchMessages({ workspaceId, q: term, limit: 12 });
+      const authorId = this.resolveAuthorId(parsed.authorToken, this.channels.members());
+      const channelFromOp = this.resolveChannelId(parsed.channelToken);
+      const channelId =
+        channelFromOp ??
+        (this.searchScope() === 'channel' ? this.channels.activeChannelId() ?? undefined : undefined);
+      const result = await this.api.searchMessages({
+        workspaceId,
+        q: parsed.term,
+        channelId,
+        authorId,
+        from: parsed.from,
+        to: parsed.to,
+        hasAttachment: parsed.hasAttachment,
+        hasLink: parsed.hasLink,
+        attachmentKind: parsed.attachmentKind,
+        sort: this.searchSort(),
+        cursor,
+        limit: 20,
+      });
       if (seq !== this.searchSeq) {
         return;
       }
-      this.searchResults.set(result.items);
+      this.searchResults.set(cursor ? [...this.searchResults(), ...result.items] : result.items);
+      this.searchTotal.set(result.total ?? result.items.length);
+      this.searchCursor.set(result.cursor ?? null);
       this.searchError.set(null);
     } catch {
       if (seq !== this.searchSeq) {
         return;
       }
-      this.searchResults.set([]);
+      if (!cursor) {
+        this.searchResults.set([]);
+        this.searchTotal.set(0);
+        this.searchCursor.set(null);
+      }
       this.searchError.set('Não foi possível buscar mensagens.');
     } finally {
       if (seq === this.searchSeq) {

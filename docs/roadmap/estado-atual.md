@@ -3,10 +3,10 @@
 Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
-- **Data de corte:** 2026-08-26
-- **Fase:** Wave 10 — W10-3 / B-097 Done (preferências/DND); seguinte W10-4 / B-098
-- **Safety lane obrigatória:** OPS-E2E-B097 Resolved neste PR (scroll/anchor após #142); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
-- **Próximo item elegível:** W10-4 / B-098 (busca com filtros)
+- **Data de corte:** 2026-08-27
+- **Fase:** Wave 10 — W10-4 / B-098 Done (busca com filtros); seguinte W10-5 / B-099
+- **Safety lane obrigatória:** OPS-E2E-B097 Resolved (#145); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
+- **Próximo item elegível:** W10-5 / B-099 (paleta de comandos e atalhos)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -24,7 +24,7 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
-2. avançar Wave 10 (W10-1 / B-095, W10-2 / B-096, W10-3 / B-097 Done; seguinte W10-4 / B-098);
+2. avançar Wave 10 (W10-1…W10-4 Done; seguinte W10-5 / B-099);
 3. consumir o roadmap autorizado W11–W19 (Wave 19 = organização do código,
    recomendada antes de W11).
 
@@ -79,7 +79,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W10-4 / B-098 | W9-2 / B-089 Done |
+| 1 | W10-5 / B-099 | W8-9 / B-087, W10-4 / B-098 e W9-10 / B-173 Done |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
@@ -92,6 +92,8 @@ W7-14 / B-187 **Done** (instalação configurável no admin; catálogo permanece
 W8-9 / B-087 **Done** (slash commands + discovery + topic).
 W10-1 / B-095 **Done** (Web Push VAPID, opt-in, outbox/worker, kill switch off default).
 W10-2 / B-096 **Done** (enquetes: mensagem + `polls`/`votes`, `/enquete`, worker de prazo).
+W10-3 / B-097 **Done** (preferências/DND).
+W10-4 / B-098 **Done** (busca com filtros, chips, paginação e ordenação).
 
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W19. Wave 19
 (organização do código) é recomendada antes de W11. Ele não altera a prioridade

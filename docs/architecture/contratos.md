@@ -540,17 +540,21 @@ public interface ISearchQuery
 }
 ```
 
-Fase 1: implementação PostgreSQL FTS (ADR-011).
+Fase 1: implementação PostgreSQL FTS (ADR-011). Filtros (B-098) só restringem; a ACL de membership continua no servidor.
 
 ### Endpoints (API)
 
 | Endpoint | Notas |
 |----------|-------|
-| `GET /api/v1/search/messages?workspaceId=&q=&channelId=&limit=` | FTS em mensagens (`tsvector`/`GIN`); exige membership no workspace + `search.messages` + `message.read`; filtra por ACL de canal (público via workspace, privado/DM via `channel_members`); nunca retorna mensagens soft-deleted nem fora da membership |
+| `GET /api/v1/search/messages?workspaceId=&q=&channelId=&authorId=&from=&to=&hasAttachment=&hasLink=&attachmentKind=&sort=&cursor=&limit=` | FTS em mensagens (`tsvector`/`GIN`); exige membership no workspace + `search.messages` + `message.read`; filtra por ACL de canal (público via workspace, privado/DM via `channel_members`); nunca retorna mensagens soft-deleted nem fora da membership. `authorId`/`channelId` de outro tenant ou sem visibilidade → **403**. `q` pode ficar vazio quando há filtro estruturado. `from`/`to` ISO-8601 (data só: início/fim do dia UTC). `attachmentKind`: `image`\|`audio`\|`document`. `sort`: `relevance` (default) \| `date`. `limit` máx. 50. |
 
 `SearchMessageHit`: `messageId`, `channelId`, `channelName`, `channelType`, `sequence`, `authorUserId`, `authorDisplayName`, `bodyPreview`, `createdAt`, `rank`.
 
-Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via outbox `MessageCreated`/`Edited`/`Deleted`).
+`SearchMessagesResponse` ganha `total` (contagem do recorte filtrado) e `cursor` (próxima página; ausente na última).
+
+Sintaxe no campo (cliente): `de:@alice em:#geral antes:2026-07-01 depois:2026-06-01 tem:anexo|link|imagem|audio|documento`. Operadores viram query params; texto restante é `q`.
+
+Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via outbox `MessageCreated`/`Edited`/`Deleted`); índice composto `ix_messages_tenant_channel_created` (`TenantId`, `ConversationId`, `CreatedAt`) para recorte por data/canal.
 
 ---
 

@@ -63,13 +63,13 @@ data.
 
 ## Aceite
 
-- [ ] `de:@alice tem:anexo` devolve só anexos da Alice
-- [ ] Intervalo de datas recorta corretamente nas bordas
-- [ ] Paginação avança sem repetir resultado
-- [ ] Clicar leva à mensagem destacada
-- [ ] Filtro por canal sem membership → 403
-- [ ] Ordenar por data muda a ordem
-- [ ] Busca em workspace com 50k mensagens responde em tempo aceitável
+- [x] `de:@alice tem:anexo` devolve só anexos da Alice
+- [x] Intervalo de datas recorta corretamente nas bordas
+- [x] Paginação avança sem repetir resultado
+- [x] Clicar leva à mensagem destacada
+- [x] Filtro por canal sem membership → 403
+- [x] Ordenar por data muda a ordem
+- [x] Busca em workspace com 50k mensagens responde em tempo aceitável — índice composto `(TenantId, ConversationId, CreatedAt)` + FTS GIN existente; consulta filtrada no smoke k6
 
 ## Testes
 
