@@ -224,8 +224,9 @@
 }
 
 .shell__title {
-  min-width: 0;
-  flex: 1;
+  /* OPS-E2E-B098: never collapse to 0 — Playwright treats a 0×n h1 as hidden. */
+  min-width: 6.5rem;
+  flex: 1 1 8rem;
 }
 
 .shell__title h1 {
@@ -247,7 +248,10 @@
 
 .shell__search {
   position: relative;
+  flex: 0 1 min(22rem, 42vw);
   width: min(22rem, 42vw);
+  min-width: 10rem;
+  max-width: min(22rem, 42vw);
 }
 
 .shell__search.is-open .shell__search-panel,
@@ -544,6 +548,6 @@
 
   .shell__title {
     flex: 1 1 auto;
-    min-width: 6rem;
+    min-width: 6.5rem;
   }
 }

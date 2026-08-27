@@ -27,6 +27,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-NAV | CI / E2E | `main` vermelho desde #131 (B-184): `timeline-anchor.spec.ts` (botão Bob ausente) + `timeline-history-scroll.spec.ts` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — specs alinhadas à nav B-184 (`Mensagem para …`) + dispatch de scroll para latch `nearBottom` |
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — `loadChannel` não desmonta lista com cache; pin reobserva `.timeline__list` no remount |
+| OPS-E2E-B098 | CI / E2E | `main` RED pós-#146 (B-098): 15 specs falham em `auth.ts:118` — timeout 20s aguardando `heading` `/geral/i`; h1 `#geral` existe mas está hidden (largura 0) | Critical | **Resolved** — título do canal com `min-width: 6.5rem`; busca encolhe (`flex: 0 1`) em vez de espremer o h1 |
 
 ## Resolvidos
 
@@ -34,6 +35,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 |----|-----------|-----------|------------|--------|----------|
 | SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 + #73 — roles/FORCE + SET LOCAL na txn + validação de role app |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142: timeline-anchor (distância ~2780) + history-scroll (scrollTop ~3200) | Critical | Resolved | `loadChannel` não desmonta lista com cache; pin reobserva `.timeline__list` no remount |
+| OPS-E2E-B098 | CI / E2E | `main` RED pós-#146: 15 specs — `heading` `#geral` hidden (caixa 0×n) | Critical | Resolved | Título `min-width: 6.5rem`; `.shell__search` com `flex: 0 1` + `min-width: 10rem` |
 
 ## Formato de detalhe
 
@@ -172,6 +174,36 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   3. finding marcado Resolved citando PR de fix.
 - Rollback: revert de #142 restauraria CI mas descarta B-097 — não seguro; preferir
   fix forward.
+
+### OPS-E2E-B098
+
+- Status: **Resolved** — título do canal deixa de colapsar a largura 0 quando a
+  busca B-098 (`22rem` / `42vw`) e os botões rotulados de IA ocupam o header.
+- Observado em: CI `E2E (Playwright)` run
+  [#33026732374](https://github.com/Guigass/vibe-chat/actions/runs/33026732374)
+  (2026-08-27T00:24Z) — 15 failed, 0 passed (retry incluído). Screenshot: header
+  sem `#geral`; busca + “Resumir mensagens recentes” / “Sugerir resposta” no lugar.
+- Base/head SHA: último green `2eb1271` (2026-08-26T12:33Z, pós-#145); incident tip
+  `55b6cb7dc39e73697fa5e8d913c6c33b077aa976` (#146, 2026-08-27T00:24Z).
+- Reprodução: CI em `main` — todas as falhas em `tests/e2e/helpers/auth.ts:118`
+  (`getByRole('heading', { name: /geral/i }).waitFor` timeout 20s; locator resolve
+  para `<h1> #geral </h1>` hidden). Snapshot a11y inclui o heading sem `ref`.
+- Causa raiz: B-098 alargou `.shell__search` de `min(18rem, 34vw)` para
+  `min(22rem, 42vw)`. `.shell__title` tinha `min-width: 0` + `h1 { overflow: hidden }`.
+  No viewport Desktop Chrome (1280) com sidebar 280px e botões de IA rotulados, o
+  flex deixa o título em 0px — Playwright trata caixa 0×n como hidden.
+- Resultado esperado: canal `#geral` visível no header após DevAuth; E2E passa.
+- Resultado atual: título com `min-width: 6.5rem`; busca `flex: 0 1` e
+  `min-width: 10rem` encolhe antes de espremer o h1.
+- Impacto: bloqueava auto-merge e violava invariante “main verde”.
+- Risk class: R1 (teste/UI); severidade Critical por bloqueio de pipeline.
+- Owner automático: Build + QA.
+- Critério de resolução:
+  1. `E2E (Playwright)` verde em `main` por ≥2 runs consecutivos;
+  2. specs acima passam via `task test:e2e:ci`;
+  3. finding marcado Resolved citando PR de fix.
+- Rollback: revert de #146 restauraria CI mas descarta B-098 — não seguro sem QA;
+  preferir fix forward (este PR).
 
 ### OPS-DOCS-RACE
 
