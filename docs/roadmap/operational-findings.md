@@ -27,6 +27,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-NAV | CI / E2E | `main` vermelho desde #131 (B-184): `timeline-anchor.spec.ts` (botão Bob ausente) + `timeline-history-scroll.spec.ts` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — specs alinhadas à nav B-184 (`Mensagem para …`) + dispatch de scroll para latch `nearBottom` |
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — `loadChannel` não desmonta lista com cache; pin reobserva `.timeline__list` no remount |
+| OPS-E2E-B098 | CI / E2E | `main` RED pós-#146 (B-098): 15 specs falham em `auth.ts:118` — timeout 20s aguardando `heading` `/geral/i`; Build/gitleaks/dep-audit verdes | Critical | Open | Build endereça regressão E2E pós-merge #146; revert #146 descarta feature — preferir fix forward |
 
 ## Resolvidos
 
@@ -172,6 +173,32 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   3. finding marcado Resolved citando PR de fix.
 - Rollback: revert de #142 restauraria CI mas descarta B-097 — não seguro; preferir
   fix forward.
+
+### OPS-E2E-B098
+
+- Status: **Open** — `main` RED imediatamente após squash de #146 (B-098).
+- Observado em: CI `E2E (Playwright)` run
+  [#33026732374](https://github.com/Guigass/vibe-chat/actions/runs/33026732374)
+  (2026-08-27T00:24Z) — 15 failed, 0 passed (retry incluído).
+- Base/head SHA: último green `2eb1271` (2026-08-26T12:33Z, pós-#145); incident tip
+  `55b6cb7dc39e73697fa5e8d913c6c33b077aa976` (#146, 2026-08-27T00:24Z).
+- Reprodução: CI em `main` — todas as falhas em `tests/e2e/helpers/auth.ts:118`
+  (`getByRole('heading', { name: /geral/i }).waitFor` timeout 20s); specs afetadas
+  incluem `persistent-draft`, `realtime-events`, `reply-citing`, `shell-responsive`,
+  `shell-scroll`, `theme-tokens`, `timeline-anchor`, `timeline-history-scroll`,
+  `timeline-toolbar-layout`, `two-sessions-chat`, `web-push-opt-in`.
+- Resultado esperado: canal `#geral` carrega após DevAuth; E2E passa.
+- Resultado atual: heading `#geral` não aparece dentro do timeout; Build/gitleaks/dep-audit
+  verdes no mesmo run.
+- Impacto: bloqueia auto-merge e viola invariante “main verde”.
+- Risk class: R1 (teste/UI); severidade Critical por bloqueio de pipeline.
+- Owner automático: Build + QA.
+- Critério de resolução:
+  1. `E2E (Playwright)` verde em `main` por ≥2 runs consecutivos;
+  2. specs acima passam via `task test:e2e:ci`;
+  3. finding marcado Resolved citando PR de fix.
+- Rollback: revert de #146 restauraria CI mas descarta B-098 — não seguro sem QA;
+  preferir fix forward.
 
 ### OPS-DOCS-RACE
 
