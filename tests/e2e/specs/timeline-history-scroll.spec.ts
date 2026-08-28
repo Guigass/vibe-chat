@@ -24,10 +24,14 @@ test.describe(`timeline history scroll (${AUTH_MODE})`, () => {
       el.prepend(filler);
       el.scrollTop = 0;
     });
+    // Match a real reader: wheel cancels the 1200ms bottom anchor; scroll
+    // updates the nearBottom latch so a later message does not drag history.
+    await bob.page.locator('.timeline').dispatchEvent('wheel');
     await bob.page.locator('.timeline').dispatchEvent('scroll');
 
     const topBefore = await bob.page.locator('.timeline').evaluate((el) => el.scrollTop);
     expect(topBefore).toBeLessThan(80);
+    await expect(bob.page.getByTestId('timeline-jump')).toBeVisible();
 
     const composer = alice.page.locator('textarea').first();
     await expect(composer).toBeVisible();

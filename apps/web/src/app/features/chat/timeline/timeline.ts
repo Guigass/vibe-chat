@@ -546,6 +546,7 @@ export class Timeline {
     if (!el) return;
     const near = this.isNearBottom(el);
     const wasNear = this.nearBottom();
+    if (!near) this.scrollAnchorController?.releaseBottom();
     this.setNearBottom(near);
     if (near && !wasNear) {
       this.newWhileAway.set(0);
