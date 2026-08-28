@@ -162,8 +162,10 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   `selectChannelGeral` refetch). Com cache, a lista permanece montada.
 - Resultado esperado: timeline ancora no conteúdo mais recente; leitor em histórico
   não é arrastado; E2E passa em ambas as specs.
-- Resultado atual: fix forward no store/pin; validação via unitários +
-  `task test:e2e:ci` no PR.
+- Resultado atual: fix forward no store/pin (#145); residual em
+  `timeline-history-scroll` — âncora `bottom` de 1200ms ainda reaplicava no
+  resize quando o E2E só disparava `scroll` (sem `wheel`). `releaseBottom()` no
+  `onScroll` ao sair do fim cancela só essa âncora; prepend/element seguem.
 - Impacto: bloqueia auto-merge e viola invariante “main verde”.
 - Risk class: R1 (teste/UI); severidade Critical por bloqueio de pipeline.
 - Owner automático: Build + QA.

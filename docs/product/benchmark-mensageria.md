@@ -36,23 +36,23 @@ com gesto “Follow thread” e uma visão agregada de threads seguidas. Discord
 | Capacidade | Slack | Teams | Discord | WhatsApp | VibeChat |
 |---|---|---|---|---|---|
 | Texto simples | sim | sim | sim | sim | **Temos** |
-| Formatação rica (negrito, itálico, lista, código, citação) | sim | sim | markdown | limitado | **Falta** — B-081 |
-| Bloco de código com linguagem | sim | sim | sim | — | **Falta** — B-081 |
-| Menções `@pessoa` / `@canal` | sim | sim | sim | sim (grupos) | **Falta** — B-082 |
-| Emoji picker | sim | sim | sim | sim | **Falta** — B-083 |
+| Formatação rica (negrito, itálico, lista, código, citação) | sim | sim | markdown | limitado | **Done** — B-081 |
+| Bloco de código com linguagem | sim | sim | sim | — | **Done** — B-081 |
+| Menções `@pessoa` / `@canal` | sim | sim | sim | sim (grupos) | **Done** — B-082 |
+| Emoji picker | sim | sim | sim | sim | **Done** — B-083 |
 | Anexo por botão | sim | sim | sim | sim | **Temos** (1 arquivo) |
-| Múltiplos anexos | sim | sim | sim | sim | **Falta** — B-079 |
-| Drag & drop na conversa | sim | sim | sim | web sim | **Falta** — B-079 |
-| Colar imagem do clipboard | sim | sim | sim | sim | **Falta** — B-079 |
-| Progresso de upload por arquivo | sim | sim | sim | sim | **Falta** — B-079 |
-| Mensagem de áudio | Clips | gravação | mensagens de voz | sim (central) | **Falta** — B-080 |
-| Transcrição de áudio | sim | sim | — | sim (on-device) | **Falta** — B-080 (flag) |
-| Clipe de vídeo curto | Clips | sim | — | sim | **Falta** — B-168 |
+| Múltiplos anexos | sim | sim | sim | sim | **Done** — B-079 |
+| Drag & drop na conversa | sim | sim | sim | web sim | **Done** — B-079 |
+| Colar imagem do clipboard | sim | sim | sim | sim | **Done** — B-079 |
+| Progresso de upload por arquivo | sim | sim | sim | sim | **Done** — B-079 |
+| Mensagem de áudio | Clips | gravação | mensagens de voz | sim (central) | **Done** — B-080 |
+| Transcrição de áudio | sim | sim | — | sim (on-device) | **Done** — B-080 (flag) |
+| Clipe de vídeo curto | Clips | sim | — | sim | **Done** — B-168 |
 | Responder citando (inline) | sim | sim | sim | sim | **Done** — B-084 |
-| Encaminhar mensagem | sim | sim | sim | sim | **Falta** — B-085 |
-| Rascunho persistente por conversa | sim | sim | sim | sim | **Falta** — B-086 |
+| Encaminhar mensagem | sim | sim | sim | sim | **Done** — B-085 |
+| Rascunho persistente por conversa | sim | sim | sim | sim | **Done** — B-086 |
 | Agendar envio | sim | sim | — | — | Fora de escopo fase 2 |
-| Comandos slash | sim | sim | sim | — | **Falta** — B-087 |
+| Comandos slash | sim | sim | sim | — | **Done** — B-087 |
 | Enquete | sim (workflow) | sim | sim | sim | **Done** — B-096 |
 
 Nota de pesquisa (áudio): o caminho web é `MediaRecorder` com detecção de MIME em
@@ -74,24 +74,24 @@ sobre o `<input type="file">` que já existe, nunca como caminho único.
 | Separador de data | sim | sim | sim | sim | **Temos** (B-088, sticky) |
 | Divisor de não lidas | sim | sim | sim | sim | **Temos** (B-088; âncora persistente em B-094) |
 | Botão “ir para a mais recente” | sim | sim | sim | sim | **Temos** (B-088) |
-| Carregar histórico antigo (scroll) | sim | sim | sim | sim | **Falta** — B-089 |
-| Pular para a mensagem a partir da busca | sim | sim | sim | sim | **Falta** — B-089 |
-| Preview inline de imagem | sim | sim | sim | sim | **Falta** — B-090 |
-| Preview de PDF/documento | sim | sim | — | sim | **Falta** — B-090 |
-| Link preview (unfurl) | sim | sim | sim | sim | **Falta** — B-091 |
-| Fixar mensagem no canal | sim | sim | sim | sim | **Falta** — B-092 |
-| Salvos / marcadores pessoais | sim | sim | — | favoritos | **Falta** — B-093 |
-| Recibo de leitura / não lidas persistentes | por canal | sim | — | sim | **Falta** — B-094 (cursor no Postgres) |
+| Carregar histórico antigo (scroll) | sim | sim | sim | sim | **Done** — B-089 |
+| Pular para a mensagem a partir da busca | sim | sim | sim | sim | **Done** — B-089 |
+| Preview inline de imagem | sim | sim | sim | sim | **Done** — B-090 |
+| Preview de PDF/documento | sim | sim | — | sim | **Done** — B-090 |
+| Link preview (unfurl) | sim | sim | sim | sim | **Done** — B-091 |
+| Fixar mensagem no canal | sim | sim | sim | sim | **Done** — B-092 |
+| Salvos / marcadores pessoais | sim | sim | — | favoritos | **Done** — B-093 |
+| Recibo de leitura / não lidas persistentes | por canal | sim | — | sim | **Done** — B-094 (cursor no Postgres) |
 | Reações | sim | sim | sim | sim | **Temos** (6 emojis fixos) |
-| Reações com emoji livre / custom | sim | sim | sim + custom | sim | **Falta** — B-083 |
+| Reações com emoji livre / custom | sim | sim | sim + custom | sim | **Done** — B-083 |
 | Editar / apagar | sim | sim | sim | sim | **Parcial** — B-023 Done; falta política (janela/papéis) — **B-107** |
-| Marcar como não lida | sim | sim | sim | sim | **Falta** — B-094 |
+| Marcar como não lida | sim | sim | sim | sim | **Done** — B-094 |
 
 ## 4. Notificações e foco
 
 | Capacidade | Slack | Teams | Discord | WhatsApp | VibeChat |
 |---|---|---|---|---|---|
-| Notificação do navegador / push | sim | sim | sim | sim | **Falta** — B-095 |
+| Notificação do navegador / push | sim | sim | sim | sim | **Done** — B-095 |
 | Preferência por canal | sim | sim | sim | sim | **Done** — B-097 |
 | Não perturbe / horário de silêncio | sim | sim | sim | sim | **Done** — B-097 |
 | Badge de menção vs. mensagem comum | sim | sim | sim | sim | **Done** — B-082 + B-097 |

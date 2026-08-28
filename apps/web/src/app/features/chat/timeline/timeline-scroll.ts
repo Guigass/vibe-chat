@@ -141,8 +141,14 @@ export class TimelineScrollAnchorController {
   private resizeObserver: ResizeObserver | null = null;
   private generation = 0;
   private anchored = false;
+  private requestKind: TimelineScrollAnchor['kind'] | null = null;
 
   constructor(private readonly scroller: HTMLElement) {}
+
+  /** Scrollbar/programmatic leave-bottom must not fight history (OPS-E2E-B097). */
+  releaseBottom(): void {
+    if (this.requestKind === 'bottom') this.cancel();
+  }
 
   anchor(
     request: TimelineScrollAnchor,
@@ -151,6 +157,7 @@ export class TimelineScrollAnchorController {
     onSettled?: () => void,
   ): void {
     this.cancel();
+    this.requestKind = request.kind;
     const generation = this.generation;
 
     const apply = () => {
@@ -186,6 +193,7 @@ export class TimelineScrollAnchorController {
   cancel(): void {
     this.generation += 1;
     this.anchored = false;
+    this.requestKind = null;
     if (this.frameId !== null) {
       cancelAnimationFrame(this.frameId);
       this.frameId = null;
@@ -210,6 +218,7 @@ export class TimelineScrollAnchorController {
     if (generation !== this.generation) return;
     this.generation += 1;
     this.anchored = false;
+    this.requestKind = null;
     this.expiryTimer = null;
     if (this.frameId !== null) {
       cancelAnimationFrame(this.frameId);

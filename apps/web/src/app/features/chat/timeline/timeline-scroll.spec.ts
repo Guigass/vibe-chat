@@ -136,6 +136,42 @@ describe('timeline scroll anchoring', () => {
     expect(scroller.scrollTop).toBe(1500);
   });
 
+  it('releaseBottom stops a bottom anchor but leaves prepend stabilization (OPS-E2E-B097)', () => {
+    const scroller = document.createElement('section');
+    const list = document.createElement('div');
+    list.className = 'timeline__list';
+    scroller.append(list);
+    let height = 900;
+    dimension(scroller, 'scrollHeight', () => height);
+    const bottom = new TimelineScrollAnchorController(scroller);
+    bottom.anchor({ kind: 'bottom' });
+    vi.advanceTimersByTime(16);
+    expect(scroller.scrollTop).toBe(900);
+
+    bottom.releaseBottom();
+    height = 1600;
+    resizeCallbacks[0]([], {} as ResizeObserver);
+    vi.advanceTimersByTime(16);
+    expect(scroller.scrollTop).toBe(900);
+
+    scroller.scrollTop = 120;
+    const prepend = new TimelineScrollAnchorController(scroller);
+    prepend.anchor({
+      kind: 'prepend',
+      previousScrollHeight: height,
+      previousScrollTop: scroller.scrollTop,
+    });
+    height = 1900;
+    vi.advanceTimersByTime(16);
+    expect(scroller.scrollTop).toBe(420);
+    prepend.releaseBottom();
+    height = 2100;
+    resizeCallbacks.at(-1)?.([], {} as ResizeObserver);
+    vi.advanceTimersByTime(16);
+    expect(scroller.scrollTop).toBe(620);
+    prepend.cancel();
+  });
+
   it('settles only after the stabilization window while keeping late resize anchored', () => {
     const scroller = document.createElement('section');
     const list = document.createElement('div');

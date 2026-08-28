@@ -2,9 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [main, "cursor/**"]
+    branches: [main]
   pull_request:
     branches: [main]
+
+# PRs on cursor/** used to also match push, so every agent PR ran CI twice
+# and one red E2E left the check rollup UNSTABLE.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   DOTNET_NOLOGO: "1"
