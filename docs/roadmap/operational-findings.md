@@ -188,6 +188,10 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 - Reprodução: CI em `main` — todas as falhas em `tests/e2e/helpers/auth.ts:118`
   (`getByRole('heading', { name: /geral/i }).waitFor` timeout 20s; locator resolve
   para `<h1> #geral </h1>` hidden). Snapshot a11y inclui o heading sem `ref`.
+  Specs afetadas: `persistent-draft`, `realtime-events`, `reply-citing`,
+  `shell-responsive`, `shell-scroll`, `theme-tokens`, `timeline-anchor`,
+  `timeline-history-scroll`, `timeline-toolbar-layout`, `two-sessions-chat`,
+  `web-push-opt-in`.
 - Causa raiz: B-098 alargou `.shell__search` de `min(18rem, 34vw)` para
   `min(22rem, 42vw)`. `.shell__title` tinha `min-width: 0` + `h1 { overflow: hidden }`.
   No viewport Desktop Chrome (1280) com sidebar 280px e botões de IA rotulados, o
