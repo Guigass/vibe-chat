@@ -54,15 +54,15 @@ endpoint que já valida.
 
 ## Aceite
 
-- [ ] `Ctrl+K` abre e digitar “ger” encontra `#geral`
-- [ ] `Enter` troca de canal e devolve o foco ao composer
-- [ ] `Alt+↓` navega entre canais
-- [ ] `↑` no composer vazio abre a edição da última mensagem própria **no composer**
+- [x] `Ctrl+K` abre e digitar “ger” encontra `#geral`
+- [x] `Enter` troca de canal e devolve o foco ao composer
+- [x] `Alt+↓` navega entre canais
+- [x] `↑` no composer vazio abre a edição da última mensagem própria **no composer**
       (B-173; política B-107 se já existir)
-- [ ] `?` abre a folha de atalhos
-- [ ] Atalho não dispara enquanto digita no composer
-- [ ] Paleta não lista canal sem membership
-- [ ] Ciclo de `Tab` fica preso dentro da paleta enquanto aberta
+- [x] `?` abre a folha de atalhos
+- [x] Atalho não dispara enquanto digita no composer
+- [x] Paleta não lista canal sem membership
+- [x] Ciclo de `Tab` fica preso dentro da paleta enquanto aberta
 
 ## Testes
 

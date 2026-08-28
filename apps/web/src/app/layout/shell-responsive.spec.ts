@@ -100,12 +100,15 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
             canCreateChannel: () => false,
             loading: () => false,
             selectChannel: vi.fn(),
+            publicChannels: () => [],
+            channels: () => [],
           },
         },
         {
           provide: MessageStore,
           useValue: {
             loadChannel: vi.fn().mockResolvedValue(undefined),
+            markActiveChannelRead: vi.fn().mockResolvedValue(undefined),
           },
         },
         {
@@ -219,6 +222,24 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
     expect(fixture.componentInstance.narrowViewport()).toBe(false);
     expect(fixture.componentInstance.sidebarOpen()).toBe(true);
     expect(host.querySelector('.shell--sidebar-collapsed')).toBeNull();
+  });
+
+  it('opens the command palette with Ctrl+K (B-099)', async () => {
+    stubMatchMedia(false);
+    const fixture = TestBed.createComponent(ShellPage);
+    fixture.detectChanges();
+
+    fixture.componentInstance.onGlobalKeydown(
+      new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, cancelable: true }),
+    );
+    fixture.detectChanges();
+    expect(fixture.componentInstance.palette.paletteOpen()).toBe(true);
+
+    fixture.componentInstance.onGlobalKeydown(
+      new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }),
+    );
+    fixture.detectChanges();
+    expect(fixture.componentInstance.palette.paletteOpen()).toBe(false);
   });
 
   it('closes the narrow overlay with Escape', async () => {

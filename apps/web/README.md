@@ -50,6 +50,8 @@ Brand asset inventory (paths/URLs for agents): `docs/architecture/design-system.
 
 ## Keyboard
 
-- `Ctrl/Cmd+K` — focus search
-- `Escape` — close context panel / blur
+- `Ctrl/Cmd+K` — command palette
+- `Ctrl/Cmd+Shift+F` — message search with filters
+- `Escape` — close palette / panel / blur
 - `Enter` — send message (`Shift+Enter` newline)
+- `?` — keyboard shortcut sheet

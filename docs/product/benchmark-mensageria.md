@@ -104,8 +104,8 @@ sobre o `<input type="file">` que já existe, nunca como caminho único.
 | Busca full-text | sim | sim | sim | sim | **Temos** |
 | Filtros (autor, canal, data, tipo) | sim | sim | sim | sim | **Done** — B-098 |
 | Filtrar só anexos / só links | sim | sim | sim | sim | **Done** — B-098 |
-| Atalhos de teclado | extensos | sim | extensos | poucos | **Temos** (2) |
-| Paleta de comandos (Ctrl+K) | sim | sim | sim | — | **Falta** — B-099 |
+| Atalhos de teclado | extensos | sim | extensos | poucos | **Done** — B-099 |
+| Paleta de comandos (Ctrl+K) | sim | sim | sim | — | **Done** — B-099 |
 
 ## 6. Plataforma e acesso
 

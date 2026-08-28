@@ -31,7 +31,7 @@ Toda revisão passa por estas telas, nesta ordem:
 4. **Bolha** — reação, editar, apagar, abrir thread
 5. **Thread** — painel lateral, estado vazio, envio de resposta
 6. **Anexo** — anexar arquivo; progresso, prévia, download
-7. **Busca** — `Ctrl/Cmd+K`, resultado, estado vazio
+7. **Busca** — `Ctrl/Cmd+Shift+F`, resultado, estado vazio; paleta em `Ctrl/Cmd+K`
 8. **Tema e densidade** — claro, escuro, compacto, confortável
 9. **Admin** — `/admin`, com e sem permissão
 10. **Realtime** — duas sessões: mensagem, edição, reação e “digitando”

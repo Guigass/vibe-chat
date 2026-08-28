@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService } from '../../../core/api/api.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { CommandPaletteService } from '../../../core/services/command-palette.service';
 import { MessageStore } from '../../../core/services/message.store';
 import {
   ParsedSlashCommand,
@@ -40,6 +41,7 @@ export class SlashCommandsService {
   private readonly api = inject(ApiService);
   private readonly channels = inject(ChannelStore);
   private readonly messages = inject(MessageStore);
+  private readonly palette = inject(CommandPaletteService);
 
   private readonly cache = new Map<string, SlashCommandDef[]>();
   readonly notice = signal<SlashNotice | null>(null);
@@ -117,6 +119,7 @@ export class SlashCommandsService {
       lines: commands.map((c) => `${c.usage} — ${c.description}`),
     };
     this.notice.set(notice);
+    this.palette.openShortcutSheet();
     return { ok: true, clearDraft: true, notice };
   }
 

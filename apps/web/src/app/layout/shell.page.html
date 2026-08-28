@@ -126,7 +126,7 @@
         <vc-input
           controlId="vc-search"
           [(value)]="search"
-          placeholder="Buscar (Ctrl/Cmd+K)"
+          placeholder="Buscar (Ctrl/Cmd+Shift+F)"
           ariaLabel="Buscar mensagens"
           (focused)="onSearchFocus()"
           (blurred)="searchFocused.set(false)"
@@ -327,7 +327,8 @@
       <p>
         Você: <strong>{{ auth.profile()?.name || '—' }}</strong>
       </p>
-      <p class="muted">Esc fecha este painel. Enter envia; Shift+Enter quebra linha.</p>
+      <p class="muted">Esc fecha este painel. Enter envia; Shift+Enter quebra linha. Ctrl/Cmd+K abre a paleta.</p>
     </aside>
   }
 </div>
+<vc-command-palette />
