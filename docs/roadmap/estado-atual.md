@@ -5,7 +5,7 @@ Snapshot factual para orientação rápida. Não substitui o
 
 - **Data de corte:** 2026-08-28
 - **Fase:** Wave 10 — W10-4 / B-098 Done (busca com filtros); seguinte W10-5 / B-099
-- **Safety lane obrigatória:** OPS-E2E-B098 Resolved (#148); OPS-E2E-B097 Resolved (#145; residual history-scroll: âncora bottom solta no scroll); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
+- **Safety lane obrigatória:** OPS-E2E-B098 Resolved (#148); OPS-E2E-B097 Resolved (#145+#149 — cache/pin + `releaseBottom()` no scroll); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
 - **Próximo item elegível:** W10-5 / B-099 (paleta de comandos e atalhos)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 

@@ -26,7 +26,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-DOCS-RACE | Corrida Docs | Merges #72+#73 (~20s) abriram Docs #76+#77; #77 foi re-draftado e ficou CONFLICTING | High | External action | Colar prompts 03/06 atualizados no dashboard (repo já em #78) |
 | OPS-E2E-NAV | CI / E2E | `main` vermelho desde #131 (B-184): `timeline-anchor.spec.ts` (botão Bob ausente) + `timeline-history-scroll.spec.ts` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — specs alinhadas à nav B-184 (`Mensagem para …`) + dispatch de scroll para latch `nearBottom` |
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
-| OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — `loadChannel` não desmonta lista com cache; pin reobserva `.timeline__list` no remount |
+| OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — #145 cache/pin + #149 `releaseBottom()` cancela âncora bottom no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146 (B-098): 15 specs falham em `auth.ts:118` — timeout 20s aguardando `heading` `/geral/i`; h1 `#geral` existe mas está hidden (largura 0) | Critical | **Resolved** — título do canal com `min-width: 6.5rem`; busca encolhe (`flex: 0 1`) em vez de espremer o h1 |
 
 ## Resolvidos
@@ -34,7 +34,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | ID | Categoria | Evidência | Severidade | Status | Resolução |
 |----|-----------|-----------|------------|--------|----------|
 | SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 + #73 — roles/FORCE + SET LOCAL na txn + validação de role app |
-| OPS-E2E-B097 | CI / E2E | `main` RED pós-#142: timeline-anchor (distância ~2780) + history-scroll (scrollTop ~3200) | Critical | Resolved | `loadChannel` não desmonta lista com cache; pin reobserva `.timeline__list` no remount |
+| OPS-E2E-B097 | CI / E2E | `main` RED pós-#142: timeline-anchor (distância ~2780) + history-scroll (scrollTop ~3200) | Critical | Resolved | #145 lista com cache; #149 `releaseBottom()` no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146: 15 specs — `heading` `#geral` hidden (caixa 0×n) | Critical | Resolved | Título `min-width: 6.5rem`; `.shell__search` com `flex: 0 1` + `min-width: 10rem` |
 
 ## Formato de detalhe
@@ -141,10 +141,10 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 ### OPS-E2E-B097
 
-- Status: **Resolved** — `loadChannel` deixa de ligar `loading` quando o canal
-  já tem mensagens em cache; a timeline não troca a lista por skeleton nesse
-  caso; `TimelineStickyBottomPin` reobserva um `.timeline__list` remountado e
-  o efeito de loading volta a âncorar só se o latch `nearBottom` seguir ativo.
+- Status: **Resolved** — [#145](https://github.com/Guigass/vibe-chat/pull/145)
+  (`loadChannel` não desmonta lista com cache; pin reobserva `.timeline__list`)
+  + [#149](https://github.com/Guigass/vibe-chat/pull/149) (`releaseBottom()` no
+  `onScroll` ao sair do fim cancela a âncora `bottom` de 1200ms no resize).
 - Observado em: CI `E2E (Playwright)` run
   [#32965658072](https://github.com/Guigass/vibe-chat/actions/runs/32965658072)
   (2026-08-26T11:53Z) —
