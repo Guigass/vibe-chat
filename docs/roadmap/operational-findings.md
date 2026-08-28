@@ -26,12 +26,15 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-DOCS-RACE | Corrida Docs | Merges #72+#73 (~20s) abriram Docs #76+#77; #77 foi re-draftado e ficou CONFLICTING | High | External action | Colar prompts 03/06 atualizados no dashboard (repo já em #78) |
 | OPS-E2E-NAV | CI / E2E | `main` vermelho desde #131 (B-184): `timeline-anchor.spec.ts` (botão Bob ausente) + `timeline-history-scroll.spec.ts` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — specs alinhadas à nav B-184 (`Mensagem para …`) + dispatch de scroll para latch `nearBottom` |
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
+| OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — `loadChannel` não desmonta lista com cache; pin reobserva `.timeline__list` no remount |
+| OPS-E2E-B098 | CI / E2E | `main` RED pós-#146 (B-098): 15 specs falham em `auth.ts:118` — timeout 20s aguardando `heading` `/geral/i`; Build/gitleaks/dep-audit verdes | Critical | Open | Build endereça regressão E2E pós-merge #146; revert #146 descarta feature — preferir fix forward |
 
 ## Resolvidos
 
 | ID | Categoria | Evidência | Severidade | Status | Resolução |
 |----|-----------|-----------|------------|--------|----------|
 | SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 + #73 — roles/FORCE + SET LOCAL na txn + validação de role app |
+| OPS-E2E-B097 | CI / E2E | `main` RED pós-#142: timeline-anchor (distância ~2780) + history-scroll (scrollTop ~3200) | Critical | Resolved | `loadChannel` não desmonta lista com cache; pin reobserva `.timeline__list` no remount |
 
 ## Formato de detalhe
 
@@ -134,6 +137,68 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   1. `E2E (Playwright)` verde em `main` por ≥2 runs consecutivos;
   2. `realtime-events.spec.ts` passa localmente via `task test:e2e:ci`;
   3. finding marcado Resolved citando PR de fix.
+
+### OPS-E2E-B097
+
+- Status: **Resolved** — `loadChannel` deixa de ligar `loading` quando o canal
+  já tem mensagens em cache; a timeline não troca a lista por skeleton nesse
+  caso; `TimelineStickyBottomPin` reobserva um `.timeline__list` remountado e
+  o efeito de loading volta a âncorar só se o latch `nearBottom` seguir ativo.
+- Observado em: CI `E2E (Playwright)` run
+  [#32965658072](https://github.com/Guigass/vibe-chat/actions/runs/32965658072)
+  (2026-08-26T11:53Z) —
+  [`timeline-anchor.spec.ts`](../../tests/e2e/specs/timeline-anchor.spec.ts) linha 79
+  (scrollTop ~2780 vs esperado &lt;5; timeout 15s) e
+  [`timeline-history-scroll.spec.ts`](../../tests/e2e/specs/timeline-history-scroll.spec.ts)
+  linha 41 (scrollTop ~3200 vs esperado &lt;120; `timeline-jump` ausente).
+- Base/head SHA: último green `b73e685` (2026-08-26T00:40Z, pós-#141); incident tip
+  `944e22786a5bdee0c6b251334dd22ede5c07d282` (#142, 2026-08-26T11:53Z).
+- Reprodução: CI em `main` — 13 passed, 2 failed; Build/gitleaks/dep-audit verdes;
+  regressão imediata após squash de #142 (não flaky — falha estável em retry).
+- Causa raiz: `loadChannel` sempre ligava `loading=true`. O template da timeline
+  destruía `.timeline__list` no skeleton; o pin ficava no nó morto e
+  `afterChannelOpen` âncorava o skeleton. #142 piorou o timing (prefs +
+  `selectChannelGeral` refetch). Com cache, a lista permanece montada.
+- Resultado esperado: timeline ancora no conteúdo mais recente; leitor em histórico
+  não é arrastado; E2E passa em ambas as specs.
+- Resultado atual: fix forward no store/pin; validação via unitários +
+  `task test:e2e:ci` no PR.
+- Impacto: bloqueia auto-merge e viola invariante “main verde”.
+- Risk class: R1 (teste/UI); severidade Critical por bloqueio de pipeline.
+- Owner automático: Build + QA.
+- Critério de resolução:
+  1. `E2E (Playwright)` verde em `main` por ≥2 runs consecutivos;
+  2. `timeline-anchor.spec.ts` e `timeline-history-scroll.spec.ts` passam via
+     `task test:e2e:ci`;
+  3. finding marcado Resolved citando PR de fix.
+- Rollback: revert de #142 restauraria CI mas descarta B-097 — não seguro; preferir
+  fix forward.
+
+### OPS-E2E-B098
+
+- Status: **Open** — `main` RED imediatamente após squash de #146 (B-098).
+- Observado em: CI `E2E (Playwright)` run
+  [#33026732374](https://github.com/Guigass/vibe-chat/actions/runs/33026732374)
+  (2026-08-27T00:24Z) — 15 failed, 0 passed (retry incluído).
+- Base/head SHA: último green `2eb1271` (2026-08-26T12:33Z, pós-#145); incident tip
+  `55b6cb7dc39e73697fa5e8d913c6c33b077aa976` (#146, 2026-08-27T00:24Z).
+- Reprodução: CI em `main` — todas as falhas em `tests/e2e/helpers/auth.ts:118`
+  (`getByRole('heading', { name: /geral/i }).waitFor` timeout 20s); specs afetadas
+  incluem `persistent-draft`, `realtime-events`, `reply-citing`, `shell-responsive`,
+  `shell-scroll`, `theme-tokens`, `timeline-anchor`, `timeline-history-scroll`,
+  `timeline-toolbar-layout`, `two-sessions-chat`, `web-push-opt-in`.
+- Resultado esperado: canal `#geral` carrega após DevAuth; E2E passa.
+- Resultado atual: heading `#geral` não aparece dentro do timeout; Build/gitleaks/dep-audit
+  verdes no mesmo run.
+- Impacto: bloqueia auto-merge e viola invariante “main verde”.
+- Risk class: R1 (teste/UI); severidade Critical por bloqueio de pipeline.
+- Owner automático: Build + QA.
+- Critério de resolução:
+  1. `E2E (Playwright)` verde em `main` por ≥2 runs consecutivos;
+  2. specs acima passam via `task test:e2e:ci`;
+  3. finding marcado Resolved citando PR de fix.
+- Rollback: revert de #146 restauraria CI mas descarta B-098 — não seguro sem QA;
+  preferir fix forward.
 
 ### OPS-DOCS-RACE
 

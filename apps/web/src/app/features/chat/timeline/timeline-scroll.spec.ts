@@ -303,4 +303,29 @@ describe('timeline sticky bottom (BUG-018)', () => {
 
     pin.destroy();
   });
+
+  it('re-pins when the timeline list remounts while still latched (OPS-E2E-B097)', () => {
+    const scroller = document.createElement('section');
+    const list = document.createElement('div');
+    list.className = 'timeline__list';
+    scroller.append(list);
+    let height = 800;
+    dimension(scroller, 'scrollHeight', () => height);
+
+    const pin = new TimelineStickyBottomPin(() => scroller);
+    pin.setPinned(true);
+    vi.advanceTimersByTime(16);
+    expect(scroller.scrollTop).toBe(800);
+
+    list.remove();
+    const remounted = document.createElement('div');
+    remounted.className = 'timeline__list';
+    scroller.append(remounted);
+    height = 1600;
+    pin.sync();
+    vi.advanceTimersByTime(16);
+    expect(scroller.scrollTop).toBe(1600);
+
+    pin.destroy();
+  });
 });

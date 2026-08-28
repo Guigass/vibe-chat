@@ -809,6 +809,25 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Search_filters_foreign_author_or_channel_are_forbidden()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var foreignAuthor = await client.GetAsync(
+            $"/api/v1/search/messages?workspaceId={SeedData.DemoWorkspaceId.Value}&q=hello&authorId={Guid.NewGuid()}");
+        foreignAuthor.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var foreignChannel = await client.GetAsync(
+            $"/api/v1/search/messages?workspaceId={SeedData.DemoWorkspaceId.Value}&q=hello&channelId={Guid.NewGuid()}");
+        foreignChannel.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var foreignWorkspace = await client.GetAsync(
+            $"/api/v1/search/messages?workspaceId={Guid.NewGuid()}&q=hello&authorId={SeedData.AliceUserId.Value}");
+        foreignWorkspace.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Cross_tenant_cannot_open_or_reply_in_thread()
     {
         var (_, foreignChannelId) = await SeedCrossTenantChannelAsync();

@@ -241,6 +241,8 @@ export interface SearchMessagesResult {
   query: string;
   limit: number;
   items: SearchMessageHit[];
+  total?: number;
+  cursor?: string | null;
 }
 
 export interface AdminStats {

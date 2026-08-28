@@ -2124,6 +2124,122 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Search_filters_by_author_attachment_and_date_bounds()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var bob = factory.CreateClient();
+        bob.DefaultRequestHeaders.Add("X-Dev-User", "bob");
+
+        var token = $"filtro{Guid.NewGuid():N}";
+        var alicePlainId = Guid.NewGuid();
+        (await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(alicePlainId, $"idem-sf-a-{alicePlainId:N}", $"{token} só texto https://vibechat.example/doc", null, null)))
+            .EnsureSuccessStatusCode();
+
+        var content = "pdf-alice"u8.ToArray();
+        var initiate = await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments",
+            new CreateAttachmentUploadRequest("alice.pdf", "application/pdf", content.Length));
+        initiate.EnsureSuccessStatusCode();
+        var upload = await initiate.Content.ReadFromJsonAsync<AttachmentUploadDto>(JsonOptions);
+        upload.Should().NotBeNull();
+        using var putClient = new HttpClient();
+        (await putClient.PutAsync(upload!.UploadUrl, new ByteArrayContent(content))).EnsureSuccessStatusCode();
+        (await alice.PostAsync(
+            $"/api/v1/channels/{DemoChannelId}/attachments/{upload.AttachmentId}/complete",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"))).EnsureSuccessStatusCode();
+
+        var aliceAttId = Guid.NewGuid();
+        (await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(aliceAttId, $"idem-sf-att-{aliceAttId:N}", $"{token} com anexo", null, null, [upload.AttachmentId])))
+            .EnsureSuccessStatusCode();
+
+        var bobId = Guid.NewGuid();
+        (await bob.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(bobId, $"idem-sf-b-{bobId:N}", $"{token} do bob", null, null)))
+            .EnsureSuccessStatusCode();
+
+        var workspace = SeedData.DemoWorkspaceId.Value;
+        var authorOnly = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={token}&authorId={SeedData.AliceUserId.Value}&limit=20",
+            JsonOptions);
+        authorOnly!.Items.Select(x => x.MessageId).Should().Contain([alicePlainId, aliceAttId]);
+        authorOnly.Items.Should().NotContain(x => x.MessageId == bobId);
+
+        var attachments = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={token}&authorId={SeedData.AliceUserId.Value}&hasAttachment=true&limit=20",
+            JsonOptions);
+        attachments!.Items.Should().ContainSingle(x => x.MessageId == aliceAttId);
+
+        var links = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={token}&hasLink=true&limit=20",
+            JsonOptions);
+        links!.Items.Should().Contain(x => x.MessageId == alicePlainId);
+        links.Items.Should().NotContain(x => x.MessageId == aliceAttId);
+
+        var future = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={token}&from=2099-01-01&limit=20",
+            JsonOptions);
+        future!.Items.Should().BeEmpty();
+
+        var past = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={token}&to=2000-01-01&limit=20",
+            JsonOptions);
+        past!.Items.Should().BeEmpty();
+
+        var window = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={token}&from=2000-01-01&to=2099-12-31&limit=20",
+            JsonOptions);
+        window!.Items.Select(x => x.MessageId).Should().Contain([alicePlainId, aliceAttId, bobId]);
+    }
+
+    [Fact]
+    public async Task Search_paginates_without_repeats_and_sorts_by_date()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var token = $"page{Guid.NewGuid():N}";
+        var ids = new List<Guid>();
+        for (var i = 0; i < 3; i++)
+        {
+            var messageId = Guid.NewGuid();
+            ids.Add(messageId);
+            (await client.PostAsJsonAsync(
+                $"/api/v1/channels/{DemoChannelId}/messages",
+                new SendMessageRequest(messageId, $"idem-sp-{messageId:N}", $"{token} n{i}", null, null)))
+                .EnsureSuccessStatusCode();
+        }
+
+        var workspace = SeedData.DemoWorkspaceId.Value;
+        var first = await client.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={token}&sort=date&limit=2",
+            JsonOptions);
+        first.Should().NotBeNull();
+        first!.Items.Should().HaveCount(2);
+        first.Cursor.Should().NotBeNullOrWhiteSpace();
+        first.Total.Should().BeGreaterThanOrEqualTo(3);
+
+        var second = await client.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={token}&sort=date&limit=2&cursor={Uri.EscapeDataString(first.Cursor!)}",
+            JsonOptions);
+        second.Should().NotBeNull();
+        second!.Items.Should().NotBeEmpty();
+        var firstIds = first.Items.Select(x => x.MessageId).ToHashSet();
+        second.Items.Should().OnlyContain(x => !firstIds.Contains(x.MessageId));
+        first.Items.Concat(second.Items).Select(x => x.MessageId).Should().Contain(ids);
+
+        var byDate = await client.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={token}&sort=date&limit=20",
+            JsonOptions);
+        byDate!.Items.Select(x => x.CreatedAt).Should().BeInDescendingOrder();
+    }
+
+    [Fact]
     public async Task Ai_summarize_uses_mock_provider_outside_send_path()
     {
         using var client = factory.CreateClient();
@@ -2589,7 +2705,12 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         DateTimeOffset CreatedAt,
         double Rank);
 
-    private sealed record SearchMessagesDto(string Query, int Limit, SearchMessageHitDto[] Items);
+    private sealed record SearchMessagesDto(
+        string Query,
+        int Limit,
+        SearchMessageHitDto[] Items,
+        int Total = 0,
+        string? Cursor = null);
 
     private sealed record ChannelMemberDto(Guid UserId, string DisplayName, string Email);
 }

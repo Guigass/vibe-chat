@@ -274,6 +274,28 @@ public sealed class BackendUnitTests
     }
 
     [Fact]
+    public void Search_cursor_roundtrips_and_date_bounds_are_inclusive()
+    {
+        var created = new DateTimeOffset(2026, 7, 1, 15, 30, 0, TimeSpan.Zero);
+        var cursor = new SearchPageCursor(SearchSort.Date, 1.25, created, Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        SearchCursorCodec.TryDecode(SearchCursorCodec.Encode(cursor), out var decoded).Should().BeTrue();
+        decoded.Sort.Should().Be(SearchSort.Date);
+        decoded.Rank.Should().BeApproximately(1.25, 0.0000001);
+        decoded.CreatedAt.Should().Be(created);
+        decoded.MessageId.Should().Be(cursor.MessageId);
+        SearchCursorCodec.TryDecode("%%%", out _).Should().BeFalse();
+
+        SearchPolicies.TryParseInstant("2026-07-01", endOfDay: false, out var from).Should().BeTrue();
+        SearchPolicies.TryParseInstant("2026-07-01", endOfDay: true, out var to).Should().BeTrue();
+        from.Should().Be(new DateTimeOffset(2026, 7, 1, 0, 0, 0, TimeSpan.Zero));
+        to.Should().Be(new DateTimeOffset(2026, 7, 1, 0, 0, 0, TimeSpan.Zero).AddDays(1).AddTicks(-1));
+        SearchPolicies.ParseSort("date").Should().Be(SearchSort.Date);
+        SearchPolicies.TryParseAttachmentKind("image", out var kind).Should().BeTrue();
+        kind.Should().Be("image");
+        SearchPolicies.TryParseAttachmentKind("video", out _).Should().BeFalse();
+    }
+
+    [Fact]
     public void Rate_limit_keys_are_tenant_and_user_scoped()
     {
         var tenant = new TenantId(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));

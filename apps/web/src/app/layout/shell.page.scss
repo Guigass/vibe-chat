@@ -247,7 +247,7 @@
 
 .shell__search {
   position: relative;
-  width: min(18rem, 34vw);
+  width: min(22rem, 42vw);
 }
 
 .shell__search.is-open .shell__search-panel,
@@ -255,19 +255,95 @@
   animation: shell-search-in 160ms ease-out;
 }
 
+.shell__search-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+}
+
+.shell__search-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid var(--vc-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--vc-brand) 10%, var(--vc-surface));
+  color: var(--vc-ink);
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+}
+
 .shell__search-panel {
   position: absolute;
   top: calc(100% + 0.35rem);
   right: 0;
   z-index: 12;
-  width: min(22rem, 72vw);
-  max-height: min(20rem, 50vh);
+  width: min(28rem, 86vw);
+  max-height: min(28rem, 62vh);
   overflow: auto;
   border: 1px solid var(--vc-border);
   border-radius: var(--vc-radius-md);
   background: var(--vc-surface-elevated);
   box-shadow: var(--vc-shadow-soft);
   padding: 0.35rem;
+}
+
+.shell__search-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 0.25rem 0.35rem 0.45rem;
+}
+
+.shell__search-toggles {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.shell__search-toggle {
+  border: 1px solid var(--vc-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--vc-ink-muted);
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+}
+
+.shell__search-toggle.is-active {
+  background: color-mix(in srgb, var(--vc-brand) 16%, transparent);
+  color: var(--vc-ink);
+}
+
+.shell__search-hint,
+.shell__search-group {
+  margin: 0.15rem 0.4rem;
+  color: var(--vc-ink-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.shell__search-more {
+  display: block;
+  width: calc(100% - 0.7rem);
+  margin: 0.35rem;
+  border: 0;
+  border-radius: var(--vc-radius-sm);
+  background: color-mix(in srgb, var(--vc-brand) 10%, transparent);
+  color: var(--vc-ink);
+  padding: 0.45rem 0.7rem;
+  cursor: pointer;
+}
+
+.shell__search-hit-body mark {
+  background: color-mix(in srgb, var(--vc-brand) 28%, transparent);
+  color: inherit;
+  padding: 0 0.1em;
 }
 
 .shell__search-status {

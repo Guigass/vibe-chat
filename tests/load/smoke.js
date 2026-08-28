@@ -80,6 +80,16 @@ export default function () {
   });
   failRate.add(!historyOk);
 
+  const workspaceId = __ENV.WORKSPACE_ID || '11111111-1111-1111-1111-111111111111';
+  const search = http.get(
+    `${apiBase}/api/v1/search/messages?workspaceId=${workspaceId}&q=k6&hasAttachment=false&sort=date&limit=20`,
+    { headers: headers() },
+  );
+  const searchOk = check(search, {
+    'search filtered 200': (r) => r.status === 200,
+  });
+  failRate.add(!searchOk);
+
   const messageId = newId();
   const idempotencyKey = `k6-${messageId}`;
   const body = JSON.stringify({

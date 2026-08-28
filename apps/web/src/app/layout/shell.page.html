@@ -128,30 +128,107 @@
           [(value)]="search"
           placeholder="Buscar (Ctrl/Cmd+K)"
           ariaLabel="Buscar mensagens"
-          (focused)="searchFocused.set(true); searchOpen.set(true)"
+          (focused)="onSearchFocus()"
           (blurred)="searchFocused.set(false)"
         />
-        @if (searchOpen() && search().trim().length >= 2) {
+        @if (searchChips().length) {
+          <div class="shell__search-chips" aria-label="Filtros da busca">
+            @for (chip of searchChips(); track chip.raw) {
+              <button type="button" class="shell__search-chip" (mousedown)="removeSearchChip(chip)">
+                {{ chip.label }}
+                <span aria-hidden="true">×</span>
+              </button>
+            }
+          </div>
+        }
+        @if (searchOpen()) {
           <div class="shell__search-panel" role="listbox" aria-label="Resultados da busca">
-            @if (searchLoading()) {
-              <p class="shell__search-status">Buscando…</p>
-            } @else if (searchError()) {
-              <p class="shell__search-status" role="alert">{{ searchError() }}</p>
-            } @else if (searchResults().length === 0) {
-              <p class="shell__search-status">Nenhuma mensagem encontrada.</p>
-            } @else {
-              @for (hit of searchResults(); track hit.messageId) {
+            <div class="shell__search-toolbar">
+              <div class="shell__search-toggles" role="group" aria-label="Escopo da busca">
                 <button
                   type="button"
-                  class="shell__search-hit"
-                  role="option"
-                  (mousedown)="openSearchHit(hit)"
-                >
-                  <span class="shell__search-hit-meta">
-                    #{{ hit.channelName }} · {{ hit.authorDisplayName }}
-                  </span>
-                  <span class="shell__search-hit-body">{{ hit.bodyPreview }}</span>
+                  class="shell__search-toggle"
+                  [class.is-active]="searchScope() === 'workspace'"
+                  (mousedown)="setSearchScope('workspace')"
+                >Workspace</button>
+                <button
+                  type="button"
+                  class="shell__search-toggle"
+                  [class.is-active]="searchScope() === 'channel'"
+                  (mousedown)="setSearchScope('channel')"
+                >Este canal</button>
+              </div>
+              <div class="shell__search-toggles" role="group" aria-label="Ordenação">
+                <button
+                  type="button"
+                  class="shell__search-toggle"
+                  [class.is-active]="searchSort() === 'relevance'"
+                  (mousedown)="setSearchSort('relevance')"
+                >Relevância</button>
+                <button
+                  type="button"
+                  class="shell__search-toggle"
+                  [class.is-active]="searchSort() === 'date'"
+                  (mousedown)="setSearchSort('date')"
+                >Data</button>
+              </div>
+            </div>
+            @if (!search().trim() && searchRecent().length) {
+              <p class="shell__search-hint">Buscas recentes</p>
+              @for (recent of searchRecent(); track recent) {
+                <button type="button" class="shell__search-hit" (mousedown)="applyRecent(recent)">
+                  <span class="shell__search-hit-body">{{ recent }}</span>
                 </button>
+              }
+            }
+            @if (searchSuggestions().length) {
+              <p class="shell__search-hint">Sugestões</p>
+              @for (item of searchSuggestions(); track item.value) {
+                <button type="button" class="shell__search-hit" (mousedown)="applySuggestion(item.value)">
+                  <span class="shell__search-hit-body">{{ item.label }}</span>
+                </button>
+              }
+            }
+            @if (searchCanRun()) {
+              @if (searchLoading() && searchResults().length === 0) {
+                <p class="shell__search-status">Buscando…</p>
+              } @else if (searchError()) {
+                <p class="shell__search-status" role="alert">{{ searchError() }}</p>
+              } @else if (searchResults().length === 0) {
+                <p class="shell__search-status">
+                  Nada encontrado. Remova um filtro ou tente outro termo.
+                </p>
+              } @else {
+                <p class="shell__search-hint">{{ searchTotal() }} resultado{{ searchTotal() === 1 ? '' : 's' }}</p>
+                @for (group of searchGroups(); track group.channelId) {
+                  <p class="shell__search-group">#{{ group.channelName }} · {{ group.count }}</p>
+                  @for (hit of group.items; track hit.messageId) {
+                    <button
+                      type="button"
+                      class="shell__search-hit"
+                      role="option"
+                      (mousedown)="openSearchHit(hit)"
+                    >
+                      <span class="shell__search-hit-meta">
+                        {{ hit.authorDisplayName }}
+                      </span>
+                      <span class="shell__search-hit-body">
+                        @for (part of highlightParts(hit.bodyPreview); track $index) {
+                          @if (part.hit) {
+                            <mark>{{ part.text }}</mark>
+                          } @else {
+                            {{ part.text }}
+                          }
+                        }
+                      </span>
+                    </button>
+                  }
+                }
+                @if (searchCursor()) {
+                  <button type="button" class="shell__search-more" (mousedown)="loadMoreSearch()">
+                    Carregar mais
+                  </button>
+                }
               }
             }
           </div>
