@@ -375,6 +375,7 @@ escreve aqui em vez de espalhar notas soltas pelas seções.
 | `GAP-web-node-boot` | A | `BOOT_ONLY` / `task ux:stack` + `ensure_web_node` com piso Angular CLI (`^22.22.3 \|\| ^24.15 \|\| >=26`) | #61 |
 | `GAP-harness-catalog` | G | Índice canônico `docs/specs/README.md`; alinhamento perfis econômico vs 24/7; scan W19 antes de W11 no Build | #135 |
 | `GAP-ci-required-checks` | A/E | Required checks verdes pós-#135/#137: allowlist gitleaks `LabDemoKeyBase64`; `RateLimitSettingsResolver` respeita `RateLimit:*` sem row DB; testes push kill switch via `process_settings` | #138 |
+| `GAP-ci-duplicate-runs` | A | CI em `cursor/**` + `pull_request` duplicava workflows; push só em `main` + `concurrency` cancel-in-progress | #149 |
 
 ---
 
