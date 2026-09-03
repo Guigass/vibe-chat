@@ -7,6 +7,7 @@ import {
   isEditableTarget,
   matchGlobalShortcut,
   rankPaletteItems,
+  SHORTCUT_SHEET,
   type PaletteItem,
 } from './palette';
 
@@ -61,6 +62,14 @@ describe('command palette scoring (B-099)', () => {
 });
 
 describe('command palette shortcuts (B-099)', () => {
+  it('lists shortcut combos without a `keys` field (gitleaks OPS-E2E-B099)', () => {
+    expect(SHORTCUT_SHEET.length).toBeGreaterThan(0);
+    for (const row of SHORTCUT_SHEET) {
+      expect(row.combo.length).toBeGreaterThan(0);
+      expect(row).not.toHaveProperty('keys');
+    }
+  });
+
   it('maps the documented modifier shortcuts even inside a text field', () => {
     expect(matchGlobalShortcut(mod('k'), true)).toBe('palette');
     expect(matchGlobalShortcut(mod('k', { meta: true }), true)).toBe('palette');
