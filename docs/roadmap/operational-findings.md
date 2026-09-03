@@ -28,6 +28,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — #145 cache/pin + #149 `releaseBottom()` cancela âncora bottom no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146 (B-098): 15 specs falham em `auth.ts:118` — timeout 20s aguardando `heading` `/geral/i`; h1 `#geral` existe mas está hidden (largura 0) | Critical | **Resolved** — título do canal com `min-width: 6.5rem`; busca encolhe (`flex: 0 1`) em vez de espremer o h1 |
+| OPS-E2E-B099 | CI / E2E + gitleaks | `main` RED pós-#151 (B-099): `command-palette.spec.ts:33` (`command-palette-query` visível mas `inactive` vs focused) + gitleaks FP em `palette.ts:46,51` (`Ctrl/Cmd+Shift+M` / `Alt+Shift+↓` como `generic-api-key`) | Critical | Open — fix forward (autofocus E2E + allowlist gitleaks); revert de #151 descartado |
 
 ## Resolvidos
 
@@ -210,6 +211,39 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   3. finding marcado Resolved citando PR de fix.
 - Rollback: revert de #146 restauraria CI mas descarta B-098 — não seguro sem QA;
   preferir fix forward (este PR).
+
+### OPS-E2E-B099
+
+- Status: **Open** — `main` RED imediato após squash de
+  [#151](https://github.com/Guigass/vibe-chat/pull/151) (2026-09-03T10:02Z).
+- Observado em: CI run
+  [#33742187221](https://github.com/Guigass/vibe-chat/actions/runs/33742187221)
+  — `E2E (Playwright)` 15 passed, 1 failed; `Secret scan (gitleaks)` 2 leaks;
+  `Build & test` + `Dependency audit notes` success.
+- Base/head SHA: último green `12fcffa` (2026-08-28T11:22Z); incident tip
+  `98ed933ce32fab4b76adbf787dcc01772bca3a80` (#151 B-099, 2026-09-03T10:02Z).
+- Reprodução: CI em `main` — `command-palette.spec.ts:33`
+  `expect(getByTestId('command-palette-query')).toBeFocused()` timeout 15s
+  (elemento presente, estado `inactive`; falha estável em retry). Gitleaks:
+  `apps/web/src/app/shared/command-palette/palette.ts` linhas 46 e 51 —
+  strings de atalho de teclado em `SHORTCUT_SHEET[].keys` (falso positivo
+  `generic-api-key`).
+- Resultado esperado: paleta abre com foco no campo de busca; gitleaks ignora
+  atalhos documentados; CI verde em `main`.
+- Resultado atual: `#151` mergeou com gitleaks + E2E vermelhos no PR (QA/Docs
+  automations SUCCESS — `OPS-REQUIRED-CHECK` ainda External); B-099 já marcado
+  **Done** no roadmap na mesma squash.
+- Impacto: bloqueia auto-merge e viola invariante “main verde”.
+- Risk class: R1 (teste/UI + allowlist); severidade Critical por bloqueio de
+  pipeline.
+- Owner automático: Build + QA.
+- Critério de resolução:
+  1. `E2E (Playwright)` + `Secret scan (gitleaks)` verdes em `main` por ≥2 runs
+     consecutivos;
+  2. `command-palette.spec.ts` passa via `task test:e2e:ci`;
+  3. finding marcado Resolved citando PR de fix.
+- Rollback: revert de #151 restauraria CI mas descarta B-099 — não seguro; preferir
+  fix forward.
 
 ### OPS-DOCS-RACE
 
