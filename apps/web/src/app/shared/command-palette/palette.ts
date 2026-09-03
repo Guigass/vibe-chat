@@ -41,16 +41,16 @@ export const PALETTE_GROUP_TITLES: Record<PaletteKind, string> = {
   action: 'Ações',
 };
 
-export const SHORTCUT_SHEET: ReadonlyArray<{ keys: string; action: string }> = [
-  { keys: 'Ctrl/Cmd+K', action: 'Abrir a paleta de comandos' },
-  { keys: 'Ctrl/Cmd+Shift+F', action: 'Buscar mensagens com filtros' },
-  { keys: 'Alt+↑ / Alt+↓', action: 'Canal anterior / próximo' },
-  { keys: 'Alt+Shift+↑ / Alt+Shift+↓', action: 'Canal não lido anterior / próximo' },
-  { keys: 'Esc', action: 'Fechar painel ou cancelar edição' },
-  { keys: '↑', action: 'Editar a última mensagem própria no composer vazio' },
-  { keys: 'Ctrl/Cmd+Shift+M', action: 'Ir para a próxima menção' },
-  { keys: 'Shift+Esc', action: 'Marcar o canal atual como lido' },
-  { keys: '?', action: 'Abrir esta folha de atalhos' },
+export const SHORTCUT_SHEET: ReadonlyArray<{ combo: string; action: string }> = [
+  { combo: 'Ctrl/Cmd+K', action: 'Abrir a paleta de comandos' },
+  { combo: 'Ctrl/Cmd+Shift+F', action: 'Buscar mensagens com filtros' },
+  { combo: 'Alt+↑ / Alt+↓', action: 'Canal anterior / próximo' },
+  { combo: 'Alt+Shift+↑ / Alt+Shift+↓', action: 'Canal não lido anterior / próximo' },
+  { combo: 'Esc', action: 'Fechar painel ou cancelar edição' },
+  { combo: '↑', action: 'Editar a última mensagem própria no composer vazio' },
+  { combo: 'Ctrl/Cmd+Shift+M', action: 'Ir para a próxima menção' },
+  { combo: 'Shift+Esc', action: 'Marcar o canal atual como lido' },
+  { combo: '?', action: 'Abrir esta folha de atalhos' },
 ];
 
 export type GlobalShortcut =

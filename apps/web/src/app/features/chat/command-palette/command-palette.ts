@@ -1,5 +1,5 @@
 import { CdkTrapFocus } from '@angular/cdk/a11y';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ChannelStore } from '../../../core/services/channel.store';
@@ -37,12 +37,14 @@ import { SlashCommandsService } from '../composer/slash-commands.service';
         <label class="cp__search">
           <span class="vc-sr-only">Filtrar canais, pessoas e ações</span>
           <input
+            #queryInput
             type="search"
             [value]="query()"
             (input)="onQuery($event)"
             (keydown)="onQueryKeydown($event)"
             placeholder="Ir para canal, pessoa ou ação…"
             autocomplete="off"
+            autofocus
             data-testid="command-palette-query"
           />
         </label>
@@ -98,9 +100,9 @@ import { SlashCommandsService } from '../composer/slash-commands.service';
           <button type="button" class="cp__ghost" (click)="closeSheet()" aria-label="Fechar">×</button>
         </header>
         <ul class="cp__sheet-list">
-          @for (row of shortcuts; track row.keys) {
+          @for (row of shortcuts; track row.combo) {
             <li>
-              <kbd class="cp__kbd">{{ row.keys }}</kbd>
+              <kbd class="cp__kbd">{{ row.combo }}</kbd>
               <span>{{ row.action }}</span>
             </li>
           }
@@ -267,6 +269,7 @@ export class CommandPalette {
   readonly query = signal('');
   readonly activeId = signal<string | null>(null);
   readonly shortcuts = SHORTCUT_SHEET;
+  private readonly queryInput = viewChild<ElementRef<HTMLInputElement>>('queryInput');
   private slashItems = signal<PaletteItem[]>([]);
 
   readonly sourceItems = computed(() => this.buildItems());
@@ -286,6 +289,13 @@ export class CommandPalette {
       this.query.set('');
       this.palette.hydrateRecents(this.auth.profile()?.id);
       void this.refreshSlashItems();
+    });
+
+    effect(() => {
+      if (!this.palette.paletteOpen()) return;
+      const input = this.queryInput()?.nativeElement;
+      if (!input) return;
+      queueMicrotask(() => input.focus());
     });
 
     effect(() => {

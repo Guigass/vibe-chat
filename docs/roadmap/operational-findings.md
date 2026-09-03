@@ -28,6 +28,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — #145 cache/pin + #149 `releaseBottom()` cancela âncora bottom no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146 (B-098): 15 specs falham em `auth.ts:118` — timeout 20s aguardando `heading` `/geral/i`; h1 `#geral` existe mas está hidden (largura 0) | Critical | **Resolved** — título do canal com `min-width: 6.5rem`; busca encolhe (`flex: 0 1`) em vez de espremer o h1 |
+| OPS-E2E-B099 | CI / E2E | `main` RED pós-#151 (B-099): `command-palette.spec.ts:33` — input visível sem foco; gitleaks FP em `SHORTCUT_SHEET[].keys` | Critical | **Resolved** — foco explícito no input da paleta; atalho E2E via `window` keydown; `combo` no lugar de `keys` |
 
 ## Resolvidos
 
@@ -36,6 +37,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 + #73 — roles/FORCE + SET LOCAL na txn + validação de role app |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142: timeline-anchor (distância ~2780) + history-scroll (scrollTop ~3200) | Critical | Resolved | #145 lista com cache; #149 `releaseBottom()` no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146: 15 specs — `heading` `#geral` hidden (caixa 0×n) | Critical | Resolved | Título `min-width: 6.5rem`; `.shell__search` com `flex: 0 1` + `min-width: 10rem` |
+| OPS-E2E-B099 | CI / E2E | `main` RED pós-#151: paleta sem foco + gitleaks `keys:` | Critical | Resolved | Foco no input ao abrir; E2E sem omnibox; `combo` no sheet |
 
 ## Formato de detalhe
 
@@ -210,6 +212,36 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   3. finding marcado Resolved citando PR de fix.
 - Rollback: revert de #146 restauraria CI mas descarta B-098 — não seguro sem QA;
   preferir fix forward (este PR).
+
+### OPS-E2E-B099
+
+- Status: **Resolved** — paleta foca o campo de busca ao abrir; E2E dispara
+  `keydown` em `window` (Ctrl+K do Chromium não rouba o foco); `SHORTCUT_SHEET`
+  usa `combo` em vez de `keys` (falso positivo `generic-api-key` do gitleaks).
+- Observado em: CI `E2E (Playwright)` —
+  [`command-palette.spec.ts`](../../tests/e2e/specs/command-palette.spec.ts)
+  linha 33 (`command-palette-query` visível, `toBeFocused` falha) e
+  `Secret scan (gitleaks)` em `palette.ts` (`keys: 'Ctrl/Cmd+Shift+M'` /
+  `Alt+Shift+↓`).
+- Base/head SHA: último green `12fcffa` (2026-08-28); incident tip `98ed933`
+  (#151, B-099).
+- Reprodução: CI em `main` após o merge de #151 — paleta abre, input sem foco;
+  gitleaks vermelho no mesmo commit.
+- Causa raiz: `cdkTrapFocusAutoCapture` não garante foco no input após o
+  `@if`; `page.keyboard.press('Control+k')` compete com o omnibox do
+  Chromium; gitleaks trata a propriedade `keys:` como segredo.
+- Resultado esperado: Ctrl/Cmd+K foca o filtro; E2E passa; secret scan verde.
+- Resultado atual: `viewChild` + `queueMicrotask(focus)`; E2E via
+  `window.dispatchEvent`; sheet com `combo`.
+- Impacto: bloqueava auto-merge e violava invariante “main verde”.
+- Risk class: R1 (teste/UI); severidade Critical por bloqueio de pipeline.
+- Owner automático: Build + QA.
+- Critério de resolução:
+  1. `E2E (Playwright)` verde em `main`;
+  2. `command-palette.spec.ts` passa via `task test:e2e:ci`;
+  3. gitleaks verde no `palette.ts`;
+  4. finding marcado Resolved citando PR de fix.
+- Rollback: revert deste PR; paleta volta ao estado de #151.
 
 ### OPS-DOCS-RACE
 
