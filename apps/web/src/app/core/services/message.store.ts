@@ -111,6 +111,21 @@ export class MessageStore {
     if (maxSeq > 0) this.schedulePersistReadCursor(channelId, maxSeq);
   }
 
+  /** B-099: Shift+Esc marks the open channel read at the latest known seq. */
+  async markActiveChannelRead(): Promise<void> {
+    const channelId = this.channels.activeChannelId();
+    if (!channelId) return;
+    this.channels.patchChannel(channelId, { unreadCount: 0, mentionCount: 0 });
+    const maxSeq = maxSeqForChannel(this.messagesSignal(), channelId);
+    if (maxSeq <= 0) return;
+    if (this.readCursorTimer) {
+      clearTimeout(this.readCursorTimer);
+      this.readCursorTimer = null;
+    }
+    this.pendingReadCursor = null;
+    await this.persistReadCursor(channelId, maxSeq);
+  }
+
   constructor() {
     this.unsubCreated = this.hub.onMessage((message) => this.ingestRemote(message));
     this.unsubEdited = this.hub.onMessageEdited((patch) => this.applyEdit(patch));

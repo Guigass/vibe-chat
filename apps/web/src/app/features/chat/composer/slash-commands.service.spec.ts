@@ -5,6 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../../core/api/api.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { CommandPaletteService } from '../../../core/services/command-palette.service';
 import { MessageStore } from '../../../core/services/message.store';
 import { SlashCommandsService } from './slash-commands.service';
 
@@ -49,6 +50,10 @@ describe('SlashCommandsService (B-087)', () => {
     remove: vi.fn(async () => undefined),
   };
 
+  const palette = {
+    openShortcutSheet: vi.fn(),
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     api.getCommands.mockResolvedValue([
@@ -62,6 +67,7 @@ describe('SlashCommandsService (B-087)', () => {
         { provide: ApiService, useValue: api },
         { provide: ChannelStore, useValue: channels },
         { provide: MessageStore, useValue: messages },
+        { provide: CommandPaletteService, useValue: palette },
       ],
     });
   });
@@ -86,6 +92,7 @@ describe('SlashCommandsService (B-087)', () => {
     expect(result.clearDraft).toBe(true);
     expect(result.notice?.kind).toBe('help');
     expect(result.notice?.lines?.some((line) => line.includes('/dm'))).toBe(true);
+    expect(palette.openShortcutSheet).toHaveBeenCalled();
   });
 
   it('explains when IA is disabled instead of raw 503', async () => {

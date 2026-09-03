@@ -38,7 +38,8 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Reaction** | Reação emoji (ou similar) a uma mensagem. |
 | **Enquete / Poll** | Mensagem com pergunta e 2–10 opções (`messaging.polls`). Voto único ou múltiplo; anônima ou visível; prazo opcional. Auditor lê e não vota. |
 | **Attachment** | Arquivo associado a mensagem; bytes no object storage (MinIO); metadados no PostgreSQL. |
-| **Busca com filtros** | FTS PostgreSQL em mensagens visíveis ao membership (`GET /search/messages`). Filtros `de:`/`em:`/`antes:`/`tem:` só restringem; nunca ampliam ACL (B-098). Distinta da busca semântica (B-121 / ADR-016). |
+| **Busca com filtros** | FTS PostgreSQL em mensagens visíveis ao membership (`GET /search/messages`). Filtros `de:`/`em:`/`antes:`/`tem:` só restringem; nunca ampliam ACL (B-098). Distinta da busca semântica (B-121 / ADR-016). Atalho: `Ctrl/Cmd+Shift+F`. |
+| **Paleta de comandos** | Overlay de navegação (`Ctrl/Cmd+K`) sobre canais com membership, pessoas visíveis, ações locais e comandos de `GET /commands` (B-087 / B-099). Não substitui a busca de mensagens. |
 | **Announcement / Anúncio** | Mensagem ou conversa de broadcast com regras de publicação e, opcionalmente, confirmação de leitura; não é sinônimo de notificação push. |
 | **Action item** | Ação estruturada derivada de uma conversa e ligada à mensagem de origem; pode evoluir para tarefa, mas preserva evidência. |
 | **Digest / Catch-up** | Resumo periódico de atividade autorizada, com links para conversas de origem. |

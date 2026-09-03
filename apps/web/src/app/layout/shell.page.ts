@@ -40,6 +40,13 @@ import {
   type SearchSort,
 } from '../shared/search/search-query';
 import { readRecentSearches, writeRecentSearch } from '../shared/search/search-recent';
+import { CommandPalette } from '../features/chat/command-palette/command-palette';
+import { CommandPaletteService } from '../core/services/command-palette.service';
+import {
+  cycleChannel,
+  isEditableTarget,
+  matchGlobalShortcut,
+} from '../shared/command-palette/palette';
 import {
   ConnectionBanner,
   DensityControl,
@@ -84,6 +91,7 @@ import { defaultSidebarOpen, readNavCompact, SHELL_NARROW_MEDIA_QUERY, writeNavC
     IconButton,
     Input,
     VcTooltip,
+    CommandPalette,
   ],
   providers: [provideVcTooltipDefaults(), ...provideVcTooltipGroup()],
   templateUrl: './shell.page.html',
@@ -103,6 +111,7 @@ export class ShellPage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly attachments = inject(AttachmentQueueService);
   private readonly destroyRef = inject(DestroyRef);
+  readonly palette = inject(CommandPaletteService);
 
   /** UX-003: tracks max-width 960px; sidebar starts collapsed on narrow. */
   readonly narrowViewport = signal(false);
@@ -221,18 +230,17 @@ export class ShellPage implements OnInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   onGlobalKeydown(event: KeyboardEvent): void {
-    const isModK = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k';
-    if (isModK) {
-      event.preventDefault();
-      this.searchFocused.set(true);
-      this.searchOpen.set(true);
-      this.refreshRecentSearches();
-      const el = document.getElementById('vc-search') as HTMLInputElement | null;
-      el?.focus();
-      return;
-    }
-
-    if (event.key === 'Escape') {
+    if (event.key === 'Escape' && !event.shiftKey) {
+      if (this.palette.sheetOpen()) {
+        event.preventDefault();
+        this.palette.closeShortcutSheet();
+        return;
+      }
+      if (this.palette.paletteOpen()) {
+        event.preventDefault();
+        this.palette.closePalette();
+        return;
+      }
       if (this.threads.open()) {
         this.threads.close();
         return;
@@ -261,7 +269,68 @@ export class ShellPage implements OnInit, OnDestroy {
       this.searchFocused.set(false);
       this.searchOpen.set(false);
       (document.activeElement as HTMLElement | null)?.blur?.();
+      return;
     }
+
+    const shortcut = matchGlobalShortcut(event, isEditableTarget(event.target));
+    if (!shortcut) return;
+    if (this.palette.anyOverlayOpen() && shortcut !== 'palette') return;
+
+    event.preventDefault();
+    switch (shortcut) {
+      case 'palette':
+        this.palette.hydrateRecents(this.auth.profile()?.id);
+        this.palette.openPalette();
+        return;
+      case 'search':
+        this.focusMessageSearch();
+        return;
+      case 'channel-prev':
+        void this.cycleActiveChannel(-1, 'all');
+        return;
+      case 'channel-next':
+        void this.cycleActiveChannel(1, 'all');
+        return;
+      case 'unread-prev':
+        void this.cycleActiveChannel(-1, 'unread');
+        return;
+      case 'unread-next':
+        void this.cycleActiveChannel(1, 'unread');
+        return;
+      case 'mentions':
+        void this.cycleActiveChannel(1, 'mention');
+        return;
+      case 'mark-read':
+        void this.messages.markActiveChannelRead();
+        return;
+      case 'shortcuts':
+        this.palette.openShortcutSheet();
+        return;
+    }
+  }
+
+  focusMessageSearch(): void {
+    this.searchFocused.set(true);
+    this.searchOpen.set(true);
+    this.refreshRecentSearches();
+    const el = document.getElementById('vc-search') as HTMLInputElement | null;
+    el?.focus();
+  }
+
+  private async cycleActiveChannel(
+    direction: 1 | -1,
+    filter: 'all' | 'unread' | 'mention',
+  ): Promise<void> {
+    const next = cycleChannel(
+      [...this.channels.publicChannels(), ...this.channels.directChannels()],
+      this.channels.activeChannelId(),
+      direction,
+      filter,
+    );
+    if (!next) return;
+    this.channels.selectChannel(next.id);
+    await this.messages.loadChannel(next.id);
+    this.palette.requestComposerFocus();
   }
 
   private bindNarrowViewport(): void {

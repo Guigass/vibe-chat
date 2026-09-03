@@ -50,6 +50,7 @@ import { drawAudioWaveform } from '../../../shared/utils/audio';
 import { MentionAutocomplete } from './mention-autocomplete';
 import { SlashAutocomplete } from './slash-autocomplete';
 import { SlashCommandsService } from './slash-commands.service';
+import { CommandPaletteService } from '../../../core/services/command-palette.service';
 import { EmojiPicker } from '../../../shared/ui/emoji-picker/emoji-picker';
 import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
 
@@ -883,6 +884,7 @@ export class Composer {
   readonly formatVideoDuration = formatVideoDuration;
   readonly audioRecorder = inject(AudioRecorderService);
   readonly slash = inject(SlashCommandsService);
+  private readonly palette = inject(CommandPaletteService);
   private readonly hub = inject(ChatHubService);
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
@@ -977,6 +979,11 @@ export class Composer {
     // BUG-017: Responder shows the cite bar but must also move focus to the textarea.
     effect(() => {
       if (!this.messages.replyTarget()) return;
+      queueMicrotask(() => this.composerTextarea()?.nativeElement()?.focus());
+    });
+
+    effect(() => {
+      if (this.palette.composerFocusTick() <= 0) return;
       queueMicrotask(() => this.composerTextarea()?.nativeElement()?.focus());
     });
 

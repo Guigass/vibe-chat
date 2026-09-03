@@ -105,6 +105,7 @@ describe('MessageStore read cursor (BUG-002)', () => {
             bumpUnread,
             bumpMention: vi.fn(),
             syncChannelUnread,
+            patchChannel: vi.fn(),
           },
         },
         {
@@ -221,6 +222,17 @@ describe('MessageStore read cursor (BUG-002)', () => {
 
     store.markViewedLatest();
     await vi.advanceTimersByTimeAsync(1000);
+
+    expect(upsertReadCursor).toHaveBeenCalledWith(channelId, 12);
+    expect(syncChannelUnread).toHaveBeenCalledWith(channelId);
+  });
+
+  it('persists immediately when markActiveChannelRead is called (B-099)', async () => {
+    await store.loadChannel(channelId);
+    upsertReadCursor.mockClear();
+    syncChannelUnread.mockClear();
+
+    await store.markActiveChannelRead();
 
     expect(upsertReadCursor).toHaveBeenCalledWith(channelId, 12);
     expect(syncChannelUnread).toHaveBeenCalledWith(channelId);
