@@ -3,7 +3,7 @@
 Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
-- **Data de corte:** 2026-08-28
+- **Data de corte:** 2026-09-04
 - **Fase:** Wave 10 — W10-5 / B-099 Done (paleta de comandos); seguinte W10-6 / B-100
 - **Safety lane obrigatória:** OPS-E2E-B099 Resolved (foco da paleta + allowlist gitleaks do `palette.ts`); OPS-E2E-B098 Resolved (#148); OPS-E2E-B097 Resolved (#145+#149); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
 - **Próximo item elegível:** W10-6 / B-100 (internacionalização)
