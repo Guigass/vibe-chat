@@ -28,7 +28,6 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — #145 cache/pin + #149 `releaseBottom()` cancela âncora bottom no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146 (B-098): 15 specs falham em `auth.ts:118` — timeout 20s aguardando `heading` `/geral/i`; h1 `#geral` existe mas está hidden (largura 0) | Critical | **Resolved** — título do canal com `min-width: 6.5rem`; busca encolhe (`flex: 0 1`) em vez de espremer o h1 |
-| OPS-E2E-B099 | CI / E2E | `main` RED pós-#151 (B-099): `command-palette.spec.ts:33` — input visível sem foco; gitleaks FP em `SHORTCUT_SHEET[].keys` (histórico `98ed933`) | Critical | **Resolved** — foco explícito no input; E2E via `window`; `combo` + allowlist gitleaks do `palette.ts` |
 
 ## Resolvidos
 
@@ -37,7 +36,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 + #73 — roles/FORCE + SET LOCAL na txn + validação de role app |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142: timeline-anchor (distância ~2780) + history-scroll (scrollTop ~3200) | Critical | Resolved | #145 lista com cache; #149 `releaseBottom()` no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146: 15 specs — `heading` `#geral` hidden (caixa 0×n) | Critical | Resolved | Título `min-width: 6.5rem`; `.shell__search` com `flex: 0 1` + `min-width: 10rem` |
-| OPS-E2E-B099 | CI / E2E | `main` RED pós-#151: paleta sem foco + gitleaks `keys:` no histórico | Critical | Resolved | Foco no input; E2E sem omnibox; `combo` + allowlist `.gitleaks.toml` |
+| OPS-E2E-B099 | CI / E2E | `main` RED pós-#151: paleta sem foco + gitleaks `keys:` no histórico | Critical | Resolved | [#154](https://github.com/Guigass/vibe-chat/pull/154) — foco no input; E2E sem omnibox; `combo` + allowlist `.gitleaks.toml` |
 
 ## Formato de detalhe
 
@@ -215,10 +214,11 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 ### OPS-E2E-B099
 
-- Status: **Resolved** — paleta foca o campo de busca ao abrir; E2E dispara
-  `keydown` em `window` (Ctrl+K do Chromium não rouba o foco); `SHORTCUT_SHEET`
-  usa `combo` em vez de `keys`; `.gitleaks.toml` allowlista `palette.ts` porque
-  o scan de histórico ainda vê `keys:` em `98ed933`.
+- Status: **Resolved** — [#154](https://github.com/Guigass/vibe-chat/pull/154)
+  (paleta foca o campo de busca ao abrir; E2E dispara `keydown` em `window` —
+  Ctrl+K do Chromium não rouba o foco; `SHORTCUT_SHEET` usa `combo` em vez de
+  `keys`; `.gitleaks.toml` allowlista `palette.ts` porque o scan de histórico
+  ainda vê `keys:` em `98ed933`).
 - Observado em: CI `E2E (Playwright)` —
   [`command-palette.spec.ts`](../../tests/e2e/specs/command-palette.spec.ts)
   linha 33 (`command-palette-query` visível, `toBeFocused` falha) e
