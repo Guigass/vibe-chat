@@ -26,7 +26,17 @@ test.describe(`command palette (${AUTH_MODE})`, () => {
     await selectChannelGeral(alice.page);
 
     for (const hop of hops) {
-      await alice.page.keyboard.press('Control+k');
+      // Dispatch on window so Chromium's omnibox Ctrl+K does not steal focus.
+      await alice.page.evaluate(() => {
+        window.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 'k',
+            ctrlKey: true,
+            bubbles: true,
+            cancelable: true,
+          }),
+        );
+      });
       const palette = alice.page.getByTestId('command-palette');
       await expect(palette).toBeVisible();
       const query = alice.page.getByTestId('command-palette-query');
