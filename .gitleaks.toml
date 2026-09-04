@@ -16,6 +16,7 @@ paths = [
   '''^apps/api/appsettings\.Development\.json$''',
   '''^apps/worker/appsettings\.Development\.json$''',
   '''^modules/Administration/ProcessSettings\.cs$''',
+  '''^apps/web/src/app/shared/command-palette/palette\.ts$''',
   '''^tests/''',
   '''^\.github/''',
 ]
