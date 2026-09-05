@@ -178,6 +178,7 @@ do Keycloak como mecanismo de reset.
 | `Minio` | `Endpoint`, `UseSsl` | Mapeado no Compose (`Minio__*`); rede interna `minio:9000`, público via `MINIO_ENDPOINT` |
 | `Observability` | `GrafanaUrl` | Default appsettings; profile `observability` expõe Grafana em `GRAFANA_PORT` |
 | `RuntimeSettings` | `DatabaseOverridesEnabled`, `Encryption:*` | Feature flag + keyring; off/default seguro |
+| `Directory` | `GroupDm:Enabled`, `GroupDm:MaxParticipants` | Kill switch R3 (B-101 / ADR-023); default off; lab/Development e TestHost ligam; teto 9 |
 
 ### Só via admin UI (não entram no `.env` mínimo)
 

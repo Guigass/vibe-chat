@@ -312,8 +312,12 @@ Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out Signal
 | `PUT /api/v1/workspaces/{workspaceId}/members/{userId}/role` | Body `{ role }`; owner/admin (`workspace.admin`); não permite auto-elevação; rejeita `Guest`/`Bot`/`WorkspaceOwner`/`PlatformOwner` (D-07); audit `member.role.change`; e-mail opcional via outbox se `Email:Enabled` |
 | `GET /api/v1/workspaces/{workspaceId}/presence` | Status `online`/`away`/`offline` dos membros (Redis TTL) |
 | `POST /api/v1/workspaces/{workspaceId}/dms` | Body `{ userId }`; get-or-create DM 1:1 (`ChannelType.Direct`) |
+| `POST /api/v1/workspaces/{workspaceId}/group-dms` | Body `{ userIds[], name? }`; get-or-create DM em grupo (`ChannelType.GroupDm`, 3–9); idempotente pelo conjunto ordenado (`ParticipantSetKey`). Flag `Directory:GroupDm:Enabled` (default false) → 404 se off |
+| `POST /api/v1/channels/{channelId}/participants` | Body `{ userIds[] }`; só participante atual. Em `GroupDm` adiciona in-place (`JoinedSeq` = último seq). Em `Direct` cria **nova** GroupDm (a 1:1 permanece) |
+| `DELETE /api/v1/channels/{channelId}/participants/me` | Sai da GroupDm; `LeftAt`/`LeftSeq`; 403 no history e no hub dali em diante |
+| `PATCH /api/v1/channels/{channelId}` | Body `{ name? }`; renomeia Title da GroupDm (só participante) |
 
-`ChannelResponse` inclui `spaceId?`, `topic?` e, para DMs, `peerUserId` / `peerDisplayName`. Channels `Private`/`Direct`/`Group` só aparecem na listagem para membros do canal. Spaces agrupam channels na UI; DMs ficam fora de spaces.
+`ChannelResponse` inclui `spaceId?`, `topic?` e, para DMs, `peerUserId` / `peerDisplayName`. GroupDm inclui `participantCount?`, `participantNames?`, `participantUserIds?`; `name` é o Title ou os nomes dos outros participantes. Channels `Private`/`Direct`/`Group`/`GroupDm` só aparecem na listagem para membros do canal. Spaces agrupam channels na UI; DMs (1:1 e grupo) ficam fora de spaces. History de GroupDm filtra `seq > JoinedSeq`.
 
 Slash commands (B-087) — o cliente traduz o comando para as APIs existentes; a lista vem do servidor:
 

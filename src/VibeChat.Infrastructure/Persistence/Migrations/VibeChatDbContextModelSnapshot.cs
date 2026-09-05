@@ -250,6 +250,14 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ParticipantSetKey")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
                     b.Property<string>("Topic")
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
@@ -265,6 +273,10 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("SpaceId");
+
+                    b.HasIndex("TenantId", "WorkspaceId", "ParticipantSetKey")
+                        .IsUnique()
+                        .HasFilter("\"ParticipantSetKey\" IS NOT NULL");
 
                     b.HasIndex("WorkspaceId", "Name")
                         .IsUnique();
@@ -283,6 +295,15 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTimeOffset>("JoinedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("JoinedSeq")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("LeftAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("LeftSeq")
+                        .HasColumnType("bigint");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");

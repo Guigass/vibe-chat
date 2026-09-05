@@ -284,15 +284,21 @@ v1.MapGet("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, Ht
     var channels = await db.Channels
         .Where(x => x.WorkspaceId == workspace.Id
             && (x.Type == ChannelType.Public || x.Type == ChannelType.Announcement || memberChannelIds.Contains(x.Id)))
-        .OrderBy(x => x.Type == ChannelType.Direct ? 1 : 0)
+        .OrderBy(x => x.Type == ChannelType.Direct || x.Type == ChannelType.GroupDm ? 1 : 0)
         .ThenBy(x => x.Name)
         .ToListAsync(ct);
 
     var peerByChannel = await ResolveDirectPeersAsync(channels, profile.Id, db, ct);
+    var groupByChannel = await GroupDmEndpoints.ResolveInfosAsync(channels, profile.Id, db, ct);
     var response = channels.Select(x =>
     {
         peerByChannel.TryGetValue(x.Id, out var peer);
-        var displayName = x.Type == ChannelType.Direct && peer is not null ? peer.DisplayName : x.Name;
+        groupByChannel.TryGetValue(x.Id, out var group);
+        var displayName = x.Type == ChannelType.Direct && peer is not null
+            ? peer.DisplayName
+            : group.Names is { Length: > 0 }
+                ? group.DisplayName
+                : x.Name;
         return new ChannelResponse(
             x.Id.Value,
             x.WorkspaceId.Value,
@@ -301,7 +307,10 @@ v1.MapGet("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, Ht
             peer?.UserId.Value,
             peer?.DisplayName,
             x.SpaceId,
-            x.Topic);
+            x.Topic,
+            group.Count == 0 ? null : group.Count,
+            group.Names is { Length: > 0 } ? group.Names : null,
+            group.UserIds is { Length: > 0 } ? group.UserIds : null);
     }).ToArray();
     return Results.Ok(response);
 });
@@ -329,20 +338,25 @@ v1.MapGet("/workspaces/{workspaceId:guid}/channels/unread", async (Guid workspac
     var cursors = await db.ReadCursors
         .Where(x => x.UserId == profile.Id && channels.Contains(x.ChannelId))
         .ToDictionaryAsync(x => x.ChannelId, x => x.LastReadSequence, ct);
+    var joinedByChannel = await db.ChannelMembers
+        .Where(x => x.UserId == profile.Id && channels.Contains(x.ChannelId))
+        .ToDictionaryAsync(x => x.ChannelId, x => x.JoinedSeq, ct);
 
     var summaries = new List<ChannelUnreadSummaryResponse>(channels.Count);
     foreach (var channelId in channels)
     {
         var lastRead = cursors.TryGetValue(channelId, out var seq) ? seq : 0L;
+        var joinedSeq = joinedByChannel.TryGetValue(channelId, out var joined) ? joined : 0L;
+        var floor = Math.Max(lastRead, joinedSeq);
         var unreadCount = await db.Messages.CountAsync(
-            x => x.ConversationId == channelId && x.Sequence > lastRead && x.DeletedAt == null,
+            x => x.ConversationId == channelId && x.Sequence > floor && x.DeletedAt == null,
             ct);
         var mentionCount = await (
             from mention in db.MessageMentions.AsNoTracking()
             join message in db.Messages.AsNoTracking() on mention.MessageId equals message.Id
             where mention.ChannelId == channelId
                 && mention.MentionedUserId == profile.Id
-                && message.Sequence > lastRead
+                && message.Sequence > floor
                 && message.DeletedAt == null
             select mention.MessageId
         ).Distinct().CountAsync(ct);
@@ -813,6 +827,8 @@ v1.MapPost("/workspaces/{workspaceId:guid}/dms", async (Guid workspaceId, OpenDi
         new ChannelResponse(channel.Id.Value, channel.WorkspaceId.Value, peerProfile.DisplayName, channel.Type.ToString(), peerProfile.Id.Value, peerProfile.DisplayName));
 }).AllowPermissionGateExempt("membership-only open DM (B-021)");
 
+GroupDmEndpoints.Map(v1);
+
 v1.MapPost("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, CreateChannelRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IAuditWriter audit, IClock clock, CancellationToken ct) =>
 {
     var profile = await EnsureProfileAsync(http.User, db, clock, ct);
@@ -828,9 +844,11 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, C
         return Results.BadRequest(new { error = "name is required." });
     }
 
-    if (Enum.TryParse<ChannelType>(request.Type, true, out var parsed) && parsed is ChannelType.Direct)
+    if (Enum.TryParse<ChannelType>(request.Type, true, out var parsed) && parsed is ChannelType.Direct or ChannelType.GroupDm)
     {
-        return Results.BadRequest(new { error = "Use POST /workspaces/{id}/dms to open direct messages." });
+        return Results.BadRequest(new { error = parsed is ChannelType.GroupDm
+            ? "Use POST /workspaces/{id}/group-dms to open group direct messages."
+            : "Use POST /workspaces/{id}/dms to open direct messages." });
     }
 
     Guid? spaceId = null;
@@ -1234,7 +1252,10 @@ v1.MapGet("/channels/{channelId:guid}/messages", async (
 
     var take = Math.Clamp(limit ?? 50, 1, 100);
     var canVote = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Send, ct);
-    var page = await ListChannelMessagesAsync(channel, profile, db, take, after, before, around, canVote, ct);
+    var membership = await db.ChannelMembers.AsNoTracking()
+        .FirstOrDefaultAsync(x => x.ChannelId == channel.Id && x.UserId == profile.Id, ct);
+    var minSeq = channel.Type == ChannelType.GroupDm ? membership?.JoinedSeq ?? 0 : 0;
+    var page = await ListChannelMessagesAsync(channel, profile, db, take, after, before, around, canVote, minSeq, ct);
     return Results.Ok(page);
 });
 
@@ -3689,16 +3710,22 @@ v1.MapGet("/admin/conversations", async (
     }
 
     var channels = await query
-        .OrderBy(x => x.Type == ChannelType.Direct ? 1 : 0)
+        .OrderBy(x => x.Type == ChannelType.Direct || x.Type == ChannelType.GroupDm ? 1 : 0)
         .ThenBy(x => x.Name)
         .Take(take)
         .ToListAsync(ct);
 
     var peerByChannel = await ResolveDirectPeersAsync(channels, profile.Id, db, ct);
+    var groupByChannel = await GroupDmEndpoints.ResolveInfosAsync(channels, profile.Id, db, ct);
     var items = channels.Select(x =>
     {
         peerByChannel.TryGetValue(x.Id, out var peer);
-        var displayName = x.Type == ChannelType.Direct && peer is not null ? peer.DisplayName : x.Name;
+        groupByChannel.TryGetValue(x.Id, out var group);
+        var displayName = x.Type == ChannelType.Direct && peer is not null
+            ? peer.DisplayName
+            : group.Names is { Length: > 0 }
+                ? group.DisplayName
+                : x.Name;
         return new AdminConversationResponse(
             x.Id.Value,
             x.WorkspaceId.Value,
@@ -5409,6 +5436,7 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
     long? before,
     long? around,
     bool canVote,
+    long minSeq,
     CancellationToken ct)
 {
     ChannelMessageRow[] rows;
@@ -5424,6 +5452,7 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
         var beforeFetched = await QueryChannelMessageRowsAsync(
             db,
             channel.Id,
+            minSeq,
             q => q.Where(m => m.Sequence <= anchor).OrderByDescending(m => m.Sequence).Take(beforeCount + 1),
             ct);
         hasMoreBefore = beforeFetched.Length > beforeCount;
@@ -5433,6 +5462,7 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
         var afterFetched = await QueryChannelMessageRowsAsync(
             db,
             channel.Id,
+            minSeq,
             q => q.Where(m => m.Sequence > anchor).OrderBy(m => m.Sequence).Take(afterCount + 1),
             ct);
         hasMoreAfter = afterFetched.Length > afterCount;
@@ -5441,10 +5471,10 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
         rows = beforeRows.Concat(afterRows).OrderBy(x => x.Sequence).ToArray();
         if (rows.Length > 0)
         {
-            var minSeq = rows[0].Sequence;
+            var pageMin = rows[0].Sequence;
             var maxSeq = rows[rows.Length - 1].Sequence;
             hasMoreBefore = hasMoreBefore || await db.Messages.AsNoTracking()
-                .AnyAsync(m => m.ConversationId == channel.Id && m.Sequence < minSeq, ct);
+                .AnyAsync(m => m.ConversationId == channel.Id && m.Sequence < pageMin && m.Sequence > minSeq, ct);
             hasMoreAfter = hasMoreAfter || await db.Messages.AsNoTracking()
                 .AnyAsync(m => m.ConversationId == channel.Id && m.Sequence > maxSeq, ct);
         }
@@ -5454,6 +5484,7 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
         var fetched = await QueryChannelMessageRowsAsync(
             db,
             channel.Id,
+            minSeq,
             q => q.Where(m => m.Sequence < before.Value).OrderByDescending(m => m.Sequence).Take(take + 1),
             ct);
         hasMoreBefore = fetched.Length > take;
@@ -5470,6 +5501,7 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
         var fetched = await QueryChannelMessageRowsAsync(
             db,
             channel.Id,
+            minSeq,
             q => q.Where(m => m.Sequence > after.Value).OrderBy(m => m.Sequence).Take(take + 1),
             ct);
         hasMoreAfter = fetched.Length > take;
@@ -5477,7 +5509,7 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
         if (rows.Length > 0)
         {
             hasMoreBefore = await db.Messages.AsNoTracking()
-                .AnyAsync(m => m.ConversationId == channel.Id && m.Sequence < rows[0].Sequence, ct);
+                .AnyAsync(m => m.ConversationId == channel.Id && m.Sequence < rows[0].Sequence && m.Sequence > minSeq, ct);
         }
     }
     else
@@ -5485,6 +5517,7 @@ static async Task<ChannelMessagesResponse> ListChannelMessagesAsync(
         var fetched = await QueryChannelMessageRowsAsync(
             db,
             channel.Id,
+            minSeq,
             q => q.OrderByDescending(m => m.Sequence).Take(take + 1),
             ct);
         hasMoreBefore = fetched.Length > take;
@@ -5588,10 +5621,11 @@ static async Task<Dictionary<Guid, LinkPreviewResponse>> LoadLinkPreviewsByMessa
 static async Task<ChannelMessageRow[]> QueryChannelMessageRowsAsync(
     VibeChatDbContext db,
     ChannelId conversationId,
+    long minSeq,
     Func<IQueryable<Message>, IQueryable<Message>> shape,
     CancellationToken ct)
 {
-    var shaped = shape(db.Messages.Where(m => m.ConversationId == conversationId));
+    var shaped = shape(db.Messages.Where(m => m.ConversationId == conversationId && m.Sequence > minSeq));
     return await (
         from m in shaped
         join u in db.UserProfiles on m.AuthorId equals u.Id into authors
@@ -5761,7 +5795,18 @@ public sealed record MeResponse(Guid UserId, string Subject, string Email, strin
 public sealed record UpdateMeRequest(string? Locale);
 public sealed record WorkspaceResponse(Guid Id, string Name, string Slug, string Role);
 public sealed record SpaceResponse(Guid Id, Guid WorkspaceId, string Name, int Order);
-public sealed record ChannelResponse(Guid Id, Guid WorkspaceId, string Name, string Type, Guid? PeerUserId = null, string? PeerDisplayName = null, Guid? SpaceId = null, string? Topic = null);
+public sealed record ChannelResponse(
+    Guid Id,
+    Guid WorkspaceId,
+    string Name,
+    string Type,
+    Guid? PeerUserId = null,
+    string? PeerDisplayName = null,
+    Guid? SpaceId = null,
+    string? Topic = null,
+    int? ParticipantCount = null,
+    string[]? ParticipantNames = null,
+    Guid[]? ParticipantUserIds = null);
 public sealed record WorkspaceMemberResponse(Guid UserId, string DisplayName, string Email, string Role);
 public sealed record ChannelMemberResponse(Guid UserId, string DisplayName, string Email);
 public sealed record WorkspaceRolesResponse(string[] AssignableRoles);

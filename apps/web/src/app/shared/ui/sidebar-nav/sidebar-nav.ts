@@ -150,6 +150,39 @@ function matchesFilter(text: string, query: string): boolean {
         <section class="vc-sidebar-nav__block" aria-label="Membros">
           @if (!compact()) {
             <p class="vc-sidebar-nav__label">Membros</p>
+            <button
+              type="button"
+              class="vc-sidebar-nav__create-toggle"
+              data-testid="group-dm-picker-toggle"
+              (click)="pickerOpen.set(!pickerOpen())"
+            >
+              {{ pickerOpen() ? 'Cancelar conversa' : 'Nova conversa' }}
+            </button>
+            @if (pickerOpen()) {
+              <div class="vc-sidebar-nav__picker" data-testid="group-dm-picker">
+                @if (selectedIds().length) {
+                  <div class="vc-sidebar-nav__chips">
+                    @for (member of selectedMembers(); track member.userId) {
+                      <button type="button" class="vc-sidebar-nav__chip" (click)="togglePick(member.userId)">
+                        {{ member.displayName }}
+                        <span aria-hidden="true">×</span>
+                      </button>
+                    }
+                  </div>
+                }
+                <p class="vc-sidebar-nav__picker-hint">
+                  {{ selectedIds().length >= 2 ? 'DM em grupo' : 'Selecione 2 ou mais para um grupo' }}
+                </p>
+                <vc-button
+                  type="button"
+                  data-testid="group-dm-open"
+                  [disabled]="selectedIds().length === 0"
+                  (click)="confirmPicker()"
+                >
+                  Abrir conversa
+                </vc-button>
+              </div>
+            }
           }
           <ul class="vc-sidebar-nav__members">
             @for (member of filteredMembers(); track member.userId) {
@@ -162,7 +195,7 @@ function matchesFilter(text: string, query: string): boolean {
                   [vcTooltip]="compact() ? memberLabel(member) : null"
                   [tooltipDisabled]="!compact()"
                   position="right"
-                  (click)="openDm.emit(member.userId)"
+                  (click)="onMemberClick(member.userId)"
                 >
                   @if (compact()) {
                     <span class="vc-sidebar-nav__member-initial" aria-hidden="true">
@@ -340,6 +373,33 @@ function matchesFilter(text: string, query: string): boolean {
     .vc-presence[data-status='away'] {
       background: var(--vc-presence-away);
     }
+    .vc-sidebar-nav__picker {
+      display: grid;
+      gap: var(--vc-space-2);
+      padding: var(--vc-space-2);
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-md);
+    }
+    .vc-sidebar-nav__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .vc-sidebar-nav__chip {
+      border: 1px solid var(--vc-border);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--vc-brand) 10%, transparent);
+      color: var(--vc-ink);
+      font: inherit;
+      font-size: 0.78rem;
+      padding: 0.15rem 0.55rem;
+      cursor: pointer;
+    }
+    .vc-sidebar-nav__picker-hint {
+      margin: 0;
+      font-size: 0.72rem;
+      color: var(--vc-ink-subtle);
+    }
   `,
 })
 export class SidebarNav {
@@ -356,6 +416,7 @@ export class SidebarNav {
   readonly compact = input(false);
   readonly select = output<string>();
   readonly openDm = output<string>();
+  readonly openGroup = output<string[]>();
   readonly channelMuteAction = output<{ channelId: string; action: ChannelMuteAction }>();
   readonly createChannel = output<{
     name: string;
@@ -373,6 +434,11 @@ export class SidebarNav {
   readonly newSpaceName = signal('');
   readonly selectedSpaceId = signal('');
   readonly channelType = signal('Public');
+  readonly pickerOpen = signal(false);
+  readonly selectedIds = signal<string[]>([]);
+  readonly selectedMembers = computed(() =>
+    this.members().filter((m) => this.selectedIds().includes(m.userId)),
+  );
 
   readonly hasFilter = computed(() => this.filterQuery().trim().length > 0);
 
@@ -436,6 +502,31 @@ export class SidebarNav {
 
   memberLabel(member: WorkspaceMember): string {
     return `Mensagem para ${member.displayName}`;
+  }
+
+  onMemberClick(userId: string): void {
+    if (this.pickerOpen()) {
+      this.togglePick(userId);
+      return;
+    }
+    this.openDm.emit(userId);
+  }
+
+  togglePick(userId: string): void {
+    this.selectedIds.update((ids) =>
+      ids.includes(userId) ? ids.filter((id) => id !== userId) : [...ids, userId],
+    );
+  }
+
+  confirmPicker(): void {
+    const ids = this.selectedIds();
+    if (ids.length >= 2) {
+      this.openGroup.emit(ids);
+    } else if (ids.length === 1) {
+      this.openDm.emit(ids[0]);
+    }
+    this.pickerOpen.set(false);
+    this.selectedIds.set([]);
   }
 
   clearFilter(event?: Event): void {

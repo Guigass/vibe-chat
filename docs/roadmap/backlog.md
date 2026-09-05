@@ -143,7 +143,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-098 | Busca com filtros | **Done** (W10-4) — filtro só restringe; membership no servidor |
 | B-099 | Paleta de comandos e atalhos | **Done** (W10-5) — Ctrl/Cmd+K paleta; atalhos documentados; `/ajuda` abre a folha |
 | B-100 | Internacionalização | **Done** (W10-6) — pt-BR + en; catálogo incompleto reprova na CI (D-14) |
-| B-101 | DM em grupo | Planned (W10-7) — reusa `Channel`; janela por `seq` de entrada |
+| B-101 | DM em grupo | **Done** (W10-7) — `ChannelType.GroupDm`; janela por `JoinedSeq`; flag `Directory:GroupDm:Enabled` off default |
 | B-102 | Seguir thread | Planned (W10-8) — auto-inscrição na mesma transação |
 | B-103 | Acessibilidade WCAG 2.2 AA | Planned (W10-9) — axe-core como gate na CI |
 | B-040 | Guests por convite | Planned (W10-10) — deixou de estar Blocked; D-07 revisado em 2026-07-25 |

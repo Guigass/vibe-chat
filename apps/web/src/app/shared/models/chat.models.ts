@@ -38,10 +38,14 @@ export interface Channel {
   mentionCount?: number;
   isPrivate?: boolean;
   isDirect?: boolean;
+  isGroupDm?: boolean;
   type?: string;
   spaceId?: string | null;
   peerUserId?: string;
   peerDisplayName?: string;
+  participantCount?: number;
+  participantNames?: string[];
+  participantUserIds?: string[];
 }
 
 export interface WorkspaceMember {

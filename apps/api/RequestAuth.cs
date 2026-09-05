@@ -146,12 +146,13 @@ internal static class RequestAuth
             return null;
         }
 
-        if (channel.Type is ChannelType.Private or ChannelType.Direct or ChannelType.Group)
+        if (channel.Type.RequiresChannelMembership())
         {
             var isChannelMember = await db.ChannelMembers.IgnoreQueryFilters().AnyAsync(
                 x => x.TenantId == channel.TenantId
                     && x.ChannelId == channel.Id
-                    && x.UserId == userId,
+                    && x.UserId == userId
+                    && x.LeftAt == null,
                 ct);
             if (!isChannelMember)
             {

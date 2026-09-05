@@ -176,6 +176,8 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Minio:UseSsl", "false");
         builder.UseSetting("Files:MaxSizeBytes", "10485760");
         builder.UseSetting("Seed:Enabled", "true");
+        builder.UseSetting("Directory:GroupDm:Enabled", "true");
+        builder.UseSetting("Directory:GroupDm:MaxParticipants", "9");
         builder.UseSetting("Database:BootstrapOnStartup", "true");
         builder.UseSetting("Ai:Enabled", "true");
         builder.UseSetting("Ai:Provider", "Mock");

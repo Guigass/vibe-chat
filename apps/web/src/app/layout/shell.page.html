@@ -113,12 +113,43 @@
 
       <div class="shell__title">
         <h1>
-          {{ channels.activeChannel()?.isDirect ? '@' : '#' }}{{ channels.activeChannel()?.name || 'channel' }}
+          {{ channels.activeChannel()?.isGroupDm ? '' : channels.activeChannel()?.isDirect ? '@' : '#' }}{{ channels.activeChannel()?.name || 'channel' }}
         </h1>
-        @if (channels.activeChannel()?.description) {
+        @if (channels.activeChannel()?.isGroupDm) {
+          <p data-testid="group-dm-header">
+            {{ groupDmCountLabel() }}
+          </p>
+        } @else if (channels.activeChannel()?.description) {
           <p>{{ channels.activeChannel()?.description }}</p>
         } @else if (channels.activeChannel()?.isDirect) {
           <p>{{ ui.directMessage }}</p>
+        }
+        @if (channels.activeChannel()?.isGroupDm || channels.activeChannel()?.isDirect) {
+          <div class="shell__group-actions">
+            @if (addMemberOpen()) {
+              <div class="shell__group-add" data-testid="group-dm-add">
+                <p class="shell__group-warn">{{ ui.groupDmHistoryWarn }}</p>
+                @for (member of addableMembers(); track member.userId) {
+                  <button type="button" (click)="addGroupMember(member.userId)">
+                    {{ member.displayName }}
+                  </button>
+                }
+                <button type="button" (click)="addMemberOpen.set(false)">{{ ui.closePanel }}</button>
+              </div>
+            } @else {
+              <button type="button" data-testid="group-dm-add-toggle" (click)="addMemberOpen.set(true)">
+                {{ ui.groupDmAdd }}
+              </button>
+            }
+            @if (channels.activeChannel()?.isGroupDm) {
+              <button type="button" data-testid="group-dm-rename" (click)="renameActiveGroup()">
+                {{ ui.groupDmRename }}
+              </button>
+              <button type="button" data-testid="group-dm-leave" (click)="leaveActiveGroup()">
+                {{ ui.groupDmLeave }}
+              </button>
+            }
+          </div>
         }
       </div>
 

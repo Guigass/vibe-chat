@@ -69,6 +69,7 @@ import { Badge, SidebarNav, Skeleton, VcTooltip } from '../../../shared/ui';
           [compact]="navCompact()"
           (select)="onSelect($event)"
           (openDm)="onOpenDm($event)"
+          (openGroup)="onOpenGroup($event)"
           (createChannel)="onCreate($event)"
           (channelMuteAction)="onChannelMuteAction($event)"
         />
@@ -215,6 +216,14 @@ export class ChannelList {
   async onOpenDm(userId: string): Promise<void> {
     this.saved.closePanel();
     const channel = await this.channels.openDirectMessage(userId);
+    if (channel) {
+      await this.messages.loadChannel(channel.id);
+    }
+  }
+
+  async onOpenGroup(userIds: string[]): Promise<void> {
+    this.saved.closePanel();
+    const channel = await this.channels.openGroupDm(userIds);
     if (channel) {
       await this.messages.loadChannel(channel.id);
     }
