@@ -119,6 +119,48 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly palette = inject(CommandPaletteService);
   private readonly locales = inject(LocaleService);
   readonly ui = ui;
+  readonly addMemberOpen = signal(false);
+  readonly addableMembers = computed(() => {
+    const active = this.channels.activeChannel();
+    if (!active) return [];
+    const taken = new Set(active.participantUserIds ?? (active.peerUserId ? [active.peerUserId] : []));
+    return this.channels.peerCandidates().filter((m) => !taken.has(m.userId));
+  });
+
+  groupDmCountLabel(): string {
+    const count = this.channels.activeChannel()?.participantCount ?? 0;
+    return count === 1
+      ? this.ui.groupDmOne
+      : this.ui.groupDmCount.replace('{$count}', String(count));
+  }
+
+  async addGroupMember(userId: string): Promise<void> {
+    const active = this.channels.activeChannel();
+    if (!active) return;
+    this.addMemberOpen.set(false);
+    const channel = await this.channels.addGroupDmParticipants(active.id, [userId]);
+    if (channel) {
+      await this.messages.loadChannel(channel.id);
+    }
+  }
+
+  async renameActiveGroup(): Promise<void> {
+    const active = this.channels.activeChannel();
+    if (!active) return;
+    const next = window.prompt(this.ui.groupDmRenamePrompt, active.name)?.trim();
+    if (!next) return;
+    await this.channels.renameGroupDm(active.id, next);
+  }
+
+  async leaveActiveGroup(): Promise<void> {
+    const active = this.channels.activeChannel();
+    if (!active) return;
+    await this.channels.leaveGroupDm(active.id);
+    const next = this.channels.activeChannel();
+    if (next) {
+      await this.messages.loadChannel(next.id);
+    }
+  }
 
   pinCountLabel(count: number): string {
     return pluralCount(count, 'pin');

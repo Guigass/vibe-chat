@@ -88,7 +88,8 @@ public sealed class PostgresSearchQuery(VibeChatDbContext dbContext) : ISearchQu
                         && dbContext.ChannelMembers.Any(cm =>
                             cm.TenantId == query.TenantId
                             && cm.ChannelId == channel.Id
-                            && cm.UserId == query.UserId)
+                            && cm.UserId == query.UserId
+                            && (channel.Type != ChannelType.GroupDm || message.Sequence > cm.JoinedSeq))
                     )
                 )
             select new { message, channel };

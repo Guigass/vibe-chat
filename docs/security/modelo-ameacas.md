@@ -59,6 +59,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
     destrutiva
 15. **Link preview / egress HTTP** — SSRF via URL em mensagem (B-091 / ADR-021)
 16. **Web Push** — prévia em tela bloqueada; chave VAPID vazada; push após sair do canal (B-095 / ADR-022)
+17. **Group DM** — vazamento de histórico ao adicionar participante; peer de outro tenant/workspace; hub após sair (B-101 / ADR-023)
 
 ## Controles mínimos obrigatórios (fase 1)
 
@@ -147,6 +148,19 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Hot path | Worker via outbox `MessageCreated`; falha não reprocessa outbox |
 | Opt-in | Permissão só após ação do usuário (primeiro envio); “agora não” persiste |
 
+### B-101 / ADR-023 — Group DM
+
+| Item | Controle |
+|------|----------|
+| Kill switch | `Directory:GroupDm:Enabled` off default; create/add/leave/rename → 404 se off |
+| Membership | Só participante ativo (`LeftAt == null`); não-membro → 403 no history e no `JoinChannel` |
+| Histórico | `seq > JoinedSeq`; quem entra depois não lê o que veio antes |
+| Saída | `LeftAt`/`LeftSeq`; evict do grupo SignalR; history/hub 403 dali em diante |
+| Peers | Mesmo workspace/tenant; peer de outro tenant → 403 |
+| Limite | 3–`MaxParticipants` (default 9); 10 → 400 `GroupDmTooManyParticipants` |
+| Get-or-create | `ParticipantSetKey` ordenado + índice único; add em DM 1:1 cria **outra** conversa |
+| Rollback | Flag off no mesmo binário; migration só em lab |
+
 ## Ameaças priorizadas para a fatia vertical
 
 1. Leitura/escrita cross-tenant
@@ -159,6 +173,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 8. Purge hard-delete sem authZ / kill switch / isolamento de tenant (B-047)
 9. SSRF via link preview (B-091 / ADR-021)
 10. Prévia de push em tela bloqueada / VAPID vazada / push pós-saída (B-095 / ADR-022)
+11. Vazamento de histórico de Group DM / peer cross-tenant / hub após sair (B-101 / ADR-023)
 
 ## O que está fora (por ora)
 
