@@ -143,7 +143,8 @@ DB vs Keycloak). **W7-13 / B-177 Done** (DevAuth fail-closed). **W7-14 / B-187 D
 Sustentação Wave 7 completa. **W10-3 / B-097 Done** (preferências de notificação e
 DND). **W10-4 / B-098 Done** (busca com filtros: autor/canal/data/anexo/link,
 sintaxe `de:`/`em:`/`antes:`/`tem:`, paginação e ordenação). **W10-5 / B-099 Done**
-(paleta de comandos e atalhos); próximo elegível: W10-6 / B-100.
+(paleta de comandos e atalhos). **W10-6 / B-100 Done** (i18n pt-BR + en).
+Próximo elegível: W10-7 / B-101.
 
 | ID | Trilha | Tarefa | Deps | Spec/evidência | Status |
 |----|--------|--------|------|----------------|--------|
@@ -306,7 +307,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W10-3 | B/D | Preferências de notificação e DND (B-097) | W10-1 | [B-097](../product/specs/B-097-preferencias-notificacao-dnd.md) | **Done** — nível/canal/DND/prioridade/ocultar prévia; envio de resumo por e-mail (`DigestEnabled`) fica para item futuro |
 | W10-4 | C/D | Busca com filtros (B-098) | W9-2 | [B-098](../product/specs/B-098-busca-com-filtros.md) | **Done** |
 | W10-5 | D | Paleta de comandos e atalhos (B-099) | W8-9, W10-4, W9-10 | [B-099](../product/specs/B-099-paleta-de-comandos.md) | **Done** |
-| W10-6 | D/G | Internacionalização (B-100) | D-14 | [B-100](../product/specs/B-100-i18n.md) | Planned |
+| W10-6 | D/G | Internacionalização (B-100) | D-14 | [B-100](../product/specs/B-100-i18n.md) | **Done** |
 | W10-7 | B/C/D | DM em grupo (B-101) | B-021 | [B-101](../product/specs/B-101-dm-em-grupo.md) | Planned |
 | W10-8 | C/D | Seguir thread (B-102) | B-022, W10-1 | [B-102](../product/specs/B-102-seguir-thread.md) | Planned |
 | W10-9 | D/E | Acessibilidade WCAG 2.2 AA (B-103) | W10-5 | [B-103](../product/specs/B-103-acessibilidade.md) | Planned |

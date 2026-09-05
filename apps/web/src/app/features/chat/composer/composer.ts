@@ -53,6 +53,7 @@ import { SlashCommandsService } from './slash-commands.service';
 import { CommandPaletteService } from '../../../core/services/command-palette.service';
 import { EmojiPicker } from '../../../shared/ui/emoji-picker/emoji-picker';
 import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
+import { ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-composer',
@@ -343,11 +344,7 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
             <vc-textarea
               #composerTextarea
               [(value)]="draft"
-              [placeholder]="
-                messages.editingMessage()
-                  ? 'Editar mensagem'
-                  : 'Mensagem em #' + (channels.activeChannel()?.name || 'channel')
-              "
+              [placeholder]="composerPlaceholder()"
               [label]="''"
               (keydown)="onKeydown($event)"
               (textInput)="onInput()"
@@ -918,11 +915,18 @@ export class Composer {
   readonly sendingAudio = signal(false);
   /** Primary CTA — Salvar while editing (B-173); Enviar áudio while mic active. */
   readonly primarySubmitLabel = computed(() => {
-    if (this.messages.editingMessage()) return 'Salvar';
+    if (this.messages.editingMessage()) return ui.composerSave;
     const phase = this.audioRecorder.phase();
-    if (phase === 'recording' || phase === 'preview') return 'Enviar áudio';
-    return 'Enviar';
+    if (phase === 'recording' || phase === 'preview') return ui.composerSendAudio;
+    return ui.composerSend;
   });
+
+  composerPlaceholder(): string {
+    if (this.messages.editingMessage()) {
+      return ui.composerEdit;
+    }
+    return `${ui.composerPlaceholder} #${this.channels.activeChannel()?.name || 'channel'}`;
+  }
   readonly submitDisabled = computed(() => {
     if (this.submitting() || this.messages.sending() || this.sendingAudio()) return true;
     if (this.messages.editingMessage()) {

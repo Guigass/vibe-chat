@@ -99,6 +99,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Id).HasConversion(v => v.Value, v => new UserId(v));
             entity.Property(x => x.Subject).HasMaxLength(256);
             entity.Property(x => x.Email).HasMaxLength(256);
+            entity.Property(x => x.Locale).HasMaxLength(16);
             entity.HasIndex(x => x.Subject).IsUnique();
             entity.HasIndex(x => x.Email);
         });

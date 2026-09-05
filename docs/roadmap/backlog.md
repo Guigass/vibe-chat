@@ -142,7 +142,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-097 | Preferências de notificação e DND | **Done** (W10-3) — nível global/canal; silenciar com expiração; DND fuso IANA; contato prioritário; ocultar prévia; `DigestEnabled` persistido (envio de resumo por e-mail fica futuro) |
 | B-098 | Busca com filtros | **Done** (W10-4) — filtro só restringe; membership no servidor |
 | B-099 | Paleta de comandos e atalhos | **Done** (W10-5) — Ctrl/Cmd+K paleta; atalhos documentados; `/ajuda` abre a folha |
-| B-100 | Internacionalização | Planned (W10-6) — pt-BR + en; catálogo incompleto reprova na CI (D-14) |
+| B-100 | Internacionalização | **Done** (W10-6) — pt-BR + en; catálogo incompleto reprova na CI (D-14) |
 | B-101 | DM em grupo | Planned (W10-7) — reusa `Channel`; janela por `seq` de entrada |
 | B-102 | Seguir thread | Planned (W10-8) — auto-inscrição na mesma transação |
 | B-103 | Acessibilidade WCAG 2.2 AA | Planned (W10-9) — axe-core como gate na CI |

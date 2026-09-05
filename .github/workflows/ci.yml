@@ -105,6 +105,7 @@ jobs:
             echo "ng lint not configured; running tsc --noEmit"
             npx tsc -p tsconfig.app.json --noEmit
           fi
+          npm run check-i18n
 
       - name: Dependency inventory (SBOM-lite)
         run: |

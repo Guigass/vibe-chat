@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { ThemeService } from '../../../core/services/theme.service';
 import { IconButton } from '../icon-button/icon-button';
+import { ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-theme-toggle',
@@ -8,7 +9,7 @@ import { IconButton } from '../icon-button/icon-button';
   imports: [IconButton],
   template: `
     <vc-icon-button
-      [label]="theme.theme() === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'"
+      [label]="theme.theme() === 'dark' ? ui.themeLight : ui.themeDark"
       (click)="theme.toggleTheme()"
     >
       @if (theme.theme() === 'dark') {
@@ -26,4 +27,5 @@ import { IconButton } from '../icon-button/icon-button';
 })
 export class ThemeToggle {
   readonly theme = inject(ThemeService);
+  readonly ui = ui;
 }

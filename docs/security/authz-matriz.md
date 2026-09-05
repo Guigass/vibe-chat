@@ -27,6 +27,7 @@ para o gate de drift CI.
 | Método | Path | Gate | Permissão(ões) | M | A | Ad | Notas |
 |--------|------|------|----------------|---|---|----|-------|
 | GET | `/me` | membership | — | ✓ | ✓ | ✓ | Perfil do caller |
+| PUT | `/me` | membership | — | ✓ | ✓ | ✓ | Só o próprio `locale` (B-100); `InvalidLocale` → 400 |
 | GET | `/workspaces` | membership | — | ✓ | ✓ | ✓ | Lista só workspaces do caller |
 | GET | `/workspaces/{workspaceId:guid}/channels` | membership | — | ✓ | ✓ | ✓ | Roster de canais |
 | GET | `/workspaces/{workspaceId:guid}/channels/unread` | membership | — | ✓ | ✓ | ✓ | Contagens do caller |

@@ -59,6 +59,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | Termo | Definição |
 |-------|-----------|
 | **User** | Perfil humano local estável usado como ator. Autenticação vem de External Identity no IdP; memberships e papéis continuam no VibeChat. |
+| **Locale** | Preferência pessoal de idioma da UI (`pt-BR` ou `en`), persistida no perfil (`GET`/`PUT /me`) — não é setting de tenant (B-100 / D-14). |
 | **Perfil público** | Ficha do membro no workspace (displayName, cargo/função, sobre, mensagem de destaque, avatar), editável pelo dono e legível por membros autorizados do mesmo workspace — não é exposição na internet aberta (B-167). Distinto de status temporário (B-116) e de preferências pessoais (locale/DND/read receipts/wallpaper/accent). |
 | **Personalização visual** | Preferências pessoais de aparência da conversa: wallpaper curado da timeline e accent de destaque (B-185). Só do próprio usuário; distinto de light/dark global (B-049), densidade e de branding por tenant (B-140). |
 | **Person** | Pessoa natural, quando conhecida. Não é credencial, sessão, membership nem identificador de autorização. |

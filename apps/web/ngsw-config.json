@@ -27,6 +27,16 @@
   ],
   "dataGroups": [
     {
+      "name": "i18n-catalogs",
+      "urls": ["/locale/**"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 4,
+        "maxAge": "1d",
+        "timeout": "3s"
+      }
+    },
+    {
       "name": "web-version",
       "urls": ["/version.json"],
       "cacheConfig": {

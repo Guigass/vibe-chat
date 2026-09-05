@@ -291,10 +291,30 @@ interface AdminConversationMessageDto {
   attachments?: AttachmentDto[];
 }
 
+export interface MeProfile {
+  userId: string;
+  subject: string;
+  email: string;
+  displayName: string;
+  roles: string[];
+  locale: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly auth = inject(AuthService);
   private readonly baseUrl = environment.apiUrl;
+
+  async getMe(): Promise<MeProfile> {
+    return this.request<MeProfile>('/api/v1/me');
+  }
+
+  async updateMe(input: { locale: string }): Promise<MeProfile> {
+    return this.request<MeProfile>('/api/v1/me', {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  }
 
   async getWorkspaces(): Promise<Workspace[]> {
     const rows = await this.request<WorkspaceDto[]>('/api/v1/workspaces');

@@ -3,28 +3,29 @@
   <div class="login-hero__pattern" aria-hidden="true"></div>
 
   <header class="login-hero__top">
+    <vc-locale-control />
     <vc-theme-toggle />
   </header>
 
   <div class="login-hero__content vc-anim-fade-in">
     <p class="login-hero__brand" id="brand-title">VibeChat</p>
-    <h1>Conversas com profundidade, sem ruído.</h1>
+    <h1>{{ ui.loginHeadline }}</h1>
     <p class="login-hero__lead">
-      Espaços calmos para times que precisam de tempo real confiável e presença sem distração.
+      {{ ui.loginLead }}
     </p>
     <div class="login-hero__cta">
-      <vc-button variant="primary" [loading]="loading" (click)="login()">Entrar com Keycloak</vc-button>
+      <vc-button variant="primary" [loading]="loading" (click)="login()">{{ ui.loginCta }}</vc-button>
     </div>
     @if (enableDevAuth) {
-      <div class="login-hero__dev" aria-label="Usuários de desenvolvimento">
-        <p>Desenvolvimento (DevAuth)</p>
+      <div class="login-hero__dev" [attr.aria-label]="ui.loginDevGroup">
+        <p>{{ ui.loginDevTitle }}</p>
         <div class="login-hero__dev-actions">
           <vc-button variant="ghost" (click)="enterDev('alice')">Alice</vc-button>
           <vc-button variant="ghost" (click)="enterDev('bob')">Bob</vc-button>
           <vc-button variant="ghost" (click)="enterDev('demo')">Demo</vc-button>
         </div>
         <button type="button" class="login-hero__offline" (click)="enterOfflineDemo()">
-          Explorar UI offline
+          {{ ui.loginOffline }}
         </button>
       </div>
     }

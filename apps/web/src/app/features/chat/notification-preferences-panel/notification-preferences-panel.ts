@@ -4,6 +4,7 @@ import { ChannelStore } from '../../../core/services/channel.store';
 import { NotificationPreferencesStore } from '../../../core/services/notification-preferences.store';
 import { NotificationLevel, WorkspaceMember } from '../../../shared/models/chat.models';
 import { IconButton } from '../../../shared/ui';
+import { ui } from '../../../core/i18n/strings';
 
 const DAY_LABELS: Array<{ bit: number; label: string }> = [
   { bit: 1 << 0, label: 'D' },
@@ -28,23 +29,23 @@ function detectTimeZone(): string {
   standalone: true,
   imports: [IconButton],
   template: `
-    <section class="notif-panel" aria-label="Preferências de notificação">
+    <section class="notif-panel" [attr.aria-label]="ui.notificationPrefs">
       <header class="notif-panel__header">
-        <h2>Notificações</h2>
-        <vc-icon-button label="Fechar painel" (click)="store.closePanel()">
+        <h2>{{ ui.notifTitle }}</h2>
+        <vc-icon-button [label]="ui.closePanel" (click)="store.closePanel()">
           <span aria-hidden="true">×</span>
         </vc-icon-button>
       </header>
 
       @if (store.loading()) {
-        <p class="notif-panel__status">Carregando…</p>
+        <p class="notif-panel__status">{{ ui.notifLoading }}</p>
       } @else {
         @if (store.error()) {
           <p class="notif-panel__status" role="alert">{{ store.error() }}</p>
         }
 
         <fieldset class="notif-panel__group">
-          <legend>Quando notificar</legend>
+          <legend>{{ ui.notifWhen }}</legend>
           @for (option of levelOptions; track option.value) {
             <label class="notif-panel__radio">
               <input
@@ -60,24 +61,24 @@ function detectTimeZone(): string {
 
         <label class="notif-panel__checkbox">
           <input type="checkbox" [checked]="hidePreview()" (change)="hidePreview.set(!hidePreview())" />
-          Ocultar prévia da mensagem na notificação
+          {{ ui.notifHidePreview }}
         </label>
 
         <fieldset class="notif-panel__group">
           <legend>
             <label class="notif-panel__checkbox notif-panel__checkbox--legend">
               <input type="checkbox" [checked]="dndEnabled()" (change)="dndEnabled.set(!dndEnabled())" />
-              Não perturbe
+              {{ ui.notifDnd }}
             </label>
           </legend>
           @if (dndEnabled()) {
             <div class="notif-panel__dnd">
               <label>
-                Das
+                {{ ui.notifFrom }}
                 <input type="time" [value]="dndStart()" (change)="onTimeInput($event, dndStart)" />
               </label>
               <label>
-                às
+                {{ ui.notifTo }}
                 <input type="time" [value]="dndEnd()" (change)="onTimeInput($event, dndEnd)" />
               </label>
             </div>
@@ -94,14 +95,14 @@ function detectTimeZone(): string {
                 </button>
               }
             </div>
-            <p class="notif-panel__hint">Sem dia marcado = todos os dias.</p>
+            <p class="notif-panel__hint">{{ ui.notifDaysHint }}</p>
             <label class="notif-panel__timezone">
-              Fuso horário
+              {{ ui.notifTimeZone }}
               <input type="text" [value]="timeZone()" (change)="onTimeZoneInput($event)" placeholder="America/Sao_Paulo" />
             </label>
 
             @if (priorityCandidates().length > 0) {
-              <p class="notif-panel__hint">Contatos prioritários furam o não perturbe em mensagens diretas:</p>
+              <p class="notif-panel__hint">{{ ui.notifPriority }}</p>
               <ul class="notif-panel__contacts">
                 @for (member of priorityCandidates(); track member.userId) {
                   <li>
@@ -122,16 +123,16 @@ function detectTimeZone(): string {
 
         <label class="notif-panel__checkbox">
           <input type="checkbox" [checked]="digestEnabled()" (change)="digestEnabled.set(!digestEnabled())" />
-          Resumo por e-mail do que foi perdido durante o não perturbe
-          <small class="notif-panel__hint">(em breve — a preferência já fica salva)</small>
+          {{ ui.notifDigest }}
+          <small class="notif-panel__hint">{{ ui.notifDigestSoon }}</small>
         </label>
 
         <div class="notif-panel__actions">
           <button type="button" class="notif-panel__save" [disabled]="saving()" (click)="save()">
-            {{ saving() ? 'Salvando…' : 'Salvar' }}
+            {{ saving() ? ui.notifSaving : ui.notifSave }}
           </button>
           @if (saved()) {
-            <span class="notif-panel__saved" role="status">Salvo.</span>
+            <span class="notif-panel__saved" role="status">{{ ui.notifSaved }}</span>
           }
         </div>
       }
@@ -276,15 +277,16 @@ function detectTimeZone(): string {
   `,
 })
 export class NotificationPreferencesPanel {
+  readonly ui = ui;
   readonly store = inject(NotificationPreferencesStore);
   private readonly api = inject(ApiService);
   private readonly channels = inject(ChannelStore);
 
   readonly dayLabels = DAY_LABELS;
   readonly levelOptions: Array<{ value: NotificationLevel; label: string }> = [
-    { value: 'All', label: 'Todas as mensagens' },
-    { value: 'MentionsAndDms', label: 'Só menções e DMs' },
-    { value: 'None', label: 'Nenhuma' },
+    { value: 'All', label: ui.notifAll },
+    { value: 'MentionsAndDms', label: ui.notifMentions },
+    { value: 'None', label: ui.notifNone },
   ];
 
   readonly level = signal<NotificationLevel>('MentionsAndDms');

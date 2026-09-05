@@ -76,6 +76,7 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
           provide: AuthService,
           useValue: {
             profile: () => ({ name: 'Alice' }),
+            isAuthenticated: () => true,
             isOfflineDemo: () => true,
             logout: vi.fn(),
           },
@@ -169,6 +170,8 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
           provide: ApiService,
           useValue: {
             searchMessages: vi.fn(),
+            getMe: vi.fn().mockResolvedValue({ locale: null }),
+            updateMe: vi.fn(),
           },
         },
       ],
