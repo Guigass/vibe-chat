@@ -26,6 +26,9 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   use: {
     baseURL,
+    // B-100: CI runners use en-US Chrome; without this, resolveBootstrapLocale()
+    // loads the en catalog and specs with pt-BR literals fail (OPS-E2E-B100).
+    locale: 'pt-BR',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
