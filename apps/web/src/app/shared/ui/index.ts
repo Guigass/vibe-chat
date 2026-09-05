@@ -18,5 +18,6 @@ export { PushOptInBanner } from './push-opt-in-banner/push-opt-in-banner';
 export { PushDevicesControl } from './push-devices-control/push-devices-control';
 export { InAppNoticeBanner } from './in-app-notice/in-app-notice';
 export { ThemeToggle } from './theme-toggle/theme-toggle';
+export { LocaleControl } from './locale-control/locale-control';
 export { DensityControl } from './density-control/density-control';
 export { VcTooltip, provideVcTooltipDefaults, provideVcTooltipGroup } from './tooltip/tooltip';

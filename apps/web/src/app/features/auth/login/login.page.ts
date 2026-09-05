@@ -2,12 +2,13 @@ import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService, DevUserName } from '../../../core/auth/auth.service';
 import { environment } from '../../../../environments/environment';
-import { Button, ThemeToggle } from '../../../shared/ui';
+import { Button, LocaleControl, ThemeToggle } from '../../../shared/ui';
+import { ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-login-page',
   standalone: true,
-  imports: [Button, ThemeToggle],
+  imports: [Button, ThemeToggle, LocaleControl],
   templateUrl: './login.page.html',
   styleUrl: './login.page.scss',
 })
@@ -16,6 +17,7 @@ export class LoginPage implements OnInit {
   private readonly router = inject(Router);
 
   readonly error = this.auth.error;
+  readonly ui = ui;
   /** Overridable in unit tests; production builds keep this false. */
   enableDevAuth = environment.enableDevAuth;
   loading = false;

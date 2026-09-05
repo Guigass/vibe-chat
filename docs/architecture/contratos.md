@@ -62,6 +62,19 @@ e **não** substituem membership. `PermissionChecker.GetRolesAsync` /
 expõem o papel da membership (não claims JWT). Sync Keycloak → membership é
 B-128 (SCIM), fora do escopo atual.
 
+### Perfil do caller — `GET`/`PUT /api/v1/me` (B-100)
+
+Preferência pessoal, não de tenant. A mesma instância atende pessoas em idiomas
+diferentes. Mensagens de erro da API continuam em inglês no `error`/`error.code`;
+o cliente traduz pelo código (não usa `Accept-Language` no servidor).
+
+| Método | Contrato |
+|--------|----------|
+| `GET /api/v1/me` | `{ userId, subject, email, displayName, roles, locale }` — `locale` é `pt-BR` \| `en` ou `null` se ainda não persistido |
+| `PUT /api/v1/me` | Body `{ locale }` — só `pt-BR` ou `en`; outro valor → **400** `InvalidLocale`. Atualiza só o caller |
+
+Logs do servidor permanecem em inglês e não interpolam texto traduzido.
+
 ```csharp
 // modules/Tenancy
 public interface IWorkspaceMembershipReader

@@ -82,6 +82,8 @@ describe('formatDayLabel', () => {
     expect(formatDayLabel('2026-08-09', now).label).toBe('Ontem');
     expect(formatDayLabel('2026-03-12', now).label).toBe('12 de março');
     expect(formatDayLabel('2025-03-12', now).label).toBe('12 de março de 2025');
+    expect(formatDayLabel('2026-08-10', now, 'en').label).toBe('Today');
+    expect(formatDayLabel('2026-03-12', now, 'en').label.toLowerCase()).toContain('march');
   });
 
   it('uses the full date as aria-label', () => {

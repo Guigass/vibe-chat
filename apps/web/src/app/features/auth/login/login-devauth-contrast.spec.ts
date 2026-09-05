@@ -35,6 +35,7 @@ describe('LoginPage DevAuth contrast (UX-001)', () => {
             ready: () => true,
             init: vi.fn(),
             isAuthenticated: () => false,
+            isOfflineDemo: () => false,
             login: vi.fn(),
             enterDevUser: vi.fn(),
             enterOfflineDemo: vi.fn(),

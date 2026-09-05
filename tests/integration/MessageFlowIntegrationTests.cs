@@ -63,6 +63,31 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Me_locale_roundtrip_rejects_unsupported()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", $"locale-{Guid.NewGuid():N}");
+        client.DefaultRequestHeaders.Add("X-Dev-Email", $"locale-{Guid.NewGuid():N}@vibechat.local");
+        client.DefaultRequestHeaders.Add("X-Dev-Name", "Locale User");
+
+        var me = await client.GetFromJsonAsync<MeDto>("/api/v1/me", JsonOptions);
+        me.Should().NotBeNull();
+        me!.Locale.Should().BeNull();
+
+        var put = await client.PutAsJsonAsync("/api/v1/me", new { locale = "en" });
+        put.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await put.Content.ReadFromJsonAsync<MeDto>(JsonOptions);
+        updated.Should().NotBeNull();
+        updated!.Locale.Should().Be("en");
+
+        var again = await client.GetFromJsonAsync<MeDto>("/api/v1/me", JsonOptions);
+        again!.Locale.Should().Be("en");
+
+        var bad = await client.PutAsJsonAsync("/api/v1/me", new { locale = "fr" });
+        bad.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Idempotent_send_returns_existing_sequence()
     {
         using var client = factory.CreateClient();
@@ -2586,7 +2611,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     private sealed record WorkspaceRolesDto(string[] AssignableRoles);
     private sealed record UpdateMemberRoleRequestDto(string Role);
     private sealed record InviteMemberRequestDto(string Email, string? DisplayName = null, string? Role = null);
-    private sealed record MeDto(Guid UserId, string Subject, string Email, string DisplayName, string[] Roles);
+    private sealed record MeDto(Guid UserId, string Subject, string Email, string DisplayName, string[] Roles, string? Locale = null);
     private sealed record WorkspaceDto(Guid Id, string Name, string Slug, string Role);
     private sealed record SensitiveSettingsDto(
         Guid WorkspaceId,

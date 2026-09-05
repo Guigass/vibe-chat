@@ -14,6 +14,7 @@ import { MessageStore, type MessageScrollRequest } from '../../../core/services/
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { ThemeService } from '../../../core/services/theme.service';
+import { LocaleService } from '../../../core/i18n/locale.service';
 import { ThreadStore } from '../../../core/services/thread.store';
 import { withoutSelfTyping } from '../../../core/services/typing-filter';
 import { ChatMessage } from '../../../shared/models/chat.models';
@@ -371,6 +372,7 @@ export class Timeline {
   private readonly auth = inject(AuthService);
   private readonly api = inject(ApiService);
   private readonly theme = inject(ThemeService);
+  private readonly locales = inject(LocaleService);
   private readonly destroyRef = inject(DestroyRef);
   readonly avatarSize = computed(() => (this.theme.density() === 'compact' ? 28 : 34));
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
@@ -418,6 +420,7 @@ export class Timeline {
       unreadCount: this.unreadSnapshot(),
       dividerAfterSeq: this.frozenUnreadAfterSeq(),
       showUnreadDivider: !this.unreadDismissed() && this.unreadSnapshot() > 0,
+      locale: this.locales.locale(),
     }),
   );
 

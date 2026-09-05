@@ -10,7 +10,7 @@
     <button
       type="button"
       class="shell__backdrop"
-      aria-label="Fechar barra lateral"
+      [attr.aria-label]="ui.closeSidebar"
       (click)="toggleSidebar()"
     ></button>
   }
@@ -28,7 +28,7 @@
       <div class="shell__brand-actions">
         @if (!narrowViewport()) {
           <vc-icon-button
-            [label]="navCompact() ? 'Expandir menu' : 'Encolher menu'"
+            [label]="navCompact() ? ui.expandMenu : ui.collapseMenu"
             [overlayTooltip]="navCompact()"
             (click)="toggleNavCompact()"
           >
@@ -44,7 +44,7 @@
           </vc-icon-button>
         }
         <vc-icon-button
-          label="Esconder barra"
+          [label]="ui.hideSidebar"
           [overlayTooltip]="navCompact() && !narrowViewport()"
           (click)="toggleSidebar()"
         >
@@ -59,11 +59,11 @@
 
     @if (showWorkspaceSelector()) {
       <label class="shell__workspace">
-        <span class="vc-sr-only">Workspace</span>
+        <span class="vc-sr-only">{{ ui.workspace }}</span>
         <select
           [value]="channels.activeWorkspace()?.id || ''"
           (change)="onWorkspaceChange($event)"
-          [attr.aria-label]="'Workspace: ' + (channels.activeWorkspace()?.name || '')"
+          [attr.aria-label]="ui.workspace + ': ' + (channels.activeWorkspace()?.name || '')"
         >
           @for (ws of channels.workspaces(); track ws.id) {
             <option [value]="ws.id">{{ ws.name }}</option>
@@ -79,18 +79,18 @@
         <a
           routerLink="/admin"
           routerLinkActive="is-active"
-          [attr.aria-label]="navCompact() && !narrowViewport() ? 'Admin' : null"
-          [vcTooltip]="navCompact() && !narrowViewport() ? 'Admin' : null"
+          [attr.aria-label]="navCompact() && !narrowViewport() ? ui.admin : null"
+          [vcTooltip]="navCompact() && !narrowViewport() ? ui.admin : null"
           [tooltipDisabled]="!(navCompact() && !narrowViewport())"
-        >Admin</a>
+        >{{ ui.admin }}</a>
       }
       <button
         type="button"
-        [attr.aria-label]="navCompact() && !narrowViewport() ? 'Sair' : null"
-        [vcTooltip]="navCompact() && !narrowViewport() ? 'Sair' : null"
+        [attr.aria-label]="navCompact() && !narrowViewport() ? ui.logout : null"
+        [vcTooltip]="navCompact() && !narrowViewport() ? ui.logout : null"
         [tooltipDisabled]="!(navCompact() && !narrowViewport())"
         (click)="logout()"
-      >Sair</button>
+      >{{ ui.logout }}</button>
     </footer>
   </aside>
 
@@ -102,7 +102,7 @@
 
     <header class="shell__header">
       @if (!sidebarOpen()) {
-        <vc-icon-button label="Mostrar barra" (click)="toggleSidebar()">
+        <vc-icon-button [label]="ui.showSidebar" (click)="toggleSidebar()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2" />
             <path d="M9 3v18" />
@@ -118,7 +118,7 @@
         @if (channels.activeChannel()?.description) {
           <p>{{ channels.activeChannel()?.description }}</p>
         } @else if (channels.activeChannel()?.isDirect) {
-          <p>Mensagem direta</p>
+          <p>{{ ui.directMessage }}</p>
         }
       </div>
 
@@ -126,13 +126,13 @@
         <vc-input
           controlId="vc-search"
           [(value)]="search"
-          placeholder="Buscar (Ctrl/Cmd+Shift+F)"
-          ariaLabel="Buscar mensagens"
+          [placeholder]="ui.searchPlaceholder"
+          [ariaLabel]="ui.searchAria"
           (focused)="onSearchFocus()"
           (blurred)="searchFocused.set(false)"
         />
         @if (searchChips().length) {
-          <div class="shell__search-chips" aria-label="Filtros da busca">
+          <div class="shell__search-chips" [attr.aria-label]="ui.searchFilters">
             @for (chip of searchChips(); track chip.raw) {
               <button type="button" class="shell__search-chip" (mousedown)="removeSearchChip(chip)">
                 {{ chip.label }}
@@ -142,39 +142,39 @@
           </div>
         }
         @if (searchOpen()) {
-          <div class="shell__search-panel" role="listbox" aria-label="Resultados da busca">
+          <div class="shell__search-panel" role="listbox" [attr.aria-label]="ui.searchResults">
             <div class="shell__search-toolbar">
-              <div class="shell__search-toggles" role="group" aria-label="Escopo da busca">
+              <div class="shell__search-toggles" role="group" [attr.aria-label]="ui.searchScope">
                 <button
                   type="button"
                   class="shell__search-toggle"
                   [class.is-active]="searchScope() === 'workspace'"
                   (mousedown)="setSearchScope('workspace')"
-                >Workspace</button>
+                >{{ ui.workspace }}</button>
                 <button
                   type="button"
                   class="shell__search-toggle"
                   [class.is-active]="searchScope() === 'channel'"
                   (mousedown)="setSearchScope('channel')"
-                >Este canal</button>
+                >{{ ui.searchThisChannel }}</button>
               </div>
-              <div class="shell__search-toggles" role="group" aria-label="Ordenação">
+              <div class="shell__search-toggles" role="group" [attr.aria-label]="ui.searchSort">
                 <button
                   type="button"
                   class="shell__search-toggle"
                   [class.is-active]="searchSort() === 'relevance'"
                   (mousedown)="setSearchSort('relevance')"
-                >Relevância</button>
+                >{{ ui.searchRelevance }}</button>
                 <button
                   type="button"
                   class="shell__search-toggle"
                   [class.is-active]="searchSort() === 'date'"
                   (mousedown)="setSearchSort('date')"
-                >Data</button>
+                >{{ ui.searchDate }}</button>
               </div>
             </div>
             @if (!search().trim() && searchRecent().length) {
-              <p class="shell__search-hint">Buscas recentes</p>
+              <p class="shell__search-hint">{{ ui.searchRecent }}</p>
               @for (recent of searchRecent(); track recent) {
                 <button type="button" class="shell__search-hit" (mousedown)="applyRecent(recent)">
                   <span class="shell__search-hit-body">{{ recent }}</span>
@@ -182,7 +182,7 @@
               }
             }
             @if (searchSuggestions().length) {
-              <p class="shell__search-hint">Sugestões</p>
+              <p class="shell__search-hint">{{ ui.searchSuggestions }}</p>
               @for (item of searchSuggestions(); track item.value) {
                 <button type="button" class="shell__search-hit" (mousedown)="applySuggestion(item.value)">
                   <span class="shell__search-hit-body">{{ item.label }}</span>
@@ -191,15 +191,15 @@
             }
             @if (searchCanRun()) {
               @if (searchLoading() && searchResults().length === 0) {
-                <p class="shell__search-status">Buscando…</p>
+                <p class="shell__search-status">{{ ui.searchLoading }}</p>
               } @else if (searchError()) {
                 <p class="shell__search-status" role="alert">{{ searchError() }}</p>
               } @else if (searchResults().length === 0) {
                 <p class="shell__search-status">
-                  Nada encontrado. Remova um filtro ou tente outro termo.
+                  {{ ui.searchEmpty }}
                 </p>
               } @else {
-                <p class="shell__search-hint">{{ searchTotal() }} resultado{{ searchTotal() === 1 ? '' : 's' }}</p>
+                <p class="shell__search-hint">{{ resultCountLabel(searchTotal()) }}</p>
                 @for (group of searchGroups(); track group.channelId) {
                   <p class="shell__search-group">#{{ group.channelName }} · {{ group.count }}</p>
                   @for (hit of group.items; track hit.messageId) {
@@ -226,7 +226,7 @@
                 }
                 @if (searchCursor()) {
                   <button type="button" class="shell__search-more" (mousedown)="loadMoreSearch()">
-                    Carregar mais
+                    {{ ui.searchMore }}
                   </button>
                 }
               }
@@ -238,13 +238,14 @@
       <div class="shell__actions">
         @if (notificationPrefs.dndActive()) {
           <button type="button" class="shell__dnd-pill" (click)="notificationPrefs.disableDndNow()">
-            Não perturbe · <span>Desativar agora</span>
+            {{ ui.dndDisableNow }}
           </button>
         }
         <vc-summarize-button />
         <vc-suggest-reply-button />
         <vc-density-control />
-        <vc-icon-button label="Preferências de notificação" (click)="notificationPrefs.openPanel()">
+        <vc-locale-control />
+        <vc-icon-button [label]="ui.notificationPrefs" (click)="notificationPrefs.openPanel()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
             <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
@@ -253,7 +254,7 @@
         </vc-icon-button>
         <vc-push-devices-control />
         <vc-theme-toggle />
-        <vc-icon-button label="Painel de contexto" (click)="toggleContext()">
+        <vc-icon-button [label]="ui.contextPanel" (click)="toggleContext()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <rect x="3" y="4" width="18" height="16" rx="2" />
             <path d="M15 4v16" />
@@ -273,7 +274,7 @@
         data-testid="pin-bar"
         (click)="openPinsPanel()"
       >
-        {{ pins.activeCount() }} fixada{{ pins.activeCount() === 1 ? '' : 's' }}
+        {{ pinCountLabel(pins.activeCount()) }}
       </button>
     }
 
@@ -286,7 +287,7 @@
       (drop)="onFileDrop($event)"
     >
       @if (fileDragActive()) {
-        <div class="shell__drop-overlay" aria-hidden="true">Solte para anexar</div>
+        <div class="shell__drop-overlay" aria-hidden="true">{{ ui.dropToAttach }}</div>
       }
       <vc-timeline />
       <vc-composer />
@@ -294,15 +295,15 @@
   </div>
 
   @if (threads.open()) {
-    <aside class="shell__context vc-anim-sidebar" aria-label="Thread">
+    <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.thread">
       <vc-thread-panel />
     </aside>
   } @else if (saved.panelOpen()) {
-    <aside class="shell__context vc-anim-sidebar" aria-label="Mensagens salvas">
+    <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.savedMessages">
       <vc-saved-panel />
     </aside>
   } @else if (pins.panelOpen()) {
-    <aside class="shell__context vc-anim-sidebar" aria-label="Mensagens fixadas">
+    <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.pinnedMessages">
       <vc-pins-panel
         (close)="pins.closePanel()"
         (jump)="pins.jumpToPin($event)"
@@ -310,24 +311,28 @@
       />
     </aside>
   } @else if (notificationPrefs.panelOpen()) {
-    <aside class="shell__context vc-anim-sidebar" aria-label="Preferências de notificação">
+    <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.notificationPrefs">
       <vc-notification-preferences-panel />
     </aside>
   } @else if (contextOpen()) {
-    <aside class="shell__context shell__context--scroll vc-anim-sidebar" aria-label="Contexto">
+    <aside class="shell__context shell__context--scroll vc-anim-sidebar" [attr.aria-label]="ui.settings">
       <header>
-        <h2>Contexto</h2>
-        <vc-icon-button label="Fechar painel" (click)="toggleContext()">
+        <h2>{{ ui.settings }}</h2>
+        <vc-icon-button [label]="ui.closePanel" (click)="toggleContext()">
           <span aria-hidden="true">×</span>
         </vc-icon-button>
       </header>
       <p>
-        Workspace <strong>{{ channels.activeWorkspace()?.name }}</strong>
+        {{ ui.workspace }} <strong>{{ channels.activeWorkspace()?.name }}</strong>
       </p>
       <p>
-        Você: <strong>{{ auth.profile()?.name || '—' }}</strong>
+        {{ ui.you }}: <strong>{{ auth.profile()?.name || '—' }}</strong>
       </p>
-      <p class="muted">Esc fecha este painel. Enter envia; Shift+Enter quebra linha. Ctrl/Cmd+K abre a paleta.</p>
+      <label class="shell__locale">
+        {{ ui.language }}
+        <vc-locale-control />
+      </label>
+      <p class="muted">{{ ui.contextHint }}</p>
     </aside>
   }
 </div>

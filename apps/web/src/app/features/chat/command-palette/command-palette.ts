@@ -16,6 +16,7 @@ import {
   type PaletteItem,
 } from '../../../shared/command-palette/palette';
 import { SlashCommandsService } from '../composer/slash-commands.service';
+import { ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-command-palette',
@@ -33,23 +34,23 @@ import { SlashCommandsService } from '../composer/slash-commands.service';
         cdkTrapFocus
         [cdkTrapFocusAutoCapture]="true"
       >
-        <h2 id="cp-title" class="cp__title">Paleta de comandos</h2>
+        <h2 id="cp-title" class="cp__title">{{ ui.paletteTitle }}</h2>
         <label class="cp__search">
-          <span class="vc-sr-only">Filtrar canais, pessoas e ações</span>
+          <span class="vc-sr-only">{{ ui.paletteFilter }}</span>
           <input
             #queryInput
             type="search"
             [value]="query()"
             (input)="onQuery($event)"
             (keydown)="onQueryKeydown($event)"
-            placeholder="Ir para canal, pessoa ou ação…"
+            [placeholder]="ui.palettePlaceholder"
             autocomplete="off"
             autofocus
             data-testid="command-palette-query"
           />
         </label>
         <p class="cp__live vc-sr-only" aria-live="polite">{{ liveMessage() }}</p>
-        <div class="cp__results" role="listbox" aria-label="Resultados da paleta">
+        <div class="cp__results" role="listbox" [attr.aria-label]="ui.paletteResults">
           @for (group of groups(); track group.kind) {
             <p class="cp__group">{{ group.title }}</p>
             @for (item of group.items; track item.id) {
@@ -74,7 +75,7 @@ import { SlashCommandsService } from '../composer/slash-commands.service';
               </button>
             }
           } @empty {
-            <p class="cp__empty">Nada encontrado.</p>
+            <p class="cp__empty">{{ ui.paletteEmpty }}</p>
           }
         </div>
         <p class="cp__footer">
@@ -257,6 +258,7 @@ import { SlashCommandsService } from '../composer/slash-commands.service';
   `,
 })
 export class CommandPalette {
+  readonly ui = ui;
   readonly palette = inject(CommandPaletteService);
   private readonly channels = inject(ChannelStore);
   private readonly messages = inject(MessageStore);

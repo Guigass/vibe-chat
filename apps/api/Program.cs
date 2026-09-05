@@ -235,7 +235,25 @@ v1.MapGet("/me", async (HttpContext http, VibeChatDbContext db, ITenantContext t
         }
     }
 
-    return Results.Ok(new MeResponse(profile.Id.Value, profile.Subject, profile.Email, profile.DisplayName, roles.Select(x => x.ToString()).ToArray()));
+    return Results.Ok(new MeResponse(profile.Id.Value, profile.Subject, profile.Email, profile.DisplayName, roles.Select(x => x.ToString()).ToArray(), profile.Locale));
+});
+
+v1.MapPut("/me", async (UpdateMeRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+    var locale = (request.Locale ?? string.Empty).Trim();
+    if (!UserLocales.IsSupported(locale))
+    {
+        return Results.BadRequest(new { error = "InvalidLocale" });
+    }
+
+    profile.Locale = locale;
+    profile.UpdatedAt = clock.UtcNow;
+    await db.SaveChangesAsync(ct);
+
+    var roles = await db.WorkspaceMembers.IgnoreQueryFilters().Where(x => x.UserId == profile.Id).Select(x => x.Role).Distinct().ToArrayAsync(ct);
+    return Results.Ok(new MeResponse(profile.Id.Value, profile.Subject, profile.Email, profile.DisplayName, roles.Select(x => x.ToString()).ToArray(), profile.Locale));
 });
 
 v1.MapGet("/workspaces", async (HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
@@ -5739,7 +5757,8 @@ public sealed class DevAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> 
     }
 }
 
-public sealed record MeResponse(Guid UserId, string Subject, string Email, string DisplayName, string[] Roles);
+public sealed record MeResponse(Guid UserId, string Subject, string Email, string DisplayName, string[] Roles, string? Locale = null);
+public sealed record UpdateMeRequest(string? Locale);
 public sealed record WorkspaceResponse(Guid Id, string Name, string Slug, string Role);
 public sealed record SpaceResponse(Guid Id, Guid WorkspaceId, string Name, int Order);
 public sealed record ChannelResponse(Guid Id, Guid WorkspaceId, string Name, string Type, Guid? PeerUserId = null, string? PeerDisplayName = null, Guid? SpaceId = null, string? Topic = null);

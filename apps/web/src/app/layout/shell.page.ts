@@ -53,6 +53,7 @@ import {
   IconButton,
   Input,
   ThemeToggle,
+  LocaleControl,
   UpdateBanner,
   PushOptInBanner,
   PushDevicesControl,
@@ -65,6 +66,9 @@ import { AttachmentQueueService } from '../features/chat/composer/attachment-que
 import { collectFilesFromDataTransfer } from '../features/chat/composer/attachment-upload';
 import { hasAdminDashboard } from '../features/admin/admin-permissions';
 import { defaultSidebarOpen, readNavCompact, SHELL_NARROW_MEDIA_QUERY, writeNavCompact } from './shell-viewport';
+import { LocaleService } from '../core/i18n/locale.service';
+import { ui } from '../core/i18n/strings';
+import { pluralCount } from '../core/i18n/format';
 
 @Component({
   selector: 'vc-shell-page',
@@ -87,6 +91,7 @@ import { defaultSidebarOpen, readNavCompact, SHELL_NARROW_MEDIA_QUERY, writeNavC
     PushDevicesControl,
     InAppNoticeBanner,
     ThemeToggle,
+    LocaleControl,
     DensityControl,
     IconButton,
     Input,
@@ -112,6 +117,16 @@ export class ShellPage implements OnInit, OnDestroy {
   private readonly attachments = inject(AttachmentQueueService);
   private readonly destroyRef = inject(DestroyRef);
   readonly palette = inject(CommandPaletteService);
+  private readonly locales = inject(LocaleService);
+  readonly ui = ui;
+
+  pinCountLabel(count: number): string {
+    return pluralCount(count, 'pin');
+  }
+
+  resultCountLabel(count: number): string {
+    return pluralCount(count, 'result');
+  }
 
   /** UX-003: tracks max-width 960px; sidebar starts collapsed on narrow. */
   readonly narrowViewport = signal(false);
@@ -210,6 +225,7 @@ export class ShellPage implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
+    await this.locales.syncFromProfile();
     this.unsubPresence = this.hub.onPresenceChanged((event) => {
       this.channels.setPresence(event.userId, event.status);
     });

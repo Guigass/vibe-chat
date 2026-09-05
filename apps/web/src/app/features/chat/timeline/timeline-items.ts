@@ -1,5 +1,6 @@
 import { ChatMessage } from '../../../shared/models/chat.models';
 import { isSystemEventBody, parseSystemEventBody, formatSystemEventLabel } from '../../../shared/system-event';
+import { DEFAULT_LOCALE, type AppLocale } from '../../../core/i18n/locale';
 
 export const GROUP_WINDOW_MS = 5 * 60 * 1000;
 
@@ -53,20 +54,21 @@ export type BuildTimelineItemsOptions = {
   dividerAfterSeq?: number | null;
   showUnreadDivider?: boolean;
   now?: Date;
+  locale?: AppLocale;
 };
 
-const dayMonthFormatter = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long' });
-const fullDateFormatter = new Intl.DateTimeFormat('pt-BR', {
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-});
-const ariaDateFormatter = new Intl.DateTimeFormat('pt-BR', {
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-});
+function dateFormatters(locale: AppLocale) {
+  return {
+    dayMonth: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long' }),
+    full: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' }),
+    aria: new Intl.DateTimeFormat(locale, {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }),
+  };
+}
 
 export function localDateKey(iso: string, now = new Date()): string {
   const date = new Date(iso);
@@ -76,24 +78,29 @@ export function localDateKey(iso: string, now = new Date()): string {
   return localDateKeyFromDate(date);
 }
 
-export function formatDayLabel(dateKey: string, now = new Date()): { label: string; ariaLabel: string } {
+export function formatDayLabel(
+  dateKey: string,
+  now = new Date(),
+  locale: AppLocale = DEFAULT_LOCALE,
+): { label: string; ariaLabel: string } {
   const date = dateFromKey(dateKey);
   const todayKey = localDateKeyFromDate(now);
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayKey = localDateKeyFromDate(yesterday);
-  const ariaLabel = ariaDateFormatter.format(date);
+  const formatters = dateFormatters(locale);
+  const ariaLabel = formatters.aria.format(date);
 
   if (dateKey === todayKey) {
-    return { label: 'Hoje', ariaLabel };
+    return { label: locale === 'en' ? 'Today' : 'Hoje', ariaLabel };
   }
   if (dateKey === yesterdayKey) {
-    return { label: 'Ontem', ariaLabel };
+    return { label: locale === 'en' ? 'Yesterday' : 'Ontem', ariaLabel };
   }
   if (date.getFullYear() === now.getFullYear()) {
-    return { label: dayMonthFormatter.format(date), ariaLabel };
+    return { label: formatters.dayMonth.format(date), ariaLabel };
   }
-  return { label: fullDateFormatter.format(date), ariaLabel };
+  return { label: formatters.full.format(date), ariaLabel };
 }
 
 export function unreadDividerAfterSeq(
@@ -127,6 +134,7 @@ export function buildTimelineItems(
   options: BuildTimelineItemsOptions = {},
 ): TimelineItem[] {
   const now = options.now ?? new Date();
+  const locale = options.locale ?? DEFAULT_LOCALE;
   const showUnread = options.showUnreadDivider !== false;
   const dividerAfterSeq =
     options.dividerAfterSeq !== undefined
@@ -141,7 +149,7 @@ export function buildTimelineItems(
     const message = messages[i];
     const dateKey = localDateKey(message.createdAt, now);
     if (dateKey !== lastDateKey) {
-      const { label, ariaLabel } = formatDayLabel(dateKey, now);
+      const { label, ariaLabel } = formatDayLabel(dateKey, now, locale);
       flat.push({
         kind: 'day',
         id: `day-${dateKey}`,
