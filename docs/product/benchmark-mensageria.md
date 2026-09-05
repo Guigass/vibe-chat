@@ -112,7 +112,7 @@ sobre o `<input type="file">` que já existe, nunca como caminho único.
 | Capacidade | Slack | Teams | Discord | WhatsApp | VibeChat |
 |---|---|---|---|---|---|
 | PWA instalável | sim | sim | sim | web | **Temos** |
-| i18n | ~10 idiomas | muitos | muitos | muitos | **Falta** — B-100 (hoje PT-BR hardcoded) |
+| i18n | ~10 idiomas | muitos | muitos | muitos | **Done** — B-100 (`pt-BR` + `en`; catálogo CI) |
 | Acessibilidade WCAG AA | sim | sim | parcial | parcial | **Parcial** — B-103 |
 | Tema claro/escuro | sim | sim | sim | sim | **Temos** |
 | Wallpaper / cores pessoais | parcial | parcial | sim | sim | **Falta** — B-185 |
