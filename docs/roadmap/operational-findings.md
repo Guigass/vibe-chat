@@ -28,7 +28,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — #145 cache/pin + #149 `releaseBottom()` cancela âncora bottom no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146 (B-098): 15 specs falham em `auth.ts:118` — timeout 20s aguardando `heading` `/geral/i`; h1 `#geral` existe mas está hidden (largura 0) | Critical | **Resolved** — título do canal com `min-width: 6.5rem`; busca encolhe (`flex: 0 1`) em vez de espremer o h1 |
-| OPS-E2E-B100 | CI / E2E | `main` RED pós-#156 (B-100): Chrome `en-US` carrega catálogo `en`; PUT `/me` no spec i18n poluía Alice e quebrava specs seguintes; paleta sem foco inicial | Critical | Open — [#158](https://github.com/Guigass/vibe-chat/pull/158) pin `locale` depois do device descriptor, reset de perfil, locators bilíngues, `cdkFocusInitial` |
+| OPS-E2E-B100 | CI / E2E | `main` RED pós-#156 (B-100): Chrome `en-US` carrega catálogo `en`; PUT `/me` no spec i18n poluía Alice e quebrava specs seguintes; paleta sem foco inicial; select de Settings caía em `pt-BR` | Critical | Open — [#158](https://github.com/Guigass/vibe-chat/pull/158) pin `locale` depois do device descriptor, reset de perfil, locators bilíngues, `cdkFocusInitial`, option ativa no `vc-locale-control` |
 
 ## Resolvidos
 
@@ -251,8 +251,9 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 - Status: **Open** — [#158](https://github.com/Guigass/vibe-chat/pull/158)
   (pin Playwright `locale: 'pt-BR'` depois de `devices['Desktop Chrome']`;
   `vc.locale` + `PUT /me` pt-BR em `openUserSession`; spec i18n troca idioma
-  pelo seletor do header e restaura Alice; locators aceitam chrome PT/EN;
-  paleta marca `cdkFocusInitial`).
+  no login e restaura Alice; locators aceitam chrome PT/EN; paleta marca
+  `cdkFocusInitial`; `vc-locale-control` marca a option ativa — o painel
+  Settings criava um segundo `<select>` que caía na primeira option `pt-BR`).
 - Observado em: CI `E2E (Playwright)` em `main` pós-#156 (run
   [#33933674819](https://github.com/Guigass/vibe-chat/actions/runs/33933674819))
   — 13 specs aguardando literais pt-BR; run de #158

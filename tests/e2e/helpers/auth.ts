@@ -104,10 +104,17 @@ export async function resetProfileLocale(
   user: DemoUser,
   locale: 'pt-BR' | 'en' = 'pt-BR',
 ): Promise<void> {
-  await request.put(`${API_BASE_URL}/api/v1/me`, {
+  const response = await request.put(`${API_BASE_URL}/api/v1/me`, {
     headers: { 'X-Dev-User': user, 'Content-Type': 'application/json' },
     data: { locale },
   });
+  if (!response.ok()) {
+    throw new Error(`PUT /me locale=${locale} for ${user} failed: ${response.status()} ${await response.text()}`);
+  }
+  const body = (await response.json()) as { locale?: string | null };
+  if (body.locale !== locale) {
+    throw new Error(`PUT /me for ${user} returned locale=${String(body.locale)}, expected ${locale}`);
+  }
 }
 
 export async function openUserSession(
