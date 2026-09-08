@@ -24,7 +24,7 @@ test.describe(`group dm (${AUTH_MODE})`, () => {
 
     const composer = alice.page.locator('textarea').first();
     await composer.fill(uniqueBody);
-    await alice.page.getByRole('button', { name: /^Enviar$/i }).click();
+    await alice.page.getByRole('button', { name: /^(Enviar|Send)$/i }).click();
     await expect(alice.page.getByText(uniqueBody)).toBeVisible({ timeout: 15_000 });
 
     if (AUTH_MODE !== 'demo') {

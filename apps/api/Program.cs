@@ -846,9 +846,12 @@ v1.MapPost("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, C
 
     if (Enum.TryParse<ChannelType>(request.Type, true, out var parsed) && parsed is ChannelType.Direct or ChannelType.GroupDm)
     {
-        return Results.BadRequest(new { error = parsed is ChannelType.GroupDm
-            ? "Use POST /workspaces/{id}/group-dms to open group direct messages."
-            : "Use POST /workspaces/{id}/dms to open direct messages." });
+        return Results.BadRequest(new
+        {
+            error = parsed is ChannelType.GroupDm
+                ? "Use POST /workspaces/{id}/group-dms to open group direct messages."
+                : "Use POST /workspaces/{id}/dms to open direct messages.",
+        });
     }
 
     Guid? spaceId = null;
