@@ -5,6 +5,7 @@ import {
   selectChannelGeral,
 } from '../helpers/auth';
 import { clickMessageToolbarButton } from '../helpers/message-actions';
+import { sendButtonName } from '../helpers/ui-copy';
 
 /**
  * B-084 — Bob cites Alice; Alice sees the quote without F5 (devauth/oidc).
@@ -22,7 +23,7 @@ test.describe(`reply citing (${AUTH_MODE})`, () => {
 
     const aliceComposer = alice.page.locator('textarea').first();
     await aliceComposer.fill(parentBody);
-    await alice.page.getByRole('button', { name: /^Enviar$/i }).click();
+    await alice.page.getByRole('button', { name: sendButtonName }).click();
     await expect(alice.page.getByText(parentBody)).toBeVisible({ timeout: 15_000 });
 
     if (AUTH_MODE === 'demo') {
@@ -43,7 +44,7 @@ test.describe(`reply citing (${AUTH_MODE})`, () => {
 
     const bobComposer = bob.page.locator('textarea').first();
     await bobComposer.fill(replyBody);
-    await bob.page.getByRole('button', { name: /^Enviar$/i }).click();
+    await bob.page.getByRole('button', { name: sendButtonName }).click();
 
     await expect(bob.page.getByText(replyBody)).toBeVisible({ timeout: 15_000 });
     await expect(alice.page.getByText(replyBody)).toBeVisible({ timeout: 30_000 });

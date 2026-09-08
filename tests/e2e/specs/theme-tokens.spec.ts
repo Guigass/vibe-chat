@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { AUTH_MODE, openUserSession, selectChannelGeral } from '../helpers/auth';
+import { themeToggleName } from '../helpers/ui-copy';
 
 /**
  * BUG-007: production builds must not defer the global stylesheet via
@@ -35,7 +36,7 @@ test.describe(`theme design tokens (${AUTH_MODE})`, () => {
       expect(tokens.stylesheetMedia === 'all' || tokens.stylesheetMedia === '').toBeTruthy();
     }
 
-    await page.getByRole('button', { name: /Ativar tema (escuro|claro)/ }).click();
+    await page.getByRole('button', { name: themeToggleName }).click();
     const afterToggle = await page.evaluate(() => {
       const root = getComputedStyle(document.documentElement);
       return {

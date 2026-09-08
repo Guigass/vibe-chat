@@ -28,6 +28,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — #145 cache/pin + #149 `releaseBottom()` cancela âncora bottom no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146 (B-098): 15 specs falham em `auth.ts:118` — timeout 20s aguardando `heading` `/geral/i`; h1 `#geral` existe mas está hidden (largura 0) | Critical | **Resolved** — título do canal com `min-width: 6.5rem`; busca encolhe (`flex: 0 1`) em vez de espremer o h1 |
+| OPS-E2E-B100 | CI / E2E | `main` RED pós-#156 (B-100): Chrome `en-US` carrega catálogo `en`; PUT `/me` no spec i18n poluía Alice e quebrava specs seguintes; paleta sem foco inicial; select de Settings caía em `pt-BR` | Critical | Open — [#158](https://github.com/Guigass/vibe-chat/pull/158) pin `locale` depois do device descriptor, reset de perfil, locators bilíngues, `cdkFocusInitial`, option ativa no `vc-locale-control` |
 
 ## Resolvidos
 
@@ -244,6 +245,40 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   3. gitleaks verde no histórico (allowlist do `palette.ts`);
   4. finding marcado Resolved citando PR de fix.
 - Rollback: revert deste PR; paleta volta ao estado de #151.
+
+### OPS-E2E-B100
+
+- Status: **Open** — [#158](https://github.com/Guigass/vibe-chat/pull/158)
+  (pin Playwright `locale: 'pt-BR'` depois de `devices['Desktop Chrome']`;
+  `vc.locale` + `PUT /me` pt-BR em `openUserSession`; spec i18n troca idioma
+  no login e restaura Alice; locators aceitam chrome PT/EN; paleta marca
+  `cdkFocusInitial`; `vc-locale-control` marca a option ativa — o painel
+  Settings criava um segundo `<select>` que caía na primeira option `pt-BR`).
+- Observado em: CI `E2E (Playwright)` em `main` pós-#156 (run
+  [#33933674819](https://github.com/Guigass/vibe-chat/actions/runs/33933674819))
+  — 13 specs aguardando literais pt-BR; run de #158
+  [#34224235379](https://github.com/Guigass/vibe-chat/actions/runs/34224235379)
+  — `i18n-locale` ficou com `locale-select=pt-BR` após PUT `en`, e os specs
+  seguintes não acharam `Enviar` / `Mostrar barra`.
+- Base/head SHA: último green `edf5a49` (2026-09-04); incident tip `98c5836`
+  (#157, docs B-100).
+- Reprodução: runner Playwright `en-US` → `resolveBootstrapLocale()` carrega
+  `messages.en.json`; specs com `Enviar`. PUT `/me` locale=`en` no spec i18n
+  persiste no perfil Alice e `syncFromProfile` traduz o shell dos testes
+  posteriores. Paleta abre com input visível sem foco (`cdkTrapFocus` no
+  dialog).
+- Resultado esperado: E2E verde em `main`; troca para `en` cobre login/shell/
+  settings; Alice volta a `pt-BR` no fim do spec i18n; Ctrl/Cmd+K foca o filtro.
+- Impacto: bloqueia auto-merge e a safety lane (hotfix antes de B-101).
+- Risk class: R1 (teste/UI); severidade Critical por bloqueio de pipeline.
+- Owner automático: Watchdog + Frontend.
+- Critério de resolução:
+  1. `E2E (Playwright)` verde no PR #158 e depois em `main`;
+  2. `i18n-locale.spec.ts` e `command-palette.spec.ts` passam via
+     `task test:e2e:ci`;
+  3. finding marcado Resolved citando o merge.
+- Rollback: revert de #158; i18n B-100 permanece, E2E volta a falhar no Chrome
+  `en-US`.
 
 ### OPS-DOCS-RACE
 

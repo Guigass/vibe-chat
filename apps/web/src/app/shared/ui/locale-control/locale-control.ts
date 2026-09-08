@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, ElementRef, afterRenderEffect, inject, viewChild } from '@angular/core';
 import { LocaleService } from '../../../core/i18n/locale.service';
 import { LOCALE_OPTION_NAMES, SUPPORTED_LOCALES, type AppLocale, isAppLocale } from '../../../core/i18n/locale';
 import { ui } from '../../../core/i18n/strings';
@@ -10,13 +10,13 @@ import { ui } from '../../../core/i18n/strings';
     <label class="locale-control">
       <span class="vc-sr-only">{{ label }}</span>
       <select
+        #selectEl
         data-testid="locale-select"
-        [value]="locales.locale()"
         [attr.aria-label]="label"
         (change)="onChange($event)"
       >
         @for (id of options; track id) {
-          <option [value]="id">{{ names[id] }}</option>
+          <option [value]="id" [selected]="id === locales.locale()">{{ names[id] }}</option>
         }
       </select>
     </label>
@@ -39,6 +39,19 @@ export class LocaleControl {
   readonly options = SUPPORTED_LOCALES;
   readonly names = LOCALE_OPTION_NAMES;
   readonly label = ui.language;
+  private readonly selectEl = viewChild<ElementRef<HTMLSelectElement>>('selectEl');
+
+  constructor() {
+    // Native <select> ignores [value] when @for options land after first paint
+    // (settings panel instance opened while locale is already `en`).
+    afterRenderEffect(() => {
+      const locale = this.locales.locale();
+      const el = this.selectEl()?.nativeElement;
+      if (el && el.value !== locale) {
+        el.value = locale;
+      }
+    });
+  }
 
   onChange(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
