@@ -45,7 +45,7 @@ test.describe(`command palette (${AUTH_MODE})`, () => {
       await expect(query).toBeFocused();
       await query.fill(hop.query);
       await expect(palette.getByRole('option').first()).toBeVisible();
-      await alice.page.keyboard.press('Enter');
+      await query.press('Enter');
       await expect(palette).toHaveCount(0);
       await expect(alice.page.getByRole('heading', { name: hop.heading })).toBeVisible();
     }

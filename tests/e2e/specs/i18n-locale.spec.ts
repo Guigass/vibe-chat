@@ -1,5 +1,11 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { AUTH_MODE, resetProfileLocale } from '../helpers/auth';
+
+async function waitForDocumentLang(page: Page, lang: 'en' | 'pt-BR'): Promise<void> {
+  await page.waitForFunction((expected) => document.documentElement.lang === expected, lang, {
+    timeout: 20_000,
+  });
+}
 
 /**
  * B-100: login, shell search and settings follow the selected locale.
@@ -18,7 +24,10 @@ test.describe(`i18n locale (${AUTH_MODE})`, () => {
     await page.goto('/login');
     await expect(page.getByRole('heading', { name: /Conversas com profundidade/i })).toBeVisible();
 
-    await page.getByTestId('locale-select').selectOption('en');
+    await Promise.all([
+      waitForDocumentLang(page, 'en'),
+      page.getByTestId('locale-select').selectOption('en'),
+    ]);
     await expect(page.getByRole('heading', { name: /Conversations with depth/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /Sign in with Keycloak/i })).toBeVisible();
 
@@ -28,14 +37,16 @@ test.describe(`i18n locale (${AUTH_MODE})`, () => {
       await page.getByRole('button', { name: /^Alice$/i }).click();
     }
     await page.waitForURL(/\/app/);
-    await page.waitForLoadState('networkidle').catch(() => undefined);
 
     const headerSelect = page.locator('.shell__actions [data-testid="locale-select"]');
     await expect(headerSelect).toBeVisible();
     if ((await headerSelect.inputValue()) !== 'en') {
-      await headerSelect.selectOption('en');
-      await page.waitForURL(/\/app/);
+      await Promise.all([
+        waitForDocumentLang(page, 'en'),
+        headerSelect.selectOption('en'),
+      ]);
     }
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.locator('.shell__actions [data-testid="locale-select"]')).toHaveValue('en');
     await expect(page.getByLabel(/Search messages/i)).toBeVisible();
 
