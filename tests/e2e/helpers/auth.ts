@@ -1,4 +1,4 @@
-import type { Browser, BrowserContext, Page } from '@playwright/test';
+import type { APIRequestContext, Browser, BrowserContext, Page } from '@playwright/test';
 
 export type AuthMode = 'demo' | 'devauth' | 'oidc';
 export type DemoUser = 'alice' | 'bob' | 'demo';
@@ -75,6 +75,8 @@ export async function loginAs(
     await page.addInitScript((name) => {
       localStorage.setItem('vc.dev-auth', name);
       localStorage.removeItem('vc.demo-auth');
+      // Pin catalog to source locale so Chrome en-US does not load messages.en.json.
+      localStorage.setItem('vc.locale', 'pt-BR');
     }, user);
     await page.goto('/app');
     await page.waitForURL(/\/app/);
@@ -96,6 +98,18 @@ export async function loginAs(
   await page.waitForURL(/\/app/, { timeout: 60_000 });
 }
 
+/** Keep DevAuth fixtures on pt-BR so i18n specs cannot pollute later tests. */
+export async function resetProfileLocale(
+  request: APIRequestContext,
+  user: DemoUser,
+  locale: 'pt-BR' | 'en' = 'pt-BR',
+): Promise<void> {
+  await request.put(`${API_BASE_URL}/api/v1/me`, {
+    headers: { 'X-Dev-User': user, 'Content-Type': 'application/json' },
+    data: { locale },
+  });
+}
+
 export async function openUserSession(
   browser: Browser,
   user: DemoUser,
@@ -104,6 +118,7 @@ export async function openUserSession(
   const context = await browser.newContext();
   if (mode === 'devauth') {
     await attachDevAuth(context, user);
+    await resetProfileLocale(context.request, user, 'pt-BR');
   }
   const page = await context.newPage();
   await loginAs(page, user, mode);

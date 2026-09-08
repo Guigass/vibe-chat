@@ -46,6 +46,7 @@ import { ui } from '../../../core/i18n/strings';
             [placeholder]="ui.palettePlaceholder"
             autocomplete="off"
             autofocus
+            cdkFocusInitial
             data-testid="command-palette-query"
           />
         </label>

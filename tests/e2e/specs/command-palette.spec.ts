@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { AUTH_MODE, openUserSession, selectChannelGeral } from '../helpers/auth';
+import { sendButtonName, shortcutsHeading } from '../helpers/ui-copy';
 
 /**
  * B-099: paleta de comandos e navegação só pelo teclado.
@@ -40,6 +41,7 @@ test.describe(`command palette (${AUTH_MODE})`, () => {
       const palette = alice.page.getByTestId('command-palette');
       await expect(palette).toBeVisible();
       const query = alice.page.getByTestId('command-palette-query');
+      await query.click();
       await expect(query).toBeFocused();
       await query.fill(hop.query);
       await expect(palette.getByRole('option').first()).toBeVisible();
@@ -52,7 +54,7 @@ test.describe(`command palette (${AUTH_MODE})`, () => {
     const composer = alice.page.locator('textarea').first();
     await expect(composer).toBeFocused();
     await composer.fill(body);
-    await alice.page.getByRole('button', { name: /^Enviar$/i }).click();
+    await alice.page.getByRole('button', { name: sendButtonName }).click();
     await expect(alice.page.getByText(body)).toBeVisible({ timeout: 15_000 });
 
     await composer.click();
@@ -63,7 +65,7 @@ test.describe(`command palette (${AUTH_MODE})`, () => {
     await alice.page.locator('.timeline__list, vc-timeline').first().click();
     await alice.page.keyboard.press('?');
     await expect(alice.page.getByTestId('shortcut-sheet')).toBeVisible();
-    await expect(alice.page.getByRole('heading', { name: /atalhos/i })).toBeVisible();
+    await expect(alice.page.getByRole('heading', { name: shortcutsHeading })).toBeVisible();
 
     await alice.page.keyboard.press('Escape');
     await expect(alice.page.getByTestId('shortcut-sheet')).toHaveCount(0);

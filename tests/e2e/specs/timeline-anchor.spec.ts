@@ -8,6 +8,7 @@ import {
   clickMessageMenuItem,
   openMessageMoreMenu,
 } from "../helpers/message-actions";
+import { sendButtonName } from "../helpers/ui-copy";
 
 async function removeGeneratedPins(page: Page): Promise<void> {
   const pinBar = page.getByTestId("pin-bar");
@@ -40,7 +41,7 @@ const tallTimelineCss = `
 async function sendMessage(page: Page, body: string) {
   const composer = page.locator("vc-composer textarea").first();
   await composer.fill(body);
-  await page.getByRole("button", { name: /^Enviar$/i }).click();
+  await page.getByRole("button", { name: sendButtonName }).click();
   const bubble = page
     .locator("article[data-message-id]")
     .filter({ hasText: body })

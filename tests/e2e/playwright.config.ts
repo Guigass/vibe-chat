@@ -26,13 +26,13 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   use: {
     baseURL,
-    // B-100: CI runners use en-US Chrome; without this, resolveBootstrapLocale()
-    // loads the en catalog and specs with pt-BR literals fail (OPS-E2E-B100).
+    ...devices['Desktop Chrome'],
+    // After the device descriptor so Playwright does not keep Chrome en-US
+    // (B-100 / OPS-E2E-B100). Source catalog is pt-BR; specs use that chrome.
     locale: 'pt-BR',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    ...devices['Desktop Chrome'],
   },
   // CI (W7-1): API + Web are started by infra/scripts/ci-e2e.sh before Playwright.
 });
