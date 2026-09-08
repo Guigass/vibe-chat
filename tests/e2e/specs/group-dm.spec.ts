@@ -15,10 +15,30 @@ test.describe(`group dm (${AUTH_MODE})`, () => {
       });
     }
 
+    const members = alice.page.locator('.vc-sidebar-nav__members');
+    await expect(members.getByRole('button', { name: /Mensagem para Bob/i })).toBeVisible();
+    await expect(members.getByRole('button', { name: /Mensagem para Demo/i })).toBeVisible();
+
     await alice.page.getByTestId('group-dm-picker-toggle').click();
-    await alice.page.getByRole('button', { name: /@?\s*Bob/i }).first().click();
-    await alice.page.getByRole('button', { name: /@?\s*Demo/i }).first().click();
-    await alice.page.getByTestId('group-dm-open').click();
+    const picker = alice.page.getByTestId('group-dm-picker');
+    await expect(picker).toBeVisible();
+
+    // Recentes pode ter um DM "Bob" — o .first() da lista inteira clica o canal, não o membro.
+    await members.getByRole('button', { name: /Mensagem para Bob/i }).click();
+    await members.getByRole('button', { name: /Mensagem para Demo/i }).click();
+    await expect(picker.locator('.vc-sidebar-nav__chip', { hasText: 'Bob' })).toBeVisible();
+    await expect(picker.locator('.vc-sidebar-nav__chip', { hasText: 'Demo' })).toBeVisible();
+
+    const created = alice.page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' && response.url().includes('/group-dms'),
+      { timeout: 15_000 },
+    );
+    await picker.getByRole('button', { name: /Abrir conversa/i }).click();
+    if (AUTH_MODE !== 'demo') {
+      const response = await created;
+      expect(response.ok(), `POST /group-dms → ${response.status()}`).toBeTruthy();
+    }
 
     await expect(alice.page.getByTestId('group-dm-header')).toBeVisible({ timeout: 15_000 });
 
