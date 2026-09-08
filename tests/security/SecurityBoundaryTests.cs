@@ -1195,6 +1195,57 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
         delete.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
+    [Fact]
+    public async Task Group_dm_rejects_foreign_tenant_peer_and_non_member_history()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var (foreignTenantId, _) = await SeedCrossTenantChannelAsync();
+        var foreignUserId = Guid.NewGuid();
+        await using (var db = factory.CreateMigratorDbContext())
+        {
+            db.UserProfiles.Add(new VibeChat.Identity.UserProfile
+            {
+                Id = new UserId(foreignUserId),
+                Subject = $"pending:foreign-{foreignUserId:N}@x.test",
+                Email = $"foreign-{foreignUserId:N}@x.test",
+                DisplayName = "Foreign",
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var cross = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/group-dms",
+            new { userIds = new[] { SeedData.BobUserId.Value, foreignUserId } });
+        cross.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var created = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{SeedData.DemoWorkspaceId.Value}/group-dms",
+            new { userIds = new[] { SeedData.BobUserId.Value, SeedData.DemoUserId.Value } });
+        created.EnsureSuccessStatusCode();
+        var group = await created.Content.ReadFromJsonAsync<ChannelDto>();
+
+        using var bob = factory.CreateClient();
+        bob.DefaultRequestHeaders.Add("X-Dev-User", "bob");
+        var leave = await bob.DeleteAsync($"/api/v1/channels/{group!.Id}/participants/me");
+        leave.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var history = await bob.GetAsync($"/api/v1/channels/{group.Id}/messages");
+        history.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        await using var hub = CreateHubConnection("bob");
+        await hub.StartAsync();
+        var join = async () => await hub.InvokeAsync("JoinChannel", SeedData.DemoTenantId.Value, group.Id);
+        await join.Should().ThrowAsync<HubException>().WithMessage("*Not authorized*");
+
+        _ = foreignTenantId;
+    }
+
     private sealed record NotificationPreferencesDto(
         string Level,
         bool HidePreview,

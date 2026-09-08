@@ -151,7 +151,12 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Type).HasConversion<string>().HasMaxLength(32);
             entity.Property(x => x.Name).HasMaxLength(120);
             entity.Property(x => x.Topic).HasMaxLength(250);
+            entity.Property(x => x.Title).HasMaxLength(80);
+            entity.Property(x => x.ParticipantSetKey).HasMaxLength(400);
             entity.HasIndex(x => new { x.WorkspaceId, x.Name }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.ParticipantSetKey })
+                .IsUnique()
+                .HasFilter("\"ParticipantSetKey\" IS NOT NULL");
             entity.HasIndex(x => x.SpaceId);
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
@@ -164,7 +169,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
             entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
             entity.HasIndex(x => new { x.ChannelId, x.UserId }).IsUnique();
-            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+            entity.HasQueryFilter(x =>
+                (!tenantContext.HasTenant || x.TenantId == tenantContext.TenantId)
+                && x.LeftAt == null);
         });
 
         modelBuilder.Entity<Message>(entity =>
@@ -654,7 +661,9 @@ public sealed class PermissionChecker(VibeChatDbContext dbContext) : IPermission
             return await IsMemberAsync(tenantId, channel.WorkspaceId, userId, cancellationToken);
         }
 
-        return await dbContext.ChannelMembers.AnyAsync(x => x.TenantId == tenantId && x.ChannelId == channelId && x.UserId == userId, cancellationToken);
+        return await dbContext.ChannelMembers.AnyAsync(
+            x => x.TenantId == tenantId && x.ChannelId == channelId && x.UserId == userId && x.LeftAt == null,
+            cancellationToken);
     }
 
 }
@@ -1808,6 +1817,24 @@ public sealed class PresenceService(RedisConnection redis, IClock clock) : IPres
         }
 
         return result;
+    }
+
+    public async Task<IReadOnlyList<string>> GetConnectionIdsAsync(
+        TenantId tenantId,
+        UserId userId,
+        CancellationToken cancellationToken)
+    {
+        var db = await redis.GetDatabaseAsync();
+        if (db is null)
+        {
+            return [];
+        }
+
+        var members = await db.SetMembersAsync(ConnectionsKey(tenantId, userId));
+        return members
+            .Select(x => x.ToString())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToArray();
     }
 
     private async Task SetStatusAsync(
@@ -3344,6 +3371,7 @@ public static class DependencyInjection
         services.AddSingleton<OutboxProcessor>();
         services.AddHostedService<OutboxDispatcher>();
         // B-047: processor shared; hosted purge loop is registered only in apps/worker.
+        services.Configure<GroupDmOptions>(configuration.GetSection(GroupDmOptions.SectionName));
         services.Configure<MessageRetentionOptions>(configuration.GetSection(MessageRetentionOptions.SectionName));
         services.Configure<RuntimeSettingsOptions>(configuration.GetSection(RuntimeSettingsOptions.SectionName));
         services.AddMemoryCache();

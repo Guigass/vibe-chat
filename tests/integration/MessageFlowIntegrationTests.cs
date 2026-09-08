@@ -1446,6 +1446,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     [Fact]
     public async Task Admin_can_persist_process_flags_and_rotate_vapid()
     {
+        factory.Services.GetRequiredService<IRuntimeSettingsCacheInvalidator>().InvalidateProcess();
         using var demo = factory.CreateClient();
         demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
         var workspaceId = SeedData.DemoWorkspaceId.Value;
@@ -1495,6 +1496,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         rotated!.Configured.Should().BeTrue();
         (await rotate.Content.ReadAsStringAsync()).Should().NotContain(vapid.PrivateKey);
 
+        factory.Services.GetRequiredService<IRuntimeSettingsCacheInvalidator>().InvalidateProcess();
         var get = await demo.GetAsync($"/api/v1/admin/settings?workspaceId={workspaceId}");
         var after = await get.Content.ReadFromJsonAsync<SensitiveSettingsDto>(JsonOptions);
         after!.Push.VapidConfigured.Should().BeTrue();

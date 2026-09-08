@@ -41,4 +41,8 @@ public interface IPresenceService
         TenantId tenantId,
         IReadOnlyCollection<UserId> userIds,
         CancellationToken cancellationToken);
+    Task<IReadOnlyList<string>> GetConnectionIdsAsync(
+        TenantId tenantId,
+        UserId userId,
+        CancellationToken cancellationToken);
 }

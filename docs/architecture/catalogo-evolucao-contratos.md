@@ -66,6 +66,12 @@ Toda flag registra:
 
 R3 nasce `false`. Flag não substitui authZ.
 
+## Flags R3 entregues
+
+| Flag lógica | Escopo | Default | B-ID | Comportamento off |
+|--------------|--------|---------|------|-------------------|
+| `Directory:GroupDm:Enabled` | instance | false | B-101 | create/add/leave/rename → 404; history existente permanece para quem ainda é membro |
+
 ## Registro inicial de flags futuras
 
 | Flag lógica | Escopo | Default | B-ID | Comportamento off |

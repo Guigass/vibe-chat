@@ -292,7 +292,9 @@ public sealed class PushNotificationIntegrationTests(VibeChatApiFactory factory)
             new SendMessageRequest(mentionId, $"idem-push-none-{mentionId:N}", body, null, null));
         mention.StatusCode.Should().Be(HttpStatusCode.Accepted);
         await DrainOutboxAsync();
-        recorder.Attempts.Should().NotContain(x => x.Endpoint == bobEndpoint, "level=None suppresses even a mention");
+        recorder.Attempts.Should().NotContain(
+            x => x.Endpoint == bobEndpoint && x.PayloadJson.Contains(mentionId.ToString("D"), StringComparison.Ordinal),
+            "level=None suppresses even a mention");
     }
 
     [Fact]
@@ -514,8 +516,6 @@ public sealed class PushNotificationIntegrationTests(VibeChatApiFactory factory)
 
     private async Task ResetPushStateAsync()
     {
-        var recorder = factory.Services.GetRequiredService<RecordingPushSender>();
-        recorder.Reset();
         await using var db = factory.CreateMigratorDbContext();
         var rows = await db.PushSubscriptions.IgnoreQueryFilters().ToListAsync();
         if (rows.Count > 0)
@@ -554,6 +554,12 @@ public sealed class PushNotificationIntegrationTests(VibeChatApiFactory factory)
         {
             await db.SaveChangesAsync();
         }
+
+        // B-101: extra tests in the shared collection leave MessageCreated in the outbox
+        // (ReadCursor mark-unread, GroupDm, …). Drain after dropping subscriptions so
+        // leftover fan-out cannot hit a newly registered endpoint in this class.
+        await DrainOutboxAsync();
+        factory.Services.GetRequiredService<RecordingPushSender>().Reset();
     }
 
     private async Task DrainOutboxAsync()

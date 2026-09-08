@@ -20,7 +20,7 @@ empresa pequena espera em 2026, mantendo a identidade visual própria
 | Canais públicos/privados | sim | sim | sim | — | **Temos** |
 | Agrupamento (space/categoria) | sim | sim | sim | — | **Temos** (Space) |
 | DM 1:1 | sim | sim | sim | sim | **Temos** |
-| DM em grupo | sim | sim | sim | sim | **Falta** — B-101 |
+| DM em grupo | sim | sim | sim | sim | **Done** — B-101 |
 | Threads | sim | sim (layout threads) | sim | — | **Temos** |
 | Canal de fórum (post = tópico) | — | posts layout | Forum Channels | — | Fora de escopo fase 2 |
 | Seguir thread / followed threads | sim | sim | — | — | **Falta** — B-102 |

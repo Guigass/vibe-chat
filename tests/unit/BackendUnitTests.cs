@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using VibeChat.Administration;
 using VibeChat.AI;
 using VibeChat.BuildingBlocks;
+using VibeChat.Conversations;
 using VibeChat.Files;
 using VibeChat.Infrastructure;
 using VibeChat.Integrations;
@@ -904,6 +905,36 @@ public sealed class BackendUnitTests
         pair.PublicKey.Should().NotContain("+");
         pair.PublicKey.Should().NotContain("/");
         pair.PublicKey.Should().NotContain("=");
+    }
+
+    [Fact]
+    public void Group_dm_policies_require_three_and_cap_at_max()
+    {
+        var caller = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var a = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+        var b = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
+
+        GroupDmPolicies.TryNormalizeMembers([a], caller, 9, out _, out var tooFew)
+            .Should().BeFalse();
+        tooFew.Should().Be("GroupDmRequiresThree");
+
+        GroupDmPolicies.TryNormalizeMembers([a, b], caller, 9, out var ok, out _)
+            .Should().BeTrue();
+        ok.Should().HaveCount(3);
+
+        var extras = Enumerable.Range(0, 9).Select(_ => Guid.NewGuid()).ToArray();
+        GroupDmPolicies.TryNormalizeMembers(extras, caller, 9, out _, out var tooMany)
+            .Should().BeFalse();
+        tooMany.Should().Be("GroupDmTooManyParticipants");
+    }
+
+    [Fact]
+    public void Group_dm_participant_set_key_is_sorted_and_stable()
+    {
+        var a = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var b = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        GroupDmPolicies.ParticipantSetKey([b, a]).Should().Be(GroupDmPolicies.ParticipantSetKey([a, b]));
+        GroupDmPolicies.ParticipantSetKey([a, b]).Should().Be($"{a:D},{b:D}");
     }
 
     private static RuntimeSecretProtector CreateTestProtector(int activeVersion = 1)

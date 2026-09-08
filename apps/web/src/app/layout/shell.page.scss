@@ -246,6 +246,33 @@
   text-overflow: ellipsis;
 }
 
+.shell__group-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.shell__group-actions > button {
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-md);
+  background: transparent;
+  color: var(--vc-ink-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+}
+
+.shell__group-add {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.shell__group-warn {
+  white-space: normal !important;
+}
+
 .shell__search {
   position: relative;
   flex: 0 1 min(22rem, 42vw);

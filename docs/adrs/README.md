@@ -28,6 +28,7 @@ original.
 | [020](ADR-020-runtime-settings-credenciais-criptografadas.md) | Settings runtime e credenciais criptografadas | Accepted |
 | [021](ADR-021-link-preview-ssrf.md) | Link preview com guarda SSRF | Accepted |
 | [022](ADR-022-web-push-vapid.md) | Web Push com VAPID da instância | Accepted |
+| [023](ADR-023-group-dm.md) | DM em grupo reutiliza Channel | Accepted |
 
 ## Quando criar um ADR
 

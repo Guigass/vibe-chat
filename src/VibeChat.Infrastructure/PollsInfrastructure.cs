@@ -112,7 +112,7 @@ public sealed class PollWriter(
         var channel = await dbContext.Channels.AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == command.ChannelId && x.TenantId == command.TenantId, cancellationToken);
         if (channel is null
-            || channel.Type is ChannelType.Direct or ChannelType.Group
+            || channel.Type is ChannelType.Direct or ChannelType.Group or ChannelType.GroupDm
             || !await channels.CanAccessAsync(command.TenantId, command.ChannelId, command.UserId, cancellationToken)
             || !await permissions.HasPermissionAsync(command.TenantId, command.UserId, Permissions.Message.Send, cancellationToken))
         {

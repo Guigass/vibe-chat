@@ -59,6 +59,9 @@ interface ChannelDto {
   peerUserId?: string | null;
   peerDisplayName?: string | null;
   topic?: string | null;
+  participantCount?: number | null;
+  participantNames?: string[] | null;
+  participantUserIds?: string[] | null;
 }
 
 interface SlashCommandDto {
@@ -465,6 +468,36 @@ export class ApiService {
     const dto = await this.request<ChannelDto>(`/api/v1/workspaces/${workspaceId}/dms`, {
       method: 'POST',
       body: JSON.stringify({ userId }),
+    });
+    return this.mapChannel(dto);
+  }
+
+  async openGroupDm(workspaceId: string, userIds: string[], name?: string): Promise<Channel> {
+    const dto = await this.request<ChannelDto>(`/api/v1/workspaces/${workspaceId}/group-dms`, {
+      method: 'POST',
+      body: JSON.stringify({ userIds, name: name ?? null }),
+    });
+    return this.mapChannel(dto);
+  }
+
+  async addGroupDmParticipants(channelId: string, userIds: string[]): Promise<Channel> {
+    const dto = await this.request<ChannelDto>(`/api/v1/channels/${channelId}/participants`, {
+      method: 'POST',
+      body: JSON.stringify({ userIds }),
+    });
+    return this.mapChannel(dto);
+  }
+
+  async leaveGroupDm(channelId: string): Promise<void> {
+    await this.request<void>(`/api/v1/channels/${channelId}/participants/me`, {
+      method: 'DELETE',
+    });
+  }
+
+  async renameGroupDm(channelId: string, name: string): Promise<Channel> {
+    const dto = await this.request<ChannelDto>(`/api/v1/channels/${channelId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
     });
     return this.mapChannel(dto);
   }
@@ -1284,6 +1317,7 @@ export class ApiService {
 
   private mapChannel(c: ChannelDto): Channel {
     const type = (c.type ?? 'Public').toLowerCase();
+    const isGroupDm = type === 'groupdm';
     return {
       id: c.id,
       workspaceId: c.workspaceId,
@@ -1294,9 +1328,13 @@ export class ApiService {
       type,
       spaceId: c.spaceId ?? null,
       isPrivate: type === 'private',
-      isDirect: type === 'direct',
+      isDirect: type === 'direct' || isGroupDm,
+      isGroupDm,
       peerUserId: c.peerUserId ?? undefined,
       peerDisplayName: c.peerDisplayName ?? undefined,
+      participantCount: c.participantCount ?? undefined,
+      participantNames: c.participantNames ?? undefined,
+      participantUserIds: c.participantUserIds ?? undefined,
     };
   }
 

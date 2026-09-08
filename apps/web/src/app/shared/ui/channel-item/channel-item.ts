@@ -21,7 +21,13 @@ import { VcTooltip } from '../tooltip/tooltip';
       position="right"
       (click)="select.emit()"
     >
-      @if (presence()) {
+      @if (channel().isGroupDm) {
+        <span class="vc-channel__stack" aria-hidden="true">
+          @for (initial of stackedInitials(); track initial) {
+            <span class="vc-channel__stack-dot">{{ initial }}</span>
+          }
+        </span>
+      } @else if (presence()) {
         <span class="vc-channel__presence" [attr.data-status]="presence()" aria-hidden="true"></span>
       } @else {
         <span class="vc-channel__hash" aria-hidden="true">{{ prefix() }}</span>
@@ -129,6 +135,26 @@ import { VcTooltip } from '../tooltip/tooltip';
     .vc-channel__hash {
       font-family: var(--vc-font-mono);
       opacity: 0.7;
+    }
+    .vc-channel__stack {
+      display: flex;
+      width: 1.35rem;
+    }
+    .vc-channel__stack-dot {
+      width: 0.85rem;
+      height: 0.85rem;
+      margin-left: -0.28rem;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: color-mix(in srgb, var(--vc-brand) 18%, transparent);
+      color: var(--vc-brand);
+      font-size: 0.55rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .vc-channel__stack-dot:first-child {
+      margin-left: 0;
     }
     .vc-channel__presence {
       width: 0.55rem;
@@ -272,7 +298,13 @@ export class ChannelItem {
   });
 
   prefix(): string {
+    if (this.channel().isGroupDm) return '··';
     if (this.channel().isDirect) return '@';
     return this.channel().isPrivate ? '◦' : '#';
+  }
+
+  stackedInitials(): string[] {
+    const names = this.channel().participantNames ?? [];
+    return names.slice(0, 2).map((n) => (n.trim()[0] ?? '?').toUpperCase());
   }
 }

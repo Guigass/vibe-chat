@@ -350,6 +350,82 @@ export class ChannelStore {
     return channel;
   }
 
+  async openGroupDm(userIds: string[], name?: string): Promise<Channel | null> {
+    const workspace = this.activeWorkspace();
+    if (!workspace || userIds.length === 0) return null;
+
+    if (this.usingDemo() || this.auth.isOfflineDemo()) {
+      const members = this.membersSignal().filter((m) => userIds.includes(m.userId));
+      const label = members.map((m) => m.displayName).join(', ') || 'Grupo';
+      const channel: Channel = {
+        id: `gdm-${userIds.slice().sort().join('-')}`,
+        workspaceId: workspace.id,
+        name: name?.trim() || label,
+        unreadCount: 0,
+        isDirect: true,
+        isGroupDm: true,
+        type: 'groupdm',
+        participantCount: userIds.length + 1,
+        participantNames: members.map((m) => m.displayName),
+      };
+      this.channelsSignal.update((list) => {
+        const existing = list.find((c) => c.id === channel.id);
+        return existing ? list : [...list, channel];
+      });
+      this.selectChannel(channel.id);
+      return channel;
+    }
+
+    const channel = await this.api.openGroupDm(workspace.id, userIds, name);
+    this.upsertChannel(channel);
+    void this.hub.joinChannel(channel.id);
+    this.selectChannel(channel.id);
+    return channel;
+  }
+
+  async addGroupDmParticipants(channelId: string, userIds: string[]): Promise<Channel | null> {
+    if (userIds.length === 0) return null;
+    if (this.usingDemo() || this.auth.isOfflineDemo()) return null;
+    const channel = await this.api.addGroupDmParticipants(channelId, userIds);
+    this.upsertChannel(channel);
+    this.selectChannel(channel.id);
+    return channel;
+  }
+
+  async leaveGroupDm(channelId: string): Promise<void> {
+    if (!this.usingDemo() && !this.auth.isOfflineDemo()) {
+      await this.api.leaveGroupDm(channelId);
+    }
+    this.channelsSignal.update((list) => list.filter((c) => c.id !== channelId));
+    const remaining = this.channelsSignal();
+    if (remaining[0]) {
+      this.selectChannel(remaining[0].id);
+    } else {
+      this.setActiveChannel(null);
+    }
+  }
+
+  async renameGroupDm(channelId: string, name: string): Promise<Channel | null> {
+    if (this.usingDemo() || this.auth.isOfflineDemo()) {
+      this.channelsSignal.update((list) =>
+        list.map((c) => (c.id === channelId ? { ...c, name } : c)),
+      );
+      return this.channelsSignal().find((c) => c.id === channelId) ?? null;
+    }
+    const channel = await this.api.renameGroupDm(channelId, name);
+    this.upsertChannel(channel);
+    return channel;
+  }
+
+  private upsertChannel(channel: Channel): void {
+    this.channelsSignal.update((list) => {
+      if (list.some((c) => c.id === channel.id)) {
+        return list.map((c) => (c.id === channel.id ? { ...c, ...channel } : c));
+      }
+      return [...list, channel];
+    });
+  }
+
   bumpUnread(channelId: string): void {
     this.channelsSignal.update((list) =>
       list.map((c) =>

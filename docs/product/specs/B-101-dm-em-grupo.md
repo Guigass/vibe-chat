@@ -36,7 +36,7 @@ messaging (mantém `seq`, outbox e history).
 - `DELETE .../channels/{channelId}/participants/me` — sai
 - `PATCH .../channels/{channelId}` — renomeia (só participante)
 - Mensagem de sistema no fluxo quando alguém entra ou sai.
-- `Directory:GroupDm:MaxParticipants` (default `9`).
+- `Directory:GroupDm:Enabled` (default `false`); `Directory:GroupDm:MaxParticipants` (default `9`).
 
 `contratos.md`: tipo de canal, endpoints, regra de idempotência por conjunto.
 
@@ -57,13 +57,13 @@ messaging (mantém `seq`, outbox e history).
 
 ## Aceite
 
-- [ ] Criar DM com 3 pessoas abre a conversa para as três
-- [ ] Criar de novo com o mesmo conjunto devolve a mesma conversa
-- [ ] Adicionar uma quarta pessoa: ela não vê o histórico anterior
-- [ ] Sair encerra o acesso, inclusive no hub
-- [ ] 10 participantes → 400
-- [ ] Não participante → 403 no history e no `JoinChannel`
-- [ ] Renomear reflete nas duas sessões
+- [x] Criar DM com 3 pessoas abre a conversa para as três
+- [x] Criar de novo com o mesmo conjunto devolve a mesma conversa
+- [x] Adicionar uma quarta pessoa: ela não vê o histórico anterior
+- [x] Sair encerra o acesso, inclusive no hub
+- [x] 10 participantes → 400
+- [x] Não participante → 403 no history e no `JoinChannel`
+- [x] Renomear reflete nas duas sessões
 
 ## Testes
 
