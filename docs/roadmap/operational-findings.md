@@ -28,7 +28,6 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — #145 cache/pin + #149 `releaseBottom()` cancela âncora bottom no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146 (B-098): 15 specs falham em `auth.ts:118` — timeout 20s aguardando `heading` `/geral/i`; h1 `#geral` existe mas está hidden (largura 0) | Critical | **Resolved** — título do canal com `min-width: 6.5rem`; busca encolhe (`flex: 0 1`) em vez de espremer o h1 |
-| OPS-E2E-B100 | CI / E2E | `main` RED pós-#156 (B-100): Chrome `en-US` carrega catálogo `en`; PUT `/me` no spec i18n poluía Alice e quebrava specs seguintes; paleta sem foco inicial; select de Settings caía em `pt-BR` | Critical | Open — [#158](https://github.com/Guigass/vibe-chat/pull/158) pin `locale` depois do device descriptor, reset de perfil, locators bilíngues, `cdkFocusInitial`, option ativa no `vc-locale-control` |
 
 ## Resolvidos
 
@@ -38,6 +37,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142: timeline-anchor (distância ~2780) + history-scroll (scrollTop ~3200) | Critical | Resolved | #145 lista com cache; #149 `releaseBottom()` no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146: 15 specs — `heading` `#geral` hidden (caixa 0×n) | Critical | Resolved | Título `min-width: 6.5rem`; `.shell__search` com `flex: 0 1` + `min-width: 10rem` |
 | OPS-E2E-B099 | CI / E2E | `main` RED pós-#151: paleta sem foco + gitleaks `keys:` no histórico | Critical | Resolved | [#154](https://github.com/Guigass/vibe-chat/pull/154) — foco no input; E2E sem omnibox; `combo` + allowlist `.gitleaks.toml` |
+| OPS-E2E-B100 | CI / E2E | `main` RED pós-#156 (B-100 i18n): Chrome `en-US` + poluição de perfil Alice + paleta/settings i18n | Critical | Resolved | [#158](https://github.com/Guigass/vibe-chat/pull/158) — pin Playwright `locale: pt-BR`; reset de perfil; locators bilíngues; `cdkFocusInitial`; option ativa no `vc-locale-control` |
 
 ## Formato de detalhe
 
@@ -248,7 +248,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 ### OPS-E2E-B100
 
-- Status: **Open** — [#158](https://github.com/Guigass/vibe-chat/pull/158)
+- Status: **Resolved** — [#158](https://github.com/Guigass/vibe-chat/pull/158)
   (pin Playwright `locale: 'pt-BR'` depois de `devices['Desktop Chrome']`;
   `vc.locale` + `PUT /me` pt-BR em `openUserSession`; spec i18n troca idioma
   no login e restaura Alice; locators aceitam chrome PT/EN; paleta marca
