@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { AUTH_MODE, openUserSession, selectChannelGeral } from '../helpers/auth';
+import { sendButtonName } from '../helpers/ui-copy';
 
 /**
  * B-088 / W9-1: reader in history is not pulled down when a new message arrives.
@@ -36,7 +37,7 @@ test.describe(`timeline history scroll (${AUTH_MODE})`, () => {
     const composer = alice.page.locator('textarea').first();
     await expect(composer).toBeVisible();
     await composer.fill(uniqueBody);
-    await alice.page.getByRole('button', { name: /^Enviar$/i }).click();
+    await alice.page.getByRole('button', { name: sendButtonName }).click();
 
     await expect(alice.page.getByText(uniqueBody)).toBeVisible({ timeout: 15_000 });
     await expect(bob.page.getByText(uniqueBody)).toBeVisible({ timeout: 30_000 });

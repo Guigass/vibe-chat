@@ -4,6 +4,7 @@ import {
   openUserSession,
   selectChannelGeral,
 } from '../helpers/auth';
+import { sendButtonName } from '../helpers/ui-copy';
 
 /**
  * B-095 — opt-in registers a subscription. OS delivery is not the gate.
@@ -52,7 +53,7 @@ test.describe(`web push opt-in (${AUTH_MODE})`, () => {
     await expect(composer).toBeVisible();
     const uniqueBody = `e2e-push-${Date.now()}`;
     await composer.fill(uniqueBody);
-    await alice.page.getByRole('button', { name: /^Enviar$/i }).click();
+    await alice.page.getByRole('button', { name: sendButtonName }).click();
     await expect(alice.page.getByText(uniqueBody)).toBeVisible({ timeout: 15_000 });
 
     const banner = alice.page.getByTestId('push-opt-in');

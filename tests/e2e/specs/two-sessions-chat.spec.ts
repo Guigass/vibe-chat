@@ -4,6 +4,7 @@ import {
   openUserSession,
   selectChannelGeral,
 } from '../helpers/auth';
+import { sendButtonName } from '../helpers/ui-copy';
 
 /**
  * Fatia vertical E2E: duas sessões no #geral.
@@ -28,7 +29,7 @@ test.describe(`two sessions chat (${AUTH_MODE})`, () => {
     const composer = alice.page.locator('textarea').first();
     await expect(composer).toBeVisible();
     await composer.fill(uniqueBody);
-    await alice.page.getByRole('button', { name: /^Enviar$/i }).click();
+    await alice.page.getByRole('button', { name: sendButtonName }).click();
 
     // Alice always sees her optimistic/local message — exactly one bubble (BUG-001).
     await expect(alice.page.getByText(uniqueBody)).toBeVisible({ timeout: 15_000 });

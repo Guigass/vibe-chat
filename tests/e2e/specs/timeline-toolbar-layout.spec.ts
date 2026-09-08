@@ -4,11 +4,12 @@ import {
   openUserSession,
   selectChannelGeral,
 } from "../helpers/auth";
+import { sendButtonName } from "../helpers/ui-copy";
 
 async function sendMessage(page: Page, body: string): Promise<Locator> {
   const composer = page.locator("vc-composer textarea").first();
   await composer.fill(body);
-  await page.getByRole("button", { name: /^Enviar$/i }).click();
+  await page.getByRole("button", { name: sendButtonName }).click();
   const bubble = page
     .locator('article[data-message-id][data-status="persisted"]')
     .filter({ hasText: body })

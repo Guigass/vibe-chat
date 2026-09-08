@@ -9,6 +9,7 @@ import {
   clickMessageToolbarButton,
   openMessageMoreMenu,
 } from '../helpers/message-actions';
+import { sendButtonName } from '../helpers/ui-copy';
 
 /**
  * B-070: MessageCreated / edit / delete / reactions cross-session without reload.
@@ -30,7 +31,7 @@ test.describe(`realtime events (${AUTH_MODE})`, () => {
     const composer = alice.page.locator('textarea').first();
     await expect(composer).toBeVisible();
     await composer.fill(body);
-    await alice.page.getByRole('button', { name: /^Enviar$/i }).click();
+    await alice.page.getByRole('button', { name: sendButtonName }).click();
 
     await expect(alice.page.getByText(body)).toBeVisible({ timeout: 15_000 });
     await expect(bob.page.getByText(body)).toBeVisible({ timeout: 30_000 });
@@ -50,7 +51,7 @@ test.describe(`realtime events (${AUTH_MODE})`, () => {
     await expect(
       bob.page.locator('article.vc-msg', { hasText: edited }).getByLabel(/^Editada$/i),
     ).toBeVisible({ timeout: 15_000 });
-    await expect(alice.page.getByRole('button', { name: /^Enviar$/i })).toBeVisible();
+    await expect(alice.page.getByRole('button', { name: sendButtonName })).toBeVisible();
 
     const editedMessageId = await alice.page
       .locator('article.vc-msg', { hasText: edited })
