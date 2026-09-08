@@ -28,7 +28,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — #145 cache/pin + #149 `releaseBottom()` cancela âncora bottom no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146 (B-098): 15 specs falham em `auth.ts:118` — timeout 20s aguardando `heading` `/geral/i`; h1 `#geral` existe mas está hidden (largura 0) | Critical | **Resolved** — título do canal com `min-width: 6.5rem`; busca encolhe (`flex: 0 1`) em vez de espremer o h1 |
-| OPS-E2E-B100 | CI / E2E | `main` RED pós-#156 (B-100): 13 specs falham (CI Playwright `en-US` + catálogo `en`); #158 pin `locale: 'pt-BR'` → 16 pass / 1 fail (`i18n-locale`: perfil Alice com `pt-BR` de spec anterior sobrescreve escolha `en`) | Critical | Open — [#158](https://github.com/Guigass/vibe-chat/pull/158) fix-forward; alinhar perfil DevAuth antes do shell |
+| OPS-E2E-B100 | CI / E2E | `main` RED pós-#156 (B-100): 13 specs falham (CI Playwright `en-US` + catálogo `en`); #158 pin `locale: 'pt-BR'` → 16/17 em run 34032007984; residual `i18n-locale` (perfil Alice `pt-BR` via `syncFromProfile`); run 34119761626 flake 4/17 (27min timeouts) | Critical | Open — [#158](https://github.com/Guigass/vibe-chat/pull/158) assert PUT `/me` + wait sync antes do settings |
 
 ## Resolvidos
 
