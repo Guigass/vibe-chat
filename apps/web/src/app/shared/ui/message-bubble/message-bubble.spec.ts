@@ -10,16 +10,17 @@ import type { ChatMessage } from '../../models/chat.models';
 import { userMentionToken } from '../../markdown/mention-tokens';
 
 function baseMessage(overrides: Partial<ChatMessage> = {}): ChatMessage {
+  const mine = overrides.mine ?? true;
   return {
     id: 'm1',
     conversationId: 'c1',
     channelId: 'ch1',
-    authorUserId: 'u1',
+    authorUserId: mine ? 'u-alice' : 'u-bob',
     authorName: 'Alice',
     body: 'olá',
     createdAt: new Date().toISOString(),
     status: 'persisted',
-    mine: true,
+    mine,
     ...overrides,
   };
 }

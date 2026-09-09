@@ -6,12 +6,14 @@ import { ChannelStore } from './channel.store';
 import { ThreadStore } from './thread.store';
 import { PushNotificationService } from './push-notification.service';
 import { ChatMessage, PollSummary } from '../../shared/models/chat.models';
+import { mergeRemotePoll, preferRicherPoll } from '../../shared/polls/poll-summary';
 import {
   bumpChannelParentForThreadReply,
   findMessageByCorrelators,
   gapFillAfterSeq,
   hasSeqGap,
   idsEqual,
+  isOwnAuthor,
   markReplyQuotesDeleted,
   maxSeqForChannel,
   mergeMessagesById,
@@ -139,7 +141,7 @@ export class MessageStore {
     this.unsubLinkPreview = this.hub.onLinkPreviewReady((event) =>
       this.applyLinkPreviewReady(event),
     );
-    this.unsubPoll = this.hub.onPollChanged((event) => this.applyPoll(event.messageId, event.poll));
+    this.unsubPoll = this.hub.onPollChanged((event) => this.applyRemotePoll(event.messageId, event.poll));
     this.unsubReconnected = this.hub.onReconnected(() => {
       void this.gapFillActiveChannel();
       void this.threads.gapFillActive();
@@ -542,6 +544,18 @@ export class MessageStore {
     );
   }
 
+  private applyRemotePoll(messageId: string, incoming: PollSummary): void {
+    this.messagesSignal.update((list) =>
+      list.map((message) => {
+        if (!idsEqual(message.id, messageId) && !idsEqual(message.id, incoming.messageId)) {
+          return message;
+        }
+        const merged = mergeRemotePoll(message.poll, incoming);
+        return merged === message.poll ? message : { ...message, poll: merged };
+      }),
+    );
+  }
+
   async edit(messageId: string, body: string): Promise<void> {
     const channel = this.channels.activeChannel();
     if (!channel || !body.trim()) return;
@@ -660,7 +674,7 @@ export class MessageStore {
       void this.gapFillChannel(normalized.channelId);
     }
 
-    const mine = normalized.authorUserId === this.auth.profile()?.id;
+    const mine = isOwnAuthor(normalized.authorUserId, this.auth.profile()?.id);
     const remote: ChatMessage = { ...normalized, mine, status: 'persisted' };
     const existing = findMessageByCorrelators(this.messagesSignal(), remote);
     const isActive = idsEqual(normalized.channelId, this.channels.activeChannelId());
@@ -671,7 +685,8 @@ export class MessageStore {
         this.patchByClientId(existing.clientMessageId, {
           ...remote,
           clientMessageId: existing.clientMessageId,
-          mine: true,
+          mine,
+          poll: preferRicherPoll(existing.poll, remote.poll),
         });
       } else {
         this.messagesSignal.update((list) => upsertRemoteMessage(list, remote));
@@ -930,7 +945,7 @@ export class MessageStore {
       channelId: message.channelId || message.conversationId,
       conversationId: message.conversationId || message.channelId,
       status: message.status ?? 'persisted',
-      mine: message.mine ?? message.authorUserId === me,
+      mine: isOwnAuthor(message.authorUserId, me),
       mentionsMe,
       authorName: message.authorName || 'Membro',
       body: message.deletedAt ? '' : message.body,

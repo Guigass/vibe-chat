@@ -308,7 +308,7 @@ export class ThreadStore {
     if (idsEqual(message.conversationId, message.channelId)) return;
 
     const normalized = this.normalize(message);
-    const mine = normalized.authorUserId === this.auth.profile()?.id;
+    const mine = idsEqual(normalized.authorUserId, this.auth.profile()?.id);
     const remote: ChatMessage = { ...normalized, mine, status: 'persisted' };
     const existing = findMessageByCorrelators(this.messagesSignal(), remote);
 
@@ -316,7 +316,7 @@ export class ThreadStore {
       this.patchByClientId(existing.clientMessageId, {
         ...remote,
         clientMessageId: existing.clientMessageId,
-        mine: true,
+        mine,
       });
       return;
     }
@@ -533,7 +533,7 @@ export class ThreadStore {
       ...message,
       channelId: message.channelId || message.conversationId,
       status: message.status ?? 'persisted',
-      mine: message.mine ?? message.authorUserId === this.auth.profile()?.id,
+      mine: idsEqual(message.authorUserId, this.auth.profile()?.id),
       authorName: message.authorName || 'Membro',
       body: message.deletedAt ? '' : message.body,
       reactions: message.reactions ?? [],

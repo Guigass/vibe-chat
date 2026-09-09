@@ -41,6 +41,11 @@ public sealed record PollDto(
 
 public static class PollAggregator
 {
+    public static readonly JsonSerializerOptions HubJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     public static PollDto Build(
         Poll poll,
         IReadOnlyList<PollOption> options,
@@ -216,7 +221,7 @@ public sealed class PollWriter(
                 body = question,
                 createdAt = now,
                 poll = snapshot
-            })
+            }, PollAggregator.HubJsonOptions)
         });
 
         audit.Add(new AuditEvent
@@ -389,7 +394,7 @@ public sealed class PollWriter(
                 pollId = poll.MessageId.Value,
                 messageId = poll.MessageId.Value,
                 poll = snapshot
-            })
+            }, PollAggregator.HubJsonOptions)
         });
         audit.Add(new AuditEvent
         {
@@ -516,7 +521,7 @@ public sealed class PollCloseProcessor(
                         pollId = poll.MessageId.Value,
                         messageId = poll.MessageId.Value,
                         poll = snapshot
-                    })
+                    }, PollAggregator.HubJsonOptions)
                 });
                 audit.Add(new AuditEvent
                 {

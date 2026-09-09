@@ -27,6 +27,7 @@ describe('Composer audio submit (BUG-004)', () => {
   const start = vi.fn();
   const uploadRecordedAudio = vi.fn();
   const send = vi.fn();
+  const createPoll = vi.fn();
   const edit = vi.fn();
   const clearAttachments = vi.fn();
   const clearReplyTarget = vi.fn();
@@ -63,6 +64,7 @@ describe('Composer audio submit (BUG-004)', () => {
     start.mockReset();
     uploadRecordedAudio.mockReset();
     send.mockReset();
+    createPoll.mockReset();
     edit.mockReset();
     clearAttachments.mockReset();
     clearReplyTarget.mockReset();
@@ -82,6 +84,7 @@ describe('Composer audio submit (BUG-004)', () => {
     buildRecordedAudio.mockResolvedValue(recorded);
     uploadRecordedAudio.mockResolvedValue({ attachmentId: 'att-1' });
     send.mockResolvedValue(true);
+    createPoll.mockResolvedValue(true);
     edit.mockImplementation(async () => {
       editingMessage.set(null);
     });
@@ -138,6 +141,7 @@ describe('Composer audio submit (BUG-004)', () => {
             replyTarget: replyTarget.asReadonly(),
             editingMessage: editingMessage.asReadonly(),
             send,
+            createPoll,
             edit,
             clearReplyTarget,
             clearEdit,
@@ -408,5 +412,25 @@ describe('Composer audio submit (BUG-004)', () => {
 
     await composer.onSubmit(new Event('submit'));
     expect(send).toHaveBeenCalledWith(expect.stringContaining(`<@${bob}>`), []);
+  });
+
+  it('publishes a poll from a panel outside the message form', async () => {
+    composer.openPollComposer('Lanche?', ['Pizza', 'Hambúrguer']);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('form.composer form')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Nova enquete');
+
+    await composer.submitPoll(new Event('submit'));
+
+    expect(createPoll).toHaveBeenCalledWith({
+      question: 'Lanche?',
+      options: ['Pizza', 'Hambúrguer'],
+      allowMultiple: false,
+      anonymous: false,
+      closesAt: null,
+    });
+    expect(send).not.toHaveBeenCalled();
+    expect(composer.pollComposerOpen()).toBe(false);
   });
 });

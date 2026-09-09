@@ -26,7 +26,9 @@ import {
   buildTimelineItems,
   unreadDividerAfterSeq,
   type TimelineItem,
+  type TimelineStackItem,
 } from './timeline-items';
+import { idsEqual, isOwnAuthor } from '../../../core/services/message-sync';
 import {
   TimelineScrollAnchorController,
   TimelineStickyBottomPin,
@@ -109,10 +111,10 @@ const NEAR_TOP_PX = 120;
               @case ('stack') {
                 <div
                   class="timeline__stack"
-                  [class.timeline__stack--mine]="item.mine"
+                  [class.timeline__stack--mine]="isOwnStack(item)"
                   data-testid="timeline-stack"
                 >
-                  @if (!item.mine) {
+                  @if (!isOwnStack(item)) {
                     <div class="timeline__stack-avatar">
                       <vc-avatar
                         [name]="item.messages[0].message.authorName"
@@ -375,6 +377,10 @@ export class Timeline {
   private readonly locales = inject(LocaleService);
   private readonly destroyRef = inject(DestroyRef);
   readonly avatarSize = computed(() => (this.theme.density() === 'compact' ? 28 : 34));
+
+  isOwnStack(item: TimelineStackItem): boolean {
+    return idsEqual(item.messages[0]?.message.authorUserId, this.auth.profile()?.id);
+  }
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
   private readonly forwardDialog = viewChild(ForwardDialog);
 
@@ -466,7 +472,7 @@ export class Timeline {
       const prependOnly =
         this.loadingOlder || (added > 0 && !!this.lastTailId && nextTailId === this.lastTailId);
       const incoming = !prependOnly && added > 0 ? list.slice(-added) : [];
-      const ownArrival = incoming.some((m) => m.mine);
+      const ownArrival = incoming.some((m) => isOwnAuthor(m.authorUserId, this.auth.profile()?.id));
       this.lastMessageCount = list.length;
       this.lastTailId = nextTailId;
       this.ensureFrozenUnreadDivider(list);

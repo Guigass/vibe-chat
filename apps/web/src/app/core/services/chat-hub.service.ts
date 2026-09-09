@@ -21,6 +21,7 @@ import {
   nextHubRetryDelayMs,
 } from './chat-hub-reconnect';
 import { withoutSelfTyping } from './typing-filter';
+import { mapPollSummary } from '../../shared/polls/poll-summary';
 
 export const AWAY_GRACE_MS = 120_000;
 
@@ -71,7 +72,7 @@ interface MessageCreatedPayload {
     contentType: string;
     sizeBytes: number;
   }>;
-  poll?: PollSummary | null;
+  poll?: unknown;
 }
 
 interface MessageEditedPayload {
@@ -402,13 +403,14 @@ export class ChatHubService {
       }
     });
 
-    connection.on('PollChanged', (raw: { messageId?: string; channelId?: string; poll?: PollSummary } | string) => {
-      const payload = this.coercePayload<{ messageId?: string; channelId?: string; poll?: PollSummary }>(raw);
-      if (!payload?.messageId || !payload.channelId || !payload.poll) return;
+    connection.on('PollChanged', (raw: { messageId?: string; channelId?: string; poll?: unknown } | string) => {
+      const payload = this.coercePayload<{ messageId?: string; channelId?: string; poll?: unknown }>(raw);
+      const poll = mapPollSummary(payload?.poll);
+      if (!payload?.messageId || !payload.channelId || !poll) return;
       const event: PollChangedEvent = {
         messageId: String(payload.messageId),
         channelId: String(payload.channelId),
-        poll: payload.poll,
+        poll,
       };
       for (const handler of this.pollHandlers) {
         handler(event);
@@ -798,8 +800,16 @@ export class ChatHubService {
   }
 
   private mapPayload(payload: MessageCreatedPayload): ChatMessage | null {
-    const id = payload.messageId ?? payload.id;
+    const raw = payload as MessageCreatedPayload & {
+      AuthorId?: string;
+      AuthorName?: string;
+      MessageId?: string;
+      Id?: string;
+    };
+    const id = payload.messageId ?? payload.id ?? raw.MessageId ?? raw.Id;
     if (!id || !payload.channelId) return null;
+    const authorId = String(payload.authorId ?? raw.AuthorId ?? '');
+    const authorName = payload.authorName || raw.AuthorName || authorId;
     const me = this.auth.profile()?.id;
     const conversationId = String(payload.conversationId || payload.channelId);
     const channelId = String(payload.channelId);
@@ -813,13 +823,13 @@ export class ChatHubService {
       clientMessageId,
       conversationId,
       channelId,
-      authorUserId: String(payload.authorId ?? ''),
-      authorName: payload.authorName || String(payload.authorId ?? ''),
+      authorUserId: authorId,
+      authorName,
       body: payload.body ?? '',
       createdAt: payload.createdAt ?? new Date().toISOString(),
       seq: payload.sequence,
       status: 'persisted',
-      mine: !!me && me === String(payload.authorId ?? ''),
+      mine: !!me && me.toLowerCase() === authorId.toLowerCase(),
       mentionsMe,
       threadId: payload.threadId ? String(payload.threadId) : null,
       parentMessageId: payload.parentMessageId ? String(payload.parentMessageId) : null,
@@ -855,7 +865,7 @@ export class ChatHubService {
         sizeBytes: a.sizeBytes,
         status: 'Ready',
       })),
-      poll: payload.poll ?? null,
+      poll: mapPollSummary(payload.poll),
     };
   }
 }

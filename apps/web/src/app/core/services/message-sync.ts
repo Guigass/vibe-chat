@@ -1,9 +1,18 @@
 import { ChatMessage } from '../../shared/models/chat.models';
+import { preferRicherPoll } from '../../shared/polls/poll-summary';
 
 /** Case-insensitive GUID/string id compare (hub/API casing may differ). */
 export function idsEqual(a: string | undefined | null, b: string | undefined | null): boolean {
   if (!a || !b) return false;
   return a.toLowerCase() === b.toLowerCase();
+}
+
+/** True when the message author is the signed-in user. */
+export function isOwnAuthor(
+  authorUserId: string | undefined | null,
+  me: string | undefined | null,
+): boolean {
+  return idsEqual(authorUserId, me);
 }
 
 /** Highest persisted sequence for a channel (ignores optimistic/sending without seq). */
@@ -46,16 +55,21 @@ export function hasSeqGap(
  */
 export function findMessageByCorrelators(
   messages: readonly ChatMessage[],
-  incoming: Pick<ChatMessage, 'id' | 'clientMessageId'>,
+  incoming: Pick<ChatMessage, 'id' | 'clientMessageId'> & { authorUserId?: string },
 ): ChatMessage | undefined {
-  return messages.find(
-    (m) =>
+  return messages.find((m) => {
+    const idMatch =
       idsEqual(m.id, incoming.id) ||
       idsEqual(m.clientMessageId, incoming.id) ||
       (!!incoming.clientMessageId &&
         (idsEqual(m.clientMessageId, incoming.clientMessageId) ||
-          idsEqual(m.id, incoming.clientMessageId))),
-  );
+          idsEqual(m.id, incoming.clientMessageId)));
+    if (!idMatch) return false;
+    if (m.authorUserId && incoming.authorUserId && !idsEqual(m.authorUserId, incoming.authorUserId)) {
+      return false;
+    }
+    return true;
+  });
 }
 
 /**
@@ -85,7 +99,8 @@ export function mergeMessagesById(
       ...raw,
       id: existing.id,
       clientMessageId: existing.clientMessageId ?? raw.clientMessageId,
-      mine: existing.mine || raw.mine,
+      // Incoming author wins; do not keep a stale mine:true from another sender.
+      mine: raw.authorUserId ? raw.mine : existing.mine || raw.mine,
       status:
         raw.status === 'persisted' || existing.status === 'sending' || existing.status === 'failed'
           ? (raw.status ?? 'persisted')
@@ -114,8 +129,9 @@ export function upsertRemoteMessage(
       ...incoming,
       id: existing.id,
       clientMessageId: existing.clientMessageId ?? incoming.clientMessageId,
-      mine: existing.mine || incoming.mine,
+      mine: incoming.authorUserId ? incoming.mine : existing.mine || incoming.mine,
       status: incoming.status ?? 'persisted',
+      poll: preferRicherPoll(existing.poll, incoming.poll),
     },
   ]);
 }

@@ -16,7 +16,7 @@ import { pollIsClosed, pollIsTie, pollLeaderIndexes } from '../../polls/poll-sum
             } @else if (card.allowMultiple) {
               Vários votos
             } @else {
-              Um voto
+              Escolha única
             }
             @if (card.anonymous) {
               · Anônima
@@ -55,10 +55,14 @@ import { pollIsClosed, pollIsTie, pollLeaderIndexes } from '../../polls/poll-sum
     }
   `,
   styles: `
+    :host {
+      display: block;
+      width: min(22rem, 100%);
+    }
     .poll {
       display: grid;
       gap: 0.5rem;
-      min-width: 16rem;
+      min-width: 0;
     }
     .poll__head {
       display: grid;
@@ -81,21 +85,27 @@ import { pollIsClosed, pollIsTie, pollLeaderIndexes } from '../../polls/poll-sum
       position: relative;
       display: flex;
       justify-content: space-between;
+      align-items: center;
       gap: 0.5rem;
       width: 100%;
       text-align: left;
-      border: 1px solid var(--vc-line);
-      border-radius: 0.5rem;
-      background: transparent;
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-sm);
+      background: color-mix(in srgb, var(--vc-surface) 55%, transparent);
       color: inherit;
-      padding: 0.4rem 0.6rem;
+      padding: 0.45rem 0.65rem;
       overflow: hidden;
+      cursor: pointer;
     }
     .poll__option:disabled {
       cursor: default;
     }
+    .poll__option:focus-visible {
+      outline: 2px solid var(--vc-brand);
+      outline-offset: 1px;
+    }
     .poll__option.is-mine {
-      border-color: var(--vc-accent);
+      border-color: var(--vc-brand);
     }
     .poll__option.is-leader {
       font-weight: 700;

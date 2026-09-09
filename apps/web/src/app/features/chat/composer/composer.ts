@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
-import { Button, IconButton, Textarea } from '../../../shared/ui';
+import { Button, IconButton, Input, Textarea } from '../../../shared/ui';
 import {
   applyMarkdownWrap,
   handleMarkdownShortcut,
@@ -58,7 +58,7 @@ import { ui } from '../../../core/i18n/strings';
 @Component({
   selector: 'vc-composer',
   standalone: true,
-  imports: [Button, IconButton, Textarea, MentionAutocomplete, SlashAutocomplete, EmojiPicker],
+  imports: [Button, IconButton, Input, Textarea, MentionAutocomplete, SlashAutocomplete, EmojiPicker],
   template: `
     <form class="composer" (submit)="onSubmit($event)">
       <div class="composer__main">
@@ -214,28 +214,24 @@ import { ui } from '../../../core/i18n/strings';
         }
 
         @if (pollComposerOpen()) {
-          <form class="composer__poll" (submit)="submitPoll($event)">
-            <label>
-              Pergunta
-              <input
-                type="text"
-                maxlength="500"
-                [value]="pollQuestion()"
-                (input)="pollQuestion.set($any($event.target).value)"
-              />
-            </label>
+          <div class="composer__poll">
+            <header class="composer__poll-head">
+              <strong>Nova enquete</strong>
+              <button type="button" class="ghost" (click)="closePollComposer()">Cancelar</button>
+            </header>
+            <vc-input
+              label="Pergunta"
+              placeholder="O que você quer perguntar?"
+              [(value)]="pollQuestion"
+            />
             @for (option of pollOptions(); track $index; let i = $index) {
-              <label>
-                Opção {{ i + 1 }}
-                <input
-                  type="text"
-                  maxlength="100"
-                  [value]="option"
-                  (input)="setPollOption(i, $any($event.target).value)"
-                />
-              </label>
+              <vc-input
+                [label]="'Opção ' + (i + 1)"
+                [value]="option"
+                (valueChange)="setPollOption(i, $event)"
+              />
             }
-            <div class="composer__poll-actions">
+            <div class="composer__poll-tools">
               <button type="button" class="ghost" (click)="addPollOption()" [disabled]="pollOptions().length >= 10">
                 Mais opção
               </button>
@@ -247,14 +243,15 @@ import { ui } from '../../../core/i18n/strings';
                 <input type="checkbox" [checked]="pollAnonymous()" (change)="pollAnonymous.set($any($event.target).checked)" />
                 Anônima
               </label>
-              <label>
-                Prazo (opcional)
-                <input type="datetime-local" [value]="pollClosesAt()" (input)="pollClosesAt.set($any($event.target).value)" />
-              </label>
-              <button type="submit" class="ghost">Publicar enquete</button>
-              <button type="button" class="ghost" (click)="closePollComposer()">Cancelar</button>
             </div>
-          </form>
+            <label class="composer__poll-deadline">
+              Prazo (opcional)
+              <input type="datetime-local" [value]="pollClosesAt()" (input)="pollClosesAt.set($any($event.target).value)" />
+            </label>
+            <div class="composer__poll-footer">
+              <vc-button type="button" variant="primary" (click)="submitPoll($event)">Publicar enquete</vc-button>
+            </div>
+          </div>
         }
 
         @if (slash.notice(); as notice) {
@@ -825,34 +822,53 @@ import { ui } from '../../../core/i18n/strings';
     }
     .composer__poll {
       display: grid;
-      gap: 0.4rem;
-      padding: 0.6rem 0.75rem;
-      border: 1px solid var(--vc-line);
-      border-radius: var(--vc-radius-sm);
+      gap: 0.55rem;
+      padding: 0.7rem 0.8rem;
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-md);
+      background: var(--vc-surface-elevated);
     }
-    .composer__poll label {
-      display: grid;
-      gap: 0.2rem;
-      font-size: 0.75rem;
-      color: var(--vc-ink-muted);
+    .composer__poll-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
     }
-    .composer__poll input[type='text'] {
-      border: 1px solid var(--vc-line);
-      border-radius: 0.4rem;
-      background: transparent;
-      color: inherit;
-      padding: 0.35rem 0.5rem;
+    .composer__poll-head strong {
+      font-size: 0.85rem;
     }
-    .composer__poll-actions {
+    .composer__poll-tools,
+    .composer__poll-footer {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
+      gap: 0.65rem 0.85rem;
       align-items: center;
     }
+    .composer__poll-footer {
+      justify-content: flex-end;
+    }
     .composer__poll-toggle {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 0.3rem;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+      color: var(--vc-ink-muted);
+    }
+    .composer__poll-deadline {
+      display: grid;
+      gap: 0.35rem;
+      font-size: 0.85rem;
+      color: var(--vc-ink-muted);
+      font-weight: 500;
+    }
+    .composer__poll-deadline input[type='datetime-local'] {
+      width: 100%;
+      min-height: 2.5rem;
+      padding: 0.55rem 0.8rem;
+      border-radius: var(--vc-radius-md);
+      border: 1px solid var(--vc-border);
+      background: var(--vc-surface-elevated);
+      color: var(--vc-ink);
     }
     @media (max-width: 720px) {
       .composer__shell {

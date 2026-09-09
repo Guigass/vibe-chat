@@ -6,6 +6,7 @@ import {
   gapFillAfterSeq,
   hasSeqGap,
   idsEqual,
+  isOwnAuthor,
   markReplyQuotesDeleted,
   maxSeqForChannel,
   minSeqForChannel,
@@ -120,6 +121,12 @@ describe('message-sync', () => {
     expect(idsEqual(undefined, 'a')).toBe(false);
   });
 
+  it('isOwnAuthor matches the signed-in user', () => {
+    expect(isOwnAuthor('U-Alice', 'u-alice')).toBe(true);
+    expect(isOwnAuthor('u-bob', 'u-alice')).toBe(false);
+    expect(isOwnAuthor('', 'u-alice')).toBe(false);
+  });
+
   it('findMessageByCorrelators matches optimistic id / clientMessageId', () => {
     const clientId = '11111111-1111-1111-1111-111111111111';
     const current = [
@@ -145,6 +152,51 @@ describe('message-sync', () => {
         clientMessageId: clientId,
       })?.clientMessageId,
     ).toBe(clientId);
+  });
+
+  it('mergeMessagesById drops a stale mine flag when the author is someone else', () => {
+    const current = [
+      msg({
+        id: 'poll-bob',
+        channelId: 'c1',
+        authorUserId: 'u-bob',
+        authorName: 'Bob',
+        mine: true,
+        body: 'ae',
+      }),
+    ];
+    const incoming = [
+      msg({
+        id: 'poll-bob',
+        channelId: 'c1',
+        authorUserId: 'u-bob',
+        authorName: 'Bob',
+        mine: false,
+        body: 'ae',
+      }),
+    ];
+
+    expect(mergeMessagesById(current, incoming)[0].mine).toBe(false);
+  });
+
+  it('findMessageByCorrelators does not match a different author', () => {
+    const current = [
+      msg({
+        id: 'alice-poll',
+        channelId: 'c1',
+        authorUserId: 'u-alice',
+        clientMessageId: 'alice-poll',
+        mine: true,
+      }),
+    ];
+
+    expect(
+      findMessageByCorrelators(current, {
+        id: 'alice-poll',
+        clientMessageId: 'alice-poll',
+        authorUserId: 'u-bob',
+      }),
+    ).toBeUndefined();
   });
 
   it('upsertRemoteMessage merges hub fan-out onto optimistic bubble (BUG-001)', () => {

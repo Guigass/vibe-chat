@@ -32,6 +32,7 @@ import { ApiService } from '../../../core/api/api.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { MessageStore } from '../../../core/services/message.store';
+import { idsEqual } from '../../../core/services/message-sync';
 import { ThemeService } from '../../../core/services/theme.service';
 import { EmojiPicker } from '../emoji-picker/emoji-picker';
 import { PollCard } from '../poll-card/poll-card';
@@ -127,7 +128,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
   template: `
     <article
       class="vc-msg vc-anim-fade-in"
-      [class.vc-msg--mine]="message().mine"
+      [class.vc-msg--mine]="own()"
       [class.vc-msg--plain]="surface() === 'plain'"
       [class.vc-msg--group-start]="groupRole() === 'start'"
       [class.vc-msg--group-middle]="groupRole() === 'middle'"
@@ -149,7 +150,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
       (touchmove)="onTouchEnd()"
       (touchcancel)="onTouchEnd()"
     >
-      @if (!message().mine && surface() !== 'plain') {
+      @if (!own() && surface() !== 'plain') {
         <div class="vc-msg__avatar-slot">
           @if (showAvatar()) {
             <vc-avatar [name]="message().authorName" [size]="avatarSize()" />
@@ -1081,8 +1082,9 @@ export class MessageBubble {
   readonly previewUrls = signal<Record<string, string>>({});
   readonly linkPreviewImageUrl = signal<string | null>(null);
   readonly emojiOptions = REACTION_EMOJI_OPTIONS;
+  readonly own = computed(() => idsEqual(this.message().authorUserId, this.auth.profile()?.id));
   readonly actionMenuPositions = computed(() =>
-    this.message().mine ? MINE_ACTION_MENU_POSITIONS : THEIRS_ACTION_MENU_POSITIONS,
+    this.own() ? MINE_ACTION_MENU_POSITIONS : THEIRS_ACTION_MENU_POSITIONS,
   );
   readonly reactionPickerOpen = signal(false);
   readonly menuOpen = signal(false);
@@ -1108,7 +1110,7 @@ export class MessageBubble {
     const poll = this.message().poll;
     const me = this.auth.profile()?.id;
     const role = this.channels.activeWorkspace()?.role?.toLowerCase();
-    return !!poll && !poll.closedAt && (this.message().mine || role === 'admin' || role === 'workspaceowner');
+    return !!poll && !poll.closedAt && (this.own() || role === 'admin' || role === 'workspaceowner');
   });
 
   onPollToggle(optionId: string): void {
@@ -1127,7 +1129,7 @@ export class MessageBubble {
   );
   readonly menuItems = computed(() =>
     menuActionsForMessage({
-      mine: this.message().mine,
+      mine: this.own(),
       showForward: this.showForwardAction(),
       showThread: this.showThreadAction(),
       showPin: this.showPinAction(),

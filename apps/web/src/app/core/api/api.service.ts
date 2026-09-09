@@ -35,6 +35,7 @@ import {
   NotificationLevel,
   ChannelMuteDuration,
 } from '../../shared/models/chat.models';
+import { mapPollSummary } from '../../shared/polls/poll-summary';
 
 interface WorkspaceDto {
   id: string;
@@ -1365,7 +1366,7 @@ export class ApiService {
       deletedAt: m.deletedAt,
       seq: m.sequence,
       status: 'persisted',
-      mine: !!me && me === m.authorId,
+      mine: !!me && me.toLowerCase() === String(m.authorId ?? '').toLowerCase(),
       attachments: (m.attachments ?? []).map((a) => this.mapAttachment(a)),
       threadId: m.threadId ?? null,
       replyToMessageId: m.replyToMessageId ?? null,
@@ -1402,31 +1403,7 @@ export class ApiService {
   }
 
   private mapPoll(poll?: PollDto | null): PollSummary | null {
-    if (!poll?.id || !poll.options) return null;
-    return {
-      id: String(poll.id),
-      messageId: String(poll.messageId || poll.id),
-      channelId: String(poll.channelId),
-      question: poll.question,
-      allowMultiple: !!poll.allowMultiple,
-      anonymous: !!poll.anonymous,
-      closesAt: poll.closesAt ?? null,
-      closedAt: poll.closedAt ?? null,
-      totalVotes: poll.totalVotes ?? 0,
-      canVote: !!poll.canVote,
-      options: poll.options.map((option) => ({
-        id: String(option.id),
-        text: option.text,
-        position: option.position,
-        voteCount: option.voteCount,
-        percent: option.percent,
-        votedByMe: !!option.votedByMe,
-        voters: option.voters?.map((voter) => ({
-          userId: String(voter.userId),
-          displayName: voter.displayName,
-        })),
-      })),
-    };
+    return mapPollSummary(poll);
   }
 
   private mapLinkPreview(preview?: LinkPreviewDto | null): MessageLinkPreview | null {

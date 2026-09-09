@@ -185,6 +185,7 @@ inteiras “por segurança” ([`loop-engineering.md`](../agents/loop-engineerin
 | Path | Uso |
 |------|-----|
 | `.cursor/skills/repo-governance-audit/SKILL.md` | Auditoria/atualização de governança do repo (não faz parte do pipeline 24/7) |
+| `.cursor/skills/frontend-feature-review/SKILL.md` | Revisar/estilizar feature do Angular (`apps/web`): tokens, lado meu/deles, mapper HTTP+hub |
 
 ---
 
