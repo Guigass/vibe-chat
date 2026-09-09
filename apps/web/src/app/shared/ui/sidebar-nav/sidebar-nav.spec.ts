@@ -108,6 +108,10 @@ describe('SidebarNav (B-184)', () => {
     expect(memberBtn.getAttribute('aria-label')).toContain('Bob');
   });
 
+  it('renders the seeded Geral space through i18n', () => {
+    expect(fixture.nativeElement.querySelector('.vc-sidebar-nav__label')?.textContent?.trim()).toBe('Geral');
+  });
+
   it('labels the DM block as Recentes', () => {
     expect(fixture.nativeElement.querySelector('[aria-label="Recentes"]')).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('Recentes');

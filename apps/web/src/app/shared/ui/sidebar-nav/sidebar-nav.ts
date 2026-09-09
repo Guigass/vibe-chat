@@ -11,6 +11,7 @@ import { ChannelItem } from '../channel-item/channel-item';
 import { Button } from '../button/button';
 import { Input } from '../input/input';
 import { VcTooltip } from '../tooltip/tooltip';
+import { displaySpaceName } from '../../../core/i18n/display';
 import { fillTemplate, ui } from '../../../core/i18n/strings';
 
 function matchesFilter(text: string, query: string): boolean {
@@ -48,7 +49,7 @@ function matchesFilter(text: string, query: string): boolean {
           @for (group of filteredGroups(); track group.space?.id ?? 'ungrouped') {
             <div class="vc-sidebar-nav__space">
               @if (!compact()) {
-                <p class="vc-sidebar-nav__label">{{ group.space?.name ?? ui.navOthers }}</p>
+                <p class="vc-sidebar-nav__label">{{ displaySpaceName(group.space?.name) }}</p>
               }
               <ul>
                 @for (channel of group.channels; track channel.id) {
@@ -84,11 +85,11 @@ function matchesFilter(text: string, query: string): boolean {
                     [(value)]="channelName"
                   />
                   <label class="vc-sidebar-nav__select">
-                    <span>Space</span>
+                    <span>{{ ui.navSpace }}</span>
                     <select [value]="selectedSpaceId()" (change)="onSpaceChange($event)">
                       <option value="">{{ ui.navNoSpace }}</option>
                       @for (space of spaces(); track space.id) {
-                        <option [value]="space.id">{{ space.name }}</option>
+                        <option [value]="space.id">{{ displaySpaceName(space.name) }}</option>
                       }
                       <option value="__new__">{{ ui.navNewSpace }}</option>
                     </select>
@@ -406,6 +407,7 @@ function matchesFilter(text: string, query: string): boolean {
 export class SidebarNav {
   readonly ui = ui;
   readonly fillTemplate = fillTemplate;
+  readonly displaySpaceName = displaySpaceName;
   readonly groups = input.required<SpaceGroup[]>();
   readonly spaces = input<Space[]>([]);
   readonly directs = input<Channel[]>([]);
