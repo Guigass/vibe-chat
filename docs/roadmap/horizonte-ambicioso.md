@@ -255,7 +255,7 @@ estrutural com testes verdes.
 
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
-| W19-1 | B | Decompor composition root da API (`Program.cs` → maps/handlers por módulo) | B-174 (recomendado) | [B-178](../product/specs/B-178-decompor-api-program.md) | Planned |
+| W19-1 | B | Decompor composition root da API (`Program.cs` → maps/handlers por módulo) | B-174 (recomendado) | [B-178](../product/specs/B-178-decompor-api-program.md) | **Done** — override humano W10; 220 linhas; build + 241 testes verdes |
 | W19-2 | B/A | Decompor registro de Infrastructure (`Infrastructure.cs` → registradores por área) | W19-1 (recomendado) | [B-179](../product/specs/B-179-decompor-infrastructure.md) | Planned |
 | W19-3 | D | Decompor camada HTTP do web (`api.service.ts` → services por domínio) | — | [B-180](../product/specs/B-180-decompor-api-service-web.md) | Planned |
 | W19-4 | D | Decompor stores e hub do web (`message.store`, `chat-hub`, `channel.store`, `thread.store`) | W19-3 (recomendado) | [B-181](../product/specs/B-181-decompor-stores-web.md) | Planned |

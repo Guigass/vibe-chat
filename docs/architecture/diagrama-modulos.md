@@ -68,6 +68,28 @@ tipos/contratos no composition root. `apps/worker` referencia Infrastructure,
 Messaging, Realtime e BuildingBlocks. A lista exata é verificável nos
 `*.csproj`.
 
+### Registro HTTP da API (B-178)
+
+`apps/api/Program.cs` mantém bootstrap, DI, middleware, o grupo autenticado
+`/api/v1` com `RequirePermissionFilter`, chamadas `Map*`, SignalR e health checks.
+Os handlers ficam em `apps/api/Endpoints/*Endpoints.cs`, por fronteira:
+Identity, Directory, Conversations, Messaging, Files, Realtime, Search,
+Notifications, Administration e AI. O seed exclusivo de Development tem map
+próprio. `GroupDmEndpoints` continua sendo chamado na posição original, pelo
+map de criação de conversas.
+
+Algumas fronteiras expõem mais de um `Map*` para conservar a ordem de registro
+anterior. Não são criados novos grupos, prefixos ou filtros por módulo.
+Helpers ficam nos arquivos `*EndpointHelpers.cs` da fronteira correspondente;
+os resolvers de autenticação continuam delegando a `RequestAuth`. DTOs ficam
+em `apps/api/Contracts/`, agrupados por fronteira, preservando nomes e namespaces
+existentes. `DevAuthHandler` fica em `apps/api/Authentication/`.
+
+A extração não muda as dependências entre assemblies nem os contratos HTTP,
+SignalR, RLS ou outbox. O snapshot em
+`tests/integration/EndpointRegistrationIntegrationTests.cs` protege rotas,
+ordem, métodos HTTP e metadata de autorização existentes antes da decomposição.
+
 ## Responsabilidades
 
 | Fronteira | Responsabilidade |

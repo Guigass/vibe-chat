@@ -182,7 +182,7 @@ Waves 7–10; **recomendada antes da Wave 11**.
 
 | ID | Item | Notas |
 |----|------|-------|
-| B-178 | Decompor `Program.cs` da API | Planned (W19-1) — maps/handlers por módulo; composition root fino; deps B-174 recomendado |
+| B-178 | Decompor `Program.cs` da API | **Done** (W19-1) — 220 linhas; maps/helpers por fronteira; snapshot de 85 rotas; override humano W10; [evidência](../product/specs/B-178-decompor-api-program.md) |
 | B-179 | Decompor `Infrastructure.cs` | Planned (W19-2) — registradores DI/adapters por área; deps W19-1 recomendado |
 | B-180 | Decompor `api.service.ts` | Planned (W19-3) — services por domínio; fachada fina |
 | B-181 | Decompor stores e hub do web | Planned (W19-4) — `message.store`, `chat-hub`, `channel.store`, `thread.store`; deps W19-3 recomendado |

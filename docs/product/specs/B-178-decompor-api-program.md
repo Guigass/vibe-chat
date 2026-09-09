@@ -40,10 +40,10 @@ permissão existentes.
 
 ## Aceite
 
-- [ ] `Program.cs` ≤ 500 linhas; handlers agrupados por fronteira.
-- [ ] `dotnet build` e `task test` verdes.
-- [ ] `task test:integration` e `task test:security` verdes.
-- [ ] Nenhuma rota removida ou renomeada.
+- [x] `Program.cs` ≤ 500 linhas; handlers agrupados por fronteira.
+- [x] `dotnet build` e `task test` verdes.
+- [x] `task test:integration` e `task test:security` verdes.
+- [x] Nenhuma rota removida ou renomeada.
 
 ## Testes
 
@@ -55,3 +55,42 @@ permissão existentes.
 - Conflito com PRs abertos que tocam `Program.cs` — coordenar merge ou esperar
   B-174.
 - Regressão sutil em ordem de middleware — validar com testes de auth/tenant.
+
+## Execução — 2026-09-09
+
+- Work-Item: B-178; Wave: W19-1; Trilha: B; Risk: R1.
+- Prioridade: override humano explícito da ordem W10; B-174 já Done.
+- Base: `ebf70685117bbfa9381c242dadc7eb3c3da720f0`.
+- Plano: extrair handlers e helpers por fronteira, manter bootstrap/pipeline,
+  conservar tipos públicos e ordem dos registros, verificar equivalência e
+  executar build + unit + architecture + integration + security em Docker.
+- Superfícies: somente composição HTTP em `apps/api`, teste de registro das
+  rotas e documentação de B-178. Nenhuma mudança em `modules/*`, persistência,
+  permissões ou contratos públicos.
+- Implementação: `Program.cs` com 220 linhas; maps em `Endpoints/`, helpers
+  junto da fronteira, records em `Contracts/`, DevAuth em `Authentication/`.
+  Maps múltiplos por fronteira mantêm a sequência original de registros.
+- Verificação estrutural contra a base: corpos e ordem dos registros,
+  36 helpers, 89 records e bootstrap/middleware equivalentes, descontando
+  indentação e modificadores necessários à extração dos helpers.
+- Regressão: `EndpointRegistrationIntegrationTests` compara as 85 rotas v1
+  anteriores com o registro real, incluindo métodos, ordem, permissões,
+  acesso anônimo e justificativas de exceção ao filtro.
+- Gates locais: `dotnet build VibeChat.slnx --no-restore` verde;
+  equivalentes de `task test`, `task test:architecture`,
+  `task test:integration` e `task test:security` em SDK .NET 10 no Docker:
+  **87 / 11 / 87 / 56 testes aprovados**, respectivamente; zero falhas/skips.
+  Comando por suíte: `dotnet test tests/<suite>/*.csproj --no-build --no-restore
+  --verbosity minimal --logger trx`. `git diff --check` verde.
+- Ambiente: Postgres 16.6, Redis 7.4 e MinIO efêmeros na mesma rede do runner;
+  o test host existente detecta os serviços no loopback. A tentativa inicial
+  com Testcontainers em bridge falhou antes dos testes porque o fixture fixa
+  o endpoint MinIO em `127.0.0.1`; nenhuma alteração no fixture foi necessária.
+  O runner com rede host do Docker Desktop também não concluiu a comunicação
+  do test runner e foi descartado. O teste de arquitetura recebeu o
+  `apps/web/nginx.conf` exigido pelo seu check, ausente na primeira cópia.
+- Build reporta aviso preexistente NU1903 em SSH.NET 2025.1.0, transitivo das
+  dependências de teste. Nenhuma dependência foi alterada neste refactor.
+- Artefatos locais: `artifacts/B-178/` (logs e TRX, fora do Git).
+- Stop reason: `GOAL_MET` para implementação e gates locais; publicação/CI
+  ficam registrados no PR. `Done` na branch só é autoritativo após merge.
