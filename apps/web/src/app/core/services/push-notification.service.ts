@@ -79,6 +79,14 @@ export class PushNotificationService {
     }
   }
 
+  async refreshDevices(): Promise<void> {
+    try {
+      this.devices.set(await this.api.listPushSubscriptions());
+    } catch {
+      this.devices.set([]);
+    }
+  }
+
   async removeDevice(id: string): Promise<void> {
     await this.api.deletePushSubscription(id);
     this.devices.update((list) => list.filter((item) => item.id !== id));
@@ -135,14 +143,6 @@ export class PushNotificationService {
       userAgent: typeof navigator === 'undefined' ? undefined : navigator.userAgent,
     });
     return 'granted';
-  }
-
-  private async refreshDevices(): Promise<void> {
-    try {
-      this.devices.set(await this.api.listPushSubscriptions());
-    } catch {
-      this.devices.set([]);
-    }
   }
 
   private onRemoteMessage(message: ChatMessage): void {

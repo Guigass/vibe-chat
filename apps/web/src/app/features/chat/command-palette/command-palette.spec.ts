@@ -8,6 +8,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { CommandPaletteService } from '../../../core/services/command-palette.service';
 import { MessageStore } from '../../../core/services/message.store';
+import { NotificationPreferencesStore } from '../../../core/services/notification-preferences.store';
 import { SavedStore } from '../../../core/services/saved.store';
 import { ThemeService } from '../../../core/services/theme.service';
 import { SlashCommandsService } from '../composer/slash-commands.service';
@@ -42,6 +43,10 @@ describe('CommandPalette (OPS-E2E-B099)', () => {
         },
         {
           provide: SavedStore,
+          useValue: { openPanel: vi.fn() },
+        },
+        {
+          provide: NotificationPreferencesStore,
           useValue: { openPanel: vi.fn() },
         },
         {

@@ -5,6 +5,7 @@ export type PaletteAction =
   | { type: 'person'; userId: string }
   | { type: 'slash'; name: string }
   | { type: 'saved' }
+  | { type: 'settings' }
   | { type: 'admin' }
   | { type: 'theme' }
   | { type: 'density' }

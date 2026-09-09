@@ -1,4 +1,4 @@
-import { Component, ElementRef, afterRenderEffect, inject, viewChild } from '@angular/core';
+import { Component, ElementRef, afterRenderEffect, inject, input, viewChild } from '@angular/core';
 import { LocaleService } from '../../../core/i18n/locale.service';
 import { LOCALE_OPTION_NAMES, SUPPORTED_LOCALES, type AppLocale, isAppLocale } from '../../../core/i18n/locale';
 import { ui } from '../../../core/i18n/strings';
@@ -7,7 +7,7 @@ import { ui } from '../../../core/i18n/strings';
   selector: 'vc-locale-control',
   standalone: true,
   template: `
-    <label class="locale-control">
+    <label class="locale-control" [class.locale-control--field]="variant() === 'field'">
       <span class="vc-sr-only">{{ label }}</span>
       <select
         #selectEl
@@ -22,15 +22,37 @@ import { ui } from '../../../core/i18n/strings';
     </label>
   `,
   styles: `
+    .locale-control {
+      display: inline-flex;
+      align-items: center;
+    }
     .locale-control select {
       font: inherit;
-      font-size: var(--vc-text-xs, 0.8rem);
+      font-size: 0.8rem;
       color: inherit;
-      background: transparent;
-      border: 1px solid var(--vc-border-subtle, currentColor);
-      border-radius: var(--vc-radius-sm, 0.4rem);
-      padding: 0.2rem 0.4rem;
+      background: color-mix(in srgb, var(--vc-surface-elevated) 70%, transparent);
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-sm);
+      padding: 0.25rem 0.45rem;
+      min-height: 2rem;
       cursor: pointer;
+    }
+    .locale-control select:focus-visible {
+      outline: none;
+      box-shadow: var(--vc-focus-ring);
+    }
+    .locale-control--field {
+      display: block;
+      width: 100%;
+    }
+    .locale-control--field select {
+      width: 100%;
+      min-height: 2.5rem;
+      padding: 0.55rem 0.8rem;
+      border-radius: var(--vc-radius-md);
+      background: var(--vc-surface-elevated);
+      color: var(--vc-ink);
+      font-size: inherit;
     }
   `,
 })
@@ -39,6 +61,7 @@ export class LocaleControl {
   readonly options = SUPPORTED_LOCALES;
   readonly names = LOCALE_OPTION_NAMES;
   readonly label = ui.language;
+  readonly variant = input<'compact' | 'field'>('compact');
   private readonly selectEl = viewChild<ElementRef<HTMLSelectElement>>('selectEl');
 
   constructor() {

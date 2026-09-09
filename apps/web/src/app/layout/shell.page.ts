@@ -53,10 +53,8 @@ import {
   IconButton,
   Input,
   ThemeToggle,
-  LocaleControl,
   UpdateBanner,
   PushOptInBanner,
-  PushDevicesControl,
   InAppNoticeBanner,
   VcTooltip,
   provideVcTooltipDefaults,
@@ -88,10 +86,8 @@ import { pluralCount } from '../core/i18n/format';
     ConnectionBanner,
     UpdateBanner,
     PushOptInBanner,
-    PushDevicesControl,
     InAppNoticeBanner,
     ThemeToggle,
-    LocaleControl,
     DensityControl,
     IconButton,
     Input,
@@ -175,7 +171,6 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly sidebarOpen = signal(true);
   /** B-184: icon-only desktop rail; persisted in localStorage. */
   readonly navCompact = signal(readNavCompact());
-  readonly contextOpen = signal(false);
   readonly fileDragActive = signal(false);
   readonly search = signal('');
   readonly searchFocused = signal(false);
@@ -315,15 +310,10 @@ export class ShellPage implements OnInit, OnDestroy {
         this.notificationPrefs.closePanel();
         return;
       }
-      if (this.push.devicesOpen()) {
-        this.push.devicesOpen.set(false);
-        return;
-      }
       if (this.narrowViewport() && this.sidebarOpen()) {
         this.sidebarOpen.set(false);
         return;
       }
-      this.contextOpen.set(false);
       this.searchFocused.set(false);
       this.searchOpen.set(false);
       (document.activeElement as HTMLElement | null)?.blur?.();
@@ -439,20 +429,21 @@ export class ShellPage implements OnInit, OnDestroy {
     });
   }
 
-  toggleContext(): void {
+  togglePreferences(): void {
+    this.threads.close();
     this.pins.closePanel();
     this.saved.closePanel();
-    this.contextOpen.update((v) => !v);
+    this.notificationPrefs.togglePanel();
   }
 
   openPinsPanel(): void {
-    this.contextOpen.set(false);
+    this.notificationPrefs.closePanel();
     this.saved.closePanel();
     this.pins.openPanel();
   }
 
   openSavedPanel(): void {
-    this.contextOpen.set(false);
+    this.notificationPrefs.closePanel();
     this.pins.closePanel();
     this.saved.openPanel();
   }

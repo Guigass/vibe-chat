@@ -33,9 +33,8 @@ test.describe(`i18n locale (${AUTH_MODE})`, () => {
     await page.waitForURL(/\/app/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.getByLabel(/Search messages/i)).toBeVisible();
-    await expect(page.locator('.shell__actions').getByTestId('locale-select')).toHaveValue('en');
 
-    await page.getByRole('button', { name: /Context panel/i }).click();
+    await page.getByRole('button', { name: /Settings|Configurações/i }).click();
     await expect(page.getByRole('heading', { name: /Settings/i })).toBeVisible();
     await expect(page.locator('.shell__context').getByTestId('locale-select')).toHaveValue('en');
   });

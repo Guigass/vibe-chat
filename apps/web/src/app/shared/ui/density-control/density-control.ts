@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { ui } from '../../../core/i18n/strings';
 import { ThemeService } from '../../../core/services/theme.service';
 import { IconButton } from '../icon-button/icon-button';
 
@@ -8,7 +9,7 @@ import { IconButton } from '../icon-button/icon-button';
   imports: [IconButton],
   template: `
     <vc-icon-button
-      [label]="theme.density() === 'compact' ? 'Densidade confortável' : 'Densidade compacta'"
+      [label]="theme.density() === 'compact' ? ui.densityComfortable : ui.densityCompact"
       (click)="theme.toggleDensity()"
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -23,4 +24,5 @@ import { IconButton } from '../icon-button/icon-button';
 })
 export class DensityControl {
   readonly theme = inject(ThemeService);
+  readonly ui = ui;
 }

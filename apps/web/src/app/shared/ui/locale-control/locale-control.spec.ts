@@ -31,6 +31,26 @@ describe('LocaleControl', () => {
     await second.whenStable();
     expect(nativeSelect(second.nativeElement).value).toBe('en');
   });
+
+  it('applies the chosen locale from the field variant', async () => {
+    const locale = signal<AppLocale>('pt-BR');
+    const apply = vi.fn(async (next: AppLocale) => locale.set(next));
+    await TestBed.configureTestingModule({
+      imports: [LocaleControl],
+      providers: [{ provide: LocaleService, useValue: { locale, apply } }],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(LocaleControl);
+    fixture.componentRef.setInput('variant', 'field');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const select = nativeSelect(fixture.nativeElement);
+    expect(select.value).toBe('pt-BR');
+    select.value = 'en';
+    select.dispatchEvent(new Event('change'));
+    expect(apply).toHaveBeenCalledWith('en');
+  });
 });
 
 function nativeSelect(host: HTMLElement): HTMLSelectElement {

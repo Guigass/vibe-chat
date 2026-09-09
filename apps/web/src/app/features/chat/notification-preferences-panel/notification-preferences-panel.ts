@@ -5,8 +5,9 @@ import { ui } from '../../../core/i18n/strings';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { idsEqual } from '../../../core/services/message-sync';
 import { NotificationPreferencesStore } from '../../../core/services/notification-preferences.store';
+import { PushNotificationService } from '../../../core/services/push-notification.service';
 import { NotificationLevel, NotificationPreferences, WorkspaceMember } from '../../../shared/models/chat.models';
-import { Button, IconButton, Input } from '../../../shared/ui';
+import { Button, IconButton, Input, LocaleControl, PushDevicesControl } from '../../../shared/ui';
 
 const PRIORITY_CONTACT_LIMIT = 50;
 
@@ -57,15 +58,25 @@ function weekdayLabels(locale: string): Array<{ bit: number; label: string }> {
 @Component({
   selector: 'vc-notification-preferences-panel',
   standalone: true,
-  imports: [Button, IconButton, Input],
+  imports: [Button, IconButton, Input, LocaleControl, PushDevicesControl],
   template: `
-    <section class="notif-panel" data-testid="notif-panel" [attr.aria-label]="ui.notificationPrefs">
+    <section class="notif-panel" data-testid="prefs-panel" [attr.aria-label]="ui.settings">
       <header class="notif-panel__header">
-        <h2>{{ ui.notifTitle }}</h2>
+        <h2>{{ ui.settings }}</h2>
         <vc-icon-button [label]="ui.closePanel" (click)="store.closePanel()">
           <span aria-hidden="true">×</span>
         </vc-icon-button>
       </header>
+
+      <p class="notif-panel__hint">
+        {{ ui.workspace }} <strong>{{ channels.activeWorkspace()?.name || '—' }}</strong>
+        · {{ ui.you }}: <strong>{{ auth.profile()?.name || '—' }}</strong>
+      </p>
+
+      <fieldset class="notif-panel__group">
+        <legend>{{ ui.language }}</legend>
+        <vc-locale-control variant="field" />
+      </fieldset>
 
       @if (store.loading() && !store.preferences()) {
         <p class="notif-panel__status">{{ ui.notifLoading }}</p>
@@ -74,8 +85,9 @@ function weekdayLabels(locale: string): Array<{ bit: number; label: string }> {
           <p class="notif-panel__status" role="alert">{{ store.error() }}</p>
         }
 
-        <fieldset class="notif-panel__group">
-          <legend>{{ ui.notifWhen }}</legend>
+        <fieldset class="notif-panel__group" data-testid="notif-panel">
+          <legend>{{ ui.notifTitle }}</legend>
+          <p class="notif-panel__hint">{{ ui.notifWhen }}</p>
           @for (option of levelOptions; track option.value) {
             <label class="notif-panel__choice">
               <input
@@ -87,14 +99,13 @@ function weekdayLabels(locale: string): Array<{ bit: number; label: string }> {
               {{ option.label }}
             </label>
           }
-        </fieldset>
 
         <label class="notif-panel__choice">
           <input type="checkbox" [checked]="hidePreview()" (change)="onChecked($event, hidePreview)" />
           {{ ui.notifHidePreview }}
         </label>
 
-        <fieldset class="notif-panel__group">
+        <fieldset class="notif-panel__dnd-block">
           <legend>
             <label class="notif-panel__choice notif-panel__choice--legend">
               <input type="checkbox" [checked]="dndEnabled()" (change)="onChecked($event, dndEnabled)" />
@@ -196,7 +207,13 @@ function weekdayLabels(locale: string): Array<{ bit: number; label: string }> {
             <span class="notif-panel__saved" role="status">{{ ui.notifSaved }}</span>
           }
         </div>
+        </fieldset>
       }
+
+      <fieldset class="notif-panel__group">
+        <legend>{{ ui.devices }}</legend>
+        <vc-push-devices-control />
+      </fieldset>
     </section>
   `,
   styles: `
@@ -244,6 +261,14 @@ function weekdayLabels(locale: string): Array<{ bit: number; label: string }> {
       font-size: 0.8rem;
       font-weight: 600;
       color: var(--vc-ink-muted);
+    }
+    .notif-panel__dnd-block {
+      display: flex;
+      flex-direction: column;
+      gap: var(--vc-space-2);
+      border: 0;
+      margin: 0;
+      padding: 0;
     }
     .notif-panel__choice {
       display: flex;
@@ -426,9 +451,10 @@ function weekdayLabels(locale: string): Array<{ bit: number; label: string }> {
 export class NotificationPreferencesPanel {
   readonly ui = ui;
   readonly store = inject(NotificationPreferencesStore);
-  private readonly auth = inject(AuthService);
-  private readonly channels = inject(ChannelStore);
+  readonly auth = inject(AuthService);
+  readonly channels = inject(ChannelStore);
   private readonly locales = inject(LocaleService);
+  private readonly push = inject(PushNotificationService);
 
   readonly dayLabels = computed(() => weekdayLabels(this.locales.locale()));
   readonly timeZoneOptions = computed(() => {
@@ -482,6 +508,7 @@ export class NotificationPreferencesPanel {
   });
 
   constructor() {
+    void this.push.refreshDevices();
     effect(() => {
       const prefs = this.store.preferences();
       if (!prefs || this.saving()) {

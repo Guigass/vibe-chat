@@ -5,6 +5,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { LocaleService } from '../../../core/i18n/locale.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { NotificationPreferencesStore } from '../../../core/services/notification-preferences.store';
+import { PushNotificationService } from '../../../core/services/push-notification.service';
 import { mapNotificationPreferences } from '../../../shared/notifications/notification-preferences';
 import { NotificationPreferencesPanel } from './notification-preferences-panel';
 
@@ -41,6 +42,7 @@ describe('NotificationPreferencesPanel', () => {
         {
           provide: ChannelStore,
           useValue: {
+            activeWorkspace: () => ({ name: 'Acme' }),
             peerCandidates: () => [
               { userId: 'u-bob', displayName: 'Bob Santos', email: 'bob@vibechat.local', role: 'Member' },
               { userId: 'u-carol', displayName: 'Carol Lima', email: 'carol@vibechat.local', role: 'Member' },
@@ -59,7 +61,15 @@ describe('NotificationPreferencesPanel', () => {
         },
         {
           provide: LocaleService,
-          useValue: { locale: () => 'pt-BR' },
+          useValue: { locale: () => 'pt-BR', apply: vi.fn() },
+        },
+        {
+          provide: PushNotificationService,
+          useValue: {
+            devices: () => [],
+            refreshDevices: vi.fn().mockResolvedValue(undefined),
+            removeDevice: vi.fn(),
+          },
         },
       ],
     }).compileComponents();
@@ -104,9 +114,17 @@ describe('NotificationPreferencesPanel', () => {
             save: vi.fn(),
           },
         },
-        { provide: ChannelStore, useValue: { peerCandidates: () => [] } },
+        { provide: ChannelStore, useValue: { peerCandidates: () => [], activeWorkspace: () => ({ name: 'Acme' }) } },
         { provide: AuthService, useValue: { profile: () => ({ id: 'u-alice' }) } },
-        { provide: LocaleService, useValue: { locale: () => 'pt-BR' } },
+        { provide: LocaleService, useValue: { locale: () => 'pt-BR', apply: vi.fn() } },
+        {
+          provide: PushNotificationService,
+          useValue: {
+            devices: () => [],
+            refreshDevices: vi.fn().mockResolvedValue(undefined),
+            removeDevice: vi.fn(),
+          },
+        },
       ],
     }).compileComponents();
 
@@ -114,5 +132,48 @@ describe('NotificationPreferencesPanel', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('form').length).toBe(0);
     expect(fixture.nativeElement.querySelector('vc-button')).not.toBeNull();
+  });
+
+  it('keeps language, notifications and devices in one panel', async () => {
+    await TestBed.configureTestingModule({
+      imports: [NotificationPreferencesPanel],
+      providers: [
+        {
+          provide: NotificationPreferencesStore,
+          useValue: {
+            preferences: () => null,
+            loading: () => false,
+            error: () => null,
+            closePanel: vi.fn(),
+            save: vi.fn(),
+          },
+        },
+        { provide: ChannelStore, useValue: { peerCandidates: () => [], activeWorkspace: () => ({ name: 'Acme' }) } },
+        { provide: AuthService, useValue: { profile: () => ({ id: 'u-alice', name: 'Alice' }) } },
+        { provide: LocaleService, useValue: { locale: () => 'en', apply: vi.fn() } },
+        {
+          provide: PushNotificationService,
+          useValue: {
+            devices: () => [],
+            refreshDevices: vi.fn().mockResolvedValue(undefined),
+            removeDevice: vi.fn(),
+          },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(NotificationPreferencesPanel);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('[data-testid="prefs-panel"]')).not.toBeNull();
+    expect(host.querySelector('[data-testid="locale-select"]')?.querySelector('option[value="en"]')).not.toBeNull();
+    expect(host.querySelector('input[name="prefs-theme"]')).toBeNull();
+    expect(host.querySelector('input[name="prefs-density"]')).toBeNull();
+    expect(host.querySelector('[data-testid="notif-panel"]')).not.toBeNull();
+    expect(host.querySelector('[data-testid="push-devices"]')).not.toBeNull();
+    expect(host.textContent).toContain('Alice');
+    expect(host.textContent).toContain('Acme');
   });
 });

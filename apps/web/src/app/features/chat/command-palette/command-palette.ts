@@ -5,6 +5,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { CommandPaletteService } from '../../../core/services/command-palette.service';
 import { MessageStore } from '../../../core/services/message.store';
+import { NotificationPreferencesStore } from '../../../core/services/notification-preferences.store';
 import { SavedStore } from '../../../core/services/saved.store';
 import { ThemeService } from '../../../core/services/theme.service';
 import { hasAdminDashboard } from '../../admin/admin-permissions';
@@ -264,6 +265,7 @@ export class CommandPalette {
   private readonly channels = inject(ChannelStore);
   private readonly messages = inject(MessageStore);
   private readonly saved = inject(SavedStore);
+  private readonly notificationPrefs = inject(NotificationPreferencesStore);
   private readonly slash = inject(SlashCommandsService);
   private readonly theme = inject(ThemeService);
   private readonly auth = inject(AuthService);
@@ -420,6 +422,13 @@ export class CommandPalette {
         action: { type: 'saved' },
       },
       {
+        id: 'action:settings',
+        kind: 'action',
+        label: ui.settings,
+        keywords: ['configurações', 'settings', 'preferências', 'idioma', 'notificação', 'tema'],
+        action: { type: 'settings' },
+      },
+      {
         id: 'action:theme',
         kind: 'action',
         label: this.theme.theme() === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro',
@@ -491,6 +500,9 @@ export class CommandPalette {
         return;
       case 'saved':
         this.saved.openPanel();
+        return;
+      case 'settings':
+        this.notificationPrefs.openPanel();
         return;
       case 'admin':
         void this.router.navigateByUrl('/admin');
