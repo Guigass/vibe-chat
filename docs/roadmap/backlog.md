@@ -51,6 +51,7 @@ e entram na **safety lane** do Build (antes de novas features de wave).
 | BUG-021 | Convidado para DM em grupo: front não atualiza | Aberto (Média) — sidebar/hub do convidado só após F5 |
 | BUG-022 | Busca do header: painel desalinhado / fecha ao selecionar | Aberto (Média) — 1ª abertura fora do campo; opção fecha a barra |
 | BUG-023 | Busca rígida / resultados insatisfatórios | Aberto (Média) — fecha em **B-188** (prefixo, acento, canal/pessoa/anexo) |
+| BUG-024 | Comandos slash não traduzem com o locale | Aberto (Média) — `/topico` `/ajuda` `/convidar` e usage ficam em PT-BR |
 | BUG-003 | Upload de arquivo com erro | **Done** — presign no PublicEndpoint + CORS fail-closed + resolveContentType |
 | BUG-004 | Áudio do microfone não envia | **Done** — MIME base + erros visíveis + discard/onstop + regressão Vitest |
 | BUG-005 | `/admin` não entra (Member) | **Done** — shell com empty-state; Demo/Owner intactos |

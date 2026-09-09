@@ -27,6 +27,7 @@ Regras do registro:
 
 | ID      | Área              | Achado                                                                | Severidade | Status                                       |
 | ------- | ----------------- | --------------------------------------------------------------------- | ---------- | -------------------------------------------- |
+| BUG-024 | Composer / slash  | Comandos `/` não acompanham o idioma da UI                            | Média      | Aberto                                       |
 | BUG-023 | Busca / relevância | Resultados rígidos; FTS não acha prefixo, acento, pessoa ou anexo     | Média      | Aberto — fecha em **B-188** |
 | BUG-022 | Header / busca    | Painel desalinhado na 1ª abertura; selecionar opção fecha a barra     | Média      | Aberto                                       |
 | BUG-021 | Group DM / realtime | Convidado para DM em grupo não vê a conversa até recarregar         | Média      | Aberto                                       |
@@ -44,6 +45,38 @@ Regras do registro:
 | BUG-018 | Timeline / scroll | Scroll não fica colado no fim ao enviar/receber (às vezes)           | Média      | Done                                         |
 
 ## Detalhamento
+
+### BUG-024 — Comandos slash não traduzem com o locale
+
+- Status: **Aberto**
+- Severidade: **Média** (envio e leitura seguem; quem troca o idioma ainda
+  vê `/topico`, `/convidar`, `/ajuda` e o usage em português).
+- Observado em: 2026-09-09; relato de produto no lab Compose
+  (`apps` / `localhost:4200`). Trocar Configurações → idioma (`en` e outros
+  de B-100) atualiza o restante da UI; o menu de `/` no composer, o
+  `/ajuda` e as dicas de uso continuam com tokens PT-BR.
+- Hipótese: B-087 / `contratos.md` congelam `name` e `usage`
+  (`/topico <texto>`, `/convidar <email>`, `/ajuda`). Só `description`
+  passa por `SlashCommandCatalog.Describe` + `me.locale`. O autocomplete
+  mostra `usage` + `description`; o catálogo web (`slash.unknownHelp`,
+  `slash.topicUsage`, `slash.inviteUsage`, `slash.aiDisabled`) ainda cita
+  `/ajuda`, `/topico`, `/convidar`, `/resumir`. `DEMO_COMMANDS` e o
+  endpoint `GET …/commands` repetem o usage fixo. Distinto de B-100
+  (catálogo da UI) — a descrição já localiza; o comando visível não.
+- Arquivos: `apps/api/Program.cs` (`GET …/commands`),
+  `modules/Conversations/SlashCommandCatalog.cs`,
+  `apps/web/src/app/features/chat/composer/slash-commands.service.ts`,
+  `apps/web/src/app/features/chat/composer/slash-autocomplete.ts`,
+  `apps/web/src/app/core/i18n/strings.ts` + `public/locale/messages.*.json`.
+- Resultado esperado: com locale ≠ `pt-BR`, o menu, o `/ajuda` e as dicas
+  de uso seguem o idioma (aliases no locale, placeholders localizados).
+  Tokens canônicos no fio podem permanecer estáveis. Distinto de B-087
+  (descoberta) e de B-100 (catálogo geral).
+- Risk class: R1.
+- Owner automático: Frontend (D) + Conversations (C).
+- Critério de resolução: locale `en` (e um terceiro) — autocomplete e
+  ajuda sem token PT-BR solto; aliases aceitos no parser; regressão do
+  discovery + i18n; finding `Done`.
 
 ### BUG-023 — Busca: resultados rígidos, pouco versáteis
 
