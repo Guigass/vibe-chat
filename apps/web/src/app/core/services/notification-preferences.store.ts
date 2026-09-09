@@ -85,6 +85,16 @@ export class NotificationPreferencesStore implements OnDestroy {
 
   readonly channelsWithOverride = computed(() => new Set(this.channelOverrides().keys()));
 
+  readonly followAllChannelIds = computed(() => {
+    const ids = new Set<string>();
+    for (const [channelId, override] of this.channelOverrides()) {
+      if (override.followAllThreads) {
+        ids.add(channelId);
+      }
+    }
+    return ids;
+  });
+
   readonly dndActive = computed(() => {
     this.nowTickSignal();
     const prefs = this.preferencesSignal();
@@ -162,6 +172,16 @@ export class NotificationPreferencesStore implements OnDestroy {
       this.upsertOverride(override);
     } catch {
       this.errorSignal.set('Não foi possível silenciar o canal.');
+    }
+  }
+
+  async setFollowAllThreads(channelId: string, followAll: boolean): Promise<void> {
+    this.errorSignal.set(null);
+    try {
+      const override = await this.api.setFollowAllThreads(channelId, followAll);
+      this.upsertOverride(override);
+    } catch {
+      this.errorSignal.set('Não foi possível atualizar o acompanhamento de threads.');
     }
   }
 

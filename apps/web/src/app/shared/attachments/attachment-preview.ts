@@ -51,7 +51,8 @@ export type MessageMenuActionId =
   | 'unpin'
   | 'save'
   | 'unsave'
-  | 'mark-unread';
+  | 'mark-unread'
+  | 'share-to-channel';
 
 export function menuActionsForMessage(options: {
   mine: boolean;
@@ -62,6 +63,7 @@ export function menuActionsForMessage(options: {
   showSave?: boolean;
   isSaved?: boolean;
   showMarkUnread?: boolean;
+  showShareToChannel?: boolean;
   replyCount?: number;
   hasLinkPreview?: boolean;
 }): Array<{ id: MessageMenuActionId; label: string; danger?: boolean }> {
@@ -72,6 +74,9 @@ export function menuActionsForMessage(options: {
   }> = [];
   if (options.showForward) {
     items.push({ id: 'forward', label: 'Encaminhar' });
+  }
+  if (options.showShareToChannel) {
+    items.push({ id: 'share-to-channel', label: 'Compartilhar no canal' });
   }
   if (options.showThread) {
     const count = options.replyCount ?? 0;

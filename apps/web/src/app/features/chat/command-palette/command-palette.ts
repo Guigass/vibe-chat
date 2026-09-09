@@ -6,6 +6,7 @@ import { ChannelStore } from '../../../core/services/channel.store';
 import { CommandPaletteService } from '../../../core/services/command-palette.service';
 import { MessageStore } from '../../../core/services/message.store';
 import { SavedStore } from '../../../core/services/saved.store';
+import { FollowedThreadsStore } from '../../../core/services/followed-threads.store';
 import { ThemeService } from '../../../core/services/theme.service';
 import { hasAdminDashboard } from '../../admin/admin-permissions';
 import {
@@ -264,6 +265,7 @@ export class CommandPalette {
   private readonly channels = inject(ChannelStore);
   private readonly messages = inject(MessageStore);
   private readonly saved = inject(SavedStore);
+  private readonly followed = inject(FollowedThreadsStore);
   private readonly slash = inject(SlashCommandsService);
   private readonly theme = inject(ThemeService);
   private readonly auth = inject(AuthService);
@@ -420,6 +422,13 @@ export class CommandPalette {
         action: { type: 'saved' },
       },
       {
+        id: 'action:followed-threads',
+        kind: 'action',
+        label: 'Ir para threads seguidas',
+        keywords: ['threads', 'seguidas', 'follow'],
+        action: { type: 'followed-threads' },
+      },
+      {
         id: 'action:theme',
         kind: 'action',
         label: this.theme.theme() === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro',
@@ -491,6 +500,9 @@ export class CommandPalette {
         return;
       case 'saved':
         this.saved.openPanel();
+        return;
+      case 'followed-threads':
+        this.followed.openPanel();
         return;
       case 'admin':
         void this.router.navigateByUrl('/admin');

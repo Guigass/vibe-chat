@@ -51,6 +51,9 @@ public sealed class ChannelNotificationPreference
     public ChannelId ChannelId { get; set; }
     public NotificationLevel Level { get; set; }
     public DateTimeOffset? MutedUntil { get; set; }
+
+    /// <summary>B-102: auto-subscribe to newly created threads in this channel.</summary>
+    public bool FollowAllThreads { get; set; }
 }
 
 /// <summary>
@@ -161,7 +164,12 @@ public static class PushDispatchPolicies
         return globalLevel;
     }
 
-    public static bool ShouldNotifyForLevel(NotificationLevel level, bool isDirect, bool isMentioned, bool isAuthor)
+    public static bool ShouldNotifyForLevel(
+        NotificationLevel level,
+        bool isDirect,
+        bool isMentioned,
+        bool isAuthor,
+        bool isFollowedThread = false)
     {
         if (isAuthor || level == NotificationLevel.None)
         {
@@ -173,7 +181,7 @@ public static class PushDispatchPolicies
             return true;
         }
 
-        return level == NotificationLevel.All || isMentioned;
+        return level == NotificationLevel.All || isMentioned || isFollowedThread;
     }
 
     /// <summary>
@@ -288,10 +296,13 @@ public static class PushDispatchPolicies
         string preview,
         Guid channelId,
         Guid messageId,
-        long sequence)
+        long sequence,
+        Guid? threadId = null)
     {
         var title = NotificationTitle(isDirect, authorName, channelName);
-        var url = $"/app?channel={channelId:D}&message={messageId:D}&seq={sequence}";
+        var url = threadId is Guid tid
+            ? $"/app?channel={channelId:D}&message={messageId:D}&seq={sequence}&thread={tid:D}"
+            : $"/app?channel={channelId:D}&message={messageId:D}&seq={sequence}";
         return JsonSerializer.Serialize(new
         {
             notification = new
@@ -305,6 +316,7 @@ public static class PushDispatchPolicies
                     channelId,
                     messageId,
                     seq = sequence,
+                    threadId,
                     onActionClick = new
                     {
                         @default = new

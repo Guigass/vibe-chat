@@ -84,6 +84,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<TenantLinkPreviewSettings> TenantLinkPreviewSettings => Set<TenantLinkPreviewSettings>();
     public DbSet<PinnedMessage> PinnedMessages => Set<PinnedMessage>();
     public DbSet<SavedMessage> SavedMessages => Set<SavedMessage>();
+    public DbSet<ThreadSubscription> ThreadSubscriptions => Set<ThreadSubscription>();
     public DbSet<Poll> Polls => Set<Poll>();
     public DbSet<PollOption> PollOptions => Set<PollOption>();
     public DbSet<PollVote> PollVotes => Set<PollVote>();
@@ -274,6 +275,19 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
+        modelBuilder.Entity<ThreadSubscription>(entity =>
+        {
+            entity.ToTable("thread_subscriptions", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.Source).HasConversion<string>().HasMaxLength(16);
+            entity.HasIndex(x => new { x.TenantId, x.UserId, x.ThreadId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.UserId, x.ChannelId });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
         modelBuilder.Entity<Poll>(entity =>
         {
             entity.ToTable("polls", "messaging");
@@ -419,6 +433,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
             entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
             entity.Property(x => x.Level).HasConversion<string>().HasMaxLength(32);
+            entity.Property(x => x.FollowAllThreads).HasDefaultValue(false);
             entity.HasIndex(x => new { x.ChannelId, x.UserId }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
@@ -763,8 +778,19 @@ public sealed class MessageWriter(
             var isThreadParent = threadParentMessageId is Guid parentId
                 && target.Id.Value == parentId
                 && target.ConversationId == parentChannelId;
+            var citedThreadId = target.ThreadId;
+            var isShareFromThreadReply = threadId is null
+                && citedThreadId is Guid shareThreadId
+                && target.ConversationId == new ChannelId(shareThreadId);
 
-            if (!sameChannelConversation && !sameThreadConversation && !isThreadParent)
+            if (isShareFromThreadReply && citedThreadId is Guid resolvedCitedThreadId)
+            {
+                var citedThread = await dbContext.MessageThreads.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == resolvedCitedThreadId && x.TenantId == command.TenantId, cancellationToken);
+                isShareFromThreadReply = citedThread is not null && citedThread.ChannelId == parentChannelId;
+            }
+
+            if (!sameChannelConversation && !sameThreadConversation && !isThreadParent && !isShareFromThreadReply)
             {
                 throw new ArgumentException("ReplyToDifferentChannel");
             }
@@ -776,7 +802,8 @@ public sealed class MessageWriter(
                 preview = target.DeletedAt is null
                     ? TruncateReplyPreview(target.Body)
                     : string.Empty,
-                deleted = target.DeletedAt is not null
+                deleted = target.DeletedAt is not null,
+                threadId = target.ThreadId
             };
         }
 
@@ -785,7 +812,8 @@ public sealed class MessageWriter(
             .Distinct()
             .ToArray();
         var body = MessageBodyPolicies.Normalize(command.Body);
-        if (MessageBodyPolicies.IsEmpty(body) && attachmentIds.Length == 0)
+        if (MessageBodyPolicies.IsEmpty(body) && attachmentIds.Length == 0
+            && !(command.AllowEmptyWithReplyTo && command.ReplyToMessageId is not null))
         {
             throw new ArgumentException("Message body or attachments are required.");
         }
@@ -865,6 +893,34 @@ public sealed class MessageWriter(
             body,
             now,
             cancellationToken);
+
+        if (threadId is Guid followThreadId)
+        {
+            await ThreadSubscriptionWriter.EnsureAsync(
+                dbContext,
+                command.TenantId,
+                command.UserId,
+                followThreadId,
+                parentChannelId,
+                ThreadSubscriptionSource.Reply,
+                sequence,
+                now,
+                cancellationToken);
+            foreach (var mentionedUserId in mentionContext.MentionedUserIds)
+            {
+                var mentionReadSeq = sequence > 0 ? sequence - 1 : 0;
+                await ThreadSubscriptionWriter.EnsureAsync(
+                    dbContext,
+                    command.TenantId,
+                    new UserId(mentionedUserId),
+                    followThreadId,
+                    parentChannelId,
+                    ThreadSubscriptionSource.Mention,
+                    mentionReadSeq,
+                    now,
+                    cancellationToken);
+            }
+        }
 
         var result = new MessageSendResult(message.Id, message.Sequence, message.CreatedAt, false);
 
@@ -1395,6 +1451,89 @@ public sealed class MessageWriter(
         }
 
         return flat[..(maxLength - 1)] + "…";
+    }
+}
+
+public static class ThreadSubscriptionWriter
+{
+    public static async Task EnsureAsync(
+        VibeChatDbContext db,
+        TenantId tenantId,
+        UserId userId,
+        Guid threadId,
+        ChannelId channelId,
+        ThreadSubscriptionSource source,
+        long lastReadSeq,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var exists = await db.ThreadSubscriptions
+            .AnyAsync(x => x.UserId == userId && x.ThreadId == threadId, cancellationToken);
+        if (exists)
+        {
+            return;
+        }
+
+        db.ThreadSubscriptions.Add(new ThreadSubscription
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            UserId = userId,
+            ThreadId = threadId,
+            ChannelId = channelId,
+            Source = source,
+            LastReadSeq = lastReadSeq < 0 ? 0 : lastReadSeq,
+            CreatedAt = now
+        });
+    }
+
+    public static async Task MarkReadAsync(
+        VibeChatDbContext db,
+        UserId userId,
+        Guid threadId,
+        long lastReadSeq,
+        CancellationToken cancellationToken)
+    {
+        if (lastReadSeq <= 0)
+        {
+            return;
+        }
+
+        var row = await db.ThreadSubscriptions
+            .FirstOrDefaultAsync(x => x.UserId == userId && x.ThreadId == threadId, cancellationToken);
+        if (row is null || row.LastReadSeq >= lastReadSeq)
+        {
+            return;
+        }
+
+        row.LastReadSeq = lastReadSeq;
+    }
+
+    public static async Task SubscribeFollowAllAsync(
+        VibeChatDbContext db,
+        TenantId tenantId,
+        Guid threadId,
+        ChannelId channelId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var userIds = await db.ChannelNotificationPreferences
+            .Where(x => x.ChannelId == channelId && x.FollowAllThreads)
+            .Select(x => x.UserId)
+            .ToArrayAsync(cancellationToken);
+        foreach (var userId in userIds)
+        {
+            await EnsureAsync(
+                db,
+                tenantId,
+                userId,
+                threadId,
+                channelId,
+                ThreadSubscriptionSource.Manual,
+                0,
+                now,
+                cancellationToken);
+        }
     }
 }
 

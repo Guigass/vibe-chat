@@ -677,6 +677,10 @@ public sealed class BackendUnitTests
         PushDispatchPolicies.ShouldNotifyForLevel(level, isDirect: true, isMentioned: false, isAuthor: true).Should().BeFalse();
         PushDispatchPolicies.ShouldNotifyForLevel(level, isDirect: false, isMentioned: true, isAuthor: false).Should().BeTrue();
         PushDispatchPolicies.ShouldNotifyForLevel(level, isDirect: false, isMentioned: false, isAuthor: false).Should().BeFalse();
+        PushDispatchPolicies.ShouldNotifyForLevel(level, isDirect: false, isMentioned: false, isAuthor: false, isFollowedThread: true)
+            .Should().BeTrue();
+        PushDispatchPolicies.ShouldNotifyForLevel(NotificationLevel.None, isDirect: false, isMentioned: false, isAuthor: false, isFollowedThread: true)
+            .Should().BeFalse();
     }
 
     [Fact]

@@ -1061,6 +1061,7 @@ export class MessageBubble {
   readonly showPinAction = input(false);
   readonly showSaveAction = input(false);
   readonly showMarkUnreadAction = input(false);
+  readonly showShareToChannel = input(false);
   readonly highlighted = input(false);
   readonly delete = output<void>();
   readonly removeLinkPreview = output<void>();
@@ -1074,6 +1075,7 @@ export class MessageBubble {
   readonly save = output<void>();
   readonly unsave = output<void>();
   readonly markUnread = output<void>();
+  readonly shareToChannel = output<void>();
   readonly startEdit = output<void>();
 
   readonly transcript = signal<string | null>(null);
@@ -1135,6 +1137,7 @@ export class MessageBubble {
       showSave: this.showSaveAction(),
       isSaved: !!this.message().isSaved,
       showMarkUnread: this.showMarkUnreadAction(),
+      showShareToChannel: this.showShareToChannel(),
       replyCount: this.message().replyCount,
       hasLinkPreview: !!this.visibleLinkPreview(),
     }),
@@ -1331,6 +1334,9 @@ export class MessageBubble {
         break;
       case 'mark-unread':
         this.markUnread.emit();
+        break;
+      case 'share-to-channel':
+        this.shareToChannel.emit();
         break;
     }
   }

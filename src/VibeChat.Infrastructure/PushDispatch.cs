@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lib.Net.Http.WebPush;
 using Lib.Net.Http.WebPush.Authentication;
@@ -151,6 +152,9 @@ public sealed class PushDispatcher(
         var authorName = root["authorName"]?.GetValue<string>() ?? string.Empty;
         var body = root["body"]?.GetValue<string>() ?? string.Empty;
         var mentioned = ParseMentionedUserIds(root["mentionedUserIds"]);
+        var threadId = root["threadId"] is JsonNode threadNode && threadNode.GetValueKind() != JsonValueKind.Null
+            ? threadNode.GetValue<Guid?>()
+            : null;
 
         var channel = await dbContext.Channels.AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == channelId && x.TenantId == tenantId, cancellationToken);
@@ -162,6 +166,16 @@ public sealed class PushDispatcher(
         var isDirect = channel.Type == ChannelType.Direct;
         var candidateIds = await LoadCandidateUserIdsAsync(tenantId, channel, cancellationToken);
         var mentionedSet = mentioned.ToHashSet();
+        var followerSet = new HashSet<Guid>();
+        Dictionary<UserId, ThreadSubscription> threadReads = [];
+        if (threadId is Guid followedThreadId)
+        {
+            var follows = await dbContext.ThreadSubscriptions.AsNoTracking()
+                .Where(x => x.ThreadId == followedThreadId && candidateIds.Contains(x.UserId))
+                .ToListAsync(cancellationToken);
+            followerSet = follows.Select(x => x.UserId.Value).ToHashSet();
+            threadReads = follows.ToDictionary(x => x.UserId);
+        }
 
         // B-097: batch-load global + per-channel preferences for every candidate up front — the
         // old two-loop shape only loaded preferences for users that a hardcoded mention/DM check
@@ -189,7 +203,9 @@ public sealed class PushDispatcher(
                 channelOverride is null ? null : (channelOverride.Level, channelOverride.MutedUntil),
                 now);
             var isMentioned = mentionedSet.Contains(userId.Value);
-            if (!PushDispatchPolicies.ShouldNotifyForLevel(effectiveLevel, isDirect, isMentioned, userId.Value == authorId))
+            var isFollowedThread = followerSet.Contains(userId.Value);
+            if (!PushDispatchPolicies.ShouldNotifyForLevel(
+                    effectiveLevel, isDirect, isMentioned, userId.Value == authorId, isFollowedThread))
             {
                 continue;
             }
@@ -216,10 +232,21 @@ public sealed class PushDispatcher(
                 continue;
             }
 
-            cursors.TryGetValue(userId, out var cursor);
-            if (PushDispatchPolicies.IsSuppressedByCursor(cursor?.LastReadSequence, sequence))
+            if (threadId is not null)
             {
-                continue;
+                threadReads.TryGetValue(userId, out var follow);
+                if (PushDispatchPolicies.IsSuppressedByCursor(follow?.LastReadSeq, sequence))
+                {
+                    continue;
+                }
+            }
+            else
+            {
+                cursors.TryGetValue(userId, out var cursor);
+                if (PushDispatchPolicies.IsSuppressedByCursor(cursor?.LastReadSequence, sequence))
+                {
+                    continue;
+                }
             }
 
             eligible.Add(userId);
@@ -247,9 +274,9 @@ public sealed class PushDispatcher(
         var mentionNames = await LoadMentionDisplayNamesAsync(body, mentioned, cancellationToken);
         var preview = PushDispatchPolicies.TruncatePreview(MentionTokens.FormatPlainText(body, mentionNames));
         var payload = PushDispatchPolicies.BuildNgswPayload(
-            authorName, isDirect, channel.Name, preview, channelId.Value, messageId, sequence);
+            authorName, isDirect, channel.Name, preview, channelId.Value, messageId, sequence, threadId);
         var hiddenPreviewPayload = PushDispatchPolicies.BuildNgswPayload(
-            authorName, isDirect, channel.Name, string.Empty, channelId.Value, messageId, sequence);
+            authorName, isDirect, channel.Name, string.Empty, channelId.Value, messageId, sequence, threadId);
         var gone = new List<PushSubscriptionEntity>();
         foreach (var subscription in subscriptions)
         {

@@ -105,6 +105,7 @@ export interface MessageReplyTo {
   authorName: string;
   preview: string;
   deleted: boolean;
+  threadId?: string | null;
 }
 
 export interface MessageForwardedFrom {
@@ -220,6 +221,24 @@ export interface ChatThread {
   createdAt: string;
   replyCount: number;
   parentMessage?: ChatMessage | null;
+  following?: boolean;
+}
+
+export interface FollowedThreadItem {
+  threadId: string;
+  channelId: string;
+  channelName: string;
+  parentMessageId: string;
+  parentPreview: string;
+  participantNames: string[];
+  unreadCount: number;
+  lastActivityAt: string;
+}
+
+export interface FollowedThreadsPage {
+  items: FollowedThreadItem[];
+  nextCursor?: string | null;
+  unreadTotal: number;
 }
 
 export interface TypingState {
@@ -525,12 +544,15 @@ export interface ChannelNotificationOverride {
   channelId: string;
   level: NotificationLevel;
   mutedUntil?: string | null;
+  followAllThreads?: boolean;
 }
 
 export type ChannelMuteAction =
   | { kind: 'mute'; duration: ChannelMuteDuration }
   | { kind: 'all' }
-  | { kind: 'default' };
+  | { kind: 'default' }
+  | { kind: 'follow-all' }
+  | { kind: 'unfollow-all' };
 
 export interface NotificationPreferences {
   level: NotificationLevel;

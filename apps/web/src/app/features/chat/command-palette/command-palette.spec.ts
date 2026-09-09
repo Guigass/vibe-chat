@@ -9,6 +9,7 @@ import { ChannelStore } from '../../../core/services/channel.store';
 import { CommandPaletteService } from '../../../core/services/command-palette.service';
 import { MessageStore } from '../../../core/services/message.store';
 import { SavedStore } from '../../../core/services/saved.store';
+import { FollowedThreadsStore } from '../../../core/services/followed-threads.store';
 import { ThemeService } from '../../../core/services/theme.service';
 import { SlashCommandsService } from '../composer/slash-commands.service';
 import { CommandPalette } from './command-palette';
@@ -42,6 +43,10 @@ describe('CommandPalette (OPS-E2E-B099)', () => {
         },
         {
           provide: SavedStore,
+          useValue: { openPanel: vi.fn() },
+        },
+        {
+          provide: FollowedThreadsStore,
           useValue: { openPanel: vi.fn() },
         },
         {

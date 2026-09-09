@@ -645,6 +645,11 @@ export class Timeline {
   }
 
   onQuoteClick(messageId: string): void {
+    const owner = this.messages.messages().find((m) => m.replyTo?.messageId === messageId);
+    if (owner?.replyTo?.threadId) {
+      void this.threads.openById(owner.replyTo.threadId);
+      return;
+    }
     void this.messages.ensureMessageVisible(messageId);
   }
 

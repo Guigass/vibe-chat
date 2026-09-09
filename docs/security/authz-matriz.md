@@ -54,6 +54,10 @@ para o gate de drift CI.
 | GET | `/threads/{threadId:guid}` | membership | — | ✓ | ✓ | ✓ | |
 | GET | `/threads/{threadId:guid}/messages` | membership | — | ✓ | ✓ | ✓ | |
 | POST | `/threads/{threadId:guid}/messages` | permission | `message.send` | ✓ | ✗ | ✓ | |
+| POST | `/threads/{threadId:guid}/subscription` | permission | `message.read` + membership | ✓ | ✓ | ✓ | B-102 |
+| DELETE | `/threads/{threadId:guid}/subscription` | permission | `message.read` + membership | ✓ | ✓ | ✓ | B-102 |
+| GET | `/workspaces/{workspaceId:guid}/threads/following` | membership | `message.read` | ✓ | ✓ | ✓ | omite canal sem acesso |
+| POST | `/threads/{threadId:guid}/messages/{messageId:guid}/share-to-channel` | permission | `message.send` + membership | ✓ | ✗ | ✓ | B-102 |
 | POST | `/channels/{channelId:guid}/attachments` | permission | `file.upload` + `message.send` | ✓ | ✗ | ✓ | |
 | POST | `/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete` | permission | `file.upload` | ✓ | ✗ | ✓ | |
 | GET | `/channels/{channelId:guid}/attachments/{attachmentId:guid}/download` | permission | `file.download` + `message.read` | ✓ | ✓ | ✓ | |

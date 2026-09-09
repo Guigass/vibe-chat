@@ -3,10 +3,10 @@
 Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
-- **Data de corte:** 2026-09-08
-- **Fase:** Wave 10 — W10-7 / B-101 Done (DM em grupo); seguinte W10-8 / B-102
+- **Data de corte:** 2026-09-09
+- **Fase:** Wave 10 — W10-8 / B-102 Done (seguir thread); seguinte W10-9 / B-103
 - **Safety lane obrigatória:** OPS-E2E-B100 Resolved (Playwright `locale: pt-BR` + isolamento i18n E2E + foco paleta + select Settings); OPS-E2E-B099 Resolved (#154); OPS-E2E-B098 Resolved (#148); OPS-E2E-B097 Resolved (#145+#149); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
-- **Próximo item elegível:** W10-8 / B-102 (seguir thread)
+- **Próximo item elegível:** W10-9 / B-103 (acessibilidade WCAG 2.2 AA)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
 ## Resumo executivo
@@ -24,7 +24,7 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
-2. avançar Wave 10 (W10-1…W10-7 Done; seguinte W10-8 / B-102);
+2. avançar Wave 10 (W10-1…W10-8 Done; seguinte W10-9 / B-103);
 3. consumir o roadmap autorizado W11–W19 (Wave 19 = organização do código,
    recomendada antes de W11).
 
@@ -79,7 +79,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W10-8 / B-102 | B-022 e W10-1 Done; W10-7 / B-101 Done |
+| 1 | W10-9 / B-103 | W10-5 Done; W10-8 / B-102 Done |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
@@ -97,6 +97,7 @@ W10-4 / B-098 **Done** (busca com filtros, chips, paginação e ordenação).
 W10-5 / B-099 **Done** (paleta Ctrl/Cmd+K, atalhos de canal/menção/lido e folha `?`).
 W10-6 / B-100 **Done** (i18n `@angular/localize`; `pt-BR` + `en`; `locale` em GET/PUT `/me`).
 W10-7 / B-101 **Done** (DM em grupo: `ChannelType.GroupDm`, janela `JoinedSeq`, kill switch off default).
+W10-8 / B-102 **Done** (seguir thread: `thread_subscriptions`, auto-seguir na mesma txn, vista + share-to-channel).
 
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W19. Wave 19
 (organização do código) é recomendada antes de W11. Ele não altera a prioridade

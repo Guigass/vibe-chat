@@ -11,6 +11,7 @@ import {
   Channel,
   ChatMessage,
   ChatThread,
+  FollowedThreadsPage,
   MessageAttachment,
   PresenceStatus,
   ReactionSummary,
@@ -109,6 +110,7 @@ interface ReplyToDto {
   authorName: string;
   preview: string;
   deleted: boolean;
+  threadId?: string | null;
 }
 
 interface ForwardedFromDto {
@@ -209,6 +211,7 @@ interface ThreadDto {
   createdAt: string;
   replyCount: number;
   parentMessage?: MessageDto | null;
+  following?: boolean;
 }
 
 interface AttachmentUploadDto {
@@ -633,6 +636,47 @@ export class ApiService {
     return rows.map((m) => this.mapMessage(m, me));
   }
 
+  async followThread(threadId: string): Promise<{ threadId: string; following: boolean }> {
+    return this.request<{ threadId: string; following: boolean }>(
+      `/api/v1/threads/${threadId}/subscription`,
+      { method: 'POST', body: '{}' },
+    );
+  }
+
+  async unfollowThread(threadId: string): Promise<void> {
+    await this.request(`/api/v1/threads/${threadId}/subscription`, { method: 'DELETE' });
+  }
+
+  async getFollowedThreads(workspaceId: string, limit = 30): Promise<FollowedThreadsPage> {
+    const dto = await this.request<FollowedThreadsPage>(
+      `/api/v1/workspaces/${workspaceId}/threads/following?limit=${limit}`,
+    );
+    return {
+      items: dto.items ?? [],
+      nextCursor: dto.nextCursor ?? null,
+      unreadTotal: dto.unreadTotal ?? 0,
+    };
+  }
+
+  async shareThreadMessageToChannel(input: {
+    threadId: string;
+    messageId: string;
+    idempotencyKey: string;
+    body?: string;
+  }): Promise<ChatMessage> {
+    const dto = await this.request<MessageDto>(
+      `/api/v1/threads/${input.threadId}/messages/${input.messageId}/share-to-channel`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          idempotencyKey: input.idempotencyKey,
+          body: input.body ?? '',
+        }),
+      },
+    );
+    return this.mapMessage(dto, this.auth.profile()?.id);
+  }
+
   async sendThreadMessage(input: {
     threadId: string;
     body: string;
@@ -1012,6 +1056,13 @@ export class ApiService {
     );
   }
 
+  async setFollowAllThreads(channelId: string, followAllThreads: boolean): Promise<ChannelNotificationOverride> {
+    return this.request<ChannelNotificationOverride>(
+      `/api/v1/notifications/preferences/channels/${channelId}`,
+      { method: 'PUT', body: JSON.stringify({ followAllThreads }) },
+    );
+  }
+
   async clearChannelNotificationOverride(channelId: string): Promise<void> {
     await this.request(`/api/v1/notifications/preferences/channels/${channelId}`, { method: 'DELETE' });
   }
@@ -1348,6 +1399,7 @@ export class ApiService {
       createdAt: t.createdAt,
       replyCount: t.replyCount ?? 0,
       parentMessage: t.parentMessage ? this.mapMessage(t.parentMessage, me) : null,
+      following: !!t.following,
     };
   }
 
@@ -1375,6 +1427,7 @@ export class ApiService {
             authorName: m.replyTo.authorName ?? '',
             preview: m.replyTo.preview ?? '',
             deleted: !!m.replyTo.deleted,
+            threadId: m.replyTo.threadId ? String(m.replyTo.threadId) : null,
           }
         : null,
       forwardedFromMessageId: m.forwardedFromMessageId ?? null,

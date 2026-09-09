@@ -11,6 +11,7 @@ import { PushNotificationService } from '../core/services/push-notification.serv
 import { MessageStore } from '../core/services/message.store';
 import { PinStore } from '../core/services/pin.store';
 import { SavedStore } from '../core/services/saved.store';
+import { FollowedThreadsStore } from '../core/services/followed-threads.store';
 import { ThreadStore } from '../core/services/thread.store';
 import { AttachmentQueueService } from '../features/chat/composer/attachment-queue.service';
 import { ShellPage } from './shell.page';
@@ -133,6 +134,15 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
             panelOpen: () => false,
             closePanel: vi.fn(),
             loadForWorkspace: vi.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: FollowedThreadsStore,
+          useValue: {
+            panelOpen: () => false,
+            closePanel: vi.fn(),
+            loadForWorkspace: vi.fn().mockResolvedValue(undefined),
+            unreadTotal: () => 0,
           },
         },
         {

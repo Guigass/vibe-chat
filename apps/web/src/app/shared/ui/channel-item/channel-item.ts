@@ -82,6 +82,15 @@ import { VcTooltip } from '../tooltip/tooltip';
         <button type="button" cdkMenuItem (click)="muteAction.emit({ kind: 'all' })">
           Notificar todas as mensagens
         </button>
+        @if (followAllThreads()) {
+          <button type="button" cdkMenuItem (click)="muteAction.emit({ kind: 'unfollow-all' })">
+            Parar de seguir todas as threads
+          </button>
+        } @else {
+          <button type="button" cdkMenuItem (click)="muteAction.emit({ kind: 'follow-all' })">
+            Seguir todas as threads
+          </button>
+        }
         @if (muted() || channelHasOverride()) {
           <button type="button" cdkMenuItem (click)="muteAction.emit({ kind: 'default' })">
             Usar o padrão
@@ -277,6 +286,7 @@ export class ChannelItem {
   readonly muted = input(false);
   /** Any channel override at all (muted or an "All" override) — controls "Usar o padrão" visibility. */
   readonly channelHasOverride = input(false);
+  readonly followAllThreads = input(false);
   readonly select = output<void>();
   readonly muteAction = output<ChannelMuteAction>();
 

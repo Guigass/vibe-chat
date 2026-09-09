@@ -28,6 +28,7 @@ export class ThreadStore {
   private readonly openSignal = signal(false);
   private readonly replyTargetSignal = signal<ChatMessage | null>(null);
   private readonly editingMessageSignal = signal<ChatMessage | null>(null);
+  private readonly autoFollowNoticeSignal = signal(false);
   private gapFillInFlight = false;
 
   readonly active = this.activeSignal.asReadonly();
@@ -37,6 +38,8 @@ export class ThreadStore {
   readonly open = this.openSignal.asReadonly();
   readonly replyTarget = this.replyTargetSignal.asReadonly();
   readonly editingMessage = this.editingMessageSignal.asReadonly();
+  readonly autoFollowNotice = this.autoFollowNoticeSignal.asReadonly();
+  readonly following = computed(() => !!this.activeSignal()?.following);
   readonly sortedMessages = computed(() =>
     [...this.messagesSignal()].sort(
       (a, b) => (a.seq ?? 0) - (b.seq ?? 0) || a.createdAt.localeCompare(b.createdAt),
@@ -70,6 +73,27 @@ export class ThreadStore {
       const replies = await this.api.getThreadMessages(thread.id);
       this.activeSignal.set(detailed);
       this.messagesSignal.set(replies.map((m) => this.normalize(m)));
+      this.autoFollowNoticeSignal.set(false);
+    } catch {
+      this.activeSignal.set(null);
+      this.messagesSignal.set([]);
+    } finally {
+      this.loadingSignal.set(false);
+    }
+  }
+
+  async openById(threadId: string): Promise<void> {
+    this.openSignal.set(true);
+    this.loadingSignal.set(true);
+    this.autoFollowNoticeSignal.set(false);
+    try {
+      if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
+        return;
+      }
+      const detailed = await this.api.getThread(threadId);
+      const replies = await this.api.getThreadMessages(threadId);
+      this.activeSignal.set(detailed);
+      this.messagesSignal.set(replies.map((m) => this.normalize(m)));
     } catch {
       this.activeSignal.set(null);
       this.messagesSignal.set([]);
@@ -84,6 +108,7 @@ export class ThreadStore {
     this.messagesSignal.set([]);
     this.replyTargetSignal.set(null);
     this.editingMessageSignal.set(null);
+    this.autoFollowNoticeSignal.set(false);
   }
 
   setReplyTarget(message: ChatMessage | null): void {
@@ -292,6 +317,10 @@ export class ThreadStore {
         mine: true,
         clientMessageId,
       });
+      if (!thread.following) {
+        this.activeSignal.set({ ...thread, following: true });
+        this.autoFollowNoticeSignal.set(true);
+      }
       // replyCount is bumped when the outbox/hub event arrives (or by MessageStore)
       return true;
     } catch {
@@ -299,6 +328,48 @@ export class ThreadStore {
       return false;
     } finally {
       this.sendingSignal.set(false);
+    }
+  }
+
+  async toggleFollow(): Promise<void> {
+    const thread = this.activeSignal();
+    if (!thread || this.channels.isDemo() || this.auth.isOfflineDemo()) return;
+    if (thread.following) {
+      await this.api.unfollowThread(thread.id);
+      this.activeSignal.set({ ...thread, following: false });
+      this.autoFollowNoticeSignal.set(false);
+      return;
+    }
+    await this.api.followThread(thread.id);
+    this.activeSignal.set({ ...thread, following: true });
+    this.autoFollowNoticeSignal.set(false);
+  }
+
+  async undoAutoFollow(): Promise<void> {
+    const thread = this.activeSignal();
+    if (!thread) return;
+    this.autoFollowNoticeSignal.set(false);
+    if (!thread.following || this.channels.isDemo() || this.auth.isOfflineDemo()) return;
+    await this.api.unfollowThread(thread.id);
+    this.activeSignal.set({ ...thread, following: false });
+  }
+
+  dismissAutoFollowNotice(): void {
+    this.autoFollowNoticeSignal.set(false);
+  }
+
+  async shareToChannel(messageId: string): Promise<boolean> {
+    const thread = this.activeSignal();
+    if (!thread || this.channels.isDemo() || this.auth.isOfflineDemo()) return false;
+    try {
+      await this.api.shareThreadMessageToChannel({
+        threadId: thread.id,
+        messageId,
+        idempotencyKey: crypto.randomUUID(),
+      });
+      return true;
+    } catch {
+      return false;
     }
   }
 

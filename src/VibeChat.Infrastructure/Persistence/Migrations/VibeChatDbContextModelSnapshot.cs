@@ -1057,6 +1057,45 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("saved_messages", "messaging");
                 });
 
+            modelBuilder.Entity("VibeChat.Messaging.ThreadSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChannelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("LastReadSeq")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ThreadId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "UserId", "ChannelId");
+
+                    b.HasIndex("TenantId", "UserId", "ThreadId")
+                        .IsUnique();
+
+                    b.ToTable("thread_subscriptions", "messaging");
+                });
+
             modelBuilder.Entity("VibeChat.Messaging.TenantLinkPreviewSettings", b =>
                 {
                     b.Property<Guid>("TenantId")
@@ -1081,6 +1120,11 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("ChannelId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("FollowAllThreads")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Level")
                         .IsRequired()

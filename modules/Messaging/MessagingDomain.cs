@@ -85,6 +85,34 @@ public static class SavedMessagePolicies
     public const int MaxPageSize = 100;
 }
 
+public enum ThreadSubscriptionSource
+{
+    Manual = 0,
+    Author = 1,
+    Reply = 2,
+    Mention = 3
+}
+
+/// <summary>Per-user follow of a thread (B-102). Unique (TenantId, UserId, ThreadId).</summary>
+public sealed class ThreadSubscription
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public UserId UserId { get; set; }
+    public Guid ThreadId { get; set; }
+    public ChannelId ChannelId { get; set; }
+    public ThreadSubscriptionSource Source { get; set; }
+    public long LastReadSeq { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public static class ThreadSubscriptionPolicies
+{
+    public const int DefaultPageSize = 30;
+    public const int MaxPageSize = 100;
+    public const int ParentPreviewLength = 140;
+}
+
 /// <summary>Channel poll (B-096). Primary key is the host message id.</summary>
 public sealed class Poll
 {
@@ -514,7 +542,8 @@ public sealed record SendMessageCommand(
     string Body,
     MessageId? ReplyToMessageId,
     Guid? ThreadId,
-    IReadOnlyList<Guid>? AttachmentIds = null);
+    IReadOnlyList<Guid>? AttachmentIds = null,
+    bool AllowEmptyWithReplyTo = false);
 
 public sealed record MessageSendResult(MessageId MessageId, long Sequence, DateTimeOffset CreatedAt, bool Idempotent);
 

@@ -4,6 +4,8 @@ import { DraftStoreService } from '../../../core/services/draft-store.service';
 import { MessageStore } from '../../../core/services/message.store';
 import { PinStore } from '../../../core/services/pin.store';
 import { SavedStore } from '../../../core/services/saved.store';
+import { FollowedThreadsStore } from '../../../core/services/followed-threads.store';
+import { ui } from '../../../core/i18n/strings';
 import { NotificationPreferencesStore } from '../../../core/services/notification-preferences.store';
 import { ChannelMuteAction } from '../../../shared/models/chat.models';
 import { Badge, SidebarNav, Skeleton, VcTooltip } from '../../../shared/ui';
@@ -53,6 +55,38 @@ import { Badge, SidebarNav, Skeleton, VcTooltip } from '../../../shared/ui';
               }
             }
           </button>
+          <button
+            type="button"
+            class="channel-list__saved"
+            [class.channel-list__saved--compact]="navCompact()"
+            [class.channel-list__saved--active]="followed.panelOpen()"
+            data-testid="followed-threads-nav"
+            [attr.aria-label]="navCompact() ? ui.followedThreads : null"
+            [vcTooltip]="navCompact() ? ui.followedThreads : null"
+            [tooltipDisabled]="!navCompact()"
+            position="right"
+            (click)="openFollowed()"
+          >
+            <span class="channel-list__saved-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" />
+                <path d="M8 8h8M8 12h5" />
+              </svg>
+            </span>
+            @if (!navCompact()) {
+              <span class="channel-list__saved-copy">
+                <span class="channel-list__saved-label">{{ ui.followedThreads }}</span>
+                <span class="channel-list__saved-hint">{{ ui.followedThreadsHint }}</span>
+              </span>
+            }
+            @if (followed.unreadTotal() > 0) {
+              @if (navCompact()) {
+                <span class="channel-list__saved-dot" aria-hidden="true"></span>
+              } @else {
+                <vc-badge tone="accent">{{ followed.unreadTotal() }}</vc-badge>
+              }
+            }
+          </button>
         </div>
 
         <vc-sidebar-nav
@@ -65,6 +99,7 @@ import { Badge, SidebarNav, Skeleton, VcTooltip } from '../../../shared/ui';
           [draftIds]="drafts.draftConversationIds()"
           [mutedIds]="notificationPrefs.mutedChannelIds()"
           [overrideIds]="notificationPrefs.channelsWithOverride()"
+          [followAllIds]="notificationPrefs.followAllChannelIds()"
           [canCreate]="channels.canCreateChannel()"
           [compact]="navCompact()"
           (select)="onSelect($event)"
@@ -94,6 +129,8 @@ import { Badge, SidebarNav, Skeleton, VcTooltip } from '../../../shared/ui';
       padding: 0 var(--vc-space-4);
     }
     .channel-list__shortcuts {
+      display: grid;
+      gap: 0.4rem;
       padding: 0 var(--vc-space-3) var(--vc-space-2);
     }
     .channel-list__shortcuts--compact {
@@ -187,6 +224,8 @@ export class ChannelList {
   readonly channels = inject(ChannelStore);
   readonly drafts = inject(DraftStoreService);
   readonly saved = inject(SavedStore);
+  readonly followed = inject(FollowedThreadsStore);
+  readonly ui = ui;
   readonly notificationPrefs = inject(NotificationPreferencesStore);
   private readonly messages = inject(MessageStore);
   private readonly pins = inject(PinStore);
@@ -197,6 +236,10 @@ export class ChannelList {
       await this.notificationPrefs.unmuteChannel(channelId);
     } else if (action.kind === 'all') {
       await this.notificationPrefs.muteChannel(channelId, 'All');
+    } else if (action.kind === 'follow-all') {
+      await this.notificationPrefs.setFollowAllThreads(channelId, true);
+    } else if (action.kind === 'unfollow-all') {
+      await this.notificationPrefs.setFollowAllThreads(channelId, false);
     } else {
       await this.notificationPrefs.muteChannel(channelId, 'None', action.duration);
     }
@@ -204,17 +247,26 @@ export class ChannelList {
 
   openSaved(): void {
     this.pins.closePanel();
+    this.followed.closePanel();
     this.saved.openPanel();
+  }
+
+  openFollowed(): void {
+    this.pins.closePanel();
+    this.saved.closePanel();
+    this.followed.openPanel();
   }
 
   async onSelect(channelId: string): Promise<void> {
     this.saved.closePanel();
+    this.followed.closePanel();
     this.channels.selectChannel(channelId);
     await this.messages.loadChannel(channelId);
   }
 
   async onOpenDm(userId: string): Promise<void> {
     this.saved.closePanel();
+    this.followed.closePanel();
     const channel = await this.channels.openDirectMessage(userId);
     if (channel) {
       await this.messages.loadChannel(channel.id);

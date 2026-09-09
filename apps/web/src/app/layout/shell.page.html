@@ -3,7 +3,7 @@
   [class.shell--sidebar-collapsed]="!sidebarOpen()"
   [class.shell--narrow]="narrowViewport()"
   [class.shell--nav-compact]="navCompact() && !narrowViewport()"
-  [class.shell--context-open]="contextOpen() || pins.panelOpen() || saved.panelOpen()"
+  [class.shell--context-open]="contextOpen() || pins.panelOpen() || saved.panelOpen() || followed.panelOpen()"
   [class.shell--thread-open]="threads.open()"
 >
   @if (narrowViewport() && sidebarOpen()) {
@@ -332,6 +332,10 @@
   } @else if (saved.panelOpen()) {
     <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.savedMessages">
       <vc-saved-panel />
+    </aside>
+  } @else if (followed.panelOpen()) {
+    <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.followedThreads">
+      <vc-followed-threads-panel />
     </aside>
   } @else if (pins.panelOpen()) {
     <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.pinnedMessages">

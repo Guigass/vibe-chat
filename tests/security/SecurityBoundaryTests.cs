@@ -847,6 +847,20 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
 
         var history = await client.GetAsync($"/api/v1/threads/{Guid.NewGuid()}/messages");
         history.StatusCode.Should().BeOneOf(HttpStatusCode.Forbidden, HttpStatusCode.NotFound);
+
+        var subscribe = await client.PostAsync(
+            $"/api/v1/threads/{Guid.NewGuid()}/subscription",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+        subscribe.StatusCode.Should().BeOneOf(HttpStatusCode.Forbidden, HttpStatusCode.NotFound);
+
+        var following = await client.GetAsync(
+            $"/api/v1/workspaces/{Guid.NewGuid()}/threads/following");
+        following.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var share = await client.PostAsJsonAsync(
+            $"/api/v1/threads/{Guid.NewGuid()}/messages/{Guid.NewGuid()}/share-to-channel",
+            new { idempotencyKey = $"sec-share-{Guid.NewGuid():N}", body = "" });
+        share.StatusCode.Should().BeOneOf(HttpStatusCode.Forbidden, HttpStatusCode.NotFound);
     }
 
     [Fact]

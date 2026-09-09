@@ -136,7 +136,7 @@ Matriz endpoint × gate: [`docs/security/authz-matriz.md`](../security/authz-mat
 | DeletedAt | DateTimeOffset? |
 | ThreadId | Guid? | Presente em pai (após abrir thread) e replies |
 | ReplyToMessageId | Guid? | Citação inline (B-084); validado no mesmo canal/thread |
-| ReplyTo | `{ messageId, authorName, preview, deleted }`? | Prévia resolvida no servidor (até 140 chars); history + Accepted + hub |
+| ReplyTo | `{ messageId, authorName, preview, deleted, threadId? }`? | Prévia resolvida no servidor (até 140 chars); history + Accepted + hub; `threadId` quando a citada é de uma thread |
 | ForwardedFromMessageId | Guid? | Origem do encaminhamento (B-085); cabeçalho histórico |
 | ForwardedFromChannelId | Guid? | Canal de origem do encaminhamento |
 | ForwardedFrom | `{ messageId, channelId, channelName, authorName, createdAt, isDirect }`? | Cabeçalho resolvido (permanece se a origem for apagada depois); em DM, `channelName` é o display name do peer (nunca o slug `dm:guid:guid`) e `isDirect = true` |
@@ -144,7 +144,7 @@ Matriz endpoint × gate: [`docs/security/authz-matriz.md`](../security/authz-mat
 | Attachments | AttachmentDto[] | Metadados prontos (sem URL): `id`, `fileName`, `contentType`, `sizeBytes`, `status`, `kind`, `durationMs?`, `waveform?`, `thumbnailStatus?` (`Pending`\|`Ready`\|`Failed`), `width?`, `height?`, `pageCount?` (B-090) |
 | Reactions | ReactionSummaryDto[] | `{ emoji, count, me }` agregado |
 
-`ReplyToMessageId` de outro canal → 400 `ReplyToDifferentChannel`. Inexistente → 400 `ReplyToNotFound`. Soft-delete da original: `replyTo.deleted = true`, preview vazio (UI: “Mensagem removida”).
+`ReplyToMessageId` de outro canal → 400 `ReplyToDifferentChannel`. Exceção B-102: citar uma resposta de thread no canal pai (`share-to-channel`) é permitido. Inexistente → 400 `ReplyToNotFound`. Soft-delete da original: `replyTo.deleted = true`, preview vazio (UI: “Mensagem removida”). Body vazio é aceito nesse caminho quando há `ReplyTo`.
 
 ### Histórico paginado (B-089)
 
@@ -293,6 +293,16 @@ Enquete é uma mensagem (`seq` + outbox `MessageCreated` + idempotência). Discr
 | `GET /api/v1/threads/{threadId}` | Metadados + parent + `replyCount` |
 | `GET /api/v1/threads/{threadId}/messages` | Histórico da conversa da thread (`seq` próprio) |
 | `POST /api/v1/threads/{threadId}/messages` | Reply; idempotência + seq + outbox; `threadId` no evento hub |
+| `POST /api/v1/threads/{threadId}/subscription` | Seguir (manual); membership do canal; `LastReadSeq` = seq atual da thread |
+| `DELETE /api/v1/threads/{threadId}/subscription` | Deixar de seguir; membership do canal |
+| `GET /api/v1/workspaces/{workspaceId}/threads/following?cursor=&limit=` | Vista de threads seguidas; omite canais sem membership/`CanAccess` |
+| `POST /api/v1/threads/{threadId}/messages/{messageId}/share-to-channel` | Publica no canal pai uma mensagem com `replyTo` da resposta (referência, não cópia); exige `message.send` |
+
+`messaging.thread_subscriptions` (RLS): `TenantId`, `UserId`, `ThreadId`, `ChannelId`, `Source` (`Manual`\|`Author`\|`Reply`\|`Mention`), `LastReadSeq`, `CreatedAt`. Único por `(TenantId, UserId, ThreadId)`.
+
+Auto-seguir na **mesma transação**: autor da raiz ao criar a thread (`Author`); quem responde (`Reply`); menção na thread (`Mention`). `followAllThreads` no override de canal inscreve em threads novas (`Manual`). Perder membership esconde a thread da vista e suprime push. Cross-tenant → 403.
+
+`GET /threads/{id}` inclui `following`. Abrir o histórico marca `LastReadSeq`. Não lidas = `lastSeq − LastReadSeq`.
 
 Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out SignalR continua no grupo do **canal pai**, com `threadId` / `conversationId` / `parentMessageId` (âncora da thread) no payload.
 
@@ -731,15 +741,17 @@ public interface IPushSender
 (`uuid[]`).
 
 `notifications.channel_preferences` (RLS, único por `ChannelId`+`UserId`):
-`Level`, `MutedUntil?`. Linha presente = override ativo; ausente = "usar o padrão".
+`Level`, `MutedUntil?`, `FollowAllThreads` (B-102, default false). Linha presente = override ativo; ausente = "usar o padrão".
 `MutedUntil` expirado é ignorado na leitura (dispatcher e API) — sem job de limpeza,
 o silêncio "volta sozinho".
 
 Nível efetivo por destinatário = override de canal não expirado, senão `Level`
 global. `None` nunca notifica; DM notifica em `All`/`MentionsAndDms`; canal comum só
-com `All` ou menção. DND (`PushDispatchPolicies.IsWithinDnd`) é recalculado a cada
+com `All`, menção **ou** assinatura de thread (B-102). Resposta em thread seguida
+compara `LastReadSeq` da assinatura, não o cursor do canal. DND (`PushDispatchPolicies.IsWithinDnd`) é recalculado a cada
 envio contra o fuso IANA armazenado — nunca offset fixo — e suprime o push a menos
-que o autor da DM esteja em `PriorityContactUserIds`. `HidePreview` troca o corpo da
+que o autor da DM esteja em `PriorityContactUserIds`. Mute de canal e `Level=None`
+continuam vencendo follow. `HidePreview` troca o corpo da
 notificação por vazio por destinatário (o payload passa a variar por assinatura, não
 mais um único payload por mensagem).
 
@@ -751,7 +763,7 @@ que foi perdido durante o DND **não** está implementado nesta entrega — ver 
 |----------|-------|-------|
 | `GET /api/v1/notifications/preferences` | `message.read` | Preferência global do actor + `channelOverrides[]` |
 | `PUT /api/v1/notifications/preferences` | `message.read` | Upsert; valida `TimeZone` quando `DndEnabled=true`; `PriorityContactUserIds` filtrado a membros do tenant |
-| `PUT /api/v1/notifications/preferences/channels/{channelId}` | `message.read` | `{ level, duration? }`; canal de outro tenant → 403 |
+| `PUT /api/v1/notifications/preferences/channels/{channelId}` | `message.read` | `{ level?, duration?, followAllThreads? }`; patch parcial; canal de outro tenant → 403 |
 | `DELETE /api/v1/notifications/preferences/channels/{channelId}` | `message.read` | Remove override (volta ao padrão); canal de outro tenant → 403 |
 
 Estritamente por `(tenant, user)` — ninguém, nem admin, lê ou escreve a preferência

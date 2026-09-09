@@ -6,6 +6,7 @@ import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { DraftStoreService } from '../../../core/services/draft-store.service';
 import { threadConversationId } from '../../../core/services/draft-storage';
 import { Button, EmptyState, IconButton, MessageBubble, Skeleton, Textarea } from '../../../shared/ui';
+import { ui } from '../../../core/i18n/strings';
 import {
   ChatMessage,
   isMessageBodyTooLong,
@@ -23,15 +24,32 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
     <div class="thread">
       <header class="thread__header">
         <div>
-          <h2>Thread</h2>
+          <h2>{{ ui.thread }}</h2>
           @if (threads.active(); as active) {
             <p>{{ active.replyCount }} {{ active.replyCount === 1 ? 'resposta' : 'respostas' }}</p>
           }
         </div>
-        <vc-icon-button label="Fechar thread" (click)="threads.close()">
-          <span aria-hidden="true">×</span>
-        </vc-icon-button>
+        <div class="thread__header-actions">
+          <button
+            type="button"
+            class="thread__follow"
+            [class.thread__follow--on]="threads.following()"
+            [attr.aria-pressed]="threads.following()"
+            (click)="threads.toggleFollow()"
+          >
+            {{ threads.following() ? ui.followingThread : ui.followThread }}
+          </button>
+          <vc-icon-button label="Fechar thread" (click)="threads.close()">
+            <span aria-hidden="true">×</span>
+          </vc-icon-button>
+        </div>
       </header>
+      @if (threads.autoFollowNotice()) {
+        <div class="thread__notice" role="status">
+          <span>{{ ui.autoFollowNotice }}</span>
+          <button type="button" class="ghost" (click)="threads.undoAutoFollow()">{{ ui.undoFollow }}</button>
+        </div>
+      }
 
       <div class="thread__scroll" #scroller>
         @if (threads.loading()) {
@@ -45,10 +63,12 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
               <vc-message-bubble
                 [message]="parent"
                 [showReplyAction]="true"
+                [showShareToChannel]="true"
                 [highlighted]="messages.highlightMessageId() === parent.id"
                 (reply)="onReply(parent)"
                 (startEdit)="onStartEdit(parent)"
                 (quoteClick)="onQuoteClick($event)"
+                (shareToChannel)="onShare(parent.id)"
                 (react)="onReact(parent.id, $event)"
                 (removeLinkPreview)="onRemoveLinkPreview(parent.id)"
               />
@@ -66,10 +86,12 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
                 <vc-message-bubble
                   [message]="message"
                   [showReplyAction]="true"
+                  [showShareToChannel]="true"
                   [highlighted]="messages.highlightMessageId() === message.id"
                   (reply)="onReply(message)"
                   (startEdit)="onStartEdit(message)"
                   (quoteClick)="onQuoteClick($event)"
+                  (shareToChannel)="onShare(message.id)"
                   (react)="onReact(message.id, $event)"
                   (removeLinkPreview)="onRemoveLinkPreview(message.id)"
                 />
@@ -156,6 +178,42 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
       padding: var(--vc-space-4);
       border-bottom: 1px solid var(--vc-border);
     }
+    .thread__header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .thread__follow {
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-md);
+      background: transparent;
+      color: var(--vc-ink);
+      font: inherit;
+      font-size: 0.8rem;
+      padding: 0.25rem 0.6rem;
+      cursor: pointer;
+    }
+    .thread__follow--on {
+      border-color: var(--vc-brand);
+      color: var(--vc-brand);
+    }
+    .thread__notice {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.45rem var(--vc-space-4);
+      background: color-mix(in srgb, var(--vc-brand) 10%, transparent);
+      color: var(--vc-ink);
+      font-size: 0.8rem;
+    }
+    .thread__notice .ghost {
+      border: 0;
+      background: transparent;
+      color: var(--vc-brand);
+      cursor: pointer;
+      font: inherit;
+    }
     .thread__header h2 {
       margin: 0;
       font-family: var(--vc-font-display);
@@ -239,6 +297,7 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
   `,
 })
 export class ThreadPanel {
+  readonly ui = ui;
   readonly threads = inject(ThreadStore);
   readonly messages = inject(MessageStore);
   private readonly hub = inject(ChatHubService);
@@ -335,6 +394,10 @@ export class ThreadPanel {
 
   onQuoteClick(messageId: string): void {
     this.messages.jumpToMessage(messageId);
+  }
+
+  async onShare(messageId: string): Promise<void> {
+    await this.threads.shareToChannel(messageId);
   }
 
   async onSubmit(event: Event): Promise<void> {

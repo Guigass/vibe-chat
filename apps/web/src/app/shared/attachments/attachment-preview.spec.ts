@@ -90,6 +90,15 @@ describe('attachment preview helpers', () => {
       }).map((item) => item.id),
     ).toEqual(['unsave']);
 
+    expect(
+      menuActionsForMessage({
+        mine: false,
+        showForward: false,
+        showThread: false,
+        showShareToChannel: true,
+      }).map((item) => item.id),
+    ).toEqual(['share-to-channel']);
+
     const deleteItem = menuActionsForMessage({
       mine: true,
       showForward: false,

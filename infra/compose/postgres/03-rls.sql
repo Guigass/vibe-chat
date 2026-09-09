@@ -214,6 +214,14 @@ CREATE POLICY tenant_isolation_saved_messages ON messaging.saved_messages
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS messaging.thread_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.thread_subscriptions FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_thread_subscriptions ON messaging.thread_subscriptions;
+CREATE POLICY tenant_isolation_thread_subscriptions ON messaging.thread_subscriptions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 DROP POLICY IF EXISTS tenant_isolation_polls ON messaging.polls;
 CREATE POLICY tenant_isolation_polls ON messaging.polls
     USING (
