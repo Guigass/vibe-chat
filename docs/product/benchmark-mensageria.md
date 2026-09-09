@@ -23,7 +23,7 @@ empresa pequena espera em 2026, mantendo a identidade visual própria
 | DM em grupo | sim | sim | sim | sim | **Done** — B-101 |
 | Threads | sim | sim (layout threads) | sim | — | **Temos** |
 | Canal de fórum (post = tópico) | — | posts layout | Forum Channels | — | Fora de escopo fase 2 |
-| Seguir thread / followed threads | sim | sim | — | — | **Falta** — B-102 |
+| Seguir thread / followed threads | sim | sim | — | — | **Done** — B-102 |
 | Convidado externo | Connect | convidado | convite | — | **Falta** — B-040 |
 | Lista/gestão de membros do canal | sim | sim | sim | — | **Falta** — B-186 (painel + add + PV; BUG-020) |
 

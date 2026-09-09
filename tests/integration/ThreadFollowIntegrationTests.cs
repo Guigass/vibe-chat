@@ -207,6 +207,39 @@ public sealed class ThreadFollowIntegrationTests(VibeChatApiFactory factory)
         _ = plainReply;
     }
 
+    [Fact]
+    public async Task Share_to_channel_publishes_a_reference_to_the_reply()
+    {
+        using var alice = CreateClient("alice");
+        using var bob = CreateClient("bob");
+
+        var thread = await OpenThreadAsync(alice, alice, "root-share");
+        var replyId = await SendThreadReplyAsync(bob, thread.Id, "bob-reply-to-share");
+        var idempotencyKey = $"share-{Guid.NewGuid():N}";
+
+        var share = await bob.PostAsJsonAsync(
+            $"/api/v1/threads/{thread.Id}/messages/{replyId}/share-to-channel",
+            new { idempotencyKey });
+        share.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var history = await bob.GetFromJsonAsync<ChannelMessagesPageDto>(
+            $"/api/v1/channels/{DemoChannelId}/messages?after=0&limit=100", JsonOptions);
+        var shared = history!.Messages.Should().ContainSingle(m => m.ForwardedFromMessageId == replyId).Subject;
+        shared.ForwardedFrom.Should().NotBeNull();
+        shared.ForwardedFrom!.ThreadId.Should().Be(thread.Id, "so the client can link back to the thread, not just the channel");
+        shared.Body.Should().Contain("bob-reply-to-share");
+
+        // Re-sharing with the same idempotency key must not publish a second reference.
+        var again = await bob.PostAsJsonAsync(
+            $"/api/v1/threads/{thread.Id}/messages/{replyId}/share-to-channel",
+            new { idempotencyKey });
+        again.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var historyAfterRetry = await bob.GetFromJsonAsync<ChannelMessagesPageDto>(
+            $"/api/v1/channels/{DemoChannelId}/messages?after=0&limit=100", JsonOptions);
+        historyAfterRetry!.Messages.Count(m => m.ForwardedFromMessageId == replyId).Should().Be(1);
+    }
+
     private async Task<ThreadDto> OpenThreadAsync(HttpClient rootAuthor, HttpClient opener, string label)
     {
         var messageId = Guid.NewGuid();
@@ -339,6 +372,12 @@ public sealed class ThreadFollowIntegrationTests(VibeChatApiFactory factory)
         string Body,
         Guid? ReplyToMessageId,
         Guid? ThreadId);
+
+    private sealed record ChannelMessagesPageDto(MessageDto[] Messages, bool HasMoreBefore, bool HasMoreAfter);
+
+    private sealed record MessageDto(Guid Id, string Body, Guid? ForwardedFromMessageId, ForwardedFromDto? ForwardedFrom);
+
+    private sealed record ForwardedFromDto(Guid MessageId, Guid ChannelId, string ChannelName, Guid? ThreadId);
 
     private sealed record ThreadDto(
         Guid Id,

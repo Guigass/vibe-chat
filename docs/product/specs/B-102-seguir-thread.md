@@ -63,14 +63,14 @@ ao tornar threads o layout padrão de canal em 2026.
 
 ## Aceite
 
-- [ ] Responder numa thread cria a assinatura automática
-- [ ] Menção na thread também cria
-- [ ] Vista lista as seguidas com não lidas corretas
-- [ ] Deixar de seguir remove da vista e para de notificar
-- [ ] “Seguir todas” no canal inscreve nas threads novas
-- [ ] Compartilhar publica a referência no canal
-- [ ] Sair do canal esconde as threads dele
-- [ ] Assinar thread de outro tenant → 403
+- [x] Responder numa thread cria a assinatura automática
+- [x] Menção na thread também cria
+- [x] Vista lista as seguidas com não lidas corretas
+- [x] Deixar de seguir remove da vista e para de notificar
+- [x] “Seguir todas” no canal inscreve nas threads novas
+- [x] Compartilhar publica a referência no canal
+- [x] Sair do canal esconde as threads dele
+- [x] Assinar thread de outro tenant → 403
 
 ## Testes
 
