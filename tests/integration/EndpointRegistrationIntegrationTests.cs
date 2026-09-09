@@ -19,11 +19,12 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             .Where(endpoint => endpoint.RoutePattern.RawText?.StartsWith("/api/v1", StringComparison.Ordinal) == true)
             .ToArray();
 
-        // Snapshot of the registrations before B-178; do not derive expectations from the new maps.
+        // Baseline registrations from before B-178; the gate follow-up explicitly annotates PUT /me.
+        // Do not derive expectations from the maps under test.
         EndpointContract[] expected =
         [
             new("GET", "/api/v1/me", "", false, ""),
-            new("PUT", "/api/v1/me", "", false, ""),
+            new("PUT", "/api/v1/me", "", false, "caller-only profile locale update"),
             new("GET", "/api/v1/workspaces", "", false, ""),
             new("GET", "/api/v1/workspaces/{workspaceId:guid}/channels", "", false, ""),
             new("GET", "/api/v1/workspaces/{workspaceId:guid}/channels/unread", "", false, ""),

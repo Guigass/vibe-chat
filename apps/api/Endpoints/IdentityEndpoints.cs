@@ -59,6 +59,6 @@ internal static class IdentityEndpoints
 
             var roles = await db.WorkspaceMembers.IgnoreQueryFilters().Where(x => x.UserId == profile.Id).Select(x => x.Role).Distinct().ToArrayAsync(ct);
             return Results.Ok(new MeResponse(profile.Id.Value, profile.Subject, profile.Email, profile.DisplayName, roles.Select(x => x.ToString()).ToArray(), profile.Locale));
-        });
+        }).AllowPermissionGateExempt("caller-only profile locale update");
     }
 }

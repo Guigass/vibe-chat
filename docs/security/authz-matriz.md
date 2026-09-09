@@ -19,15 +19,17 @@ Gates:
 Nota: `GET /health` (fora de `/api/v1`) é anônimo e **não** está nesta matriz;
 não confundir com `GET /api/v1/admin/health-summary`.
 
-Paths abaixo usam o template literal de `apps/api/Program.cs` (inclui `:guid`)
-para o gate de drift CI.
+Paths abaixo usam os templates literais de `apps/api/Endpoints/*.cs` e
+`apps/api/GroupDmEndpoints.cs` (incluem `:guid`). Os gates offline percorrem
+os arquivos C# de `apps/api` recursivamente, excluindo `bin`/`obj`, e recusam
+inventário vazio. A matriz é conferida por método HTTP + path.
 
 ## API `/api/v1`
 
 | Método | Path | Gate | Permissão(ões) | M | A | Ad | Notas |
 |--------|------|------|----------------|---|---|----|-------|
 | GET | `/me` | membership | — | ✓ | ✓ | ✓ | Perfil do caller |
-| PUT | `/me` | membership | — | ✓ | ✓ | ✓ | Só o próprio `locale` (B-100); `InvalidLocale` → 400 |
+| PUT | `/me` | exempt | caller-only | ✓ | ✓ | ✓ | Só o próprio `locale`; exceção explícita, sem mudar authZ; `InvalidLocale` → 400 |
 | GET | `/workspaces` | membership | — | ✓ | ✓ | ✓ | Lista só workspaces do caller |
 | GET | `/workspaces/{workspaceId:guid}/channels` | membership | — | ✓ | ✓ | ✓ | Roster de canais |
 | GET | `/workspaces/{workspaceId:guid}/channels/unread` | membership | — | ✓ | ✓ | ✓ | Contagens do caller |
@@ -40,6 +42,10 @@ para o gate de drift CI.
 | PUT | `/workspaces/{workspaceId:guid}/members/{userId:guid}/role` | permission | `workspace.admin` | ✗ | ✗ | ✓ | |
 | GET | `/workspaces/{workspaceId:guid}/presence` | membership | — | ✓ | ✓ | ✓ | Presence não é conteúdo de mensagem |
 | POST | `/workspaces/{workspaceId:guid}/dms` | exempt | membership-only | ✓ | ✓ | ✓ | Abrir DM (B-021); `AllowPermissionGateExempt` |
+| POST | `/workspaces/{workspaceId:guid}/group-dms` | exempt | membership-only | ✓ | ✓ | ✓ | Group DM habilitado; participantes validados no workspace |
+| POST | `/channels/{channelId:guid}/participants` | exempt | membership-only | ✓ | ✓ | ✓ | Participante atual adiciona membros do workspace |
+| DELETE | `/channels/{channelId:guid}/participants/me` | exempt | membership-only | ✓ | ✓ | ✓ | Sai apenas o caller |
+| PATCH | `/channels/{channelId:guid}` | exempt | membership-only | ✓ | ✓ | ✓ | Participante renomeia a DM em grupo |
 | POST | `/workspaces/{workspaceId:guid}/channels` | permission | `channel.create` | ✓ | ✗ | ✓ | |
 | PUT | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/topic` | permission | `channel.create` | ✓ | ✗ | ✓ | Slash `/topico` |
 | GET | `/workspaces/{workspaceId:guid}/commands` | membership | (filtra por perm) | ✓ | ✓ | ✓ | Discovery; itens filtrados por permissão |
@@ -120,9 +126,9 @@ para o gate de drift CI.
 
 ## Manutenção
 
-- Novo endpoint `/api/v1` → linha nesta matriz no mesmo PR (path = template de `Program.cs`).
+- Novo endpoint `/api/v1` → linha nesta matriz no mesmo PR (método + template literal do map em `apps/api`).
 - Mutações: `RequirePermission` ou `AllowPermissionGateExempt` (gate CI B-174).
-- Arch test `Api_v1_maps_are_listed_in_authz_matriz` falha se o path sumir daqui.
+- Arch test `Api_v1_maps_are_listed_in_authz_matriz` falha se o par método/path sumir daqui.
 - Paths `/admin/*` no filtro `RequirePermission` resolvem tenant via membership admin
   (não via `ResolveChannelAsync`) para preservar o bypass de `channel_members` da
   auditoria de conversa (B-067 / B-175).
