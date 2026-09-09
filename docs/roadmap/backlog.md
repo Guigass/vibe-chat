@@ -48,6 +48,7 @@ e entram na **safety lane** do Build (antes de novas features de wave).
 | BUG-001 | Mensagens duplicadas no envio | **Done** — lock composer + dedupe store + `clientMessageId` no hub |
 | BUG-002 | Unread/badges após reload | Aberto (Média) — alívio cursor; fecha em **B-094** (W9-7) |
 | BUG-020 | Sem painel de membros / add no canal / PV | Aberto (Média) — fecha em **B-186** (W10-15) |
+| BUG-021 | Convidado para DM em grupo: front não atualiza | Aberto (Média) — sidebar/hub do convidado só após F5 |
 | BUG-003 | Upload de arquivo com erro | **Done** — presign no PublicEndpoint + CORS fail-closed + resolveContentType |
 | BUG-004 | Áudio do microfone não envia | **Done** — MIME base + erros visíveis + discard/onstop + regressão Vitest |
 | BUG-005 | `/admin` não entra (Member) | **Done** — shell com empty-state; Demo/Owner intactos |

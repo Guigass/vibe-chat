@@ -27,6 +27,7 @@ Regras do registro:
 
 | ID      | Área              | Achado                                                                | Severidade | Status                                       |
 | ------- | ----------------- | --------------------------------------------------------------------- | ---------- | -------------------------------------------- |
+| BUG-021 | Group DM / realtime | Convidado para DM em grupo não vê a conversa até recarregar         | Média      | Aberto                                       |
 | BUG-020 | Canal / membros   | Sem painel de membros, add no canal nem enviar PV a partir do roster  | Média      | Aberto — fecha em **B-186** |
 | BUG-002 | Sidebar / unread  | Badges de novas mensagens não limpam de forma persistente após reload | Média      | **Done** — B-094 |
 | BUG-008 | Presence          | Minimizar a janela marca ausente na hora                              | Média      | Done                                         |
@@ -41,6 +42,36 @@ Regras do registro:
 | BUG-018 | Timeline / scroll | Scroll não fica colado no fim ao enviar/receber (às vezes)           | Média      | Done                                         |
 
 ## Detalhamento
+
+### BUG-021 — Convidado para DM em grupo: front não atualiza
+
+- Status: **Aberto**
+- Severidade: **Média** (o membership grava no servidor; F5 mostra a conversa.
+  Sem reload, o convidado não vê o grupo na sidebar nem entra no hub).
+- Observado em: 2026-09-09; relato de produto no lab Compose (`apps` /
+  `localhost:4200`). Alice adiciona Bob (ou cria o grupo incluindo Bob): a
+  sessão de Alice atualiza; a de Bob permanece sem o item até recarregar.
+- Hipótese: `ChannelStore.addGroupDmParticipants` / `openGroupDm` só fazem
+  `upsertChannel` + `joinChannel` no cliente que chamou o HTTP. A API persiste
+  o membro e, no add, emite mensagem de sistema no **grupo do canal**
+  (`MessageCreated`). O convidado ainda não fez `JoinChannel`, então não
+  recebe o eco. O hub não tem evento user-targeted de membership
+  (`AddedToChannel` / equivalente) e o store não reidrata a lista ao vivo.
+- Arquivos: `apps/web/src/app/core/services/channel.store.ts`,
+  `apps/web/src/app/core/services/chat-hub.service.ts`,
+  `apps/web/src/app/layout/shell.page.ts` (`addGroupDmParticipants`),
+  `apps/api/GroupDmEndpoints.cs` (`AddParticipants` / `CreateGroupDm`),
+  `docs/architecture/contratos.md` (eventos do hub — só `MessageCreated` etc.).
+- Resultado esperado: ao ser incluído (criar grupo ou “Adicionar” numa
+  GroupDm), o front do convidado insere a conversa na sidebar, faz
+  `JoinChannel` e passa a receber mensagens sem F5. Quem já estava no grupo
+  atualiza nomes/contagem no cabeçalho.
+- Risk class: R2.
+- Owner automático: Frontend (D) + Messaging/Realtime (C).
+- Critério de resolução: duas sessões (DevAuth Alice/Bob) — convite aparece
+  ao vivo no cliente do convidado; regressão unit/E2E do upsert + join;
+  finding `Done`. Distinto de **BUG-020** / B-186 (roster de canal
+  público/privado) e de B-040 (convidado externo).
 
 ### BUG-020 — Sem membros do canal nem add / PV no painel
 
