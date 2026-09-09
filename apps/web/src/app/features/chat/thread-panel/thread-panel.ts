@@ -1,5 +1,7 @@
 import { Component, computed, effect, ElementRef, inject, signal, untracked, viewChild } from '@angular/core';
 import { ThreadStore } from '../../../core/services/thread.store';
+import { FollowedThreadsStore } from '../../../core/services/followed-threads.store';
+import { ApiService } from '../../../core/api/api.service';
 import { replyPreviewText } from '../../../core/services/message-sync';
 import { MessageStore } from '../../../core/services/message.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
@@ -29,10 +31,36 @@ import { ui } from '../../../core/i18n/strings';
             <p>{{ active.replyCount }} {{ active.replyCount === 1 ? ui.menuReply : ui.menuReplies }}</p>
           }
         </div>
-        <vc-icon-button [label]="ui.threadClose" (click)="threads.close()">
-          <span aria-hidden="true">×</span>
-        </vc-icon-button>
+        <div class="thread__header-actions">
+          @if (threads.active(); as active) {
+            <button
+              type="button"
+              class="thread__follow"
+              [class.thread__follow--active]="active.following"
+              [attr.aria-pressed]="active.following"
+              [attr.aria-label]="active.following ? ui.threadUnfollowAction : ui.threadFollowAction"
+              (click)="toggleFollow(active.id, active.following)"
+            >
+              {{ active.following ? ui.threadFollowing : ui.threadNotFollowing }}
+            </button>
+          }
+          <vc-icon-button [label]="ui.threadClose" (click)="threads.close()">
+            <span aria-hidden="true">×</span>
+          </vc-icon-button>
+        </div>
       </header>
+
+      @if (autoFollowNotice()) {
+        <div class="thread__auto-follow" role="status">
+          <span>{{ ui.threadFollowToastTitle }}</span>
+          <button type="button" (click)="undoAutoFollow()">{{ ui.threadFollowToastUndo }}</button>
+        </div>
+      }
+      @if (shareNotice(); as notice) {
+        <div class="thread__auto-follow" role="status">
+          <span>{{ notice }}</span>
+        </div>
+      }
 
       <div class="thread__scroll" #scroller>
         @if (threads.loading()) {
@@ -67,7 +95,9 @@ import { ui } from '../../../core/i18n/strings';
                 <vc-message-bubble
                   [message]="message"
                   [showReplyAction]="true"
+                  [showShareToChannelAction]="true"
                   [highlighted]="messages.highlightMessageId() === message.id"
+                  (shareToChannel)="onShareToChannel(message.id)"
                   (reply)="onReply(message)"
                   (startEdit)="onStartEdit(message)"
                   (quoteClick)="onQuoteClick($event)"
@@ -167,6 +197,47 @@ import { ui } from '../../../core/i18n/strings';
       color: var(--vc-ink-muted);
       font-size: 0.8rem;
     }
+    .thread__header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--vc-space-2);
+    }
+    .thread__follow {
+      font: inherit;
+      font-size: var(--vc-text-xs);
+      padding: var(--vc-space-1) var(--vc-space-2);
+      border-radius: var(--vc-radius-sm);
+      border: 1px solid var(--vc-border-subtle);
+      background: transparent;
+      color: var(--vc-text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .thread__follow--active {
+      color: var(--vc-accent, var(--vc-text));
+      border-color: var(--vc-accent, var(--vc-border));
+      background: var(--vc-surface-raised);
+    }
+    .thread__auto-follow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--vc-space-2);
+      padding: var(--vc-space-2) var(--vc-space-4);
+      background: var(--vc-surface-raised);
+      border-bottom: 1px solid var(--vc-border-subtle);
+      font-size: var(--vc-text-xs);
+      color: var(--vc-text-muted);
+    }
+    .thread__auto-follow button {
+      font: inherit;
+      color: var(--vc-text);
+      background: transparent;
+      border: none;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 0;
+    }
     .thread__scroll {
       min-height: 0;
       overflow: auto;
@@ -243,6 +314,10 @@ export class ThreadPanel {
   readonly ui = ui;
   readonly threads = inject(ThreadStore);
   readonly messages = inject(MessageStore);
+  readonly followedThreads = inject(FollowedThreadsStore);
+  readonly autoFollowNotice = signal(false);
+  readonly shareNotice = signal<string | null>(null);
+  private readonly api = inject(ApiService);
   private readonly hub = inject(ChatHubService);
   private readonly drafts = inject(DraftStoreService);
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
@@ -283,6 +358,28 @@ export class ThreadPanel {
     });
 
     effect(() => {
+      const active = this.threads.active();
+      const loading = this.threads.loading();
+      if (!active || loading) return;
+      untracked(() => {
+        this.autoFollowNotice.set(false);
+        if (active.following && active.followSource && active.followSource !== 'Manual') {
+          if (this.followedThreads.shouldAnnounceAutoFollow(active.id)) {
+            this.autoFollowNotice.set(true);
+          }
+        }
+        if (active.following) {
+          const latestSeq = Math.max(
+            active.parentMessage?.seq ?? 0,
+            ...this.threads.sortedMessages().map((m) => m.seq ?? 0),
+            0,
+          );
+          void this.followedThreads.markRead(active.id, latestSeq);
+        }
+      });
+    });
+
+    effect(() => {
       const editing = this.threads.editingMessage();
       if (!editing) return;
       untracked(() => {
@@ -305,6 +402,34 @@ export class ThreadPanel {
 
   citePreview(body: string): string {
     return replyPreviewText(body);
+  }
+
+  async toggleFollow(threadId: string, following: boolean): Promise<void> {
+    if (following) {
+      await this.followedThreads.unfollow(threadId);
+    } else {
+      await this.followedThreads.follow(threadId);
+    }
+  }
+
+  async undoAutoFollow(): Promise<void> {
+    const active = this.threads.active();
+    this.autoFollowNotice.set(false);
+    if (active) {
+      await this.followedThreads.unfollow(active.id);
+    }
+  }
+
+  async onShareToChannel(messageId: string): Promise<void> {
+    const thread = this.threads.active();
+    if (!thread) return;
+    try {
+      await this.api.shareThreadReplyToChannel(thread.id, messageId);
+      this.shareNotice.set(ui.threadSharedToChannel);
+    } catch {
+      this.shareNotice.set(ui.threadShareError);
+    }
+    setTimeout(() => this.shareNotice.set(null), 4000);
   }
 
   onReply(message: ChatMessage): void {

@@ -151,6 +151,9 @@ public sealed class PushDispatcher(
         var authorName = root["authorName"]?.GetValue<string>() ?? string.Empty;
         var body = root["body"]?.GetValue<string>() ?? string.Empty;
         var mentioned = ParseMentionedUserIds(root["mentionedUserIds"]);
+        var threadId = root["threadId"] is JsonValue threadIdValue && threadIdValue.TryGetValue<Guid>(out var parsedThreadId)
+            ? parsedThreadId
+            : (Guid?)null;
 
         var channel = await dbContext.Channels.AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == channelId && x.TenantId == tenantId, cancellationToken);
@@ -162,6 +165,16 @@ public sealed class PushDispatcher(
         var isDirect = channel.Type == ChannelType.Direct;
         var candidateIds = await LoadCandidateUserIdsAsync(tenantId, channel, cancellationToken);
         var mentionedSet = mentioned.ToHashSet();
+
+        // B-102: a followed-thread reply bypasses the "None-unless-mentioned" gate the same way an
+        // explicit mention does. Thread followers are always a subset of candidateIds — following a
+        // thread requires channel access — so no change to candidate loading is needed.
+        var followingThreadSet = threadId is Guid resolvedThreadId
+            ? (await dbContext.ThreadSubscriptions.AsNoTracking()
+                .Where(x => x.TenantId == tenantId && x.ThreadId == resolvedThreadId)
+                .Select(x => x.UserId.Value)
+                .ToListAsync(cancellationToken)).ToHashSet()
+            : [];
 
         // B-097: batch-load global + per-channel preferences for every candidate up front — the
         // old two-loop shape only loaded preferences for users that a hardcoded mention/DM check
@@ -186,9 +199,9 @@ public sealed class PushDispatcher(
             channelOverrides.TryGetValue(userId, out var channelOverride);
             var effectiveLevel = PushDispatchPolicies.ResolveEffectiveLevel(
                 globalLevel,
-                channelOverride is null ? null : (channelOverride.Level, channelOverride.MutedUntil),
+                channelOverride?.Level is NotificationLevel overrideLevel ? (overrideLevel, channelOverride.MutedUntil) : null,
                 now);
-            var isMentioned = mentionedSet.Contains(userId.Value);
+            var isMentioned = mentionedSet.Contains(userId.Value) || followingThreadSet.Contains(userId.Value);
             if (!PushDispatchPolicies.ShouldNotifyForLevel(effectiveLevel, isDirect, isMentioned, userId.Value == authorId))
             {
                 continue;

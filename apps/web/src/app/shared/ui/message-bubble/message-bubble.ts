@@ -1065,6 +1065,7 @@ export class MessageBubble {
   readonly showThreadAction = input(false);
   readonly showReplyAction = input(false);
   readonly showForwardAction = input(false);
+  readonly showShareToChannelAction = input(false);
   readonly showPinAction = input(false);
   readonly showSaveAction = input(false);
   readonly showMarkUnreadAction = input(false);
@@ -1074,6 +1075,7 @@ export class MessageBubble {
   readonly openThread = output<void>();
   readonly reply = output<void>();
   readonly forward = output<void>();
+  readonly shareToChannel = output<void>();
   readonly quoteClick = output<string>();
   readonly react = output<string>();
   readonly pin = output<void>();
@@ -1138,6 +1140,7 @@ export class MessageBubble {
     menuActionsForMessage({
       mine: this.own(),
       showForward: this.showForwardAction(),
+      showShareToChannel: this.showShareToChannelAction(),
       showThread: this.showThreadAction(),
       showPin: this.showPinAction(),
       isPinned: !!this.message().isPinned,
@@ -1318,6 +1321,9 @@ export class MessageBubble {
     switch (id) {
       case 'forward':
         this.forward.emit();
+        break;
+      case 'share-to-channel':
+        this.shareToChannel.emit();
         break;
       case 'thread':
         this.openThread.emit();

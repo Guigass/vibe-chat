@@ -628,6 +628,25 @@
     "admin.reencrypted": "%n% identifiant(s) rechiffré(s) sur la version active.",
     "admin.reencryptNone": "Aucun identifiant n’avait besoin d’être rechiffré.",
     "admin.reencryptForbidden": "Pas d’autorisation pour rechiffrer.",
-    "admin.reencryptError": "Échec du rechiffrement des identifiants."
+    "admin.reencryptError": "Échec du rechiffrement des identifiants.",
+    "channel.followedThreads": "Fils suivis",
+    "channel.followAllThreads": "Suivre tous les fils de ce canal",
+    "channel.unfollowAllThreads": "Ne plus suivre tous les fils",
+    "thread.following": "Suivi",
+    "thread.notFollowing": "Suivre",
+    "thread.followAction": "Suivre le fil",
+    "thread.unfollowAction": "Ne plus suivre le fil",
+    "thread.shareToChannel": "Partager dans le canal",
+    "thread.sharedToChannel": "Partagé dans le canal.",
+    "thread.shareError": "Impossible de partager dans le canal.",
+    "threadFollow.toastTitle": "Vous suivez maintenant ce fil",
+    "threadFollow.toastUndo": "Annuler",
+    "threadFollow.empty": "Aucun fil suivi pour le moment.",
+    "threadFollow.emptyHint": "Répondre, être mentionné ou suivre manuellement ajoute un fil ici.",
+    "threadFollow.jump": "Ouvrir",
+    "threadFollow.unfollow": "Ne plus suivre",
+    "threadFollow.loadError": "Impossible de charger les fils suivis.",
+    "threadFollow.actionError": "Impossible de mettre à jour l'abonnement au fil.",
+    "threadFollow.unreadCount": "%n% non lus"
   }
 }

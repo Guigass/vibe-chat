@@ -61,6 +61,7 @@ function matchesFilter(text: string, query: string): boolean {
                       [compact]="compact()"
                       [muted]="mutedIds().has(channel.id)"
                       [channelHasOverride]="overrideIds().has(channel.id)"
+                      [followAllThreads]="followAllThreadsIds().has(channel.id)"
                       (select)="select.emit(channel.id)"
                       (muteAction)="channelMuteAction.emit({ channelId: channel.id, action: $event })"
                     />
@@ -139,6 +140,7 @@ function matchesFilter(text: string, query: string): boolean {
                   [presence]="presenceOf(channel.peerUserId)"
                   [muted]="mutedIds().has(channel.id)"
                   [channelHasOverride]="overrideIds().has(channel.id)"
+                  [followAllThreads]="followAllThreadsIds().has(channel.id)"
                   (select)="select.emit(channel.id)"
                   (muteAction)="channelMuteAction.emit({ channelId: channel.id, action: $event })"
                 />
@@ -417,6 +419,7 @@ export class SidebarNav {
   readonly draftIds = input<ReadonlySet<string>>(new Set());
   readonly mutedIds = input<ReadonlySet<string>>(new Set());
   readonly overrideIds = input<ReadonlySet<string>>(new Set());
+  readonly followAllThreadsIds = input<ReadonlySet<string>>(new Set());
   readonly canCreate = input(false);
   readonly compact = input(false);
   readonly select = output<string>();

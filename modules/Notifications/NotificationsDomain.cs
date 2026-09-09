@@ -39,9 +39,10 @@ public sealed class NotificationPreference
 }
 
 /// <summary>
-/// Per-channel notification override (B-097). Row presence means an override is active;
-/// absence means "use the global default". <see cref="MutedUntil"/> is evaluated live at
-/// read time — no cleanup job needed for temporary mutes to expire on their own.
+/// Per-channel notification override (B-097) and thread-follow default (B-102). Row presence
+/// no longer implies a mute override alone: <see cref="Level"/> null means "no level override"
+/// (the row may still exist just to carry <see cref="FollowAllThreads"/>). <see cref="MutedUntil"/>
+/// is evaluated live at read time — no cleanup job needed for temporary mutes to expire on their own.
 /// </summary>
 public sealed class ChannelNotificationPreference
 {
@@ -49,8 +50,11 @@ public sealed class ChannelNotificationPreference
     public TenantId TenantId { get; set; }
     public UserId UserId { get; set; }
     public ChannelId ChannelId { get; set; }
-    public NotificationLevel Level { get; set; }
+    public NotificationLevel? Level { get; set; }
     public DateTimeOffset? MutedUntil { get; set; }
+
+    /// <summary>B-102: auto-follow every new thread created in this channel.</summary>
+    public bool FollowAllThreads { get; set; }
 }
 
 /// <summary>

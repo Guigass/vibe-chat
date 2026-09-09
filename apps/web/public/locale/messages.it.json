@@ -628,6 +628,25 @@
     "admin.reencrypted": "%n% credenziale/i ricifrate sulla versione attiva.",
     "admin.reencryptNone": "Nessuna credenziale necessitava di ricifratura.",
     "admin.reencryptForbidden": "Nessun permesso per ricifrare.",
-    "admin.reencryptError": "Ricifratura delle credenziali non riuscita."
+    "admin.reencryptError": "Ricifratura delle credenziali non riuscita.",
+    "channel.followedThreads": "Thread seguiti",
+    "channel.followAllThreads": "Segui tutti i thread di questo canale",
+    "channel.unfollowAllThreads": "Smetti di seguire tutti i thread",
+    "thread.following": "Seguito",
+    "thread.notFollowing": "Segui",
+    "thread.followAction": "Segui thread",
+    "thread.unfollowAction": "Smetti di seguire il thread",
+    "thread.shareToChannel": "Condividi nel canale",
+    "thread.sharedToChannel": "Condiviso nel canale.",
+    "thread.shareError": "Impossibile condividere nel canale.",
+    "threadFollow.toastTitle": "Ora segui questo thread",
+    "threadFollow.toastUndo": "Annulla",
+    "threadFollow.empty": "Nessun thread seguito ancora.",
+    "threadFollow.emptyHint": "Rispondere, essere menzionati o seguire manualmente aggiunge un thread qui.",
+    "threadFollow.jump": "Apri",
+    "threadFollow.unfollow": "Smetti di seguire",
+    "threadFollow.loadError": "Impossibile caricare i thread seguiti.",
+    "threadFollow.actionError": "Impossibile aggiornare l'iscrizione al thread.",
+    "threadFollow.unreadCount": "%n% non letti"
   }
 }

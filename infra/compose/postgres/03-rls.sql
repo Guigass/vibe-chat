@@ -202,6 +202,8 @@ CREATE POLICY tenant_isolation_pinned_messages ON messaging.pinned_messages
 
 ALTER TABLE IF EXISTS messaging.saved_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.saved_messages FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.thread_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.thread_subscriptions FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.polls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.polls FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.poll_options ENABLE ROW LEVEL SECURITY;
@@ -211,6 +213,11 @@ ALTER TABLE IF EXISTS messaging.poll_votes FORCE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS tenant_isolation_saved_messages ON messaging.saved_messages;
 CREATE POLICY tenant_isolation_saved_messages ON messaging.saved_messages
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_thread_subscriptions ON messaging.thread_subscriptions;
+CREATE POLICY tenant_isolation_thread_subscriptions ON messaging.thread_subscriptions
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

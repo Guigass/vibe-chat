@@ -18,6 +18,7 @@ export function emptyNotificationPreferences(): NotificationPreferences {
     digestEnabled: false,
     priorityContactUserIds: [],
     channelOverrides: [],
+    followAllThreadsChannelIds: [],
   };
 }
 
@@ -44,6 +45,9 @@ export function mapNotificationPreferences(raw: unknown): NotificationPreference
           .map((item) => mapChannelNotificationOverride(item))
           .filter((item): item is ChannelNotificationOverride => item !== null)
       : [],
+    followAllThreadsChannelIds: readIdList(
+      readValue(source, 'followAllThreadsChannelIds', 'FollowAllThreadsChannelIds'),
+    ),
   };
 }
 

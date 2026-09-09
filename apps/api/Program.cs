@@ -1593,6 +1593,53 @@ v1.MapPost("/channels/{channelId:guid}/messages/{messageId:guid}/threads", async
             };
             db.MessageThreads.Add(thread);
             parent.ThreadId = thread.Id;
+
+            // B-102: the root message's author auto-follows their own new thread, plus anyone
+            // who opted into "seguir todas as threads" for this channel. Thread is brand new here
+            // (zero prior subscriptions), so a local set is enough to avoid a duplicate insert.
+            var now = clock.UtcNow;
+            var alreadySubscribed = new HashSet<Guid>();
+            db.ThreadSubscriptions.Add(new ThreadSubscription
+            {
+                Id = Guid.NewGuid(),
+                TenantId = channel.TenantId,
+                UserId = parent.AuthorId,
+                ThreadId = thread.Id,
+                ChannelId = channel.Id,
+                Source = ThreadSubscriptionSource.Author,
+                LastReadSeq = 0,
+                CreatedAt = now
+            });
+            alreadySubscribed.Add(parent.AuthorId.Value);
+
+            var followAllUserIds = await db.ChannelMembers.AsNoTracking()
+                .Where(x => x.TenantId == channel.TenantId && x.ChannelId == channel.Id)
+                .Join(
+                    db.ChannelNotificationPreferences.AsNoTracking()
+                        .Where(x => x.ChannelId == channel.Id && x.FollowAllThreads),
+                    cm => cm.UserId,
+                    p => p.UserId,
+                    (cm, p) => cm.UserId)
+                .ToArrayAsync(ct);
+            foreach (var userId in followAllUserIds)
+            {
+                if (!alreadySubscribed.Add(userId.Value))
+                {
+                    continue;
+                }
+
+                db.ThreadSubscriptions.Add(new ThreadSubscription
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = channel.TenantId,
+                    UserId = userId,
+                    ThreadId = thread.Id,
+                    ChannelId = channel.Id,
+                    Source = ThreadSubscriptionSource.Manual,
+                    LastReadSeq = 0,
+                    CreatedAt = now
+                });
+            }
         }
 
         await db.SaveChangesAsync(ct);
@@ -1601,13 +1648,19 @@ v1.MapPost("/channels/{channelId:guid}/messages/{messageId:guid}/threads", async
     var replyCount = await db.Messages.CountAsync(
         x => x.ThreadId == thread.Id && x.ConversationId == new ChannelId(thread.Id),
         ct);
+    var subscription = await db.ThreadSubscriptions.AsNoTracking()
+        .Where(x => x.ThreadId == thread.Id && x.UserId == profile.Id)
+        .Select(x => (ThreadSubscriptionSource?)x.Source)
+        .FirstOrDefaultAsync(ct);
     return Results.Ok(new ThreadResponse(
         thread.Id,
         thread.ChannelId.Value,
         thread.ParentMessageId.Value,
         thread.CreatedBy.Value,
         thread.CreatedAt,
-        replyCount));
+        replyCount,
+        Following: subscription is not null,
+        FollowSource: subscription?.ToString()));
 }).RequirePermission(Permissions.Message.Send);
 
 v1.MapGet("/threads/{threadId:guid}", async (
@@ -1675,6 +1728,11 @@ v1.MapGet("/threads/{threadId:guid}", async (
                 : null);
     }
 
+    var subscription = await db.ThreadSubscriptions.AsNoTracking()
+        .Where(x => x.ThreadId == thread.Id && x.UserId == profile.Id)
+        .Select(x => (ThreadSubscriptionSource?)x.Source)
+        .FirstOrDefaultAsync(ct);
+
     return Results.Ok(new ThreadResponse(
         thread.Id,
         thread.ChannelId.Value,
@@ -1682,7 +1740,9 @@ v1.MapGet("/threads/{threadId:guid}", async (
         thread.CreatedBy.Value,
         thread.CreatedAt,
         replyCount,
-        parentResponse));
+        parentResponse,
+        Following: subscription is not null,
+        FollowSource: subscription?.ToString()));
 });
 
 v1.MapGet("/threads/{threadId:guid}/messages", async (
@@ -1903,6 +1963,305 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
         return Results.Json(
             new { error = "MentionAllForbidden", message = "Channel-wide mention is not allowed in this channel." },
             statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
+    }
+}).RequirePermission(Permissions.Message.Send);
+
+// B-102: follow/unfollow a thread, list followed threads, advance the per-thread read cursor,
+// and share a thread reply back to its channel as a reference (reuses the B-085 forward writer).
+v1.MapPost("/threads/{threadId:guid}/subscription", async (
+    Guid threadId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+    var thread = await db.MessageThreads.AsNoTracking().FirstOrDefaultAsync(x => x.Id == threadId, ct);
+    if (thread is null)
+    {
+        return Results.NotFound();
+    }
+
+    var channel = await ResolveChannelAsync(thread.ChannelId, profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var subscription = await db.ThreadSubscriptions
+        .FirstOrDefaultAsync(x => x.ThreadId == threadId && x.UserId == profile.Id, ct);
+    if (subscription is null)
+    {
+        var currentSeq = await db.ConversationSequences.AsNoTracking()
+            .Where(x => x.ConversationId == new ChannelId(threadId))
+            .Select(x => (long?)x.LastSequence)
+            .FirstOrDefaultAsync(ct) ?? 0;
+        subscription = new ThreadSubscription
+        {
+            Id = Guid.NewGuid(),
+            TenantId = channel.TenantId,
+            UserId = profile.Id,
+            ThreadId = threadId,
+            ChannelId = channel.Id,
+            Source = ThreadSubscriptionSource.Manual,
+            LastReadSeq = currentSeq,
+            CreatedAt = clock.UtcNow
+        };
+        db.ThreadSubscriptions.Add(subscription);
+        await db.SaveChangesAsync(ct);
+    }
+
+    return Results.Ok(new ThreadSubscriptionResponse(threadId, true, subscription.Source.ToString(), subscription.LastReadSeq));
+}).RequirePermission(Permissions.Message.Read);
+
+v1.MapDelete("/threads/{threadId:guid}/subscription", async (
+    Guid threadId,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+    var thread = await db.MessageThreads.AsNoTracking().FirstOrDefaultAsync(x => x.Id == threadId, ct);
+    if (thread is null)
+    {
+        return Results.NotFound();
+    }
+
+    var channel = await ResolveChannelAsync(thread.ChannelId, profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var subscription = await db.ThreadSubscriptions
+        .FirstOrDefaultAsync(x => x.ThreadId == threadId && x.UserId == profile.Id, ct);
+    if (subscription is not null)
+    {
+        db.ThreadSubscriptions.Remove(subscription);
+        await db.SaveChangesAsync(ct);
+    }
+
+    return Results.NoContent();
+}).RequirePermission(Permissions.Message.Read);
+
+v1.MapPut("/threads/{threadId:guid}/subscription/read-cursor", async (
+    Guid threadId,
+    UpsertThreadReadCursorRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+    var thread = await db.MessageThreads.AsNoTracking().FirstOrDefaultAsync(x => x.Id == threadId, ct);
+    if (thread is null)
+    {
+        return Results.NotFound();
+    }
+
+    var channel = await ResolveChannelAsync(thread.ChannelId, profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var subscription = await db.ThreadSubscriptions
+        .FirstOrDefaultAsync(x => x.ThreadId == threadId && x.UserId == profile.Id, ct);
+    if (subscription is null)
+    {
+        return Results.NotFound();
+    }
+
+    subscription.LastReadSeq = request.AllowRetrograde
+        ? request.LastReadSequence
+        : Math.Max(subscription.LastReadSeq, request.LastReadSequence);
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new ThreadSubscriptionResponse(threadId, true, subscription.Source.ToString(), subscription.LastReadSeq));
+}).RequirePermission(Permissions.Message.Read);
+
+v1.MapGet("/workspaces/{workspaceId:guid}/threads/following", async (
+    Guid workspaceId,
+    int? limit,
+    string? cursor,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+    if (workspace is null)
+    {
+        return Results.Forbid();
+    }
+
+    var pageSize = Math.Clamp(limit ?? ThreadSubscriptionPolicies.DefaultPageSize, 1, ThreadSubscriptionPolicies.MaxPageSize);
+    if (!TryParseOffsetCursor(cursor, out var offset))
+    {
+        return Results.BadRequest(new { error = "InvalidCursor" });
+    }
+
+    // Membership re-checked per row (not just at the workspace gate) so a thread in a channel the
+    // user has left silently drops off the list instead of hiding the whole page (spec: "sair do
+    // canal esconde as threads dele") — same pattern as the B-093 saved-messages list below.
+    var rows = await (
+        from sub in db.ThreadSubscriptions.AsNoTracking()
+        join channel in db.Channels.AsNoTracking() on sub.ChannelId equals channel.Id
+        join thread in db.MessageThreads.AsNoTracking() on sub.ThreadId equals thread.Id
+        join parentMsg in db.Messages.AsNoTracking() on thread.ParentMessageId equals parentMsg.Id into parentJoin
+        from parentMsg in parentJoin.DefaultIfEmpty()
+        where sub.UserId == profile.Id
+            && channel.WorkspaceId == workspace.Id
+            && (
+                (
+                    (channel.Type == ChannelType.Public || channel.Type == ChannelType.Announcement)
+                    && db.WorkspaceMembers.Any(wm =>
+                        wm.TenantId == workspace.TenantId && wm.WorkspaceId == channel.WorkspaceId && wm.UserId == profile.Id)
+                )
+                || (
+                    channel.Type != ChannelType.Public
+                    && channel.Type != ChannelType.Announcement
+                    && db.ChannelMembers.Any(cm =>
+                        cm.TenantId == workspace.TenantId && cm.ChannelId == channel.Id && cm.UserId == profile.Id)
+                )
+            )
+        select new
+        {
+            sub.ThreadId,
+            ChannelId = channel.Id,
+            ChannelName = channel.Name,
+            ChannelType = channel.Type,
+            sub.LastReadSeq,
+            sub.CreatedAt,
+            RootBody = parentMsg != null ? parentMsg.Body : string.Empty,
+            RootDeleted = parentMsg == null || parentMsg.DeletedAt != null
+        }).ToListAsync(ct);
+
+    if (rows.Count == 0)
+    {
+        return Results.Ok(new FollowedThreadsPageResponse([], null));
+    }
+
+    var threadIds = rows.Select(x => x.ThreadId).Distinct().ToArray();
+    var conversationIds = threadIds.Select(x => new ChannelId(x)).ToArray();
+    var currentSeqByThread = await db.ConversationSequences.AsNoTracking()
+        .Where(x => conversationIds.Contains(x.ConversationId))
+        .ToDictionaryAsync(x => x.ConversationId.Value, x => x.LastSequence, ct);
+    var lastActivityByThread = await db.Messages.AsNoTracking()
+        .Where(m => m.ThreadId != null && threadIds.Contains(m.ThreadId.Value))
+        .GroupBy(m => m.ThreadId!.Value)
+        .Select(g => new { ThreadId = g.Key, LastAt = g.Max(x => x.CreatedAt) })
+        .ToDictionaryAsync(x => x.ThreadId, x => x.LastAt, ct);
+
+    var channelStubs = rows
+        .GroupBy(x => x.ChannelId.Value)
+        .Select(g =>
+        {
+            var first = g.First();
+            return new Channel { Id = first.ChannelId, Type = first.ChannelType, Name = first.ChannelName };
+        })
+        .ToArray();
+    var peers = await ResolveDirectPeersAsync(channelStubs, profile.Id, db, ct);
+
+    var merged = rows
+        .Select(x =>
+        {
+            var currentSeq = currentSeqByThread.TryGetValue(x.ThreadId, out var seq) ? seq : 0L;
+            var unread = Math.Max(0, currentSeq - x.LastReadSeq);
+            var lastActivityAt = lastActivityByThread.TryGetValue(x.ThreadId, out var at) ? at : x.CreatedAt;
+            var channelName = x.ChannelType == ChannelType.Direct
+                ? (peers.TryGetValue(x.ChannelId, out var peer) && !string.IsNullOrWhiteSpace(peer.DisplayName) ? peer.DisplayName : "DM")
+                : x.ChannelName;
+            return new FollowedThreadResponse(
+                x.ThreadId,
+                x.ChannelId.Value,
+                channelName,
+                x.ChannelType.ToString(),
+                x.RootDeleted ? "Mensagem removida" : TruncateReplyPreview(x.RootBody),
+                x.RootDeleted,
+                unread,
+                lastActivityAt);
+        })
+        .OrderByDescending(x => x.LastActivityAt)
+        .ThenByDescending(x => x.ThreadId)
+        .ToArray();
+
+    var page = merged.Skip(offset).Take(pageSize + 1).ToArray();
+    string? nextCursor = null;
+    if (page.Length > pageSize)
+    {
+        page = page.Take(pageSize).ToArray();
+        nextCursor = EncodeOffsetCursor(offset + pageSize);
+    }
+
+    return Results.Ok(new FollowedThreadsPageResponse(page, nextCursor));
+}).RequirePermission(Permissions.Message.Read);
+
+v1.MapPost("/threads/{threadId:guid}/messages/{messageId:guid}/share-to-channel", async (
+    Guid threadId,
+    Guid messageId,
+    ShareToChannelRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IMessageWriter writer,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+    var thread = await db.MessageThreads.AsNoTracking().FirstOrDefaultAsync(x => x.Id == threadId, ct);
+    if (thread is null)
+    {
+        return Results.NotFound();
+    }
+
+    var channel = await ResolveChannelAsync(thread.ChannelId, profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var target = await db.Messages.AsNoTracking()
+        .FirstOrDefaultAsync(x => x.Id == new MessageId(messageId) && x.ThreadId == threadId, ct);
+    if (target is null || target.DeletedAt is not null)
+    {
+        return Results.NotFound();
+    }
+
+    try
+    {
+        // Reuses the B-085 forward writer with the thread's own channel as the single target —
+        // "share to channel" is a same-channel forward that references the reply, not a copy.
+        var result = await writer.ForwardAsync(new ForwardMessageCommand(
+            channel.TenantId,
+            profile.Id,
+            channel.WorkspaceId,
+            target.Id,
+            request.IdempotencyKey,
+            [channel.Id],
+            null), ct);
+
+        var shared = result.Messages[0];
+        return Results.Accepted(
+            $"/api/v1/channels/{shared.ChannelId}/messages?after={shared.Sequence - 1}",
+            new ShareToChannelResponse(shared.MessageId.Value, shared.ChannelId.Value, shared.Sequence, shared.CreatedAt));
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
     }
     catch (UnauthorizedAccessException)
     {
@@ -3416,9 +3775,15 @@ v1.MapGet("/notifications/preferences", async (
     await BeginRlsUserAsync(db, tenant, profile.Id, ct);
     var pref = await db.NotificationPreferences.AsNoTracking()
         .FirstOrDefaultAsync(x => x.UserId == profile.Id, ct);
+    // B-102: row presence no longer implies a mute override alone (a row may exist only to carry
+    // FollowAllThreads) — Level null means "no override", filtered out of this mute-specific array.
     var overrides = await db.ChannelNotificationPreferences.AsNoTracking()
-        .Where(x => x.UserId == profile.Id)
-        .Select(x => new ChannelNotificationOverrideResponse(x.ChannelId.Value, x.Level.ToString(), x.MutedUntil))
+        .Where(x => x.UserId == profile.Id && x.Level != null)
+        .Select(x => new ChannelNotificationOverrideResponse(x.ChannelId.Value, x.Level!.Value.ToString(), x.MutedUntil))
+        .ToArrayAsync(ct);
+    var followAllThreadsChannelIds = await db.ChannelNotificationPreferences.AsNoTracking()
+        .Where(x => x.UserId == profile.Id && x.FollowAllThreads)
+        .Select(x => x.ChannelId.Value)
         .ToArrayAsync(ct);
     return Results.Ok(new NotificationPreferencesResponse(
         (pref?.Level ?? NotificationLevel.MentionsAndDms).ToString(),
@@ -3430,7 +3795,8 @@ v1.MapGet("/notifications/preferences", async (
         pref?.TimeZone,
         pref?.DigestEnabled ?? false,
         pref?.PriorityContactUserIds ?? [],
-        overrides));
+        overrides,
+        followAllThreadsChannelIds));
 }).RequirePermission(Permissions.Message.Read);
 
 v1.MapPut("/notifications/preferences", async (
@@ -3500,12 +3866,17 @@ v1.MapPut("/notifications/preferences", async (
     await db.SaveChangesAsync(ct);
 
     var overrides = await db.ChannelNotificationPreferences.AsNoTracking()
-        .Where(x => x.UserId == profile.Id)
-        .Select(x => new ChannelNotificationOverrideResponse(x.ChannelId.Value, x.Level.ToString(), x.MutedUntil))
+        .Where(x => x.UserId == profile.Id && x.Level != null)
+        .Select(x => new ChannelNotificationOverrideResponse(x.ChannelId.Value, x.Level!.Value.ToString(), x.MutedUntil))
+        .ToArrayAsync(ct);
+    var followAllThreadsChannelIds = await db.ChannelNotificationPreferences.AsNoTracking()
+        .Where(x => x.UserId == profile.Id && x.FollowAllThreads)
+        .Select(x => x.ChannelId.Value)
         .ToArrayAsync(ct);
     return Results.Ok(new NotificationPreferencesResponse(
         pref.Level.ToString(), pref.HidePreview, pref.DndEnabled, pref.DndStart, pref.DndEnd,
-        pref.DndDays, pref.TimeZone, pref.DigestEnabled, pref.PriorityContactUserIds, overrides));
+        pref.DndDays, pref.TimeZone, pref.DigestEnabled, pref.PriorityContactUserIds, overrides,
+        followAllThreadsChannelIds));
 }).RequirePermission(Permissions.Message.Read);
 
 v1.MapPut("/notifications/preferences/channels/{channelId:guid}", async (
@@ -3572,7 +3943,7 @@ v1.MapPut("/notifications/preferences/channels/{channelId:guid}", async (
     row.Level = level;
     row.MutedUntil = mutedUntil;
     await db.SaveChangesAsync(ct);
-    return Results.Ok(new ChannelNotificationOverrideResponse(channel.Id.Value, row.Level.ToString(), row.MutedUntil));
+    return Results.Ok(new ChannelNotificationOverrideResponse(channel.Id.Value, level.ToString(), row.MutedUntil));
 }).RequirePermission(Permissions.Message.Read);
 
 v1.MapDelete("/notifications/preferences/channels/{channelId:guid}", async (
@@ -3594,10 +3965,68 @@ v1.MapDelete("/notifications/preferences/channels/{channelId:guid}", async (
         .FirstOrDefaultAsync(x => x.ChannelId == channel.Id && x.UserId == profile.Id, ct);
     if (row is not null)
     {
-        db.ChannelNotificationPreferences.Remove(row);
+        if (row.FollowAllThreads)
+        {
+            // B-102: clearing a mute override must not silently drop "seguir todas as threads" —
+            // keep the row, just clear the level/mute fields it existed for.
+            row.Level = null;
+            row.MutedUntil = null;
+        }
+        else
+        {
+            db.ChannelNotificationPreferences.Remove(row);
+        }
+
         await db.SaveChangesAsync(ct);
     }
 
+    return Results.NoContent();
+}).RequirePermission(Permissions.Message.Read);
+
+v1.MapPut("/notifications/preferences/channels/{channelId:guid}/follow-all-threads", async (
+    Guid channelId,
+    UpdateChannelFollowAllThreadsRequest request,
+    HttpContext http,
+    VibeChatDbContext db,
+    ITenantContext tenant,
+    IClock clock,
+    CancellationToken ct) =>
+{
+    var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+    var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+    if (channel is null)
+    {
+        return Results.Forbid();
+    }
+
+    var row = await db.ChannelNotificationPreferences
+        .FirstOrDefaultAsync(x => x.ChannelId == channel.Id && x.UserId == profile.Id, ct);
+    if (row is null)
+    {
+        if (!request.Enabled)
+        {
+            return Results.NoContent();
+        }
+
+        row = new ChannelNotificationPreference
+        {
+            Id = Guid.NewGuid(),
+            TenantId = channel.TenantId,
+            UserId = profile.Id,
+            ChannelId = channel.Id,
+            Level = null
+        };
+        db.ChannelNotificationPreferences.Add(row);
+    }
+
+    row.FollowAllThreads = request.Enabled;
+    if (!request.Enabled && row.Level is null)
+    {
+        // Nothing left to persist on this row (no mute override, no follow-all-threads).
+        db.ChannelNotificationPreferences.Remove(row);
+    }
+
+    await db.SaveChangesAsync(ct);
     return Results.NoContent();
 }).RequirePermission(Permissions.Message.Read);
 
@@ -5088,6 +5517,32 @@ static bool TryParseSavedCursor(string? cursor, out DateTimeOffset? createdAt, o
 static string EncodeSavedCursor(DateTimeOffset createdAt, Guid id) =>
     Convert.ToBase64String(Encoding.UTF8.GetBytes($"{createdAt.ToString("O", CultureInfo.InvariantCulture)}|{id:D}"));
 
+/// <summary>
+/// B-102 followed-threads list: a personal, attention-bounded list, so an opaque offset cursor
+/// (over an in-memory sort by last activity) is simpler than a DB-level keyset and cheap enough.
+/// </summary>
+static bool TryParseOffsetCursor(string? cursor, out int offset)
+{
+    offset = 0;
+    if (string.IsNullOrWhiteSpace(cursor))
+    {
+        return true;
+    }
+
+    try
+    {
+        var raw = Encoding.UTF8.GetString(Convert.FromBase64String(cursor));
+        return int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out offset) && offset >= 0;
+    }
+    catch (FormatException)
+    {
+        return false;
+    }
+}
+
+static string EncodeOffsetCursor(int offset) =>
+    Convert.ToBase64String(Encoding.UTF8.GetBytes(offset.ToString(CultureInfo.InvariantCulture)));
+
 static async Task<(Message Message, Channel Channel)?> ResolveReadableMessageAsync(
     VibeChatDbContext db,
     ITenantContext tenant,
@@ -5370,6 +5825,7 @@ static async Task<Dictionary<Guid, ForwardedFromResponse>> LoadForwardedFromById
         {
             m.Id,
             m.CreatedAt,
+            m.ThreadId,
             AuthorName = u != null ? u.DisplayName : m.AuthorId.Value.ToString()
         }).ToDictionaryAsync(x => x.Id.Value, ct);
 
@@ -5407,7 +5863,8 @@ static async Task<Dictionary<Guid, ForwardedFromResponse>> LoadForwardedFromById
             channelName,
             msg?.AuthorName ?? string.Empty,
             msg?.CreatedAt ?? default,
-            isDirect);
+            isDirect,
+            msg?.ThreadId);
     }
 
     return result;
@@ -5907,7 +6364,8 @@ public sealed record ForwardedFromResponse(
     string ChannelName,
     string AuthorName,
     DateTimeOffset CreatedAt,
-    bool IsDirect = false);
+    bool IsDirect = false,
+    Guid? ThreadId = null);
 
 public sealed record ChannelMessagesResponse(
     MessageResponse[] Messages,
@@ -6010,8 +6468,24 @@ public sealed record ThreadResponse(
     Guid CreatedBy,
     DateTimeOffset CreatedAt,
     int ReplyCount,
-    MessageResponse? ParentMessage = null);
+    MessageResponse? ParentMessage = null,
+    bool Following = false,
+    string? FollowSource = null);
 public sealed record UpsertReadCursorRequest(long LastReadSequence, bool AllowRetrograde = false);
+public sealed record ThreadSubscriptionResponse(Guid ThreadId, bool Following, string Source, long LastReadSeq);
+public sealed record UpsertThreadReadCursorRequest(long LastReadSequence, bool AllowRetrograde = false);
+public sealed record FollowedThreadResponse(
+    Guid ThreadId,
+    Guid ChannelId,
+    string ChannelName,
+    string ChannelType,
+    string RootPreview,
+    bool RootDeleted,
+    long UnreadCount,
+    DateTimeOffset LastActivityAt);
+public sealed record FollowedThreadsPageResponse(FollowedThreadResponse[] Items, string? NextCursor);
+public sealed record ShareToChannelRequest(string IdempotencyKey);
+public sealed record ShareToChannelResponse(Guid MessageId, Guid ChannelId, long Sequence, DateTimeOffset CreatedAt);
 public sealed record PushPublicKeyResponse(bool Enabled, string? PublicKey);
 public sealed record PushSubscriptionRequest(string Endpoint, string P256dh, string Auth, string? UserAgent);
 public sealed record PushSubscriptionResponse(
@@ -6033,7 +6507,8 @@ public sealed record NotificationPreferencesResponse(
     string? TimeZone,
     bool DigestEnabled,
     Guid[] PriorityContactUserIds,
-    ChannelNotificationOverrideResponse[] ChannelOverrides);
+    ChannelNotificationOverrideResponse[] ChannelOverrides,
+    Guid[]? FollowAllThreadsChannelIds = null);
 
 public sealed record UpdateNotificationPreferencesRequest(
     string Level,
@@ -6048,6 +6523,7 @@ public sealed record UpdateNotificationPreferencesRequest(
 
 /// <summary>Duration: "OneHour" | "EightHours" | "UntilTomorrow" | "Indefinite" | null (no mute, e.g. an "All" override).</summary>
 public sealed record UpdateChannelNotificationPreferenceRequest(string Level, string? Duration);
+public sealed record UpdateChannelFollowAllThreadsRequest(bool Enabled);
 public sealed record ReadCursorResponse(Guid ChannelId, Guid UserId, long LastReadSequence, DateTimeOffset UpdatedAt);
 public sealed record ChannelUnreadSummaryResponse(
     Guid ChannelId,

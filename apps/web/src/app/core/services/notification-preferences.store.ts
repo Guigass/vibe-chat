@@ -86,6 +86,11 @@ export class NotificationPreferencesStore implements OnDestroy {
 
   readonly channelsWithOverride = computed(() => new Set(this.channelOverrides().keys()));
 
+  /** B-102 — channels where the caller auto-follows every new thread. */
+  readonly followAllThreadsChannelIds = computed(
+    () => new Set(this.preferencesSignal()?.followAllThreadsChannelIds ?? []),
+  );
+
   readonly dndActive = computed(() => {
     this.nowTickSignal();
     const prefs = this.preferencesSignal();
@@ -133,7 +138,7 @@ export class NotificationPreferencesStore implements OnDestroy {
     }
   }
 
-  async save(patch: Omit<NotificationPreferences, 'channelOverrides'>): Promise<boolean> {
+  async save(patch: Omit<NotificationPreferences, 'channelOverrides' | 'followAllThreadsChannelIds'>): Promise<boolean> {
     this.errorSignal.set(null);
     try {
       const updated = await this.api.updateNotificationPreferences(patch);
@@ -177,6 +182,22 @@ export class NotificationPreferencesStore implements OnDestroy {
       );
     } catch {
       this.errorSignal.set(ui.notifUnmuteError);
+    }
+  }
+
+  async setFollowAllThreads(channelId: string, enabled: boolean): Promise<void> {
+    this.errorSignal.set(null);
+    try {
+      await this.api.setChannelFollowAllThreads(channelId, enabled);
+      this.preferencesSignal.update((current) => {
+        if (!current) return current;
+        const ids = new Set(current.followAllThreadsChannelIds);
+        if (enabled) ids.add(channelId);
+        else ids.delete(channelId);
+        return { ...current, followAllThreadsChannelIds: [...ids] };
+      });
+    } catch {
+      this.errorSignal.set(ui.notifMuteError);
     }
   }
 

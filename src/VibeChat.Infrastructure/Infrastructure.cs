@@ -84,6 +84,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<TenantLinkPreviewSettings> TenantLinkPreviewSettings => Set<TenantLinkPreviewSettings>();
     public DbSet<PinnedMessage> PinnedMessages => Set<PinnedMessage>();
     public DbSet<SavedMessage> SavedMessages => Set<SavedMessage>();
+    public DbSet<ThreadSubscription> ThreadSubscriptions => Set<ThreadSubscription>();
     public DbSet<Poll> Polls => Set<Poll>();
     public DbSet<PollOption> PollOptions => Set<PollOption>();
     public DbSet<PollVote> PollVotes => Set<PollVote>();
@@ -420,6 +421,20 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
             entity.Property(x => x.Level).HasConversion<string>().HasMaxLength(32);
             entity.HasIndex(x => new { x.ChannelId, x.UserId }).IsUnique();
+            entity.HasIndex(x => new { x.ChannelId, x.FollowAllThreads });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ThreadSubscription>(entity =>
+        {
+            entity.ToTable("thread_subscriptions", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.Source).HasConversion<string>().HasMaxLength(16);
+            entity.HasIndex(x => new { x.TenantId, x.UserId, x.ThreadId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.UserId, x.CreatedAt });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -866,6 +881,21 @@ public sealed class MessageWriter(
             now,
             cancellationToken);
 
+        // B-102: replying/being mentioned in a thread auto-follows it, in this same transaction.
+        if (threadId is Guid subscribedThreadId)
+        {
+            await UpsertThreadSubscriptionAsync(
+                command.TenantId, subscribedThreadId, parentChannelId, command.UserId,
+                ThreadSubscriptionSource.Reply, sequence, now, cancellationToken);
+
+            foreach (var mentionedUserId in mentionContext.MentionedUserIds)
+            {
+                await UpsertThreadSubscriptionAsync(
+                    command.TenantId, subscribedThreadId, parentChannelId, new UserId(mentionedUserId),
+                    ThreadSubscriptionSource.Mention, null, now, cancellationToken);
+            }
+        }
+
         var result = new MessageSendResult(message.Id, message.Sequence, message.CreatedAt, false);
 
         var authorName = await dbContext.UserProfiles.AsNoTracking()
@@ -1067,7 +1097,10 @@ public sealed class MessageWriter(
             channelName = sourceChannelName,
             authorName = sourceAuthorName,
             createdAt = source.CreatedAt,
-            isDirect
+            isDirect,
+            // B-102: set when forwarding a thread reply back to its own channel ("share to channel") —
+            // lets the client render a "shared from thread" link instead of a generic forward card.
+            threadId = source.ThreadId
         };
 
         var now = clock.UtcNow;
@@ -1377,6 +1410,44 @@ public sealed class MessageWriter(
         return new MentionBuildResult(
             mentionedUsers.Select(x => x.Value).ToArray(),
             mentionKinds.ToArray());
+    }
+
+    /// <summary>
+    /// B-102: find-or-create a thread follow. Never lowers <see cref="ThreadSubscription.LastReadSeq"/> —
+    /// callers pass null when the event (e.g. a mention) shouldn't mark anything as read.
+    /// </summary>
+    private async Task UpsertThreadSubscriptionAsync(
+        TenantId tenantId,
+        Guid threadId,
+        ChannelId channelId,
+        UserId userId,
+        ThreadSubscriptionSource source,
+        long? bumpLastReadSeqTo,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var existing = await dbContext.ThreadSubscriptions
+            .FirstOrDefaultAsync(x => x.TenantId == tenantId && x.ThreadId == threadId && x.UserId == userId, cancellationToken);
+        if (existing is null)
+        {
+            dbContext.ThreadSubscriptions.Add(new ThreadSubscription
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                UserId = userId,
+                ThreadId = threadId,
+                ChannelId = channelId,
+                Source = source,
+                LastReadSeq = bumpLastReadSeqTo ?? 0,
+                CreatedAt = now
+            });
+            return;
+        }
+
+        if (bumpLastReadSeqTo is long seq && seq > existing.LastReadSeq)
+        {
+            existing.LastReadSeq = seq;
+        }
     }
 
     private static string ComputeHash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));

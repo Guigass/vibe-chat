@@ -628,6 +628,25 @@
     "admin.reencrypted": "%n% credencial(es) vueltas a cifrar en la versión activa.",
     "admin.reencryptNone": "Ninguna credencial necesitaba volver a cifrarse.",
     "admin.reencryptForbidden": "Sin permiso para volver a cifrar.",
-    "admin.reencryptError": "Error al volver a cifrar las credenciales."
+    "admin.reencryptError": "Error al volver a cifrar las credenciales.",
+    "channel.followedThreads": "Hilos seguidos",
+    "channel.followAllThreads": "Seguir todos los hilos de este canal",
+    "channel.unfollowAllThreads": "Dejar de seguir todos los hilos",
+    "thread.following": "Siguiendo",
+    "thread.notFollowing": "Seguir",
+    "thread.followAction": "Seguir hilo",
+    "thread.unfollowAction": "Dejar de seguir hilo",
+    "thread.shareToChannel": "Compartir en el canal",
+    "thread.sharedToChannel": "Compartido en el canal.",
+    "thread.shareError": "No se pudo compartir en el canal.",
+    "threadFollow.toastTitle": "Ahora sigues este hilo",
+    "threadFollow.toastUndo": "Deshacer",
+    "threadFollow.empty": "Aún no sigues ningún hilo.",
+    "threadFollow.emptyHint": "Responder, ser mencionado o seguir manualmente agrega un hilo aquí.",
+    "threadFollow.jump": "Abrir",
+    "threadFollow.unfollow": "Dejar de seguir",
+    "threadFollow.loadError": "No se pudieron cargar los hilos seguidos.",
+    "threadFollow.actionError": "No se pudo actualizar la suscripción al hilo.",
+    "threadFollow.unreadCount": "%n% sin leer"
   }
 }

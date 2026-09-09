@@ -1064,6 +1064,86 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Cross_tenant_cannot_manage_or_list_thread_subscription()
+    {
+        // B-102
+        var (foreignWorkspaceId, foreignThreadId) = await SeedCrossTenantThreadAsync();
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        // A foreign-tenant threadId is invisible to RLS before tenant resolution (same as
+        // Cross_tenant_cannot_open_or_reply_in_thread) — 404 is as safe as 403 here, neither leaks it.
+        var follow = await client.PostAsync($"/api/v1/threads/{foreignThreadId}/subscription", content: null);
+        follow.StatusCode.Should().BeOneOf(HttpStatusCode.Forbidden, HttpStatusCode.NotFound);
+
+        var unfollow = await client.DeleteAsync($"/api/v1/threads/{foreignThreadId}/subscription");
+        unfollow.StatusCode.Should().BeOneOf(HttpStatusCode.Forbidden, HttpStatusCode.NotFound);
+
+        var readCursor = await client.PutAsJsonAsync(
+            $"/api/v1/threads/{foreignThreadId}/subscription/read-cursor",
+            new { lastReadSequence = 1L });
+        readCursor.StatusCode.Should().BeOneOf(HttpStatusCode.Forbidden, HttpStatusCode.NotFound);
+
+        var list = await client.GetAsync($"/api/v1/workspaces/{foreignWorkspaceId}/threads/following");
+        list.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var shareForeignThread = await client.PostAsJsonAsync(
+            $"/api/v1/threads/{foreignThreadId}/messages/{Guid.NewGuid()}/share-to-channel",
+            new { idempotencyKey = $"sec-share-{Guid.NewGuid():N}" });
+        shareForeignThread.StatusCode.Should().BeOneOf(HttpStatusCode.Forbidden, HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Followed_thread_hides_when_private_channel_membership_lost()
+    {
+        // B-102 — same "soft hide, don't delete the subscription" contract as saved messages.
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+
+        var channelName = $"thread-priv-{Guid.NewGuid():N}"[..20];
+        var createChannel = await client.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspaceId}/channels",
+            new { name = channelName, type = "Private", spaceId = (Guid?)null });
+        createChannel.EnsureSuccessStatusCode();
+        var channel = await createChannel.Content.ReadFromJsonAsync<ChannelDto>();
+        channel.Should().NotBeNull();
+
+        var messageId = Guid.NewGuid();
+        var create = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{channel!.Id}/messages",
+            new SendMessageRequest(messageId, $"sec-thread-priv-{messageId:N}", "private-thread-root", null, null));
+        create.EnsureSuccessStatusCode();
+
+        var openThread = await client.PostAsJsonAsync(
+            $"/api/v1/channels/{channel.Id}/messages/{messageId}/threads",
+            new { });
+        openThread.EnsureSuccessStatusCode();
+        var thread = await openThread.Content.ReadFromJsonAsync<ThreadDto>();
+        thread.Should().NotBeNull();
+
+        // Alice already auto-follows as the root author (B-102); assert the pre-condition explicitly.
+        var before = await client.GetFromJsonAsync<FollowedThreadsPageDto>(
+            $"/api/v1/workspaces/{workspaceId}/threads/following");
+        before!.Items.Should().Contain(x => x.ThreadId == thread!.Id);
+
+        await using var db = factory.CreateMigratorDbContext();
+        var membership = await db.ChannelMembers.IgnoreQueryFilters()
+            .SingleAsync(x => x.ChannelId == new ChannelId(channel.Id) && x.UserId == SeedData.AliceUserId);
+        db.ChannelMembers.Remove(membership);
+        await db.SaveChangesAsync();
+
+        var after = await client.GetFromJsonAsync<FollowedThreadsPageDto>(
+            $"/api/v1/workspaces/{workspaceId}/threads/following");
+        after!.Items.Should().NotContain(x => x.ThreadId == thread!.Id);
+
+        var rowStillExists = await db.ThreadSubscriptions.IgnoreQueryFilters()
+            .AnyAsync(x => x.UserId == SeedData.AliceUserId && x.ThreadId == thread!.Id);
+        rowStillExists.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Direct_message_is_hidden_from_non_members()
     {
         using var alice = factory.CreateClient();
@@ -1274,6 +1354,9 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     private sealed record SearchMessagesDto(string Query, int Limit, SearchMessageHitDto[] Items);
     private sealed record SavedMessageResponseDto(Guid MessageId, Guid ChannelId, string BodyPreview);
     private sealed record SavedMessagesPageDto(SavedMessageResponseDto[] Items, string? NextCursor, int PendingCount);
+    private sealed record ThreadDto(Guid Id, Guid ChannelId, Guid ParentMessageId, Guid CreatedBy, DateTimeOffset CreatedAt, int ReplyCount);
+    private sealed record FollowedThreadDto(Guid ThreadId, Guid ChannelId, string ChannelName, long UnreadCount);
+    private sealed record FollowedThreadsPageDto(FollowedThreadDto[] Items, string? NextCursor);
     private sealed record AuditEventItemDto(Guid Id, string Action, string EntityType, string? EntityId, Guid? ActorUserId, DateTimeOffset OccurredAt, string MetadataJson);
     private sealed record AuditEventsDto(AuditEventItemDto[] Items);
     private sealed record AdminConversationItemDto(Guid Id, Guid WorkspaceId, string Name, string Type);
@@ -1339,6 +1422,31 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
 
         await db.SaveChangesAsync();
         return (workspaceId.Value, channelId.Value);
+    }
+
+    private async Task<(Guid WorkspaceId, Guid ThreadId)> SeedCrossTenantThreadAsync()
+    {
+        var (workspaceId, channelId) = await SeedCrossTenantWorkspaceWithMessageAsync();
+
+        await using var db = factory.CreateMigratorDbContext();
+        var tenantId = new TenantId(workspaceId);
+        var parentMessageId = await db.Messages.IgnoreQueryFilters()
+            .Where(x => x.ConversationId == new ChannelId(channelId))
+            .Select(x => x.Id)
+            .FirstAsync();
+
+        var threadId = Guid.NewGuid();
+        db.MessageThreads.Add(new MessageThread
+        {
+            Id = threadId,
+            TenantId = tenantId,
+            ChannelId = new ChannelId(channelId),
+            ParentMessageId = parentMessageId,
+            CreatedBy = SeedData.DemoUserId,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        await db.SaveChangesAsync();
+        return (workspaceId, threadId);
     }
 
     private async Task SeedForeignTenantAuditEventAsync(string action)

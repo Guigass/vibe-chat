@@ -27,6 +27,7 @@ import {
   MessageLinkPreview,
   PinnedMessageItem,
   SavedMessageItem,
+  FollowedThreadItem,
   PollSummary,
   PushPublicKey,
   PushDevice,
@@ -214,6 +215,19 @@ interface ThreadDto {
   createdAt: string;
   replyCount: number;
   parentMessage?: MessageDto | null;
+  following?: boolean;
+  followSource?: string | null;
+}
+
+interface FollowedThreadDto {
+  threadId: string;
+  channelId: string;
+  channelName: string;
+  channelType: string;
+  rootPreview: string;
+  rootDeleted: boolean;
+  unreadCount: number;
+  lastActivityAt: string;
 }
 
 interface AttachmentUploadDto {
@@ -658,6 +672,52 @@ export class ApiService {
     return this.mapMessage(dto, this.auth.profile()?.id);
   }
 
+  async followThread(threadId: string): Promise<void> {
+    await this.request(`/api/v1/threads/${threadId}/subscription`, { method: 'POST' });
+  }
+
+  async unfollowThread(threadId: string): Promise<void> {
+    await this.request(`/api/v1/threads/${threadId}/subscription`, { method: 'DELETE' });
+  }
+
+  async markThreadRead(threadId: string, lastReadSequence: number): Promise<void> {
+    await this.request(`/api/v1/threads/${threadId}/subscription/read-cursor`, {
+      method: 'PUT',
+      body: JSON.stringify({ lastReadSequence }),
+    });
+  }
+
+  async getFollowedThreads(
+    workspaceId: string,
+    options?: { limit?: number; cursor?: string | null },
+  ): Promise<{ items: FollowedThreadItem[]; nextCursor: string | null }> {
+    const params = new URLSearchParams();
+    if (options?.limit) params.set('limit', String(options.limit));
+    if (options?.cursor) params.set('cursor', options.cursor);
+    const qs = params.toString();
+    const dto = await this.request<{ items: FollowedThreadDto[]; nextCursor?: string | null }>(
+      `/api/v1/workspaces/${workspaceId}/threads/following${qs ? `?${qs}` : ''}`,
+    );
+    return {
+      items: (dto.items ?? []).map(mapFollowedThread),
+      nextCursor: dto.nextCursor ?? null,
+    };
+  }
+
+  async shareThreadReplyToChannel(threadId: string, messageId: string): Promise<void> {
+    await this.request(`/api/v1/threads/${threadId}/messages/${messageId}/share-to-channel`, {
+      method: 'POST',
+      body: JSON.stringify({ idempotencyKey: `share-${threadId}-${messageId}` }),
+    });
+  }
+
+  async setChannelFollowAllThreads(channelId: string, enabled: boolean): Promise<void> {
+    await this.request(`/api/v1/notifications/preferences/channels/${channelId}/follow-all-threads`, {
+      method: 'PUT',
+      body: JSON.stringify({ enabled }),
+    });
+  }
+
   async initiateAttachmentUpload(input: {
     channelId: string;
     fileName: string;
@@ -999,7 +1059,7 @@ export class ApiService {
   }
 
   async updateNotificationPreferences(
-    patch: Omit<NotificationPreferences, 'channelOverrides'>,
+    patch: Omit<NotificationPreferences, 'channelOverrides' | 'followAllThreadsChannelIds'>,
   ): Promise<NotificationPreferences> {
     const dto = await this.request<unknown>('/api/v1/notifications/preferences', {
       method: 'PUT',
@@ -1354,6 +1414,7 @@ export class ApiService {
 
   private mapThread(t: ThreadDto): ChatThread {
     const me = this.auth.profile()?.id;
+    const followSource = t.followSource ?? null;
     return {
       id: t.id,
       channelId: t.channelId,
@@ -1362,6 +1423,11 @@ export class ApiService {
       createdAt: t.createdAt,
       replyCount: t.replyCount ?? 0,
       parentMessage: t.parentMessage ? this.mapMessage(t.parentMessage, me) : null,
+      following: !!t.following,
+      followSource:
+        followSource === 'Manual' || followSource === 'Author' || followSource === 'Reply' || followSource === 'Mention'
+          ? followSource
+          : null,
     };
   }
 
@@ -1542,6 +1608,19 @@ function mapSavedMessage(dto: SavedMessageDto): SavedMessageItem {
     completedAt: dto.completedAt ?? null,
     createdAt: dto.createdAt,
     messageRemoved: !!dto.messageRemoved,
+  };
+}
+
+function mapFollowedThread(dto: FollowedThreadDto): FollowedThreadItem {
+  return {
+    threadId: String(dto.threadId),
+    channelId: String(dto.channelId),
+    channelName: dto.channelName ?? '',
+    channelType: dto.channelType ?? 'Public',
+    rootPreview: dto.rootPreview ?? '',
+    rootDeleted: !!dto.rootDeleted,
+    unreadCount: dto.unreadCount ?? 0,
+    lastActivityAt: dto.lastActivityAt,
   };
 }
 

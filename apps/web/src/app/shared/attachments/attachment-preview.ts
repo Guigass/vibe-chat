@@ -46,6 +46,7 @@ export function formatAttachmentSize(bytes: number): string {
 export type MessageMenuActionId =
   | 'forward'
   | 'thread'
+  | 'share-to-channel'
   | 'edit'
   | 'remove-link-preview'
   | 'delete'
@@ -59,6 +60,7 @@ export function menuActionsForMessage(options: {
   mine: boolean;
   showForward: boolean;
   showThread: boolean;
+  showShareToChannel?: boolean;
   showPin?: boolean;
   isPinned?: boolean;
   showSave?: boolean;
@@ -74,6 +76,9 @@ export function menuActionsForMessage(options: {
   }> = [];
   if (options.showForward) {
     items.push({ id: 'forward', label: ui.menuForward });
+  }
+  if (options.showShareToChannel) {
+    items.push({ id: 'share-to-channel', label: ui.threadShareToChannel });
   }
   if (options.showThread) {
     const count = options.replyCount ?? 0;

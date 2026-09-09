@@ -220,6 +220,20 @@ export interface ChatThread {
   createdAt: string;
   replyCount: number;
   parentMessage?: ChatMessage | null;
+  following: boolean;
+  followSource: 'Manual' | 'Author' | 'Reply' | 'Mention' | null;
+}
+
+/** B-102 — an entry in "Threads seguidas". */
+export interface FollowedThreadItem {
+  threadId: string;
+  channelId: string;
+  channelName: string;
+  channelType: string;
+  rootPreview: string;
+  rootDeleted: boolean;
+  unreadCount: number;
+  lastActivityAt: string;
 }
 
 export interface TypingState {
@@ -530,7 +544,8 @@ export interface ChannelNotificationOverride {
 export type ChannelMuteAction =
   | { kind: 'mute'; duration: ChannelMuteDuration }
   | { kind: 'all' }
-  | { kind: 'default' };
+  | { kind: 'default' }
+  | { kind: 'follow-all-threads'; enabled: boolean };
 
 export interface NotificationPreferences {
   level: NotificationLevel;
@@ -543,4 +558,6 @@ export interface NotificationPreferences {
   digestEnabled: boolean;
   priorityContactUserIds: string[];
   channelOverrides: ChannelNotificationOverride[];
+  /** B-102 — channels where the caller auto-follows every new thread. */
+  followAllThreadsChannelIds: string[];
 }

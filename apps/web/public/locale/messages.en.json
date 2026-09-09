@@ -628,6 +628,25 @@
     "admin.reencrypted": "%n% credential(s) re-encrypted on the active version.",
     "admin.reencryptNone": "No credentials needed re-encryption.",
     "admin.reencryptForbidden": "No permission to re-encrypt.",
-    "admin.reencryptError": "Failed to re-encrypt credentials."
+    "admin.reencryptError": "Failed to re-encrypt credentials.",
+    "channel.followedThreads": "Followed threads",
+    "channel.followAllThreads": "Follow all threads in this channel",
+    "channel.unfollowAllThreads": "Stop following all threads",
+    "thread.following": "Following",
+    "thread.notFollowing": "Follow",
+    "thread.followAction": "Follow thread",
+    "thread.unfollowAction": "Unfollow thread",
+    "thread.shareToChannel": "Share to channel",
+    "thread.sharedToChannel": "Shared to channel.",
+    "thread.shareError": "Could not share to the channel.",
+    "threadFollow.toastTitle": "You're now following this thread",
+    "threadFollow.toastUndo": "Undo",
+    "threadFollow.empty": "No followed threads yet.",
+    "threadFollow.emptyHint": "Replying, being mentioned, or following manually adds a thread here.",
+    "threadFollow.jump": "Open",
+    "threadFollow.unfollow": "Unfollow",
+    "threadFollow.loadError": "Could not load followed threads.",
+    "threadFollow.actionError": "Could not update the thread subscription.",
+    "threadFollow.unreadCount": "%n% unread"
   }
 }

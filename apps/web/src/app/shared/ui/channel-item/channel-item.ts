@@ -88,6 +88,13 @@ import { fillTemplate, ui } from '../../../core/i18n/strings';
             {{ ui.channelUseDefault }}
           </button>
         }
+        <button
+          type="button"
+          cdkMenuItem
+          (click)="muteAction.emit({ kind: 'follow-all-threads', enabled: !followAllThreads() })"
+        >
+          {{ followAllThreads() ? ui.channelUnfollowAllThreads : ui.channelFollowAllThreads }}
+        </button>
       </div>
     </ng-template>
   `,
@@ -279,6 +286,8 @@ export class ChannelItem {
   readonly muted = input(false);
   /** Any channel override at all (muted or an "All" override) — controls "Usar o padrão" visibility. */
   readonly channelHasOverride = input(false);
+  /** B-102 — caller auto-follows every new thread created in this channel. */
+  readonly followAllThreads = input(false);
   readonly select = output<void>();
   readonly muteAction = output<ChannelMuteAction>();
 

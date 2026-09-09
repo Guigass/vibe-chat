@@ -54,6 +54,11 @@ para o gate de drift CI.
 | GET | `/threads/{threadId:guid}` | membership | — | ✓ | ✓ | ✓ | |
 | GET | `/threads/{threadId:guid}/messages` | membership | — | ✓ | ✓ | ✓ | |
 | POST | `/threads/{threadId:guid}/messages` | permission | `message.send` | ✓ | ✗ | ✓ | |
+| POST | `/threads/{threadId:guid}/subscription` | permission | `message.read` | ✓ | ✓ | ✓ | B-102 seguir; outro tenant → 403 |
+| DELETE | `/threads/{threadId:guid}/subscription` | permission | `message.read` | ✓ | ✓ | ✓ | B-102 deixar de seguir |
+| PUT | `/threads/{threadId:guid}/subscription/read-cursor` | permission | `message.read` | ✓ | ✓ | ✓ | B-102; sem assinatura → 404 |
+| GET | `/workspaces/{workspaceId:guid}/threads/following` | permission | `message.read` | ✓ | ✓ | ✓ | B-102; membership perdida esconde a linha |
+| POST | `/threads/{threadId:guid}/messages/{messageId:guid}/share-to-channel` | permission | `message.send` | ✓ | ✗ | ✓ | B-102; reusa forward writer (B-085) |
 | POST | `/channels/{channelId:guid}/attachments` | permission | `file.upload` + `message.send` | ✓ | ✗ | ✓ | |
 | POST | `/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete` | permission | `file.upload` | ✓ | ✗ | ✓ | |
 | GET | `/channels/{channelId:guid}/attachments/{attachmentId:guid}/download` | permission | `file.download` + `message.read` | ✓ | ✓ | ✓ | |
@@ -81,7 +86,8 @@ para o gate de drift CI.
 | GET | `/notifications/preferences` | permission | `message.read` | ✓ | ✓ | ✓ | Preferência global do actor + overrides de canal |
 | PUT | `/notifications/preferences` | permission | `message.read` | ✓ | ✓ | ✓ | Upsert; sempre `(tenant, actor)` |
 | PUT | `/notifications/preferences/channels/{channelId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | Canal de outro tenant → 403 |
-| DELETE | `/notifications/preferences/channels/{channelId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | Canal de outro tenant → 403 |
+| DELETE | `/notifications/preferences/channels/{channelId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | Canal de outro tenant → 403; preserva linha se `FollowAllThreads` |
+| PUT | `/notifications/preferences/channels/{channelId:guid}/follow-all-threads` | permission | `message.read` | ✓ | ✓ | ✓ | B-102; canal de outro tenant → 403 |
 | GET | `/admin/dashboard` | permission | `admin.dashboard` | ✗ | ✓ | ✓ | Gap B-175 fechado |
 | GET | `/admin/audit-events` | permission | `admin.dashboard` | ✗ | ✓ | ✓ | |
 | GET | `/admin/conversations` | permission | `admin.dashboard` | ✗ | ✓ | ✓ | |

@@ -628,6 +628,25 @@
     "admin.reencrypted": "%n% Zugangsdaten auf der aktiven Version neu verschlüsselt.",
     "admin.reencryptNone": "Keine Zugangsdaten mussten neu verschlüsselt werden.",
     "admin.reencryptForbidden": "Keine Berechtigung zum Neuverschlüsseln.",
-    "admin.reencryptError": "Neuverschlüsselung der Zugangsdaten fehlgeschlagen."
+    "admin.reencryptError": "Neuverschlüsselung der Zugangsdaten fehlgeschlagen.",
+    "channel.followedThreads": "Verfolgte Threads",
+    "channel.followAllThreads": "Allen Threads in diesem Kanal folgen",
+    "channel.unfollowAllThreads": "Allen Threads nicht mehr folgen",
+    "thread.following": "Folgt",
+    "thread.notFollowing": "Folgen",
+    "thread.followAction": "Thread folgen",
+    "thread.unfollowAction": "Thread nicht mehr folgen",
+    "thread.shareToChannel": "Im Kanal teilen",
+    "thread.sharedToChannel": "Im Kanal geteilt.",
+    "thread.shareError": "Konnte nicht im Kanal geteilt werden.",
+    "threadFollow.toastTitle": "Du folgst jetzt diesem Thread",
+    "threadFollow.toastUndo": "Rückgängig",
+    "threadFollow.empty": "Noch keine verfolgten Threads.",
+    "threadFollow.emptyHint": "Antworten, erwähnt werden oder manuell folgen fügt hier einen Thread hinzu.",
+    "threadFollow.jump": "Öffnen",
+    "threadFollow.unfollow": "Nicht mehr folgen",
+    "threadFollow.loadError": "Verfolgte Threads konnten nicht geladen werden.",
+    "threadFollow.actionError": "Thread-Abo konnte nicht aktualisiert werden.",
+    "threadFollow.unreadCount": "%n% ungelesen"
   }
 }

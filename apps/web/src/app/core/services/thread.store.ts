@@ -79,6 +79,27 @@ export class ThreadStore {
     }
   }
 
+  /** B-102 — open a thread the caller already knows the id of (from "Threads seguidas"). */
+  async openById(threadId: string): Promise<void> {
+    this.openSignal.set(true);
+    this.loadingSignal.set(true);
+    this.replyTargetSignal.set(null);
+    this.editingMessageSignal.set(null);
+    try {
+      const [detailed, replies] = await Promise.all([
+        this.api.getThread(threadId),
+        this.api.getThreadMessages(threadId),
+      ]);
+      this.activeSignal.set(detailed);
+      this.messagesSignal.set(replies.map((m) => this.normalize(m)));
+    } catch {
+      this.activeSignal.set(null);
+      this.messagesSignal.set([]);
+    } finally {
+      this.loadingSignal.set(false);
+    }
+  }
+
   close(): void {
     this.openSignal.set(false);
     this.activeSignal.set(null);
@@ -162,6 +183,14 @@ export class ThreadStore {
     const active = this.activeSignal();
     if (active && idsEqual(active.id, threadId)) {
       this.activeSignal.set({ ...active, replyCount: (active.replyCount ?? 0) + 1 });
+    }
+  }
+
+  /** B-102 — reflects a follow/unfollow (manual or auto) in the open thread panel, if it's this thread. */
+  setFollowing(threadId: string, following: boolean, source: ChatThread['followSource'] = null): void {
+    const active = this.activeSignal();
+    if (active && idsEqual(active.id, threadId)) {
+      this.activeSignal.set({ ...active, following, followSource: following ? source : null });
     }
   }
 
@@ -550,6 +579,8 @@ export class ThreadStore {
       createdBy: this.auth.profile()?.id ?? 'me',
       createdAt: new Date().toISOString(),
       replyCount: 0,
+      following: false,
+      followSource: null,
       parentMessage: {
         id: messageId,
         conversationId: channelId,

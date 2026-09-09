@@ -628,6 +628,25 @@
     "admin.reencrypted": "稼働版で%n%件の資格情報を再暗号化しました。",
     "admin.reencryptNone": "再暗号化が必要な資格情報はありませんでした。",
     "admin.reencryptForbidden": "再暗号化する権限がありません。",
-    "admin.reencryptError": "資格情報の再暗号化に失敗しました。"
+    "admin.reencryptError": "資格情報の再暗号化に失敗しました。",
+    "channel.followedThreads": "フォロー中のスレッド",
+    "channel.followAllThreads": "このチャンネルの全スレッドをフォロー",
+    "channel.unfollowAllThreads": "全スレッドのフォローを解除",
+    "thread.following": "フォロー中",
+    "thread.notFollowing": "フォロー",
+    "thread.followAction": "スレッドをフォロー",
+    "thread.unfollowAction": "スレッドのフォローを解除",
+    "thread.shareToChannel": "チャンネルに共有",
+    "thread.sharedToChannel": "チャンネルに共有しました。",
+    "thread.shareError": "チャンネルに共有できませんでした。",
+    "threadFollow.toastTitle": "このスレッドをフォローしています",
+    "threadFollow.toastUndo": "元に戻す",
+    "threadFollow.empty": "フォロー中のスレッドはまだありません。",
+    "threadFollow.emptyHint": "返信・メンション・手動フォローでスレッドがここに追加されます。",
+    "threadFollow.jump": "開く",
+    "threadFollow.unfollow": "フォロー解除",
+    "threadFollow.loadError": "フォロー中のスレッドを読み込めませんでした。",
+    "threadFollow.actionError": "スレッドの購読を更新できませんでした。",
+    "threadFollow.unreadCount": "未読 %n% 件"
   }
 }

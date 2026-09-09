@@ -85,6 +85,38 @@ public static class SavedMessagePolicies
     public const int MaxPageSize = 100;
 }
 
+/// <summary>How a thread subscription (B-102) came to exist.</summary>
+public enum ThreadSubscriptionSource
+{
+    Manual = 0,
+    Author = 1,
+    Reply = 2,
+    Mention = 3
+}
+
+/// <summary>
+/// Per-user "follow thread" relationship (B-102). Unread count is derived at read time from
+/// <see cref="ConversationSequence"/> (current thread seq) minus <see cref="LastReadSeq"/> —
+/// cheap and incremental, never an aggregation over messages.
+/// </summary>
+public sealed class ThreadSubscription
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public UserId UserId { get; set; }
+    public Guid ThreadId { get; set; }
+    public ChannelId ChannelId { get; set; }
+    public ThreadSubscriptionSource Source { get; set; }
+    public long LastReadSeq { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public static class ThreadSubscriptionPolicies
+{
+    public const int DefaultPageSize = 30;
+    public const int MaxPageSize = 100;
+}
+
 /// <summary>Channel poll (B-096). Primary key is the host message id.</summary>
 public sealed class Poll
 {

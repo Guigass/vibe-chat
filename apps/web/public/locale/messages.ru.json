@@ -628,6 +628,25 @@
     "admin.reencrypted": "Перешифровано учётных данных на активной версии: %n%.",
     "admin.reencryptNone": "Перешифрование не потребовалось.",
     "admin.reencryptForbidden": "Нет права перешифровывать.",
-    "admin.reencryptError": "Не удалось перешифровать учётные данные."
+    "admin.reencryptError": "Не удалось перешифровать учётные данные.",
+    "channel.followedThreads": "Отслеживаемые темы",
+    "channel.followAllThreads": "Отслеживать все темы в этом канале",
+    "channel.unfollowAllThreads": "Прекратить отслеживание всех тем",
+    "thread.following": "Отслеживается",
+    "thread.notFollowing": "Отслеживать",
+    "thread.followAction": "Отслеживать тему",
+    "thread.unfollowAction": "Не отслеживать тему",
+    "thread.shareToChannel": "Поделиться в канале",
+    "thread.sharedToChannel": "Опубликовано в канале.",
+    "thread.shareError": "Не удалось поделиться в канале.",
+    "threadFollow.toastTitle": "Теперь вы отслеживаете эту тему",
+    "threadFollow.toastUndo": "Отменить",
+    "threadFollow.empty": "Пока нет отслеживаемых тем.",
+    "threadFollow.emptyHint": "Ответ, упоминание или ручная подписка добавляют тему сюда.",
+    "threadFollow.jump": "Открыть",
+    "threadFollow.unfollow": "Не отслеживать",
+    "threadFollow.loadError": "Не удалось загрузить отслеживаемые темы.",
+    "threadFollow.actionError": "Не удалось обновить подписку на тему.",
+    "threadFollow.unreadCount": "Непрочитано: %n%"
   }
 }

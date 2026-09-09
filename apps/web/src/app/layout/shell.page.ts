@@ -18,6 +18,7 @@ import { MessageStore } from '../core/services/message.store';
 import { ThreadStore } from '../core/services/thread.store';
 import { PinStore } from '../core/services/pin.store';
 import { SavedStore } from '../core/services/saved.store';
+import { FollowedThreadsStore } from '../core/services/followed-threads.store';
 import { PushNotificationService } from '../core/services/push-notification.service';
 import { NotificationPreferencesStore } from '../core/services/notification-preferences.store';
 import { ChannelList } from '../features/chat/channel-list/channel-list';
@@ -25,6 +26,7 @@ import { Composer } from '../features/chat/composer/composer';
 import { Timeline } from '../features/chat/timeline/timeline';
 import { PinsPanel } from '../features/chat/pins-panel/pins-panel';
 import { SavedPanel } from '../features/chat/saved-panel/saved-panel';
+import { FollowedThreadsPanel } from '../features/chat/followed-threads-panel/followed-threads-panel';
 import { ThreadPanel } from '../features/chat/thread-panel/thread-panel';
 import { NotificationPreferencesPanel } from '../features/chat/notification-preferences-panel/notification-preferences-panel';
 import { SuggestReplyButton } from '../features/ai/suggest-reply-button';
@@ -81,6 +83,7 @@ import { pluralCount } from '../core/i18n/format';
     ThreadPanel,
     PinsPanel,
     SavedPanel,
+    FollowedThreadsPanel,
     NotificationPreferencesPanel,
     SummarizeButton,
     SuggestReplyButton,
@@ -107,6 +110,7 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly threads = inject(ThreadStore);
   readonly pins = inject(PinStore);
   readonly saved = inject(SavedStore);
+  readonly followedThreads = inject(FollowedThreadsStore);
   readonly hub = inject(ChatHubService);
   readonly push = inject(PushNotificationService);
   readonly notificationPrefs = inject(NotificationPreferencesStore);
@@ -264,6 +268,7 @@ export class ShellPage implements OnInit, OnDestroy {
     effect(() => {
       const workspaceId = this.channels.activeWorkspace()?.id ?? null;
       void this.saved.loadForWorkspace(workspaceId);
+      void this.followedThreads.loadForWorkspace(workspaceId);
     });
 
     effect(() => {
@@ -481,19 +486,29 @@ export class ShellPage implements OnInit, OnDestroy {
     this.threads.close();
     this.pins.closePanel();
     this.saved.closePanel();
+    this.followedThreads.closePanel();
     this.notificationPrefs.togglePanel();
   }
 
   openPinsPanel(): void {
     this.notificationPrefs.closePanel();
     this.saved.closePanel();
+    this.followedThreads.closePanel();
     this.pins.openPanel();
   }
 
   openSavedPanel(): void {
     this.notificationPrefs.closePanel();
     this.pins.closePanel();
+    this.followedThreads.closePanel();
     this.saved.openPanel();
+  }
+
+  openFollowedThreadsPanel(): void {
+    this.notificationPrefs.closePanel();
+    this.pins.closePanel();
+    this.saved.closePanel();
+    this.followedThreads.openPanel();
   }
 
   async onUnpinFromPanel(messageId: string): Promise<void> {

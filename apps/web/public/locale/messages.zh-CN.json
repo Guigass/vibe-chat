@@ -628,6 +628,25 @@
     "admin.reencrypted": "已在当前版本重新加密 %n% 条凭据。",
     "admin.reencryptNone": "没有需要重新加密的凭据。",
     "admin.reencryptForbidden": "没有重新加密的权限。",
-    "admin.reencryptError": "重新加密凭据失败。"
+    "admin.reencryptError": "重新加密凭据失败。",
+    "channel.followedThreads": "已关注的话题",
+    "channel.followAllThreads": "关注此频道的所有话题",
+    "channel.unfollowAllThreads": "取消关注所有话题",
+    "thread.following": "已关注",
+    "thread.notFollowing": "关注",
+    "thread.followAction": "关注话题",
+    "thread.unfollowAction": "取消关注话题",
+    "thread.shareToChannel": "分享到频道",
+    "thread.sharedToChannel": "已分享到频道。",
+    "thread.shareError": "无法分享到频道。",
+    "threadFollow.toastTitle": "你现在关注了此话题",
+    "threadFollow.toastUndo": "撤销",
+    "threadFollow.empty": "还没有关注的话题。",
+    "threadFollow.emptyHint": "回复、被提及或手动关注都会在此添加话题。",
+    "threadFollow.jump": "打开",
+    "threadFollow.unfollow": "取消关注",
+    "threadFollow.loadError": "无法加载已关注的话题。",
+    "threadFollow.actionError": "无法更新话题订阅。",
+    "threadFollow.unreadCount": "%n% 条未读"
   }
 }

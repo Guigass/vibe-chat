@@ -255,6 +255,26 @@ Permissão `message.pin` (default: Member, Moderator, Admin, Bot — não Guest/
 | Hub | Nenhum (estado pessoal) |
 | AuthZ | Nenhum admin lê salvos de terceiros; cross-tenant → **403** |
 
+### Seguir thread (B-102)
+
+Seguir é uma assinatura por usuário; não há evento de hub dedicado — o web client
+refaz o cálculo local a partir do `MessageCreated` de replies (`threadId`) já em
+trânsito. Não lidas são calculadas em leitura (`ConversationSequences.LastSequence
+- ThreadSubscription.LastReadSeq`), nunca por agregação sobre `messages`.
+
+| Artefato | Contrato |
+|----------|----------|
+| Tabela | `messaging.thread_subscriptions` (`TenantId`, `UserId`, `ThreadId`, `ChannelId`, `Source` enum `Manual\|Author\|Reply\|Mention`, `LastReadSeq`, `CreatedAt`); unique `(TenantId, UserId, ThreadId)` |
+| `POST /api/v1/threads/{threadId}/subscription` | Membership do canal da thread + `message.read`; upsert `Source=Manual`; `LastReadSeq` = seq atual da thread (sem backfill de não lidas) |
+| `DELETE /api/v1/threads/{threadId}/subscription` | **204** se removida ou já ausente |
+| `PUT /api/v1/threads/{threadId}/subscription/read-cursor` | Body `{ lastReadSequence, allowRetrograde? }`; **404** sem assinatura |
+| `GET /api/v1/workspaces/{workspaceId}/threads/following?cursor=&limit=` | Só threads do usuário; revalida membership por linha (omite sem apagar, como B-093); ordenado por atividade recente; `{ items: [{ threadId, channelId, channelName, channelType, rootPreview, rootDeleted, unreadCount, lastActivityAt }], nextCursor }` |
+| `POST /api/v1/threads/{threadId}/messages/{messageId}/share-to-channel` | Membership + `message.send`; reusa o writer de forward (B-085) com o próprio canal da thread como único alvo — referência, não cópia de texto solto; `Message.ThreadId` da origem propagado no payload de forward (`ForwardedFromResponse.threadId`) para o client linkar de volta à thread |
+| Auto-follow (mesma transação) | Autor da mensagem raiz → `Source=Author` na criação da thread (`POST .../messages/{messageId}/threads`); quem responde → `Source=Reply`, `LastReadSeq` = seq da própria resposta; quem é mencionado na thread → `Source=Mention`, sem tocar `LastReadSeq` se já existia |
+| `notifications.channel_preferences.FollowAllThreads` | Bool; ativado via `PUT /api/v1/notifications/preferences/channels/{channelId}/follow-all-threads` (`{ enabled }`); auto-segue só threads **novas** do canal, não retroativo; `Level` da mesma tabela virou `NotificationLevel?` — linha pode existir só para carregar este flag, sem mute ativo |
+| Web Push | `PushDispatcher` trata seguidor de thread como mention (`isMentioned \|\| followingThreadSet.Contains(userId)`) — passa do gate "None a menos que mencionado", mas DND/mute/read-cursor seguem suprimindo normalmente |
+| AuthZ | Assinatura exige membership do canal da thread; perder membership esconde a linha da lista (não apaga); cross-tenant → **403** |
+
 ### Enquetes (B-096)
 
 Enquete é uma mensagem (`seq` + outbox `MessageCreated` + idempotência). Discriminator = linha em `messaging.polls` (PK = `MessageId`). O `Body` da mensagem replica a pergunta (preview/FTS). Só canal com membership (não thread, não DM).
@@ -735,9 +755,12 @@ public interface IPushSender
 (`uuid[]`).
 
 `notifications.channel_preferences` (RLS, único por `ChannelId`+`UserId`):
-`Level`, `MutedUntil?`. Linha presente = override ativo; ausente = "usar o padrão".
+`Level?`, `MutedUntil?`, `FollowAllThreads` (B-102). `Level` é nullable desde B-102:
+`null` = "sem override de mute" — a linha pode existir só para carregar
+`FollowAllThreads=true`. Linha ausente = "usar o padrão" em ambos os eixos.
 `MutedUntil` expirado é ignorado na leitura (dispatcher e API) — sem job de limpeza,
-o silêncio "volta sozinho".
+o silêncio "volta sozinho". Limpar o mute (`DELETE .../channels/{channelId}`) não
+apaga a linha quando `FollowAllThreads=true` — só zera `Level`/`MutedUntil`.
 
 Nível efetivo por destinatário = override de canal não expirado, senão `Level`
 global. `None` nunca notifica; DM notifica em `All`/`MentionsAndDms`; canal comum só
