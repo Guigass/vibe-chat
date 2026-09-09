@@ -94,3 +94,25 @@ permissão existentes.
 - Artefatos locais: `artifacts/B-178/` (logs e TRX, fora do Git).
 - Stop reason: `GOAL_MET` para implementação e gates locais; publicação/CI
   ficam registrados no PR. `Done` na branch só é autoritativo após merge.
+
+### Follow-up dos gates — 2026-09-09
+
+O PR #162 foi mergeado em `e9bfd5e`, com CI e QA aprovados. O snapshot
+`EndpointRegistrationIntegrationTests.cs` está versionado nesse commit.
+Apesar disso, os dois gates offline de autorização continuavam lendo apenas
+`Program.cs` e passavam com zero mapas: os 11 testes de arquitetura verdes da
+extração não demonstravam a cobertura desses gates.
+
+- Correção R1, restrita a B-178: inventário recursivo dos C# de `apps/api`,
+  excluindo `bin`/`obj`, incluindo `Endpoints/` e `GroupDmEndpoints.cs`.
+- Inventário vazio falha. Cada mutação precisa da própria declaração encadeada;
+  comentários, strings, helpers e permissões de endpoints seguintes não contam.
+- Matriz validada por par método HTTP + path, não por simples menção ao path.
+- Evidência antes/depois: os gates corrigidos inicialmente falharam para
+  `PUT /me` sem exceção explícita e para as quatro rotas de DM em grupo ausentes
+  da matriz. A exceção caller-only de locale foi declarada em metadata e no
+  snapshot, sem mudar autorização efetiva; as quatro rotas foram documentadas.
+- Sete casos de regressão do inventário; suite de arquitetura: **18/18**.
+  Build, unit **87/87**, integration **87/87** (inclui snapshot de 85 rotas)
+  e security **56/56** verdes em Docker; nenhum skip. Total: **248** testes.
+- Logs/TRX: `artifacts/B-178-gates/`; `git diff --check` verde.
