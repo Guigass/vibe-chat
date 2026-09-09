@@ -1,18 +1,48 @@
-import { Component, WritableSignal, computed, effect, inject, signal } from '@angular/core';
+import { Component, ElementRef, WritableSignal, afterRenderEffect, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LocaleService } from '../../../core/i18n/locale.service';
 import { ui } from '../../../core/i18n/strings';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { idsEqual } from '../../../core/services/message-sync';
 import { NotificationPreferencesStore } from '../../../core/services/notification-preferences.store';
-import { NotificationLevel, NotificationPreferences } from '../../../shared/models/chat.models';
+import { NotificationLevel, NotificationPreferences, WorkspaceMember } from '../../../shared/models/chat.models';
 import { Button, IconButton, Input } from '../../../shared/ui';
+
+const PRIORITY_CONTACT_LIMIT = 50;
 
 function detectTimeZone(): string {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   } catch {
     return 'UTC';
+  }
+}
+
+function listTimeZones(current: string): string[] {
+  let zones: string[] = [];
+  try {
+    const intl = Intl as typeof Intl & { supportedValuesOf?(key: string): string[] };
+    if (typeof intl.supportedValuesOf === 'function') {
+      zones = intl.supportedValuesOf('timeZone');
+    }
+  } catch {
+    zones = [];
+  }
+  if (zones.length === 0) {
+    zones = ['UTC', 'America/Sao_Paulo', 'America/New_York', 'Europe/Lisbon', 'Europe/London'];
+  }
+  return current && !zones.includes(current) ? [current, ...zones] : zones;
+}
+
+function timeZoneLabel(zone: string, locale: string): string {
+  try {
+    const offset = new Intl.DateTimeFormat(locale, { timeZone: zone, timeZoneName: 'shortOffset' })
+      .formatToParts(new Date())
+      .find((part) => part.type === 'timeZoneName')?.value;
+    const name = zone.replaceAll('_', ' ');
+    return offset ? `${name} (${offset})` : name;
+  } catch {
+    return zone;
   }
 }
 
@@ -90,30 +120,63 @@ function weekdayLabels(locale: string): Array<{ bit: number; label: string }> {
               }
             </div>
             <p class="notif-panel__hint">{{ ui.notifDaysHint }}</p>
-            <vc-input
-              [label]="ui.notifTimeZone"
-              type="text"
-              placeholder="America/Sao_Paulo"
-              [(value)]="timeZone"
-            />
-
-            @if (priorityCandidates().length > 0) {
-              <p class="notif-panel__hint">{{ ui.notifPriority }}</p>
-              <ul class="notif-panel__contacts" data-testid="notif-priority">
-                @for (member of priorityCandidates(); track member.userId) {
-                  <li>
-                    <label class="notif-panel__choice">
-                      <input
-                        type="checkbox"
-                        [checked]="isPriorityContact(member.userId)"
-                        (change)="togglePriorityContact(member.userId)"
-                      />
-                      {{ member.displayName }}
-                    </label>
-                  </li>
+            <label class="notif-panel__field">
+              <span>{{ ui.notifTimeZone }}</span>
+              <select
+                #timeZoneEl
+                data-testid="notif-timezone"
+                [attr.aria-label]="ui.notifTimeZone"
+                (change)="onTimeZoneChange($event)"
+              >
+                @for (option of timeZoneOptions(); track option.id) {
+                  <option [value]="option.id" [selected]="option.id === timeZone()">
+                    {{ option.label }}
+                  </option>
                 }
-              </ul>
-            }
+              </select>
+            </label>
+
+            <div class="notif-panel__priority">
+              <p class="notif-panel__hint">{{ ui.notifPriority }}</p>
+              @if (selectedPriorityContacts().length) {
+                <ul class="notif-panel__chips" data-testid="notif-priority">
+                  @for (member of selectedPriorityContacts(); track member.userId) {
+                    <li>
+                      <span>{{ member.displayName }}</span>
+                      <button
+                        type="button"
+                        class="notif-panel__chip-remove"
+                        [attr.aria-label]="ui.notifPriorityRemove + ' ' + member.displayName"
+                        (click)="togglePriorityContact(member.userId)"
+                      >
+                        ×
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+              <vc-input
+                [label]="ui.notifPrioritySearch"
+                type="search"
+                [placeholder]="ui.notifPrioritySearch"
+                [(value)]="contactQuery"
+              />
+              @if (contactQuery().trim()) {
+                @if (prioritySuggestions().length === 0) {
+                  <p class="notif-panel__hint" role="status">{{ ui.notifPriorityNone }}</p>
+                } @else {
+                  <ul class="notif-panel__suggestions" data-testid="notif-priority-suggest">
+                    @for (member of prioritySuggestions(); track member.userId) {
+                      <li>
+                        <button type="button" class="notif-panel__suggest" (click)="addPriorityContact(member.userId)">
+                          {{ member.displayName }}
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
+              }
+            </div>
           }
         </fieldset>
 
@@ -246,15 +309,103 @@ function weekdayLabels(locale: string): Array<{ bit: number; label: string }> {
       color: var(--vc-ink-muted);
       font-size: 0.8rem;
     }
-    .notif-panel__contacts {
+    .notif-panel__field {
+      display: grid;
+      gap: 0.35rem;
+      width: 100%;
+    }
+    .notif-panel__field > span {
+      font-size: 0.85rem;
+      color: var(--vc-ink-muted);
+      font-weight: 500;
+    }
+    .notif-panel__field select {
+      width: 100%;
+      min-height: 2.5rem;
+      padding: 0.55rem 0.8rem;
+      border-radius: var(--vc-radius-md);
+      border: 1px solid var(--vc-border);
+      background: var(--vc-surface-elevated);
+      color: var(--vc-ink);
+      font: inherit;
+      cursor: pointer;
+    }
+    .notif-panel__priority {
+      display: flex;
+      flex-direction: column;
+      gap: var(--vc-space-2);
+    }
+    .notif-panel__chips {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--vc-space-1);
+    }
+    .notif-panel__chips li {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      max-width: 100%;
+      padding: 0.2rem 0.35rem 0.2rem 0.55rem;
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-sm);
+      background: var(--vc-brand-soft);
+      color: var(--vc-brand-ink);
+      font-size: 0.8rem;
+    }
+    .notif-panel__chips li span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .notif-panel__chip-remove {
+      flex-shrink: 0;
+      width: 1.4rem;
+      height: 1.4rem;
+      border: 0;
+      border-radius: var(--vc-radius-sm);
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+      line-height: 1;
+    }
+    .notif-panel__chip-remove:focus-visible {
+      outline: none;
+      box-shadow: var(--vc-focus-ring);
+    }
+    .notif-panel__suggestions {
       list-style: none;
       margin: 0;
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: var(--vc-space-1);
-      max-height: 8rem;
+      max-height: 10rem;
       overflow-y: auto;
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-md);
+      background: var(--vc-surface-elevated);
+    }
+    .notif-panel__suggest {
+      width: 100%;
+      padding: 0.45rem 0.7rem;
+      border: 0;
+      background: transparent;
+      color: var(--vc-ink);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+    .notif-panel__suggest:hover,
+    .notif-panel__suggest:focus-visible {
+      background: color-mix(in srgb, var(--vc-brand) 12%, transparent);
+    }
+    .notif-panel__suggest:focus-visible {
+      outline: none;
+      box-shadow: var(--vc-focus-ring);
     }
     .notif-panel__actions {
       display: flex;
@@ -280,6 +431,13 @@ export class NotificationPreferencesPanel {
   private readonly locales = inject(LocaleService);
 
   readonly dayLabels = computed(() => weekdayLabels(this.locales.locale()));
+  readonly timeZoneOptions = computed(() => {
+    const locale = this.locales.locale();
+    return listTimeZones(this.timeZone()).map((id) => ({
+      id,
+      label: timeZoneLabel(id, locale),
+    }));
+  });
   readonly levelOptions: Array<{ value: NotificationLevel; label: string }> = [
     { value: 'All', label: ui.notifAll },
     { value: 'MentionsAndDms', label: ui.notifMentions },
@@ -295,11 +453,33 @@ export class NotificationPreferencesPanel {
   readonly timeZone = signal(detectTimeZone());
   readonly digestEnabled = signal(false);
   readonly priorityContactUserIds = signal<string[]>([]);
+  readonly contactQuery = signal('');
+  private readonly timeZoneEl = viewChild<ElementRef<HTMLSelectElement>>('timeZoneEl');
 
   readonly saving = signal(false);
   readonly saved = signal(false);
 
-  readonly priorityCandidates = computed(() => this.channels.peerCandidates());
+  readonly selectedPriorityContacts = computed(() => {
+    const members = this.channels.peerCandidates();
+    return this.priorityContactUserIds()
+      .map((id) => members.find((member) => idsEqual(member.userId, id)) ?? fallbackMember(id))
+      .slice(0, PRIORITY_CONTACT_LIMIT);
+  });
+
+  readonly prioritySuggestions = computed(() => {
+    const query = this.contactQuery().trim().toLowerCase();
+    if (!query) {
+      return [];
+    }
+    return this.channels
+      .peerCandidates()
+      .filter(
+        (member) =>
+          !this.isPriorityContact(member.userId) &&
+          (member.displayName.toLowerCase().includes(query) || member.email.toLowerCase().includes(query)),
+      )
+      .slice(0, 8);
+  });
 
   constructor() {
     effect(() => {
@@ -308,6 +488,13 @@ export class NotificationPreferencesPanel {
         return;
       }
       this.applyPrefs(prefs);
+    });
+    afterRenderEffect(() => {
+      const zone = this.timeZone();
+      const el = this.timeZoneEl()?.nativeElement;
+      if (el && el.value !== zone) {
+        el.value = zone;
+      }
     });
   }
 
@@ -327,12 +514,23 @@ export class NotificationPreferencesPanel {
     this.priorityContactUserIds.update((current) =>
       current.some((id) => idsEqual(id, userId))
         ? current.filter((id) => !idsEqual(id, userId))
-        : [...current, userId],
+        : current.length >= PRIORITY_CONTACT_LIMIT
+          ? current
+          : [...current, userId],
     );
+  }
+
+  addPriorityContact(userId: string): void {
+    this.togglePriorityContact(userId);
+    this.contactQuery.set('');
   }
 
   onChecked(event: Event, target: WritableSignal<boolean>): void {
     target.set((event.target as HTMLInputElement).checked);
+  }
+
+  onTimeZoneChange(event: Event): void {
+    this.timeZone.set((event.target as HTMLSelectElement).value);
   }
 
   async save(): Promise<void> {
@@ -362,7 +560,9 @@ export class NotificationPreferencesPanel {
     this.dndDays.set(prefs.dndDays);
     this.timeZone.set(prefs.timeZone || detectTimeZone());
     this.digestEnabled.set(prefs.digestEnabled);
-    this.priorityContactUserIds.set(prefs.priorityContactUserIds.filter((id) => !idsEqual(id, this.auth.profile()?.id)));
+    this.priorityContactUserIds.set(
+      prefs.priorityContactUserIds.filter((id) => !idsEqual(id, this.auth.profile()?.id)).slice(0, PRIORITY_CONTACT_LIMIT),
+    );
   }
 }
 
@@ -376,4 +576,8 @@ function toTimeInput(value: string | null | undefined, fallback: string): string
 function toTimePayload(value: string): string {
   const hhmm = value.length >= 5 ? value.slice(0, 5) : '00:00';
   return `${hhmm}:00`;
+}
+
+function fallbackMember(userId: string): WorkspaceMember {
+  return { userId, displayName: userId, email: '', role: '' };
 }

@@ -43,6 +43,13 @@ describe('NotificationPreferencesPanel', () => {
           useValue: {
             peerCandidates: () => [
               { userId: 'u-bob', displayName: 'Bob Santos', email: 'bob@vibechat.local', role: 'Member' },
+              { userId: 'u-carol', displayName: 'Carol Lima', email: 'carol@vibechat.local', role: 'Member' },
+              ...Array.from({ length: 40 }, (_, index) => ({
+                userId: `u-extra-${index}`,
+                displayName: `Membro ${index}`,
+                email: `m${index}@vibechat.local`,
+                role: 'Member',
+              })),
             ],
           },
         },
@@ -66,10 +73,21 @@ describe('NotificationPreferencesPanel', () => {
     const allRadio = host.querySelector<HTMLInputElement>('input[name="notif-level"]');
     expect(allRadio?.checked).toBe(true);
     expect(host.querySelector<HTMLInputElement>('input[type="time"]')?.value).toBe('21:00');
-    expect(host.textContent).toContain('Bob Santos');
+    expect(host.querySelector<HTMLSelectElement>('[data-testid="notif-timezone"]')?.value).toBe(
+      'America/Sao_Paulo',
+    );
+    expect(host.querySelectorAll('[data-testid="notif-timezone"] option').length).toBeGreaterThan(1);
+    expect(host.querySelector('[data-testid="notif-priority"]')?.textContent).toContain('Bob Santos');
     expect(host.querySelector('[data-testid="notif-priority"]')?.textContent).not.toContain('Alice');
+    expect(host.textContent).not.toContain('Membro 12');
+    expect(host.querySelector('[data-testid="notif-priority-suggest"]')).toBeNull();
     expect(fixture.componentInstance.isPriorityContact('u-bob')).toBe(true);
     expect(fixture.componentInstance.isPriorityContact('u-alice')).toBe(false);
+
+    fixture.componentInstance.contactQuery.set('Carol');
+    fixture.detectChanges();
+    expect(host.querySelector('[data-testid="notif-priority-suggest"]')?.textContent).toContain('Carol Lima');
+    expect(host.querySelectorAll('[data-testid="notif-priority-suggest"] button').length).toBe(1);
   });
 
   it('does not nest a form inside the panel', async () => {
