@@ -36,6 +36,10 @@ import {
   ChannelMuteDuration,
 } from '../../shared/models/chat.models';
 import { mapPollSummary } from '../../shared/polls/poll-summary';
+import {
+  mapChannelNotificationOverride,
+  mapNotificationPreferences,
+} from '../../shared/notifications/notification-preferences';
 
 interface WorkspaceDto {
   id: string;
@@ -990,16 +994,18 @@ export class ApiService {
   }
 
   async getNotificationPreferences(): Promise<NotificationPreferences> {
-    return this.request<NotificationPreferences>('/api/v1/notifications/preferences');
+    const dto = await this.request<unknown>('/api/v1/notifications/preferences');
+    return mapNotificationPreferences(dto);
   }
 
   async updateNotificationPreferences(
     patch: Omit<NotificationPreferences, 'channelOverrides'>,
   ): Promise<NotificationPreferences> {
-    return this.request<NotificationPreferences>('/api/v1/notifications/preferences', {
+    const dto = await this.request<unknown>('/api/v1/notifications/preferences', {
       method: 'PUT',
       body: JSON.stringify(patch),
     });
+    return mapNotificationPreferences(dto);
   }
 
   async muteChannelNotifications(
@@ -1007,9 +1013,16 @@ export class ApiService {
     level: NotificationLevel,
     duration?: ChannelMuteDuration,
   ): Promise<ChannelNotificationOverride> {
-    return this.request<ChannelNotificationOverride>(
+    const dto = await this.request<unknown>(
       `/api/v1/notifications/preferences/channels/${channelId}`,
       { method: 'PUT', body: JSON.stringify({ level, duration: duration ?? null }) },
+    );
+    return (
+      mapChannelNotificationOverride(dto) ?? {
+        channelId,
+        level,
+        mutedUntil: null,
+      }
     );
   }
 

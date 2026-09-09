@@ -442,13 +442,18 @@
   align-items: center;
   gap: 0.3rem;
   border: 1px solid var(--vc-border);
-  border-radius: 999px;
+  border-radius: var(--vc-radius-md);
   background: color-mix(in srgb, var(--vc-ink) 8%, var(--vc-surface));
   color: var(--vc-ink-muted);
   font: inherit;
   font-size: 0.76rem;
   padding: 0.25rem 0.6rem;
   cursor: pointer;
+}
+
+.shell__dnd-pill:focus-visible {
+  outline: none;
+  box-shadow: var(--vc-focus-ring);
 }
 
 .shell__dnd-pill span {
@@ -504,7 +509,8 @@
 
 .shell__context > vc-thread-panel,
 .shell__context > vc-pins-panel,
-.shell__context > vc-saved-panel {
+.shell__context > vc-saved-panel,
+.shell__context > vc-notification-preferences-panel {
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;

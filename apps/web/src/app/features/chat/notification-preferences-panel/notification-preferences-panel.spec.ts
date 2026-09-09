@@ -1,0 +1,100 @@
+import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { describe, expect, it, vi } from 'vitest';
+import { AuthService } from '../../../core/auth/auth.service';
+import { LocaleService } from '../../../core/i18n/locale.service';
+import { ChannelStore } from '../../../core/services/channel.store';
+import { NotificationPreferencesStore } from '../../../core/services/notification-preferences.store';
+import { mapNotificationPreferences } from '../../../shared/notifications/notification-preferences';
+import { NotificationPreferencesPanel } from './notification-preferences-panel';
+
+describe('NotificationPreferencesPanel', () => {
+  it('hydrates PascalCase prefs and keeps the current user out of priority contacts', async () => {
+    const preferences = signal(
+      mapNotificationPreferences({
+        Level: 'All',
+        HidePreview: true,
+        DndEnabled: true,
+        DndStart: '21:00:00',
+        DndEnd: '07:00:00',
+        DndDays: 0,
+        TimeZone: 'America/Sao_Paulo',
+        DigestEnabled: false,
+        PriorityContactUserIds: ['u-alice', 'u-bob'],
+        ChannelOverrides: [],
+      }),
+    );
+
+    await TestBed.configureTestingModule({
+      imports: [NotificationPreferencesPanel],
+      providers: [
+        {
+          provide: NotificationPreferencesStore,
+          useValue: {
+            preferences,
+            loading: () => false,
+            error: () => null,
+            closePanel: vi.fn(),
+            save: vi.fn().mockResolvedValue(true),
+          },
+        },
+        {
+          provide: ChannelStore,
+          useValue: {
+            peerCandidates: () => [
+              { userId: 'u-bob', displayName: 'Bob Santos', email: 'bob@vibechat.local', role: 'Member' },
+            ],
+          },
+        },
+        {
+          provide: AuthService,
+          useValue: { profile: () => ({ id: 'u-alice', name: 'Alice' }) },
+        },
+        {
+          provide: LocaleService,
+          useValue: { locale: () => 'pt-BR' },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(NotificationPreferencesPanel);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const allRadio = host.querySelector<HTMLInputElement>('input[name="notif-level"]');
+    expect(allRadio?.checked).toBe(true);
+    expect(host.querySelector<HTMLInputElement>('input[type="time"]')?.value).toBe('21:00');
+    expect(host.textContent).toContain('Bob Santos');
+    expect(host.querySelector('[data-testid="notif-priority"]')?.textContent).not.toContain('Alice');
+    expect(fixture.componentInstance.isPriorityContact('u-bob')).toBe(true);
+    expect(fixture.componentInstance.isPriorityContact('u-alice')).toBe(false);
+  });
+
+  it('does not nest a form inside the panel', async () => {
+    await TestBed.configureTestingModule({
+      imports: [NotificationPreferencesPanel],
+      providers: [
+        {
+          provide: NotificationPreferencesStore,
+          useValue: {
+            preferences: () => null,
+            loading: () => false,
+            error: () => null,
+            closePanel: vi.fn(),
+            save: vi.fn(),
+          },
+        },
+        { provide: ChannelStore, useValue: { peerCandidates: () => [] } },
+        { provide: AuthService, useValue: { profile: () => ({ id: 'u-alice' }) } },
+        { provide: LocaleService, useValue: { locale: () => 'pt-BR' } },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(NotificationPreferencesPanel);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('form').length).toBe(0);
+    expect(fixture.nativeElement.querySelector('vc-button')).not.toBeNull();
+  });
+});

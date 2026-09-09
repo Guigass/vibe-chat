@@ -1,5 +1,6 @@
 import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../api/api.service';
+import { ui } from '../i18n/strings';
 import {
   ChannelMuteDuration,
   ChannelNotificationOverride,
@@ -126,7 +127,7 @@ export class NotificationPreferencesStore implements OnDestroy {
       const prefs = await this.api.getNotificationPreferences();
       this.preferencesSignal.set(prefs);
     } catch {
-      this.errorSignal.set('Não foi possível carregar as preferências de notificação.');
+      this.errorSignal.set(ui.notifLoadError);
     } finally {
       this.loadingSignal.set(false);
     }
@@ -142,7 +143,7 @@ export class NotificationPreferencesStore implements OnDestroy {
       }));
       return true;
     } catch {
-      this.errorSignal.set('Não foi possível salvar as preferências.');
+      this.errorSignal.set(ui.notifSaveError);
       return false;
     }
   }
@@ -161,7 +162,7 @@ export class NotificationPreferencesStore implements OnDestroy {
       const override = await this.api.muteChannelNotifications(channelId, level, duration);
       this.upsertOverride(override);
     } catch {
-      this.errorSignal.set('Não foi possível silenciar o canal.');
+      this.errorSignal.set(ui.notifMuteError);
     }
   }
 
@@ -175,7 +176,7 @@ export class NotificationPreferencesStore implements OnDestroy {
           : current,
       );
     } catch {
-      this.errorSignal.set('Não foi possível remover o silêncio do canal.');
+      this.errorSignal.set(ui.notifUnmuteError);
     }
   }
 

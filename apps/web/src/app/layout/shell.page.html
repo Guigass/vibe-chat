@@ -3,7 +3,7 @@
   [class.shell--sidebar-collapsed]="!sidebarOpen()"
   [class.shell--narrow]="narrowViewport()"
   [class.shell--nav-compact]="navCompact() && !narrowViewport()"
-  [class.shell--context-open]="contextOpen() || pins.panelOpen() || saved.panelOpen()"
+  [class.shell--context-open]="contextOpen() || pins.panelOpen() || saved.panelOpen() || notificationPrefs.panelOpen()"
   [class.shell--thread-open]="threads.open()"
 >
   @if (narrowViewport() && sidebarOpen()) {

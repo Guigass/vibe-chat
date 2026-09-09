@@ -69,7 +69,7 @@ export class ChannelStore {
   });
   readonly peerCandidates = computed(() => {
     const me = this.auth.profile()?.id;
-    return this.membersSignal().filter((m) => m.userId !== me);
+    return this.membersSignal().filter((m) => !idsEqual(m.userId, me));
   });
   readonly canCreateChannel = computed(() => {
     if (this.usingDemo()) return true;
