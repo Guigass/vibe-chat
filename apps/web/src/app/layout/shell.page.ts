@@ -50,6 +50,7 @@ import {
 import {
   ConnectionBanner,
   DensityControl,
+  Button,
   IconButton,
   Input,
   ThemeToggle,
@@ -89,6 +90,7 @@ import { pluralCount } from '../core/i18n/format';
     InAppNoticeBanner,
     ThemeToggle,
     DensityControl,
+    Button,
     IconButton,
     Input,
     VcTooltip,
@@ -115,13 +117,44 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly palette = inject(CommandPaletteService);
   private readonly locales = inject(LocaleService);
   readonly ui = ui;
-  readonly addMemberOpen = signal(false);
+  readonly dmPanel = signal<'add' | 'rename' | 'leave' | null>(null);
+  readonly memberQuery = signal('');
+  readonly groupName = signal('');
   readonly addableMembers = computed(() => {
     const active = this.channels.activeChannel();
     if (!active) return [];
     const taken = new Set(active.participantUserIds ?? (active.peerUserId ? [active.peerUserId] : []));
     return this.channels.peerCandidates().filter((m) => !taken.has(m.userId));
   });
+  readonly filteredAddableMembers = computed(() => {
+    const query = this.memberQuery().trim().toLowerCase();
+    const members = this.addableMembers();
+    if (!query) return members;
+    return members.filter((member) => member.displayName.toLowerCase().includes(query));
+  });
+
+  toggleDmPanel(panel: 'add' | 'rename' | 'leave'): void {
+    if (this.dmPanel() === panel) {
+      this.closeDmPanel();
+      return;
+    }
+    if (panel === 'add') {
+      this.memberQuery.set('');
+    }
+    if (panel === 'rename') {
+      this.groupName.set(this.channels.activeChannel()?.name ?? '');
+    }
+    this.dmPanel.set(panel);
+    const focusId = panel === 'add' ? 'vc-group-dm-add-search' : panel === 'rename' ? 'vc-group-dm-rename' : null;
+    if (focusId) {
+      setTimeout(() => document.getElementById(focusId)?.focus(), 0);
+    }
+  }
+
+  closeDmPanel(): void {
+    this.dmPanel.set(null);
+    this.memberQuery.set('');
+  }
 
   groupDmCountLabel(): string {
     const count = this.channels.activeChannel()?.participantCount ?? 0;
@@ -133,24 +166,26 @@ export class ShellPage implements OnInit, OnDestroy {
   async addGroupMember(userId: string): Promise<void> {
     const active = this.channels.activeChannel();
     if (!active) return;
-    this.addMemberOpen.set(false);
+    this.closeDmPanel();
     const channel = await this.channels.addGroupDmParticipants(active.id, [userId]);
     if (channel) {
       await this.messages.loadChannel(channel.id);
     }
   }
 
-  async renameActiveGroup(): Promise<void> {
+  async submitRename(event: Event): Promise<void> {
+    event.preventDefault();
     const active = this.channels.activeChannel();
-    if (!active) return;
-    const next = window.prompt(this.ui.groupDmRenamePrompt, active.name)?.trim();
-    if (!next) return;
+    const next = this.groupName().trim();
+    if (!active || !next) return;
+    this.closeDmPanel();
     await this.channels.renameGroupDm(active.id, next);
   }
 
   async leaveActiveGroup(): Promise<void> {
     const active = this.channels.activeChannel();
     if (!active) return;
+    this.closeDmPanel();
     await this.channels.leaveGroupDm(active.id);
     const next = this.channels.activeChannel();
     if (next) {
@@ -211,6 +246,7 @@ export class ShellPage implements OnInit, OnDestroy {
     effect(() => {
       const channelId = this.channels.activeChannelId() ?? null;
       if (this.lastChannelId !== null && this.lastChannelId !== channelId) {
+        this.closeDmPanel();
         this.threads.close();
         this.pins.closePanel();
         this.saved.closePanel();
@@ -281,6 +317,14 @@ export class ShellPage implements OnInit, OnDestroy {
     this.unsubPresence?.();
   }
 
+  @HostListener('document:pointerdown', ['$event'])
+  onDocumentPointerDown(event: PointerEvent): void {
+    if (!this.dmPanel()) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.shell__dm-menu')) return;
+    this.closeDmPanel();
+  }
+
   @HostListener('window:keydown', ['$event'])
   onGlobalKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape' && !event.shiftKey) {
@@ -308,6 +352,10 @@ export class ShellPage implements OnInit, OnDestroy {
       }
       if (this.notificationPrefs.panelOpen()) {
         this.notificationPrefs.closePanel();
+        return;
+      }
+      if (this.dmPanel()) {
+        this.closeDmPanel();
         return;
       }
       if (this.narrowViewport() && this.sidebarOpen()) {
