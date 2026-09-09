@@ -1,5 +1,6 @@
 import { Component, HostListener, input, signal } from '@angular/core';
 import { ConnectionStatus } from '../../../core/services/chat-hub.service';
+import { ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-connection-banner',
@@ -7,16 +8,16 @@ import { ConnectionStatus } from '../../../core/services/chat-hub.service';
   template: `
     @if (!online()) {
       <div class="vc-banner vc-banner--warn" role="status">
-        Você está offline. O shell do app continua disponível; envios ficam pausados.
+        {{ ui.bannerOffline }}
       </div>
     } @else if (status() === 'reconnecting' || status() === 'connecting') {
       <div class="vc-banner" role="status">
         <span class="vc-banner__dot" aria-hidden="true"></span>
-        Reconectando ao tempo real…
+        {{ ui.bannerReconnecting }}
       </div>
     } @else if (status() === 'disconnected') {
       <div class="vc-banner vc-banner--warn" role="status">
-        Sem conexão em tempo real. Mensagens podem atrasar.
+        {{ ui.bannerNoRealtime }}
       </div>
     }
   `,
@@ -47,6 +48,7 @@ import { ConnectionStatus } from '../../../core/services/chat-hub.service';
   `,
 })
 export class ConnectionBanner {
+  readonly ui = ui;
   readonly status = input<ConnectionStatus>('disconnected');
   readonly online = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
 

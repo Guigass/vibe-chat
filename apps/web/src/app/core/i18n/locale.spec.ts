@@ -8,17 +8,21 @@ import {
 } from './locale';
 
 describe('locale', () => {
-  it('accepts only pt-BR and en', () => {
+  it('accepts the supported locales only', () => {
     expect(isAppLocale('pt-BR')).toBe(true);
     expect(isAppLocale('en')).toBe(true);
-    expect(isAppLocale('fr')).toBe(false);
+    expect(isAppLocale('fr')).toBe(true);
+    expect(isAppLocale('zh-CN')).toBe(true);
+    expect(isAppLocale('xx')).toBe(false);
     expect(isAppLocale(null)).toBe(false);
   });
 
-  it('detects English and Portuguese from the browser list', () => {
+  it('maps browser language tags to a supported locale', () => {
     expect(detectBrowserLocale(['en-US', 'pt-BR'])).toBe('en');
     expect(detectBrowserLocale(['pt-PT'])).toBe('pt-BR');
-    expect(detectBrowserLocale(['fr-FR'])).toBe('pt-BR');
+    expect(detectBrowserLocale(['fr-FR'])).toBe('fr');
+    expect(detectBrowserLocale(['zh-Hans-CN'])).toBe('zh-CN');
+    expect(detectBrowserLocale(['sv-SE'])).toBe('pt-BR');
   });
 
   it('prefers a stored locale over the browser', () => {

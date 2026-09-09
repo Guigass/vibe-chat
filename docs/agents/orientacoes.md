@@ -65,6 +65,7 @@ Este documento guia agentes de código (backend, frontend, infra, QA, security, 
 - Idempotency-Key estável por tentativa de envio (UUID por compose submit)
 - Light/dark via `data-theme`
 - Motion sutil (2–3) sem poluição
+- Texto visível só via i18n (`ui.*` / catálogo). Nunca literal no template ou TS
 
 ### Não fazer
 
@@ -72,6 +73,7 @@ Este documento guia agentes de código (backend, frontend, infra, QA, security, 
 - Cards no hero/shell sem necessidade
 - Roxo/indigo / cream terracotta / Inter como marca
 - Inventar logo/favicon/fundo genérico quando já existir arquivo catalogado
+- Escrever string de UI direto no código (usar `ui.*` / catálogo i18n)
 - State global pesado sem necessidade no MVP
 
 ### Checklist de PR frontend

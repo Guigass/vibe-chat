@@ -160,7 +160,7 @@ export class ShellPage implements OnInit, OnDestroy {
     const count = this.channels.activeChannel()?.participantCount ?? 0;
     return count === 1
       ? this.ui.groupDmOne
-      : this.ui.groupDmCount.replace('{$count}', String(count));
+      : this.ui.groupDmCount.replace('%count%', String(count));
   }
 
   async addGroupMember(userId: string): Promise<void> {
@@ -561,9 +561,9 @@ export class ShellPage implements OnInit, OnDestroy {
     await this.channels.selectChannel(hit.channelId);
     const result = await this.messages.jumpToSequence(hit.channelId, hit.sequence, hit.messageId);
     if (result === 'deleted') {
-      this.searchJumpNotice.set('Esta mensagem foi removida.');
+      this.searchJumpNotice.set(ui.searchJumpRemoved);
     } else if (result === 'missing') {
-      this.searchJumpNotice.set('Não foi possível localizar a mensagem.');
+      this.searchJumpNotice.set(ui.searchJumpMissing);
     } else {
       this.searchJumpNotice.set(null);
     }
@@ -761,7 +761,7 @@ export class ShellPage implements OnInit, OnDestroy {
         this.searchTotal.set(0);
         this.searchCursor.set(null);
       }
-      this.searchError.set('Não foi possível buscar mensagens.');
+      this.searchError.set(ui.searchFailed);
     } finally {
       if (seq === this.searchSeq) {
         this.searchLoading.set(false);

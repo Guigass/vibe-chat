@@ -60,6 +60,7 @@ describe('SlashCommandsService (B-087)', () => {
       { name: 'ajuda', description: 'Lista', usage: '/ajuda' },
       { name: 'dm', description: 'DM', usage: '/dm @pessoa' },
       { name: 'resumir', description: 'IA', usage: '/resumir' },
+      { name: 'topico', description: 'Tópico', usage: '/topico <texto>' },
     ]);
     TestBed.configureTestingModule({
       providers: [
@@ -93,6 +94,17 @@ describe('SlashCommandsService (B-087)', () => {
     expect(result.notice?.kind).toBe('help');
     expect(result.notice?.lines?.some((line) => line.includes('/dm'))).toBe(true);
     expect(palette.openShortcutSheet).toHaveBeenCalled();
+  });
+
+  it('translates API error codes instead of raw JSON', async () => {
+    api.updateChannelTopic.mockRejectedValue(
+      new Error(JSON.stringify({ error: 'WrongChannel', message: 'Message does not belong to this channel.' })),
+    );
+
+    const svc = TestBed.inject(SlashCommandsService);
+    const result = await svc.execute('/topico hello');
+    expect(result.ok).toBe(false);
+    expect(result.notice?.text).toMatch(/não pertence/i);
   });
 
   it('explains when IA is disabled instead of raw 503', async () => {

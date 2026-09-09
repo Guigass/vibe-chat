@@ -18,6 +18,16 @@ async function bootstrap(): Promise<void> {
     }
   }
 
+  const { ui } = await import('./app/core/i18n/strings');
+  const meta = document.querySelector('meta[name="description"]');
+  if (meta) {
+    meta.setAttribute('content', ui.metaDescription);
+  }
+  const noscript = document.querySelector('noscript');
+  if (noscript) {
+    noscript.textContent = ui.noscript;
+  }
+
   const { bootstrapApplication } = await import('@angular/platform-browser');
   const { appConfig } = await import('./app/app.config');
   const { App } = await import('./app/app');

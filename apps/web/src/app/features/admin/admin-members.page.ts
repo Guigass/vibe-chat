@@ -1,6 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { ApiService } from '../../core/api/api.service';
+import { fillTemplate, ui } from '../../core/i18n/strings';
 import { WorkspaceMember } from '../../shared/models/chat.models';
 import { Badge } from '../../shared/ui';
 import { AdminContextService } from './admin-context.service';
@@ -25,6 +26,8 @@ function isPendingMember(member: WorkspaceMember): boolean {
 })
 export class AdminMembersPage implements OnInit {
   readonly areaId: AdminAreaId = 'members';
+  readonly ui = ui;
+  readonly fillTemplate = fillTemplate;
 
   private readonly api = inject(ApiService);
   readonly ctx = inject(AdminContextService);
@@ -111,7 +114,7 @@ export class AdminMembersPage implements OnInit {
     const displayName = String(data.get('displayName') ?? '').trim();
     const role = String(data.get('role') ?? 'Member').trim() || 'Member';
     if (!email) {
-      this.inviteError.set('Informe um e-mail válido.');
+      this.inviteError.set(ui.adminNeedEmail);
       return;
     }
 
@@ -130,7 +133,7 @@ export class AdminMembersPage implements OnInit {
         ),
       );
       this.inviteFeedback.set(
-        `${created.displayName} provisionado como ${created.role}. SSO com este e-mail vincula a membership.`,
+        fillTemplate(ui.adminInviteOk, { name: created.displayName, role: created.role }),
       );
       form.reset();
       const roleSelect = form.elements.namedItem('role') as HTMLSelectElement | null;
@@ -141,10 +144,10 @@ export class AdminMembersPage implements OnInit {
       const status = (err as { status?: number } | null)?.status;
       this.inviteError.set(
         status === 409
-          ? 'Este e-mail já é membro do workspace.'
+          ? ui.adminAlreadyMember
           : status === 403
-            ? 'Sem permissão para convidar membros.'
-            : 'Não foi possível convidar o membro.',
+            ? ui.adminInviteForbidden
+            : ui.adminInviteError,
       );
     } finally {
       this.inviteBusy.set(false);
@@ -164,14 +167,12 @@ export class AdminMembersPage implements OnInit {
       this.members.update((rows) =>
         rows.map((row) => (row.userId === updated.userId ? updated : row)),
       );
-      this.roleFeedback.set(`Papel de ${updated.displayName} atualizado para ${updated.role}.`);
+      this.roleFeedback.set(
+        fillTemplate(ui.adminRoleUpdated, { name: updated.displayName, role: updated.role }),
+      );
     } catch (err) {
       const status = (err as { status?: number } | null)?.status;
-      this.roleFeedback.set(
-        status === 403
-          ? 'Sem permissão para alterar este papel.'
-          : 'Não foi possível alterar o papel.',
-      );
+      this.roleFeedback.set(status === 403 ? ui.adminRoleForbidden : ui.adminRoleError);
     } finally {
       this.roleBusyUserId.set(null);
     }

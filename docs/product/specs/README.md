@@ -85,6 +85,7 @@ Origens: `docs/product/benchmark-mensageria.md`, `visao-longo-prazo.md` e
 | B-109 | [Núcleo plugin — bot/token + envio](B-109-api-integracao-envio-mensagens.md) |
 | B-110 | [Instalar/gerir plugins na instância](B-110-instalar-plugins.md) |
 | B-186 | [Membros do canal (lista + gestão)](B-186-membros-do-canal.md) |
+| B-188 | [Busca versátil (relevância e matching)](B-188-busca-versatil.md) |
 
 ### Wave 11 — Organização e comunicação
 
@@ -242,5 +243,5 @@ O que pode dar errado e como mitigar.
 - Nada de dependência proprietária; nada de secret em log ou commit.
 - UI usa tokens de `docs/architecture/design-system.md`; sem clonar Slack/Discord/WhatsApp.
 - Toda ação de arrastar precisa de alternativa por clique (WCAG 2.2 — 2.5.7).
-- Texto de UI em `pt-BR` e `en` a partir de B-100; antes disso, `pt-BR`.
+- Texto de UI via i18n (`pt-BR` fonte + catálogos). Nunca literal no código.
 - Feature de risco entra atrás de flag com default seguro.

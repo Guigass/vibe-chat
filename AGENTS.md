@@ -64,6 +64,7 @@ protocolo autônomo de falha e continuar outra trilha independente quando possí
 - Não chamar provedores de IA de forma síncrona no hot path de `SendMessage`.
 - Testes de integração com Testcontainers quando tocar persistência.
 - Checklist: contratos, migration/RLS, testes de messaging, arch tests verdes.
+- Copy visível (e-mail, slash `description`) por locale; erro de API é código em inglês.
 
 ## Frontend
 
@@ -73,6 +74,8 @@ protocolo autônomo de falha e continuar outra trilha independente quando possí
 - Light/dark via `data-theme`; motion sutil (2–3), sem poluição visual.
 - Não clonar visual Slack/Discord/WhatsApp; sem cards desnecessários no shell.
 - Tratar reconnect SignalR, empty/error states e a11y básica.
+- Texto visível só via i18n (`ui.*` / `$localize` / `public/locale/messages.*.json`).
+  Nunca escrever string de UI direto no template, componente ou store.
 
 ## Infra
 

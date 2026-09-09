@@ -9,6 +9,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { fillTemplate, ui } from '../../../core/i18n/strings';
 import { drawAudioWaveform, formatAudioDuration } from '../../utils/audio';
 import { MessageAttachment } from '../../models/chat.models';
 
@@ -22,7 +23,7 @@ const PLAYBACK_RATES = [1, 1.5, 2] as const;
       <button
         type="button"
         class="vc-audio__play"
-        [attr.aria-label]="playing() ? 'Pausar áudio' : 'Reproduir áudio'"
+        [attr.aria-label]="playing() ? ui.audioPause : ui.audioPlay"
         (click)="togglePlayback()"
         [disabled]="!downloadUrl()"
       >
@@ -47,7 +48,7 @@ const PLAYBACK_RATES = [1, 1.5, 2] as const;
           max="1000"
           [value]="progressValue()"
           (input)="onScrub($event)"
-          aria-label="Progresso do áudio"
+          [attr.aria-label]="ui.audioProgress"
           [disabled]="!downloadUrl()"
         />
       </div>
@@ -56,7 +57,7 @@ const PLAYBACK_RATES = [1, 1.5, 2] as const;
         type="button"
         class="vc-audio__speed"
         (click)="cycleSpeed()"
-        [attr.aria-label]="'Velocidade ' + speed() + 'x'"
+        [attr.aria-label]="fillTemplate(ui.audioSpeed, { speed: speed() })"
         [disabled]="!downloadUrl()"
       >
         {{ speed() }}×
@@ -113,6 +114,8 @@ const PLAYBACK_RATES = [1, 1.5, 2] as const;
   `,
 })
 export class AudioMessage {
+  readonly ui = ui;
+  readonly fillTemplate = fillTemplate;
   private readonly destroyRef = inject(DestroyRef);
   readonly attachment = input.required<MessageAttachment>();
   readonly downloadUrl = input<string | null>(null);
@@ -132,7 +135,9 @@ export class AudioMessage {
     return Math.round((this.elapsedMs() / duration) * 1000);
   });
   readonly playbackProgress = computed(() => this.progressValue() / 1000);
-  readonly ariaLabel = computed(() => `Mensagem de áudio, duração ${this.durationLabel()}`);
+  readonly ariaLabel = computed(() =>
+    fillTemplate(ui.audioAria, { duration: this.durationLabel() }),
+  );
 
   constructor() {
     effect(() => {

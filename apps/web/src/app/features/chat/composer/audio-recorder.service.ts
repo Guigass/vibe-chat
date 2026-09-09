@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { ui } from '../../../core/i18n/strings';
 import {
   AUDIO_MAX_DURATION_MS,
   AUDIO_MAX_SIZE_BYTES,
@@ -50,20 +51,20 @@ export class AudioRecorderService {
     this.resetInternal(false);
     if (!this.supported) {
       this.phase.set('unsupported');
-      return 'Gravação de áudio não é suportada neste navegador. Use anexar arquivo.';
+      return ui.audioUnsupported;
     }
 
     const mimeType = resolveAudioMimeType();
     if (!mimeType) {
       this.phase.set('unsupported');
-      return 'Nenhum formato de áudio compatível foi encontrado.';
+      return ui.audioNoFormat;
     }
 
     try {
       this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
       this.phase.set('denied');
-      return 'Permissão de microfone negada. Você ainda pode anexar um arquivo de áudio.';
+      return ui.audioMicDenied;
     }
 
     this.audioContext = new AudioContext();
@@ -155,7 +156,7 @@ export class AudioRecorderService {
   async buildRecordedAudio(): Promise<RecordedAudio | null> {
     const blob = this.previewBlob();
     if (!blob) {
-      this.errorMessage.set('Nenhum áudio gravado para enviar.');
+      this.errorMessage.set(ui.audioNothingToSend);
       return null;
     }
 
@@ -164,12 +165,12 @@ export class AudioRecorderService {
     );
     const durationMs = this.elapsedMs();
     if (durationMs <= 0 || blob.size <= 0) {
-      this.errorMessage.set('Áudio inválido ou vazio. Grave novamente.');
+      this.errorMessage.set(ui.audioInvalid);
       return null;
     }
 
     if (blob.size > AUDIO_MAX_SIZE_BYTES) {
-      this.errorMessage.set('Áudio excede 10 MB.');
+      this.errorMessage.set(ui.audioTooLarge);
       return null;
     }
 
@@ -219,14 +220,14 @@ export class AudioRecorderService {
 
     const blob = new Blob(chunks, { type: mimeType });
     if (blob.size > AUDIO_MAX_SIZE_BYTES) {
-      this.errorMessage.set('Áudio excede 10 MB.');
+      this.errorMessage.set(ui.audioTooLarge);
       this.resetInternal(true);
       this.settleStopWaiters(null);
       return;
     }
 
     if (blob.size <= 0) {
-      this.errorMessage.set('Áudio inválido ou vazio. Grave novamente.');
+      this.errorMessage.set(ui.audioInvalid);
       this.resetInternal(true);
       this.settleStopWaiters(null);
       return;

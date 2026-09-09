@@ -83,7 +83,12 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         var again = await client.GetFromJsonAsync<MeDto>("/api/v1/me", JsonOptions);
         again!.Locale.Should().Be("en");
 
-        var bad = await client.PutAsJsonAsync("/api/v1/me", new { locale = "fr" });
+        var french = await client.PutAsJsonAsync("/api/v1/me", new { locale = "fr" });
+        french.StatusCode.Should().Be(HttpStatusCode.OK);
+        var frenchMe = await french.Content.ReadFromJsonAsync<MeDto>(JsonOptions);
+        frenchMe!.Locale.Should().Be("fr");
+
+        var bad = await client.PutAsJsonAsync("/api/v1/me", new { locale = "xx" });
         bad.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
@@ -1766,6 +1771,47 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             $"/api/v1/workspaces/{workspaceId}/members",
             new InviteMemberRequestDto($"nope-{Guid.NewGuid():N}@vibechat.local"));
         forbiddenInvite.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Slash_commands_descriptions_follow_caller_locale()
+    {
+        var workspaceId = SeedData.DemoWorkspaceId.Value;
+
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        try
+        {
+            var en = await alice.PutAsJsonAsync("/api/v1/me", new { locale = "en" });
+            en.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var aliceCommands = await alice.GetFromJsonAsync<SlashCommandDto[]>(
+                $"/api/v1/workspaces/{workspaceId}/commands",
+                JsonOptions);
+            aliceCommands.Should().NotBeNull();
+            var ajuda = aliceCommands!.Single(c => c.Name == "ajuda");
+            ajuda.Description.Should().Be(SlashCommandCatalog.Describe("ajuda", "en"));
+            ajuda.Usage.Should().Be("/ajuda");
+            aliceCommands.Select(c => c.Name).Should().NotContain("convidar");
+
+            using var bob = factory.CreateClient();
+            bob.DefaultRequestHeaders.Add("X-Dev-User", "bob");
+            var pt = await bob.PutAsJsonAsync("/api/v1/me", new { locale = "pt-BR" });
+            pt.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var bobCommands = await bob.GetFromJsonAsync<SlashCommandDto[]>(
+                $"/api/v1/workspaces/{workspaceId}/commands",
+                JsonOptions);
+            var bobAjuda = bobCommands!.Single(c => c.Name == "ajuda");
+            bobAjuda.Name.Should().Be("ajuda");
+            bobAjuda.Usage.Should().Be("/ajuda");
+            bobAjuda.Description.Should().Be(SlashCommandCatalog.Describe("ajuda", "pt-BR"));
+        }
+        finally
+        {
+            await alice.PutAsJsonAsync("/api/v1/me", new { locale = "pt-BR" });
+        }
     }
 
     [Fact]

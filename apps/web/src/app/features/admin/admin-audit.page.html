@@ -1,40 +1,40 @@
-<p class="admin-panel__lead">Ações sensíveis do tenant registradas para compliance.</p>
+<p class="admin-panel__lead">{{ ui.adminAuditLead }}</p>
 
 @if (loading()) {
-  <p class="admin-empty">Carregando audit log…</p>
+  <p class="admin-empty">{{ ui.adminLoadingAudit }}</p>
 } @else if (loadError()) {
-  <p class="admin-empty">Não foi possível carregar o audit log.</p>
+  <p class="admin-empty">{{ ui.adminAuditLoadError }}</p>
 } @else {
-  <div class="admin-filters" aria-label="Filtros do audit log">
+  <div class="admin-filters" [attr.aria-label]="ui.adminAuditFilters">
     <label class="admin-filters__field">
-      <span>Ação</span>
+      <span>{{ ui.adminAction }}</span>
       <select [value]="actionFilter()" (change)="actionFilter.set($any($event.target).value)">
         @for (action of actionOptions(); track action) {
-          <option [value]="action">{{ action === 'all' ? 'Todas' : action }}</option>
+          <option [value]="action">{{ action === 'all' ? ui.allFeminine : action }}</option>
         }
       </select>
     </label>
     <label class="admin-filters__field">
-      <span>De</span>
+      <span>{{ ui.adminFrom }}</span>
       <input type="date" [value]="dateFrom()" (input)="dateFrom.set($any($event.target).value)" />
     </label>
     <label class="admin-filters__field">
-      <span>Até</span>
+      <span>{{ ui.adminUntil }}</span>
       <input type="date" [value]="dateTo()" (input)="dateTo.set($any($event.target).value)" />
     </label>
   </div>
 
   @if (filteredEvents().length === 0) {
-    <p class="admin-empty">Nenhum evento corresponde aos filtros.</p>
+    <p class="admin-empty">{{ ui.adminAuditEmpty }}</p>
   } @else {
     <div class="admin-table-wrap">
       <table class="admin-table" style="min-width: 40rem">
         <thead>
           <tr>
-            <th scope="col">Quando</th>
-            <th scope="col">Ação</th>
-            <th scope="col">Entidade</th>
-            <th scope="col">Ator</th>
+            <th scope="col">{{ ui.adminWhen }}</th>
+            <th scope="col">{{ ui.adminAction }}</th>
+            <th scope="col">{{ ui.adminEntity }}</th>
+            <th scope="col">{{ ui.adminActor }}</th>
           </tr>
         </thead>
         <tbody>

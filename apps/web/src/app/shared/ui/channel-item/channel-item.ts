@@ -3,6 +3,7 @@ import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import { Channel, ChannelMuteAction, PresenceStatus } from '../../models/chat.models';
 import { Badge } from '../badge/badge';
 import { VcTooltip } from '../tooltip/tooltip';
+import { fillTemplate, ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-channel-item',
@@ -35,11 +36,11 @@ import { VcTooltip } from '../tooltip/tooltip';
       <span class="vc-channel__main">
         <span class="vc-channel__name">{{ channel().name }}</span>
         @if (hasDraft()) {
-          <span class="vc-channel__draft">Rascunho</span>
+          <span class="vc-channel__draft">{{ ui.channelDraft }}</span>
         }
       </span>
       @if (muted()) {
-        <span class="vc-channel__muted-icon" aria-label="Silenciado" title="Silenciado">
+        <span class="vc-channel__muted-icon" [attr.aria-label]="ui.channelMuted" [attr.title]="ui.channelMuted">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
             <path d="M6 8a6 6 0 0 1 10.24-4.24M18 8c0 7 3 9 3 9H3s3-2 3-9" />
             <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
@@ -56,7 +57,7 @@ import { VcTooltip } from '../tooltip/tooltip';
       <button
         type="button"
         class="vc-channel__kebab"
-        aria-label="Notificações do canal"
+        [attr.aria-label]="ui.channelNotifMenu"
         aria-haspopup="menu"
         [cdkMenuTriggerFor]="muteMenu"
         (click)="$event.stopPropagation()"
@@ -68,23 +69,23 @@ import { VcTooltip } from '../tooltip/tooltip';
     <ng-template #muteMenu>
       <div class="vc-channel-menu" cdkMenu>
         <button type="button" cdkMenuItem (click)="muteAction.emit({ kind: 'mute', duration: 'OneHour' })">
-          Silenciar por 1 hora
+          {{ ui.channelMute1h }}
         </button>
         <button type="button" cdkMenuItem (click)="muteAction.emit({ kind: 'mute', duration: 'EightHours' })">
-          Silenciar por 8 horas
+          {{ ui.channelMute8h }}
         </button>
         <button type="button" cdkMenuItem (click)="muteAction.emit({ kind: 'mute', duration: 'UntilTomorrow' })">
-          Silenciar até amanhã
+          {{ ui.channelMuteTomorrow }}
         </button>
         <button type="button" cdkMenuItem (click)="muteAction.emit({ kind: 'mute', duration: 'Indefinite' })">
-          Silenciar indefinidamente
+          {{ ui.channelMuteIndefinite }}
         </button>
         <button type="button" cdkMenuItem (click)="muteAction.emit({ kind: 'all' })">
-          Notificar todas as mensagens
+          {{ ui.channelNotifyAll }}
         </button>
         @if (muted() || channelHasOverride()) {
           <button type="button" cdkMenuItem (click)="muteAction.emit({ kind: 'default' })">
-            Usar o padrão
+            {{ ui.channelUseDefault }}
           </button>
         }
       </div>
@@ -268,6 +269,7 @@ import { VcTooltip } from '../tooltip/tooltip';
   `,
 })
 export class ChannelItem {
+  readonly ui = ui;
   readonly channel = input.required<Channel>();
   readonly active = input(false);
   readonly hasDraft = input(false);
@@ -284,15 +286,15 @@ export class ChannelItem {
     const ch = this.channel();
     const parts = [ch.isDirect ? `@${ch.name}` : `#${ch.name}`];
     if (this.hasDraft()) {
-      parts.push('rascunho');
+      parts.push(ui.channelDraftHint);
     }
     if (this.muted()) {
-      parts.push('silenciado');
+      parts.push(ui.channelMutedHint);
     }
     if (ch.mentionCount && ch.mentionCount > 0) {
-      parts.push(`${ch.mentionCount} menções`);
+      parts.push(fillTemplate(ui.channelMentionsCount, { n: ch.mentionCount }));
     } else if (ch.unreadCount > 0) {
-      parts.push(`${ch.unreadCount} não lidas`);
+      parts.push(fillTemplate(ui.channelUnreadCount, { n: ch.unreadCount }));
     }
     return parts.join(', ');
   });

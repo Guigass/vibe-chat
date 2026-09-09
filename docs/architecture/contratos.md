@@ -70,10 +70,12 @@ o cliente traduz pelo código (não usa `Accept-Language` no servidor).
 
 | Método | Contrato |
 |--------|----------|
-| `GET /api/v1/me` | `{ userId, subject, email, displayName, roles, locale }` — `locale` é `pt-BR` \| `en` ou `null` se ainda não persistido |
-| `PUT /api/v1/me` | Body `{ locale }` — só `pt-BR` ou `en`; outro valor → **400** `InvalidLocale`. Atualiza só o caller |
+| `GET /api/v1/me` | `{ userId, subject, email, displayName, roles, locale }` — `locale` é um de `pt-BR` \| `en` \| `es` \| `fr` \| `de` \| `it` \| `ja` \| `zh-CN` \| `ko` \| `ru` ou `null` se ainda não persistido |
+| `PUT /api/v1/me` | Body `{ locale }` — só um locale suportado; outro valor → **400** `InvalidLocale`. Atualiza só o caller |
 
 Logs do servidor permanecem em inglês e não interpolam texto traduzido.
+`GET /api/v1/workspaces/{id}/commands.description` é locale-sensitive (mesmo shape; valor no idioma do caller).
+Campo `message` em erros, quando existir, fica em inglês fixo — o cliente traduz por `error`.
 
 ```csharp
 // modules/Tenancy
@@ -198,7 +200,7 @@ Erro `MessageBodyTooLong` (400):
 ```json
 {
   "error": "MessageBodyTooLong",
-  "message": "A mensagem excede o limite de 8000 caracteres.",
+  "message": "Message exceeds the 8000-character limit.",
   "maxLength": 8000
 }
 ```
@@ -305,7 +307,7 @@ Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out Signal
 | `GET /api/v1/workspaces/{workspaceId}/channels` | Channels do workspace; `spaceId` e `topic` opcionais no response |
 | `POST /api/v1/workspaces/{workspaceId}/channels` | Body `{ name, type, spaceId? }`; exige `channel.create`; `spaceId` deve pertencer ao workspace |
 | `PUT /api/v1/workspaces/{workspaceId}/channels/{channelId}/topic` | Body `{ topic }` (máx. 250; vazio limpa); membership + `channel.create`; rejeita `Direct` (B-087 `/topico`) |
-| `GET /api/v1/workspaces/{workspaceId}/commands` | Descoberta de slash commands disponíveis ao ator (B-087); membership; filtrado por permissão — ver tabela abaixo |
+| `GET /api/v1/workspaces/{workspaceId}/commands` | Descoberta de slash commands disponíveis ao ator (B-087); membership; filtrado por permissão; `description` segue o `locale` do caller (`me.locale`; null → `pt-BR`); `name` e `usage` são estáveis — ver tabela abaixo |
 | `GET /api/v1/workspaces/{workspaceId}/members` | Membros do workspace (membership obrigatória — D-07); inclui `role` |
 | `GET /api/v1/workspaces/{workspaceId}/roles` | Papéis atribuíveis (`Member`, `Moderator`, `Auditor`, `Admin`); exige `workspace.admin` no workspace |
 | `POST /api/v1/workspaces/{workspaceId}/members` | Convite/provisionamento (B-068). Body `{ email, displayName?, role? }` (`role` default `Member`); exige `workspace.admin`; cria perfil stub `pending:{email}` se o usuário ainda não logou; 409 se já membro; rejeita `Guest`/`Bot`/owners; audit `member.invite`; e-mail opcional via outbox se `Email:Enabled`. Sem self-signup — IdP (Keycloak) continua responsável pela autenticação |
@@ -329,6 +331,8 @@ Slash commands (B-087) — o cliente traduz o comando para as APIs existentes; a
 | `resumir` | `/resumir` | `ai.summarize` | `POST …/ai/summarize` |
 | `apagar` | `/apagar` | `message.delete.own` | `DELETE …/messages/{id}` |
 | `ajuda` | `/ajuda` | membership | UI local + esta lista |
+
+`description` localiza por `UserLocales.Resolve(caller.locale)` (`pt-BR` default). `name` e `usage` não mudam.
 
 Papéis reutilizam `Role` + `RolePermissionCatalog` + `IPermissionChecker`. Guest permanece no enum/catálogo, mas **fora do fluxo de membership** (D-07).
 

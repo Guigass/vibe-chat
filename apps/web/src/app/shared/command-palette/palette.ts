@@ -1,3 +1,5 @@
+import { ui } from '../../core/i18n/strings';
+
 export type PaletteKind = 'recent' | 'channel' | 'person' | 'action';
 
 export type PaletteAction =
@@ -36,22 +38,22 @@ export interface PaletteGroup {
 }
 
 export const PALETTE_GROUP_TITLES: Record<PaletteKind, string> = {
-  recent: 'Recentes',
-  channel: 'Canais',
-  person: 'Pessoas',
-  action: 'Ações',
+  recent: ui.paletteRecent,
+  channel: ui.paletteChannels,
+  person: ui.palettePeople,
+  action: ui.paletteActions,
 };
 
 export const SHORTCUT_SHEET: ReadonlyArray<{ combo: string; action: string }> = [
-  { combo: 'Ctrl/Cmd+K', action: 'Abrir a paleta de comandos' },
-  { combo: 'Ctrl/Cmd+Shift+F', action: 'Buscar mensagens com filtros' },
-  { combo: 'Alt+↑ / Alt+↓', action: 'Canal anterior / próximo' },
-  { combo: 'Alt+Shift+↑ / Alt+Shift+↓', action: 'Canal não lido anterior / próximo' },
-  { combo: 'Esc', action: 'Fechar painel ou cancelar edição' },
-  { combo: '↑', action: 'Editar a última mensagem própria no composer vazio' },
-  { combo: 'Ctrl/Cmd+Shift+M', action: 'Ir para a próxima menção' },
-  { combo: 'Shift+Esc', action: 'Marcar o canal atual como lido' },
-  { combo: '?', action: 'Abrir esta folha de atalhos' },
+  { combo: 'Ctrl/Cmd+K', action: ui.paletteShortcutOpen },
+  { combo: 'Ctrl/Cmd+Shift+F', action: ui.paletteShortcutSearch },
+  { combo: 'Alt+↑ / Alt+↓', action: ui.paletteShortcutChannelNav },
+  { combo: 'Alt+Shift+↑ / Alt+Shift+↓', action: ui.paletteShortcutUnreadNav },
+  { combo: 'Esc', action: ui.paletteShortcutEsc },
+  { combo: '↑', action: ui.paletteShortcutEditLast },
+  { combo: 'Ctrl/Cmd+Shift+M', action: ui.paletteShortcutMentions },
+  { combo: 'Shift+Esc', action: ui.paletteShortcutMarkRead },
+  { combo: '?', action: ui.paletteShortcutSheetOpen },
 ];
 
 export type GlobalShortcut =

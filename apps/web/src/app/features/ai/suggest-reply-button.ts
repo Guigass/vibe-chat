@@ -3,6 +3,7 @@ import { environment } from '../../../environments/environment';
 import { ApiService } from '../../core/api/api.service';
 import { ChannelStore } from '../../core/services/channel.store';
 import { Button } from '../../shared/ui';
+import { ui } from '../../core/i18n/strings';
 
 @Component({
   selector: 'vc-suggest-reply-button',
@@ -12,17 +13,17 @@ import { Button } from '../../shared/ui';
     @if (enabled) {
       <div class="ai-wrap">
         <vc-button variant="subtle" [loading]="loading()" (click)="suggest()">
-          Sugerir resposta
+          {{ ui.aiSuggestAria }}
         </vc-button>
         @if (suggestion()) {
           <aside class="ai-suggestion" role="status">
             <header>
-              <strong>Sugestão</strong>
-              <button type="button" (click)="suggestion.set(null)" aria-label="Fechar sugestão">×</button>
+              <strong>{{ ui.aiSuggestion }}</strong>
+              <button type="button" (click)="suggestion.set(null)" [attr.aria-label]="ui.aiCloseSuggestion">×</button>
             </header>
             <p>{{ suggestion() }}</p>
             <div class="ai-suggestion__actions">
-              <vc-button variant="subtle" (click)="useSuggestion()">Usar no composer</vc-button>
+              <vc-button variant="subtle" (click)="useSuggestion()">{{ ui.aiUseInComposer }}</vc-button>
             </div>
           </aside>
         }
@@ -81,6 +82,7 @@ import { Button } from '../../shared/ui';
   `,
 })
 export class SuggestReplyButton {
+  readonly ui = ui;
   private readonly api = inject(ApiService);
   private readonly channels = inject(ChannelStore);
 
@@ -97,7 +99,7 @@ export class SuggestReplyButton {
     try {
       const workspace = this.channels.activeWorkspace();
       if (!workspace) {
-        throw new Error('Workspace não selecionado');
+        throw new Error(ui.aiNoWorkspace);
       }
       const result = await this.api.suggestChannelReply(workspace.id, channel.id);
       this.suggestion.set(result.suggestion);
@@ -105,7 +107,7 @@ export class SuggestReplyButton {
       this.error.set(
         err instanceof Error
           ? err.message
-          : 'IA indisponível ou desabilitada para este workspace.',
+          : ui.slashAiUnavailable,
       );
     } finally {
       this.loading.set(false);

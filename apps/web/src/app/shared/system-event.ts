@@ -1,3 +1,5 @@
+import { fillTemplate, ui } from '../core/i18n/strings';
+
 export type SystemEventKind = 'pin' | 'unpin';
 
 export interface ParsedSystemEvent {
@@ -28,9 +30,9 @@ export function formatSystemEventLabel(
   authorName: string,
   event: ParsedSystemEvent,
 ): string {
-  return event.kind === 'pin'
-    ? `${authorName} fixou uma mensagem`
-    : `${authorName} desafixou uma mensagem`;
+  return fillTemplate(event.kind === 'pin' ? ui.systemPinned : ui.systemUnpinned, {
+    name: authorName,
+  });
 }
 
 export function isSystemEventBody(body: string): boolean {

@@ -1,4 +1,5 @@
 import { Component, input, output } from '@angular/core';
+import { ui } from '../../core/i18n/strings';
 import { MarkdownInline } from './restricted-markdown';
 
 @Component({
@@ -113,9 +114,9 @@ export class MarkdownInlines {
   }
 
   labelFor(inline: Extract<MarkdownInline, { kind: 'mention' }>): string {
-    if (inline.special === 'here') return '@aqui';
-    if (inline.special === 'channel') return '@canal';
+    if (inline.special === 'here') return ui.mentionHere;
+    if (inline.special === 'channel') return ui.mentionChannel;
     const name = this.mentionLabels()[inline.userId ?? ''];
-    return name ? `@${name}` : '@usuário';
+    return name ? `@${name}` : ui.mentionUser;
   }
 }

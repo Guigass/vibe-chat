@@ -33,9 +33,24 @@ test.describe(`i18n locale (${AUTH_MODE})`, () => {
     await page.waitForURL(/\/app/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.getByLabel(/Search messages/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Send$/i })).toBeVisible();
+    await expect(page.getByText('Recents', { exact: true }).first()).toBeVisible();
+
+    await page.keyboard.press('Control+k');
+    await expect(page.getByTestId('command-palette')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Command palette/i })).toBeVisible();
+    await page.keyboard.press('Escape');
 
     await page.getByRole('button', { name: /Settings|Configurações/i }).click();
     await expect(page.getByRole('heading', { name: /Settings/i })).toBeVisible();
     await expect(page.locator('.shell__context').getByTestId('locale-select')).toHaveValue('en');
+
+    const adminLink = page.getByRole('link', { name: /^Admin$/i });
+    if (await adminLink.isVisible()) {
+      await adminLink.click();
+      await expect(
+        page.getByRole('heading', { name: /Overview|No admin access/i }),
+      ).toBeVisible();
+    }
   });
 });

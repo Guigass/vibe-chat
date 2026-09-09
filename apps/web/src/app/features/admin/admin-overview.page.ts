@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { ApiService } from '../../core/api/api.service';
+import { ui } from '../../core/i18n/strings';
 import { AdminStats } from '../../shared/models/chat.models';
 import { Skeleton } from '../../shared/ui';
 import { AdminContextService } from './admin-context.service';
@@ -15,6 +16,7 @@ import { AdminAreaId } from './admin-permissions';
 })
 export class AdminOverviewPage implements OnInit {
   readonly areaId: AdminAreaId = 'overview';
+  readonly ui = ui;
   readonly webBuildId = environment.buildId;
 
   private readonly api = inject(ApiService);

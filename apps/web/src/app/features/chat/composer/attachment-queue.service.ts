@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../../../core/api/api.service';
+import { fillTemplate, ui } from '../../../core/i18n/strings';
 import { ChannelStore } from '../../../core/services/channel.store';
 import {
   MAX_ATTACHMENTS_PER_MESSAGE,
@@ -52,13 +53,15 @@ export class AttachmentQueueService {
 
     const remaining = MAX_ATTACHMENTS_PER_MESSAGE - this.itemsSignal().length;
     if (remaining <= 0) {
-      return `No máximo ${MAX_ATTACHMENTS_PER_MESSAGE} anexos por mensagem.`;
+      return fillTemplate(ui.attachMaxPerMessage, { n: MAX_ATTACHMENTS_PER_MESSAGE });
     }
 
     const accepted = files.slice(0, remaining);
     const skipped = files.length - accepted.length;
     void this.enqueueAccepted(channelId, accepted, skipped);
-    return skipped > 0 ? `No máximo ${MAX_ATTACHMENTS_PER_MESSAGE} anexos por mensagem.` : null;
+    return skipped > 0
+      ? fillTemplate(ui.attachMaxPerMessage, { n: MAX_ATTACHMENTS_PER_MESSAGE })
+      : null;
   }
 
   private async enqueueAccepted(channelId: string, accepted: File[], skipped: number): Promise<void> {
@@ -105,8 +108,8 @@ export class AttachmentQueueService {
 
     this.itemsSignal.update((list) => [...list, ...next]);
     if (next.length) {
-      const suffix = skipped > 0 ? ` (${skipped} ignorados pelo limite)` : '';
-      this.announce(`${next.length} arquivo${next.length === 1 ? '' : 's'} adicionado${next.length === 1 ? '' : 's'}${suffix}`);
+      const suffix = skipped > 0 ? fillTemplate(ui.attachSkipped, { n: skipped }) : '';
+      this.announce(fillTemplate(ui.attachAdded, { n: next.length }) + suffix);
     }
     if (errors.length) {
       this.announce(errors.join(' '));
@@ -151,7 +154,7 @@ export class AttachmentQueueService {
       this.scheduleUploads(channelId);
     } catch (error) {
       this.revokePreview(item);
-      const message = error instanceof Error ? error.message : 'Falha ao validar vídeo';
+      const message = error instanceof Error ? error.message : ui.attachVideoValidateFail;
       this.patch(localId, {
         status: 'failed',
         progress: 0,
@@ -179,7 +182,7 @@ export class AttachmentQueueService {
   cancelUpload(localId: string): void {
     this.abortControllers.get(localId)?.abort();
     this.abortControllers.delete(localId);
-    this.patch(localId, { status: 'failed', progress: 0, error: 'Upload cancelado' });
+    this.patch(localId, { status: 'failed', progress: 0, error: ui.attachUploadCanceled });
   }
 
   clear(): void {
@@ -235,7 +238,7 @@ export class AttachmentQueueService {
     recorded: RecordedAudio,
   ): Promise<{ attachmentId?: string; error?: string }> {
     if (!this.canAcceptMore()) {
-      return { error: `No máximo ${MAX_ATTACHMENTS_PER_MESSAGE} anexos por mensagem.` };
+      return { error: fillTemplate(ui.attachMaxPerMessage, { n: MAX_ATTACHMENTS_PER_MESSAGE }) };
     }
 
     const contentType = normalizeAudioContentType(recorded.mimeType);
@@ -275,10 +278,10 @@ export class AttachmentQueueService {
         progress: 100,
         attachmentId: ready.id,
       });
-      this.announce('Áudio enviado');
+      this.announce(ui.attachAudioSent);
       return { attachmentId: ready.id };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Falha no upload do áudio';
+      const message = error instanceof Error ? error.message : ui.attachAudioUploadFail;
       this.patch(localId, { status: 'failed', progress: 0, error: message });
       return { error: message };
     }
@@ -336,13 +339,13 @@ export class AttachmentQueueService {
         progress: 100,
         attachmentId: ready.id,
       });
-      this.announce(`${item.file.name} enviado`);
+      this.announce(fillTemplate(ui.attachFileSent, { name: item.file.name }));
     } catch (error) {
       if (controller.signal.aborted) {
-        this.patch(localId, { status: 'failed', progress: 0, error: 'Upload cancelado' });
+        this.patch(localId, { status: 'failed', progress: 0, error: ui.attachUploadCanceled });
         return;
       }
-      const message = error instanceof Error ? error.message : 'Falha no upload';
+      const message = error instanceof Error ? error.message : ui.attachUploadFail;
       this.patch(localId, { status: 'failed', progress: 0, error: message });
     } finally {
       this.abortControllers.delete(localId);

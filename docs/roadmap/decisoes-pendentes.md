@@ -23,7 +23,7 @@ um caso realmente fora desses defaults também for R4 em `agents/autonomia.md`.
 | D-11 | **Escopo de paridade da fase 2** | Define o que o agente pode implementar sem perguntar | Founder / Produto | **Decidido (2026-07-25)**, **esclarecido (2026-07-27 / 2026-08-11)** — mensageria rica entra (inclui anexo de vídeo curto via B-168); voz/vídeo ao vivo, canvas, registry e E2EE ficam fora **da fase 2** e foram ordenados depois por D-16…D-26 |
 | D-12 | **Mensagem de áudio** | Formato, limites, privacidade da transcrição | Produto + Security | **Decidido (2026-07-25)** — anexo de áudio com MIME negociado no cliente; 5 min / 10 MB; transcrição opt-in atrás da flag de IA |
 | D-13 | **Notificações push** | Sai do perímetro self-host se usar serviço fechado | Ops + Security | **Decidido (2026-07-25)** — Web Push (VAPID) do próprio servidor; opt-in por usuário; sem FCM/APNs proprietário |
-| D-14 | **Idiomas suportados** | Custo de manutenção de catálogo | Produto | **Decidido (2026-07-25)** — `pt-BR` (default) e `en`; `@angular/localize`; sem terceiro idioma na fase 2 |
+| D-14 | **Idiomas suportados** | Custo de manutenção de catálogo | Produto | **Decidido (2026-07-25)**, **ampliado (2026-09-09)** — `pt-BR` (default) + `en` `es` `fr` `de` `it` `ja` `zh-CN` `ko` `ru`; `@angular/localize`; catálogo por idioma no repo |
 | D-15 | **Licença do PrimeNG / PrimeUI** | `primeng@22` é comercial e, sem chave, injeta banner que cobre o composer | Founder / Legal | **Decidido (2026-07-25)** — **sair do PrimeNG** (opção c); ver B-104 + emenda ADR-002 |
 | D-16 | **Posicionamento de longo prazo** | Define se VibeChat permanece chat excelente ou vira plataforma de comunicação/conhecimento/automação | Founder / Produto | **Decidido (2026-07-27)** — plataforma aberta de comunicação, conhecimento e automação, self-hosted first |
 | D-17 | **Superfície de conhecimento** | Página leve, canvas colaborativo ou integração externa têm custos e modelos de permissão diferentes | Produto + Arquitetura | **Decidido (2026-07-27)** — páginas server-authoritative primeiro; colaboração CRDT só em B-152 |
@@ -239,12 +239,12 @@ Impacto em código/docs: specs B-095/B-097; Notifications; .env.example;
 
 ```text
 Decisão: D-14
-Escolha: pt-BR é o idioma default e en o segundo. Mecanismo: @angular/localize
-  com catálogo por idioma no repo. Sem terceiro idioma na fase 2. Docs humanas
-  continuam só em PT-BR (AGENTS.md); a regra vale para a UI.
-Data: 2026-07-25
+Escolha: pt-BR é o idioma default. Catálogos no repo via @angular/localize:
+  en, es, fr, de, it, ja, zh-CN, ko, ru. Docs humanas continuam só em PT-BR
+  (AGENTS.md); a regra vale para a UI.
+Data: 2026-07-25; ampliado 2026-09-09
 Owner: Produto
-Impacto em código/docs: spec B-100; apps/web; orientacoes.md
+Impacto em código/docs: spec B-100; apps/web; Identity.UserLocales; orientacoes.md
 ```
 
 ### D-15

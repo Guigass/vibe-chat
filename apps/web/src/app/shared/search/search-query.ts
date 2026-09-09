@@ -1,3 +1,5 @@
+import { ui } from '../../core/i18n/strings';
+
 export type SearchAttachmentKind = 'image' | 'audio' | 'document';
 export type SearchSort = 'relevance' | 'date';
 export type SearchChipKey =
@@ -38,15 +40,15 @@ const TAIL_OPERATOR = /(?:^|\s)(de|em|antes|depois|desde|tem):(\S*)$/i;
 
 const TEM_VALUES: Record<string, { hasAttachment?: boolean; hasLink?: boolean; kind?: SearchAttachmentKind; label: string }> =
   {
-    anexo: { hasAttachment: true, label: 'Com anexo' },
-    attachment: { hasAttachment: true, label: 'Com anexo' },
-    link: { hasLink: true, label: 'Com link' },
-    imagem: { kind: 'image', label: 'Imagem' },
-    image: { kind: 'image', label: 'Imagem' },
-    audio: { kind: 'audio', label: 'Áudio' },
-    documento: { kind: 'document', label: 'Documento' },
-    document: { kind: 'document', label: 'Documento' },
-    arquivo: { kind: 'document', label: 'Documento' },
+    anexo: { hasAttachment: true, label: ui.searchChipHasAttachment },
+    attachment: { hasAttachment: true, label: ui.searchChipHasAttachment },
+    link: { hasLink: true, label: ui.searchChipHasLink },
+    imagem: { kind: 'image', label: ui.searchChipImage },
+    image: { kind: 'image', label: ui.searchChipImage },
+    audio: { kind: 'audio', label: ui.searchChipAudio },
+    documento: { kind: 'document', label: ui.searchChipDocument },
+    document: { kind: 'document', label: ui.searchChipDocument },
+    arquivo: { kind: 'document', label: ui.searchChipDocument },
   };
 
 export function parseSearchQuery(input: string): ParsedSearchQuery {

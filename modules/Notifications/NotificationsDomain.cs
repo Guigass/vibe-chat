@@ -335,3 +335,116 @@ public sealed record MemberInvitedEmailEvent(
     string To,
     string Subject,
     string BodyText);
+
+/// <summary>Invite/role emails follow the recipient locale (B-100). Pass <c>UserLocales.Resolve</c>.</summary>
+public static class MemberEmailCopy
+{
+    public static (string Subject, string BodyText) Invite(
+        string locale,
+        string workspaceName,
+        string displayName,
+        string role) =>
+        locale switch
+        {
+            "en" => (
+                $"VibeChat: you were invited to {workspaceName}",
+                $"Hello {displayName},\n\n" +
+                $"You were added to the workspace \"{workspaceName}\" with the role {role}.\n" +
+                "Sign in via SSO (Keycloak/OIDC) with this email to access.\n" +
+                "There is no open self-signup — membership was already provisioned by an admin.\n"),
+            "es" => (
+                $"VibeChat: fuiste invitado a {workspaceName}",
+                $"Hola {displayName},\n\n" +
+                $"Te añadieron al workspace \"{workspaceName}\" con el rol {role}.\n" +
+                "Inicia sesión por SSO (Keycloak/OIDC) con este correo para acceder.\n" +
+                "No hay auto-registro abierto — un admin ya provisionó la membresía.\n"),
+            "fr" => (
+                $"VibeChat: vous avez été invité à {workspaceName}",
+                $"Bonjour {displayName},\n\n" +
+                $"Vous avez été ajouté à l'espace de travail « {workspaceName} » avec le rôle {role}.\n" +
+                "Connectez-vous via SSO (Keycloak/OIDC) avec cet e-mail pour accéder.\n" +
+                "Il n'y a pas d'inscription libre — un admin a déjà provisionné l'adhésion.\n"),
+            "de" => (
+                $"VibeChat: du wurdest zu {workspaceName} eingeladen",
+                $"Hallo {displayName},\n\n" +
+                $"Du wurdest dem Workspace \"{workspaceName}\" mit der Rolle {role} hinzugefügt.\n" +
+                "Melde dich per SSO (Keycloak/OIDC) mit dieser E-Mail an.\n" +
+                "Es gibt keine offene Selbstregistrierung — ein Admin hat die Mitgliedschaft bereits eingerichtet.\n"),
+            "it" => (
+                $"VibeChat: sei stato invitato a {workspaceName}",
+                $"Ciao {displayName},\n\n" +
+                $"Sei stato aggiunto al workspace \"{workspaceName}\" con il ruolo {role}.\n" +
+                "Accedi via SSO (Keycloak/OIDC) con questa e-mail.\n" +
+                "Non c'è auto-iscrizione aperta — un admin ha già creato la membership.\n"),
+            "ja" => (
+                $"VibeChat: {workspaceName} に招待されました",
+                $"{displayName} さん\n\n" +
+                $"ワークスペース「{workspaceName}」にロール {role} で追加されました。\n" +
+                "このメールで SSO（Keycloak/OIDC）にサインインしてください。\n" +
+                "公開の自己登録はありません。管理者によってメンバーシップは既に用意されています。\n"),
+            "zh-CN" => (
+                $"VibeChat: 你已被邀请加入 {workspaceName}",
+                $"{displayName}，你好：\n\n" +
+                $"你已被添加到工作区“{workspaceName}”，角色为 {role}。\n" +
+                "请使用此邮箱通过 SSO（Keycloak/OIDC）登录。\n" +
+                "没有开放的自助注册 — 管理员已开通成员资格。\n"),
+            "ko" => (
+                $"VibeChat: {workspaceName}에 초대되었습니다",
+                $"{displayName}님, 안녕하세요.\n\n" +
+                $"역할 {role}(으)로 워크스페이스 \"{workspaceName}\"에 추가되었습니다.\n" +
+                "이 이메일로 SSO(Keycloak/OIDC)에 로그인하세요.\n" +
+                "공개 자가 가입은 없습니다. 관리자가 멤버십을 이미 프로비저닝했습니다.\n"),
+            "ru" => (
+                $"VibeChat: вас пригласили в {workspaceName}",
+                $"Здравствуйте, {displayName}!\n\n" +
+                $"Вас добавили в рабочее пространство «{workspaceName}» с ролью {role}.\n" +
+                "Войдите через SSO (Keycloak/OIDC) с этим адресом почты.\n" +
+                "Открытой самостоятельной регистрации нет — администратор уже выдал членство.\n"),
+            _ => (
+                $"VibeChat: você foi convidado para {workspaceName}",
+                $"Olá {displayName},\n\n" +
+                $"Você foi adicionado ao workspace \"{workspaceName}\" com o papel {role}.\n" +
+                "Autentique-se via SSO (Keycloak/OIDC) com este e-mail para acessar.\n" +
+                "Não há self-signup aberto — a membership já foi provisionada pelo admin.\n"),
+        };
+
+    public static (string Subject, string BodyText) RoleChanged(
+        string locale,
+        string workspaceName,
+        string displayName,
+        string previousRole,
+        string newRole) =>
+        locale switch
+        {
+            "en" => (
+                $"VibeChat: your role in {workspaceName} was updated",
+                $"Hello {displayName},\n\nYour role in the workspace \"{workspaceName}\" changed from {previousRole} to {newRole}.\n"),
+            "es" => (
+                $"VibeChat: tu rol en {workspaceName} se actualizó",
+                $"Hola {displayName},\n\nTu rol en el workspace \"{workspaceName}\" cambió de {previousRole} a {newRole}.\n"),
+            "fr" => (
+                $"VibeChat: votre rôle dans {workspaceName} a été mis à jour",
+                $"Bonjour {displayName},\n\nVotre rôle dans l'espace de travail « {workspaceName} » est passé de {previousRole} à {newRole}.\n"),
+            "de" => (
+                $"VibeChat: deine Rolle in {workspaceName} wurde aktualisiert",
+                $"Hallo {displayName},\n\nDeine Rolle im Workspace \"{workspaceName}\" wurde von {previousRole} zu {newRole} geändert.\n"),
+            "it" => (
+                $"VibeChat: il tuo ruolo in {workspaceName} è stato aggiornato",
+                $"Ciao {displayName},\n\nIl tuo ruolo nel workspace \"{workspaceName}\" è cambiato da {previousRole} a {newRole}.\n"),
+            "ja" => (
+                $"VibeChat: {workspaceName} のロールが更新されました",
+                $"{displayName} さん\n\nワークスペース「{workspaceName}」のロールが {previousRole} から {newRole} に変わりました。\n"),
+            "zh-CN" => (
+                $"VibeChat: 你在 {workspaceName} 的角色已更新",
+                $"{displayName}，你好：\n\n你在工作区“{workspaceName}”的角色已从 {previousRole} 更改为 {newRole}。\n"),
+            "ko" => (
+                $"VibeChat: {workspaceName}의 역할이 변경되었습니다",
+                $"{displayName}님, 안녕하세요.\n\n워크스페이스 \"{workspaceName}\"의 역할이 {previousRole}에서 {newRole}(으)로 변경되었습니다.\n"),
+            "ru" => (
+                $"VibeChat: ваша роль в {workspaceName} обновлена",
+                $"Здравствуйте, {displayName}!\n\nВаша роль в рабочем пространстве «{workspaceName}» изменена с {previousRole} на {newRole}.\n"),
+            _ => (
+                $"VibeChat: seu papel em {workspaceName} foi atualizado",
+                $"Olá {displayName},\n\nSeu papel no workspace \"{workspaceName}\" mudou de {previousRole} para {newRole}.\n"),
+        };
+}

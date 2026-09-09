@@ -2,26 +2,27 @@ import { Component, inject, input, output } from '@angular/core';
 import { PinStore } from '../../../core/services/pin.store';
 import { PinnedMessageItem } from '../../../shared/models/chat.models';
 import { IconButton } from '../../../shared/ui';
+import { fillTemplate, ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-pins-panel',
   standalone: true,
   imports: [IconButton],
   template: `
-    <section class="pins-panel" aria-label="Mensagens fixadas">
+    <section class="pins-panel" [attr.aria-label]="ui.pinnedMessages">
       <header class="pins-panel__header">
-        <h2>Mensagens fixadas</h2>
-        <vc-icon-button label="Fechar painel" (click)="close.emit()">
+        <h2>{{ ui.pinnedMessages }}</h2>
+        <vc-icon-button [label]="ui.closePanel" (click)="close.emit()">
           <span aria-hidden="true">×</span>
         </vc-icon-button>
       </header>
 
       @if (loading()) {
-        <p class="pins-panel__status">Carregando…</p>
+        <p class="pins-panel__status">{{ ui.loading }}</p>
       } @else if (error()) {
         <p class="pins-panel__status" role="alert">{{ error() }}</p>
       } @else if (!pins().length) {
-        <p class="pins-panel__status">Nenhuma mensagem fixada neste canal.</p>
+        <p class="pins-panel__status">{{ ui.pinsEmpty }}</p>
       } @else {
         <ul class="pins-panel__list">
           @for (pin of pins(); track pin.messageId) {
@@ -29,12 +30,12 @@ import { IconButton } from '../../../shared/ui';
               <div class="pins-panel__meta">
                 <strong>{{ pin.authorName }}</strong>
                 <span>{{ pin.bodyPreview }}</span>
-                <small>Fixada por {{ pin.pinnedByName }}</small>
+                <small>{{ fillTemplate(ui.pinsBy, { name: pin.pinnedByName }) }}</small>
               </div>
               <div class="pins-panel__actions">
-                <button type="button" (click)="jump.emit(pin)">Ir até</button>
+                <button type="button" (click)="jump.emit(pin)">{{ ui.savedJump }}</button>
                 @if (canUnpin()) {
-                  <button type="button" (click)="unpin.emit(pin)">Desafixar</button>
+                  <button type="button" (click)="unpin.emit(pin)">{{ ui.menuUnpin }}</button>
                 }
               </div>
             </li>
@@ -127,6 +128,8 @@ import { IconButton } from '../../../shared/ui';
   `,
 })
 export class PinsPanel {
+  readonly ui = ui;
+  readonly fillTemplate = fillTemplate;
   private readonly pinStore = inject(PinStore);
 
   readonly canUnpin = input(true);

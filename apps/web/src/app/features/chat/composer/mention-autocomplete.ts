@@ -1,4 +1,5 @@
 import { Component, input, output } from '@angular/core';
+import { ui } from '../../../core/i18n/strings';
 import { MentionAutocompleteItem } from '../../../shared/markdown/mention-tokens';
 
 @Component({
@@ -6,7 +7,7 @@ import { MentionAutocompleteItem } from '../../../shared/markdown/mention-tokens
   standalone: true,
   template: `
     @if (open() && items().length) {
-      <ul class="mention-menu" role="listbox" [attr.aria-label]="'Menções'">
+      <ul class="mention-menu" role="listbox" [attr.aria-label]="ui.mentionsHeading">
         @for (item of items(); track trackItem(item); let index = $index) {
           <li>
             <button
@@ -70,6 +71,7 @@ import { MentionAutocompleteItem } from '../../../shared/markdown/mention-tokens
   `,
 })
 export class MentionAutocomplete {
+  readonly ui = ui;
   readonly open = input(false);
   readonly items = input<MentionAutocompleteItem[]>([]);
   readonly activeIndex = input(0);

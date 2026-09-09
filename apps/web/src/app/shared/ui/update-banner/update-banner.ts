@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { AppUpdateService } from '../../../core/services/app-update.service';
 import { Button } from '../button/button';
+import { ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-update-banner',
@@ -9,7 +10,7 @@ import { Button } from '../button/button';
   template: `
     @if (updates.updateAvailable()) {
       <div class="vc-update" role="status">
-        <span class="vc-update__text">Nova versão disponível</span>
+        <span class="vc-update__text">{{ ui.bannerUpdate }}</span>
         <vc-button
           type="button"
           variant="primary"
@@ -17,7 +18,7 @@ import { Button } from '../button/button';
           [disabled]="updates.applying()"
           (click)="onUpdate()"
         >
-          Atualizar
+          {{ ui.bannerRefresh }}
         </vc-button>
       </div>
     }
@@ -70,6 +71,7 @@ import { Button } from '../button/button';
   `,
 })
 export class UpdateBanner {
+  readonly ui = ui;
   readonly updates = inject(AppUpdateService);
 
   onUpdate(): void {

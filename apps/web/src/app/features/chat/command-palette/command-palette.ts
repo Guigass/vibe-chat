@@ -18,6 +18,7 @@ import {
 } from '../../../shared/command-palette/palette';
 import { SlashCommandsService } from '../composer/slash-commands.service';
 import { ui } from '../../../core/i18n/strings';
+import { pluralCount } from '../../../core/i18n/format';
 
 @Component({
   selector: 'vc-command-palette',
@@ -81,8 +82,9 @@ import { ui } from '../../../core/i18n/strings';
           }
         </div>
         <p class="cp__footer">
-          <kbd>↑</kbd><kbd>↓</kbd> navegam · <kbd>Enter</kbd> abre · <kbd>Esc</kbd> fecha ·
-          <kbd>?</kbd> atalhos
+          <kbd>↑</kbd><kbd>↓</kbd> {{ ui.paletteNavigate }} <kbd>Enter</kbd> {{ ui.paletteOpenHint }}
+          <kbd>Esc</kbd> {{ ui.paletteCloseHint }}
+          <kbd>?</kbd> {{ ui.paletteShortcutsWord }}
         </p>
       </div>
     }
@@ -99,8 +101,8 @@ import { ui } from '../../../core/i18n/strings';
         [cdkTrapFocusAutoCapture]="true"
       >
         <header class="cp__sheet-head">
-          <h2 id="cp-sheet-title">Atalhos de teclado</h2>
-          <button type="button" class="cp__ghost" (click)="closeSheet()" aria-label="Fechar">×</button>
+          <h2 id="cp-sheet-title">{{ ui.paletteShortcutsTitle }}</h2>
+          <button type="button" class="cp__ghost" (click)="closeSheet()" [attr.aria-label]="ui.close">×</button>
         </header>
         <ul class="cp__sheet-list">
           @for (row of shortcuts; track row.combo) {
@@ -282,11 +284,7 @@ export class CommandPalette {
     rankPaletteItems(this.sourceItems(), this.query(), this.palette.recentIds()),
   );
   readonly flatItems = computed(() => flattenPaletteItems(this.groups()));
-  readonly liveMessage = computed(() => {
-    const n = this.flatItems().length;
-    if (!n) return 'Nenhum resultado';
-    return n === 1 ? '1 resultado' : `${n} resultados`;
-  });
+  readonly liveMessage = computed(() => pluralCount(this.flatItems().length, 'result'));
 
   constructor() {
     effect(() => {
@@ -409,7 +407,7 @@ export class CommandPalette {
       {
         id: 'action:search',
         kind: 'action',
-        label: 'Buscar mensagens',
+        label: ui.paletteSearchMessages,
         shortcut: 'Ctrl/Cmd+Shift+F',
         keywords: ['busca', 'search', 'filtros'],
         action: { type: 'search' },
@@ -417,7 +415,7 @@ export class CommandPalette {
       {
         id: 'action:saved',
         kind: 'action',
-        label: 'Ir para Salvos',
+        label: ui.paletteGoSaved,
         keywords: ['salvos', 'saved'],
         action: { type: 'saved' },
       },
@@ -431,7 +429,7 @@ export class CommandPalette {
       {
         id: 'action:theme',
         kind: 'action',
-        label: this.theme.theme() === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro',
+        label: this.theme.theme() === 'dark' ? ui.themeLight : ui.themeDark,
         keywords: ['tema', 'theme', 'dark', 'light'],
         action: { type: 'theme' },
       },
@@ -439,14 +437,14 @@ export class CommandPalette {
         id: 'action:density',
         kind: 'action',
         label:
-          this.theme.density() === 'compact' ? 'Densidade confortável' : 'Densidade compacta',
+          this.theme.density() === 'compact' ? ui.paletteDensityComfortable : ui.paletteDensityCompact,
         keywords: ['densidade', 'compacto'],
         action: { type: 'density' },
       },
       {
         id: 'action:mentions',
         kind: 'action',
-        label: 'Ir para menções',
+        label: ui.paletteGoMentions,
         shortcut: 'Ctrl/Cmd+Shift+M',
         keywords: ['menções', 'mentions'],
         action: { type: 'mentions' },
@@ -454,7 +452,7 @@ export class CommandPalette {
       {
         id: 'action:read',
         kind: 'action',
-        label: 'Marcar canal como lido',
+        label: ui.paletteMarkRead,
         shortcut: 'Shift+Esc',
         keywords: ['lido', 'read'],
         action: { type: 'mark-read' },
@@ -462,7 +460,7 @@ export class CommandPalette {
       {
         id: 'action:shortcuts',
         kind: 'action',
-        label: 'Folha de atalhos',
+        label: ui.paletteShortcutSheet,
         shortcut: '?',
         keywords: ['atalhos', 'ajuda', 'shortcuts'],
         action: { type: 'shortcuts' },
@@ -473,7 +471,7 @@ export class CommandPalette {
       items.push({
         id: 'action:admin',
         kind: 'action',
-        label: 'Ir para Admin',
+        label: ui.paletteGoAdmin,
         keywords: ['admin', 'administração'],
         action: { type: 'admin' },
       });

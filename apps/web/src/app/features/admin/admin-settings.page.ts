@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ApiService } from '../../core/api/api.service';
+import { fillTemplate, ui } from '../../core/i18n/strings';
 import { SensitiveSettings } from '../../shared/models/chat.models';
 import { AdminContextService } from './admin-context.service';
 import { AdminAreaId } from './admin-permissions';
@@ -14,6 +15,8 @@ type CredentialKind = 'openrouter' | 'smtp' | 'webhook' | 'vapid';
 })
 export class AdminSettingsPage implements OnInit {
   readonly areaId: AdminAreaId = 'settings';
+  readonly ui = ui;
+  readonly fillTemplate = fillTemplate;
 
   private readonly api = inject(ApiService);
   readonly ctx = inject(AdminContextService);
@@ -49,12 +52,10 @@ export class AdminSettingsPage implements OnInit {
     this.exportError.set(null);
     try {
       await this.api.downloadWorkspaceExport(workspaceId);
-      this.exportFeedback.set('Export baixado.');
+      this.exportFeedback.set(ui.adminExportDownloaded);
     } catch (error) {
       const status = (error as { status?: number }).status;
-      this.exportError.set(
-        status === 403 ? 'Falha ao exportar — sem permissão.' : 'Falha ao gerar o export.',
-      );
+      this.exportError.set(status === 403 ? ui.adminExportForbidden : ui.adminExportFailed);
     } finally {
       this.exportBusy.set(false);
     }
@@ -177,17 +178,15 @@ export class AdminSettingsPage implements OnInit {
         },
       });
       this.settings.set(updated);
-      this.settingsFeedback.set(
-        'Configurações atualizadas. Credenciais usam “Substituir” — nunca voltam em claro.',
-      );
+      this.settingsFeedback.set(ui.adminSettingsSaved);
     } catch (err) {
       const status = (err as { status?: number } | null)?.status;
       this.settingsErrorMessage.set(
         status === 403
-          ? 'Sem permissão para alterar settings sensíveis.'
+          ? ui.adminSettingsForbidden
           : status === 503
-            ? 'Overrides de runtime indisponíveis (flag/keyring).'
-            : 'Não foi possível salvar as configurações.',
+            ? ui.adminOverridesUnavailable
+            : ui.adminSettingsSaveError,
       );
     } finally {
       this.settingsBusy.set(false);
@@ -206,7 +205,7 @@ export class AdminSettingsPage implements OnInit {
     const data = new FormData(form);
     const value = String(data.get('secret') ?? '').trim();
     if (!value) {
-      this.credentialError.set('Informe a nova credencial.');
+      this.credentialError.set(ui.adminNeedCredential);
       return;
     }
 
@@ -227,17 +226,18 @@ export class AdminSettingsPage implements OnInit {
       }
 
       await this.loadSettings();
+      const replaced = fillTemplate(ui.adminCredentialReplaced, { kind });
       this.credentialFeedback.set(
-        `Credencial ${kind} substituída${result.mask ? ` (${result.mask})` : ''}.`,
+        result.mask ? `${replaced.replace(/\.$/, '')} (${result.mask}).` : replaced,
       );
     } catch (err) {
       const status = (err as { status?: number } | null)?.status;
       this.credentialError.set(
         status === 403
-          ? 'Sem permissão para rotacionar credenciais.'
+          ? ui.adminRotateForbidden
           : status === 503
-            ? 'Criptografia indisponível (RuntimeSettings desligado ou keyring ausente).'
-            : 'Falha ao substituir a credencial.',
+            ? ui.adminCryptoUnavailable
+            : ui.adminReplaceCredentialError,
       );
     } finally {
       this.credentialBusy.set(null);
@@ -258,7 +258,7 @@ export class AdminSettingsPage implements OnInit {
     const privateKey = String(data.get('privateKey') ?? '').trim();
     const subject = String(data.get('subject') ?? '').trim();
     if (!publicKey || !privateKey) {
-      this.credentialError.set('Informe as chaves VAPID pública e privada.');
+      this.credentialError.set(ui.adminNeedVapid);
       return;
     }
 
@@ -282,16 +282,16 @@ export class AdminSettingsPage implements OnInit {
       }
       await this.loadSettings();
       this.credentialFeedback.set(
-        `VAPID substituído${result.mask ? ` (${result.mask})` : ''}.`,
+        result.mask ? `${ui.adminVapidReplaced.replace(/\.$/, '')} (${result.mask}).` : ui.adminVapidReplaced,
       );
     } catch (err) {
       const status = (err as { status?: number } | null)?.status;
       this.credentialError.set(
         status === 403
-          ? 'Sem permissão para rotacionar credenciais.'
+          ? ui.adminRotateForbidden
           : status === 503
-            ? 'Criptografia indisponível (RuntimeSettings desligado ou keyring ausente).'
-            : 'Falha ao substituir a credencial.',
+            ? ui.adminCryptoUnavailable
+            : ui.adminReplaceCredentialError,
       );
     } finally {
       this.credentialBusy.set(null);
@@ -312,17 +312,17 @@ export class AdminSettingsPage implements OnInit {
       this.settings.set(result.settings);
       this.credentialFeedback.set(
         result.reencrypted > 0
-          ? `${result.reencrypted} credencial(is) re-encriptada(s) na versão ativa.`
-          : 'Nenhuma credencial precisava de re-encriptação.',
+          ? fillTemplate(ui.adminReencrypted, { n: result.reencrypted })
+          : ui.adminReencryptNone,
       );
     } catch (err) {
       const status = (err as { status?: number } | null)?.status;
       this.credentialError.set(
         status === 403
-          ? 'Sem permissão para re-encriptar.'
+          ? ui.adminReencryptForbidden
           : status === 503
-            ? 'Criptografia indisponível (RuntimeSettings desligado ou keyring ausente).'
-            : 'Falha ao re-encriptar credenciais.',
+            ? ui.adminCryptoUnavailable
+            : ui.adminReencryptError,
       );
     } finally {
       this.reencryptBusy.set(false);

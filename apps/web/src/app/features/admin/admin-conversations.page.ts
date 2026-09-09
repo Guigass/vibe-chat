@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { ApiService } from '../../core/api/api.service';
+import { ui } from '../../core/i18n/strings';
 import {
   AdminConversationItem,
   AdminConversationMessageItem,
@@ -25,6 +26,7 @@ interface ConversationOption {
 })
 export class AdminConversationsPage implements OnInit {
   readonly areaId: AdminAreaId = 'conversations';
+  readonly ui = ui;
 
   private readonly api = inject(ApiService);
   readonly ctx = inject(AdminContextService);
@@ -98,7 +100,7 @@ export class AdminConversationsPage implements OnInit {
       return m.deletedByName ? `soft-delete · ${m.deletedByName}` : 'soft-delete';
     }
     if (m.editedAt) {
-      return 'editado';
+      return ui.adminEdited;
     }
     return 'ok';
   }

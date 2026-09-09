@@ -1,0 +1,37 @@
+---
+description: Texto visível sempre via i18n — nunca literal no código
+alwaysApply: true
+---
+
+# i18n — sem string solta
+
+Toda string visível ao usuário (UI, `aria-*`, `title`, `placeholder`, empty/error,
+e-mail, descrição de slash) **sai do catálogo**. Nunca escreva português, inglês
+ou outro idioma direto no template, componente, store ou API.
+
+## Front (`apps/web`)
+
+- Fonte: `pt-BR` em `apps/web/src/app/core/i18n/strings.ts` (`$localize` + `@@id`).
+- Outros idiomas: `apps/web/public/locale/messages.{locale}.json`.
+- Use `ui.*`, `fillTemplate` e `translateErrorCode`. Datas/números: `format.ts`.
+- Idioma novo: só catálogo JSON + entrada em `SUPPORTED_LOCALES` / `UserLocales`.
+- Placeholders (`%name%`, `%n%`, `%count%`…) e nomes de produto ficam iguais.
+
+```ts
+// ❌
+button.textContent = 'Enviar';
+// ✅
+button.textContent = ui.composerSend;
+```
+
+## API
+
+- Erro: código estável em inglês (`InvalidLocale`). Cliente traduz o código.
+- Copy localizada (e-mail, `SlashCommandCatalog`): dicionário por locale, fallback `pt-BR`.
+- Log/métrica: inglês fixo, sem interpolar tradução.
+
+## Proibido
+
+- Literal de UI em `.ts` / `.html` / `.cs` (exceto ids, códigos, logs).
+- Traduzir no meio do componente ou inventar chave só naquele arquivo.
+- Catálogo incompleto (CI `check-i18n` reprova).

@@ -17,6 +17,8 @@ globs:
 - Theme via `data-theme`; motion sutil (2–3), sem ruído.
 - Evitar visual Slack/Discord/WhatsApp; sem cards desnecessários.
 - Tratar reconnect SignalR, empty/error states e a11y (foco, contraste).
+- Texto visível só via i18n (`ui.*` / `$localize` / catálogo). Nunca literal
+  no template ou no TS — ver regra `i18n`.
 - E2E em `tests/e2e` (Playwright); documentar caminhos Demo e DevAuth.
 - Verificação: `task apps` / `task ux:stack` / testes via Docker/`task` — **nunca**
   `nvm use`, `npm start`, `ng serve` ou `ng test` no Node do host (regra

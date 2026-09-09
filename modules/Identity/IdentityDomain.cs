@@ -18,10 +18,14 @@ public static class UserLocales
 {
     public const string Default = "pt-BR";
 
-    public static readonly IReadOnlyList<string> Supported = ["pt-BR", "en"];
+    public static readonly IReadOnlyList<string> Supported =
+        ["pt-BR", "en", "es", "fr", "de", "it", "ja", "zh-CN", "ko", "ru"];
 
     public static bool IsSupported(string? locale) =>
         locale is not null && Supported.Contains(locale, StringComparer.Ordinal);
+
+    /// <summary>Caller/recipient locale; unsupported or null falls back to <see cref="Default"/>.</summary>
+    public static string Resolve(string? locale) => IsSupported(locale) ? locale! : Default;
 }
 
 public interface IUserProfileReader

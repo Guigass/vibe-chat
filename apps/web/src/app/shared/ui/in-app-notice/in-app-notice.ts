@@ -1,6 +1,7 @@
 import { Component, inject, output } from '@angular/core';
 import { PushNotificationService } from '../../../core/services/push-notification.service';
 import { Button } from '../button/button';
+import { ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-in-app-notice',
@@ -13,7 +14,7 @@ import { Button } from '../button/button';
           <strong>{{ notice.title }}</strong>
           <span>{{ notice.body }}</span>
         </button>
-        <vc-button type="button" variant="ghost" (click)="push.dismissNotice()">Fechar</vc-button>
+        <vc-button type="button" variant="ghost" (click)="push.dismissNotice()">{{ ui.close }}</vc-button>
       </div>
     }
   `,
@@ -46,6 +47,7 @@ import { Button } from '../button/button';
   `,
 })
 export class InAppNoticeBanner {
+  readonly ui = ui;
   readonly push = inject(PushNotificationService);
   readonly open = output<void>();
 }

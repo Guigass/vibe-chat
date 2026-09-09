@@ -1,5 +1,5 @@
 @if (usingDemo()) {
-  <p class="admin-shell__hint" role="status">API admin indisponível — exibindo snapshot de demonstração.</p>
+  <p class="admin-shell__hint" role="status">{{ ui.adminDemoHint }}</p>
 }
 
 @if (loading()) {
@@ -10,19 +10,19 @@
   </div>
 } @else if (stats(); as s) {
   <div class="admin__grid">
-    <article class="stat"><span>Usuários</span><strong>{{ s.users }}</strong></article>
-    <article class="stat"><span>Online</span><strong>{{ s.onlineUsers }}</strong></article>
+    <article class="stat"><span>{{ ui.adminStatUsers }}</span><strong>{{ s.users }}</strong></article>
+    <article class="stat"><span>{{ ui.adminStatOnline }}</span><strong>{{ s.onlineUsers }}</strong></article>
     <article class="stat"><span>Workspaces</span><strong>{{ s.workspaces }}</strong></article>
     <article class="stat"><span>Channels</span><strong>{{ s.channels }}</strong></article>
-    <article class="stat"><span>Mensagens</span><strong>{{ s.messages }}</strong></article>
-    <article class="stat"><span>Conexões realtime</span><strong>{{ s.realtimeConnections }}</strong></article>
-    <article class="stat"><span>Outbox pendente</span><strong>{{ s.outboxPending }}</strong></article>
-    <article class="stat"><span>Falhas de processamento</span><strong>{{ s.processingFailures }}</strong></article>
+    <article class="stat"><span>{{ ui.adminStatMessages }}</span><strong>{{ s.messages }}</strong></article>
+    <article class="stat"><span>{{ ui.adminStatRealtime }}</span><strong>{{ s.realtimeConnections }}</strong></article>
+    <article class="stat"><span>{{ ui.adminStatOutbox }}</span><strong>{{ s.outboxPending }}</strong></article>
+    <article class="stat"><span>{{ ui.adminStatFailures }}</span><strong>{{ s.processingFailures }}</strong></article>
   </div>
 
   <div class="admin__lower">
     <article class="health admin-panel">
-      <h2>Saúde</h2>
+      <h2>{{ ui.adminHealth }}</h2>
       <ul>
         <li>
           <span>PostgreSQL</span>
@@ -40,10 +40,10 @@
     </article>
 
     <article class="meta admin-panel">
-      <h2>Versão</h2>
+      <h2>{{ ui.adminVersion }}</h2>
       <p class="mono">{{ s.appVersion }}</p>
       <p class="mono admin-build-id">build {{ webBuildId }}</p>
-      <a [href]="s.grafanaUrl" target="_blank" rel="noopener noreferrer">Abrir Grafana ↗</a>
+      <a [href]="s.grafanaUrl" target="_blank" rel="noopener noreferrer">{{ ui.adminOpenGrafana }}</a>
     </article>
   </div>
 }

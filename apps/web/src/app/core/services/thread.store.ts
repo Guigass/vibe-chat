@@ -3,6 +3,7 @@ import { ApiService } from '../api/api.service';
 import { AuthService } from '../auth/auth.service';
 import { ChatHubService } from './chat-hub.service';
 import { ChannelStore } from './channel.store';
+import { ui } from '../i18n/strings';
 import { ChatMessage, ChatThread } from '../../shared/models/chat.models';
 import {
   findMessageByCorrelators,
@@ -251,7 +252,7 @@ export class ThreadStore {
       conversationId: thread.id,
       channelId: thread.channelId,
       authorUserId: profile?.id ?? 'me',
-      authorName: profile?.name ?? 'Você',
+      authorName: profile?.name ?? ui.you,
       body: text,
       createdAt: new Date().toISOString(),
       status: 'sending',

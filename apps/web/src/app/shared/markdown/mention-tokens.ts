@@ -1,3 +1,5 @@
+import { ui } from '../../core/i18n/strings';
+
 export type MentionSpecial = 'here' | 'channel';
 
 export interface MentionTokenMatch {
@@ -74,10 +76,10 @@ export function insertMentionToken(
 }
 
 export function composerMentionDisplay(item: MentionAutocompleteItem): string {
-  if (item.kind === 'here') return '@aqui';
-  if (item.kind === 'channel') return '@canal';
+  if (item.kind === 'here') return ui.mentionHere;
+  if (item.kind === 'channel') return ui.mentionChannel;
   const name = (item.displayName ?? '').replace(/^@/, '').trim();
-  return name ? `@${name}` : '@usuário';
+  return name ? `@${name}` : ui.mentionUser;
 }
 
 function mentionBoundaryBefore(source: string, index: number): boolean {
@@ -113,9 +115,17 @@ export function encodeMentionPlainText(
     }
 
     if (source[i] === '@' && mentionBoundaryBefore(source, i)) {
-      if (source.startsWith('@aqui', i) && mentionBoundaryAfter(source, i + 5)) {
+      if (
+        (source.startsWith('@aqui', i) || source.startsWith('@here', i)) &&
+        mentionBoundaryAfter(source, i + 5)
+      ) {
         result += '<@here>';
         i += 5;
+        continue;
+      }
+      if (source.startsWith('@channel', i) && mentionBoundaryAfter(source, i + 8)) {
+        result += '<@channel>';
+        i += 8;
         continue;
       }
       if (source.startsWith('@canal', i) && mentionBoundaryAfter(source, i + 6)) {
@@ -144,9 +154,10 @@ export function mentionLabel(
   token: MentionTokenMatch,
   labels: Record<string, string>,
 ): string {
-  if (token.kind === 'here') return '@aqui';
-  if (token.kind === 'channel') return '@canal';
-  return `@${labels[token.userId ?? ''] ?? 'usuário'}`;
+  if (token.kind === 'here') return ui.mentionHere;
+  if (token.kind === 'channel') return ui.mentionChannel;
+  const name = labels[token.userId ?? ''];
+  return name ? `@${name}` : ui.mentionUser;
 }
 
 export function formatMentionPlainText(
@@ -194,7 +205,12 @@ export function filterMentionItems(
       )
     : users;
 
-  const showSpecials = !q || 'aqui'.startsWith(q) || 'canal'.startsWith(q);
+  const showSpecials =
+    !q ||
+    'aqui'.startsWith(q) ||
+    'canal'.startsWith(q) ||
+    'here'.startsWith(q) ||
+    'channel'.startsWith(q);
   const visibleSpecials = showSpecials ? specials : [];
   return [...visibleSpecials, ...filteredUsers].slice(0, limit);
 }

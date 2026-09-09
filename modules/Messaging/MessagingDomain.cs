@@ -578,7 +578,7 @@ public static class MessageBodyPolicies
     public static object TooLongPayload() => new
     {
         error = "MessageBodyTooLong",
-        message = "A mensagem excede o limite de 8000 caracteres.",
+        message = "Message exceeds the 8000-character limit.",
         maxLength = MaxLength
     };
 }

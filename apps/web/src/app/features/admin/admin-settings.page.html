@@ -1,12 +1,11 @@
 <p class="admin-panel__lead">
-  Ajustes runtime do workspace e do tenant. Credenciais ficam criptografadas — a UI só mostra
-  máscara. Infraestrutura (Postgres, Redis, OIDC, MinIO) continua no ambiente.
+  {{ ui.adminSettingsLead }}
 </p>
 
 @if (loading()) {
-  <p class="admin-empty">Carregando configurações…</p>
+  <p class="admin-empty">{{ ui.adminLoadingSettings }}</p>
 } @else if (loadError()) {
-  <p class="admin-empty">Não foi possível carregar as configurações.</p>
+  <p class="admin-empty">{{ ui.adminSettingsLoadError }}</p>
 } @else if (settings(); as s) {
   <!-- Form âncora: campos usam form="admin-settings-form" para permitir credenciais entre blocos. -->
   <form
@@ -15,21 +14,21 @@
     (submit)="onSettingsSubmit($event)"
   ></form>
 
-  <aside class="settings__status" aria-label="Estado dos gates">
+  <aside class="settings__status" [attr.aria-label]="ui.adminGatesState">
     <div class="settings__status-item">
-      <span class="settings__status-label">IA (processo)</span>
+      <span class="settings__status-label">{{ ui.adminAiProcess }}</span>
       <strong [class.settings__status-on]="s.ai.processEnabled" [class.settings__status-off]="!s.ai.processEnabled">
-        {{ s.ai.processEnabled ? 'ligado' : 'desligado' }}
+        {{ s.ai.processEnabled ? ui.on : ui.off }}
       </strong>
       <span class="settings__status-src">{{ s.ai.processSource }}</span>
     </div>
     <div class="settings__status-item">
-      <span class="settings__status-label">Retenção (processo)</span>
+      <span class="settings__status-label">{{ ui.adminRetentionProcess }}</span>
       <strong
         [class.settings__status-on]="s.retention.processEnabled"
         [class.settings__status-off]="!s.retention.processEnabled"
       >
-        {{ s.retention.processEnabled ? 'ligado' : 'desligado' }}
+        {{ s.retention.processEnabled ? ui.on : ui.off }}
       </strong>
       <span class="settings__status-src">{{ s.retention.processSource }}</span>
     </div>
@@ -39,20 +38,20 @@
         [class.settings__status-on]="s.linkPreview.processEnabled"
         [class.settings__status-off]="!s.linkPreview.processEnabled"
       >
-        {{ s.linkPreview.processEnabled ? 'ligado' : 'desligado' }}
+        {{ s.linkPreview.processEnabled ? ui.on : ui.off }}
       </strong>
       <span class="settings__status-src">{{ s.linkPreview.processSource }}</span>
     </div>
     <div class="settings__status-item">
-      <span class="settings__status-label">Overrides DB</span>
+      <span class="settings__status-label">{{ ui.adminDbOverrides }}</span>
       <strong
         [class.settings__status-on]="s.encryption.databaseOverridesEnabled"
         [class.settings__status-off]="!s.encryption.databaseOverridesEnabled"
       >
-        {{ s.encryption.databaseOverridesEnabled ? 'ligado' : 'desligado' }}
+        {{ s.encryption.databaseOverridesEnabled ? ui.on : ui.off }}
       </strong>
       <span class="settings__status-src">
-        keyring {{ s.encryption.encryptionAvailable ? 'ok' : 'indisponível' }}
+        keyring {{ s.encryption.encryptionAvailable ? 'ok' : ui.unavailable }}
         @if (s.encryption.activeKeyVersion) {
           · v{{ s.encryption.activeKeyVersion }}
         }
@@ -63,18 +62,18 @@
   <!-- 1. Integrações -->
   <section class="settings__section">
     <header class="settings__section-head">
-      <h2 class="settings__section-title">Integrações</h2>
+      <h2 class="settings__section-title">{{ ui.adminIntegrations }}</h2>
       <p class="settings__section-desc">
-        Provedores externos. Salve os campos abaixo; use “Substituir” só para rotacionar secrets.
+        {{ ui.adminIntegrationsDesc }}
       </p>
     </header>
 
     <div class="settings__block">
       <div class="settings__block-head">
-        <h3 class="settings__block-title">Inteligência artificial</h3>
+        <h3 class="settings__block-title">{{ ui.adminAiTitle }}</h3>
         <p class="settings__meta">
-          Chave
-          {{ s.ai.apiKeyConfigured ? (s.ai.apiKeyMask ?? 'configurada') : 'não configurada' }}
+          {{ ui.key }}
+          {{ s.ai.apiKeyConfigured ? (s.ai.apiKeyMask ?? ui.configured) : ui.notConfigured }}
           @if (s.ai.apiKeySource) {
             · <code>{{ s.ai.apiKeySource }}</code>
           }
@@ -91,7 +90,7 @@
             name="aiProcessEnabled"
             [checked]="s.ai.processEnabled"
           />
-          <span>Kill switch da instância (IA)</span>
+          <span>{{ ui.adminAiKill }}</span>
         </label>
         <label class="settings__check">
           <input
@@ -100,7 +99,7 @@
             name="aiWorkspaceEnabled"
             [checked]="s.ai.workspaceEnabled"
           />
-          <span>Habilitada neste workspace</span>
+          <span>{{ ui.adminAiWorkspace }}</span>
         </label>
         <label class="settings__field settings__field--narrow">
           <span>Provider</span>
@@ -122,7 +121,7 @@
       </fieldset>
       <form class="settings__cred" (submit)="rotateCredential('openrouter', $event)">
         <label class="settings__field">
-          <span>Nova API key (OpenRouter)</span>
+          <span>{{ ui.adminNewOpenRouterKey }}</span>
           <input name="secret" type="password" value="" autocomplete="new-password" />
         </label>
         <button
@@ -130,21 +129,21 @@
           class="admin-btn admin-btn--ghost"
           [disabled]="credentialBusy() !== null || !s.ai.secretsWritable"
         >
-          {{ credentialBusy() === 'openrouter' ? 'Substituindo…' : 'Substituir chave' }}
+          {{ credentialBusy() === 'openrouter' ? ui.replacing : ui.adminReplaceKey }}
         </button>
       </form>
     </div>
 
     <div class="settings__block">
       <div class="settings__block-head">
-        <h3 class="settings__block-title">E-mail / SMTP</h3>
+        <h3 class="settings__block-title">{{ ui.adminEmailSmtp }}</h3>
         <p class="settings__meta">
-          Fonte <code>{{ s.email.source }}</code>
-          · senha
+          {{ ui.source }} <code>{{ s.email.source }}</code>
+          · {{ ui.password }}
           {{
             s.email.smtpPasswordConfigured
-              ? (s.email.smtpPasswordMask ?? 'configurada')
-              : 'não configurada'
+              ? (s.email.smtpPasswordMask ?? ui.configured)
+              : ui.notConfigured
           }}
           @if (s.email.smtpPasswordSource) {
             · <code>{{ s.email.smtpPasswordSource }}</code>
@@ -159,7 +158,7 @@
             name="emailProcessEnabled"
             [checked]="s.email.processEnabled === true"
           />
-          <span>Kill switch da instância (e-mail)</span>
+          <span>{{ ui.adminEmailKill }}</span>
         </label>
         <label class="settings__check">
           <input
@@ -168,7 +167,7 @@
             name="emailEnabled"
             [checked]="s.email.enabled"
           />
-          <span>E-mail habilitado</span>
+          <span>{{ ui.adminEmailEnabled }}</span>
         </label>
         <div class="settings__row">
           <label class="settings__field">
@@ -182,7 +181,7 @@
             />
           </label>
           <label class="settings__field settings__field--narrow">
-            <span>Porta</span>
+            <span>{{ ui.adminPort }}</span>
             <input
               form="admin-settings-form"
               name="smtpPort"
@@ -193,7 +192,7 @@
             />
           </label>
           <label class="settings__field">
-            <span>Usuário</span>
+            <span>{{ ui.adminUser }}</span>
             <input
               form="admin-settings-form"
               name="smtpUsername"
@@ -225,7 +224,7 @@
       </fieldset>
       <form class="settings__cred" (submit)="rotateCredential('smtp', $event)">
         <label class="settings__field">
-          <span>Nova senha SMTP</span>
+          <span>{{ ui.adminNewSmtpPassword }}</span>
           <input name="secret" type="password" value="" autocomplete="new-password" />
         </label>
         <button
@@ -233,7 +232,7 @@
           class="admin-btn admin-btn--ghost"
           [disabled]="credentialBusy() !== null || !s.email.secretsWritable"
         >
-          {{ credentialBusy() === 'smtp' ? 'Substituindo…' : 'Substituir senha' }}
+          {{ credentialBusy() === 'smtp' ? ui.replacing : ui.adminReplacePassword }}
         </button>
       </form>
     </div>
@@ -246,8 +245,8 @@
           · secret
           {{
             s.webhooks.secretConfigured
-              ? (s.webhooks.secretMask ?? 'configurado')
-              : 'não configurado'
+              ? (s.webhooks.secretMask ?? ui.configuredMasc)
+              : ui.notConfiguredMasc
           }}
           @if (s.webhooks.secretSource) {
             · <code>{{ s.webhooks.secretSource }}</code>
@@ -262,7 +261,7 @@
             name="webhookEnabled"
             [checked]="s.webhooks.enabled"
           />
-          <span>Delivery habilitado (MessageCreated)</span>
+          <span>{{ ui.adminWebhookDelivery }}</span>
         </label>
         <label class="settings__field">
           <span>URL</span>
@@ -278,7 +277,7 @@
       </fieldset>
       <form class="settings__cred" (submit)="rotateCredential('webhook', $event)">
         <label class="settings__field">
-          <span>Novo signing secret</span>
+          <span>{{ ui.adminNewSigningSecret }}</span>
           <input name="secret" type="password" value="" autocomplete="new-password" />
         </label>
         <button
@@ -286,7 +285,7 @@
           class="admin-btn admin-btn--ghost"
           [disabled]="credentialBusy() !== null || !s.webhooks.secretsWritable"
         >
-          {{ credentialBusy() === 'webhook' ? 'Substituindo…' : 'Substituir secret' }}
+          {{ credentialBusy() === 'webhook' ? ui.replacing : ui.adminReplaceSecret }}
         </button>
       </form>
     </div>
@@ -295,25 +294,24 @@
   <!-- 2. Limites -->
   <section class="settings__section">
     <header class="settings__section-head">
-      <h2 class="settings__section-title">Limites operacionais</h2>
+      <h2 class="settings__section-title">{{ ui.adminLimits }}</h2>
       <p class="settings__section-desc">
-        Podem restringir, nunca ampliar além do teto definido no ambiente.
+        {{ ui.adminLimitsDesc }}
       </p>
     </header>
 
     <div class="settings__block">
       <div class="settings__block-head">
-        <h3 class="settings__block-title">Arquivos</h3>
+        <h3 class="settings__block-title">{{ ui.adminFiles }}</h3>
         <p class="settings__meta">
-          Fonte <code>{{ s.files.source }}</code>
-          · teto {{ s.files.ceilingMaxSizeBytes }} bytes /
-          {{ s.files.ceilingMaxAttachmentsPerMessage }} anexos
+          {{ ui.source }} <code>{{ s.files.source }}</code>
+          · {{ fillTemplate(ui.adminCeilingFiles, { bytes: s.files.ceilingMaxSizeBytes, n: s.files.ceilingMaxAttachmentsPerMessage }) }}
         </p>
       </div>
       <fieldset class="settings__fields" [disabled]="settingsBusy()">
         <div class="settings__row">
           <label class="settings__field">
-            <span>Tamanho máx. (bytes)</span>
+            <span>{{ ui.adminMaxSizeBytes }}</span>
             <input
               form="admin-settings-form"
               name="maxSizeBytes"
@@ -324,7 +322,7 @@
             />
           </label>
           <label class="settings__field settings__field--narrow">
-            <span>Anexos / mensagem</span>
+            <span>{{ ui.adminAttachmentsPerMessage }}</span>
             <input
               form="admin-settings-form"
               name="maxAttachmentsPerMessage"
@@ -342,15 +340,14 @@
       <div class="settings__block-head">
         <h3 class="settings__block-title">Rate limit</h3>
         <p class="settings__meta">
-          Fonte <code>{{ s.rateLimit.source }}</code>
-          · teto envio {{ s.rateLimit.ceilingSendPerMinute }}/min · hub
-          {{ s.rateLimit.ceilingHubPerMinute }}/min
+          {{ ui.source }} <code>{{ s.rateLimit.source }}</code>
+          · {{ fillTemplate(ui.adminCeilingRate, { send: s.rateLimit.ceilingSendPerMinute, hub: s.rateLimit.ceilingHubPerMinute }) }}
         </p>
       </div>
       <fieldset class="settings__fields" [disabled]="settingsBusy()">
         <div class="settings__row">
           <label class="settings__field settings__field--narrow">
-            <span>Envio / minuto</span>
+            <span>{{ ui.adminSendPerMinute }}</span>
             <input
               form="admin-settings-form"
               name="sendPerMinute"
@@ -361,7 +358,7 @@
             />
           </label>
           <label class="settings__field settings__field--narrow">
-            <span>Hub / minuto</span>
+            <span>{{ ui.adminHubPerMinute }}</span>
             <input
               form="admin-settings-form"
               name="hubPerMinute"
@@ -379,15 +376,15 @@
   <!-- 3. Retenção e export -->
   <section class="settings__section">
     <header class="settings__section-head">
-      <h2 class="settings__section-title">Retenção e exportação</h2>
+      <h2 class="settings__section-title">{{ ui.adminRetentionExport }}</h2>
       <p class="settings__section-desc">
-        Política de purge do tenant e export de compliance do workspace.
+        {{ ui.adminRetentionExportDesc }}
       </p>
     </header>
 
     <div class="settings__block">
       <div class="settings__block-head">
-        <h3 class="settings__block-title">Purge de soft-deletes</h3>
+        <h3 class="settings__block-title">{{ ui.adminPurgeTitle }}</h3>
         <p class="settings__meta">
           Default {{ s.retention.defaultRetentionDays }}d — {{ s.retention.message }}
         </p>
@@ -400,7 +397,7 @@
             name="retentionProcessEnabled"
             [checked]="s.retention.processEnabled"
           />
-          <span>Kill switch da instância (purge)</span>
+          <span>{{ ui.adminPurgeKill }}</span>
         </label>
         <label class="settings__check">
           <input
@@ -409,10 +406,10 @@
             name="retentionEnabled"
             [checked]="s.retention.enabled"
           />
-          <span>Purge habilitado neste tenant</span>
+          <span>{{ ui.adminPurgeEnabled }}</span>
         </label>
         <label class="settings__field settings__field--narrow">
-          <span>Dias de retenção</span>
+          <span>{{ ui.adminRetentionDays }}</span>
           <input
             form="admin-settings-form"
             name="retentionDays"
@@ -423,7 +420,7 @@
           />
         </label>
         <label class="settings__field settings__field--narrow">
-          <span>Default (dias)</span>
+          <span>{{ ui.adminDefaultDays }}</span>
           <input
             form="admin-settings-form"
             name="retentionDefaultDays"
@@ -445,7 +442,7 @@
           />
         </label>
         <label class="settings__field settings__field--narrow">
-          <span>Intervalo (min)</span>
+          <span>{{ ui.adminIntervalMin }}</span>
           <input
             form="admin-settings-form"
             name="retentionIntervalMinutes"
@@ -471,7 +468,7 @@
             name="linkPreviewProcessEnabled"
             [checked]="s.linkPreview.processEnabled"
           />
-          <span>Kill switch da instância (preview)</span>
+          <span>{{ ui.adminPreviewKill }}</span>
         </label>
         <label class="settings__check">
           <input
@@ -480,7 +477,7 @@
             name="linkPreviewEnabled"
             [checked]="s.linkPreview.enabled"
           />
-          <span>Preview de links habilitado neste tenant</span>
+          <span>{{ ui.adminPreviewEnabled }}</span>
         </label>
         <label class="settings__field settings__field--narrow">
           <span>Timeout (ms)</span>
@@ -501,7 +498,7 @@
         <div class="settings__block-head">
           <h3 class="settings__block-title">Web Push / VAPID</h3>
           <p class="settings__meta">
-            {{ push.vapidConfigured ? (push.vapidMask ?? 'configurado') : 'não configurado' }}
+            {{ push.vapidConfigured ? (push.vapidMask ?? ui.configuredMasc) : ui.notConfiguredMasc }}
             @if (push.vapidSource) {
               · <code>{{ push.vapidSource }}</code>
             }
@@ -515,16 +512,16 @@
               name="pushProcessEnabled"
               [checked]="push.processEnabled"
             />
-            <span>Kill switch da instância (push)</span>
+            <span>{{ ui.adminPushKill }}</span>
           </label>
         </fieldset>
         <form id="admin-vapid-form" class="settings__cred" (submit)="rotateVapid($event)">
           <label class="settings__field">
-            <span>Chave pública</span>
+            <span>{{ ui.adminPublicKey }}</span>
             <input name="publicKey" type="text" value="" autocomplete="off" />
           </label>
           <label class="settings__field">
-            <span>Chave privada</span>
+            <span>{{ ui.adminPrivateKey }}</span>
             <input name="privateKey" type="password" value="" autocomplete="new-password" />
           </label>
           <label class="settings__field">
@@ -536,7 +533,7 @@
             class="admin-btn admin-btn--ghost"
             [disabled]="credentialBusy() !== null || !push.secretsWritable"
           >
-            {{ credentialBusy() === 'vapid' ? 'Substituindo…' : 'Substituir VAPID' }}
+            {{ credentialBusy() === 'vapid' ? ui.replacing : ui.adminReplaceVapid }}
           </button>
         </form>
       </div>
@@ -544,11 +541,11 @@
 
     <div class="settings__block settings__block--actions">
       <div class="settings__block-head">
-        <h3 class="settings__block-title">Export do workspace</h3>
-        <p class="settings__meta">ZIP com JSON de compliance (inclui soft-deletes).</p>
+        <h3 class="settings__block-title">{{ ui.adminExportTitle }}</h3>
+        <p class="settings__meta">{{ ui.adminExportDesc }}</p>
       </div>
       <button type="button" class="admin-btn admin-btn--ghost" [disabled]="exportBusy()" (click)="exportWorkspace()">
-        {{ exportBusy() ? 'Exportando…' : 'Exportar workspace (ZIP)' }}
+        {{ exportBusy() ? ui.adminExporting : ui.adminExportZip }}
       </button>
       @if (exportFeedback(); as feedback) {
         <p class="admin-feedback" role="status">{{ feedback }}</p>
@@ -562,17 +559,17 @@
   <!-- 4. Segurança -->
   <section class="settings__section">
     <header class="settings__section-head">
-      <h2 class="settings__section-title">Criptografia</h2>
+      <h2 class="settings__section-title">{{ ui.adminEncryption }}</h2>
       <p class="settings__section-desc">
-        Re-encripta envelopes para a versão ativa do keyring (após rotação de chave mestra).
+        {{ ui.adminEncryptionDesc }}
       </p>
     </header>
 
     <div class="settings__block settings__block--actions">
       <p class="settings__meta">
-        Credenciais na versão ativa: {{ s.encryption.credentialsUsingActiveKey }}
+        {{ fillTemplate(ui.adminCredentialsActive, { n: s.encryption.credentialsUsingActiveKey }) }}
         @if (!s.encryption.databaseOverridesEnabled || !s.encryption.encryptionAvailable) {
-          · rotação exige flag e keyring configurados no ambiente.
+          {{ ui.adminRotationNeedsKeyring }}
         }
       </p>
       <button
@@ -581,7 +578,7 @@
         [disabled]="reencryptBusy() || !s.encryption.encryptionAvailable"
         (click)="reencryptCredentials()"
       >
-        {{ reencryptBusy() ? 'Re-encriptando…' : 'Re-encriptar para versão ativa' }}
+        {{ reencryptBusy() ? ui.adminReencrypting : ui.adminReencrypt }}
       </button>
     </div>
   </section>
@@ -593,9 +590,9 @@
       class="admin-btn"
       [disabled]="settingsBusy()"
     >
-      {{ settingsBusy() ? 'Salvando…' : 'Salvar configurações' }}
+      {{ settingsBusy() ? ui.adminSaving : ui.adminSaveSettings }}
     </button>
-    <p class="settings__footer-hint">Não envia secrets — use “Substituir” em cada integração.</p>
+    <p class="settings__footer-hint">{{ ui.adminSaveHint }}</p>
   </div>
 
   @if (settingsFeedback(); as feedback) {

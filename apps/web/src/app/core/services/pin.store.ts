@@ -3,6 +3,7 @@ import { ApiService } from '../api/api.service';
 import { ChatHubService } from './chat-hub.service';
 import { ChannelStore } from './channel.store';
 import { MessageStore } from './message.store';
+import { ui } from '../i18n/strings';
 import { PinnedMessageItem } from '../../shared/models/chat.models';
 
 @Injectable({ providedIn: 'root' })
@@ -84,7 +85,7 @@ export class PinStore {
         page.pins.map((p) => p.messageId),
       );
     } catch {
-      this.errorSignal.set('Não foi possível carregar mensagens fixadas.');
+      this.errorSignal.set(ui.pinsLoadError);
     } finally {
       this.loadingSignal.set(false);
     }

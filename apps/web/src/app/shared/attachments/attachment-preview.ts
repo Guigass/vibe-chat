@@ -1,3 +1,5 @@
+import { ui } from '../../core/i18n/strings';
+
 export type AttachmentPreviewKind = 'image' | 'pdf' | 'audio' | 'video' | 'file';
 
 export function classifyAttachmentPreview(
@@ -71,7 +73,7 @@ export function menuActionsForMessage(options: {
     danger?: boolean;
   }> = [];
   if (options.showForward) {
-    items.push({ id: 'forward', label: 'Encaminhar' });
+    items.push({ id: 'forward', label: ui.menuForward });
   }
   if (options.showThread) {
     const count = options.replyCount ?? 0;
@@ -79,31 +81,31 @@ export function menuActionsForMessage(options: {
       id: 'thread',
       label:
         count > 0
-          ? `${count} ${count === 1 ? 'resposta' : 'respostas'}`
-          : 'Abrir thread',
+          ? `${count} ${count === 1 ? ui.menuReply : ui.menuReplies}`
+          : ui.menuOpenThread,
     });
   }
   if (options.showPin) {
     items.push({
       id: options.isPinned ? 'unpin' : 'pin',
-      label: options.isPinned ? 'Desafixar' : 'Fixar',
+      label: options.isPinned ? ui.menuUnpin : ui.menuPin,
     });
   }
   if (options.showSave) {
     items.push({
       id: options.isSaved ? 'unsave' : 'save',
-      label: options.isSaved ? 'Remover dos salvos' : 'Salvar',
+      label: options.isSaved ? ui.menuUnsave : ui.menuSave,
     });
   }
   if (options.showMarkUnread) {
-    items.push({ id: 'mark-unread', label: 'Marcar como não lida' });
+    items.push({ id: 'mark-unread', label: ui.menuMarkUnread });
   }
   if (options.mine) {
-    items.push({ id: 'edit', label: 'Editar' });
+    items.push({ id: 'edit', label: ui.menuEdit });
     if (options.hasLinkPreview) {
-      items.push({ id: 'remove-link-preview', label: 'Remover preview' });
+      items.push({ id: 'remove-link-preview', label: ui.menuRemovePreview });
     }
-    items.push({ id: 'delete', label: 'Apagar', danger: true });
+    items.push({ id: 'delete', label: ui.menuDelete, danger: true });
   }
   return items;
 }

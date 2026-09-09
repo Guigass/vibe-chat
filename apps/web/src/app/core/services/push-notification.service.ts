@@ -5,6 +5,7 @@ import { AuthService } from '../auth/auth.service';
 import { ChatHubService } from './chat-hub.service';
 import { ChannelStore } from './channel.store';
 import { ChatMessage, PushDevice } from '../../shared/models/chat.models';
+import { fillTemplate, ui } from '../i18n/strings';
 import { formatMentionPlainText } from '../../shared/markdown/mention-tokens';
 
 export const PUSH_DISMISSED_KEY = 'vc.push.dismissed';
@@ -168,15 +169,15 @@ export class PushNotificationService {
     channel: { name?: string; peerDisplayName?: string | null } | undefined,
     isDirect: boolean,
   ): string {
-    const author = this.humanName(authorName) ?? 'Alguém';
+    const author = this.humanName(authorName) ?? ui.someone;
     if (isDirect) {
-      return author === 'Alguém'
-        ? this.humanName(channel?.peerDisplayName) ?? 'Mensagem direta'
+      return author === ui.someone
+        ? this.humanName(channel?.peerDisplayName) ?? ui.pushDirectMessage
         : author;
     }
 
     const channelName = this.humanName(channel?.name?.replace(/^#/, ''));
-    return `${author} · #${channelName ?? 'canal'}`;
+    return fillTemplate(ui.pushChannelTitle, { author, channel: channelName ?? ui.channelFallback });
   }
 
   private noticeBody(body: string): string {

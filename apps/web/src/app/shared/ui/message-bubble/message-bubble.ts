@@ -38,6 +38,8 @@ import { EmojiPicker } from '../emoji-picker/emoji-picker';
 import { PollCard } from '../poll-card/poll-card';
 import { rememberRecentEmoji } from '../../emoji/emoji-data';
 import { environment } from '../../../../environments/environment';
+import { LocaleService } from '../../../core/i18n/locale.service';
+import { fillTemplate, ui } from '../../../core/i18n/strings';
 
 const MINE_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
   {
@@ -167,7 +169,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
                 message().createdAt | date: 'shortTime'
               }}</time>
               @if (message().editedAt && !message().deletedAt) {
-                <span class="vc-msg__status" title="Editada" aria-label="Editada">
+                <span class="vc-msg__status" [title]="ui.bubbleEdited" [attr.aria-label]="ui.bubbleEdited">
                   <svg
                     width="12"
                     height="12"
@@ -187,8 +189,8 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
               @if (message().isPinned && !message().deletedAt) {
                 <span
                   class="vc-msg__status vc-msg__status--pin"
-                  title="Mensagem fixada"
-                  aria-label="Mensagem fixada"
+                  [title]="ui.bubblePinned"
+                  [attr.aria-label]="ui.bubblePinned"
                 >
                   <svg
                     width="12"
@@ -211,8 +213,8 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
               @if (message().isSaved && !message().deletedAt) {
                 <span
                   class="vc-msg__status vc-msg__status--saved"
-                  title="Mensagem salva"
-                  aria-label="Mensagem salva"
+                  [title]="ui.bubbleSaved"
+                  [attr.aria-label]="ui.bubbleSaved"
                 >
                   <svg
                     width="12"
@@ -230,7 +232,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
                 </span>
               }
               @if (message().status === 'sending') {
-                <span class="vc-msg__status" title="Enviando…" aria-label="Enviando…">
+                <span class="vc-msg__status" [title]="ui.bubbleSending" [attr.aria-label]="ui.bubbleSending">
                   <svg
                     width="12"
                     height="12"
@@ -246,7 +248,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
                   </svg>
                 </span>
               } @else if (message().status === 'sent') {
-                <span class="vc-msg__status" title="Enviada" aria-label="Enviada">
+                <span class="vc-msg__status" [title]="ui.bubbleSent" [attr.aria-label]="ui.bubbleSent">
                   <svg
                     width="12"
                     height="12"
@@ -264,8 +266,8 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
               } @else if (message().status === 'failed') {
                 <span
                   class="vc-msg__status vc-msg__status--fail"
-                  title="Falhou"
-                  aria-label="Falhou"
+                  [title]="ui.bubbleFailed"
+                  [attr.aria-label]="ui.bubbleFailed"
                 >
                   <svg
                     width="12"
@@ -289,14 +291,14 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
 
           <div class="vc-msg__content">
             @if (message().deletedAt) {
-              <p class="vc-msg__deleted">Mensagem removida</p>
+              <p class="vc-msg__deleted">{{ ui.bubbleRemoved }}</p>
             } @else {
               @if (message().forwardedFrom; as origin) {
                 <p
                   class="vc-msg__forwarded"
-                  title="Encaminhada de {{ formatForwardOrigin(origin) }} · {{ origin.authorName }} · {{
-                    origin.createdAt | date: 'shortDate'
-                  }}"
+                  title="{{ ui.bubbleForwardedFrom }} {{ formatForwardOrigin(origin) }} · {{
+                    origin.authorName
+                  }} · {{ origin.createdAt | date: 'shortDate' }}"
                 >
                   <svg
                     width="12"
@@ -313,7 +315,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
                     <path d="M4 20v-7a4 4 0 0 1 4-4h12" />
                   </svg>
                   <span>
-                    Encaminhada de
+                    {{ ui.bubbleForwardedFrom }}
                     {{ formatForwardOrigin(origin) }}
                     · {{ origin.authorName }} · {{ origin.createdAt | date: 'shortDate' }}
                   </span>
@@ -321,7 +323,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
               }
               @if (message().replyTo; as cite) {
                 @if (cite.deleted) {
-                  <div class="vc-msg__quote vc-msg__quote--deleted">Mensagem removida</div>
+                  <div class="vc-msg__quote vc-msg__quote--deleted">{{ ui.bubbleRemoved }}</div>
                 } @else {
                   <button
                     type="button"
@@ -405,7 +407,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
                 }
               }
               @if (message().reactions?.length) {
-                <ul class="vc-msg__reactions" aria-label="Reações">
+                <ul class="vc-msg__reactions" [attr.aria-label]="ui.bubbleReactions">
                   @for (reaction of message().reactions; track reaction.emoji) {
                     <li>
                       <button
@@ -430,7 +432,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
           @if (!showMeta()) {
             <div class="vc-msg__group-meta">
               @if (message().editedAt && !message().deletedAt) {
-                <span class="vc-msg__status" title="Editada" aria-label="Editada">
+                <span class="vc-msg__status" [title]="ui.bubbleEdited" [attr.aria-label]="ui.bubbleEdited">
                   <svg
                     width="12"
                     height="12"
@@ -450,8 +452,8 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
               @if (message().isPinned && !message().deletedAt) {
                 <span
                   class="vc-msg__status vc-msg__status--pin"
-                  title="Mensagem fixada"
-                  aria-label="Mensagem fixada"
+                  [title]="ui.bubblePinned"
+                  [attr.aria-label]="ui.bubblePinned"
                 >
                   <svg
                     width="12"
@@ -474,8 +476,8 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
               @if (message().isSaved && !message().deletedAt) {
                 <span
                   class="vc-msg__status vc-msg__status--saved"
-                  title="Mensagem salva"
-                  aria-label="Mensagem salva"
+                  [title]="ui.bubbleSaved"
+                  [attr.aria-label]="ui.bubbleSaved"
                 >
                   <svg
                     width="12"
@@ -508,7 +510,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
             <button
               type="button"
               class="vc-msg__toolbar-btn vc-msg__more"
-              aria-label="Ações da mensagem"
+              [attr.aria-label]="ui.bubbleActions"
               aria-haspopup="menu"
               [cdkMenuTriggerFor]="actionsMenu"
               [cdkMenuPosition]="actionMenuPositions()"
@@ -524,11 +526,11 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
 
     <ng-template #actionsMenu>
       <div class="vc-msg-menu" cdkMenu>
-        <div class="vc-msg-menu__reactions" role="group" aria-label="Adicionar reação">
+        <div class="vc-msg-menu__reactions" role="group" [attr.aria-label]="ui.bubbleAddReaction">
           @for (emoji of emojiOptions; track emoji) {
             <button
               type="button"
-              [attr.aria-label]="'Reagir com ' + emoji"
+              [attr.aria-label]="fillTemplate(ui.bubbleReactWith, { emoji })"
               (click)="onQuickReact(emoji)"
             >
               {{ emoji }}
@@ -537,7 +539,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
           <div class="vc-msg__react-more">
             <button
               type="button"
-              aria-label="Mais emojis"
+              [attr.aria-label]="ui.bubbleMoreEmojis"
               aria-haspopup="dialog"
               [attr.aria-expanded]="reactionPickerOpen()"
               (click)="toggleReactionPicker($event)"
@@ -546,6 +548,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
             </button>
             <vc-emoji-picker
               [open]="reactionPickerOpen()"
+              [locale]="emojiLocale()"
               (select)="onQuickReact($event)"
               (closed)="reactionPickerOpen.set(false)"
             />
@@ -553,7 +556,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
         </div>
         @if (showReplyAction()) {
           <button type="button" cdkMenuItem class="vc-msg-menu__item" (click)="reply.emit()">
-            Responder
+            {{ ui.bubbleReply }}
           </button>
         }
         @for (item of menuItems(); track item.id) {
@@ -1042,11 +1045,14 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
   `,
 })
 export class MessageBubble {
+  readonly ui = ui;
+  readonly fillTemplate = fillTemplate;
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
   private readonly channels = inject(ChannelStore);
   private readonly messages = inject(MessageStore);
   private readonly theme = inject(ThemeService);
+  private readonly locales = inject(LocaleService);
   private readonly contextMenu = viewChild(CdkContextMenuTrigger);
 
   readonly message = input.required<ChatMessage>();
@@ -1092,6 +1098,7 @@ export class MessageBubble {
   readonly lightboxOpen = signal(false);
   readonly lightboxStartId = signal<string | null>(null);
   readonly avatarSize = computed(() => (this.theme.density() === 'compact' ? 28 : 34));
+  readonly emojiLocale = computed(() => (this.locales.locale() === 'en' ? 'en' : 'pt'));
   readonly transcribeEnabled = computed(
     () => environment.aiTranscribeEnabled && environment.aiSummarizeEnabled,
   );
@@ -1261,7 +1268,7 @@ export class MessageBubble {
       });
       this.transcript.set(result.text);
     } catch {
-      this.transcript.set('Transcrição indisponível.');
+      this.transcript.set(ui.bubbleTranscriptUnavailable);
     }
   }
 
@@ -1283,7 +1290,9 @@ export class MessageBubble {
   /** Stable accessible name — never replace "Reação {emoji}" with tooltip-only text. */
   reactionAriaLabel(emoji: string): string {
     const tip = this.reactionTooltip(emoji);
-    return tip ? `Reação ${emoji}: ${tip}` : `Reação ${emoji}`;
+    return tip
+      ? fillTemplate(ui.bubbleReactionTip, { emoji, tip })
+      : fillTemplate(ui.bubbleReaction, { emoji });
   }
 
   async loadReactionTooltip(emoji: string): Promise<void> {
@@ -1294,7 +1303,10 @@ export class MessageBubble {
     try {
       const result = await this.api.getReactionUsers(channelId, this.message().id, emoji);
       const names = result.users.slice(0, 10).map((user) => user.displayName);
-      const extra = result.total > names.length ? ` e mais ${result.total - names.length}` : '';
+      const extra =
+        result.total > names.length
+          ? fillTemplate(ui.bubbleAndMore, { n: result.total - names.length })
+          : '';
       const text = names.length ? `${names.join(', ')}${extra}` : '';
       this.reactionTooltips.update((current) => ({ ...current, [emoji]: text }));
     } catch {

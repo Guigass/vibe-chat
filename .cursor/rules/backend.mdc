@@ -21,3 +21,6 @@ globs:
 - Migrations + RLS quando o schema mudar.
 - Preferir Testcontainers em integração de persistência.
 - Validar com `task test`, `task test:architecture` e, se aplicável, `task test:integration`.
+- Copy visível ao usuário (e-mail, descrição de slash) vai no catálogo por
+  locale; erro de API é código em inglês. Sem string de UI solta no C# — ver
+  regra `i18n`.

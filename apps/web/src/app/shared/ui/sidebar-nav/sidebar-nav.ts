@@ -11,6 +11,7 @@ import { ChannelItem } from '../channel-item/channel-item';
 import { Button } from '../button/button';
 import { Input } from '../input/input';
 import { VcTooltip } from '../tooltip/tooltip';
+import { fillTemplate, ui } from '../../../core/i18n/strings';
 
 function matchesFilter(text: string, query: string): boolean {
   if (!query) return true;
@@ -25,29 +26,29 @@ function matchesFilter(text: string, query: string): boolean {
     <nav
       class="vc-sidebar-nav vc-anim-sidebar"
       [class.vc-sidebar-nav--compact]="compact()"
-      aria-label="Spaces e channels"
+      [attr.aria-label]="ui.navAria"
     >
       @if (!compact()) {
         <div class="vc-sidebar-nav__filter">
           <vc-input
             controlId="vc-nav-filter"
-            ariaLabel="Filtrar canais, recentes e membros"
-            placeholder="Filtrar canais, recentes e membros…"
+            [ariaLabel]="ui.navFilterAria"
+            [placeholder]="ui.navFilterPh"
             [(value)]="filterQuery"
           />
         </div>
       }
 
       @if (hasFilter() && isEmpty()) {
-        <p class="vc-sidebar-nav__empty" role="status">Nenhum resultado para “{{ filterQuery().trim() }}”.</p>
+        <p class="vc-sidebar-nav__empty" role="status">{{ fillTemplate(ui.navFilterEmpty, { query: filterQuery().trim() }) }}</p>
       }
 
       @if (filteredGroups().length) {
-        <section class="vc-sidebar-nav__block" aria-label="Canais">
+        <section class="vc-sidebar-nav__block" [attr.aria-label]="ui.navChannels">
           @for (group of filteredGroups(); track group.space?.id ?? 'ungrouped') {
             <div class="vc-sidebar-nav__space">
               @if (!compact()) {
-                <p class="vc-sidebar-nav__label">{{ group.space?.name ?? 'Outros' }}</p>
+                <p class="vc-sidebar-nav__label">{{ group.space?.name ?? ui.navOthers }}</p>
               }
               <ul>
                 @for (channel of group.channels; track channel.id) {
@@ -72,47 +73,47 @@ function matchesFilter(text: string, query: string): boolean {
             <div class="vc-sidebar-nav__create">
               @if (!createOpen()) {
                 <button type="button" class="vc-sidebar-nav__create-toggle" (click)="createOpen.set(true)">
-                  Novo channel
+                  {{ ui.navNewChannel }}
                 </button>
               } @else {
                 <form class="vc-sidebar-nav__form" (submit)="submitCreate($event)">
                   <vc-input
                     controlId="vc-create-channel"
-                    label="Nome do channel"
-                    placeholder="ex.: roadmap"
+                    [label]="ui.navChannelName"
+                    [placeholder]="ui.navChannelNamePh"
                     [(value)]="channelName"
                   />
                   <label class="vc-sidebar-nav__select">
                     <span>Space</span>
                     <select [value]="selectedSpaceId()" (change)="onSpaceChange($event)">
-                      <option value="">Sem space</option>
+                      <option value="">{{ ui.navNoSpace }}</option>
                       @for (space of spaces(); track space.id) {
                         <option [value]="space.id">{{ space.name }}</option>
                       }
-                      <option value="__new__">Novo space…</option>
+                      <option value="__new__">{{ ui.navNewSpace }}</option>
                     </select>
                   </label>
                   @if (selectedSpaceId() === '__new__') {
                     <vc-input
                       controlId="vc-create-space"
-                      label="Nome do space"
-                      placeholder="ex.: Produto"
+                      [label]="ui.navSpaceName"
+                      [placeholder]="ui.navSpaceNamePh"
                       [(value)]="newSpaceName"
                     />
                   }
                   <label class="vc-sidebar-nav__select">
-                    <span>Tipo</span>
+                    <span>{{ ui.navType }}</span>
                     <select [value]="channelType()" (change)="onTypeChange($event)">
-                      <option value="Public">Público</option>
-                      <option value="Private">Privado</option>
+                      <option value="Public">{{ ui.navPublic }}</option>
+                      <option value="Private">{{ ui.navPrivate }}</option>
                     </select>
                   </label>
                   @if (createError()) {
                     <p class="vc-sidebar-nav__error" role="alert">{{ createError() }}</p>
                   }
                   <div class="vc-sidebar-nav__form-actions">
-                    <vc-button type="submit" [loading]="creating()" [disabled]="creating()">Criar</vc-button>
-                    <vc-button type="button" variant="ghost" (click)="cancelCreate()">Cancelar</vc-button>
+                    <vc-button type="submit" [loading]="creating()" [disabled]="creating()">{{ ui.create }}</vc-button>
+                    <vc-button type="button" variant="ghost" (click)="cancelCreate()">{{ ui.cancel }}</vc-button>
                   </div>
                 </form>
               }
@@ -122,9 +123,9 @@ function matchesFilter(text: string, query: string): boolean {
       }
 
       @if (filteredDirects().length) {
-        <section class="vc-sidebar-nav__block" aria-label="Recentes">
+        <section class="vc-sidebar-nav__block" [attr.aria-label]="ui.navRecent">
           @if (!compact()) {
-            <p class="vc-sidebar-nav__label">Recentes</p>
+            <p class="vc-sidebar-nav__label">{{ ui.navRecent }}</p>
           }
           <ul>
             @for (channel of filteredDirects(); track channel.id) {
@@ -147,16 +148,16 @@ function matchesFilter(text: string, query: string): boolean {
       }
 
       @if (filteredMembers().length) {
-        <section class="vc-sidebar-nav__block" aria-label="Membros">
+        <section class="vc-sidebar-nav__block" [attr.aria-label]="ui.navMembers">
           @if (!compact()) {
-            <p class="vc-sidebar-nav__label">Membros</p>
+            <p class="vc-sidebar-nav__label">{{ ui.navMembers }}</p>
             <button
               type="button"
               class="vc-sidebar-nav__create-toggle"
               data-testid="group-dm-picker-toggle"
               (click)="pickerOpen.set(!pickerOpen())"
             >
-              {{ pickerOpen() ? 'Cancelar conversa' : 'Nova conversa' }}
+              {{ pickerOpen() ? ui.navCancelConversation : ui.navNewConversation }}
             </button>
             @if (pickerOpen()) {
               <div class="vc-sidebar-nav__picker" data-testid="group-dm-picker">
@@ -171,7 +172,7 @@ function matchesFilter(text: string, query: string): boolean {
                   </div>
                 }
                 <p class="vc-sidebar-nav__picker-hint">
-                  {{ selectedIds().length >= 2 ? 'DM em grupo' : 'Selecione 2 ou mais para um grupo' }}
+                  {{ selectedIds().length >= 2 ? ui.navGroupDm : ui.navGroupDmHint }}
                 </p>
                 <vc-button
                   type="button"
@@ -179,7 +180,7 @@ function matchesFilter(text: string, query: string): boolean {
                   [disabled]="selectedIds().length === 0"
                   (click)="confirmPicker()"
                 >
-                  Abrir conversa
+                  {{ ui.navOpenConversation }}
                 </vc-button>
               </div>
             }
@@ -403,6 +404,8 @@ function matchesFilter(text: string, query: string): boolean {
   `,
 })
 export class SidebarNav {
+  readonly ui = ui;
+  readonly fillTemplate = fillTemplate;
   readonly groups = input.required<SpaceGroup[]>();
   readonly spaces = input<Space[]>([]);
   readonly directs = input<Channel[]>([]);
@@ -501,7 +504,7 @@ export class SidebarNav {
   }
 
   memberLabel(member: WorkspaceMember): string {
-    return `Mensagem para ${member.displayName}`;
+    return fillTemplate(ui.navMessageTo, { name: member.displayName });
   }
 
   onMemberClick(userId: string): void {
@@ -559,11 +562,11 @@ export class SidebarNav {
     event.preventDefault();
     const name = this.channelName().trim();
     if (!name) {
-      this.createError.set('Informe o nome do channel.');
+      this.createError.set(ui.navNeedChannelName);
       return;
     }
     if (this.selectedSpaceId() === '__new__' && !this.newSpaceName().trim()) {
-      this.createError.set('Informe o nome do novo space.');
+      this.createError.set(ui.navNeedSpaceName);
       return;
     }
 
@@ -580,7 +583,7 @@ export class SidebarNav {
       });
       this.cancelCreate();
     } catch (err) {
-      this.createError.set(err instanceof Error ? err.message : 'Falha ao criar channel');
+      this.createError.set(err instanceof Error ? err.message : ui.navCreateChannelError);
     } finally {
       this.creating.set(false);
     }

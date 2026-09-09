@@ -35,6 +35,7 @@ import {
   shouldStickTimelineToBottom,
   type TimelineScrollAnchor,
 } from './timeline-scroll';
+import { fillTemplate, ui } from '../../../core/i18n/strings';
 
 const NEAR_BOTTOM_PX = 80;
 const NEAR_TOP_PX = 120;
@@ -62,8 +63,8 @@ const NEAR_TOP_PX = 120;
         </div>
       } @else if (!messages.forActiveChannel().length) {
         <vc-empty-state
-          title="Canal em silêncio"
-          description="Envie a primeira mensagem. O status mostrará enviando → enviada/salva sem fingir persistência."
+          [title]="ui.timelineEmptyTitle"
+          [description]="ui.timelineEmptyBody"
         />
       } @else {
         @if (messages.paginationForActive().loadingOlder) {
@@ -78,11 +79,11 @@ const NEAR_TOP_PX = 120;
             data-testid="timeline-retry-older"
             (click)="messages.retryLoadOlder()"
           >
-            Não foi possível carregar — tentar novamente
+            {{ ui.timelineLoadRetry }}
           </button>
         } @else if (atConversationStart()) {
           <div class="timeline__start" data-testid="timeline-start" role="status">
-            Início da conversa
+            {{ ui.timelineStart }}
           </div>
         }
         <div class="timeline__list">
@@ -102,10 +103,10 @@ const NEAR_TOP_PX = 120;
                 <div
                   class="timeline__unread"
                   role="separator"
-                  aria-label="Novas mensagens"
+                  [attr.aria-label]="ui.timelineNewMessages"
                   data-testid="timeline-unread"
                 >
-                  <span>Novas mensagens</span>
+                  <span>{{ ui.timelineNewMessages }}</span>
                 </div>
               }
               @case ('stack') {
@@ -365,6 +366,7 @@ const NEAR_TOP_PX = 120;
   `,
 })
 export class Timeline {
+  readonly ui = ui;
   readonly messages = inject(MessageStore);
   readonly channels = inject(ChannelStore);
   private readonly pins = inject(PinStore);
@@ -396,7 +398,9 @@ export class Timeline {
   );
   readonly jumpLabel = computed(() => {
     const count = this.newWhileAway();
-    return count > 0 ? `Ir para a mais recente · ${count}` : 'Ir para a mais recente';
+    return count > 0
+      ? fillTemplate(ui.timelineJumpLatestCount, { count })
+      : ui.timelineJumpLatest;
   });
   readonly atConversationStart = computed(
     () =>
@@ -748,7 +752,7 @@ export class Timeline {
     if (this.unreadAnnouncedFor === channelId) return;
     if (!this.timelineItems().some((item) => item.kind === 'unread')) return;
     this.unreadAnnouncedFor = channelId;
-    this.unreadLive.set('Novas mensagens');
+    this.unreadLive.set(ui.timelineNewMessages);
     setTimeout(() => this.unreadLive.set(''), 800);
   }
 

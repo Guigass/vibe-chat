@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api/api.service';
 import { SensitiveSettings } from '../../shared/models/chat.models';
 import { AdminContextService } from './admin-context.service';
+import { ui } from '../../core/i18n/strings';
 import { AdminSettingsPage } from './admin-settings.page';
 
 const baseSettings: SensitiveSettings = {
@@ -156,9 +157,9 @@ describe('AdminSettingsPage', () => {
     expect(host.textContent).toContain('••••ey99');
     expect(host.textContent).toContain('••••rd42');
     expect(host.textContent).not.toContain('sk-test');
-    expect(host.textContent).toContain('Salvar configurações');
-    expect(host.textContent).toContain('Substituir chave');
-    expect(host.textContent).toContain('Kill switch da instância (IA)');
+    expect(host.textContent).toContain(ui.adminSaveSettings);
+    expect(host.textContent).toContain(ui.adminReplaceKey);
+    expect(host.textContent).toContain(ui.adminAiKill);
     expect(host.textContent).toContain('Web Push / VAPID');
   });
 
@@ -236,9 +237,7 @@ describe('AdminSettingsPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Criptografia indisponível',
-    );
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(ui.adminCryptoUnavailable);
   });
 
   it('groups sections in a sensible order', () => {
@@ -246,10 +245,10 @@ describe('AdminSettingsPage', () => {
       (fixture.nativeElement as HTMLElement).querySelectorAll('.settings__section-title'),
     ).map((el) => el.textContent?.trim());
     expect(titles).toEqual([
-      'Integrações',
-      'Limites operacionais',
-      'Retenção e exportação',
-      'Criptografia',
+      ui.adminIntegrations,
+      ui.adminLimits,
+      ui.adminRetentionExport,
+      ui.adminEncryption,
     ]);
   });
 });

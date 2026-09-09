@@ -1,26 +1,24 @@
 <p class="admin-panel__lead">
-  Keycloak autentica; membership + diretivas (papéis) autorizam neste workspace.
-  Sem self-signup — admin convida por e-mail e atribui o papel.
+  {{ ui.adminMembersLead }}
 </p>
 
 @if (canInvite()) {
   <form class="invite admin-panel" (submit)="onInviteSubmit($event)" aria-labelledby="invite-heading">
-    <h2 id="invite-heading" class="invite__title">Convidar membro</h2>
+    <h2 id="invite-heading" class="invite__title">{{ ui.adminInviteTitle }}</h2>
     <p class="invite__hint">
-      Crie a identidade no IdP com o mesmo e-mail; no primeiro login o perfil pending é
-      vinculado e a membership já vale.
+      {{ ui.adminInviteHint }}
     </p>
     <div class="invite__row">
       <label class="invite__field">
-        <span>E-mail</span>
+        <span>{{ ui.adminEmail }}</span>
         <input name="email" type="email" required autocomplete="email" [disabled]="inviteBusy()" />
       </label>
       <label class="invite__field">
-        <span>Nome (opcional)</span>
+        <span>{{ ui.adminNameOptional }}</span>
         <input name="displayName" type="text" maxlength="160" autocomplete="name" [disabled]="inviteBusy()" />
       </label>
       <label class="invite__field">
-        <span>Papel</span>
+        <span>{{ ui.adminRole }}</span>
         <select name="role" class="roles__select" [disabled]="inviteBusy()">
           @for (role of assignableRoles(); track role) {
             <option [value]="role" [selected]="role === 'Member'">{{ role }}</option>
@@ -28,7 +26,7 @@
         </select>
       </label>
       <button type="submit" class="admin-btn" [disabled]="inviteBusy()">
-        {{ inviteBusy() ? 'Convidando…' : 'Convidar' }}
+        {{ inviteBusy() ? ui.adminInviting : ui.adminInvite }}
       </button>
     </div>
   </form>
@@ -45,48 +43,48 @@
 }
 
 @if (loading()) {
-  <p class="admin-empty">Carregando membros…</p>
+  <p class="admin-empty">{{ ui.adminLoadingMembers }}</p>
 } @else if (loadError()) {
-  <p class="admin-empty">Não foi possível carregar os membros.</p>
+  <p class="admin-empty">{{ ui.adminMembersLoadError }}</p>
 } @else {
-  <div class="admin-filters" aria-label="Filtros de membros">
+  <div class="admin-filters" [attr.aria-label]="ui.adminMembersFilters">
     <label class="admin-filters__field">
-      <span>Busca</span>
+      <span>{{ ui.adminSearch }}</span>
       <input
         type="search"
-        placeholder="Nome ou e-mail"
+        [placeholder]="ui.adminSearchMemberPh"
         [value]="searchQuery()"
         (input)="searchQuery.set($any($event.target).value)"
       />
     </label>
     <label class="admin-filters__field">
-      <span>Papel</span>
+      <span>{{ ui.adminRole }}</span>
       <select [value]="roleFilter()" (change)="roleFilter.set($any($event.target).value)">
         @for (role of roleOptions(); track role) {
-          <option [value]="role">{{ role === 'all' ? 'Todos' : role }}</option>
+          <option [value]="role">{{ role === 'all' ? ui.all : role }}</option>
         }
       </select>
     </label>
     <label class="admin-filters__field">
-      <span>Status</span>
+      <span>{{ ui.adminStatus }}</span>
       <select [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
-        <option value="all">Todos</option>
-        <option value="active">Ativo</option>
+        <option value="all">{{ ui.all }}</option>
+        <option value="active">{{ ui.adminActive }}</option>
         <option value="pending">Pending</option>
       </select>
     </label>
   </div>
 
   @if (filteredMembers().length === 0) {
-    <p class="admin-empty">Nenhum membro corresponde aos filtros.</p>
+    <p class="admin-empty">{{ ui.adminMembersEmpty }}</p>
   } @else {
     <div class="admin-table-wrap">
       <table class="admin-table" style="min-width: 36rem">
         <thead>
           <tr>
-            <th scope="col">Membro</th>
-            <th scope="col">E-mail</th>
-            <th scope="col">Papel</th>
+            <th scope="col">{{ ui.adminMemberCol }}</th>
+            <th scope="col">{{ ui.adminEmail }}</th>
+            <th scope="col">{{ ui.adminRole }}</th>
           </tr>
         </thead>
         <tbody>
@@ -97,7 +95,7 @@
               <td>
                 @if (canEditRole(member)) {
                   <label class="sr-only" [attr.for]="'role-' + member.userId"
-                    >Papel de {{ member.displayName }}</label
+                    >{{ fillTemplate(ui.adminRoleOf, { name: member.displayName }) }}</label
                   >
                   <hlm-select
                     [value]="member.role"

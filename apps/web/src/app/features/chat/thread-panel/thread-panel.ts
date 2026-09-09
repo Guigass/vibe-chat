@@ -14,6 +14,7 @@ import {
   MESSAGE_BODY_MAX_LENGTH,
 } from '../../../shared/models/chat.models';
 import { updateTextareaSelection } from '../../../shared/markdown/markdown-format';
+import { ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-thread-panel',
@@ -25,10 +26,10 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
         <div>
           <h2>Thread</h2>
           @if (threads.active(); as active) {
-            <p>{{ active.replyCount }} {{ active.replyCount === 1 ? 'resposta' : 'respostas' }}</p>
+            <p>{{ active.replyCount }} {{ active.replyCount === 1 ? ui.menuReply : ui.menuReplies }}</p>
           }
         </div>
-        <vc-icon-button label="Fechar thread" (click)="threads.close()">
+        <vc-icon-button [label]="ui.threadClose" (click)="threads.close()">
           <span aria-hidden="true">×</span>
         </vc-icon-button>
       </header>
@@ -57,8 +58,8 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
 
           @if (!threads.sortedMessages().length) {
             <vc-empty-state
-              title="Sem respostas ainda"
-              description="Escreva abaixo para continuar a conversa nesta thread."
+              [title]="ui.threadEmptyTitle"
+              [description]="ui.threadEmptyBody"
             />
           } @else {
             <div class="thread__list">
@@ -83,13 +84,13 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
         @if (threads.replyTarget(); as cite) {
           <div class="thread__reply" role="status">
             <div class="thread__reply-meta">
-              <strong>Respondendo a {{ cite.authorName }}</strong>
+              <strong>{{ ui.composerReplyingTo }} {{ cite.authorName }}</strong>
               <span>{{ citePreview(cite.body) }}</span>
             </div>
             <button
               type="button"
               class="ghost"
-              aria-label="Cancelar citação"
+              [attr.aria-label]="ui.composerCancelQuote"
               (click)="threads.clearReplyTarget()"
             >
               ×
@@ -99,13 +100,13 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
         @if (threads.editingMessage(); as editing) {
           <div class="thread__reply" role="status">
             <div class="thread__reply-meta">
-              <strong>Editando mensagem</strong>
+              <strong>{{ ui.composerEditing }}</strong>
               <span>{{ citePreview(editing.body) }}</span>
             </div>
             <button
               type="button"
               class="ghost"
-              aria-label="Cancelar edição"
+              [attr.aria-label]="ui.composerCancelEdit"
               (click)="cancelEdit()"
             >
               ×
@@ -115,7 +116,7 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
         <vc-textarea
           #threadTextarea
           [(value)]="draft"
-          [placeholder]="threads.editingMessage() ? 'Editar mensagem' : 'Responder na thread…'"
+          [placeholder]="threads.editingMessage() ? ui.composerEdit : ui.threadReplyPh"
           [label]="''"
           (keydown)="onKeydown($event)"
         />
@@ -129,7 +130,7 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
           </p>
         }
         <vc-button type="submit" [disabled]="submitDisabled()" [loading]="threads.sending()">
-          {{ threads.editingMessage() ? 'Salvar' : 'Responder' }}
+          {{ threads.editingMessage() ? ui.composerSave : ui.threadReply }}
         </vc-button>
       </form>
     </div>
@@ -239,6 +240,7 @@ import { updateTextareaSelection } from '../../../shared/markdown/markdown-forma
   `,
 })
 export class ThreadPanel {
+  readonly ui = ui;
   readonly threads = inject(ThreadStore);
   readonly messages = inject(MessageStore);
   private readonly hub = inject(ChatHubService);

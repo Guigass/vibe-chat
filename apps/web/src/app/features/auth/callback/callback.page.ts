@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
+import { ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-callback-page',
@@ -11,7 +12,7 @@ import { AuthService } from '../../../core/auth/auth.service';
       @if (error()) {
         <p role="alert">{{ error() }}</p>
       } @else {
-        <p>Concluindo autenticação…</p>
+        <p>{{ ui.authCompleting }}</p>
       }
     </section>
   `,
@@ -33,6 +34,7 @@ import { AuthService } from '../../../core/auth/auth.service';
   `,
 })
 export class CallbackPage implements OnInit {
+  readonly ui = ui;
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   readonly error = signal<string | null>(null);
@@ -42,7 +44,7 @@ export class CallbackPage implements OnInit {
       await this.auth.completeLogin();
       await this.router.navigateByUrl('/app');
     } catch (err) {
-      this.error.set(err instanceof Error ? err.message : 'Falha no callback OIDC');
+      this.error.set(err instanceof Error ? err.message : ui.authCallbackFailed);
     }
   }
 }

@@ -1,4 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
+import { fillTemplate, ui } from '../../../core/i18n/strings';
 import { PollSummary } from '../../models/chat.models';
 import { pollIsClosed, pollIsTie, pollLeaderIndexes } from '../../polls/poll-summary';
 
@@ -12,14 +13,14 @@ import { pollIsClosed, pollIsTie, pollLeaderIndexes } from '../../polls/poll-sum
           <strong>{{ card.question }}</strong>
           <span class="poll__meta">
             @if (closed()) {
-              Encerrada
+              {{ ui.pollClosed }}
             } @else if (card.allowMultiple) {
-              Vários votos
+              {{ ui.pollMultiple }}
             } @else {
-              Escolha única
+              {{ ui.pollSingle }}
             }
             @if (card.anonymous) {
-              · Anônima
+              {{ ui.pollAnonymous }}
             }
           </span>
         </header>
@@ -43,12 +44,14 @@ import { pollIsClosed, pollIsTie, pollLeaderIndexes } from '../../polls/poll-sum
           }
         </ul>
         <footer class="poll__foot">
-          <span>{{ card.totalVotes }} voto{{ card.totalVotes === 1 ? '' : 's' }}</span>
+          <span>{{
+            fillTemplate(card.totalVotes === 1 ? ui.pollVote : ui.pollVotes, { n: card.totalVotes })
+          }}</span>
           @if (closed() && tie()) {
-            <span>Empate</span>
+            <span>{{ ui.pollTie }}</span>
           }
           @if (!closed() && canClose()) {
-            <button type="button" class="poll__close" (click)="close.emit()">Encerrar</button>
+            <button type="button" class="poll__close" (click)="close.emit()">{{ ui.pollClose }}</button>
           }
         </footer>
       </section>
@@ -135,6 +138,8 @@ import { pollIsClosed, pollIsTie, pollLeaderIndexes } from '../../polls/poll-sum
   `,
 })
 export class PollCard {
+  readonly ui = ui;
+  readonly fillTemplate = fillTemplate;
   readonly poll = input.required<PollSummary>();
   readonly canClose = input(false);
   readonly toggle = output<string>();

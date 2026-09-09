@@ -1,4 +1,5 @@
 import { Component, input } from '@angular/core';
+import { fillTemplate, ui } from '../../../core/i18n/strings';
 import { TypingState } from '../../models/chat.models';
 
 @Component({
@@ -12,9 +13,9 @@ import { TypingState } from '../../models/chat.models';
         </span>
         <span>
           @if (users().length === 1) {
-            {{ users()[0].displayName }} está digitando…
+            {{ fillTemplate(ui.typingOne, { name: users()[0].displayName }) }}
           } @else {
-            {{ users().length }} pessoas digitando…
+            {{ fillTemplate(ui.typingMany, { n: users().length }) }}
           }
         </span>
       </div>
@@ -50,5 +51,7 @@ import { TypingState } from '../../models/chat.models';
   `,
 })
 export class TypingIndicator {
+  readonly ui = ui;
+  readonly fillTemplate = fillTemplate;
   readonly users = input<TypingState[]>([]);
 }

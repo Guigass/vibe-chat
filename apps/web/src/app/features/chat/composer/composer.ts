@@ -23,6 +23,8 @@ import {
 } from '../../../shared/markdown/slash-tokens';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ApiService } from '../../../core/api/api.service';
+import { LocaleService } from '../../../core/i18n/locale.service';
+import { fillTemplate, ui } from '../../../core/i18n/strings';
 import { MessageStore } from '../../../core/services/message.store';
 import { replyPreviewText } from '../../../core/services/message-sync';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
@@ -53,7 +55,6 @@ import { SlashCommandsService } from './slash-commands.service';
 import { CommandPaletteService } from '../../../core/services/command-palette.service';
 import { EmojiPicker } from '../../../shared/ui/emoji-picker/emoji-picker';
 import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
-import { ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-composer',
@@ -65,13 +66,13 @@ import { ui } from '../../../core/i18n/strings';
         @if (messages.replyTarget(); as cite) {
           <div class="composer__reply" role="status">
             <div class="composer__reply-meta">
-              <strong>Respondendo a {{ cite.authorName }}</strong>
+              <strong>{{ ui.composerReplyingTo }} {{ cite.authorName }}</strong>
               <span>{{ citePreview(cite.body) }}</span>
             </div>
             <button
               type="button"
               class="ghost"
-              aria-label="Cancelar citação"
+              [attr.aria-label]="ui.composerCancelQuote"
               (click)="messages.clearReplyTarget()"
             >
               ×
@@ -81,13 +82,13 @@ import { ui } from '../../../core/i18n/strings';
         @if (messages.editingMessage(); as editing) {
           <div class="composer__reply" role="status">
             <div class="composer__reply-meta">
-              <strong>Editando mensagem</strong>
+              <strong>{{ ui.composerEditing }}</strong>
               <span>{{ citePreview(editing.body) }}</span>
             </div>
             <button
               type="button"
               class="ghost"
-              aria-label="Cancelar edição"
+              [attr.aria-label]="ui.composerCancelEdit"
               (click)="cancelEdit()"
             >
               ×
@@ -95,7 +96,7 @@ import { ui } from '../../../core/i18n/strings';
           </div>
         }
         @if (attachments.items().length) {
-          <ul class="composer__attachments" aria-label="Anexos pendentes">
+          <ul class="composer__attachments" [attr.aria-label]="ui.composerPendingAttachments">
             @for (item of attachments.items(); track item.localId) {
               <li class="composer__attachment" [class.is-failed]="item.status === 'failed'">
                 <span class="composer__attachment-icon" aria-hidden="true">
@@ -145,7 +146,7 @@ import { ui } from '../../../core/i18n/strings';
                     [src]="item.previewUrl"
                     controls
                     preload="metadata"
-                    [attr.aria-label]="'Prévia de ' + item.file.name"
+                    [attr.aria-label]="fillTemplate(ui.composerPreviewOf, { name: item.file.name })"
                   ></video>
                 }
                 <div class="composer__attachment-meta">
@@ -157,18 +158,18 @@ import { ui } from '../../../core/i18n/strings';
                     }
                   </span>
                   @if (item.status === 'validating') {
-                    <span class="composer__attachment-ready">Validando vídeo…</span>
+                    <span class="composer__attachment-ready">{{ ui.composerValidatingVideo }}</span>
                   } @else if (item.status === 'uploading' || item.status === 'queued') {
                     <progress
                       class="composer__attachment-progress"
                       [value]="item.progress"
                       max="100"
-                      [attr.aria-label]="'Progresso de ' + item.file.name"
+                      [attr.aria-label]="fillTemplate(ui.composerProgressOf, { name: item.file.name })"
                     ></progress>
                   } @else if (item.status === 'failed') {
                     <span class="composer__attachment-error" role="alert">{{ item.error }}</span>
                   } @else if (item.status === 'ready') {
-                    <span class="composer__attachment-ready">Pronto</span>
+                    <span class="composer__attachment-ready">{{ ui.composerReady }}</span>
                   }
                 </div>
                 <div class="composer__attachment-actions">
@@ -177,25 +178,25 @@ import { ui } from '../../../core/i18n/strings';
                       type="button"
                       class="ghost"
                       (click)="attachments.cancelUpload(item.localId)"
-                      [attr.aria-label]="'Cancelar upload de ' + item.file.name"
+                      [attr.aria-label]="fillTemplate(ui.composerCancelUploadOf, { name: item.file.name })"
                     >
-                      Cancelar
+                      {{ ui.cancel }}
                     </button>
                   } @else if (item.status === 'failed') {
                     <button
                       type="button"
                       class="ghost"
                       (click)="attachments.retry(item.localId)"
-                      [attr.aria-label]="'Tentar novamente ' + item.file.name"
+                      [attr.aria-label]="fillTemplate(ui.composerRetryOf, { name: item.file.name })"
                     >
-                      Tentar novamente
+                      {{ ui.retry }}
                     </button>
                   }
                   <button
                     type="button"
                     class="ghost composer__attachment-remove"
                     (click)="attachments.remove(item.localId)"
-                    [attr.aria-label]="'Remover ' + item.file.name"
+                    [attr.aria-label]="fillTemplate(ui.composerRemoveOf, { name: item.file.name })"
                   >
                     ×
                   </button>
@@ -216,40 +217,40 @@ import { ui } from '../../../core/i18n/strings';
         @if (pollComposerOpen()) {
           <div class="composer__poll">
             <header class="composer__poll-head">
-              <strong>Nova enquete</strong>
-              <button type="button" class="ghost" (click)="closePollComposer()">Cancelar</button>
+              <strong>{{ ui.composerNewPoll }}</strong>
+              <button type="button" class="ghost" (click)="closePollComposer()">{{ ui.cancel }}</button>
             </header>
             <vc-input
-              label="Pergunta"
-              placeholder="O que você quer perguntar?"
+              [label]="ui.composerPollQuestion"
+              [placeholder]="ui.composerPollQuestionPh"
               [(value)]="pollQuestion"
             />
             @for (option of pollOptions(); track $index; let i = $index) {
               <vc-input
-                [label]="'Opção ' + (i + 1)"
+                [label]="fillTemplate(ui.composerPollOptionN, { n: i + 1 })"
                 [value]="option"
                 (valueChange)="setPollOption(i, $event)"
               />
             }
             <div class="composer__poll-tools">
               <button type="button" class="ghost" (click)="addPollOption()" [disabled]="pollOptions().length >= 10">
-                Mais opção
+                {{ ui.composerPollAddOption }}
               </button>
               <label class="composer__poll-toggle">
                 <input type="checkbox" [checked]="pollAllowMultiple()" (change)="pollAllowMultiple.set($any($event.target).checked)" />
-                Vários votos
+                {{ ui.composerPollMultiple }}
               </label>
               <label class="composer__poll-toggle">
                 <input type="checkbox" [checked]="pollAnonymous()" (change)="pollAnonymous.set($any($event.target).checked)" />
-                Anônima
+                {{ ui.composerPollAnonymous }}
               </label>
             </div>
             <label class="composer__poll-deadline">
-              Prazo (opcional)
+              {{ ui.composerPollDeadline }}
               <input type="datetime-local" [value]="pollClosesAt()" (input)="pollClosesAt.set($any($event.target).value)" />
             </label>
             <div class="composer__poll-footer">
-              <vc-button type="button" variant="primary" (click)="submitPoll($event)">Publicar enquete</vc-button>
+              <vc-button type="button" variant="primary" (click)="submitPoll($event)">{{ ui.composerPollPublish }}</vc-button>
             </div>
           </div>
         }
@@ -263,13 +264,13 @@ import { ui } from '../../../core/i18n/strings';
             <header>
               <strong>
                 @switch (notice.kind) {
-                  @case ('help') { Ajuda }
-                  @case ('summary') { Resumo }
-                  @case ('error') { Comando }
-                  @default { Comando }
+                  @case ('help') { {{ ui.composerHelp }} }
+                  @case ('summary') { {{ ui.composerSummary }} }
+                  @case ('error') { {{ ui.composerCommand }} }
+                  @default { {{ ui.composerCommand }} }
                 }
               </strong>
-              <button type="button" class="ghost" aria-label="Fechar" (click)="slash.clearNotice()">
+              <button type="button" class="ghost" [attr.aria-label]="ui.close" (click)="slash.clearNotice()">
                 ×
               </button>
             </header>
@@ -285,27 +286,27 @@ import { ui } from '../../../core/i18n/strings';
         }
 
         <div class="composer__shell">
-          <div class="composer__format" role="toolbar" aria-label="Formatação de texto">
-            <vc-icon-button label="Negrito" (click)="applyFormat('bold')">
+          <div class="composer__format" role="toolbar" [attr.aria-label]="ui.composerFormatting">
+            <vc-icon-button [label]="ui.composerBold" (click)="applyFormat('bold')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8" />
               </svg>
             </vc-icon-button>
-            <vc-icon-button label="Itálico" (click)="applyFormat('italic')">
+            <vc-icon-button [label]="ui.composerItalic" (click)="applyFormat('italic')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <line x1="19" x2="10" y1="4" y2="4" />
                 <line x1="14" x2="5" y1="20" y2="20" />
                 <line x1="15" x2="9" y1="4" y2="20" />
               </svg>
             </vc-icon-button>
-            <vc-icon-button label="Riscado" (click)="applyFormat('strike')">
+            <vc-icon-button [label]="ui.composerStrike" (click)="applyFormat('strike')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M16 4H9a3 3 0 0 0-2.83 4" />
                 <path d="M14 12a4 4 0 0 1 0 8H6" />
                 <line x1="4" x2="20" y1="12" y2="12" />
               </svg>
             </vc-icon-button>
-            <vc-icon-button label="Código inline" (click)="applyFormat('code')">
+            <vc-icon-button [label]="ui.composerInlineCode" (click)="applyFormat('code')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="m16 18 6-6-6-6" />
                 <path d="m8 6-6 6 6 6" />
@@ -315,7 +316,7 @@ import { ui } from '../../../core/i18n/strings';
               <button
                 type="button"
                 class="composer__icon-btn"
-                aria-label="Inserir emoji"
+                [attr.aria-label]="ui.composerInsertEmoji"
                 aria-haspopup="dialog"
                 [attr.aria-expanded]="emojiPickerOpen()"
                 (click)="toggleEmojiPicker($event)"
@@ -331,6 +332,7 @@ import { ui } from '../../../core/i18n/strings';
               </button>
               <vc-emoji-picker
                 [open]="emojiPickerOpen()"
+                [locale]="emojiLocale()"
                 (select)="insertEmoji($event)"
                 (closed)="emojiPickerOpen.set(false)"
               />
@@ -370,7 +372,7 @@ import { ui } from '../../../core/i18n/strings';
                 [disabled]="messages.sending() || !attachments.canAcceptMore()"
                 (change)="onFileSelected($event)"
                 accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,video/mp4,video/webm"
-                aria-label="Anexar arquivo"
+                [attr.aria-label]="ui.composerAttachFile"
               />
               <span class="composer__attach-face" aria-hidden="true">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -380,7 +382,7 @@ import { ui } from '../../../core/i18n/strings';
             </label>
             @if (!channels.activeChannel()?.isDirect) {
               <vc-icon-button
-                label="Enquete"
+                [label]="ui.composerPoll"
                 [disabled]="messages.sending() || messages.editingMessage() !== null"
                 (click)="openPollComposer()"
               >
@@ -395,7 +397,7 @@ import { ui } from '../../../core/i18n/strings';
             @if (audioRecorder.supported) {
               @if (audioRecorder.phase() === 'idle') {
                 <vc-icon-button
-                  label="Gravar áudio"
+                  [label]="ui.composerRecordAudio"
                   [disabled]="messages.sending() || !attachments.canAcceptMore()"
                   (click)="startRecording()"
                 >
@@ -409,13 +411,13 @@ import { ui } from '../../../core/i18n/strings';
                 <div class="composer__audio-panel" aria-live="polite">
                   <span class="composer__audio-timer">{{ formatDuration(audioRecorder.elapsedMs()) }}</span>
                   <canvas #liveWave width="120" height="28" aria-hidden="true"></canvas>
-                  <button type="button" class="composer__audio-btn" (click)="stopRecording()" aria-label="Parar gravação">
+                  <button type="button" class="composer__audio-btn" (click)="stopRecording()" [attr.aria-label]="ui.composerStopRecording">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <rect width="18" height="18" x="3" y="3" rx="2" />
                       </svg>
-                      Parar
+                      {{ ui.composerStop }}
                     </button>
-                  <button type="button" class="composer__audio-btn" (click)="discardRecording()" aria-label="Descartar gravação">
+                  <button type="button" class="composer__audio-btn" (click)="discardRecording()" [attr.aria-label]="ui.composerDiscardRecording">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                       <path d="M10 11v6" />
                       <path d="M14 11v6" />
@@ -423,25 +425,25 @@ import { ui } from '../../../core/i18n/strings';
                       <path d="M3 6h18" />
                       <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                     </svg>
-                    Descartar
+                    {{ ui.composerDiscard }}
                   </button>
                 </div>
               } @else if (audioRecorder.phase() === 'preview') {
                 <div class="composer__audio-panel">
                   @if (audioRecorder.previewUrl(); as previewUrl) {
-                    <audio [src]="previewUrl" controls aria-label="Prévia do áudio"></audio>
+                    <audio [src]="previewUrl" controls [attr.aria-label]="ui.composerAudioPreview"></audio>
                   }
-                  <button type="button" class="composer__audio-btn" (click)="discardRecording()" aria-label="Regravar áudio">
+                  <button type="button" class="composer__audio-btn" (click)="discardRecording()" [attr.aria-label]="ui.composerRerecordAudio">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                       <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                       <path d="M3 3v5h5" />
                     </svg>
-                    Regravar
+                    {{ ui.composerRerecord }}
                   </button>
                 </div>
               }
             } @else {
-              <span class="composer__mic-hint" title="Use o anexo para enviar áudio">Mic indisponível</span>
+              <span class="composer__mic-hint" [attr.title]="ui.composerMicUnavailableTitle">{{ ui.composerMicUnavailable }}</span>
             }
             }
             <vc-button
@@ -902,8 +904,12 @@ export class Composer {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
   private readonly drafts = inject(DraftStoreService);
+  private readonly locales = inject(LocaleService);
 
+  readonly ui = ui;
+  readonly fillTemplate = fillTemplate;
   readonly formatDuration = formatDuration;
+  readonly emojiLocale = computed(() => (this.locales.locale() === 'en' ? 'en' : 'pt'));
 
   readonly draft = signal('');
   readonly validationError = signal<string | null>(null);
@@ -963,8 +969,8 @@ export class Composer {
     const context = this.mentionContext();
     if (!context) return [];
     const base: MentionAutocompleteItem[] = [
-      { kind: 'here', displayName: '@aqui', subtitle: 'Notifica quem está online' },
-      { kind: 'channel', displayName: '@canal', subtitle: 'Notifica todos os membros' },
+      { kind: 'here', displayName: ui.mentionHere, subtitle: ui.mentionHereNotify },
+      { kind: 'channel', displayName: ui.mentionChannel, subtitle: ui.mentionChannelNotify },
       ...this.mentionRemoteItems(),
     ];
     return filterMentionItems(base, context.query, {
@@ -1127,7 +1133,7 @@ export class Composer {
     const recorded = await this.audioRecorder.buildRecordedAudio();
     if (!recorded) {
       this.validationError.set(
-        this.audioRecorder.errorMessage() ?? 'Não foi possível preparar o áudio.',
+        this.audioRecorder.errorMessage() ?? ui.composerAudioPrepareError,
       );
       return;
     }
@@ -1147,7 +1153,7 @@ export class Composer {
       return;
     }
 
-    this.validationError.set('Não foi possível enviar o áudio. Tente novamente.');
+    this.validationError.set(ui.composerAudioSendError);
   }
 
   async onSubmit(event: Event): Promise<void> {
@@ -1179,7 +1185,7 @@ export class Composer {
           const recorded = await this.audioRecorder.stop();
           if (!recorded) {
             this.validationError.set(
-              this.audioRecorder.errorMessage() ?? 'Não foi possível finalizar a gravação.',
+              this.audioRecorder.errorMessage() ?? ui.composerAudioFinishError,
             );
             return;
           }
@@ -1658,17 +1664,17 @@ export class Composer {
     const question = this.pollQuestion().trim();
     const options = this.pollOptions().map((item) => item.trim()).filter(Boolean);
     if (question.length < 1 || question.length > 500 || options.length < 2 || options.length > 10) {
-      this.validationError.set('Informe uma pergunta e 2 a 10 opções.');
+      this.validationError.set(ui.composerPollNeedOptions);
       return;
     }
     if (options.some((option) => option.length > 100)) {
-      this.validationError.set('Cada opção deve ter no máximo 100 caracteres.');
+      this.validationError.set(ui.composerPollOptionTooLong);
       return;
     }
     const closesLocal = this.pollClosesAt().trim();
     const closesAt = closesLocal ? new Date(closesLocal).toISOString() : null;
     if (closesAt && Number.isNaN(Date.parse(closesAt))) {
-      this.validationError.set('Prazo inválido.');
+      this.validationError.set(ui.composerPollDeadlineInvalid);
       return;
     }
     const ok = await this.messages.createPoll({
@@ -1679,7 +1685,7 @@ export class Composer {
       closesAt,
     });
     if (!ok) {
-      this.validationError.set('Não foi possível criar a enquete.');
+      this.validationError.set(ui.composerPollCreateError);
       return;
     }
     this.validationError.set(null);

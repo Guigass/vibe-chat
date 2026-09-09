@@ -10,6 +10,7 @@ import {
   Workspace,
   WorkspaceMember,
 } from '../../shared/models/chat.models';
+import { ui } from '../i18n/strings';
 import { idsEqual } from './message-sync';
 
 @Injectable({ providedIn: 'root' })
@@ -130,7 +131,7 @@ export class ChannelStore {
       this.activeWorkspaceId.set(null);
       this.activeChannelIdSignal.set(null);
       this.usingDemo.set(false);
-      this.errorSignal.set('Não foi possível carregar o workspace. Tente novamente.');
+      this.errorSignal.set(ui.errorLoadWorkspace);
     } finally {
       this.loadingSignal.set(false);
     }
@@ -207,7 +208,7 @@ export class ChannelStore {
       if (first) this.selectChannel(first.id);
       else this.setActiveChannel(null);
     } catch (err) {
-      this.errorSignal.set(err instanceof Error ? err.message : 'Falha ao carregar channels');
+      this.errorSignal.set(err instanceof Error ? err.message : ui.errorLoadChannels);
     }
   }
 
@@ -356,7 +357,7 @@ export class ChannelStore {
 
     if (this.usingDemo() || this.auth.isOfflineDemo()) {
       const members = this.membersSignal().filter((m) => userIds.includes(m.userId));
-      const label = members.map((m) => m.displayName).join(', ') || 'Grupo';
+      const label = members.map((m) => m.displayName).join(', ') || ui.groupFallback;
       const channel: Channel = {
         id: `gdm-${userIds.slice().sort().join('-')}`,
         workspaceId: workspace.id,

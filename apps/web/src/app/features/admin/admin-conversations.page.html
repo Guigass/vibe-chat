@@ -1,35 +1,34 @@
 <p class="admin-panel__lead">
-  Histórico completo por canal/DM/thread (conteúdo, edições, soft-deletes). Distinto do
-  audit log de ações.
+  {{ ui.adminConversationsLead }}
 </p>
 
 @if (loading()) {
-  <p class="admin-empty">Carregando conversas…</p>
+  <p class="admin-empty">{{ ui.adminLoadingConversations }}</p>
 } @else if (loadError()) {
-  <p class="admin-empty">Não foi possível carregar as conversas.</p>
+  <p class="admin-empty">{{ ui.adminConversationsLoadError }}</p>
 } @else {
-  <div class="admin-filters" aria-label="Filtros de conversas">
+  <div class="admin-filters" [attr.aria-label]="ui.adminConversationsFilters">
     <label class="admin-filters__field">
-      <span>Busca</span>
+      <span>{{ ui.adminSearch }}</span>
       <input
         type="search"
-        placeholder="Nome do canal ou DM"
+        [placeholder]="ui.adminSearchConversationPh"
         [value]="searchQuery()"
         (input)="searchQuery.set($any($event.target).value)"
       />
     </label>
     <label class="admin-filters__field">
-      <span>Tipo</span>
+      <span>{{ ui.adminConversationType }}</span>
       <select [value]="typeFilter()" (change)="typeFilter.set($any($event.target).value)">
         @for (type of typeOptions(); track type) {
-          <option [value]="type">{{ type === 'all' ? 'Todos' : type }}</option>
+          <option [value]="type">{{ type === 'all' ? ui.all : type }}</option>
         }
       </select>
     </label>
   </div>
 
   <label class="conv-audit__picker">
-    <span>Conversação</span>
+    <span>{{ ui.adminConversation }}</span>
     <hlm-select
       [value]="selectedConversationId()"
       [disabled]="conversationOptions().length === 0"
@@ -37,7 +36,7 @@
       (valueChange)="onConversationSelected($event)"
     >
       <hlm-select-trigger buttonId="admin-conversation-picker" class="w-full">
-        <hlm-select-value placeholder="Selecione um canal ou DM…" />
+        <hlm-select-value [placeholder]="ui.adminSelectConversation" />
       </hlm-select-trigger>
       <hlm-select-content *hlmSelectPortal>
         <hlm-select-group>
@@ -50,23 +49,23 @@
   </label>
 
   @if (conversationOptions().length === 0) {
-    <p class="admin-empty">Nenhuma conversa corresponde aos filtros.</p>
+    <p class="admin-empty">{{ ui.adminConversationsEmpty }}</p>
   } @else if (conversationMessagesBusy()) {
-    <p class="admin-empty">Carregando mensagens…</p>
+    <p class="admin-empty">{{ ui.adminLoadingMessages }}</p>
   } @else if (conversationMessagesError()) {
-    <p class="admin-empty">Não foi possível carregar o histórico.</p>
+    <p class="admin-empty">{{ ui.adminHistoryLoadError }}</p>
   } @else if (selectedConversationId() && conversationMessages().length === 0) {
-    <p class="admin-empty">Nenhuma mensagem nesta conversa.</p>
+    <p class="admin-empty">{{ ui.adminNoMessages }}</p>
   } @else if (conversationMessages().length > 0) {
     <div class="admin-table-wrap">
       <table class="admin-table" style="min-width: 48rem">
         <thead>
           <tr>
             <th scope="col">Seq</th>
-            <th scope="col">Quando</th>
-            <th scope="col">Autor</th>
-            <th scope="col">Conteúdo</th>
-            <th scope="col">Estado</th>
+            <th scope="col">{{ ui.adminWhen }}</th>
+            <th scope="col">{{ ui.adminAuthor }}</th>
+            <th scope="col">{{ ui.adminContent }}</th>
+            <th scope="col">{{ ui.adminState }}</th>
           </tr>
         </thead>
         <tbody>
@@ -101,25 +100,25 @@
   }
 
   @if (activeThreadId(); as tid) {
-    <div class="conv-audit__thread" aria-label="Replies da thread">
+    <div class="conv-audit__thread" [attr.aria-label]="ui.adminThreadReplies">
       <div class="conv-audit__thread-head">
         <h3>Thread <code class="mono">{{ tid.slice(0, 8) }}</code></h3>
-        <button type="button" class="admin-btn admin-btn--ghost" (click)="closeThread()">Fechar</button>
+        <button type="button" class="admin-btn admin-btn--ghost" (click)="closeThread()">{{ ui.close }}</button>
       </div>
       @if (threadBusy()) {
-        <p class="admin-empty">Carregando thread…</p>
+        <p class="admin-empty">{{ ui.adminLoadingThread }}</p>
       } @else if (threadMessages().length === 0) {
-        <p class="admin-empty">Sem replies nesta thread.</p>
+        <p class="admin-empty">{{ ui.adminNoThreadReplies }}</p>
       } @else {
         <div class="admin-table-wrap">
           <table class="admin-table" style="min-width: 40rem">
             <thead>
               <tr>
                 <th scope="col">Seq</th>
-                <th scope="col">Quando</th>
-                <th scope="col">Autor</th>
-                <th scope="col">Conteúdo</th>
-                <th scope="col">Estado</th>
+                <th scope="col">{{ ui.adminWhen }}</th>
+                <th scope="col">{{ ui.adminAuthor }}</th>
+                <th scope="col">{{ ui.adminContent }}</th>
+                <th scope="col">{{ ui.adminState }}</th>
               </tr>
             </thead>
             <tbody>

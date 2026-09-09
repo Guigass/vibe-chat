@@ -1,5 +1,6 @@
 import { ChatMessage } from '../../../shared/models/chat.models';
 import { isSystemEventBody, parseSystemEventBody, formatSystemEventLabel } from '../../../shared/system-event';
+import { dayRelativeLabel } from '../../../core/i18n/format';
 import { DEFAULT_LOCALE, type AppLocale } from '../../../core/i18n/locale';
 
 export const GROUP_WINDOW_MS = 5 * 60 * 1000;
@@ -92,10 +93,10 @@ export function formatDayLabel(
   const ariaLabel = formatters.aria.format(date);
 
   if (dateKey === todayKey) {
-    return { label: locale === 'en' ? 'Today' : 'Hoje', ariaLabel };
+    return { label: dayRelativeLabel('today'), ariaLabel };
   }
   if (dateKey === yesterdayKey) {
-    return { label: locale === 'en' ? 'Yesterday' : 'Ontem', ariaLabel };
+    return { label: dayRelativeLabel('yesterday'), ariaLabel };
   }
   if (date.getFullYear() === now.getFullYear()) {
     return { label: formatters.dayMonth.format(date), ariaLabel };

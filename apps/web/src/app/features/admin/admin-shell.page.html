@@ -1,7 +1,7 @@
 <div class="admin-shell">
-  <aside class="admin-shell__sidebar" aria-label="Navegação administrativa">
+  <aside class="admin-shell__sidebar" [attr.aria-label]="ui.adminNavAria">
     <p class="admin-shell__brand">VibeChat</p>
-    <a routerLink="/app" class="admin-shell__back">← Voltar ao chat</a>
+    <a routerLink="/app" class="admin-shell__back">{{ ui.adminBackToChat }}</a>
 
     @if (!loading() && ctx.canAccessAdmin()) {
       <nav class="admin-shell__nav">
@@ -35,13 +35,13 @@
 
     <div class="admin-shell__content">
       @if (loading()) {
-        <p class="admin-shell__hint">Carregando console…</p>
+        <p class="admin-shell__hint">{{ ui.adminLoadingConsole }}</p>
       } @else if (!ctx.canAccessAdmin()) {
         <vc-empty-state
-          title="Sem acesso ao admin"
-          description="Esta área é para Owner, Admin ou Auditor. No laboratório local, use o DevAuth Demo."
+          [title]="ui.adminNoAccessHeading"
+          [description]="ui.adminNoAccessBody"
         >
-          <a routerLink="/app" class="admin-shell__back">Voltar ao chat</a>
+          <a routerLink="/app" class="admin-shell__back">{{ ui.adminBackToChatShort }}</a>
         </vc-empty-state>
       } @else {
         <router-outlet (activate)="onChildActivate($event)" />

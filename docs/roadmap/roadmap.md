@@ -317,6 +317,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W10-13 | B/C/D/E | Núcleo plugin — bot/token + envio msgs (B-109) | B-004, B-069, B-021 | [B-109](../product/specs/B-109-api-integracao-envio-mensagens.md) | Planned |
 | W10-14 | B/C/D | Instalar/gerir plugins na instância (B-110) | W10-13 | [B-110](../product/specs/B-110-instalar-plugins.md) | Planned |
 | W10-15 | B/D | Membros do canal — painel direito, add/remove em privado, enviar PV (B-186; fecha BUG-020) | B-020 | [B-186](../product/specs/B-186-membros-do-canal.md) | Planned |
+| W10-16 | C/D | Busca versátil — matching e relevância no FTS (B-188; fecha BUG-023) | W10-4 | [B-188](../product/specs/B-188-busca-versatil.md) | Planned |
 
 ### Itens de maior risco nestas waves
 

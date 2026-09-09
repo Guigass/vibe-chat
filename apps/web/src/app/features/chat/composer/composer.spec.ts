@@ -12,6 +12,7 @@ import { ChatMessage } from '../../../shared/models/chat.models';
 import { AttachmentQueueService } from './attachment-queue.service';
 import { AudioRecorderService, RecordedAudio } from './audio-recorder.service';
 import { AuthService } from '../../../core/auth/auth.service';
+import { LocaleService } from '../../../core/i18n/locale.service';
 import { Composer } from './composer';
 
 describe('Composer audio submit (BUG-004)', () => {
@@ -169,6 +170,10 @@ describe('Composer audio submit (BUG-004)', () => {
         {
           provide: AuthService,
           useValue: { profile: () => ({ id: 'u-alice', name: 'Alice' }) },
+        },
+        {
+          provide: LocaleService,
+          useValue: { locale: () => 'pt-BR', apply: vi.fn() },
         },
         {
           provide: ApiService,

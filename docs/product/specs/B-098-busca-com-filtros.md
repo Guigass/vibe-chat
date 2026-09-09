@@ -23,6 +23,7 @@ impossível.
 
 - Busca semântica/vetorial (ADR-016 é o gatilho para OpenSearch); busca dentro de PDF;
   busca por conteúdo de áudio (só a transcrição, se existir).
+- Qualidade/versatilidade do matching (prefixo, acento, canal/pessoa/anexo) → **B-188**.
 
 ## Contratos
 

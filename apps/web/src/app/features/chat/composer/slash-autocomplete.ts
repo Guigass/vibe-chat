@@ -1,4 +1,5 @@
 import { Component, input, output } from '@angular/core';
+import { ui } from '../../../core/i18n/strings';
 import { SlashCommandDef } from '../../../shared/markdown/slash-tokens';
 
 @Component({
@@ -6,7 +7,7 @@ import { SlashCommandDef } from '../../../shared/markdown/slash-tokens';
   standalone: true,
   template: `
     @if (open() && items().length) {
-      <ul class="slash-menu" role="listbox" [attr.aria-label]="'Comandos'">
+      <ul class="slash-menu" role="listbox" [attr.aria-label]="ui.slashCommands">
         @for (item of items(); track item.name; let index = $index) {
           <li>
             <button
@@ -69,6 +70,7 @@ import { SlashCommandDef } from '../../../shared/markdown/slash-tokens';
   `,
 })
 export class SlashAutocomplete {
+  readonly ui = ui;
   readonly open = input(false);
   readonly items = input<SlashCommandDef[]>([]);
   readonly activeIndex = input(0);

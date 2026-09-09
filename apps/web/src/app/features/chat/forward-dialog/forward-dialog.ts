@@ -1,6 +1,7 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { Channel } from '../../../shared/models/chat.models';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { fillTemplate, ui } from '../../../core/i18n/strings';
 
 const MAX_TARGETS = 5;
 
@@ -12,26 +13,26 @@ const MAX_TARGETS = 5;
       <div class="fwd-backdrop" (click)="cancel.emit()"></div>
       <div class="fwd" role="dialog" aria-modal="true" aria-labelledby="fwd-title">
         <header class="fwd__header">
-          <h2 id="fwd-title">Encaminhar mensagem</h2>
-          <button type="button" class="ghost" (click)="cancel.emit()" aria-label="Fechar">×</button>
+          <h2 id="fwd-title">{{ ui.forwardTitle }}</h2>
+          <button type="button" class="ghost" (click)="cancel.emit()" [attr.aria-label]="ui.close">×</button>
         </header>
 
         <label class="fwd__search">
-          <span class="sr-only">Buscar destino</span>
+          <span class="sr-only">{{ ui.forwardSearchAria }}</span>
           <input
             type="search"
             [value]="query()"
             (input)="query.set(($any($event.target).value))"
-            placeholder="Buscar canal ou DM…"
+            [placeholder]="ui.forwardSearchPh"
             autofocus
           />
         </label>
 
         @if (selected().length) {
-          <ul class="fwd__chips" aria-label="Destinos selecionados">
+          <ul class="fwd__chips" [attr.aria-label]="ui.forwardSelected">
             @for (ch of selected(); track ch.id) {
               <li>
-                <button type="button" (click)="toggle(ch)" [attr.aria-label]="'Remover ' + label(ch)">
+                <button type="button" (click)="toggle(ch)" [attr.aria-label]="fillTemplate(ui.forwardRemoveOf, { name: label(ch) })">
                   {{ label(ch) }} ×
                 </button>
               </li>
@@ -39,7 +40,7 @@ const MAX_TARGETS = 5;
           </ul>
         }
 
-        <ul class="fwd__list" role="listbox" aria-label="Destinos">
+        <ul class="fwd__list" role="listbox" [attr.aria-label]="ui.forwardDestinations">
           @for (ch of filtered(); track ch.id) {
             <li>
               <button
@@ -51,24 +52,23 @@ const MAX_TARGETS = 5;
               >
                 <span>{{ label(ch) }}</span>
                 @if (ch.isPrivate) {
-                  <span class="fwd__meta">privado</span>
+                  <span class="fwd__meta">{{ ui.forwardPrivate }}</span>
                 }
               </button>
             </li>
           } @empty {
-            <li class="fwd__empty">Nenhum destino encontrado</li>
+            <li class="fwd__empty">{{ ui.forwardEmpty }}</li>
           }
         </ul>
 
         @if (privacyWarning()) {
           <p class="fwd__warn" role="status">
-            Você está encaminhando de um canal privado para um público — o conteúdo ficará
-            visível a mais pessoas.
+            {{ ui.forwardPrivateWarn }}
           </p>
         }
 
         <label class="fwd__comment">
-          <span>Comentário (opcional)</span>
+          <span>{{ ui.forwardComment }}</span>
           <textarea
             rows="2"
             [value]="comment()"
@@ -78,13 +78,13 @@ const MAX_TARGETS = 5;
         </label>
 
         <footer class="fwd__footer">
-          <button type="button" class="ghost" (click)="cancel.emit()">Cancelar</button>
+          <button type="button" class="ghost" (click)="cancel.emit()">{{ ui.cancel }}</button>
           <button
             type="button"
             [disabled]="selected().length === 0 || submitting()"
             (click)="submit()"
           >
-            Encaminhar{{ selected().length ? ' (' + selected().length + ')' : '' }}
+            {{ ui.forwardSubmit }}{{ selected().length ? ' (' + selected().length + ')' : '' }}
           </button>
         </footer>
       </div>
@@ -238,6 +238,8 @@ const MAX_TARGETS = 5;
   `,
 })
 export class ForwardDialog {
+  readonly ui = ui;
+  readonly fillTemplate = fillTemplate;
   private readonly channels = inject(ChannelStore);
 
   readonly open = input(false);

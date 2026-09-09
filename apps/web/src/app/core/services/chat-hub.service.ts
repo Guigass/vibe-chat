@@ -21,6 +21,7 @@ import {
   nextHubRetryDelayMs,
 } from './chat-hub-reconnect';
 import { withoutSelfTyping } from './typing-filter';
+import { ui } from '../i18n/strings';
 import { mapPollSummary } from '../../shared/polls/poll-summary';
 
 export const AWAY_GRACE_MS = 120_000;
@@ -660,7 +661,7 @@ export class ChatHubService {
   async sendTyping(channelId: string): Promise<void> {
     if (!this.connection || this.connection.state !== HubConnectionState.Connected) return;
     const tenantId = this.tenant.snapshot().tenantId;
-    const name = this.auth.profile()?.name ?? 'Usuário';
+    const name = this.auth.profile()?.name ?? ui.userFallback;
     if (!tenantId) return;
     await this.connection.invoke('SendTyping', tenantId, channelId, name);
   }

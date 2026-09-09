@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../api/api.service';
 import { AuthService } from '../auth/auth.service';
 import { ChatHubService } from './chat-hub.service';
+import { ui } from '../i18n/strings';
 import { ChannelStore } from './channel.store';
 
 describe('ChannelStore authenticated API failure', () => {
@@ -35,6 +36,6 @@ describe('ChannelStore authenticated API failure', () => {
     expect(store.isDemo()).toBe(false);
     expect(store.workspaces()).toEqual([]);
     expect(store.channels()).toEqual([]);
-    expect(store.error()).toBe('Não foi possível carregar o workspace. Tente novamente.');
+    expect(store.error()).toBe(ui.errorLoadWorkspace);
   });
 });

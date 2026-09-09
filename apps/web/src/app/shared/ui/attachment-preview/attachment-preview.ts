@@ -15,6 +15,7 @@ import {
   isGifContentType,
   type AttachmentPreviewKind,
 } from '../../attachments/attachment-preview';
+import { fillTemplate, ui } from '../../../core/i18n/strings';
 import { MessageAttachment } from '../../models/chat.models';
 import { AudioMessage } from '../audio-message/audio-message';
 
@@ -28,7 +29,7 @@ import { AudioMessage } from '../audio-message/audio-message';
         <vc-audio-message [attachment]="attachment()" [downloadUrl]="downloadUrl()" />
         @if (showTranscribe()) {
           <button type="button" class="vc-att__transcribe" (click)="transcribe.emit()">
-            Transcrever
+            {{ ui.attachTranscribe }}
           </button>
         }
       }
@@ -38,7 +39,7 @@ import { AudioMessage } from '../audio-message/audio-message';
             class="vc-att__placeholder"
             [style.aspect-ratio]="aspectRatio()"
             role="status"
-            [attr.aria-label]="'Gerando preview de ' + attachment().fileName"
+            [attr.aria-label]="fillTemplate(ui.attachGeneratingPreview, { name: attachment().fileName })"
           ></div>
         } @else if (showFileCard()) {
           <button
@@ -58,7 +59,7 @@ import { AudioMessage } from '../audio-message/audio-message';
             type="button"
             class="vc-att__image-btn"
             [class.vc-att__image-btn--gif]="isGif()"
-            [attr.aria-label]="'Abrir imagem ' + attachment().fileName"
+            [attr.aria-label]="fillTemplate(ui.attachOpenImage, { name: attachment().fileName })"
             (click)="imageOpen.emit(attachment().id)"
             (mouseenter)="onGifEnter()"
             (mouseleave)="onGifLeave()"
@@ -92,13 +93,13 @@ import { AudioMessage } from '../audio-message/audio-message';
             class="vc-att__placeholder"
             [style.aspect-ratio]="aspectRatio()"
             role="status"
-            [attr.aria-label]="'Gerando preview de ' + attachment().fileName"
+            [attr.aria-label]="fillTemplate(ui.attachGeneratingPreview, { name: attachment().fileName })"
           ></div>
         } @else if (displayUrl() && !loadFailed()) {
           <button
             type="button"
             class="vc-att__image-btn"
-            [attr.aria-label]="'Abrir PDF ' + attachment().fileName"
+            [attr.aria-label]="fillTemplate(ui.attachOpenPdf, { name: attachment().fileName })"
             (click)="openFile()"
           >
             <img
@@ -111,7 +112,7 @@ import { AudioMessage } from '../audio-message/audio-message';
             <span class="vc-att__pdf-hint">
               PDF
               @if (attachment().pageCount; as pages) {
-                · {{ pages }} {{ pages === 1 ? 'página' : 'páginas' }}
+                · {{ pages }} {{ pages === 1 ? ui.attachPage : ui.attachPages }}
               }
               · {{ sizeLabel() }}
             </span>
@@ -129,7 +130,7 @@ import { AudioMessage } from '../audio-message/audio-message';
               <span class="vc-att__size">
                 PDF
                 @if (attachment().pageCount; as pages) {
-                  · {{ pages }} {{ pages === 1 ? 'página' : 'páginas' }}
+                  · {{ pages }} {{ pages === 1 ? ui.attachPage : ui.attachPages }}
                 }
                 · {{ sizeLabel() }}
               </span>
@@ -147,7 +148,7 @@ import { AudioMessage } from '../audio-message/audio-message';
               [src]="downloadUrl()!"
               (error)="loadFailed.set(true)"
             >
-              Seu navegador não reproduz este vídeo.
+              {{ ui.attachVideoUnsupported }}
             </video>
             <a
               class="vc-att__download"
@@ -155,7 +156,7 @@ import { AudioMessage } from '../audio-message/audio-message';
               target="_blank"
               rel="noopener noreferrer"
             >
-              Baixar {{ attachment().fileName }}
+              {{ fillTemplate(ui.attachDownload, { name: attachment().fileName }) }}
             </a>
           </div>
         } @else {
@@ -163,7 +164,7 @@ import { AudioMessage } from '../audio-message/audio-message';
             <span class="vc-att__icon" aria-hidden="true">{{ icon() }}</span>
             <span class="vc-att__meta">
               <span class="vc-att__name">{{ attachment().fileName }}</span>
-              <span class="vc-att__size">Vídeo · {{ sizeLabel() }}</span>
+              <span class="vc-att__size">{{ ui.attachVideoMeta }} · {{ sizeLabel() }}</span>
             </span>
           </button>
         }
@@ -310,6 +311,8 @@ import { AudioMessage } from '../audio-message/audio-message';
   `,
 })
 export class AttachmentPreview {
+  readonly ui = ui;
+  readonly fillTemplate = fillTemplate;
   readonly attachment = input.required<MessageAttachment>();
   /** Original file URL (download / GIF hover / audio / video). */
   readonly downloadUrl = input<string | null>(null);
@@ -359,9 +362,7 @@ export class AttachmentPreview {
     return '4 / 3';
   });
   readonly failedTitle = computed(() =>
-    this.attachment().thumbnailStatus === 'Failed'
-      ? 'Preview indisponível — abrir arquivo original'
-      : undefined,
+    this.attachment().thumbnailStatus === 'Failed' ? ui.attachPreviewUnavailable : undefined,
   );
 
   constructor() {

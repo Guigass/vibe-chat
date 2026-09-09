@@ -5,6 +5,7 @@ import { AuthService } from '../auth/auth.service';
 import { ChannelStore } from './channel.store';
 import { ThreadStore } from './thread.store';
 import { PushNotificationService } from './push-notification.service';
+import { ui } from '../i18n/strings';
 import { ChatMessage, PollSummary } from '../../shared/models/chat.models';
 import { mergeRemotePoll, preferRicherPoll } from '../../shared/polls/poll-summary';
 import {
@@ -407,7 +408,7 @@ export class MessageStore {
       conversationId: channel.id,
       channelId: channel.id,
       authorUserId: profile?.id ?? 'me',
-      authorName: profile?.name ?? 'Você',
+      authorName: profile?.name ?? ui.you,
       body: text,
       createdAt: new Date().toISOString(),
       status: 'sending',
@@ -417,7 +418,7 @@ export class MessageStore {
       attachments: hasAttachments
         ? attachmentIds.map((id) => ({
             id,
-            fileName: 'anexo',
+            fileName: ui.attachmentFallback,
             contentType: 'application/octet-stream',
             sizeBytes: 0,
             status: 'PendingUpload',
@@ -438,7 +439,7 @@ export class MessageStore {
           attachments: hasAttachments
             ? attachmentIds.map((id) => ({
                 id,
-                fileName: 'anexo',
+                fileName: ui.attachmentFallback,
                 contentType: 'application/octet-stream',
                 sizeBytes: 0,
                 status: 'Ready',

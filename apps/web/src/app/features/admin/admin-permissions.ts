@@ -1,3 +1,5 @@
+import { ui } from '../../core/i18n/strings';
+
 /** B-106 — mirrors RolePermissionCatalog visibility for admin UI (hide, never warn). */
 
 export type AdminAreaId =
@@ -18,12 +20,12 @@ export interface AdminNavItem {
 }
 
 export const ADMIN_NAV: readonly AdminNavItem[] = [
-  { id: 'overview', label: 'Visão geral', path: 'overview' },
-  { id: 'members', label: 'Membros', path: 'members' },
-  { id: 'conversations', label: 'Conversas', path: 'conversations' },
-  { id: 'audit', label: 'Audit log', path: 'audit' },
-  { id: 'settings', label: 'Settings', path: 'settings' },
-  { id: 'plugins', label: 'Plugins', path: 'plugins' },
+  { id: 'overview', label: ui.adminNavOverview, path: 'overview' },
+  { id: 'members', label: ui.adminNavMembers, path: 'members' },
+  { id: 'conversations', label: ui.adminNavConversations, path: 'conversations' },
+  { id: 'audit', label: ui.adminNavAudit, path: 'audit' },
+  { id: 'settings', label: ui.adminNavSettings, path: 'settings' },
+  { id: 'plugins', label: ui.adminNavPlugins, path: 'plugins' },
 ] as const;
 
 export function hasAdminDashboard(role?: string | null): boolean {
@@ -62,5 +64,5 @@ export function firstAllowedPath(role?: string | null): string {
 }
 
 export function areaTitle(area: AdminAreaId): string {
-  return ADMIN_NAV.find((item) => item.id === area)?.label ?? 'Admin';
+  return ADMIN_NAV.find((item) => item.id === area)?.label ?? ui.admin;
 }

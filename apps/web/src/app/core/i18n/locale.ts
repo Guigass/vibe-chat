@@ -1,5 +1,16 @@
 export const DEFAULT_LOCALE = 'pt-BR';
-export const SUPPORTED_LOCALES = ['pt-BR', 'en'] as const;
+export const SUPPORTED_LOCALES = [
+  'pt-BR',
+  'en',
+  'es',
+  'fr',
+  'de',
+  'it',
+  'ja',
+  'zh-CN',
+  'ko',
+  'ru',
+] as const;
 export type AppLocale = (typeof SUPPORTED_LOCALES)[number];
 
 export const LOCALE_STORAGE_KEY = 'vc.locale';
@@ -7,10 +18,33 @@ export const LOCALE_STORAGE_KEY = 'vc.locale';
 export const LOCALE_OPTION_NAMES: Record<AppLocale, string> = {
   'pt-BR': 'Português',
   en: 'English',
+  es: 'Español',
+  fr: 'Français',
+  de: 'Deutsch',
+  it: 'Italiano',
+  ja: '日本語',
+  'zh-CN': '中文',
+  ko: '한국어',
+  ru: 'Русский',
+};
+
+const SUPPORTED_LOCALE_SET = new Set<string>(SUPPORTED_LOCALES);
+
+const LANGUAGE_TO_LOCALE: Record<string, AppLocale> = {
+  pt: 'pt-BR',
+  en: 'en',
+  es: 'es',
+  fr: 'fr',
+  de: 'de',
+  it: 'it',
+  ja: 'ja',
+  zh: 'zh-CN',
+  ko: 'ko',
+  ru: 'ru',
 };
 
 export function isAppLocale(value: string | null | undefined): value is AppLocale {
-  return value === 'pt-BR' || value === 'en';
+  return value != null && SUPPORTED_LOCALE_SET.has(value);
 }
 
 export function detectBrowserLocale(
@@ -19,12 +53,17 @@ export function detectBrowserLocale(
     : (navigator.languages?.length ? navigator.languages : [navigator.language]),
 ): AppLocale {
   for (const raw of languages) {
-    const tag = (raw ?? '').toLowerCase();
-    if (tag === 'en' || tag.startsWith('en-')) {
-      return 'en';
+    const tag = (raw ?? '').trim();
+    if (!tag) {
+      continue;
     }
-    if (tag === 'pt' || tag.startsWith('pt-')) {
-      return 'pt-BR';
+    if (isAppLocale(tag)) {
+      return tag;
+    }
+    const language = tag.split('-')[0]?.toLowerCase() ?? '';
+    const mapped = LANGUAGE_TO_LOCALE[language];
+    if (mapped) {
+      return mapped;
     }
   }
   return DEFAULT_LOCALE;

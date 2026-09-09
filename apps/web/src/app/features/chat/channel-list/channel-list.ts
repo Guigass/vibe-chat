@@ -7,6 +7,7 @@ import { SavedStore } from '../../../core/services/saved.store';
 import { NotificationPreferencesStore } from '../../../core/services/notification-preferences.store';
 import { ChannelMuteAction } from '../../../shared/models/chat.models';
 import { Badge, SidebarNav, Skeleton, VcTooltip } from '../../../shared/ui';
+import { ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-channel-list',
@@ -28,8 +29,8 @@ import { Badge, SidebarNav, Skeleton, VcTooltip } from '../../../shared/ui';
             [class.channel-list__saved--compact]="navCompact()"
             [class.channel-list__saved--active]="saved.panelOpen()"
             data-testid="saved-nav"
-            [attr.aria-label]="navCompact() ? 'Mensagens salvas' : null"
-            [vcTooltip]="navCompact() ? 'Mensagens salvas' : null"
+            [attr.aria-label]="navCompact() ? ui.savedMessages : null"
+            [vcTooltip]="navCompact() ? ui.savedMessages : null"
             [tooltipDisabled]="!navCompact()"
             position="right"
             (click)="openSaved()"
@@ -41,8 +42,8 @@ import { Badge, SidebarNav, Skeleton, VcTooltip } from '../../../shared/ui';
             </span>
             @if (!navCompact()) {
               <span class="channel-list__saved-copy">
-                <span class="channel-list__saved-label">Salvos</span>
-                <span class="channel-list__saved-hint">Vista pessoal</span>
+                <span class="channel-list__saved-label">{{ ui.channelSaved }}</span>
+                <span class="channel-list__saved-hint">{{ ui.channelPersonalView }}</span>
               </span>
             }
             @if (saved.pendingCount() > 0) {
@@ -183,6 +184,7 @@ import { Badge, SidebarNav, Skeleton, VcTooltip } from '../../../shared/ui';
   `,
 })
 export class ChannelList {
+  readonly ui = ui;
   readonly navCompact = input(false);
   readonly channels = inject(ChannelStore);
   readonly drafts = inject(DraftStoreService);

@@ -2,21 +2,22 @@ import { Component, inject, signal } from '@angular/core';
 import { SavedStore } from '../../../core/services/saved.store';
 import { SavedMessageItem } from '../../../shared/models/chat.models';
 import { IconButton } from '../../../shared/ui';
+import { ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-saved-panel',
   standalone: true,
   imports: [IconButton],
   template: `
-    <section class="saved-panel" aria-label="Mensagens salvas">
+    <section class="saved-panel" [attr.aria-label]="ui.savedMessages">
       <header class="saved-panel__header">
-        <h2>Salvos</h2>
-        <vc-icon-button label="Fechar painel" (click)="saved.closePanel()">
+        <h2>{{ ui.channelSaved }}</h2>
+        <vc-icon-button [label]="ui.closePanel" (click)="saved.closePanel()">
           <span aria-hidden="true">×</span>
         </vc-icon-button>
       </header>
 
-      <div class="saved-panel__filters" role="tablist" aria-label="Filtro de salvos">
+      <div class="saved-panel__filters" role="tablist" [attr.aria-label]="ui.savedFilter">
         <button
           type="button"
           role="tab"
@@ -24,7 +25,7 @@ import { IconButton } from '../../../shared/ui';
           [class.is-active]="!saved.showCompleted()"
           (click)="saved.setShowCompleted(false)"
         >
-          Pendentes
+          {{ ui.savedPending }}
         </button>
         <button
           type="button"
@@ -33,20 +34,20 @@ import { IconButton } from '../../../shared/ui';
           [class.is-active]="saved.showCompleted()"
           (click)="saved.setShowCompleted(true)"
         >
-          Concluídos
+          {{ ui.savedDone }}
         </button>
       </div>
 
       @if (saved.loading()) {
-        <p class="saved-panel__status">Carregando…</p>
+        <p class="saved-panel__status">{{ ui.loading }}</p>
       } @else if (saved.error()) {
         <p class="saved-panel__status" role="alert">{{ saved.error() }}</p>
       } @else if (!saved.items().length) {
         <p class="saved-panel__status">
           @if (saved.showCompleted()) {
-            Nenhum salvo concluído.
+            {{ ui.savedEmptyDone }}
           } @else {
-            Salve mensagens para voltar depois — só você vê esta lista.
+            {{ ui.savedEmptyHint }}
           }
         </p>
       } @else {
@@ -70,18 +71,18 @@ import { IconButton } from '../../../shared/ui';
                   [value]="noteDrafts()[item.messageId] ?? item.note ?? ''"
                   (input)="onNoteInput(item.messageId, $event)"
                   (change)="onNoteCommit(item)"
-                  [attr.aria-label]="'Nota do salvo'"
-                  placeholder="Nota pessoal (opcional)"
+                  [attr.aria-label]="ui.savedNote"
+                  [placeholder]="ui.savedNotePh"
                 />
               </div>
               <div class="saved-panel__actions">
                 @if (!item.messageRemoved) {
-                  <button type="button" (click)="saved.jumpToSaved(item)">Ir até</button>
+                  <button type="button" (click)="saved.jumpToSaved(item)">{{ ui.savedJump }}</button>
                 }
                 <button type="button" (click)="saved.toggleComplete(item)">
-                  {{ item.completedAt ? 'Reabrir' : 'Concluir' }}
+                  {{ item.completedAt ? ui.savedReopen : ui.savedComplete }}
                 </button>
-                <button type="button" (click)="saved.unsaveMessage(item.messageId)">Remover</button>
+                <button type="button" (click)="saved.unsaveMessage(item.messageId)">{{ ui.remove }}</button>
               </div>
             </li>
           }
@@ -206,6 +207,7 @@ import { IconButton } from '../../../shared/ui';
   `,
 })
 export class SavedPanel {
+  readonly ui = ui;
   readonly saved = inject(SavedStore);
   readonly noteDrafts = signal<Record<string, string>>({});
 

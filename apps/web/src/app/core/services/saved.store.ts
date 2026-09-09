@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../api/api.service';
 import { ChannelStore } from './channel.store';
 import { MessageStore } from './message.store';
+import { ui } from '../i18n/strings';
 import { SavedMessageItem } from '../../shared/models/chat.models';
 
 @Injectable({ providedIn: 'root' })
@@ -79,7 +80,7 @@ export class SavedStore {
         this.itemsSignal.set(this.showCompletedSignal() ? completedPage.items : openPage.items);
       }
     } catch {
-      this.errorSignal.set('Não foi possível carregar salvos.');
+      this.errorSignal.set(ui.savedLoadError);
     } finally {
       this.loadingSignal.set(false);
     }
@@ -108,7 +109,7 @@ export class SavedStore {
       this.savedIdsSignal.set(ids);
       this.messages.applySavedFlags([...ids]);
     } catch {
-      this.errorSignal.set('Não foi possível carregar salvos.');
+      this.errorSignal.set(ui.savedLoadError);
     } finally {
       this.loadingSignal.set(false);
     }
@@ -158,7 +159,7 @@ export class SavedStore {
         await this.reload();
       }
     } catch {
-      this.errorSignal.set('Não foi possível atualizar o salvo.');
+      this.errorSignal.set(ui.savedUpdateError);
     }
   }
 
@@ -171,7 +172,7 @@ export class SavedStore {
         await this.reload();
       }
     } catch {
-      this.errorSignal.set('Não foi possível salvar a nota.');
+      this.errorSignal.set(ui.savedNoteError);
     }
   }
 

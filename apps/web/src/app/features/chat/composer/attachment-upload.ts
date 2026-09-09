@@ -1,3 +1,5 @@
+import { fillTemplate, ui } from '../../../core/i18n/strings';
+
 export const MAX_ATTACHMENTS_PER_MESSAGE = 10;
 export const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
 export const MAX_VIDEO_SIZE_BYTES = 25 * 1024 * 1024;
@@ -94,16 +96,19 @@ export function validateAttachmentFile(
   if (!ALLOWED_ATTACHMENT_TYPES.has(contentType)) {
     return {
       fileName: file.name,
-      reason: `tipo não permitido (${contentType || 'desconhecido'})`,
+      reason: fillTemplate(ui.attachTypeNotAllowed, { type: contentType || ui.attachUnknownType }),
     };
   }
   if (file.size <= 0) {
-    return { fileName: file.name, reason: 'arquivo vazio' };
+    return { fileName: file.name, reason: ui.attachEmptyFile };
   }
   if (file.size > maxSizeBytes) {
     return {
       fileName: file.name,
-      reason: `excede ${formatFileSize(maxSizeBytes)} (tem ${formatFileSize(file.size)})`,
+      reason: fillTemplate(ui.attachExceedsSize, {
+        limit: formatFileSize(maxSizeBytes),
+        size: formatFileSize(file.size),
+      }),
     };
   }
   return null;
@@ -118,22 +123,29 @@ export function validateVideoAttachmentFile(
   if (!ALLOWED_VIDEO_TYPES.has(normalized) && !normalized.startsWith('video/webm')) {
     return {
       fileName: file.name,
-      reason: `tipo de vídeo não permitido (${contentType || 'desconhecido'})`,
+      reason: fillTemplate(ui.attachVideoTypeNotAllowed, {
+        type: contentType || ui.attachUnknownType,
+      }),
     };
   }
   if (file.size <= 0) {
-    return { fileName: file.name, reason: 'arquivo vazio' };
+    return { fileName: file.name, reason: ui.attachEmptyFile };
   }
   if (file.size > MAX_VIDEO_SIZE_BYTES) {
     return {
       fileName: file.name,
-      reason: `excede ${formatFileSize(MAX_VIDEO_SIZE_BYTES)} (tem ${formatFileSize(file.size)})`,
+      reason: fillTemplate(ui.attachExceedsSize, {
+        limit: formatFileSize(MAX_VIDEO_SIZE_BYTES),
+        size: formatFileSize(file.size),
+      }),
     };
   }
   if (durationMs != null && durationMs > MAX_VIDEO_DURATION_MS) {
     return {
       fileName: file.name,
-      reason: `excede ${formatVideoDuration(MAX_VIDEO_DURATION_MS)} de duração`,
+      reason: fillTemplate(ui.attachExceedsDuration, {
+        duration: formatVideoDuration(MAX_VIDEO_DURATION_MS),
+      }),
     };
   }
   return null;
@@ -152,14 +164,14 @@ export function extractVideoMetadata(file: File): Promise<VideoMetadata> {
       const height = video.videoHeight > 0 ? video.videoHeight : undefined;
       URL.revokeObjectURL(url);
       if (durationMs <= 0) {
-        reject(new Error('Não foi possível ler a duração do vídeo'));
+        reject(new Error(ui.attachVideoDurationUnread));
         return;
       }
       resolve({ durationMs, width, height });
     };
     video.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('Não foi possível ler metadados do vídeo'));
+      reject(new Error(ui.attachVideoMetaUnread));
     };
     video.src = url;
   });

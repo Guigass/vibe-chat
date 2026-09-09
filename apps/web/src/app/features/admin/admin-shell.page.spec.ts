@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { ui } from '../../core/i18n/strings';
 import { AdminShellPage } from './admin-shell.page';
 
 describe('Admin shell (B-106)', () => {
@@ -57,7 +58,7 @@ describe('Admin shell (B-106)', () => {
     expect(host.querySelector('.admin-shell__nav-link')).toBeTruthy();
     expect(host.textContent).toContain('Settings');
     expect(host.textContent).not.toContain('Sem permissão');
-    expect(host.textContent).not.toContain('Sem acesso ao admin');
+    expect(host.textContent).not.toContain(ui.adminNoAccessHeading);
   });
 
   it('shows clear denial feedback for Member instead of a silent redirect', async () => {
@@ -88,9 +89,9 @@ describe('Admin shell (B-106)', () => {
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
-    expect(host.textContent).toContain('Sem acesso ao admin');
+    expect(host.textContent).toContain(ui.adminNoAccessHeading);
     expect(host.textContent).toContain('DevAuth Demo');
     expect(host.querySelector('.admin-shell__nav-link')).toBeFalsy();
-    expect(fixture.componentInstance.activeTitle()).toBe('Sem acesso');
+    expect(fixture.componentInstance.activeTitle()).toBe(ui.adminNoAccessTitle);
   });
 });

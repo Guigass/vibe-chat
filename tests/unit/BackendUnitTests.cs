@@ -8,6 +8,7 @@ using VibeChat.AI;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
 using VibeChat.Files;
+using VibeChat.Identity;
 using VibeChat.Infrastructure;
 using VibeChat.Integrations;
 using VibeChat.Messaging;
@@ -926,6 +927,48 @@ public sealed class BackendUnitTests
         GroupDmPolicies.TryNormalizeMembers(extras, caller, 9, out _, out var tooMany)
             .Should().BeFalse();
         tooMany.Should().Be("GroupDmTooManyParticipants");
+    }
+
+    [Fact]
+    public void User_locales_resolve_falls_back_to_pt_br()
+    {
+        UserLocales.Resolve("en").Should().Be("en");
+        UserLocales.Resolve("pt-BR").Should().Be("pt-BR");
+        UserLocales.Resolve("fr").Should().Be("fr");
+        UserLocales.Resolve(null).Should().Be(UserLocales.Default);
+        UserLocales.Resolve("xx").Should().Be(UserLocales.Default);
+    }
+
+    [Fact]
+    public void Slash_command_descriptions_follow_locale()
+    {
+        SlashCommandCatalog.Describe("ajuda", "en").Should().Be("List available commands");
+        SlashCommandCatalog.Describe("ajuda", "pt-BR").Should().Be("Lista os comandos disponíveis");
+        SlashCommandCatalog.Describe("ajuda", null).Should().Be("Lista os comandos disponíveis");
+        SlashCommandCatalog.Describe("ajuda", "fr").Should().Be("Liste les commandes disponibles");
+        SlashCommandCatalog.Describe("ajuda", "xx").Should().Be("Lista os comandos disponíveis");
+        SlashCommandCatalog.Describe("dm", "en").Should().Be("Open or create a DM");
+        SlashCommandCatalog.Describe("unknown", "en").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Member_email_copy_follows_recipient_locale()
+    {
+        var en = MemberEmailCopy.Invite("en", "Acme", "Alice", "Member");
+        en.Subject.Should().Contain("you were invited");
+        en.BodyText.Should().Contain("Hello Alice");
+
+        var pt = MemberEmailCopy.Invite("pt-BR", "Acme", "Alice", "Member");
+        pt.Subject.Should().Contain("você foi convidado");
+        pt.BodyText.Should().Contain("Olá Alice");
+
+        var roleEn = MemberEmailCopy.RoleChanged("en", "Acme", "Bob", "Member", "Moderator");
+        roleEn.Subject.Should().Contain("your role");
+        roleEn.BodyText.Should().Contain("changed from Member to Moderator");
+
+        var es = MemberEmailCopy.Invite("es", "Acme", "Ana", "Member");
+        es.Subject.Should().Contain("fuiste invitado");
+        es.BodyText.Should().Contain("Hola Ana");
     }
 
     [Fact]

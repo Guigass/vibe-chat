@@ -6,6 +6,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { MessageStore } from '../../../core/services/message.store';
 import { ThemeService } from '../../../core/services/theme.service';
+import { LocaleService } from '../../../core/i18n/locale.service';
 import type { ChatMessage } from '../../models/chat.models';
 import { userMentionToken } from '../../markdown/mention-tokens';
 
@@ -88,6 +89,10 @@ describe('MessageBubble (B-163)', () => {
             density: () => 'comfortable' as const,
             theme: () => 'light' as const,
           },
+        },
+        {
+          provide: LocaleService,
+          useValue: { locale: () => 'pt-BR' as const, apply: vi.fn() },
         },
       ],
     }).compileComponents();

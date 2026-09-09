@@ -27,6 +27,8 @@ Regras do registro:
 
 | ID      | Área              | Achado                                                                | Severidade | Status                                       |
 | ------- | ----------------- | --------------------------------------------------------------------- | ---------- | -------------------------------------------- |
+| BUG-023 | Busca / relevância | Resultados rígidos; FTS não acha prefixo, acento, pessoa ou anexo     | Média      | Aberto — fecha em **B-188** |
+| BUG-022 | Header / busca    | Painel desalinhado na 1ª abertura; selecionar opção fecha a barra     | Média      | Aberto                                       |
 | BUG-021 | Group DM / realtime | Convidado para DM em grupo não vê a conversa até recarregar         | Média      | Aberto                                       |
 | BUG-020 | Canal / membros   | Sem painel de membros, add no canal nem enviar PV a partir do roster  | Média      | Aberto — fecha em **B-186** |
 | BUG-002 | Sidebar / unread  | Badges de novas mensagens não limpam de forma persistente após reload | Média      | **Done** — B-094 |
@@ -42,6 +44,61 @@ Regras do registro:
 | BUG-018 | Timeline / scroll | Scroll não fica colado no fim ao enviar/receber (às vezes)           | Média      | Done                                         |
 
 ## Detalhamento
+
+### BUG-023 — Busca: resultados rígidos, pouco versáteis
+
+- Status: **Aberto** — fecha em **B-188** (W10-16).
+- Severidade: **Média** (a busca responde, mas o matching não acha o que o
+  usuário espera no dia a dia).
+- Observado em: 2026-09-09; relato de produto no lab Compose após B-027/B-098
+  Done. Consultas comuns devolvem vazio ou hits pouco úteis: termo parcial,
+  acento (`reuniao` vs `reunião`), pessoa, canal ou nome de arquivo.
+- Hipótese: `PostgresSearchQuery` usa `PlainToTsQuery` só em `Body`
+  (`SearchInfrastructure.cs`); lexema inteiro, sem prefixo `:*`, sem
+  `unaccent`, sem `websearch_to_tsquery` e sem índice de canal/autor/anexo.
+  Filtros B-098 só restringem o recorte — não melhoram relevância.
+- Arquivos: `src/VibeChat.Infrastructure/SearchInfrastructure.cs`,
+  `modules/Search/SearchDomain.cs`, `apps/web/src/app/shared/search/search-query.ts`.
+- Resultado esperado: busca versátil no Postgres FTS (prefixo, acento, frase,
+  OR/`-termo`, hits de canal/pessoa/anexo com a mesma ACL). Distinto de
+  **BUG-022** (painel do header) e de **B-121** (semântica/RAG).
+- Risk class: R2.
+- Owner automático: Backend Messaging + Frontend (C/D).
+- Critério de resolução: B-188 Done + este finding `Done` no mesmo PR;
+  regressão de filtros/ACL de B-098 coberta.
+
+### BUG-022 — Busca do header: painel desalinhado e fecha ao selecionar
+
+- Status: **Aberto**
+- Severidade: **Média** (a busca por digitação ainda funciona; filtro/sugestão
+  e o dropdown da primeira abertura atrapalham o fluxo de B-098).
+- Observado em: 2026-09-09; relato de produto no lab Compose (`apps` /
+  `localhost:4200`). Clicar no campo de pesquisa do header: na **primeira**
+  abertura o painel (`shell__search-panel`) fica desalinhado do input. Escolher
+  uma opção (recente, sugestão de operador, toggle) fecha a barra.
+- Hipótese: o painel é `position: absolute; right: 0` com largura
+  `min(28rem, 86vw)` enquanto o campo é `min(22rem, 42vw)` — sobra à esquerda
+  e a animação `shell-search-in` (`translateY`) marca o primeiro open. Fechar
+  cedo: `(blurred)` zera `searchFocused`; o effect de busca faz
+  `searchOpen.set(searchFocused())` quando a query ainda não roda (ex.:
+  `de:` / recente curto); `openSearchHit` também força close. Não há
+  click-outside dedicado — o blur do input faz as vezes e dispara no
+  `mousedown` da opção.
+- Arquivos: `apps/web/src/app/layout/shell.page.html`,
+  `apps/web/src/app/layout/shell.page.ts` (`onSearchFocus`, `applySuggestion`,
+  `applyRecent`, `openSearchHit`),
+  `apps/web/src/app/layout/shell.page.scss` (`.shell__search-panel`).
+- Resultado esperado: o painel alinha com o campo já na primeira abertura.
+  Selecionar opção (recente, filtro, escopo/ordem) **não** fecha a barra —
+  aplica e mantém o dropdown. Fecha só ao clicar fora ou ao começar a
+  digitar o termo.
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: primeiro clique alinhado ao input; escolher
+  recente/sugestão/toggle deixa o painel aberto; click fora e digitação
+  fecham; regressão no shell da busca; finding `Done`. Distinto de B-098
+  (filtros/FTS já entregues), de **BUG-023** / B-188 (qualidade dos hits) e
+  da paleta `Ctrl+K`.
 
 ### BUG-021 — Convidado para DM em grupo: front não atualiza
 

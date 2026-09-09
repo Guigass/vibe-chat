@@ -634,12 +634,11 @@ v1.MapPost("/workspaces/{workspaceId:guid}/members", async (
     if (await emailSettings.IsEnabledAsync(workspace.TenantId, ct)
         && !string.IsNullOrWhiteSpace(targetProfile.Email))
     {
-        var subject = $"VibeChat: você foi convidado para {workspace.Name}";
-        var body =
-            $"Olá {targetProfile.DisplayName},\n\n" +
-            $"Você foi adicionado ao workspace \"{workspace.Name}\" com o papel {inviteRole}.\n" +
-            "Autentique-se via SSO (Keycloak/OIDC) com este e-mail para acessar.\n" +
-            "Não há self-signup aberto — a membership já foi provisionada pelo admin.\n";
+        var copy = MemberEmailCopy.Invite(
+            UserLocales.Resolve(targetProfile.Locale),
+            workspace.Name,
+            targetProfile.DisplayName,
+            inviteRole.ToString());
         outbox.Add(new OutboxMessage
         {
             TenantId = workspace.TenantId,
@@ -649,8 +648,8 @@ v1.MapPost("/workspaces/{workspaceId:guid}/members", async (
                 workspace.Id.Value,
                 targetProfile.Id.Value,
                 targetProfile.Email,
-                subject,
-                body))
+                copy.Subject,
+                copy.BodyText))
         });
     }
 
@@ -736,8 +735,12 @@ v1.MapPut("/workspaces/{workspaceId:guid}/members/{userId:guid}/role", async (
     if (await emailSettings.IsEnabledAsync(workspace.TenantId, ct)
         && !string.IsNullOrWhiteSpace(targetProfile.Email))
     {
-        var subject = $"VibeChat: seu papel em {workspace.Name} foi atualizado";
-        var body = $"Olá {targetProfile.DisplayName},\n\nSeu papel no workspace \"{workspace.Name}\" mudou de {previousRole} para {newRole}.\n";
+        var copy = MemberEmailCopy.RoleChanged(
+            UserLocales.Resolve(targetProfile.Locale),
+            workspace.Name,
+            targetProfile.DisplayName,
+            previousRole.ToString(),
+            newRole.ToString());
         outbox.Add(new OutboxMessage
         {
             TenantId = workspace.TenantId,
@@ -747,8 +750,8 @@ v1.MapPut("/workspaces/{workspaceId:guid}/members/{userId:guid}/role", async (
                 workspace.Id.Value,
                 targetUserId.Value,
                 targetProfile.Email,
-                subject,
-                body))
+                copy.Subject,
+                copy.BodyText))
         });
     }
 
@@ -956,15 +959,16 @@ v1.MapGet("/workspaces/{workspaceId:guid}/commands", async (
         return Results.Forbid();
     }
 
-    var catalog = new (string Name, string Description, string Usage, string? Permission)[]
+    var locale = UserLocales.Resolve(profile.Locale);
+    var catalog = new (string Name, string Usage, string? Permission)[]
     {
-        ("dm", "Abre ou cria uma DM", "/dm @pessoa", null),
-        ("topico", "Altera a descrição do canal", "/topico <texto>", Permissions.Channel.Create),
-        ("convidar", "Convida alguém para o workspace", "/convidar <email>", Permissions.Workspace.Admin),
-        ("resumir", "Resume as mensagens recentes do canal", "/resumir", Permissions.Ai.Summarize),
-        ("apagar", "Apaga a sua última mensagem neste canal", "/apagar", Permissions.Message.DeleteOwn),
-        ("enquete", "Cria uma enquete no canal", "/enquete", Permissions.Message.Send),
-        ("ajuda", "Lista os comandos disponíveis", "/ajuda", null),
+        ("dm", "/dm @pessoa", null),
+        ("topico", "/topico <texto>", Permissions.Channel.Create),
+        ("convidar", "/convidar <email>", Permissions.Workspace.Admin),
+        ("resumir", "/resumir", Permissions.Ai.Summarize),
+        ("apagar", "/apagar", Permissions.Message.DeleteOwn),
+        ("enquete", "/enquete", Permissions.Message.Send),
+        ("ajuda", "/ajuda", null),
     };
 
     var allowed = new List<SlashCommandResponse>(catalog.Length);
@@ -976,7 +980,11 @@ v1.MapGet("/workspaces/{workspaceId:guid}/commands", async (
             continue;
         }
 
-        allowed.Add(new SlashCommandResponse(item.Name, item.Description, item.Usage, item.Permission));
+        allowed.Add(new SlashCommandResponse(
+            item.Name,
+            SlashCommandCatalog.Describe(item.Name, locale),
+            item.Usage,
+            item.Permission));
     }
 
     return Results.Ok(allowed);
@@ -1384,7 +1392,7 @@ v1.MapPost("/channels/{channelId:guid}/messages", async (
     catch (UnauthorizedAccessException ex) when (ex is MentionAllForbiddenException)
     {
         return Results.Json(
-            new { error = "MentionAllForbidden", message = "Você não pode usar @canal neste canal." },
+            new { error = "MentionAllForbidden", message = "Channel-wide mention is not allowed in this channel." },
             statusCode: StatusCodes.Status403Forbidden);
     }
     catch (UnauthorizedAccessException)
@@ -1893,7 +1901,7 @@ v1.MapPost("/threads/{threadId:guid}/messages", async (
     catch (UnauthorizedAccessException ex) when (ex is MentionAllForbiddenException)
     {
         return Results.Json(
-            new { error = "MentionAllForbidden", message = "Você não pode usar @canal neste canal." },
+            new { error = "MentionAllForbidden", message = "Channel-wide mention is not allowed in this channel." },
             statusCode: StatusCodes.Status403Forbidden);
     }
     catch (UnauthorizedAccessException)
@@ -2320,7 +2328,7 @@ v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}/reactions", asyn
     var emoji = request.Emoji?.Trim() ?? string.Empty;
     if (!EmojiValidator.IsValid(emoji))
     {
-        return Results.BadRequest(new { error = "InvalidEmoji", message = "Emoji inválido ou não suportado." });
+        return Results.BadRequest(new { error = "InvalidEmoji", message = "Emoji is invalid or unsupported." });
     }
 
     var message = await FindMessageInChannelAsync(db, channel.Id, new MessageId(messageId), ct);
@@ -2418,7 +2426,7 @@ v1.MapPost("/channels/{channelId:guid}/messages/{messageId:guid}/pin", async (
     var message = await FindDirectChannelMessageAsync(db, channel.Id, new MessageId(messageId), ct);
     if (message is null)
     {
-        return Results.BadRequest(new { error = "WrongChannel", message = "A mensagem não pertence a este canal." });
+        return Results.BadRequest(new { error = "WrongChannel", message = "Message does not belong to this channel." });
     }
 
     if (message.DeletedAt is not null)
@@ -2440,7 +2448,7 @@ v1.MapPost("/channels/{channelId:guid}/messages/{messageId:guid}/pin", async (
         return Results.BadRequest(new
         {
             error = "PinLimitReached",
-            message = $"Limite de {PinPolicies.MaxPinnedPerChannel} mensagens fixadas atingido. Desafixe uma antes de continuar.",
+            message = $"Pinned message limit of {PinPolicies.MaxPinnedPerChannel} reached. Unpin one before continuing.",
             limit = PinPolicies.MaxPinnedPerChannel,
             count
         });
@@ -2497,7 +2505,7 @@ v1.MapDelete("/channels/{channelId:guid}/messages/{messageId:guid}/pin", async (
     var message = await FindDirectChannelMessageAsync(db, channel.Id, new MessageId(messageId), ct);
     if (message is null)
     {
-        return Results.BadRequest(new { error = "WrongChannel", message = "A mensagem não pertence a este canal." });
+        return Results.BadRequest(new { error = "WrongChannel", message = "Message does not belong to this channel." });
     }
 
     var pin = await db.PinnedMessages.FirstOrDefaultAsync(
@@ -2916,7 +2924,7 @@ v1.MapGet("/channels/{channelId:guid}/messages/{messageId:guid}/reactions/{emoji
     var normalizedEmoji = Uri.UnescapeDataString(emoji).Trim();
     if (!EmojiValidator.IsValid(normalizedEmoji))
     {
-        return Results.BadRequest(new { error = "InvalidEmoji", message = "Emoji inválido ou não suportado." });
+        return Results.BadRequest(new { error = "InvalidEmoji", message = "Emoji is invalid or unsupported." });
     }
 
     var message = await FindMessageInChannelAsync(db, channel.Id, new MessageId(messageId), ct);
@@ -5038,7 +5046,7 @@ static object? ValidateSavedNote(string? note, out string? normalized)
         return new
         {
             error = "NoteTooLong",
-            message = $"Nota pode ter no máximo {SavedMessagePolicies.MaxNoteLength} caracteres.",
+            message = $"Note may be at most {SavedMessagePolicies.MaxNoteLength} characters.",
             max = SavedMessagePolicies.MaxNoteLength
         };
     }

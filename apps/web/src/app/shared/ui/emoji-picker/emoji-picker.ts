@@ -26,6 +26,7 @@ import {
   type EmojiCategory,
   type EmojiLocale,
 } from '../../emoji/emoji-data';
+import { fillTemplate, ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-emoji-picker',
@@ -50,7 +51,7 @@ import {
         class="emoji-picker"
         role="dialog"
         aria-modal="true"
-        [attr.aria-label]="'Seletor de emoji'"
+        [attr.aria-label]="ui.emojiPickerTitle"
         (keydown)="onPanelKeydown($event)"
       >
         <div class="emoji-picker__search">
@@ -59,14 +60,14 @@ import {
             type="search"
             [value]="query()"
             (input)="onSearchInput($event)"
-            placeholder="Buscar emoji…"
-            aria-label="Buscar emoji"
+            [placeholder]="ui.emojiSearchPh"
+            [attr.aria-label]="ui.emojiSearchAria"
           />
         </div>
 
         @if (query().trim()) {
           <div class="emoji-picker__section">
-            <p class="emoji-picker__heading">Resultados</p>
+            <p class="emoji-picker__heading">{{ ui.emojiResults }}</p>
             <cdk-virtual-scroll-viewport itemSize="36" class="emoji-picker__viewport">
               <div class="emoji-picker__grid">
                 @for (emoji of searchResults(); track emoji) {
@@ -74,7 +75,7 @@ import {
                     type="button"
                     class="emoji-picker__emoji"
                     [class.is-active]="emoji === activeEmoji()"
-                    [attr.aria-label]="'Inserir ' + emoji"
+                    [attr.aria-label]="fillTemplate(ui.emojiInsert, { emoji })"
                     (click)="pick(emoji)"
                   >
                     {{ emoji }}
@@ -84,7 +85,7 @@ import {
             </cdk-virtual-scroll-viewport>
           </div>
         } @else {
-          <div class="emoji-picker__tabs" role="tablist" aria-label="Categorias de emoji">
+          <div class="emoji-picker__tabs" role="tablist" [attr.aria-label]="ui.emojiCategories">
             @if (recentEmojis().length) {
               <button
                 type="button"
@@ -93,7 +94,7 @@ import {
                 [class.is-active]="activeCategoryId() === 'recent'"
                 (click)="activeCategoryId.set('recent')"
               >
-                Recentes
+                {{ ui.emojiRecent }}
               </button>
             }
             @for (category of categories(); track category.id) {
@@ -118,7 +119,7 @@ import {
                     type="button"
                     class="emoji-picker__emoji"
                     [class.is-active]="emoji === activeEmoji()"
-                    [attr.aria-label]="'Inserir ' + emoji"
+                    [attr.aria-label]="fillTemplate(ui.emojiInsert, { emoji })"
                     (click)="pick(emoji)"
                   >
                     {{ emoji }}
@@ -217,11 +218,13 @@ import {
   `,
 })
 export class EmojiPicker {
+  readonly ui = ui;
+  readonly fillTemplate = fillTemplate;
   private readonly overlay = inject(Overlay);
   readonly scrollStrategy = this.overlay.scrollStrategies.reposition();
 
   readonly open = input(false);
-  readonly locale = input<EmojiLocale>('pt');
+  readonly locale = input<'pt' | 'en' | 'pt-BR'>('pt');
   readonly select = output<string>();
   readonly closed = output<void>();
 
@@ -268,7 +271,7 @@ export class EmojiPicker {
   readonly searchResults = computed(() => {
     const catalog = this.catalog();
     if (!catalog) return [];
-    return searchEmojis(catalog, this.query(), this.locale());
+    return searchEmojis(catalog, this.query(), this.catalogLocale());
   });
   readonly visibleEmojis = computed(() => {
     if (this.activeCategoryId() === 'recent') {
@@ -279,10 +282,10 @@ export class EmojiPicker {
   });
   readonly activeHeading = computed(() => {
     if (this.activeCategoryId() === 'recent') {
-      return this.locale() === 'pt' ? 'Usados recentemente' : 'Recently used';
+      return ui.emojiRecentlyUsed;
     }
     const category = this.categories().find((item) => item.id === this.activeCategoryId());
-    return category ? categoryLabel(category, this.locale()) : '';
+    return category ? categoryLabel(category, this.catalogLocale()) : '';
   });
 
   constructor() {
@@ -312,7 +315,11 @@ export class EmojiPicker {
   }
 
   labelFor(category: EmojiCategory): string {
-    return categoryLabel(category, this.locale());
+    return categoryLabel(category, this.catalogLocale());
+  }
+
+  private catalogLocale(): EmojiLocale {
+    return this.locale() === 'en' ? 'en' : 'pt';
   }
 
   onSearchInput(event: Event): void {

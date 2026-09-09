@@ -31,7 +31,7 @@ organiza. Estados:
 
 | Capacidade | Estado | Próximo passo |
 |------------|--------|---------------|
-| Busca FTS com filtros e resumo opcional | Atual | Semântica/RAG → B-121 / W12 |
+| Busca FTS com filtros e resumo opcional | Atual | Matching versátil → B-188 / W10-16 (BUG-023); semântica/RAG → B-121 / W12 |
 | Salvos, pins e seguir thread | Committed | Waves 9–10 |
 | Painéis de contexto (sidebar direita) | Done | B-171 / W9-9 |
 | Barra de navegação (sidebar esquerda) | **Done** | B-184 / W9-11 |

@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { PushNotificationService } from '../../../core/services/push-notification.service';
 import { Button } from '../button/button';
+import { ui } from '../../../core/i18n/strings';
 
 @Component({
   selector: 'vc-push-opt-in-banner',
@@ -9,9 +10,9 @@ import { Button } from '../button/button';
   template: `
     @if (push.bannerOpen()) {
       <div class="vc-push" role="status" data-testid="push-opt-in">
-        <span class="vc-push__text">Receber notificações neste dispositivo?</span>
+        <span class="vc-push__text">{{ ui.bannerPushAsk }}</span>
         <div class="vc-push__actions">
-          <vc-button type="button" variant="ghost" (click)="push.dismissBanner()">Agora não</vc-button>
+          <vc-button type="button" variant="ghost" (click)="push.dismissBanner()">{{ ui.bannerNotNow }}</vc-button>
           <vc-button
             type="button"
             variant="primary"
@@ -19,16 +20,16 @@ import { Button } from '../button/button';
             [disabled]="push.busy()"
             (click)="push.enablePush()"
           >
-            Ativar
+            {{ ui.bannerEnable }}
           </vc-button>
         </div>
       </div>
     } @else if (push.permissionDenied()) {
       <div class="vc-push" role="status" data-testid="push-denied">
         <span class="vc-push__text">
-          Notificações bloqueadas no navegador. Reative a permissão nas configurações do site.
+          {{ ui.bannerPushBlocked }}
         </span>
-        <vc-button type="button" variant="ghost" (click)="push.permissionDenied.set(false)">Fechar</vc-button>
+        <vc-button type="button" variant="ghost" (click)="push.permissionDenied.set(false)">{{ ui.close }}</vc-button>
       </div>
     }
   `,
@@ -60,5 +61,6 @@ import { Button } from '../button/button';
   `,
 })
 export class PushOptInBanner {
+  readonly ui = ui;
   readonly push = inject(PushNotificationService);
 }

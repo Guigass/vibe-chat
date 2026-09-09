@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService } from '../../../core/api/api.service';
+import { fillTemplate, translateErrorCode, ui } from '../../../core/i18n/strings';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { CommandPaletteService } from '../../../core/services/command-palette.service';
 import { MessageStore } from '../../../core/services/message.store';
@@ -27,13 +28,13 @@ export interface SlashExecResult {
 }
 
 const DEMO_COMMANDS: SlashCommandDef[] = [
-  { name: 'dm', description: 'Abre ou cria uma DM', usage: '/dm @pessoa' },
-  { name: 'topico', description: 'Altera a descrição do canal', usage: '/topico <texto>' },
-  { name: 'convidar', description: 'Convida alguém para o workspace', usage: '/convidar <email>' },
-  { name: 'resumir', description: 'Resume as mensagens recentes do canal', usage: '/resumir' },
-  { name: 'apagar', description: 'Apaga a sua última mensagem neste canal', usage: '/apagar' },
-  { name: 'enquete', description: 'Cria uma enquete no canal', usage: '/enquete' },
-  { name: 'ajuda', description: 'Lista os comandos disponíveis', usage: '/ajuda' },
+  { name: 'dm', description: ui.slashDmDesc, usage: '/dm @pessoa' },
+  { name: 'topico', description: ui.slashTopicDesc, usage: '/topico <texto>' },
+  { name: 'convidar', description: ui.slashInviteDesc, usage: '/convidar <email>' },
+  { name: 'resumir', description: ui.slashSummarizeDesc, usage: '/resumir' },
+  { name: 'apagar', description: ui.slashDeleteDesc, usage: '/apagar' },
+  { name: 'enquete', description: ui.slashPollDesc, usage: '/enquete' },
+  { name: 'ajuda', description: ui.slashHelpDesc, usage: '/ajuda' },
 ];
 
 @Injectable({ providedIn: 'root' })
@@ -74,22 +75,19 @@ export class SlashCommandsService {
   async execute(raw: string): Promise<SlashExecResult> {
     const parsed = parseSlashCommand(raw);
     if (!parsed || !parsed.name) {
-      return this.fail('Comando inválido.', false);
+      return this.fail(ui.slashInvalid, false);
     }
 
     const workspace = this.channels.activeWorkspace();
     const channel = this.channels.activeChannel();
     if (!workspace || !channel) {
-      return this.fail('Selecione um canal para usar comandos.', false);
+      return this.fail(ui.slashNeedChannel, false);
     }
 
     const available = await this.listCommands(workspace.id);
     const known = available.find((c) => c.name === parsed.name);
     if (!known) {
-      return this.fail(
-        `Comando desconhecido: /${parsed.name}. Digite /ajuda para ver a lista.`,
-        false,
-      );
+      return this.fail(fillTemplate(ui.slashUnknownHelp, { name: parsed.name }), false);
     }
 
     switch (parsed.name) {
@@ -108,14 +106,14 @@ export class SlashCommandsService {
       case 'enquete':
         return this.runEnquete(parsed, channel.isDirect === true);
       default:
-        return this.fail(`Comando desconhecido: /${parsed.name}.`, false);
+        return this.fail(fillTemplate(ui.slashUnknown, { name: parsed.name }), false);
     }
   }
 
   private runAjuda(commands: SlashCommandDef[]): SlashExecResult {
     const notice: SlashNotice = {
       kind: 'help',
-      text: 'Comandos disponíveis',
+      text: ui.slashAvailable,
       lines: commands.map((c) => `${c.usage} — ${c.description}`),
     };
     this.notice.set(notice);
@@ -126,7 +124,7 @@ export class SlashCommandsService {
   private async runDm(parsed: ParsedSlashCommand): Promise<SlashExecResult> {
     const handle = parsed.argsRaw.replace(/^@/, '').trim();
     if (!handle) {
-      return this.fail('Uso: /dm @pessoa', false);
+      return this.fail(ui.slashDmUsage, false);
     }
 
     const members = this.channels.members();
@@ -138,17 +136,17 @@ export class SlashCommandsService {
     );
 
     if (!match) {
-      return this.fail(`Não encontrei o membro "${handle}".`, false);
+      return this.fail(fillTemplate(ui.slashMemberNotFound, { handle }), false);
     }
 
     const channel = await this.channels.openDirectMessage(match.userId);
     if (!channel) {
-      return this.fail('Não foi possível abrir a DM.', false);
+      return this.fail(ui.slashDmOpenError, false);
     }
 
     const notice: SlashNotice = {
       kind: 'info',
-      text: `DM aberta com ${match.displayName}.`,
+      text: fillTemplate(ui.slashDmOpened, { name: match.displayName }),
     };
     this.notice.set(notice);
     return { ok: true, clearDraft: true, notice };
@@ -161,18 +159,18 @@ export class SlashCommandsService {
     isDirect: boolean,
   ): Promise<SlashExecResult> {
     if (isDirect) {
-      return this.fail('DMs não têm tópico.', false);
+      return this.fail(ui.slashDmNoTopic, false);
     }
     if (!parsed.argsRaw) {
-      return this.fail('Uso: /topico <texto>', false);
+      return this.fail(ui.slashTopicUsage, false);
     }
     if (parsed.argsRaw.length > 250) {
-      return this.fail('O tópico deve ter no máximo 250 caracteres.', false);
+      return this.fail(ui.slashTopicTooLong, false);
     }
 
     if (this.channels.isDemo()) {
       this.channels.patchChannel(channelId, { description: parsed.argsRaw });
-      const notice: SlashNotice = { kind: 'info', text: 'Tópico atualizado.' };
+      const notice: SlashNotice = { kind: 'info', text: ui.slashTopicUpdated };
       this.notice.set(notice);
       return { ok: true, clearDraft: true, notice };
     }
@@ -180,11 +178,11 @@ export class SlashCommandsService {
     try {
       const updated = await this.api.updateChannelTopic(workspaceId, channelId, parsed.argsRaw);
       this.channels.patchChannel(channelId, { description: updated.description });
-      const notice: SlashNotice = { kind: 'info', text: 'Tópico atualizado.' };
+      const notice: SlashNotice = { kind: 'info', text: ui.slashTopicUpdated };
       this.notice.set(notice);
       return { ok: true, clearDraft: true, notice };
     } catch (err) {
-      return this.fail(this.errorMessage(err, 'Não foi possível atualizar o tópico.'), false);
+      return this.fail(this.errorMessage(err, ui.slashTopicError), false);
     }
   }
 
@@ -194,13 +192,13 @@ export class SlashCommandsService {
   ): Promise<SlashExecResult> {
     const email = parsed.argsRaw.trim();
     if (!email || !email.includes('@')) {
-      return this.fail('Uso: /convidar <email>', false);
+      return this.fail(ui.slashInviteUsage, false);
     }
 
     if (this.channels.isDemo()) {
       const notice: SlashNotice = {
         kind: 'info',
-        text: `Convite simulado para ${email}.`,
+        text: fillTemplate(ui.slashInviteSimulated, { email }),
       };
       this.notice.set(notice);
       return { ok: true, clearDraft: true, notice };
@@ -208,15 +206,18 @@ export class SlashCommandsService {
 
     try {
       await this.api.inviteMember(workspaceId, { email });
-      const notice: SlashNotice = { kind: 'info', text: `Convite enviado para ${email}.` };
+      const notice: SlashNotice = {
+        kind: 'info',
+        text: fillTemplate(ui.slashInviteSent, { email }),
+      };
       this.notice.set(notice);
       return { ok: true, clearDraft: true, notice };
     } catch (err) {
       const status = (err as { status?: number })?.status;
       if (status === 403) {
-        return this.fail('Você não tem permissão para convidar membros.', false);
+        return this.fail(ui.slashInviteForbidden, false);
       }
-      return this.fail(this.errorMessage(err, 'Não foi possível enviar o convite.'), false);
+      return this.fail(this.errorMessage(err, ui.slashInviteError), false);
     }
   }
 
@@ -224,7 +225,7 @@ export class SlashCommandsService {
     if (this.channels.isDemo()) {
       const notice: SlashNotice = {
         kind: 'summary',
-        text: 'Resumo (demo): conversa recente sem conteúdo real.',
+        text: ui.slashSummarizeDemo,
       };
       this.notice.set(notice);
       return { ok: true, clearDraft: true, notice };
@@ -239,15 +240,9 @@ export class SlashCommandsService {
       const status = (err as { status?: number })?.status;
       const raw = err instanceof Error ? err.message : '';
       if (status === 503 || /AiDisabled/i.test(raw)) {
-        return this.fail(
-          'A IA está desligada neste workspace. Ative em Configurações para usar /resumir.',
-          false,
-        );
+        return this.fail(ui.slashAiDisabled, false);
       }
-      return this.fail(
-        this.errorMessage(err, 'IA indisponível ou desabilitada para este workspace.'),
-        false,
-      );
+      return this.fail(this.errorMessage(err, ui.slashAiUnavailable), false);
     }
   }
 
@@ -257,12 +252,12 @@ export class SlashCommandsService {
       .find((m) => m.mine && !m.deletedAt);
 
     if (!lastOwn) {
-      return this.fail('Você não tem mensagem recente para apagar neste canal.', false);
+      return this.fail(ui.slashNoRecentToDelete, false);
     }
 
     const confirmed =
       typeof globalThis.confirm === 'function'
-        ? globalThis.confirm('Apagar a sua última mensagem neste canal?')
+        ? globalThis.confirm(ui.slashDeleteConfirm)
         : true;
     if (!confirmed) {
       return { ok: false, clearDraft: false, notice: null };
@@ -270,17 +265,17 @@ export class SlashCommandsService {
 
     try {
       await this.messages.remove(lastOwn.id);
-      const notice: SlashNotice = { kind: 'info', text: 'Mensagem apagada.' };
+      const notice: SlashNotice = { kind: 'info', text: ui.slashDeleted };
       this.notice.set(notice);
       return { ok: true, clearDraft: true, notice };
     } catch (err) {
-      return this.fail(this.errorMessage(err, 'Não foi possível apagar a mensagem.'), false);
+      return this.fail(this.errorMessage(err, ui.slashDeleteError), false);
     }
   }
 
   private runEnquete(parsed: ParsedSlashCommand, isDirect: boolean): SlashExecResult {
     if (isDirect) {
-      return this.fail('Enquetes só estão disponíveis em canais.', false);
+      return this.fail(ui.slashPollChannelsOnly, false);
     }
 
     const parts = parsed.argsRaw
@@ -294,7 +289,7 @@ export class SlashCommandsService {
         options.length > 10 ||
         options.some((option) => option.length > 100)
       ) {
-        return this.fail('Pergunta até 500 e 2–10 opções de até 100 caracteres.', false);
+        return this.fail(ui.slashPollHint, false);
       }
       this.notice.set(null);
       return {
@@ -329,9 +324,9 @@ export class SlashCommandsService {
       const parsed = JSON.parse(err.message) as { error?: string };
       if (parsed?.error && typeof parsed.error === 'string') {
         if (parsed.error === 'AiDisabled') {
-          return 'A IA está desligada neste workspace. Ative em Configurações para usar /resumir.';
+          return ui.slashAiDisabled;
         }
-        return parsed.error;
+        return translateErrorCode(parsed.error);
       }
     } catch {
       /* not JSON */

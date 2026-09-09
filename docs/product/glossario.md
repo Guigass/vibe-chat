@@ -38,7 +38,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Reaction** | Reação emoji (ou similar) a uma mensagem. |
 | **Enquete / Poll** | Mensagem com pergunta e 2–10 opções (`messaging.polls`). Voto único ou múltiplo; anônima ou visível; prazo opcional. Auditor lê e não vota. |
 | **Attachment** | Arquivo associado a mensagem; bytes no object storage (MinIO); metadados no PostgreSQL. |
-| **Busca com filtros** | FTS PostgreSQL em mensagens visíveis ao membership (`GET /search/messages`). Filtros `de:`/`em:`/`antes:`/`tem:` só restringem; nunca ampliam ACL (B-098). Distinta da busca semântica (B-121 / ADR-016). Atalho: `Ctrl/Cmd+Shift+F`. |
+| **Busca com filtros** | FTS PostgreSQL em mensagens visíveis ao membership (`GET /search/messages`). Filtros `de:`/`em:`/`antes:`/`tem:` só restringem; nunca ampliam ACL (B-098). Qualidade/versatilidade do matching (prefixo, acento, canal/pessoa/anexo) → **B-188**. Distinta da busca semântica (B-121 / ADR-016). Atalho: `Ctrl/Cmd+Shift+F`. |
 | **Paleta de comandos** | Overlay de navegação (`Ctrl/Cmd+K`) sobre canais com membership, pessoas visíveis, ações locais e comandos de `GET /commands` (B-087 / B-099). Não substitui a busca de mensagens. |
 | **Announcement / Anúncio** | Mensagem ou conversa de broadcast com regras de publicação e, opcionalmente, confirmação de leitura; não é sinônimo de notificação push. |
 | **Action item** | Ação estruturada derivada de uma conversa e ligada à mensagem de origem; pode evoluir para tarefa, mas preserva evidência. |
@@ -59,7 +59,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | Termo | Definição |
 |-------|-----------|
 | **User** | Perfil humano local estável usado como ator. Autenticação vem de External Identity no IdP; memberships e papéis continuam no VibeChat. |
-| **Locale** | Preferência pessoal de idioma da UI (`pt-BR` ou `en`), persistida no perfil (`GET`/`PUT /me`) — não é setting de tenant (B-100 / D-14). |
+| **Locale** | Preferência pessoal de idioma da UI (`pt-BR`, `en`, `es`, `fr`, `de`, `it`, `ja`, `zh-CN`, `ko`, `ru`), persistida no perfil (`GET`/`PUT /me`) — não é setting de tenant (B-100 / D-14). |
 | **Perfil público** | Ficha do membro no workspace (displayName, cargo/função, sobre, mensagem de destaque, avatar), editável pelo dono e legível por membros autorizados do mesmo workspace — não é exposição na internet aberta (B-167). Distinto de status temporário (B-116) e de preferências pessoais (locale/DND/read receipts/wallpaper/accent). |
 | **Personalização visual** | Preferências pessoais de aparência da conversa: wallpaper curado da timeline e accent de destaque (B-185). Só do próprio usuário; distinto de light/dark global (B-049), densidade e de branding por tenant (B-140). |
 | **Person** | Pessoa natural, quando conhecida. Não é credencial, sessão, membership nem identificador de autorização. |

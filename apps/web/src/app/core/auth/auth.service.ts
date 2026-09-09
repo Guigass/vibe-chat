@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { User, UserManager, WebStorageStateStore } from 'oidc-client-ts';
 import { environment } from '../../../environments/environment';
 import { DraftStoreService } from '../services/draft-store.service';
+import { ui } from '../i18n/strings';
 import { TenantContext } from '../tenant/tenant-context';
 
 export interface AuthProfile {
@@ -89,7 +90,7 @@ export class AuthService {
     const p = u.profile as Record<string, unknown>;
     return {
       id: String(p['sub'] ?? ''),
-      name: String(p['name'] ?? p['preferred_username'] ?? 'Usuário'),
+      name: String(p['name'] ?? p['preferred_username'] ?? ui.userFallback),
       email: p['email'] ? String(p['email']) : undefined,
       roles: this.extractRoles(p),
       tenantId: p['tenant_id'] ? String(p['tenant_id']) : undefined,
@@ -125,7 +126,7 @@ export class AuthService {
       const user = await this.userManager.getUser();
       this.applyUser(user && !user.expired ? user : null);
     } catch (err) {
-      this.errorSignal.set(err instanceof Error ? err.message : 'Falha ao iniciar autenticação');
+      this.errorSignal.set(err instanceof Error ? err.message : ui.authStartFailed);
       this.applyUser(null);
     } finally {
       this.readySignal.set(true);
@@ -258,7 +259,7 @@ export class AuthService {
       userId,
       roles: profile ? this.extractRoles(profile) : [],
       displayName: profile
-        ? String(profile['name'] ?? profile['preferred_username'] ?? 'Usuário')
+        ? String(profile['name'] ?? profile['preferred_username'] ?? ui.userFallback)
         : null,
     });
   }

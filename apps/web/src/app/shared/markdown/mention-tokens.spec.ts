@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ui } from '../../core/i18n/strings';
 import {
   detectMentionQuery,
   encodeMentionPlainText,
@@ -27,8 +28,8 @@ describe('mention tokens', () => {
   it('formats mention tokens as readable plain text', () => {
     const userId = '55555555-5555-5555-5555-555555555555';
     const text = `hey ${userMentionToken(userId)} <@here>`;
-    expect(formatMentionPlainText(text, { [userId]: 'Bob' })).toBe('hey @Bob @aqui');
-    expect(formatMentionPlainText(userMentionToken(userId), {})).toBe('@usuário');
+    expect(formatMentionPlainText(text, { [userId]: 'Bob' })).toBe(`hey @Bob ${ui.mentionHere}`);
+    expect(formatMentionPlainText(userMentionToken(userId), {})).toBe(ui.mentionUser);
   });
 
   it('inserts mention token replacing query', () => {
@@ -57,6 +58,23 @@ describe('mention tokens', () => {
       `oi ${userMentionToken(bob)}, vê <@here>`,
     );
     expect(formatMentionPlainText(`oi ${userMentionToken(bob)}`, { [bob]: 'Bob' })).toBe('oi @Bob');
+  });
+
+  it('encodes English @here / @channel aliases', () => {
+    expect(encodeMentionPlainText('ping @here and @channel', {})).toBe(
+      'ping <@here> and <@channel>',
+    );
+  });
+
+  it('shows specials for empty or localized mention queries', () => {
+    const items = [
+      { kind: 'here' as const, displayName: '@aqui' },
+      { kind: 'channel' as const, displayName: '@canal' },
+    ];
+    expect(filterMentionItems(items, '').map((item) => item.kind)).toEqual(['here', 'channel']);
+    expect(filterMentionItems(items, 'he').map((item) => item.kind)).toEqual(['here', 'channel']);
+    expect(filterMentionItems(items, 'chan').map((item) => item.kind)).toEqual(['here', 'channel']);
+    expect(filterMentionItems(items, 'bob').map((item) => item.kind)).toEqual([]);
   });
 });
 

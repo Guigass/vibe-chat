@@ -1,4 +1,5 @@
 import { Component, HostListener, effect, input, output, signal } from '@angular/core';
+import { ui } from '../../../core/i18n/strings';
 
 export interface LightboxImage {
   id: string;
@@ -16,7 +17,7 @@ export interface LightboxImage {
         class="lb"
         role="dialog"
         aria-modal="true"
-        aria-label="Visualização de imagem"
+        [attr.aria-label]="ui.lightboxTitle"
         (click)="$event.stopPropagation()"
       >
         <header class="lb__header">
@@ -26,9 +27,9 @@ export interface LightboxImage {
               <span class="lb__count">{{ index() + 1 }} / {{ images().length }}</span>
             }
             <a [href]="img.url" target="_blank" rel="noopener noreferrer" download>
-              Baixar
+              {{ ui.lightboxDownload }}
             </a>
-            <button type="button" class="ghost" aria-label="Fechar" (click)="close.emit()">×</button>
+            <button type="button" class="ghost" [attr.aria-label]="ui.close" (click)="close.emit()">×</button>
           </div>
         </header>
         <div class="lb__stage">
@@ -36,7 +37,7 @@ export interface LightboxImage {
             <button
               type="button"
               class="lb__nav"
-              aria-label="Imagem anterior"
+              [attr.aria-label]="ui.lightboxPrev"
               (click)="prev()"
             >
               ‹
@@ -47,7 +48,7 @@ export interface LightboxImage {
             <button
               type="button"
               class="lb__nav"
-              aria-label="Próxima imagem"
+              [attr.aria-label]="ui.lightboxNext"
               (click)="next()"
             >
               ›
@@ -149,6 +150,7 @@ export interface LightboxImage {
   `,
 })
 export class ImageLightbox {
+  readonly ui = ui;
   readonly open = input(false);
   readonly images = input<LightboxImage[]>([]);
   readonly startId = input<string | null>(null);

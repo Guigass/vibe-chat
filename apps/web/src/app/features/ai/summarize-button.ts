@@ -3,6 +3,7 @@ import { environment } from '../../../environments/environment';
 import { ApiService } from '../../core/api/api.service';
 import { ChannelStore } from '../../core/services/channel.store';
 import { Button } from '../../shared/ui';
+import { ui } from '../../core/i18n/strings';
 
 @Component({
   selector: 'vc-summarize-button',
@@ -12,13 +13,13 @@ import { Button } from '../../shared/ui';
     @if (enabled) {
       <div class="ai-wrap">
         <vc-button variant="subtle" [loading]="loading()" (click)="summarize()">
-          Resumir mensagens recentes
+          {{ ui.aiSummarizeAria }}
         </vc-button>
         @if (summary()) {
           <aside class="ai-summary" role="status">
             <header>
-              <strong>Resumo</strong>
-              <button type="button" (click)="summary.set(null)" aria-label="Fechar resumo">×</button>
+              <strong>{{ ui.aiSummary }}</strong>
+              <button type="button" (click)="summary.set(null)" [attr.aria-label]="ui.aiCloseSummary">×</button>
             </header>
             <p>{{ summary() }}</p>
           </aside>
@@ -73,6 +74,7 @@ import { Button } from '../../shared/ui';
   `,
 })
 export class SummarizeButton {
+  readonly ui = ui;
   private readonly api = inject(ApiService);
   private readonly channels = inject(ChannelStore);
 
@@ -89,7 +91,7 @@ export class SummarizeButton {
     try {
       const workspace = this.channels.activeWorkspace();
       if (!workspace) {
-        throw new Error('Workspace não selecionado');
+        throw new Error(ui.aiNoWorkspace);
       }
       const result = await this.api.summarizeChannel(workspace.id, channel.id);
       this.summary.set(result.summary);
@@ -97,7 +99,7 @@ export class SummarizeButton {
       this.error.set(
         err instanceof Error
           ? err.message
-          : 'IA indisponível ou desabilitada para este workspace.',
+          : ui.slashAiUnavailable,
       );
     } finally {
       this.loading.set(false);

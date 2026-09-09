@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ApiService } from '../../core/api/api.service';
+import { ui } from '../../core/i18n/strings';
 import { AuditEventItem } from '../../shared/models/chat.models';
 import { AdminContextService } from './admin-context.service';
 import { AdminAreaId } from './admin-permissions';
@@ -14,6 +15,7 @@ import { AdminAreaId } from './admin-permissions';
 })
 export class AdminAuditPage implements OnInit {
   readonly areaId: AdminAreaId = 'audit';
+  readonly ui = ui;
 
   private readonly api = inject(ApiService);
   readonly ctx = inject(AdminContextService);

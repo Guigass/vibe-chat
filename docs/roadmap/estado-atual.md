@@ -5,7 +5,7 @@ Snapshot factual para orientação rápida. Não substitui o
 
 - **Data de corte:** 2026-09-08
 - **Fase:** Wave 10 — W10-7 / B-101 Done (DM em grupo); seguinte W10-8 / B-102
-- **Safety lane obrigatória:** OPS-E2E-B100 Resolved (Playwright `locale: pt-BR` + isolamento i18n E2E + foco paleta + select Settings); OPS-E2E-B099 Resolved (#154); OPS-E2E-B098 Resolved (#148); OPS-E2E-B097 Resolved (#145+#149); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); BUG-020 Aberto (Média, fecha em B-186 / W10-15 — painel de membros + add + PV); BUG-021 Aberto (Média — convidado para DM em grupo não atualiza o front até F5); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
+- **Safety lane obrigatória:** OPS-E2E-B100 Resolved (Playwright `locale: pt-BR` + isolamento i18n E2E + foco paleta + select Settings); OPS-E2E-B099 Resolved (#154); OPS-E2E-B098 Resolved (#148); OPS-E2E-B097 Resolved (#145+#149); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); BUG-020 Aberto (Média, fecha em B-186 / W10-15 — painel de membros + add + PV); BUG-021 Aberto (Média — convidado para DM em grupo não atualiza o front até F5); BUG-022 Aberto (Média — busca do header desalinhada na 1ª abertura e fecha ao selecionar opção); BUG-023 Aberto (Média, fecha em B-188 / W10-16 — resultados de busca rígidos); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
 - **Próximo item elegível:** W10-8 / B-102 (seguir thread)
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
@@ -104,7 +104,7 @@ imediata: o Build só consome W11+ depois de W7–W10 `Done`.
 
 ## Baseline de planejamento
 
-- 91 itens `Planned` entre W8–W19 (B-186/W10-15 — membros do canal; B-178…B-183
+- 92 itens `Planned` entre W8–W19 (B-188/W10-16 — busca versátil, fecha BUG-023; B-186/W10-15 — membros do canal; B-178…B-183
   catalogados em W19 — organização do código; B-104/W7-6 Done via #82;
   B-076/W7-3 Done via #84; B-165/W7-9 Done 2026-08-10; B-088/W9-1 Done;
   B-171/W9-9 Done via #129; B-173/W9-10 Done; B-177/W7-13 Done;
