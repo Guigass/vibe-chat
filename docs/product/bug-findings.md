@@ -27,6 +27,7 @@ Regras do registro:
 
 | ID      | Área              | Achado                                                                | Severidade | Status                                       |
 | ------- | ----------------- | --------------------------------------------------------------------- | ---------- | -------------------------------------------- |
+| BUG-020 | Canal / membros   | Sem painel de membros, add no canal nem enviar PV a partir do roster  | Média      | Aberto — fecha em **B-186** |
 | BUG-002 | Sidebar / unread  | Badges de novas mensagens não limpam de forma persistente após reload | Média      | **Done** — B-094 |
 | BUG-008 | Presence          | Minimizar a janela marca ausente na hora                              | Média      | Done                                         |
 | BUG-010 | Timeline / scroll | Ao abrir a conversa não rola até as mensagens mais recentes           | Média      | Done                                         |
@@ -40,6 +41,32 @@ Regras do registro:
 | BUG-018 | Timeline / scroll | Scroll não fica colado no fim ao enviar/receber (às vezes)           | Média      | Done                                         |
 
 ## Detalhamento
+
+### BUG-020 — Sem membros do canal nem add / PV no painel
+
+- Status: **Aberto** — fecha em **B-186** (W10-15).
+- Severidade: **Média** (não quebra envio/leitura; impede gerir quem está no
+  canal e puxar um PV a partir do roster).
+- Observado em: 2026-09-09; relato de produto + código do shell Compose
+  (`apps` / `localhost:4200`). Canal público/privado não tem contagem clicável
+  nem aside de membros; “Adicionar” no header só existe em GroupDm
+  (`addMemberOpen` / `data-testid="group-dm-add-toggle"`). `GET …/channels/{id}/members`
+  serve autocomplete de menção (máx. 8), não roster paginado nem POST/DELETE.
+- Hipótese: B-020 criou o canal e membership do criador; a fatia de roster
+  (lista + add/remove em privado + painel B-171 + DM via B-021) ainda não
+  foi implementada. Confunde-se fácil com convite de workspace (`/admin`
+  membros) ou com add de GroupDm.
+- Arquivos: `apps/web/src/app/layout/shell.page.html`,
+  `apps/web/src/app/layout/shell.page.ts`,
+  `apps/web/src/app/core/api/api.service.ts` (`getChannelMembers`),
+  endpoints `…/channels/{channelId}/members` na API.
+- Resultado esperado: cabeçalho “N membros” abre o painel direito com o
+  roster; em privado, gestor adiciona/remove gente do workspace; em cada
+  outro membro, **Mensagem direta** abre ou cria o DM 1:1 (B-021).
+- Risk class: R2.
+- Owner automático: Directory (B) + Frontend (D).
+- Critério de resolução: B-186 Done + este finding `Done` no mesmo PR;
+  aceite da spec (painel, add, PV) coberto por teste.
 
 ### BUG-001 — Mensagens duplicadas no envio
 

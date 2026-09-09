@@ -47,6 +47,7 @@ e entram na **safety lane** do Build (antes de novas features de wave).
 | B-072 | Scroll só no bloco da conversa | **Done (Wave 6)** — shell sem scroll da página; timeline com overflow interno + composer fixo |
 | BUG-001 | Mensagens duplicadas no envio | **Done** — lock composer + dedupe store + `clientMessageId` no hub |
 | BUG-002 | Unread/badges após reload | Aberto (Média) — alívio cursor; fecha em **B-094** (W9-7) |
+| BUG-020 | Sem painel de membros / add no canal / PV | Aberto (Média) — fecha em **B-186** (W10-15) |
 | BUG-003 | Upload de arquivo com erro | **Done** — presign no PublicEndpoint + CORS fail-closed + resolveContentType |
 | BUG-004 | Áudio do microfone não envia | **Done** — MIME base + erros visíveis + discard/onstop + regressão Vitest |
 | BUG-005 | `/admin` não entra (Member) | **Done** — shell com empty-state; Demo/Owner intactos |
@@ -151,7 +152,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-108 | Extender webhooks outbound | Planned (W10-12) — mais eventos, multi-endpoint, filtros de canal, ping de teste; spec `docs/product/specs/B-108-extender-webhooks.md` |
 | B-109 | Núcleo plugin — bot/token + envio msgs | Planned (W10-13) — capability `messages.send`; base da trilha; spec `docs/product/specs/B-109-api-integracao-envio-mensagens.md` |
 | B-110 | Instalar/gerir plugins na instância | Planned (W10-14) — manifesto local, built-in Incoming Messages; deps B-109; spec `docs/product/specs/B-110-instalar-plugins.md` |
-| B-186 | Membros do canal (lista + gestão) | Planned (W10-15) — roster; add/remove em privado (`channel.manage`); distinto de guest B-040 e GroupDm B-101; [spec](../product/specs/B-186-membros-do-canal.md) |
+| B-186 | Membros do canal (lista + gestão) | Planned (W10-15) — painel direito (B-171); roster; add/remove em privado (`channel.manage`); enviar PV (B-021); fecha **BUG-020**; distinto de guest B-040 e GroupDm B-101; [spec](../product/specs/B-186-membros-do-canal.md) |
 
 ## P3 — Capacidades condicionais e itens promovidos
 

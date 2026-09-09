@@ -316,7 +316,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W10-12 | B/C/D | Extender webhooks outbound (B-108) | B-048, B-069 | [B-108](../product/specs/B-108-extender-webhooks.md) | Planned |
 | W10-13 | B/C/D/E | Núcleo plugin — bot/token + envio msgs (B-109) | B-004, B-069, B-021 | [B-109](../product/specs/B-109-api-integracao-envio-mensagens.md) | Planned |
 | W10-14 | B/C/D | Instalar/gerir plugins na instância (B-110) | W10-13 | [B-110](../product/specs/B-110-instalar-plugins.md) | Planned |
-| W10-15 | B/D | Membros do canal — lista + add/remove em privado (B-186) | B-020 | [B-186](../product/specs/B-186-membros-do-canal.md) | Planned |
+| W10-15 | B/D | Membros do canal — painel direito, add/remove em privado, enviar PV (B-186; fecha BUG-020) | B-020 | [B-186](../product/specs/B-186-membros-do-canal.md) | Planned |
 
 ### Itens de maior risco nestas waves
 

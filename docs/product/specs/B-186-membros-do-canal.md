@@ -1,14 +1,15 @@
 # B-186 — Membros do canal (lista + gestão)
 
-> Wave W10-15 · Trilha B/D · Deps: B-020 · Soft-deps: B-171 · Decisões: D-07 · Risco R2
+> Wave W10-15 · Trilha B/D · Deps: B-020 · Soft-deps: B-171, B-021 · Decisões: D-07 · Risco R2
 
 ## Problema
 
 B-020 entregou spaces e criar canal, mas a gestão de quem participa ficou
 incompleta. Em canal privado só o criador entra em `channel_members`; não há UI
-de roster nem API de add/remove para membros do workspace. O `GET …/members`
-atual serve só autocomplete de menção (máx. 8). Convite de **externo** é B-040;
-este item cobre membros **já do workspace**.
+de roster, painel lateral de membros nem API de add/remove para membros do
+workspace. O `GET …/members` atual serve só autocomplete de menção (máx. 8).
+Adicionar gente só existe hoje em GroupDm (B-101). Convite de **externo** é
+B-040; este item cobre membros **já do workspace**.
 
 ## Escopo
 
@@ -19,8 +20,11 @@ este item cobre membros **já do workspace**.
 - Criador e quem tem `channel.manage` (ou `workspace.admin`) gerem private;
   membro comum pode **sair** do privado (exceto se for o último membro com
   `channel.manage` — bloquear até transferir ou remover o canal).
-- Contagem no cabeçalho do canal; abrir roster no painel de contexto (ou
-  overlay no narrow).
+- Contagem no cabeçalho do canal; abrir roster no **painel de contexto direito**
+  (B-171; overlay no narrow). Não é um painel novo flutuante.
+- Ações por membro no painel (exceto eu): **enviar PV** via get-or-create DM
+  já existente (`POST …/dms`, B-021); opcionalmente ver perfil se B-167 estiver
+  Done (senão omitir o CTA).
 - Mensagem de sistema ao adicionar/remover (mesmo padrão de B-101 quando existir).
 - Audit `channel.member.add` / `channel.member.remove` / `channel.member.leave`.
 
@@ -31,6 +35,8 @@ este item cobre membros **já do workspace**.
   distintos).
 - Papéis granulares **dentro** do canal (moderador de canal).
 - Auto-join em massa, sync SCIM → canal (B-128).
+- Novo endpoint de DM — reusa B-021.
+- Ficha pública completa — B-167 (CTA só se já existir).
 - Redesign da sidebar esquerda (B-184) ou só largura do painel (B-171).
 
 ## Contratos
@@ -51,11 +57,16 @@ catálogo) além da membership do canal.
 
 ## UX
 
-- Cabeçalho: “N membros” clicável.
-- Painel: lista com avatar/nome; em privado, botão “Adicionar” (picker do
-  diretório do workspace, só quem ainda não está) e “Remover” / “Sair”.
-- Empty/erro claros; sem clonar Slack/Discord.
-- Guest (quando B-040 existir) aparece no roster com selo “Convidado”.
+- Cabeçalho (canal público/privado; não DM 1:1): “N membros” clicável. GroupDm
+  continua no fluxo B-101.
+- Painel direito (`shell__context`, mesmo trilho de pins/salvos/thread): lista
+  com avatar, nome e presença se já houver.
+- Em privado: “Adicionar pessoas” (picker do diretório do workspace, só quem
+  ainda não está) e “Remover” / “Sair”.
+- Por linha (outro membro): ação **Mensagem direta** / enviar PV — abre o DM
+  1:1 existente ou cria e navega. Sem inventar composer no painel.
+- Menu curto no item (não um card extra). Sem clonar Slack/Discord.
+- Empty/erro claros. Guest (quando B-040 existir) aparece com selo “Convidado”.
 
 ## Multi-tenant e authZ
 
@@ -68,11 +79,12 @@ catálogo) além da membership do canal.
 
 ## Aceite
 
-- [ ] Abrir canal privado mostra contagem e lista com o criador
-- [ ] Admin/gestor adiciona Alice; ela passa a ver o canal na sidebar e o histórico
+- [ ] Abrir canal privado mostra contagem e o painel direito lista o criador
+- [ ] Admin/gestor adiciona Alice pelo painel; ela passa a ver o canal na sidebar e o histórico
 - [ ] Remover Bob: ele perde acesso (API + hub) na hora
 - [ ] Membro sai com “Sair”; último gestor não consegue sair sem outro gestor
 - [ ] Canal público: lista workspace members; sem add/remove individual
+- [ ] “Mensagem direta” em outro membro abre (ou cria) o DM 1:1 e foca essa conversa
 - [ ] Autocomplete `?query=` continua limitado a 8
 - [ ] Cross-tenant / user de outro workspace → 403
 
@@ -81,7 +93,8 @@ catálogo) além da membership do canal.
 - Integration: add/remove/leave; paginação do GET; 409 duplicado; 400 em público.
 - Security: sem membership → 403; cross-tenant; removido não lê history nem
   `JoinChannel`; Member sem `channel.manage` não adiciona.
-- E2E / unit web: abrir roster, adicionar, contagem atualiza.
+- E2E / unit web: abrir roster, adicionar, contagem atualiza; ação “Mensagem
+  direta” navega para o DM.
 
 ## Riscos
 
