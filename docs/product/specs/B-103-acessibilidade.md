@@ -84,8 +84,8 @@ pessoa não abriu.
 
 ## Evidência local — 2026-09-10
 
-Implementação concluída no workspace; fechamento `Done` depende do PR/CI/merge.
-Não houve alteração de contratos HTTP, dados ou authZ.
+Implementação e CI do PR #164 verdes. Status **Done** neste PR; passa a ser
+canônico após o merge. Não houve alteração de contratos HTTP, dados ou authZ.
 
 - Build de produção: `docker compose -f compose.yaml -f compose.dev.yaml --profile apps up -d --build --no-deps web` — passou.
 - Container `vibechat-b103-check`, dependências Linux isoladas: typecheck
@@ -102,5 +102,7 @@ Não houve alteração de contratos HTTP, dados ou authZ.
   concluída. CI publica relatórios mesmo quando verde e executa unitários web.
 - Avisos existentes do build: fallback de locale `pt-BR` → `pt` e orçamento CSS
   de shell/message-bubble; nenhum erro de build.
-- Stop reason: `GOAL_MET` para implementação e validação local; publicação,
-  CI/merge e passagem com leitor de tela real não são alegados como concluídos.
+- CI GitHub do PR #164: Build & test, gitleaks, Dependency audit notes e E2E
+  (Playwright com axe) passaram.
+- Stop reason: `GOAL_MET` para implementação, unitários, i18n e E2E/axe;
+  passagem com leitor de tela real permanece na rodada exploratória final.
