@@ -1,6 +1,7 @@
 {
   "locale": "ru",
   "translations": {
+    "a11y.skipToConversation": "Перейти к беседе",
     "settings.language": "Язык",
     "login.headline": "Разговоры с глубиной — без шума.",
     "login.lead": "Спокойные пространства для команд, которым нужен надёжный realtime и присутствие без отвлечений.",

@@ -1,6 +1,7 @@
 {
   "locale": "fr",
   "translations": {
+    "a11y.skipToConversation": "Aller à la conversation",
     "settings.language": "Langue",
     "login.headline": "Des conversations en profondeur, sans le bruit.",
     "login.lead": "Des espaces calmes pour les équipes qui ont besoin d’un temps réel fiable et d’une présence sans distraction.",

@@ -1,3 +1,4 @@
+<a class="vc-skip-link" href="#conversation" (click)="$event.preventDefault(); conversation.focus()">{{ ui.skipToConversation }}</a>
 <div
   class="shell"
   [class.shell--sidebar-collapsed]="!sidebarOpen()"
@@ -19,6 +20,7 @@
     class="shell__sidebar vc-anim-sidebar"
     [class.shell__sidebar--no-workspace]="!showWorkspaceSelector()"
     [attr.aria-hidden]="!sidebarOpen()"
+    [attr.inert]="!sidebarOpen() ? '' : null"
   >
     <div class="shell__brand">
       <span class="shell__wordmark">
@@ -74,7 +76,7 @@
 
     <vc-channel-list [navCompact]="navCompact() && !narrowViewport()" />
 
-    <footer class="shell__sidebar-footer">
+    <footer class="shell__sidebar-footer" role="contentinfo">
       @if (canAccessAdmin()) {
         <a
           routerLink="/admin"
@@ -256,7 +258,9 @@
                 </svg>
               </vc-icon-button>
               @if (dmPanel() === 'add') {
-                <div class="shell__dm-popover" data-testid="group-dm-add">
+                <div class="shell__dm-popover" data-testid="group-dm-add" role="dialog"
+                  [attr.aria-label]="ui.groupDmAdd" cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+                  (keydown.escape)="$event.stopPropagation(); closeDmPanel()">
                   <p class="shell__dm-popover-warn">{{ ui.groupDmHistoryWarn }}</p>
                   <vc-input
                     controlId="vc-group-dm-add-search"
@@ -290,7 +294,7 @@
                   </svg>
                 </vc-icon-button>
                 @if (dmPanel() === 'rename') {
-                  <div class="shell__dm-popover shell__dm-popover--form" data-testid="group-dm-rename-form">
+                  <div class="shell__dm-popover shell__dm-popover--form" data-testid="group-dm-rename-form" role="dialog" [attr.aria-label]="ui.directMessage" cdkTrapFocus [cdkTrapFocusAutoCapture]="true" (keydown.escape)="$event.stopPropagation(); closeDmPanel()">
                     <p class="shell__dm-popover-title" id="vc-group-dm-rename-title">{{ ui.groupDmRename }}</p>
                     <form (submit)="submitRename($event)" aria-labelledby="vc-group-dm-rename-title">
                       <vc-input
@@ -320,7 +324,7 @@
                   </svg>
                 </vc-icon-button>
                 @if (dmPanel() === 'leave') {
-                  <div class="shell__dm-popover" data-testid="group-dm-leave-confirm">
+                  <div class="shell__dm-popover" data-testid="group-dm-leave-confirm" role="dialog" [attr.aria-label]="ui.directMessage" cdkTrapFocus [cdkTrapFocusAutoCapture]="true" (keydown.escape)="$event.stopPropagation(); closeDmPanel()">
                     <p class="shell__dm-popover-title">{{ ui.groupDmLeaveConfirm }}</p>
                     <p class="shell__dm-popover-warn">{{ ui.groupDmLeaveHint }}</p>
                     <div class="shell__dm-popover-footer">
@@ -373,7 +377,11 @@
       </button>
     }
 
-    <div
+    <main
+      id="conversation"
+      #conversation
+      tabindex="-1"
+      [attr.aria-label]="ui.skipToConversation"
       class="shell__conversation"
       [class.shell__conversation--drop]="fileDragActive()"
       (dragenter)="onFileDragEnter($event)"
@@ -386,7 +394,7 @@
       }
       <vc-timeline />
       <vc-composer />
-    </div>
+    </main>
   </div>
 
   @if (threads.open()) {

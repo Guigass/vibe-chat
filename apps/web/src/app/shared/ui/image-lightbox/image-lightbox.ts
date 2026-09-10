@@ -1,5 +1,6 @@
-import { Component, HostListener, effect, input, output, signal } from '@angular/core';
+import { Component, effect, input, output, signal } from '@angular/core';
 import { ui } from '../../../core/i18n/strings';
+import { A11yModule } from '@angular/cdk/a11y';
 
 export interface LightboxImage {
   id: string;
@@ -10,15 +11,19 @@ export interface LightboxImage {
 @Component({
   selector: 'vc-image-lightbox',
   standalone: true,
+  imports: [A11yModule],
   template: `
     @if (open() && current(); as img) {
       <div class="lb-backdrop" (click)="close.emit()"></div>
       <div
         class="lb"
         role="dialog"
+        cdkTrapFocus
+        [cdkTrapFocusAutoCapture]="true"
         aria-modal="true"
         [attr.aria-label]="ui.lightboxTitle"
         (click)="$event.stopPropagation()"
+        (keydown)="onKeydown($event)"
       >
         <header class="lb__header">
           <p class="lb__title">{{ img.alt }}</p>
@@ -186,11 +191,11 @@ export class ImageLightbox {
     this.index.update((i) => (i + 1) % len);
   }
 
-  @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent): void {
     if (!this.open()) return;
     if (event.key === 'Escape') {
       event.preventDefault();
+      event.stopPropagation();
       this.close.emit();
       return;
     }

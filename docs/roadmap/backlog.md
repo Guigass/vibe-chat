@@ -150,7 +150,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-100 | Internacionalização | **Done** (W10-6) — pt-BR + en; catálogo incompleto reprova na CI (D-14) |
 | B-101 | DM em grupo | **Done** (W10-7) — `ChannelType.GroupDm`; janela por `JoinedSeq`; flag `Directory:GroupDm:Enabled` off default |
 | B-102 | Seguir thread | **Done** (W10-8) — auto-inscrição (autor/resposta/menção) na mesma transação; não lidas via `ConversationSequences - LastReadSeq`; `followAllThreads` por canal; compartilhar resposta no canal |
-| B-103 | Acessibilidade WCAG 2.2 AA | Planned (W10-9) — axe-core como gate na CI |
+| B-103 | Acessibilidade WCAG 2.2 AA | Planned (W10-9) — implementação local validada em 2026-09-10; 293 unitários e 4 E2E verdes; aguarda PR/CI/merge; [evidência](../product/specs/B-103-acessibilidade.md) |
 | B-040 | Guests por convite | Planned (W10-10) — deixou de estar Blocked; D-07 revisado em 2026-07-25 |
 | B-107 | Políticas de edição/apagar mensagem | Planned (W10-11) — janela de tempo (`messaging.edit|delete.windowMinutes`), papéis e override de moderação; settings admin; UI de editar no composer (B-173); preservação de body no audit → B-169; [spec](../product/specs/B-107-politicas-edicao-mensagem.md) |
 | B-108 | Extender webhooks outbound | Planned (W10-12) — mais eventos, multi-endpoint, filtros de canal, ping de teste; spec `docs/product/specs/B-108-extender-webhooks.md` |

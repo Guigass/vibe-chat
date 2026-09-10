@@ -40,7 +40,8 @@ Suportar **light** e **dark** desde o início via `data-theme="light|dark"` no `
 :root,
 [data-theme="light"] {
   /* Brand */
-  --vc-brand: #0d9488;          /* teal 600 */
+  --vc-brand: #0f766e;          /* teal 700 — AA para texto/CTA */
+  --vc-on-brand: #ffffff;
   --vc-brand-hover: #0f766e;    /* teal 700 */
   --vc-brand-soft: #ccfbf1;     /* teal 100 */
   --vc-brand-ink: #134e4a;      /* teal 900 */
@@ -48,7 +49,7 @@ Suportar **light** e **dark** desde o início via `data-theme="light|dark"` no `
   /* Neutrals charcoal */
   --vc-ink: #1c1917;            /* stone/charcoal */
   --vc-ink-muted: #57534e;
-  --vc-ink-subtle: #78716c;
+  --vc-ink-subtle: #68615c;
   --vc-surface: #f8fafc;        /* cool light, não cream #F4F1EA */
   --vc-surface-elevated: #ffffff;
   --vc-border: #e7e5e4;
@@ -224,6 +225,21 @@ Não transformar o shell em dashboard com stats, strips e callouts.
 - Focus ring visível (`outline` teal)
 - Não depender só de cor para “não lido”
 - `prefers-reduced-motion` reduz animações
+
+B-103: skip link traduzido como primeiro foco no shell, landmarks semânticos,
+mensagens focáveis para revelar ações e sidebar fechada com `inert`. Overlays
+usam `CdkTrapFocus` com captura/devolução de foco; Escape fecha a camada ativa.
+O picker move foco real entre emojis pelas setas, mantendo a edição nativa na busca.
+Timeline/thread anunciam apenas um resumo de novas mensagens por lote; hidratação,
+paginação anterior e ecos repetidos não anunciam o histórico.
+
+Tokens de contraste: `--vc-on-brand` branco no light e `#042f2e` no dark;
+`--vc-ink-subtle` dark = `#a8a29e`; metadados em mensagem própria usam
+`--vc-msg-mine-muted` (`#57534e` light / `#e7e5e4` dark). Foco usa outline
+de 2px com offset, inclusive `forced-colors`; controles têm mínimo de 24×24px,
+placeholders opacos e estados disabled legíveis. O gate axe de E2E cobre login,
+shell, thread, admin, emoji e encaminhamento nos dois temas, guardando JSON e
+screenshots mesmo em CI verde.
 
 ## Ícones
 

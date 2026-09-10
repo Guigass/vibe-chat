@@ -1,6 +1,7 @@
 {
   "locale": "ko",
   "translations": {
+    "a11y.skipToConversation": "대화로 이동",
     "settings.language": "언어",
     "login.headline": "깊이는 있고, 소음은 없는 대화.",
     "login.lead": "방해 없이 안정적인 실시간과 프레즌스가 필요한 팀을 위한 차분한 공간.",

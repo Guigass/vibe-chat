@@ -49,7 +49,7 @@ import { Component, input } from '@angular/core';
     }
     .vc-btn--primary {
       background: var(--vc-brand);
-      color: #042f2e;
+      color: var(--vc-on-brand);
     }
     .vc-btn--primary:hover:not(:disabled) {
       background: var(--vc-brand-hover);

@@ -314,7 +314,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W10-6 | D/G | Internacionalização (B-100) | D-14 | [B-100](../product/specs/B-100-i18n.md) | **Done** |
 | W10-7 | B/C/D | DM em grupo (B-101) | B-021 | [B-101](../product/specs/B-101-dm-em-grupo.md) | **Done** |
 | W10-8 | C/D | Seguir thread (B-102) | B-022, W10-1 | [B-102](../product/specs/B-102-seguir-thread.md) | **Done** |
-| W10-9 | D/E | Acessibilidade WCAG 2.2 AA (B-103) | W10-5 | [B-103](../product/specs/B-103-acessibilidade.md) | Planned |
+| W10-9 | D/E | Acessibilidade WCAG 2.2 AA (B-103) | W10-5 | [B-103](../product/specs/B-103-acessibilidade.md) | Planned — implementação local validada; aguarda PR/CI/merge |
 | W10-10 | B/D/E | Guests por convite (B-040) | P2-1, W10-4, D-07 | [B-040](../product/specs/B-040-guests-por-convite.md) | Planned |
 | W10-11 | B/C/D | Políticas de edição/apagar mensagem (B-107) | B-023, B-069 | [B-107](../product/specs/B-107-politicas-edicao-mensagem.md) | Planned |
 | W10-12 | B/C/D | Extender webhooks outbound (B-108) | B-048, B-069 | [B-108](../product/specs/B-108-extender-webhooks.md) | Planned |

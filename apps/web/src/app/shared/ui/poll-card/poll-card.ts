@@ -131,7 +131,7 @@ import { pollIsClosed, pollIsTie, pollLeaderIndexes } from '../../polls/poll-sum
     .poll__close {
       border: 0;
       background: none;
-      color: var(--vc-accent);
+      color: var(--vc-brand);
       cursor: pointer;
       font: inherit;
     }
