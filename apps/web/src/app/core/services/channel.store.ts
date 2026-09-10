@@ -77,6 +77,11 @@ export class ChannelStore {
     const role = this.activeWorkspace()?.role;
     return !!role && ['PlatformOwner', 'WorkspaceOwner', 'Admin', 'Moderator', 'Member'].includes(role);
   });
+  readonly isGuest = computed(() => this.activeWorkspace()?.role === 'Guest');
+  readonly canInviteGuest = computed(() => {
+    const role = this.activeWorkspace()?.role;
+    return !!role && ['PlatformOwner', 'WorkspaceOwner', 'Admin'].includes(role);
+  });
   readonly loading = this.loadingSignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
   readonly isDemo = this.usingDemo.asReadonly();
@@ -192,11 +197,15 @@ export class ChannelStore {
           'u-bob': 'away',
         });
       } else {
+        const workspace = this.workspacesSignal().find((item) => item.id === workspaceId);
+        const guest = workspace?.role === 'Guest';
         const [spaces, channels, members, presence] = await Promise.all([
-          this.api.getSpaces(workspaceId),
+          guest ? Promise.resolve([]) : this.api.getSpaces(workspaceId),
           this.api.getChannels(workspaceId),
-          this.api.getMembers(workspaceId),
-          this.api.getPresence(workspaceId).catch(() => ({}) as Record<string, PresenceStatus>),
+          guest ? Promise.resolve([]) : this.api.getMembers(workspaceId),
+          guest
+            ? Promise.resolve({} as Record<string, PresenceStatus>)
+            : this.api.getPresence(workspaceId).catch(() => ({}) as Record<string, PresenceStatus>),
         ]);
         this.spacesSignal.set(spaces);
         this.channelsSignal.set(channels);

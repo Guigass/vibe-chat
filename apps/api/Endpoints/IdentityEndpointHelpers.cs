@@ -22,4 +22,12 @@ internal static class IdentityEndpointHelpers
 
     internal static Task<Channel?> ResolveChannelAsync(ChannelId channelId, UserId userId, VibeChatDbContext db, ITenantContext tenant, CancellationToken ct) =>
         RequestAuth.ResolveChannelAsync(channelId, userId, db, tenant, ct);
+
+    internal static Task<(Workspace? Workspace, bool IsGuest)> ResolveWorkspaceOrGuestAsync(
+        WorkspaceId workspaceId,
+        UserId userId,
+        VibeChatDbContext db,
+        ITenantContext tenant,
+        CancellationToken ct) =>
+        RequestAuth.ResolveWorkspaceOrGuestAsync(workspaceId, userId, db, tenant, ct);
 }

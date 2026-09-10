@@ -23,6 +23,7 @@ import { ui } from '../../../core/i18n/strings';
           <vc-skeleton height="2rem" />
         </div>
       } @else {
+        @if (!channels.isGuest()) {
         <div class="channel-list__shortcuts" [class.channel-list__shortcuts--compact]="navCompact()">
           <button
             type="button"
@@ -88,6 +89,7 @@ import { ui } from '../../../core/i18n/strings';
             }
           </button>
         </div>
+        }
 
         <vc-sidebar-nav
           [groups]="channels.spaceGroups()"

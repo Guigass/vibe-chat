@@ -29,6 +29,7 @@ original.
 | [021](ADR-021-link-preview-ssrf.md) | Link preview com guarda SSRF | Accepted |
 | [022](ADR-022-web-push-vapid.md) | Web Push com VAPID da instância | Accepted |
 | [023](ADR-023-group-dm.md) | DM em grupo reutiliza Channel | Accepted |
+| [024](ADR-024-guests-por-convite.md) | Guest é ChannelMember sem workspace | Accepted |
 
 ## Quando criar um ADR
 

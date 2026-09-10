@@ -200,6 +200,14 @@ CREATE POLICY tenant_isolation_pinned_messages ON messaging.pinned_messages
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS directory.channel_invites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.channel_invites FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_channel_invites ON directory.channel_invites;
+CREATE POLICY tenant_isolation_channel_invites ON directory.channel_invites
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 ALTER TABLE IF EXISTS messaging.saved_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.saved_messages FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.thread_subscriptions ENABLE ROW LEVEL SECURITY;

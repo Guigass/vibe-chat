@@ -402,6 +402,18 @@ export const ui = {
   channelFollowedThreads: $localize`:@@channel.followedThreads:Threads seguidas`,
   channelFollowAllThreads: $localize`:@@channel.followAllThreads:Seguir todas as threads deste canal`,
   channelUnfollowAllThreads: $localize`:@@channel.unfollowAllThreads:Parar de seguir todas as threads`,
+  guestInvite: $localize`:@@guest.invite:Convidar para o canal`,
+  guestInviteTitle: $localize`:@@guest.inviteTitle:Convidar uma pessoa de fora`,
+  guestInviteEmail: $localize`:@@guest.inviteEmail:E-mail (opcional)`,
+  guestInviteDays: $localize`:@@guest.inviteDays:Validade em dias`,
+  guestInviteCreate: $localize`:@@guest.inviteCreate:Gerar link`,
+  guestLinkOnce: $localize`:@@guest.linkOnce:Copie este link agora. Ele não será mostrado de novo.`,
+  guestLinkCopied: $localize`:@@guest.linkCopied:Link copiado`,
+  guestLimitedAccess: $localize`:@@guest.limitedAccess:Seu acesso é limitado a este canal.`,
+  guestPresentBadge: $localize`:@@guest.presentBadge:Convidado presente`,
+  guestExpired: $localize`:@@guest.expired:Este convite não está mais disponível.`,
+  guestAccepting: $localize`:@@guest.accepting:Abrindo o canal…`,
+  guestClose: $localize`:@@guest.close:Fechar`,
 
   paletteNavigate: $localize`:@@palette.navigate:navegam ·`,
   paletteOpenHint: $localize`:@@palette.openHint:abre ·`,
@@ -700,6 +712,10 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.errorNoteTooLong;
     case 'MessageBodyTooLong':
       return ui.errorMessageBodyTooLong;
+    case 'InviteUnavailable':
+      return ui.guestExpired;
+    case 'AlreadyMember':
+      return ui.guestExpired;
     default:
       return code ?? '';
   }

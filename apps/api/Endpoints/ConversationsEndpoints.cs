@@ -24,7 +24,7 @@ internal static class ConversationsEndpoints
         v1.MapGet("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
         {
             var profile = await EnsureProfileAsync(http.User, db, clock, ct);
-            var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+            var (workspace, isGuest) = await ResolveWorkspaceOrGuestAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
             if (workspace is null)
             {
                 return Results.Forbid();
@@ -37,13 +37,16 @@ internal static class ConversationsEndpoints
 
             var channels = await db.Channels
                 .Where(x => x.WorkspaceId == workspace.Id
-                    && (x.Type == ChannelType.Public || x.Type == ChannelType.Announcement || memberChannelIds.Contains(x.Id)))
+                    && (isGuest
+                        ? memberChannelIds.Contains(x.Id)
+                        : (x.Type == ChannelType.Public || x.Type == ChannelType.Announcement || memberChannelIds.Contains(x.Id))))
                 .OrderBy(x => x.Type == ChannelType.Direct || x.Type == ChannelType.GroupDm ? 1 : 0)
                 .ThenBy(x => x.Name)
                 .ToListAsync(ct);
 
             var peerByChannel = await ResolveDirectPeersAsync(channels, profile.Id, db, ct);
             var groupByChannel = await GroupDmEndpoints.ResolveInfosAsync(channels, profile.Id, db, ct);
+            var guestChannelIds = await GuestChannelIdsAsync(db, workspace.Id, channels.Select(x => x.Id).ToList(), ct);
             var response = channels.Select(x =>
             {
                 peerByChannel.TryGetValue(x.Id, out var peer);
@@ -64,7 +67,8 @@ internal static class ConversationsEndpoints
                     x.Topic,
                     group.Count == 0 ? null : group.Count,
                     group.Names is { Length: > 0 } ? group.Names : null,
-                    group.UserIds is { Length: > 0 } ? group.UserIds : null);
+                    group.UserIds is { Length: > 0 } ? group.UserIds : null,
+                    guestChannelIds.Contains(x.Id));
             }).ToArray();
             return Results.Ok(response);
         });
@@ -72,7 +76,7 @@ internal static class ConversationsEndpoints
         v1.MapGet("/workspaces/{workspaceId:guid}/channels/unread", async (Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
         {
             var profile = await EnsureProfileAsync(http.User, db, clock, ct);
-            var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+            var (workspace, isGuest) = await ResolveWorkspaceOrGuestAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
             if (workspace is null)
             {
                 return Results.Forbid();
@@ -85,7 +89,9 @@ internal static class ConversationsEndpoints
 
             var channels = await db.Channels
                 .Where(x => x.WorkspaceId == workspace.Id
-                    && (x.Type == ChannelType.Public || x.Type == ChannelType.Announcement || memberChannelIds.Contains(x.Id)))
+                    && (isGuest
+                        ? memberChannelIds.Contains(x.Id)
+                        : (x.Type == ChannelType.Public || x.Type == ChannelType.Announcement || memberChannelIds.Contains(x.Id))))
                 .Select(x => x.Id)
                 .ToListAsync(ct);
 
@@ -146,21 +152,32 @@ internal static class ConversationsEndpoints
             var query = http.Request.Query["query"].ToString().Trim();
             var queryLower = query.ToLowerInvariant();
 
-            var members = channel.Type is ChannelType.Public or ChannelType.Announcement
+            var roster = channel.Type is ChannelType.Public or ChannelType.Announcement
                 ? await (
                     from m in db.WorkspaceMembers.AsNoTracking()
                     where m.WorkspaceId == channel.WorkspaceId
                     join u in db.UserProfiles.AsNoTracking() on m.UserId equals u.Id
-                    orderby u.DisplayName
                     select new ChannelMemberResponse(u.Id.Value, u.DisplayName, u.Email)
-                ).ToArrayAsync(ct)
-                : await (
-                    from cm in db.ChannelMembers.AsNoTracking()
-                    where cm.ChannelId == channel.Id
-                    join u in db.UserProfiles.AsNoTracking() on cm.UserId equals u.Id
-                    orderby u.DisplayName
-                    select new ChannelMemberResponse(u.Id.Value, u.DisplayName, u.Email)
-                ).ToArrayAsync(ct);
+                ).ToListAsync(ct)
+                : [];
+            var channelRoster = await (
+                from cm in db.ChannelMembers.AsNoTracking()
+                where cm.ChannelId == channel.Id
+                join u in db.UserProfiles.AsNoTracking() on cm.UserId equals u.Id
+                select new ChannelMemberResponse(u.Id.Value, u.DisplayName, u.Email)
+            ).ToListAsync(ct);
+            var seen = roster.Select(x => x.UserId).ToHashSet();
+            foreach (var member in channelRoster)
+            {
+                if (seen.Add(member.UserId))
+                {
+                    roster.Add(member);
+                }
+            }
+
+            var members = roster
+                .OrderBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
 
             if (!string.IsNullOrWhiteSpace(queryLower))
             {

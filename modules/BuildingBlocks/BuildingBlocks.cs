@@ -180,7 +180,9 @@ public static class RolePermissionCatalog
 
     private static readonly HashSet<string> GuestPermissions =
     [
-        Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Message.Read, Permissions.Files.Download
+        Permissions.Channel.Read,
+        Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React,
+        Permissions.Files.Upload, Permissions.Files.Download
     ];
 
     private static readonly HashSet<string> BotPermissions =

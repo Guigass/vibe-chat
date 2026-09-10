@@ -56,6 +56,7 @@ public sealed class ArchitectureRulesTests
             "tenancy.workspaces",
             "tenancy.workspace_members",
             "directory.spaces",
+            "directory.channel_invites",
             "conversations.channels",
             "conversations.channel_members",
             "messaging.messages",

@@ -25,7 +25,16 @@ internal static class DirectoryEndpoints
             var workspaces = await db.WorkspaceMembers.IgnoreQueryFilters()
                 .Where(x => x.UserId == profile.Id)
                 .Join(db.Workspaces.IgnoreQueryFilters(), m => m.WorkspaceId, w => w.Id, (m, w) => new WorkspaceResponse(w.Id.Value, w.Name, w.Slug, m.Role.ToString()))
-                .ToArrayAsync(ct);
+                .ToListAsync(ct);
+            var memberIds = workspaces.Select(x => x.Id).ToHashSet();
+            var guestWorkspaces = await (
+                from cm in db.ChannelMembers.IgnoreQueryFilters()
+                join ch in db.Channels.IgnoreQueryFilters() on cm.ChannelId equals ch.Id
+                join w in db.Workspaces.IgnoreQueryFilters() on ch.WorkspaceId equals w.Id
+                where cm.UserId == profile.Id && cm.LeftAt == null && !memberIds.Contains(w.Id.Value)
+                select new WorkspaceResponse(w.Id.Value, w.Name, w.Slug, Role.Guest.ToString())
+            ).ToListAsync(ct);
+            workspaces.AddRange(guestWorkspaces.DistinctBy(x => x.Id));
             return Results.Ok(workspaces);
         });
     }

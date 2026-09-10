@@ -123,6 +123,12 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly ui = ui;
   readonly dmPanel = signal<'add' | 'rename' | 'leave' | null>(null);
   readonly memberQuery = signal('');
+  readonly inviteOpen = signal(false);
+  readonly inviteEmail = signal('');
+  readonly inviteDays = signal('7');
+  readonly inviteUrl = signal<string | null>(null);
+  readonly inviteError = signal<string | null>(null);
+  readonly inviteBusy = signal(false);
   readonly groupName = signal('');
   readonly addableMembers = computed(() => {
     const active = this.channels.activeChannel();
@@ -152,6 +158,66 @@ export class ShellPage implements OnInit, OnDestroy {
     const focusId = panel === 'add' ? 'vc-group-dm-add-search' : panel === 'rename' ? 'vc-group-dm-rename' : null;
     if (focusId) {
       setTimeout(() => document.getElementById(focusId)?.focus(), 0);
+    }
+  }
+
+  toggleInvitePanel(): void {
+    if (this.inviteOpen()) {
+      this.closeInvitePanel();
+      return;
+    }
+    this.inviteOpen.set(true);
+    this.inviteUrl.set(null);
+    this.inviteError.set(null);
+    this.inviteEmail.set('');
+    this.inviteDays.set('7');
+  }
+
+  closeInvitePanel(): void {
+    this.inviteOpen.set(false);
+    this.inviteUrl.set(null);
+    this.inviteError.set(null);
+    this.inviteBusy.set(false);
+  }
+
+  inviteAbsoluteUrl(): string {
+    const path = this.inviteUrl();
+    if (!path) return '';
+    return `${window.location.origin}${path}`;
+  }
+
+  async copyInviteLink(): Promise<void> {
+    const url = this.inviteAbsoluteUrl();
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      this.inviteError.set(url);
+    }
+  }
+
+  async submitInvite(event: Event): Promise<void> {
+    event.preventDefault();
+    const workspaceId = this.channels.activeWorkspace()?.id;
+    const channelId = this.channels.activeChannel()?.id;
+    if (!workspaceId || !channelId) return;
+    this.inviteBusy.set(true);
+    this.inviteError.set(null);
+    try {
+      const days = Number.parseInt(this.inviteDays() || '7', 10);
+      const created = await this.api.createChannelInvite(workspaceId, channelId, {
+        email: this.inviteEmail().trim() || undefined,
+        expiresInDays: Number.isFinite(days) ? days : 7,
+      });
+      this.inviteUrl.set(created.url);
+      const current = this.channels.activeChannel();
+      if (current) {
+        this.channels.patchChannel(current.id, { hasGuests: current.hasGuests });
+      }
+    } catch (err) {
+      this.inviteError.set(err instanceof Error ? err.message : ui.guestExpired);
+    } finally {
+      this.inviteBusy.set(false);
     }
   }
 

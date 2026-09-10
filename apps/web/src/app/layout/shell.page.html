@@ -124,9 +124,19 @@
         } @else if (channels.activeChannel()?.isDirect) {
           <p>{{ ui.directMessage }}</p>
         }
+        @if (channels.isGuest()) {
+          <p data-testid="guest-limited">{{ ui.guestLimitedAccess }}</p>
+        } @else if (channels.activeChannel()?.hasGuests) {
+          <p data-testid="guest-present">{{ ui.guestPresentBadge }}</p>
+        }
       </div>
 
-      <div class="shell__search" [class.is-focused]="searchFocused()" [class.is-open]="searchOpen()">
+      <div
+        class="shell__search"
+        [class.is-focused]="searchFocused()"
+        [class.is-open]="searchOpen()"
+        [hidden]="channels.isGuest()"
+      >
         <vc-input
           controlId="vc-search"
           [(value)]="search"
@@ -340,13 +350,70 @@
             }
           </div>
         }
+        @if (channels.canInviteGuest() && channels.activeChannel() && !channels.activeChannel()?.isDirect && !channels.activeChannel()?.isGroupDm) {
+          <div class="shell__dm-slot">
+            <vc-icon-button
+              data-testid="guest-invite-toggle"
+              [label]="ui.guestInvite"
+              (click)="toggleInvitePanel()"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 11h-7" />
+                <path d="M18.5 7.5v7" />
+              </svg>
+            </vc-icon-button>
+            @if (inviteOpen()) {
+              <div class="shell__dm-popover shell__dm-popover--form" data-testid="guest-invite">
+                <p class="shell__dm-popover-title">{{ ui.guestInviteTitle }}</p>
+                @if (inviteUrl()) {
+                  <p class="shell__dm-popover-warn">{{ ui.guestLinkOnce }}</p>
+                  <vc-input
+                    controlId="vc-guest-invite-url"
+                    [value]="inviteAbsoluteUrl()"
+                    [ariaLabel]="ui.guestInvite"
+                  />
+                  <div class="shell__dm-popover-footer">
+                    <vc-button type="button" variant="ghost" (click)="closeInvitePanel()">{{ ui.guestClose }}</vc-button>
+                    <vc-button type="button" (click)="copyInviteLink()">{{ ui.guestLinkCopied }}</vc-button>
+                  </div>
+                } @else {
+                  <form (submit)="submitInvite($event)">
+                    <vc-input
+                      controlId="vc-guest-invite-email"
+                      [label]="ui.guestInviteEmail"
+                      [placeholder]="ui.guestInviteEmail"
+                      [(value)]="inviteEmail"
+                    />
+                    <vc-input
+                      controlId="vc-guest-invite-days"
+                      [label]="ui.guestInviteDays"
+                      [placeholder]="'7'"
+                      [(value)]="inviteDays"
+                    />
+                    @if (inviteError()) {
+                      <p class="shell__dm-popover-warn" role="alert">{{ inviteError() }}</p>
+                    }
+                    <div class="shell__dm-popover-footer">
+                      <vc-button type="button" variant="ghost" (click)="closeInvitePanel()">{{ ui.guestClose }}</vc-button>
+                      <vc-button type="submit" [loading]="inviteBusy()">{{ ui.guestInviteCreate }}</vc-button>
+                    </div>
+                  </form>
+                }
+              </div>
+            }
+          </div>
+        }
         @if (notificationPrefs.dndActive()) {
           <button type="button" class="shell__dnd-pill" (click)="notificationPrefs.disableDndNow()">
             {{ ui.dndDisableNow }}
           </button>
         }
-        <vc-summarize-button />
-        <vc-suggest-reply-button />
+        @if (!channels.isGuest()) {
+          <vc-summarize-button />
+          <vc-suggest-reply-button />
+        }
         <vc-density-control />
         <vc-theme-toggle />
         <vc-icon-button [label]="ui.settings" (click)="togglePreferences()">

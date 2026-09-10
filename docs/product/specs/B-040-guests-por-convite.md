@@ -82,16 +82,16 @@ Este é o item de maior risco de authZ da wave. Regras que são requisito de apr
 
 ## Aceite
 
-- [ ] Admin gera link; aceitar dá acesso só àquele canal
-- [ ] Guest não enxerga outros canais nem o diretório
-- [ ] Busca global do guest é bloqueada / forçada ao canal
-- [ ] Guest envia mensagem, anexo e reação
-- [ ] Guest não convida, não cria canal, não lê configuração
-- [ ] Segundo uso do token → 410
-- [ ] Convite expirado → recusado
-- [ ] Revogar encerra a sessão e derruba o hub
-- [ ] Convite, aceite e revogação aparecem no audit
-- [ ] Token não aparece em log nem na listagem
+- [x] Admin gera link; aceitar dá acesso só àquele canal
+- [x] Guest não enxerga outros canais nem o diretório
+- [x] Busca global do guest é bloqueada / forçada ao canal
+- [x] Guest envia mensagem, anexo e reação
+- [x] Guest não convida, não cria canal, não lê configuração
+- [x] Segundo uso do token → 410
+- [x] Convite expirado → recusado
+- [x] Revogar encerra a sessão e derruba o hub
+- [x] Convite, aceite e revogação aparecem no audit
+- [x] Token não aparece em log nem na listagem
 
 ## Testes
 

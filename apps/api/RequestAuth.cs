@@ -141,28 +141,68 @@ internal static class RequestAuth
                 && x.WorkspaceId == channel.WorkspaceId
                 && x.UserId == userId,
             ct);
-        if (!isWorkspaceMember)
+        var isChannelMember = await db.ChannelMembers.IgnoreQueryFilters().AnyAsync(
+            x => x.TenantId == channel.TenantId
+                && x.ChannelId == channel.Id
+                && x.UserId == userId
+                && x.LeftAt == null,
+            ct);
+        if (!isWorkspaceMember && !isChannelMember)
         {
             return null;
         }
 
-        if (channel.Type.RequiresChannelMembership())
+        if (channel.Type.RequiresChannelMembership() && !isChannelMember)
         {
-            var isChannelMember = await db.ChannelMembers.IgnoreQueryFilters().AnyAsync(
-                x => x.TenantId == channel.TenantId
-                    && x.ChannelId == channel.Id
-                    && x.UserId == userId
-                    && x.LeftAt == null,
-                ct);
-            if (!isChannelMember)
-            {
-                return null;
-            }
+            return null;
         }
 
         tenant.SetTenant(channel.TenantId);
         await RlsSession.EnsureAppliedAsync(db, tenant, ct);
         return channel;
+    }
+
+    /// <summary>
+    /// Workspace member, or channel-only guest in that workspace (B-040).
+    /// Guests never receive workspace membership.
+    /// </summary>
+    public static async Task<(Workspace? Workspace, bool IsGuest)> ResolveWorkspaceOrGuestAsync(
+        WorkspaceId workspaceId,
+        UserId userId,
+        VibeChatDbContext db,
+        ITenantContext tenant,
+        CancellationToken ct)
+    {
+        var workspace = await ResolveWorkspaceAsync(workspaceId, userId, db, tenant, ct);
+        if (workspace is not null)
+        {
+            return (workspace, false);
+        }
+
+        await BeginRlsUserAsync(db, tenant, userId, ct);
+        workspace = await db.Workspaces.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == workspaceId, ct);
+        if (workspace is null)
+        {
+            return (null, false);
+        }
+
+        var isGuest = await (
+            from cm in db.ChannelMembers.IgnoreQueryFilters()
+            join ch in db.Channels.IgnoreQueryFilters() on cm.ChannelId equals ch.Id
+            where cm.UserId == userId
+                && cm.LeftAt == null
+                && ch.WorkspaceId == workspaceId
+                && ch.TenantId == workspace.TenantId
+            select cm.Id).AnyAsync(ct);
+        if (!isGuest)
+        {
+            return (null, false);
+        }
+
+        tenant.SetTenant(workspace.TenantId);
+        await RlsSession.EnsureAppliedAsync(db, tenant, ct);
+        return (workspace, true);
     }
 
     /// <summary>

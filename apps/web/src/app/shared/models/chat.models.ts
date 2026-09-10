@@ -46,6 +46,7 @@ export interface Channel {
   participantCount?: number;
   participantNames?: string[];
   participantUserIds?: string[];
+  hasGuests?: boolean;
 }
 
 export interface WorkspaceMember {

@@ -99,6 +99,8 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
             peerCandidates: () => [],
             presence: () => ({}),
             canCreateChannel: () => false,
+            isGuest: () => false,
+            canInviteGuest: () => false,
             loading: () => false,
             selectChannel: vi.fn(),
             publicChannels: () => [],

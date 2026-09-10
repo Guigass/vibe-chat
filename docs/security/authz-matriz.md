@@ -5,7 +5,8 @@
 > (não de claims JWT do Keycloak — ver B-176).
 
 Papéis resumidos: **M** = Member · **A** = Auditor · **Ad** = Admin/Owner.
-Guest fora de escopo (B-040). Bot fora desta matriz.
+Guest (B-040) não tem membership de workspace — só `ChannelMember` no canal do convite.
+Coluna Guest: workspace → 403; canal convidado → send/react/upload. Bot fora desta matriz.
 
 Gates:
 
@@ -35,7 +36,11 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/workspaces/{workspaceId:guid}/channels/unread` | membership | — | ✓ | ✓ | ✓ | Contagens do caller |
 | GET | `/workspaces/{workspaceId:guid}/spaces` | membership | — | ✓ | ✓ | ✓ | |
 | POST | `/workspaces/{workspaceId:guid}/spaces` | permission | `channel.create` | ✓ | ✗ | ✓ | |
-| GET | `/workspaces/{workspaceId:guid}/members` | membership | — | ✓ | ✓ | ✓ | Directory; Guest restringe em B-040 |
+| GET | `/workspaces/{workspaceId:guid}/members` | membership | — | ✓ | ✓ | ✓ | Directory; Guest 403 (sem workspace membership) |
+| POST | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/invites` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-040; flag `Directory:Invites:Enabled` off → 404; token só na criação |
+| GET | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/invites` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-040; lista sem token + guests ativos |
+| DELETE | `/invites/{inviteId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-040; revoga + evict hub |
+| POST | `/invites/{token}/accept` | exempt | authenticated | ✓* | ✓* | ✓* | *qualquer identidade autenticada; token inválido/gasto/expirado → 410 genérico |
 | GET | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/members` | membership | — | ✓ | ✓ | ✓ | Autocomplete menções |
 | GET | `/workspaces/{workspaceId:guid}/roles` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Catálogo assignable |
 | POST | `/workspaces/{workspaceId:guid}/members` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Invite B-068 |

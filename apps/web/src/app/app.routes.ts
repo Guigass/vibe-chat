@@ -24,6 +24,12 @@ export const routes: Routes = [
       import('./features/auth/silent-renew/silent-renew.page').then((m) => m.SilentRenewPage),
   },
   {
+    path: 'invite/:token',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/invites/accept-invite.page').then((m) => m.AcceptInvitePage),
+  },
+  {
     path: 'app',
     canActivate: [authGuard],
     loadComponent: () => import('./layout/shell.page').then((m) => m.ShellPage),

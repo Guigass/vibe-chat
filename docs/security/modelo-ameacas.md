@@ -161,6 +161,18 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Get-or-create | `ParticipantSetKey` ordenado + índice único; add em DM 1:1 cria **outra** conversa |
 | Rollback | Flag off no mesmo binário; migration só em lab |
 
+### B-040 / ADR-024 — Guests por convite
+
+| Item | Controle |
+|------|----------|
+| Kill switch | `Directory:Invites:Enabled` off default; create/list/revoke/accept → 404 se off |
+| Membership | Só `ChannelMember`; **nunca** `WorkspaceMember`. Workspace endpoints → 403 |
+| Token | SHA-256; valor cru uma vez; gasto/expirado/revogado/ausente → 410 idêntico |
+| E-mail | Opcional; mismatch → mesmo 410 (não revela o canal) |
+| Revogação | `LeftAt` + evict SignalR + `AccessRevoked` |
+| Escala | Guest sem `workspace.read`, busca, DM, admin, convite, criar canal |
+| Rollback | Flag off no mesmo binário; migration só em lab |
+
 ## Ameaças priorizadas para a fatia vertical
 
 1. Leitura/escrita cross-tenant
@@ -174,6 +186,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 9. SSRF via link preview (B-091 / ADR-021)
 10. Prévia de push em tela bloqueada / VAPID vazada / push pós-saída (B-095 / ADR-022)
 11. Vazamento de histórico de Group DM / peer cross-tenant / hub após sair (B-101 / ADR-023)
+12. Guest escalando para o workspace / enumeração de convite (B-040 / ADR-024)
 
 ## O que está fora (por ora)
 
