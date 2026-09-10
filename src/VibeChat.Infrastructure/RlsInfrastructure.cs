@@ -73,7 +73,8 @@ public static class RlsSession
             SELECT
               set_config('app.tenant_id', '', false),
               set_config('app.user_id', '', false),
-              set_config('app.job_role', '', false)
+              set_config('app.job_role', '', false),
+              set_config('app.invite_token_hash', '', false)
             """;
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
@@ -143,6 +144,39 @@ public static class RlsSession
         var transaction = dbContext.Database.CurrentTransaction?.GetDbTransaction()
             ?? throw new InvalidOperationException("RLS requires an open database transaction for SET LOCAL.");
         await ApplyAsync(connection, tenantContext, cancellationToken, transaction);
+    }
+
+    /// <summary>
+    /// B-040: SET LOCAL the invite hash so RLS can reveal the single matching
+    /// <c>directory.channel_invites</c> row before tenant is known.
+    /// </summary>
+    public static async Task SetInviteTokenHashAsync(
+        VibeChatDbContext dbContext,
+        string tokenHash,
+        CancellationToken cancellationToken)
+    {
+        var connection = dbContext.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+        {
+            await dbContext.Database.OpenConnectionAsync(cancellationToken);
+        }
+
+        if (dbContext.Database.CurrentTransaction is null)
+        {
+            await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        }
+
+        var transaction = dbContext.Database.CurrentTransaction?.GetDbTransaction()
+            ?? throw new InvalidOperationException("RLS requires an open database transaction for SET LOCAL.");
+
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = "SELECT set_config('app.invite_token_hash', @hash, true)";
+        var hash = command.CreateParameter();
+        hash.ParameterName = "hash";
+        hash.Value = tokenHash;
+        command.Parameters.Add(hash);
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     public static async Task CommitAsync(VibeChatDbContext dbContext, CancellationToken cancellationToken = default)

@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using VibeChat.Conversations;
 using VibeChat.SharedKernel;
 
 namespace VibeChat.Directory;
@@ -41,8 +40,8 @@ public static class InvitePolicies
     public const int CreatePerMinute = 10;
     public const int AcceptPerMinute = 20;
 
-    public static bool AllowsInvite(ChannelType type) =>
-        type is ChannelType.Public or ChannelType.Private or ChannelType.Announcement or ChannelType.Group;
+    public static bool AllowsInvite(string channelType) =>
+        channelType is "Public" or "Private" or "Announcement" or "Group";
 
     public static int NormalizeExpiryDays(int? requested, int maxExpiryDays)
     {

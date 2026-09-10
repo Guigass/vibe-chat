@@ -66,7 +66,7 @@ internal static class GuestInviteEndpoints
 
         var channel = await db.Channels.AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == new ChannelId(channelId) && x.WorkspaceId == workspace.Id, ct);
-        if (channel is null || !InvitePolicies.AllowsInvite(channel.Type))
+        if (channel is null || !InvitePolicies.AllowsInvite(channel.Type.ToString()))
         {
             return Results.NotFound();
         }
@@ -299,6 +299,7 @@ internal static class GuestInviteEndpoints
         }
 
         var hash = InviteToken.Hash(token ?? string.Empty);
+        await RlsSession.SetInviteTokenHashAsync(db, hash, ct);
         var invite = await db.ChannelInvites.IgnoreQueryFilters()
             .FirstOrDefaultAsync(x => x.TokenHash == hash, ct);
         var now = clock.UtcNow;

@@ -5,6 +5,7 @@
 --   app.tenant_id  — required for tenant-scoped reads/writes (fail closed when unset)
 --   app.user_id    — bootstrap membership discovery before tenant is known
 --   app.job_role   — 'outbox' | 'retention' | 'polls' for worker cross-tenant claim paths only
+--   app.invite_token_hash — B-040 accept lookup only; reveals the single matching invite row
 --
 -- Column names match EF defaults ("TenantId").
 
@@ -32,6 +33,14 @@ LANGUAGE sql
 STABLE
 AS $$
   SELECT NULLIF(current_setting('app.job_role', true), '');
+$$;
+
+CREATE OR REPLACE FUNCTION app.current_invite_token_hash()
+RETURNS text
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT NULLIF(current_setting('app.invite_token_hash', true), '');
 $$;
 
 -- ---------------------------------------------------------------------------
@@ -112,6 +121,18 @@ CREATE POLICY tenant_isolation_workspaces ON tenancy.workspaces
                   AND m."UserId" = app.current_user_id()
             )
         )
+        OR (
+            app.current_tenant_id() IS NULL
+            AND app.current_user_id() IS NOT NULL
+            AND EXISTS (
+                SELECT 1
+                FROM conversations.channel_members cm
+                JOIN conversations.channels c ON c."Id" = cm."ChannelId"
+                WHERE c."WorkspaceId" = workspaces."Id"
+                  AND cm."UserId" = app.current_user_id()
+                  AND cm."LeftAt" IS NULL
+            )
+        )
     )
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
@@ -143,6 +164,17 @@ CREATE POLICY tenant_isolation_channels ON conversations.channels
                 FROM tenancy.workspace_members m
                 WHERE m."WorkspaceId" = channels."WorkspaceId"
                   AND m."UserId" = app.current_user_id()
+            )
+        )
+        OR (
+            app.current_tenant_id() IS NULL
+            AND app.current_user_id() IS NOT NULL
+            AND EXISTS (
+                SELECT 1
+                FROM conversations.channel_members cm
+                WHERE cm."ChannelId" = channels."Id"
+                  AND cm."UserId" = app.current_user_id()
+                  AND cm."LeftAt" IS NULL
             )
         )
     )
@@ -205,7 +237,13 @@ ALTER TABLE IF EXISTS directory.channel_invites FORCE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS tenant_isolation_channel_invites ON directory.channel_invites;
 CREATE POLICY tenant_isolation_channel_invites ON directory.channel_invites
-    USING ("TenantId" = app.current_tenant_id())
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR (
+            app.current_invite_token_hash() IS NOT NULL
+            AND "TokenHash" = app.current_invite_token_hash()
+        )
+    )
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
 ALTER TABLE IF EXISTS messaging.saved_messages ENABLE ROW LEVEL SECURITY;
@@ -397,6 +435,7 @@ BEGIN
     EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_tenant_id() TO %I', app_role);
     EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_user_id() TO %I', app_role);
     EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_job_role() TO %I', app_role);
+    EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_invite_token_hash() TO %I', app_role);
   END IF;
 
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = backup_role) THEN

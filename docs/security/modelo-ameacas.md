@@ -167,7 +167,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 |------|----------|
 | Kill switch | `Directory:Invites:Enabled` off default; create/list/revoke/accept → 404 se off |
 | Membership | Só `ChannelMember`; **nunca** `WorkspaceMember`. Workspace endpoints → 403 |
-| Token | SHA-256; valor cru uma vez; gasto/expirado/revogado/ausente → 410 idêntico |
+| Token | SHA-256; valor cru uma vez; gasto/expirado/revogado/ausente → 410 idêntico. Aceite seta `app.invite_token_hash` (SET LOCAL) só para revelar a linha do hash; escrita continua exigindo `TenantId` |
 | E-mail | Opcional; mismatch → mesmo 410 (não revela o canal) |
 | Revogação | `LeftAt` + evict SignalR + `AccessRevoked` |
 | Escala | Guest sem `workspace.read`, busca, DM, admin, convite, criar canal |

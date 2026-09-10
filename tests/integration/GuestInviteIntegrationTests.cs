@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using VibeChat.Audit;
 using VibeChat.Infrastructure;
 using VibeChat.TestHost;
@@ -61,8 +60,7 @@ public sealed class GuestInviteIntegrationTests(VibeChatApiFactory factory)
         var after = await guest.GetAsync($"/api/v1/channels/{ChannelId}/messages");
         after.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        await using var db = factory.CreateMigratorDbContext();
         var actions = await db.AuditEvents.IgnoreQueryFilters()
             .Where(x => x.EntityId == created.Id.ToString())
             .Select(x => x.Action)
@@ -77,8 +75,7 @@ public sealed class GuestInviteIntegrationTests(VibeChatApiFactory factory)
     {
         using var admin = Client("demo");
         var created = await CreateInviteAsync(admin);
-        using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        await using var db = factory.CreateMigratorDbContext();
 
         var invite = await db.ChannelInvites.IgnoreQueryFilters()
             .FirstAsync(x => x.Id == created.Id);
@@ -104,7 +101,7 @@ public sealed class GuestInviteIntegrationTests(VibeChatApiFactory factory)
         var raw = await admin.GetStringAsync(
             $"/api/v1/workspaces/{WorkspaceId}/channels/{ChannelId}/invites");
         raw.Should().NotContain(created.Token);
-        raw.Should().NotContain("tokenHash", StringComparison.OrdinalIgnoreCase);
+        raw.ToLowerInvariant().Should().NotContain("tokenhash");
         created.Url.Should().StartWith("/invite/");
     }
 
