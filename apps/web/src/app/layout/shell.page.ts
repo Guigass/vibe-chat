@@ -10,6 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
+import { A11yModule } from '@angular/cdk/a11y';
 import { AuthService } from '../core/auth/auth.service';
 import { ApiService } from '../core/api/api.service';
 import { ChannelStore } from '../core/services/channel.store';
@@ -75,6 +76,7 @@ import { pluralCount } from '../core/i18n/format';
   selector: 'vc-shell-page',
   standalone: true,
   imports: [
+    A11yModule,
     RouterLink,
     RouterLinkActive,
     ChannelList,

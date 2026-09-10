@@ -106,6 +106,7 @@ jobs:
             npx tsc -p tsconfig.app.json --noEmit
           fi
           npm run check-i18n
+          npm test -- --watch=false
 
       - name: Dependency inventory (SBOM-lite)
         run: |
@@ -173,7 +174,8 @@ jobs:
           ./infra/scripts/ci-e2e.sh
 
       - name: Upload Playwright report
-        if: failure()
+        # B-103: keep axe JSON and screenshots as evidence even on green runs.
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report

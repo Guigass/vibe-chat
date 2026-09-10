@@ -4,10 +4,19 @@
 
 ## Problema
 
-A base é razoável — há `aria-label`, `aria-live` na timeline, `role="listbox"` na busca
-e classes `sr-only`. Mas não há foco preso em painel, nem skip link, nem verificação
-automatizada, e o `@angular/cdk` está no `package.json` sem nenhum import no `src`.
-Sem gate na CI, a acessibilidade regride a cada PR.
+A base tinha rótulos ARIA e foco contido na paleta, mas faltavam skip link,
+controle de foco em outros overlays e verificação automatizada. A timeline
+inteira era uma região viva, e contrastes/rótulos de status tinham regressões.
+
+## Plano de execução — 2026-09-10
+
+- Work-Item: B-103 / W10-9; Risk: R1; trilhas D/E; dependência B-099 Done.
+- Superfícies: shell, timeline/thread, overlays, tokens globais, catálogos i18n e E2E/CI.
+- Entrega: teclado/foco, anúncios resumidos por conversa, contraste e gate axe nas quatro telas.
+- Gates: build/typecheck, unitários web, i18n, Playwright com axe nos dois temas,
+  regressões de foco/teclado e screenshots. Leitor de tela real: rodada exploratória final
+  do perfil econômico, sem alegação de certificação.
+- Parada: escopo entregue com evidência; em falha técnica registrar causa e trabalho restante.
 
 ## Escopo
 
@@ -37,7 +46,7 @@ Nenhum. É frontend e CI.
 ## UX
 
 - Skip link aparece só no foco, no topo à esquerda.
-- Foco visível com anel de 2 px em `--color-accent`, com contraste próprio.
+- Foco visível com outline de 2 px em `--vc-brand`, com contraste próprio.
 - Estado de erro nunca comunicado só por cor — sempre ícone e texto.
 - Toda ação por hover tem equivalente por foco de teclado.
 
@@ -48,22 +57,23 @@ pessoa não abriu.
 
 ## Aceite
 
-- [ ] Navegar do login à mensagem enviada só por teclado
-- [ ] Skip link funciona e é o primeiro no `Tab`
-- [ ] Abrir a paleta prende o foco; `Esc` devolve à origem
-- [ ] Nenhuma violação séria/crítica do axe em login, shell, thread e admin
-- [ ] Contraste AA nos dois temas (relatório no PR)
-- [ ] `prefers-reduced-motion` desliga as animações
-- [ ] Alvos de toque ≥ 24 px
-- [ ] Leitor de tela anuncia mensagem nova sem repetir a timeline inteira
+- [x] Navegar do login à mensagem enviada só por teclado
+- [x] Skip link funciona e é o primeiro no `Tab`
+- [x] Abrir a paleta prende o foco; `Esc` devolve à origem
+- [x] Nenhuma violação séria/crítica do axe em login, shell, thread e admin
+- [x] Contraste AA nos dois temas nas telas e estados verificados (relatório local)
+- [x] `prefers-reduced-motion` desliga as animações
+- [x] Controles verificados com alvos de toque ≥ 24 px
+- [ ] Passagem com leitor de tela real — deferida à rodada exploratória final;
+  região viva resumida e cancelamento por troca de conversa cobertos por unitários
 
 ## Testes
 
 - CI: axe-core dentro do job de E2E, nas quatro telas; violação séria reprova o build.
 - E2E: fluxo completo só com teclado.
 - Unit (web): foco preso e devolução de foco por overlay.
-- Manual: uma passada com leitor de tela registrada no PR (a automação de UX review
-  cobre isso — `.cursor/automations/04-ux-review.prompt.md`).
+- Manual: passagem com leitor de tela real na rodada exploratória final do perfil
+  econômico (`docs/agents/autonomia.md`); testes automatizados não a substituem.
 
 ## Riscos
 
@@ -71,3 +81,28 @@ pessoa não abriu.
   baseline vai no PR.
 - `aria-live` verboso atrapalhando mais que ajudando → anúncio resumido e testado com
   leitor de tela, não só com o axe.
+
+## Evidência local — 2026-09-10
+
+Implementação e CI do PR #164 verdes. Status **Done** neste PR; passa a ser
+canônico após o merge. Não houve alteração de contratos HTTP, dados ou authZ.
+
+- Build de produção: `docker compose -f compose.yaml -f compose.dev.yaml --profile apps up -d --build --no-deps web` — passou.
+- Container `vibechat-b103-check`, dependências Linux isoladas: typecheck
+  (`npx tsc -p tsconfig.app.json --noEmit`) e `npm test -- --watch=false`
+  em `apps/web` — **293 testes / 62 arquivos passaram**.
+- `npm run check-i18n` — **648 IDs / 9 catálogos completos**.
+- `npx playwright test accessibility.spec.ts command-palette.spec.ts` em `tests/e2e`
+  com DevAuth — **4 testes passaram**. Axe WCAG A/AA até 2.2 em login, shell,
+  thread, admin, emoji e encaminhamento, light/dark: sem violações sérias/críticas,
+  sem exclusões e sem regras desativadas. Testes adicionais de alvos de botão,
+  ordem de Tab, foco, forced-colors e movimento reduzido.
+- Relatório: `tests/e2e/playwright-report/index.html`; capturas em
+  `tests/e2e/test-results/accessibility-*/`. Revisão visual de shell/thread/admin
+  concluída. CI publica relatórios mesmo quando verde e executa unitários web.
+- Avisos existentes do build: fallback de locale `pt-BR` → `pt` e orçamento CSS
+  de shell/message-bubble; nenhum erro de build.
+- CI GitHub do PR #164: Build & test, gitleaks, Dependency audit notes e E2E
+  (Playwright com axe) passaram.
+- Stop reason: `GOAL_MET` para implementação, unitários, i18n e E2E/axe;
+  passagem com leitor de tela real permanece na rodada exploratória final.

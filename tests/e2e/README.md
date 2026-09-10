@@ -2,6 +2,14 @@
 
 Fluxo alvo: **duas sessões** (alice e bob) no canal `#geral` — alice envia, bob recebe.
 
+B-103: `specs/accessibility.spec.ts` executa axe-core em login, shell, thread,
+admin, emoji e encaminhamento nos temas light/dark, sem exclusões. Violações
+sérias/críticas reprovam a CI. Inclui navegação por teclado, foco, alvos de botão
+≥24px, movimento reduzido e forced-colors. JSON axe e screenshots ficam anexados
+ao relatório Playwright, publicado mesmo em runs verdes. A passagem com leitor
+de tela real continua na rodada exploratória final. Execução pela stack Docker
+do projeto (`task test:e2e:ci`); não instalar runtime no PC para rodar esses testes.
+
 ## Pré-requisitos
 
 ```bash
