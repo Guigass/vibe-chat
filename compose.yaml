@@ -111,7 +111,9 @@ services:
       start_period: 60s
 
   minio:
-    image: ${MINIO_IMAGE:-quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z}
+    image: ${MINIO_IMAGE:-alpine/minio:RELEASE.2025-10-15T17-29-55Z}
+    # Image USER is minio; named volume /data is root-owned. Official minio ran as root.
+    user: "0:0"
     restart: unless-stopped
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
@@ -122,14 +124,16 @@ services:
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      # alpine/minio ships wget, not curl.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9000/minio/health/live"]
       interval: 5s
       timeout: 5s
       retries: 12
       start_period: 10s
 
   createbucket:
-    image: ${MINIO_MC_IMAGE:-quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z}
+    # Docker Hub/Quay minio/mc are unauthorized; aws-cli talks S3 to community MinIO.
+    image: ${MINIO_MC_IMAGE:-amazon/aws-cli:2.27.50}
     depends_on:
       minio:
         condition: service_healthy
@@ -137,17 +141,18 @@ services:
       /bin/sh -c "
       set -e;
       i=0;
-      until mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD}; do
+      until aws --endpoint-url http://minio:9000 s3 mb s3://$${MINIO_BUCKET:-vibechat} 2>/dev/null \
+         || aws --endpoint-url http://minio:9000 s3api head-bucket --bucket $${MINIO_BUCKET:-vibechat}; do
         i=$$((i+1));
         if [ $$i -ge 30 ]; then echo 'MinIO not ready' >&2; exit 1; fi;
         sleep 2;
       done;
-      mc mb --ignore-existing local/$${MINIO_BUCKET:-vibechat};
       echo 'MinIO bucket ready: $${MINIO_BUCKET:-vibechat}';
       "
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin_dev_password_change_me}
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin_dev_password_change_me}
+      AWS_DEFAULT_REGION: ${MINIO_REGION:-us-east-1}
       MINIO_BUCKET: ${MINIO_BUCKET:-vibechat}
     restart: "no"
 

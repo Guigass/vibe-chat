@@ -40,9 +40,11 @@ Pin atual do profile `observability`: `prom/prometheus:v3.13.2` (Compose default
 `.env.example`). Em Prometheus 3.x, scrapes sem `Content-Type` válido falham
 fechado — validar otel/apps ao subir o profile.
 
-Pin MinIO: `quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z` (Compose, `.env.example`
-e TestHost). O Docker Hub removeu `minio/minio` em 2026-09-12; a tag histórica
-permanece no Quay.
+Pin MinIO: `alpine/minio:RELEASE.2025-10-15T17-29-55Z` (Compose, `.env.example`
+e TestHost). O Docker Hub removeu `minio/minio` em 2026-09-12; tags históricas
+no Quay (`quay.io/minio/minio`) retornam `unauthorized` no GitHub Actions.
+Init do bucket no Compose: `amazon/aws-cli:2.27.50` (`MINIO_MC_IMAGE`) — `minio/mc`
+também foi removido.
 
 ## Labels do Dependabot
 
