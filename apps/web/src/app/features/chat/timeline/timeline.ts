@@ -36,6 +36,7 @@ import {
   type TimelineScrollAnchor,
 } from './timeline-scroll';
 import { fillTemplate, ui } from '../../../core/i18n/strings';
+import { MessageAnnouncer } from '../../../shared/ui/message-announcer';
 
 const NEAR_BOTTOM_PX = 80;
 const NEAR_TOP_PX = 120;
@@ -43,12 +44,13 @@ const NEAR_TOP_PX = 120;
 @Component({
   selector: 'vc-timeline',
   standalone: true,
-  imports: [Avatar, MessageBubble, TypingIndicator, EmptyState, Skeleton, ForwardDialog],
+  imports: [MessageAnnouncer, Avatar, MessageBubble, TypingIndicator, EmptyState, Skeleton, ForwardDialog],
   template: `
     <section
       class="timeline"
       #scroller
-      aria-live="polite"
+      tabindex="0"
+      [attr.aria-label]="ui.skipToConversation"
       (scroll)="onScroll()"
       (wheel)="cancelPendingAnchor()"
       (pointerdown)="cancelPendingAnchor()"
@@ -82,7 +84,7 @@ const NEAR_TOP_PX = 120;
             {{ ui.timelineLoadRetry }}
           </button>
         } @else if (atConversationStart()) {
-          <div class="timeline__start" data-testid="timeline-start" role="status">
+          <div class="timeline__start" data-testid="timeline-start">
             {{ ui.timelineStart }}
           </div>
         }
@@ -157,7 +159,7 @@ const NEAR_TOP_PX = 120;
                 </div>
               }
               @case ('system') {
-                <div class="timeline__system" role="status" data-testid="timeline-system">
+                <div class="timeline__system" data-testid="timeline-system">
                   <span>{{ item.label }}</span>
                 </div>
               }
@@ -170,7 +172,8 @@ const NEAR_TOP_PX = 120;
       }
     </section>
 
-    <div class="vc-sr-only" aria-live="polite">{{ unreadLive() }}</div>
+    <vc-message-announcer [scope]="channels.activeChannelId()"
+      [messages]="messages.forActiveChannel()" [loading]="messages.loading()" />
 
     @if (showJump()) {
       <button
@@ -391,7 +394,6 @@ export class Timeline {
   readonly forwardSubmitting = signal(false);
   readonly nearBottom = signal(true);
   readonly newWhileAway = signal(0);
-  readonly unreadLive = signal('');
   readonly showJump = computed(
     () =>
       !this.messages.loading() && this.messages.forActiveChannel().length > 0 && !this.nearBottom(),
@@ -422,7 +424,6 @@ export class Timeline {
   private lastChannelId: string | null = null;
   private lastMessageCount = 0;
   private lastTailId: string | null = null;
-  private unreadAnnouncedFor: string | null = null;
   private wasLoading = false;
 
   readonly timelineItems = computed((): TimelineItem[] =>
@@ -456,8 +457,6 @@ export class Timeline {
         this.frozenUnreadAfterSeq.set(
           opened > 0 && list.length > 0 ? unreadDividerAfterSeq(list, opened) : null,
         );
-        this.unreadLive.set('');
-        this.unreadAnnouncedFor = null;
         this.setNearBottom(true);
         this.messages.markViewedLatest();
         queueMicrotask(() => {
@@ -706,7 +705,6 @@ export class Timeline {
     const channelId = this.channels.activeChannelId();
     if (this.isScrollRequestForChannel(this.messages.scrollRequest(), channelId)) return;
     this.ensureFrozenUnreadDivider(this.messages.forActiveChannel());
-    this.announceUnreadOnce();
     const divider = el.querySelector<HTMLElement>('.timeline__unread');
     if (divider) {
       this.anchorTimeline(
@@ -744,16 +742,6 @@ export class Timeline {
     if (!active) return;
     if (active.unreadCount <= 0 && (active.mentionCount ?? 0) <= 0) return;
     this.channels.patchChannel(active.id, { unreadCount: 0, mentionCount: 0 });
-  }
-
-  private announceUnreadOnce(): void {
-    const channelId = this.channels.activeChannelId();
-    if (!channelId || this.unreadDismissed() || this.unreadSnapshot() <= 0) return;
-    if (this.unreadAnnouncedFor === channelId) return;
-    if (!this.timelineItems().some((item) => item.kind === 'unread')) return;
-    this.unreadAnnouncedFor = channelId;
-    this.unreadLive.set(ui.timelineNewMessages);
-    setTimeout(() => this.unreadLive.set(''), 800);
   }
 
   private dismissUnreadIfPast(el: HTMLElement): void {

@@ -1,6 +1,7 @@
 {
   "locale": "de",
   "translations": {
+    "a11y.skipToConversation": "Zum Gespräch springen",
     "settings.language": "Sprache",
     "login.headline": "Gespräche mit Tiefe, ohne den Lärm.",
     "login.lead": "Ruhige Räume für Teams, die verlässliches Echtzeit-Chat und Präsenz ohne Ablenkung brauchen.",

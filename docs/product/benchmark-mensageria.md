@@ -113,7 +113,7 @@ sobre o `<input type="file">` que já existe, nunca como caminho único.
 |---|---|---|---|---|---|
 | PWA instalável | sim | sim | sim | web | **Temos** |
 | i18n | ~10 idiomas | muitos | muitos | muitos | **Done** — B-100 (`pt-BR` + 9 catálogos; CI) |
-| Acessibilidade WCAG AA | sim | sim | parcial | parcial | **Parcial** — B-103 |
+| Acessibilidade WCAG AA | sim | sim | parcial | parcial | **Done** — B-103 (axe WCAG 2.2 AA na CI; sem certificação formal) |
 | Tema claro/escuro | sim | sim | sim | sim | **Temos** |
 | Wallpaper / cores pessoais | parcial | parcial | sim | sim | **Falta** — B-185 |
 | Webhooks / integrações | sim | sim | sim | Business API | **Parcial** — B-048 Done (`MessageCreated`); estender em **B-108** |

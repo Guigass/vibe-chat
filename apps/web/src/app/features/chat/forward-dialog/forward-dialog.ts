@@ -2,16 +2,20 @@ import { Component, computed, inject, input, output, signal } from '@angular/cor
 import { Channel } from '../../../shared/models/chat.models';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { fillTemplate, ui } from '../../../core/i18n/strings';
+import { A11yModule } from '@angular/cdk/a11y';
 
 const MAX_TARGETS = 5;
 
 @Component({
   selector: 'vc-forward-dialog',
   standalone: true,
+  imports: [A11yModule],
   template: `
     @if (open()) {
       <div class="fwd-backdrop" (click)="cancel.emit()"></div>
-      <div class="fwd" role="dialog" aria-modal="true" aria-labelledby="fwd-title">
+      <div class="fwd" role="dialog" aria-modal="true" aria-labelledby="fwd-title"
+        cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+        (keydown.escape)="$event.stopPropagation(); cancel.emit()">
         <header class="fwd__header">
           <h2 id="fwd-title">{{ ui.forwardTitle }}</h2>
           <button type="button" class="ghost" (click)="cancel.emit()" [attr.aria-label]="ui.close">×</button>
@@ -24,7 +28,7 @@ const MAX_TARGETS = 5;
             [value]="query()"
             (input)="query.set(($any($event.target).value))"
             [placeholder]="ui.forwardSearchPh"
-            autofocus
+            cdkFocusInitial
           />
         </label>
 
@@ -40,9 +44,9 @@ const MAX_TARGETS = 5;
           </ul>
         }
 
-        <ul class="fwd__list" role="listbox" [attr.aria-label]="ui.forwardDestinations">
+        <ul class="fwd__list" role="listbox" aria-multiselectable="true" [attr.aria-label]="ui.forwardDestinations">
           @for (ch of filtered(); track ch.id) {
-            <li>
+            <li role="presentation">
               <button
                 type="button"
                 role="option"
@@ -57,7 +61,7 @@ const MAX_TARGETS = 5;
               </button>
             </li>
           } @empty {
-            <li class="fwd__empty">{{ ui.forwardEmpty }}</li>
+            <li role="option" aria-disabled="true" aria-selected="false" class="fwd__empty">{{ ui.forwardEmpty }}</li>
           }
         </ul>
 

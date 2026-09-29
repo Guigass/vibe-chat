@@ -33,7 +33,7 @@
       </div>
     </header>
 
-    <div class="admin-shell__content">
+    <main class="admin-shell__content">
       @if (loading()) {
         <p class="admin-shell__hint">{{ ui.adminLoadingConsole }}</p>
       } @else if (!ctx.canAccessAdmin()) {
@@ -46,6 +46,6 @@
       } @else {
         <router-outlet (activate)="onChildActivate($event)" />
       }
-    </div>
+    </main>
   </div>
 </div>

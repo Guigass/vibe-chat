@@ -37,7 +37,9 @@
 
 /* Light colors only when not dark — must not sit on bare :root (that always matches). */
 html:not([data-theme='dark']) {
-  --vc-brand: #0d9488;
+  --vc-brand: #0f766e;
+  --vc-on-brand: #ffffff;
+  --vc-msg-mine-muted: #57534e;
   --vc-brand-hover: #0f766e;
   --vc-brand-soft: #ccfbf1;
   --vc-brand-ink: #134e4a;
@@ -46,13 +48,13 @@ html:not([data-theme='dark']) {
 
   --vc-ink: #1c1917;
   --vc-ink-muted: #57534e;
-  --vc-ink-subtle: #78716c;
+  --vc-ink-subtle: #68615c;
   --vc-surface: #f8fafc;
   --vc-surface-elevated: #ffffff;
   --vc-border: #e7e5e4;
   --vc-color-bg: #f8fafc;
   --vc-color-surface: #ffffff;
-  --vc-color-accent: #0d9488;
+  --vc-color-accent: #0f766e;
   --vc-color-accent-muted: #0f766e;
   --vc-color-text: #1c1917;
   --vc-color-text-muted: #57534e;
@@ -84,6 +86,8 @@ html:not([data-theme='dark']) {
 */
 html[data-theme='dark'] {
   --vc-brand: #2dd4bf;
+  --vc-on-brand: #042f2e;
+  --vc-msg-mine-muted: #e7e5e4;
   --vc-brand-hover: #5eead4;
   --vc-brand-soft: #134e4a;
   --vc-brand-ink: #99f6e4;
@@ -92,7 +96,7 @@ html[data-theme='dark'] {
 
   --vc-ink: #f5f5f4;
   --vc-ink-muted: #a8a29e;
-  --vc-ink-subtle: #78716c;
+  --vc-ink-subtle: #a8a29e;
   --vc-surface: #0c0f12;
   --vc-surface-elevated: #161a1f;
   --vc-border: #292524;

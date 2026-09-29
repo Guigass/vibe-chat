@@ -4,7 +4,7 @@ import { Component, computed, input } from '@angular/core';
   selector: 'vc-avatar',
   standalone: true,
   template: `
-    <span class="vc-avatar" [style.width.px]="size()" [style.height.px]="size()" [attr.aria-label]="name()">
+    <span class="vc-avatar" role="img" [style.width.px]="size()" [style.height.px]="size()" [attr.aria-label]="name()">
       @if (src()) {
         <img [src]="src()" [alt]="name()" />
       } @else {

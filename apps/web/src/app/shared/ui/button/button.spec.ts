@@ -13,9 +13,9 @@ describe('Button (UX-001)', () => {
     fixture.detectChanges();
 
     const cmp = Button as unknown as { ɵcmp: { styles: string[] } };
-    const css = cmp.ɵcmp.styles.join('\n');
+    const css = cmp.ɵcmp.styles.join('\n').replaceAll('%NS%', '');
     // Emulated encapsulation rewrites selectors to `.vc-btn[_ngcontent-%COMP%]`.
-    expect(css).toContain('color: var(--vc-ink)');
+    expect(css).toMatch(/color:\s*var\(--vc-ink\)/);
     expect(css).toMatch(/\.vc-btn(?:\[[^\]]+\])?\s*\{[^}]*color:\s*var\(--vc-ink\)/s);
   });
 });

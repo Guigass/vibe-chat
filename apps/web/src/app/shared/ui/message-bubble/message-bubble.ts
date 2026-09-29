@@ -130,6 +130,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
   template: `
     <article
       class="vc-msg vc-anim-fade-in"
+      tabindex="0"
       [class.vc-msg--mine]="own()"
       [class.vc-msg--plain]="surface() === 'plain'"
       [class.vc-msg--group-start]="groupRole() === 'start'"
@@ -169,7 +170,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
                 message().createdAt | date: 'shortTime'
               }}</time>
               @if (message().editedAt && !message().deletedAt) {
-                <span class="vc-msg__status" [title]="ui.bubbleEdited" [attr.aria-label]="ui.bubbleEdited">
+                <span role="img" class="vc-msg__status" [title]="ui.bubbleEdited" [attr.aria-label]="ui.bubbleEdited">
                   <svg
                     width="12"
                     height="12"
@@ -188,7 +189,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
               }
               @if (message().isPinned && !message().deletedAt) {
                 <span
-                  class="vc-msg__status vc-msg__status--pin"
+                  role="img" class="vc-msg__status vc-msg__status--pin"
                   [title]="ui.bubblePinned"
                   [attr.aria-label]="ui.bubblePinned"
                 >
@@ -212,7 +213,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
               }
               @if (message().isSaved && !message().deletedAt) {
                 <span
-                  class="vc-msg__status vc-msg__status--saved"
+                  role="img" class="vc-msg__status vc-msg__status--saved"
                   [title]="ui.bubbleSaved"
                   [attr.aria-label]="ui.bubbleSaved"
                 >
@@ -232,7 +233,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
                 </span>
               }
               @if (message().status === 'sending') {
-                <span class="vc-msg__status" [title]="ui.bubbleSending" [attr.aria-label]="ui.bubbleSending">
+                <span role="img" class="vc-msg__status" [title]="ui.bubbleSending" [attr.aria-label]="ui.bubbleSending">
                   <svg
                     width="12"
                     height="12"
@@ -248,7 +249,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
                   </svg>
                 </span>
               } @else if (message().status === 'sent') {
-                <span class="vc-msg__status" [title]="ui.bubbleSent" [attr.aria-label]="ui.bubbleSent">
+                <span role="img" class="vc-msg__status" [title]="ui.bubbleSent" [attr.aria-label]="ui.bubbleSent">
                   <svg
                     width="12"
                     height="12"
@@ -265,7 +266,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
                 </span>
               } @else if (message().status === 'failed') {
                 <span
-                  class="vc-msg__status vc-msg__status--fail"
+                  role="img" class="vc-msg__status vc-msg__status--fail"
                   [title]="ui.bubbleFailed"
                   [attr.aria-label]="ui.bubbleFailed"
                 >
@@ -432,7 +433,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
           @if (!showMeta()) {
             <div class="vc-msg__group-meta">
               @if (message().editedAt && !message().deletedAt) {
-                <span class="vc-msg__status" [title]="ui.bubbleEdited" [attr.aria-label]="ui.bubbleEdited">
+                <span role="img" class="vc-msg__status" [title]="ui.bubbleEdited" [attr.aria-label]="ui.bubbleEdited">
                   <svg
                     width="12"
                     height="12"
@@ -451,7 +452,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
               }
               @if (message().isPinned && !message().deletedAt) {
                 <span
-                  class="vc-msg__status vc-msg__status--pin"
+                  role="img" class="vc-msg__status vc-msg__status--pin"
                   [title]="ui.bubblePinned"
                   [attr.aria-label]="ui.bubblePinned"
                 >
@@ -475,7 +476,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
               }
               @if (message().isSaved && !message().deletedAt) {
                 <span
-                  class="vc-msg__status vc-msg__status--saved"
+                  role="img" class="vc-msg__status vc-msg__status--saved"
                   [title]="ui.bubbleSaved"
                   [attr.aria-label]="ui.bubbleSaved"
                 >
@@ -767,6 +768,8 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
       font-size: 0.72rem;
       color: var(--vc-ink-subtle);
     }
+    .vc-msg--mine time,
+    .vc-msg--mine .vc-msg__status { color: var(--vc-msg-mine-muted); }
     .vc-msg__status {
       display: inline-flex;
       align-items: center;

@@ -1,13 +1,11 @@
 import {
   Component,
-  ElementRef,
   computed,
   effect,
   inject,
   input,
   output,
   signal,
-  viewChild,
 } from '@angular/core';
 import {
   CdkConnectedOverlay,
@@ -16,6 +14,7 @@ import {
   type ConnectedPosition,
 } from '@angular/cdk/overlay';
 import { ScrollingModule } from '@angular/cdk/scrolling';
+import { A11yModule } from '@angular/cdk/a11y';
 import {
   categoryLabel,
   loadEmojiCatalog,
@@ -31,7 +30,7 @@ import { fillTemplate, ui } from '../../../core/i18n/strings';
 @Component({
   selector: 'vc-emoji-picker',
   standalone: true,
-  imports: [ScrollingModule, CdkConnectedOverlay, CdkOverlayOrigin],
+  imports: [A11yModule, ScrollingModule, CdkConnectedOverlay, CdkOverlayOrigin],
   template: `
     <span class="emoji-picker__origin" cdkOverlayOrigin #origin="cdkOverlayOrigin"></span>
     <ng-template
@@ -50,6 +49,8 @@ import { fillTemplate, ui } from '../../../core/i18n/strings';
       <div
         class="emoji-picker"
         role="dialog"
+        cdkTrapFocus
+        [cdkTrapFocusAutoCapture]="true"
         aria-modal="true"
         [attr.aria-label]="ui.emojiPickerTitle"
         (keydown)="onPanelKeydown($event)"
@@ -57,6 +58,7 @@ import { fillTemplate, ui } from '../../../core/i18n/strings';
         <div class="emoji-picker__search">
           <input
             #searchInput
+            cdkFocusInitial
             type="search"
             [value]="query()"
             (input)="onSearchInput($event)"
@@ -85,12 +87,12 @@ import { fillTemplate, ui } from '../../../core/i18n/strings';
             </cdk-virtual-scroll-viewport>
           </div>
         } @else {
-          <div class="emoji-picker__tabs" role="tablist" [attr.aria-label]="ui.emojiCategories">
+          <div class="emoji-picker__tabs" role="group" [attr.aria-label]="ui.emojiCategories">
             @if (recentEmojis().length) {
               <button
                 type="button"
-                role="tab"
-                [attr.aria-selected]="activeCategoryId() === 'recent'"
+
+                [attr.aria-pressed]="activeCategoryId() === 'recent'"
                 [class.is-active]="activeCategoryId() === 'recent'"
                 (click)="activeCategoryId.set('recent')"
               >
@@ -100,8 +102,8 @@ import { fillTemplate, ui } from '../../../core/i18n/strings';
             @for (category of categories(); track category.id) {
               <button
                 type="button"
-                role="tab"
-                [attr.aria-selected]="activeCategoryId() === category.id"
+
+                [attr.aria-pressed]="activeCategoryId() === category.id"
                 [class.is-active]="activeCategoryId() === category.id"
                 (click)="activeCategoryId.set(category.id)"
               >
@@ -265,8 +267,6 @@ export class EmojiPicker {
     },
   ];
 
-  private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
-
   readonly categories = computed(() => this.catalog()?.categories ?? []);
   readonly searchResults = computed(() => {
     const catalog = this.catalog();
@@ -304,7 +304,6 @@ export class EmojiPicker {
         this.activeEmoji.set(null);
         return;
       }
-      queueMicrotask(() => this.searchInput()?.nativeElement.focus());
     });
   }
 
@@ -337,36 +336,28 @@ export class EmojiPicker {
   onPanelKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault();
+      event.stopPropagation();
       this.closed.emit();
       return;
     }
 
-    const emojis = this.query().trim() ? this.searchResults() : this.visibleEmojis();
-    if (!emojis.length) return;
-
-    const currentIndex = this.activeEmoji()
-      ? emojis.indexOf(this.activeEmoji()!)
-      : -1;
-
-    if (event.key === 'ArrowRight') {
-      event.preventDefault();
-      const next = currentIndex < 0 ? 0 : Math.min(currentIndex + 1, emojis.length - 1);
-      this.activeEmoji.set(emojis[next] ?? null);
-    } else if (event.key === 'ArrowLeft') {
-      event.preventDefault();
-      const next = currentIndex < 0 ? 0 : Math.max(currentIndex - 1, 0);
-      this.activeEmoji.set(emojis[next] ?? null);
-    } else if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      const next = currentIndex < 0 ? 0 : Math.min(currentIndex + 8, emojis.length - 1);
-      this.activeEmoji.set(emojis[next] ?? null);
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      const next = currentIndex < 0 ? 0 : Math.max(currentIndex - 8, 0);
-      this.activeEmoji.set(emojis[next] ?? null);
-    } else if (event.key === 'Enter' && this.activeEmoji()) {
-      event.preventDefault();
-      this.pick(this.activeEmoji()!);
+    const panel = event.currentTarget as HTMLElement;
+    const target = event.target as HTMLElement;
+    const buttons = Array.from(panel.querySelectorAll<HTMLButtonElement>('.emoji-picker__emoji'));
+    const index = buttons.indexOf(target as HTMLButtonElement);
+    if (target instanceof HTMLInputElement) {
+      // Preserve native caret movement and editing in the search input.
+      if (event.key === 'ArrowDown' && buttons.length) {
+        event.preventDefault();
+        buttons[0].focus();
+      }
+      return;
     }
+    if (index < 0) return;
+    const delta: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 8, ArrowUp: -8 };
+    if (!(event.key in delta)) return; // Enter/Space activate the actual focused button.
+    event.preventDefault();
+    const next = Math.max(0, Math.min(buttons.length - 1, index + delta[event.key]));
+    buttons[next].focus();
   }
 }

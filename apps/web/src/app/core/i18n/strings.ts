@@ -1,5 +1,6 @@
 /** Visible chrome strings. Source locale is pt-BR; other locales load from public/locale. */
 export const ui = {
+  skipToConversation: $localize`:@@a11y.skipToConversation:Ir para a conversa`,
   language: $localize`:@@settings.language:Idioma`,
   loginHeadline: $localize`:@@login.headline:Conversas com profundidade, sem ruído.`,
   loginLead: $localize`:@@login.lead:Espaços calmos para times que precisam de tempo real confiável e presença sem distração.`,

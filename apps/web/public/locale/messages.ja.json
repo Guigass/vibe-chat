@@ -1,6 +1,7 @@
 {
   "locale": "ja",
   "translations": {
+    "a11y.skipToConversation": "会話へ移動",
     "settings.language": "言語",
     "login.headline": "深く、静かに。余計なノイズのない会話。",
     "login.lead": "信頼できるリアルタイムと在席表示を、気が散らない空間で。",

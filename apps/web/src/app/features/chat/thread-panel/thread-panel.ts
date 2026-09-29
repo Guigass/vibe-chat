@@ -17,16 +17,17 @@ import {
 } from '../../../shared/models/chat.models';
 import { updateTextareaSelection } from '../../../shared/markdown/markdown-format';
 import { ui } from '../../../core/i18n/strings';
+import { MessageAnnouncer } from '../../../shared/ui/message-announcer';
 
 @Component({
   selector: 'vc-thread-panel',
   standalone: true,
-  imports: [Button, EmptyState, IconButton, MessageBubble, Skeleton, Textarea],
+  imports: [MessageAnnouncer, Button, EmptyState, IconButton, MessageBubble, Skeleton, Textarea],
   template: `
     <div class="thread">
       <header class="thread__header">
         <div>
-          <h2>Thread</h2>
+          <h2>{{ ui.thread }}</h2>
           @if (threads.active(); as active) {
             <p>{{ active.replyCount }} {{ active.replyCount === 1 ? ui.menuReply : ui.menuReplies }}</p>
           }
@@ -62,7 +63,7 @@ import { ui } from '../../../core/i18n/strings';
         </div>
       }
 
-      <div class="thread__scroll" #scroller>
+      <div class="thread__scroll" role="region" #scroller tabindex="0" [attr.aria-label]="ui.thread">
         @if (threads.loading()) {
           <div class="thread__loading">
             <vc-skeleton height="3rem" />
@@ -110,6 +111,8 @@ import { ui } from '../../../core/i18n/strings';
         }
       </div>
 
+      <vc-message-announcer [scope]="threads.active()?.id ?? null"
+        [messages]="threads.sortedMessages()" [loading]="threads.loading()" />
       <form class="thread__composer" (submit)="onSubmit($event)">
         @if (threads.replyTarget(); as cite) {
           <div class="thread__reply" role="status">

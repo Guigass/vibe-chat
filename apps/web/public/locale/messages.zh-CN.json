@@ -1,6 +1,7 @@
 {
   "locale": "zh-CN",
   "translations": {
+    "a11y.skipToConversation": "跳转到对话",
     "settings.language": "语言",
     "login.headline": "有深度的对话，没有噪音。",
     "login.lead": "为需要可靠实时通信与在线状态、又不想被打扰的团队准备的安静空间。",
