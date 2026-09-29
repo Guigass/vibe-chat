@@ -93,7 +93,8 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
 
         _redis = new RedisBuilder("redis:7.4-alpine").Build();
 
-        _minio = new ContainerBuilder("minio/minio:RELEASE.2024-12-18T13-15-44Z")
+        // Docker Hub removed minio/minio (~2026-09-12). Same historical tag lives on Quay.
+        _minio = new ContainerBuilder("quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z")
             .WithEnvironment("MINIO_ROOT_USER", MinioUser)
             .WithEnvironment("MINIO_ROOT_PASSWORD", MinioPassword)
             .WithCommand("server", "/data", "--address", ":9000")

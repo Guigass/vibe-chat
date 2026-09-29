@@ -89,6 +89,12 @@ jobs:
       - name: Architecture tests
         run: dotnet test tests/architecture/VibeChat.ArchitectureTests.csproj -c Release --no-build --verbosity minimal
 
+      - name: Pre-pull Testcontainers images
+        run: |
+          docker pull postgres:16.6
+          docker pull redis:7.4-alpine
+          docker pull quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z
+
       - name: Security tests (Testcontainers)
         run: dotnet test tests/security/VibeChat.SecurityTests.csproj -c Release --no-build --verbosity minimal
 
