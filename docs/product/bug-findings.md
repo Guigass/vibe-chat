@@ -27,6 +27,7 @@ Regras do registro:
 
 | ID      | Área              | Achado                                                                | Severidade | Status                                       |
 | ------- | ----------------- | --------------------------------------------------------------------- | ---------- | -------------------------------------------- |
+| BUG-025 | Sidebar / filtro  | Cada mudança no filtro da rail loga TypeError em `setActiveChannel`  | Baixa      | Aberto                                       |
 | BUG-024 | Composer / slash  | Comandos `/` não acompanham o idioma da UI                            | Média      | Aberto                                       |
 | BUG-023 | Busca / relevância | Resultados rígidos; FTS não acha prefixo, acento, pessoa ou anexo     | Média      | Aberto — fecha em **B-188** |
 | BUG-022 | Header / busca    | Painel desalinhado na 1ª abertura; selecionar opção fecha a barra     | Média      | Aberto                                       |
@@ -45,6 +46,45 @@ Regras do registro:
 | BUG-018 | Timeline / scroll | Scroll não fica colado no fim ao enviar/receber (às vezes)           | Média      | Done                                         |
 
 ## Detalhamento
+
+### BUG-025 — Filtro da sidebar loga TypeError em setActiveChannel
+
+- Status: **Aberto**
+- Severidade: **Baixa**. O filtro ainda estreita a lista e a conversa aberta
+  continua usável; a exceção só vai para o console. Não é **Média**: nada no
+  fluxo atrapalha — o match aparece e o canal aberto não troca. Não é
+  **Alta**: filtrar, ler e enviar seguem.
+- Observado em: 2026-09-29; lab Compose (`apps` / `http://localhost:4200`),
+  Alice via DevAuth, `main` em `ca4de51` (antes do squash #165). Digitar no
+  filtro da rail (placeholder `nav.filterPh`, na sessão “Filter channels,
+  recents and members”) estreita a lista (Bob, depois Demo) e `#geral`
+  permanece usável. Cada mudança do filtro loga
+  `TypeError: i.toLowerCase is not a function`, atribuído a
+  `setActiveChannel`. O squash #165 (B-040) não mexe nesse trecho.
+- Hipótese: `vc-sidebar-nav` expõe `select = output<string>()`, o mesmo nome
+  do evento DOM `select`. O `(select)="onSelect($event)"` do `ChannelList`
+  escuta os dois — o output e o `select` nativo que borbulha do `<input>` do
+  filtro. O `$event` (um `Event`) segue para `selectChannel` →
+  `setActiveChannel`. O objeto é truthy, então o guarda de id vazio não
+  retorna, e `idsEqual` chama `toLowerCase` sem exigir string. No bundle de
+  produção (nginx) o método `setActiveChannel` conserva o nome e o parâmetro
+  vira `i`. O throw ocorre antes de `activeChannelIdSignal.set`, por isso
+  `#geral` não muda. `matchesFilter` não entra nesse stack: não chama
+  `setActiveChannel`, e a lista que estreita mostra que os nomes deste lab
+  (`#geral`, Bob, Demo) são string.
+- Arquivos: `apps/web/src/app/shared/ui/sidebar-nav/sidebar-nav.ts`
+  (`select`, input do filtro),
+  `apps/web/src/app/features/chat/channel-list/channel-list.ts` (`onSelect`),
+  `apps/web/src/app/core/services/channel.store.ts` (`setActiveChannel`),
+  `apps/web/src/app/core/services/message-sync.ts` (`idsEqual`).
+- Resultado esperado: mudar o filtro não loga TypeError e não chama
+  `selectChannel`. A lista continua estreitando; o canal aberto não muda.
+  Distinto de B-184 (filtro da rail já entregue).
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: no lab, cada mudança no filtro da rail estreita a
+  lista sem `TypeError` no console; o canal ativo permanece; regressão do
+  filtro (match e vazio) coberta; finding `Done`.
 
 ### BUG-024 — Comandos slash não traduzem com o locale
 
