@@ -197,6 +197,7 @@ public static class Permissions
         public const string Send = "message.send";
         public const string React = "message.react";
         public const string EditOwn = "message.edit.own";
+        public const string EditAny = "message.edit.any";
         public const string DeleteOwn = "message.delete.own";
         public const string DeleteAny = "message.delete.any";
         public const string Pin = "message.pin";

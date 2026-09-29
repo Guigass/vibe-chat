@@ -660,6 +660,23 @@
     "threadFollow.unfollow": "Не отслеживать",
     "threadFollow.loadError": "Не удалось загрузить отслеживаемые темы.",
     "threadFollow.actionError": "Не удалось обновить подписку на тему.",
-    "threadFollow.unreadCount": "Непрочитано: %n%"
+    "threadFollow.unreadCount": "Непрочитано: %n%",
+    "menu.editExpired": "Редактирование доступно %n% мин после отправки",
+    "menu.deleteExpired": "Удаление доступно %n% мин после отправки",
+    "admin.messagingTitle": "Редактирование и удаление сообщений",
+    "admin.messagingDesc": "Кто может редактировать или удалять свои сообщения и как долго после отправки.",
+    "admin.messagingEditEnabled": "Автор может редактировать",
+    "admin.messagingEditWindow": "Окно редактирования (мин)",
+    "admin.messagingWindowHint": "Пусто = без ограничения",
+    "admin.messagingEditOverride": "Модерация может редактировать чужие сообщения и игнорировать окно",
+    "admin.messagingDeleteEnabled": "Автор может удалять",
+    "admin.messagingDeleteWindow": "Окно удаления (мин)",
+    "admin.messagingDeleteOverride": "Модерация может удалять чужие сообщения и игнорировать окно",
+    "admin.messagingRoles": "Роли",
+    "admin.roleMember": "Участник",
+    "admin.roleModerator": "Модератор",
+    "admin.roleAdmin": "Админ",
+    "admin.roleAuditor": "Аудитор",
+    "admin.roleGuest": "Гость"
   }
 }

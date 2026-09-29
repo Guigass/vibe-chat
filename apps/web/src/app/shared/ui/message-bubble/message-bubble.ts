@@ -40,6 +40,11 @@ import { rememberRecentEmoji } from '../../emoji/emoji-data';
 import { environment } from '../../../../environments/environment';
 import { LocaleService } from '../../../core/i18n/locale.service';
 import { fillTemplate, ui } from '../../../core/i18n/strings';
+import {
+  deleteLifecycle,
+  editLifecycle,
+  messagingPolicyOf,
+} from '../../messaging/messaging-policy';
 
 const MINE_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
   {
@@ -566,6 +571,8 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
             cdkMenuItem
             class="vc-msg-menu__item"
             [class.vc-msg-menu__item--danger]="item.danger"
+            [disabled]="item.disabled"
+            [attr.title]="item.title || null"
             (click)="onMenuAction(item.id)"
           >
             {{ item.label }}
@@ -1139,9 +1146,16 @@ export class MessageBubble {
   readonly showActions = computed(
     () => !this.message().deletedAt && this.message().status === 'persisted',
   );
-  readonly menuItems = computed(() =>
-    menuActionsForMessage({
-      mine: this.own(),
+  readonly menuItems = computed(() => {
+    const policy = messagingPolicyOf(this.channels);
+    const role = this.channels.activeWorkspace?.()?.role;
+    const createdAt = this.message().createdAt;
+    const nowMs = Date.now();
+    const mine = this.own();
+    const edit = editLifecycle({ policy, role, mine, createdAt, nowMs });
+    const remove = deleteLifecycle({ policy, role, mine, createdAt, nowMs });
+    return menuActionsForMessage({
+      mine,
       showForward: this.showForwardAction(),
       showShareToChannel: this.showShareToChannelAction(),
       showThread: this.showThreadAction(),
@@ -1152,8 +1166,18 @@ export class MessageBubble {
       showMarkUnread: this.showMarkUnreadAction(),
       replyCount: this.message().replyCount,
       hasLinkPreview: !!this.visibleLinkPreview(),
-    }),
-  );
+      allowEdit: edit === 'allow',
+      allowDelete: remove === 'allow',
+      editExpiredTitle:
+        edit === 'expired' && policy.editWindowMinutes != null
+          ? fillTemplate(ui.menuEditExpired, { n: policy.editWindowMinutes })
+          : undefined,
+      deleteExpiredTitle:
+        remove === 'expired' && policy.deleteWindowMinutes != null
+          ? fillTemplate(ui.menuDeleteExpired, { n: policy.deleteWindowMinutes })
+          : undefined,
+    });
+  });
   readonly visibleLinkPreview = computed(() => {
     const preview = this.message().linkPreview;
     if (!preview || this.message().deletedAt) return null;
@@ -1321,6 +1345,7 @@ export class MessageBubble {
   }
 
   onMenuAction(id: MessageMenuActionId): void {
+    if (this.menuItems().find((item) => item.id === id)?.disabled) return;
     switch (id) {
       case 'forward':
         this.forward.emit();

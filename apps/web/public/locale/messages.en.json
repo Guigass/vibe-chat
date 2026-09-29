@@ -660,6 +660,23 @@
     "threadFollow.unfollow": "Unfollow",
     "threadFollow.loadError": "Could not load followed threads.",
     "threadFollow.actionError": "Could not update the thread subscription.",
-    "threadFollow.unreadCount": "%n% unread"
+    "threadFollow.unreadCount": "%n% unread",
+    "menu.editExpired": "Editing is available for %n% min after sending",
+    "menu.deleteExpired": "Deletion is available for %n% min after sending",
+    "admin.messagingTitle": "Message editing and deletion",
+    "admin.messagingDesc": "Who can edit or delete their own messages, and for how long after sending.",
+    "admin.messagingEditEnabled": "Author can edit",
+    "admin.messagingEditWindow": "Edit window (min)",
+    "admin.messagingWindowHint": "Empty = no limit",
+    "admin.messagingEditOverride": "Moderation can edit other people's messages and ignore the window",
+    "admin.messagingDeleteEnabled": "Author can delete",
+    "admin.messagingDeleteWindow": "Delete window (min)",
+    "admin.messagingDeleteOverride": "Moderation can delete other people's messages and ignore the window",
+    "admin.messagingRoles": "Roles",
+    "admin.roleMember": "Member",
+    "admin.roleModerator": "Moderator",
+    "admin.roleAdmin": "Admin",
+    "admin.roleAuditor": "Auditor",
+    "admin.roleGuest": "Guest"
   }
 }

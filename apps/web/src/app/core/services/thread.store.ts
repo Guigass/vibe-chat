@@ -4,6 +4,7 @@ import { AuthService } from '../auth/auth.service';
 import { ChatHubService } from './chat-hub.service';
 import { ChannelStore } from './channel.store';
 import { ui } from '../i18n/strings';
+import { editLifecycle, messagingPolicyOf } from '../../shared/messaging/messaging-policy';
 import { ChatMessage, ChatThread } from '../../shared/models/chat.models';
 import {
   findMessageByCorrelators,
@@ -126,7 +127,14 @@ export class ThreadStore {
       !message ||
       message.deletedAt ||
       !message.mine ||
-      message.status !== 'persisted'
+      message.status !== 'persisted' ||
+      editLifecycle({
+        policy: messagingPolicyOf(this.channels),
+        role: this.channels.activeWorkspace?.()?.role,
+        mine: true,
+        createdAt: message.createdAt,
+        nowMs: Date.now(),
+      }) !== 'allow'
     ) {
       this.editingMessageSignal.set(null);
       return;

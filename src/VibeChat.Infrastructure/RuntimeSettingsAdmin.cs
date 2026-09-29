@@ -99,6 +99,8 @@ public sealed class RuntimeSettingsAdminService(
 
         var linkPreviewTenantEnabled = (await db.TenantLinkPreviewSettings.AsNoTracking()
             .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct))?.Enabled ?? true;
+        var lifecycle = await db.MessageLifecyclePolicies.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
 
         return new
         {
@@ -197,6 +199,7 @@ public sealed class RuntimeSettingsAdminService(
                 ceilingMaxSizeBytes = filesCeiling.MaxSizeBytes,
                 ceilingMaxAttachmentsPerMessage = filesCeiling.MaxAttachmentsPerMessage
             },
+            messaging = MessageLifecyclePolicyRules.ToDto(lifecycle),
             rateLimit = new
             {
                 source = rate.Source,

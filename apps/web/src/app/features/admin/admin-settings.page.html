@@ -373,6 +373,100 @@
     </div>
   </section>
 
+  <section class="settings__section">
+    <header class="settings__section-head">
+      <h2 class="settings__section-title">{{ ui.adminMessagingTitle }}</h2>
+      <p class="settings__section-desc">{{ ui.adminMessagingDesc }}</p>
+    </header>
+    <div class="settings__block">
+      <fieldset class="settings__fields" [disabled]="settingsBusy()">
+        <label class="settings__check">
+          <input
+            form="admin-settings-form"
+            type="checkbox"
+            name="editEnabled"
+            [checked]="s.messaging.editEnabled"
+          />
+          <span>{{ ui.adminMessagingEditEnabled }}</span>
+        </label>
+        <label class="settings__field settings__field--narrow">
+          <span>{{ ui.adminMessagingEditWindow }}</span>
+          <input
+            form="admin-settings-form"
+            name="editWindowMinutes"
+            type="number"
+            min="1"
+            max="525600"
+            [value]="s.messaging.editWindowMinutes ?? ''"
+          />
+        </label>
+        <p class="settings__meta">{{ ui.adminMessagingWindowHint }}</p>
+        <span class="settings__field">{{ ui.adminMessagingRoles }}</span>
+        @for (role of messagingRoles; track role.id) {
+          <label class="settings__check">
+            <input
+              form="admin-settings-form"
+              type="checkbox"
+              [name]="'editRole' + role.id"
+              [checked]="s.messaging.editRoles.includes(role.id)"
+            />
+            <span>{{ role.label }}</span>
+          </label>
+        }
+        <label class="settings__check">
+          <input
+            form="admin-settings-form"
+            type="checkbox"
+            name="editAllowModeratorOverride"
+            [checked]="s.messaging.editAllowModeratorOverride"
+          />
+          <span>{{ ui.adminMessagingEditOverride }}</span>
+        </label>
+        <label class="settings__check">
+          <input
+            form="admin-settings-form"
+            type="checkbox"
+            name="deleteEnabled"
+            [checked]="s.messaging.deleteEnabled"
+          />
+          <span>{{ ui.adminMessagingDeleteEnabled }}</span>
+        </label>
+        <label class="settings__field settings__field--narrow">
+          <span>{{ ui.adminMessagingDeleteWindow }}</span>
+          <input
+            form="admin-settings-form"
+            name="deleteWindowMinutes"
+            type="number"
+            min="1"
+            max="525600"
+            [value]="s.messaging.deleteWindowMinutes ?? ''"
+          />
+        </label>
+        <span class="settings__field">{{ ui.adminMessagingRoles }}</span>
+        @for (role of messagingRoles; track role.id) {
+          <label class="settings__check">
+            <input
+              form="admin-settings-form"
+              type="checkbox"
+              [name]="'deleteRole' + role.id"
+              [checked]="s.messaging.deleteRoles.includes(role.id)"
+            />
+            <span>{{ role.label }}</span>
+          </label>
+        }
+        <label class="settings__check">
+          <input
+            form="admin-settings-form"
+            type="checkbox"
+            name="deleteAllowModeratorOverride"
+            [checked]="s.messaging.deleteAllowModeratorOverride"
+          />
+          <span>{{ ui.adminMessagingDeleteOverride }}</span>
+        </label>
+      </fieldset>
+    </div>
+  </section>
+
   <!-- 3. Retenção e export -->
   <section class="settings__section">
     <header class="settings__section-head">

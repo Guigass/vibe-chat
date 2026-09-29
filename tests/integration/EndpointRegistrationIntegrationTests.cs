@@ -68,6 +68,7 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("POST", "/api/v1/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete", string.Join(",", new[] { Permissions.Files.Upload }), false, ""),
             new("GET", "/api/v1/channels/{channelId:guid}/attachments/{attachmentId:guid}/download", string.Join(",", new[] { Permissions.Files.Download, Permissions.Message.Read }), false, ""),
             new("GET", "/api/v1/channels/{channelId:guid}/attachments/{attachmentId:guid}/thumbnail", string.Join(",", new[] { Permissions.Files.Download, Permissions.Message.Read }), false, ""),
+            new("GET", "/api/v1/channels/{channelId:guid}/messaging-policy", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
             new("PUT", "/api/v1/channels/{channelId:guid}/messages/{messageId:guid}", "", false, "conditional EditOwn vs authorship (B-023)"),
             new("PUT", "/api/v1/channels/{channelId:guid}/messages/{messageId:guid}/reactions", string.Join(",", new[] { Permissions.Message.React }), false, ""),
             new("POST", "/api/v1/channels/{channelId:guid}/messages/{messageId:guid}/pin", string.Join(",", new[] { Permissions.Message.Pin }), false, ""),

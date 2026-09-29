@@ -1,3 +1,5 @@
+import type { MessagingPolicy, MessagingPolicyInput } from '../messaging/messaging-policy';
+
 export type MessageStatus = 'sending' | 'sent' | 'failed' | 'persisted';
 export type PresenceStatus = 'online' | 'away' | 'offline';
 
@@ -421,6 +423,7 @@ export interface SensitiveSettings {
     ceilingSendPerMinute: number;
     ceilingHubPerMinute: number;
   };
+  messaging: MessagingPolicy;
   encryption: {
     databaseOverridesEnabled: boolean;
     encryptionAvailable: boolean;
@@ -479,6 +482,7 @@ export interface UpdateSensitiveSettingsInput {
     sendPerMinute?: number;
     hubPerMinute?: number;
   };
+  messaging?: MessagingPolicyInput;
 }
 
 export interface RotateCredentialInput {

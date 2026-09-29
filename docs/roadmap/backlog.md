@@ -152,7 +152,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-102 | Seguir thread | **Done** (W10-8) — auto-inscrição (autor/resposta/menção) na mesma transação; não lidas via `ConversationSequences - LastReadSeq`; `followAllThreads` por canal; compartilhar resposta no canal |
 | B-103 | Acessibilidade WCAG 2.2 AA | **Done** (W10-9) — skip link, landmarks, foco em overlays, contraste AA, anunciador resumido; axe-core como gate na CI |
 | B-040 | Guests por convite | **Done** (W10-10) — `directory.channel_invites`; ChannelMember sem workspace; flag `Directory:Invites:Enabled` off default |
-| B-107 | Políticas de edição/apagar mensagem | Planned (W10-11) — janela de tempo (`messaging.edit|delete.windowMinutes`), papéis e override de moderação; settings admin; UI de editar no composer (B-173); preservação de body no audit → B-169; [spec](../product/specs/B-107-politicas-edicao-mensagem.md) |
+| B-107 | Políticas de edição/apagar mensagem | **Done** (W10-11) — janela, papéis e override em `messaging.message_lifecycle_policies`; settings admin; menu respeita a política; body do soft-delete permanece na linha (snapshot de audit → B-169); ADR-025; [spec](../product/specs/B-107-politicas-edicao-mensagem.md) |
 | B-108 | Extender webhooks outbound | Planned (W10-12) — mais eventos, multi-endpoint, filtros de canal, ping de teste; spec `docs/product/specs/B-108-extender-webhooks.md` |
 | B-109 | Núcleo plugin — bot/token + envio msgs | Planned (W10-13) — capability `messages.send`; base da trilha; spec `docs/product/specs/B-109-api-integracao-envio-mensagens.md` |
 | B-110 | Instalar/gerir plugins na instância | Planned (W10-14) — manifesto local, built-in Incoming Messages; deps B-109; spec `docs/product/specs/B-110-instalar-plugins.md` |
