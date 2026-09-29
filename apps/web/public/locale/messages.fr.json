@@ -632,7 +632,7 @@
     "admin.reencryptError": "Échec du rechiffrement des identifiants.",
     "channel.followedThreads": "Fils suivis",
     "channel.followAllThreads": "Suivre tous les fils de ce canal",
-    "channel.unfollowAllThreads": "Ne plus suivre tous les fils",,
+    "channel.unfollowAllThreads": "Ne plus suivre tous les fils",
     "guest.invite": "Inviter sur le canal",
     "guest.inviteTitle": "Inviter une personne externe",
     "guest.inviteEmail": "E-mail (facultatif)",
@@ -644,7 +644,7 @@
     "guest.presentBadge": "Invité présent",
     "guest.expired": "Cette invitation n’est plus disponible.",
     "guest.accepting": "Ouverture du canal…",
-    "guest.close": "Fermer"
+    "guest.close": "Fermer",
     "thread.following": "Suivi",
     "thread.notFollowing": "Suivre",
     "thread.followAction": "Suivre le fil",

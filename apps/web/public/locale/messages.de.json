@@ -632,7 +632,7 @@
     "admin.reencryptError": "Neuverschlüsselung der Zugangsdaten fehlgeschlagen.",
     "channel.followedThreads": "Verfolgte Threads",
     "channel.followAllThreads": "Allen Threads in diesem Kanal folgen",
-    "channel.unfollowAllThreads": "Allen Threads nicht mehr folgen",,
+    "channel.unfollowAllThreads": "Allen Threads nicht mehr folgen",
     "guest.invite": "Zum Kanal einladen",
     "guest.inviteTitle": "Externe Person einladen",
     "guest.inviteEmail": "E-Mail (optional)",
@@ -644,7 +644,7 @@
     "guest.presentBadge": "Gast anwesend",
     "guest.expired": "Diese Einladung ist nicht mehr verfügbar.",
     "guest.accepting": "Kanal wird geöffnet…",
-    "guest.close": "Schließen"
+    "guest.close": "Schließen",
     "thread.following": "Folgt",
     "thread.notFollowing": "Folgen",
     "thread.followAction": "Thread folgen",

@@ -632,7 +632,7 @@
     "admin.reencryptError": "Failed to re-encrypt credentials.",
     "channel.followedThreads": "Followed threads",
     "channel.followAllThreads": "Follow all threads in this channel",
-    "channel.unfollowAllThreads": "Stop following all threads",,
+    "channel.unfollowAllThreads": "Stop following all threads",
     "guest.invite": "Invite to channel",
     "guest.inviteTitle": "Invite someone from outside",
     "guest.inviteEmail": "Email (optional)",
@@ -644,7 +644,7 @@
     "guest.presentBadge": "Guest present",
     "guest.expired": "This invite is no longer available.",
     "guest.accepting": "Opening the channel…",
-    "guest.close": "Close"
+    "guest.close": "Close",
     "thread.following": "Following",
     "thread.notFollowing": "Follow",
     "thread.followAction": "Follow thread",

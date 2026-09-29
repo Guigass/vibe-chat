@@ -632,7 +632,7 @@
     "admin.reencryptError": "Не удалось перешифровать учётные данные.",
     "channel.followedThreads": "Отслеживаемые темы",
     "channel.followAllThreads": "Отслеживать все темы в этом канале",
-    "channel.unfollowAllThreads": "Прекратить отслеживание всех тем",,
+    "channel.unfollowAllThreads": "Прекратить отслеживание всех тем",
     "guest.invite": "Пригласить в канал",
     "guest.inviteTitle": "Пригласить человека извне",
     "guest.inviteEmail": "Эл. почта (необязательно)",
@@ -644,7 +644,7 @@
     "guest.presentBadge": "Есть гость",
     "guest.expired": "Это приглашение больше недоступно.",
     "guest.accepting": "Открываем канал…",
-    "guest.close": "Закрыть"
+    "guest.close": "Закрыть",
     "thread.following": "Отслеживается",
     "thread.notFollowing": "Отслеживать",
     "thread.followAction": "Отслеживать тему",

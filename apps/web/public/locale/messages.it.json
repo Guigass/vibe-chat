@@ -632,7 +632,7 @@
     "admin.reencryptError": "Ricifratura delle credenziali non riuscita.",
     "channel.followedThreads": "Thread seguiti",
     "channel.followAllThreads": "Segui tutti i thread di questo canale",
-    "channel.unfollowAllThreads": "Smetti di seguire tutti i thread",,
+    "channel.unfollowAllThreads": "Smetti di seguire tutti i thread",
     "guest.invite": "Invita al canale",
     "guest.inviteTitle": "Invita qualcuno dall’esterno",
     "guest.inviteEmail": "Email (opzionale)",
@@ -644,7 +644,7 @@
     "guest.presentBadge": "Ospite presente",
     "guest.expired": "Questo invito non è più disponibile.",
     "guest.accepting": "Apertura del canale…",
-    "guest.close": "Chiudi"
+    "guest.close": "Chiudi",
     "thread.following": "Seguito",
     "thread.notFollowing": "Segui",
     "thread.followAction": "Segui thread",
