@@ -25,7 +25,36 @@ internal static class DirectoryEndpoints
             var workspaces = await db.WorkspaceMembers.IgnoreQueryFilters()
                 .Where(x => x.UserId == profile.Id)
                 .Join(db.Workspaces.IgnoreQueryFilters(), m => m.WorkspaceId, w => w.Id, (m, w) => new WorkspaceResponse(w.Id.Value, w.Name, w.Slug, m.Role.ToString()))
-                .ToArrayAsync(ct);
+                .ToListAsync(ct);
+            var memberIds = workspaces.Select(x => x.Id).ToHashSet();
+            var guestWorkspaceIds = await db.ChannelMembers.AsNoTracking().IgnoreQueryFilters()
+                .Where(cm => cm.UserId == profile.Id && cm.LeftAt == null)
+                .Join(
+                    db.Channels.AsNoTracking().IgnoreQueryFilters(),
+                    cm => cm.ChannelId,
+                    ch => ch.Id,
+                    (_, ch) => ch.WorkspaceId)
+                .ToListAsync(ct);
+            foreach (var workspaceId in guestWorkspaceIds.Distinct())
+            {
+                if (memberIds.Contains(workspaceId.Value))
+                {
+                    continue;
+                }
+
+                var guestWorkspace = await db.Workspaces.AsNoTracking().IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(x => x.Id == workspaceId, ct);
+                if (guestWorkspace is not null)
+                {
+                    workspaces.Add(new WorkspaceResponse(
+                        guestWorkspace.Id.Value,
+                        guestWorkspace.Name,
+                        guestWorkspace.Slug,
+                        nameof(Role.Guest)));
+                    memberIds.Add(guestWorkspace.Id.Value);
+                }
+            }
+
             return Results.Ok(workspaces);
         });
     }

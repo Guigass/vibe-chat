@@ -255,7 +255,7 @@ public sealed class BackendUnitTests
     public void Permission_catalog_allows_member_to_upload_files()
     {
         RolePermissionCatalog.For(Role.Member).Should().Contain(Permissions.Files.Upload);
-        RolePermissionCatalog.For(Role.Guest).Should().NotContain(Permissions.Files.Upload);
+        RolePermissionCatalog.For(Role.Guest).Should().Contain(Permissions.Files.Upload);
     }
 
     [Fact]
@@ -377,7 +377,17 @@ public sealed class BackendUnitTests
         EmojiValidator.IsValid(":)").Should().BeFalse();
         EmojiValidator.IsValid(" ").Should().BeFalse();
         EmojiValidator.IsValid("hello").Should().BeFalse();
-        RolePermissionCatalog.For(Role.Guest).Should().NotContain(Permissions.Message.React);
+        RolePermissionCatalog.For(Role.Guest).Should().Contain(Permissions.Message.React);
+    }
+
+    [Fact]
+    public void Permission_catalog_allows_guest_to_send_on_invited_channel()
+    {
+        RolePermissionCatalog.For(Role.Guest).Should().Contain(Permissions.Message.Send);
+        RolePermissionCatalog.For(Role.Guest).Should().Contain(Permissions.Message.React);
+        RolePermissionCatalog.For(Role.Guest).Should().Contain(Permissions.Files.Upload);
+        RolePermissionCatalog.For(Role.Guest).Should().NotContain(Permissions.Workspace.Read);
+        RolePermissionCatalog.For(Role.Guest).Should().NotContain(Permissions.Search.Messages);
     }
 
     [Fact]

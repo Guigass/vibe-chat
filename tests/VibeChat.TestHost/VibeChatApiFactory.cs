@@ -93,10 +93,13 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
 
         _redis = new RedisBuilder("redis:7.4-alpine").Build();
 
-        _minio = new ContainerBuilder("minio/minio:RELEASE.2024-12-18T13-15-44Z")
+        // Docker Hub removed minio/minio (~2026-09-12). Quay historical tags return
+        // unauthorized from GitHub Actions. alpine/minio is public; the image user
+        // cannot write the baked-in /data dir, so use /tmp/data.
+        _minio = new ContainerBuilder("alpine/minio:RELEASE.2025-10-15T17-29-55Z")
             .WithEnvironment("MINIO_ROOT_USER", MinioUser)
             .WithEnvironment("MINIO_ROOT_PASSWORD", MinioPassword)
-            .WithCommand("server", "/data", "--address", ":9000")
+            .WithCommand("server", "/tmp/data", "--address", ":9000")
             .WithPortBinding(9000, true)
             .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(r =>
                 r.ForPath("/minio/health/live").ForPort(9000)))
@@ -178,6 +181,8 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Seed:Enabled", "true");
         builder.UseSetting("Directory:GroupDm:Enabled", "true");
         builder.UseSetting("Directory:GroupDm:MaxParticipants", "9");
+        builder.UseSetting("Directory:Invites:Enabled", "true");
+        builder.UseSetting("Directory:Invites:MaxExpiryDays", "30");
         builder.UseSetting("Database:BootstrapOnStartup", "true");
         builder.UseSetting("Ai:Enabled", "true");
         builder.UseSetting("Ai:Provider", "Mock");

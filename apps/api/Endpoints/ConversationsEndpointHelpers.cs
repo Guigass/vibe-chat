@@ -3,6 +3,7 @@ using VibeChat.Api;
 using VibeChat.Conversations;
 using VibeChat.Infrastructure;
 using VibeChat.SharedKernel;
+using VibeChat.Tenancy;
 
 namespace VibeChat.Api.Endpoints;
 
@@ -58,5 +59,28 @@ internal static class ConversationsEndpointHelpers
         }
 
         return result;
+    }
+
+    internal static async Task<HashSet<ChannelId>> GuestChannelIdsAsync(
+        VibeChatDbContext db,
+        WorkspaceId workspaceId,
+        IReadOnlyCollection<ChannelId> channelIds,
+        CancellationToken ct)
+    {
+        if (channelIds.Count == 0)
+        {
+            return [];
+        }
+
+        var workspaceMemberIds = await db.WorkspaceMembers.AsNoTracking()
+            .Where(x => x.WorkspaceId == workspaceId)
+            .Select(x => x.UserId)
+            .ToListAsync(ct);
+        var guestIds = await db.ChannelMembers.AsNoTracking()
+            .Where(x => channelIds.Contains(x.ChannelId) && !workspaceMemberIds.Contains(x.UserId))
+            .Select(x => x.ChannelId)
+            .Distinct()
+            .ToListAsync(ct);
+        return guestIds.ToHashSet();
     }
 }

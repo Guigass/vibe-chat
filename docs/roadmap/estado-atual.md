@@ -3,10 +3,10 @@
 Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
-- **Data de corte:** 2026-09-10
-- **Fase:** Wave 10 — W10-9 / B-103 Done (acessibilidade WCAG 2.2 AA); seguinte W10-10 / B-040
+- **Data de corte:** 2026-09-29
+- **Fase:** Wave 10 — W10-9 / B-103 Done (acessibilidade) e W10-10 / B-040 Done (guests)
 - **Safety lane obrigatória:** OPS-E2E-B100 Resolved (Playwright `locale: pt-BR` + isolamento i18n E2E + foco paleta + select Settings); OPS-E2E-B099 Resolved (#154); OPS-E2E-B098 Resolved (#148); OPS-E2E-B097 Resolved (#145+#149); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); BUG-020 Aberto (Média, fecha em B-186 / W10-15 — painel de membros + add + PV); BUG-021 Aberto (Média — convidado para DM em grupo não atualiza o front até F5); BUG-022 Aberto (Média — busca do header desalinhada na 1ª abertura e fecha ao selecionar opção); BUG-023 Aberto (Média, fecha em B-188 / W10-16 — resultados de busca rígidos); BUG-024 Aberto (Média — comandos slash não acompanham o idioma da UI); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
-- **Próximo item elegível:** W10-10 / B-040 (guests por convite)
+- **Próximo item elegível:** W10-11 / B-107 (políticas de edição/apagar mensagem)
 - **Override humano concluído:** W19-1 / B-178 — decomposição da API em maps por fronteira; `Program.cs` com 220 linhas; build e 241 testes verdes. A fila W10 permanece na ordem acima.
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
@@ -25,7 +25,7 @@ W7-1, W7-3 e W7-6 estão marcadas como entregues. `SEC-RLS-RUNTIME` fechou via #
 O trabalho aberto concentra-se em:
 
 1. safety lane Alta esvaziada (BUG-006 Done; BUG-002 aliviado, fecha em B-094);
-2. avançar Wave 10 (W10-1…W10-9 Done; seguinte W10-10 / B-040);
+2. avançar Wave 10 (W10-1…W10-10 Done; seguinte W10-11 / B-107);
 3. consumir o roadmap autorizado W11–W19 (Wave 19 = organização do código,
    recomendada antes de W11).
 
@@ -80,7 +80,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W10-10 / B-040 | P2-1, W10-4 e D-07 Done |
+| 1 | W10-11 / B-107 | W10-9 / B-103 e W10-10 / B-040 Done |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
@@ -108,6 +108,9 @@ W10-9 / B-103 **Done** (acessibilidade WCAG 2.2 AA: skip link, landmarks, foco
 contido/restaurado em overlays, contraste AA nos dois temas, anunciador resumido
 sem copiar o corpo da mensagem; axe-core como gate na CI nas telas de login,
 shell, thread e admin).
+W10-10 / B-040 **Done** (guest por convite: `directory.channel_invites`, token
+hashed de uso único, `ChannelMember` sem workspace, flag
+`Directory:Invites:Enabled` off default; ADR-024).
 
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W19. Wave 19
 (organização do código) é recomendada antes de W11. Ele não altera a prioridade

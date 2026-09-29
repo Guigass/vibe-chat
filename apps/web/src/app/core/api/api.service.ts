@@ -68,6 +68,7 @@ interface ChannelDto {
   participantCount?: number | null;
   participantNames?: string[] | null;
   participantUserIds?: string[] | null;
+  hasGuests?: boolean;
 }
 
 interface SlashCommandDto {
@@ -1409,7 +1410,32 @@ export class ApiService {
       participantCount: c.participantCount ?? undefined,
       participantNames: c.participantNames ?? undefined,
       participantUserIds: c.participantUserIds ?? undefined,
+      hasGuests: !!c.hasGuests,
     };
+  }
+
+  async createChannelInvite(
+    workspaceId: string,
+    channelId: string,
+    input: { email?: string; expiresInDays?: number },
+  ): Promise<{ id: string; url: string; expiresAt: string }> {
+    return this.request<{ id: string; url: string; expiresAt: string }>(
+      `/api/v1/workspaces/${workspaceId}/channels/${channelId}/invites`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          email: input.email || null,
+          expiresInDays: input.expiresInDays ?? 7,
+        }),
+      },
+    );
+  }
+
+  async acceptChannelInvite(token: string): Promise<{ channelId: string; workspaceId: string; channelName: string }> {
+    return this.request<{ channelId: string; workspaceId: string; channelName: string }>(
+      `/api/v1/invites/${encodeURIComponent(token)}/accept`,
+      { method: 'POST' },
+    );
   }
 
   private mapThread(t: ThreadDto): ChatThread {

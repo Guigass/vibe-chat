@@ -193,6 +193,7 @@ v1.MapChannelLists();
 v1.MapSpacesAndMembers();
 v1.MapChannelMembers();
 v1.MapWorkspaceRoles();
+v1.MapGuestInvites();
 v1.MapPresence();
 v1.MapChannelCreation();
 v1.MapCommands();

@@ -28,6 +28,7 @@ testes nem uma revisão de segurança.
 | [021](../adrs/ADR-021-link-preview-ssrf.md) | Link preview + SSRF | outbox B-091, `LinkPreviewFetcher`, cache por tenant, ADR+threat model | **Alinhado** (W9-4) |
 | [022](../adrs/ADR-022-web-push-vapid.md) | Web Push VAPID | outbox B-095, `Push:Enabled=false`, payload mínimo, RLS | **Alinhado** (W10-1) |
 | [023](../adrs/ADR-023-group-dm.md) | DM em grupo | `ChannelType.GroupDm`, `JoinedSeq`, flag `Directory:GroupDm:Enabled=false` | **Alinhado** (W10-7) |
+| [024](../adrs/ADR-024-guests-por-convite.md) | Guests por convite | `directory.channel_invites`, ChannelMember sem workspace, `Directory:Invites:Enabled=false` | **Alinhado** (W10-10) |
 
 ## Gaps transversais derivados
 

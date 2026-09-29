@@ -27,6 +27,10 @@ public static class AuditActions
     public const string AttachmentUpload = "attachment.upload";
     public const string MemberRoleChange = "member.role.change";
     public const string MemberInvite = "member.invite";
+    public const string GuestInvite = "guest.invite";
+    public const string GuestAccept = "guest.accept";
+    public const string GuestRevoke = "guest.revoke";
+    public const string GuestExpire = "guest.expire";
     public const string SettingsChange = "settings.change";
     public const string SettingsCredentialRotate = "settings.credential.rotate";
     public const string SettingsEncryptionReencrypt = "settings.encryption.reencrypt";

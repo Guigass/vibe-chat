@@ -9,7 +9,8 @@ public sealed record ChannelResponse(
     string? Topic = null,
     int? ParticipantCount = null,
     string[]? ParticipantNames = null,
-    Guid[]? ParticipantUserIds = null);
+    Guid[]? ParticipantUserIds = null,
+    bool HasGuests = false);
 public sealed record ChannelMemberResponse(Guid UserId, string DisplayName, string Email);
 public sealed record UpdateChannelTopicRequest(string Topic);
 public sealed record OpenDirectMessageRequest(Guid UserId);

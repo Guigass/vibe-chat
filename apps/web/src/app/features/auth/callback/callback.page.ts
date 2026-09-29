@@ -42,7 +42,12 @@ export class CallbackPage implements OnInit {
   async ngOnInit(): Promise<void> {
     try {
       await this.auth.completeLogin();
-      await this.router.navigateByUrl('/app');
+      const next =
+        typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('vc.returnUrl') : null;
+      if (next) {
+        sessionStorage.removeItem('vc.returnUrl');
+      }
+      await this.router.navigateByUrl(next && next.startsWith('/') ? next : '/app');
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : ui.authCallbackFailed);
     }

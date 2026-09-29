@@ -18,6 +18,11 @@ internal static class IdentityEndpoints
             var profile = await EnsureProfileAsync(http.User, db, clock, ct);
             await BeginRlsUserAsync(db, tenant, profile.Id, ct);
             var roles = await db.WorkspaceMembers.IgnoreQueryFilters().Where(x => x.UserId == profile.Id).Select(x => x.Role).Distinct().ToArrayAsync(ct);
+            if (roles.Length == 0
+                && await db.ChannelMembers.IgnoreQueryFilters().AnyAsync(x => x.UserId == profile.Id && x.LeftAt == null, ct))
+            {
+                roles = [Role.Guest];
+            }
             if (roles.Any(x => x is Role.Admin or Role.PlatformOwner or Role.WorkspaceOwner))
             {
                 var membershipTenant = await db.WorkspaceMembers.IgnoreQueryFilters()
@@ -58,6 +63,11 @@ internal static class IdentityEndpoints
             await db.SaveChangesAsync(ct);
 
             var roles = await db.WorkspaceMembers.IgnoreQueryFilters().Where(x => x.UserId == profile.Id).Select(x => x.Role).Distinct().ToArrayAsync(ct);
+            if (roles.Length == 0
+                && await db.ChannelMembers.IgnoreQueryFilters().AnyAsync(x => x.UserId == profile.Id && x.LeftAt == null, ct))
+            {
+                roles = [Role.Guest];
+            }
             return Results.Ok(new MeResponse(profile.Id.Value, profile.Subject, profile.Email, profile.DisplayName, roles.Select(x => x.ToString()).ToArray(), profile.Locale));
         }).AllowPermissionGateExempt("caller-only profile locale update");
     }

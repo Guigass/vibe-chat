@@ -339,7 +339,14 @@ Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out Signal
 | `DELETE /api/v1/channels/{channelId}/participants/me` | Sai da GroupDm; `LeftAt`/`LeftSeq`; 403 no history e no hub dali em diante |
 | `PATCH /api/v1/channels/{channelId}` | Body `{ name? }`; renomeia Title da GroupDm (só participante) |
 
-`ChannelResponse` inclui `spaceId?`, `topic?` e, para DMs, `peerUserId` / `peerDisplayName`. GroupDm inclui `participantCount?`, `participantNames?`, `participantUserIds?`; `name` é o Title ou os nomes dos outros participantes. Channels `Private`/`Direct`/`Group`/`GroupDm` só aparecem na listagem para membros do canal. Spaces agrupam channels na UI; DMs (1:1 e grupo) ficam fora de spaces. History de GroupDm filtra `seq > JoinedSeq`.
+`ChannelResponse` inclui `spaceId?`, `topic?`, `hasGuests?` e, para DMs, `peerUserId` / `peerDisplayName`. GroupDm inclui `participantCount?`, `participantNames?`, `participantUserIds?`; `name` é o Title ou os nomes dos outros participantes. Channels `Private`/`Direct`/`Group`/`GroupDm` só aparecem na listagem para membros do canal. Guest (B-040) vê **somente** o canal do convite. Spaces agrupam channels na UI; DMs (1:1 e grupo) ficam fora de spaces. History de GroupDm filtra `seq > JoinedSeq`.
+
+| Endpoint | Notas |
+|----------|-------|
+| `POST /api/v1/workspaces/{workspaceId}/channels/{channelId}/invites` | Body `{ email?, expiresInDays? }`; `workspace.admin`; devolve `{ id, url, expiresAt }` **uma vez**. Flag `Directory:Invites:Enabled` (default false) → 404 se off. Recusa DM/GroupDm. |
+| `GET /api/v1/workspaces/{workspaceId}/channels/{channelId}/invites` | Lista convites **sem token** + guests ativos; `workspace.admin` |
+| `DELETE /api/v1/invites/{inviteId}` | Revoga; se já aceito, `LeftAt` no `ChannelMember` e evict do hub |
+| `POST /api/v1/invites/{token}/accept` | Autenticado; cria `ChannelMember` sem `WorkspaceMember`; token gasto/expirado/revogado/ausente → **410** `InviteUnavailable` (indistinguível) |
 
 Slash commands (B-087) — o cliente traduz o comando para as APIs existentes; a lista vem do servidor:
 
@@ -354,7 +361,7 @@ Slash commands (B-087) — o cliente traduz o comando para as APIs existentes; a
 
 `description` localiza por `UserLocales.Resolve(caller.locale)` (`pt-BR` default). `name` e `usage` não mudam.
 
-Papéis reutilizam `Role` + `RolePermissionCatalog` + `IPermissionChecker`. Guest permanece no enum/catálogo, mas **fora do fluxo de membership** (D-07).
+Papéis reutilizam `Role` + `RolePermissionCatalog` + `IPermissionChecker`. Guest (B-040 / ADR-024) **não** entra em `workspace_members`: é `ChannelMember` no canal do convite, com `message.send` / `message.react` / `file.upload`. Demais superfícies de workspace respondem 403.
 
 ---
 

@@ -27,8 +27,17 @@ export class LoginPage implements OnInit {
       await this.auth.init();
     }
     if (this.auth.isAuthenticated()) {
-      await this.router.navigateByUrl('/app');
+      await this.router.navigateByUrl(this.consumeReturnUrl());
     }
+  }
+
+  private consumeReturnUrl(): string {
+    if (typeof sessionStorage === 'undefined') {
+      return '/app';
+    }
+    const next = sessionStorage.getItem('vc.returnUrl');
+    sessionStorage.removeItem('vc.returnUrl');
+    return next && next.startsWith('/') ? next : '/app';
   }
 
   async login(): Promise<void> {
@@ -43,11 +52,11 @@ export class LoginPage implements OnInit {
 
   async enterDev(name: DevUserName): Promise<void> {
     this.auth.enterDevUser(name);
-    await this.router.navigateByUrl('/app');
+    await this.router.navigateByUrl(this.consumeReturnUrl());
   }
 
   async enterOfflineDemo(): Promise<void> {
     this.auth.enterOfflineDemo();
-    await this.router.navigateByUrl('/app');
+    await this.router.navigateByUrl(this.consumeReturnUrl());
   }
 }

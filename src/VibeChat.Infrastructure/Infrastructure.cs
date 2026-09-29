@@ -56,6 +56,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
     public DbSet<Space> Spaces => Set<Space>();
+    public DbSet<ChannelInvite> ChannelInvites => Set<ChannelInvite>();
     public DbSet<Channel> Channels => Set<Channel>();
     public DbSet<ChannelMember> ChannelMembers => Set<ChannelMember>();
     public DbSet<Message> Messages => Set<Message>();
@@ -138,6 +139,23 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
             entity.Property(x => x.Name).HasMaxLength(120);
             entity.HasIndex(x => new { x.WorkspaceId, x.Order });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ChannelInvite>(entity =>
+        {
+            entity.ToTable("channel_invites", "directory");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.CreatedByUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.AcceptedByUserId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new UserId(v.Value) : null);
+            entity.Property(x => x.RevokedByUserId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new UserId(v.Value) : null);
+            entity.Property(x => x.TokenHash).HasMaxLength(64);
+            entity.Property(x => x.Email).HasMaxLength(256);
+            entity.HasIndex(x => x.TokenHash).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.ChannelId, x.CreatedAt });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -656,12 +674,23 @@ public sealed class PermissionChecker(VibeChatDbContext dbContext) : IPermission
     /// <summary>
     /// Workspace roles from <c>tenancy.workspace_members</c> (B-176). JWT / <c>ICurrentUser.Roles</c> are not used.
     /// </summary>
-    public async Task<IReadOnlyCollection<Role>> GetRolesAsync(TenantId tenantId, UserId userId, CancellationToken cancellationToken) =>
-        await dbContext.WorkspaceMembers.AsNoTracking()
+    public async Task<IReadOnlyCollection<Role>> GetRolesAsync(TenantId tenantId, UserId userId, CancellationToken cancellationToken)
+    {
+        var roles = await dbContext.WorkspaceMembers.AsNoTracking()
             .Where(x => x.TenantId == tenantId && x.UserId == userId)
             .Select(x => x.Role)
             .Distinct()
             .ToArrayAsync(cancellationToken);
+        if (roles.Length > 0)
+        {
+            return roles;
+        }
+
+        var isGuest = await dbContext.ChannelMembers.AsNoTracking().AnyAsync(
+            x => x.TenantId == tenantId && x.UserId == userId && x.LeftAt == null,
+            cancellationToken);
+        return isGuest ? [Role.Guest] : [];
+    }
 
     public async Task<bool> CanAccessAsync(TenantId tenantId, ChannelId channelId, UserId userId, CancellationToken cancellationToken)
     {
@@ -671,14 +700,20 @@ public sealed class PermissionChecker(VibeChatDbContext dbContext) : IPermission
             return false;
         }
 
+        var isChannelMember = await dbContext.ChannelMembers.AnyAsync(
+            x => x.TenantId == tenantId && x.ChannelId == channelId && x.UserId == userId && x.LeftAt == null,
+            cancellationToken);
+        if (isChannelMember)
+        {
+            return true;
+        }
+
         if (channel.Type == ChannelType.Public || channel.Type == ChannelType.Announcement)
         {
             return await IsMemberAsync(tenantId, channel.WorkspaceId, userId, cancellationToken);
         }
 
-        return await dbContext.ChannelMembers.AnyAsync(
-            x => x.TenantId == tenantId && x.ChannelId == channelId && x.UserId == userId && x.LeftAt == null,
-            cancellationToken);
+        return false;
     }
 
 }
@@ -3443,6 +3478,7 @@ public static class DependencyInjection
         services.AddHostedService<OutboxDispatcher>();
         // B-047: processor shared; hosted purge loop is registered only in apps/worker.
         services.Configure<GroupDmOptions>(configuration.GetSection(GroupDmOptions.SectionName));
+        services.Configure<InviteOptions>(configuration.GetSection(InviteOptions.SectionName));
         services.Configure<MessageRetentionOptions>(configuration.GetSection(MessageRetentionOptions.SectionName));
         services.Configure<RuntimeSettingsOptions>(configuration.GetSection(RuntimeSettingsOptions.SectionName));
         services.AddMemoryCache();

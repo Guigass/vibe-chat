@@ -100,6 +100,8 @@ em `SEC-RLS-RUNTIME` (`RlsSession` + `03-rls.sql` + roles Compose); ver
 | T19 | Runtime sem `app.tenant_id` executa SELECT/INSERT/UPDATE/DELETE | Falha fechado / nenhuma linha; nunca acesso global |
 | T20 | Runtime tenta gravar `"TenantId"` diferente do `SET LOCAL` | Negado por `WITH CHECK` |
 | T21 | Owner/migrator e runtime são comparados no mesmo cenário cross-tenant | Teste da aplicação usa runtime e prova enforcement real |
+| T-guest | Guest aceito lista spaces/members/search/DM/admin/outros canais | 403 em toda superfície de workspace; só o canal do convite (B-040) |
+| T-guest-token | Token de outro tenant / expirado / já usado / inexistente | Sempre 410 `InviteUnavailable`; sem revelar o canal |
 
 ## Operação multi-tenant vs single-tenant
 

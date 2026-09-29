@@ -56,6 +56,7 @@ public sealed class ArchitectureRulesTests
             "tenancy.workspaces",
             "tenancy.workspace_members",
             "directory.spaces",
+            "directory.channel_invites",
             "conversations.channels",
             "conversations.channel_members",
             "messaging.messages",
@@ -101,6 +102,8 @@ public sealed class ArchitectureRulesTests
             because: "SEC-RLS-RUNTIME requires WITH CHECK on tenant writes");
         sql.Should().Contain("app.current_tenant_id()",
             because: "RLS policies must read app.tenant_id via fail-closed helper");
+        sql.Should().Contain("app.current_invite_token_hash()",
+            because: "B-040 accept lookup must use a fail-closed invite hash GUC, not BYPASSRLS");
     }
 
     private static string FindRepoFile(string relativePath)
