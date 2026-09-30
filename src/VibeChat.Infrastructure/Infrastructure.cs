@@ -2261,7 +2261,24 @@ public sealed class RedisSignalRBridge(RedisConnection redis, IHubContext<ChatHu
 
 public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<OutboxProcessor> logger)
 {
+    // Hosted OutboxDispatcher and an explicit drain share this singleton.
+    // Overlapping batches both see ProcessedAt == null and deliver the same row twice.
+    private readonly SemaphoreSlim _batchGate = new(1, 1);
+
     public async Task<int> ProcessBatchAsync(CancellationToken cancellationToken)
+    {
+        await _batchGate.WaitAsync(cancellationToken);
+        try
+        {
+            return await ProcessBatchCoreAsync(cancellationToken);
+        }
+        finally
+        {
+            _batchGate.Release();
+        }
+    }
+
+    private async Task<int> ProcessBatchCoreAsync(CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
