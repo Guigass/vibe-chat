@@ -23,6 +23,8 @@ import {
   SensitiveSettings,
   Space,
   UpdateSensitiveSettingsInput,
+  UpsertWebhookEndpointInput,
+  WebhookEndpointSettings,
   Workspace,
   WorkspaceMember,
   MessageLinkPreview,
@@ -1306,6 +1308,48 @@ export class ApiService {
     return this.request<CredentialRotateResult>('/api/v1/admin/settings/credentials/webhook/rotate', {
       method: 'POST',
       body: JSON.stringify(input),
+    });
+  }
+
+  async createAdminWebhook(input: UpsertWebhookEndpointInput): Promise<WebhookEndpointSettings> {
+    return this.request<WebhookEndpointSettings>('/api/v1/admin/webhooks', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async updateAdminWebhook(
+    endpointId: string,
+    input: UpsertWebhookEndpointInput,
+  ): Promise<WebhookEndpointSettings> {
+    return this.request<WebhookEndpointSettings>(`/api/v1/admin/webhooks/${endpointId}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteAdminWebhook(endpointId: string, workspaceId?: string): Promise<void> {
+    const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : '';
+    await this.request<void>(`/api/v1/admin/webhooks/${endpointId}${query}`, { method: 'DELETE' });
+  }
+
+  async rotateAdminWebhookEndpoint(
+    endpointId: string,
+    input: RotateCredentialInput,
+  ): Promise<CredentialRotateResult> {
+    return this.request<CredentialRotateResult>(`/api/v1/admin/webhooks/${endpointId}/rotate`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async testAdminWebhook(
+    endpointId: string,
+    workspaceId?: string,
+  ): Promise<{ ok: boolean; statusCode: number | null; lastError: string | null }> {
+    return this.request(`/api/v1/admin/webhooks/${endpointId}/test`, {
+      method: 'POST',
+      body: JSON.stringify({ workspaceId }),
     });
   }
 

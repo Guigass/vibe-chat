@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ApiService } from '../../core/api/api.service';
 import { fillTemplate, ui } from '../../core/i18n/strings';
-import { SensitiveSettings } from '../../shared/models/chat.models';
+import { Channel, SensitiveSettings, WebhookEndpointSettings } from '../../shared/models/chat.models';
 import { AdminContextService } from './admin-context.service';
 import { AdminAreaId } from './admin-permissions';
 
@@ -17,6 +17,11 @@ export class AdminSettingsPage implements OnInit {
   readonly areaId: AdminAreaId = 'settings';
   readonly ui = ui;
   readonly fillTemplate = fillTemplate;
+  readonly webhookEventIds = ['MessageCreated', 'MessageEdited', 'MessageDeleted', 'ReactionChanged'] as const;
+  readonly channels = signal<Channel[]>([]);
+  readonly webhookBusy = signal<string | null>(null);
+  readonly webhookFeedback = signal<string | null>(null);
+  readonly webhookError = signal<string | null>(null);
   readonly messagingRoles = [
     { id: 'Member', label: ui.adminRoleMember },
     { id: 'Moderator', label: ui.adminRoleModerator },
@@ -45,6 +50,7 @@ export class AdminSettingsPage implements OnInit {
   async ngOnInit(): Promise<void> {
     await this.ctx.ensureReady();
     await this.loadSettings();
+    await this.loadChannels();
     this.loading.set(false);
   }
 
@@ -106,8 +112,6 @@ export class AdminSettingsPage implements OnInit {
     const smtpUsername = String(data.get('smtpUsername') ?? '').trim();
     const smtpFrom = String(data.get('smtpFrom') ?? '').trim();
     const useStartTls = data.get('useStartTls') === 'on';
-    const webhookEnabled = data.get('webhookEnabled') === 'on';
-    const webhookUrl = String(data.get('webhookUrl') ?? '').trim();
     const retentionEnabled = data.get('retentionEnabled') === 'on';
     const retentionProcessEnabled = data.get('retentionProcessEnabled') === 'on';
     const retentionDays = Number(data.get('retentionDays') ?? current.retention.retentionDays);
@@ -154,10 +158,6 @@ export class AdminSettingsPage implements OnInit {
           smtpUsername,
           smtpFrom,
           useStartTls,
-        },
-        webhooks: {
-          enabled: webhookEnabled,
-          url: webhookUrl,
         },
         retention: {
           enabled: retentionEnabled,
@@ -359,6 +359,175 @@ export class AdminSettingsPage implements OnInit {
       );
     } finally {
       this.reencryptBusy.set(false);
+    }
+  }
+
+  async addWebhook(event: Event): Promise<void> {
+    event.preventDefault();
+    const workspaceId = this.workspaceId();
+    if (!workspaceId || this.webhookBusy()) {
+      return;
+    }
+
+    const form = event.target as HTMLFormElement;
+    const data = new FormData(form);
+    this.webhookBusy.set('new');
+    this.webhookFeedback.set(null);
+    this.webhookError.set(null);
+    try {
+      await this.api.createAdminWebhook({
+        workspaceId,
+        name: String(data.get('name') ?? '').trim(),
+        url: String(data.get('url') ?? '').trim(),
+        enabled: data.get('enabled') === 'on',
+        subscribedEvents: this.selectedEvents(data),
+        secret: String(data.get('secret') ?? '').trim() || undefined,
+      });
+      form.reset();
+      await this.loadSettings();
+      this.webhookFeedback.set(ui.adminWebhookSaved);
+    } catch (err) {
+      this.webhookError.set(this.webhookErrorMessage(err));
+    } finally {
+      this.webhookBusy.set(null);
+    }
+  }
+
+  async saveWebhook(endpoint: WebhookEndpointSettings, event: Event): Promise<void> {
+    event.preventDefault();
+    const workspaceId = this.workspaceId();
+    if (!workspaceId || this.webhookBusy()) {
+      return;
+    }
+
+    const form = event.target as HTMLFormElement;
+    const data = new FormData(form);
+    this.webhookBusy.set(endpoint.id);
+    this.webhookFeedback.set(null);
+    this.webhookError.set(null);
+    try {
+      await this.api.updateAdminWebhook(endpoint.id, {
+        workspaceId,
+        name: String(data.get('name') ?? '').trim(),
+        url: String(data.get('url') ?? '').trim(),
+        enabled: data.get('enabled') === 'on',
+        subscribedEvents: this.selectedEvents(data),
+        channelFilter: this.selectedChannels(data),
+      });
+      await this.loadSettings();
+      this.webhookFeedback.set(ui.adminWebhookSaved);
+    } catch (err) {
+      this.webhookError.set(this.webhookErrorMessage(err));
+    } finally {
+      this.webhookBusy.set(null);
+    }
+  }
+
+  async rotateWebhook(endpointId: string, event: Event): Promise<void> {
+    event.preventDefault();
+    const workspaceId = this.workspaceId();
+    if (!workspaceId || this.webhookBusy()) {
+      return;
+    }
+
+    const form = event.target as HTMLFormElement;
+    const value = String(new FormData(form).get('secret') ?? '').trim();
+    if (!value) {
+      this.webhookError.set(ui.adminNeedCredential);
+      return;
+    }
+
+    this.webhookBusy.set(endpointId);
+    this.webhookFeedback.set(null);
+    this.webhookError.set(null);
+    try {
+      await this.api.rotateAdminWebhookEndpoint(endpointId, { workspaceId, value });
+      const secretInput = form.elements.namedItem('secret') as HTMLInputElement | null;
+      if (secretInput) {
+        secretInput.value = '';
+      }
+      await this.loadSettings();
+      this.webhookFeedback.set(ui.adminWebhookSaved);
+    } catch (err) {
+      this.webhookError.set(this.webhookErrorMessage(err));
+    } finally {
+      this.webhookBusy.set(null);
+    }
+  }
+
+  async testWebhook(endpointId: string): Promise<void> {
+    const workspaceId = this.workspaceId();
+    if (!workspaceId || this.webhookBusy()) {
+      return;
+    }
+
+    this.webhookBusy.set(endpointId);
+    this.webhookFeedback.set(null);
+    this.webhookError.set(null);
+    try {
+      const result = await this.api.testAdminWebhook(endpointId, workspaceId);
+      await this.loadSettings();
+      this.webhookFeedback.set(
+        result.ok
+          ? fillTemplate(ui.adminWebhookTestSent, { status: result.statusCode ?? 0 })
+          : ui.adminWebhookTestFailed,
+      );
+    } catch {
+      this.webhookError.set(ui.adminWebhookTestFailed);
+    } finally {
+      this.webhookBusy.set(null);
+    }
+  }
+
+  async deleteWebhook(endpointId: string): Promise<void> {
+    const workspaceId = this.workspaceId();
+    if (!workspaceId || this.webhookBusy()) {
+      return;
+    }
+
+    this.webhookBusy.set(endpointId);
+    this.webhookFeedback.set(null);
+    this.webhookError.set(null);
+    try {
+      await this.api.deleteAdminWebhook(endpointId, workspaceId);
+      await this.loadSettings();
+      this.webhookFeedback.set(ui.adminWebhookSaved);
+    } catch (err) {
+      this.webhookError.set(this.webhookErrorMessage(err));
+    } finally {
+      this.webhookBusy.set(null);
+    }
+  }
+
+  private workspaceId(): string | undefined {
+    return this.ctx.workspace()?.id ?? this.settings()?.workspaceId;
+  }
+
+  private selectedEvents(data: FormData): string[] {
+    return this.webhookEventIds.filter((id) => data.get(`event${id}`) === 'on');
+  }
+
+  private selectedChannels(data: FormData): string[] {
+    return this.channels()
+      .filter((channel) => data.get(`channel${channel.id}`) === 'on')
+      .map((channel) => channel.id);
+  }
+
+  private webhookErrorMessage(err: unknown): string {
+    const status = (err as { status?: number } | null)?.status;
+    return status === 403 ? ui.adminSettingsForbidden : ui.adminSettingsSaveError;
+  }
+
+  private async loadChannels(): Promise<void> {
+    const workspaceId = this.ctx.workspace()?.id;
+    if (!workspaceId) {
+      return;
+    }
+
+    try {
+      this.channels.set(await this.api.getChannels(workspaceId));
+    } catch {
+      this.channels.set([]);
     }
   }
 

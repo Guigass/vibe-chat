@@ -677,6 +677,21 @@
     "admin.roleModerator": "モデレーター",
     "admin.roleAdmin": "管理者",
     "admin.roleAuditor": "監査",
-    "admin.roleGuest": "ゲスト"
+    "admin.roleGuest": "ゲスト",
+    "admin.webhooksEmpty": "Webhook はありません — HTTPS エンドポイントを追加",
+    "admin.webhookName": "名前",
+    "admin.webhookAdd": "エンドポイントを追加",
+    "admin.webhookEvents": "イベント",
+    "admin.webhookChannels": "チャンネル",
+    "admin.webhookChannelsHint": "未選択のときはすべてのチャンネルに送ります。",
+    "admin.webhookActive": "有効",
+    "admin.webhookTest": "テストを送信",
+    "admin.webhookRemove": "削除",
+    "admin.webhookSave": "エンドポイントを保存",
+    "admin.webhookLastStatus": "最新 HTTP %status%",
+    "admin.webhookSaved": "エンドポイントを保存しました。",
+    "admin.webhookTestSent": "テストを送信しました (HTTP %status%)。",
+    "admin.webhookTestFailed": "テストは届きませんでした。",
+    "admin.webhookLimit": "最大 %n% エンドポイント。"
   }
 }

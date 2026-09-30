@@ -46,6 +46,8 @@ public sealed record EffectiveRateLimitSettings(
     string Source);
 
 public sealed record EffectiveWebhookEndpoint(
+    Guid Id,
+    string Name,
     bool Enabled,
     string Url,
     string? SigningSecret,
@@ -53,7 +55,13 @@ public sealed record EffectiveWebhookEndpoint(
     bool SecretConfigured,
     string? SecretMask,
     int? SecretKeyVersion,
-    DateTimeOffset? SecretRotatedAt);
+    DateTimeOffset? SecretRotatedAt,
+    IReadOnlyList<string> SubscribedEvents,
+    IReadOnlyList<Guid> ChannelFilter,
+    DateTimeOffset? LastDeliveryAt,
+    int? LastStatusCode,
+    string? LastError,
+    DateTimeOffset UpdatedAt);
 
 public interface IRuntimeSettingsCacheInvalidator
 {
@@ -464,15 +472,20 @@ public sealed class WebhookEndpointResolver(
     RuntimeSecretProtector protector,
     ILogger<WebhookEndpointResolver> logger)
 {
-    public async Task<EffectiveWebhookEndpoint?> ResolveAsync(TenantId tenantId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<EffectiveWebhookEndpoint>> ListAsync(
+        TenantId tenantId,
+        CancellationToken cancellationToken)
     {
-        var row = await dbContext.OutboundWebhookEndpoints.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.TenantId == tenantId, cancellationToken);
-        if (row is null)
-        {
-            return null;
-        }
+        var rows = await dbContext.OutboundWebhookEndpoints.AsNoTracking()
+            .Where(x => x.TenantId == tenantId)
+            .OrderBy(x => x.UpdatedAt)
+            .ThenBy(x => x.Id)
+            .ToListAsync(cancellationToken);
+        return rows.Select(row => ToEffective(tenantId, row)).ToArray();
+    }
 
+    private EffectiveWebhookEndpoint ToEffective(TenantId tenantId, OutboundWebhookEndpoint row)
+    {
         string? secret = null;
         var source = "none";
         int? keyVersion = null;
@@ -483,6 +496,7 @@ public sealed class WebhookEndpointResolver(
         {
             try
             {
+                // AAD stays tenant-scoped so rows migrated from the B-048 singleton still decrypt.
                 secret = protector.Unprotect(
                     row.SigningSecret,
                     RuntimeSecretKinds.WebhookSigningSecret,
@@ -509,6 +523,8 @@ public sealed class WebhookEndpointResolver(
         }
 
         return new EffectiveWebhookEndpoint(
+            row.Id,
+            row.Name ?? string.Empty,
             row.Enabled,
             row.Url ?? string.Empty,
             secret,
@@ -516,6 +532,12 @@ public sealed class WebhookEndpointResolver(
             SecretMasking.IsConfigured(secret) || source == "unavailable",
             mask,
             keyVersion,
-            rotatedAt);
+            rotatedAt,
+            row.SubscribedEvents ?? WebhookEventTypes.DefaultSubscribed,
+            row.ChannelFilter ?? [],
+            row.LastDeliveryAt,
+            row.LastStatusCode,
+            row.LastError,
+            row.UpdatedAt);
     }
 }

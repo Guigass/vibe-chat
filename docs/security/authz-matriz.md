@@ -109,7 +109,12 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | PUT | `/admin/settings` | permission | `workspace.admin` | ✗ | ✗ | ✓ | |
 | POST | `/admin/settings/credentials/openrouter/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | |
 | POST | `/admin/settings/credentials/smtp/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | |
-| POST | `/admin/settings/credentials/webhook/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | |
+| POST | `/admin/settings/credentials/webhook/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | 0 ou 1 endpoint; mais de um → 409 |
+| POST | `/admin/webhooks` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-108; limite 5; canal de outro tenant → 400 |
+| PUT | `/admin/webhooks/{endpointId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Sem secret no body |
+| DELETE | `/admin/webhooks/{endpointId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | |
+| POST | `/admin/webhooks/{endpointId:guid}/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Resposta só máscara |
+| POST | `/admin/webhooks/{endpointId:guid}/test` | permission | `workspace.admin` | ✗ | ✗ | ✓ | `WebhookTest`; não grava mensagem |
 | POST | `/admin/settings/credentials/vapid/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-187 |
 | POST | `/admin/settings/encryption/reencrypt` | permission | `workspace.admin` | ✗ | ✗ | ✓ | |
 | GET | `/admin/workspaces/{workspaceId:guid}/export` | permission | `workspace.admin` | ✗ | ✗ | ✓ | |

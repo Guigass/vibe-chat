@@ -547,17 +547,32 @@ internal static class AdministrationEndpoints
 
             if (request.Webhooks is not null)
             {
-                var webhookRow = await db.OutboundWebhookEndpoints
-                    .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
+                var webhookRows = await db.OutboundWebhookEndpoints
+                    .Where(x => x.TenantId == workspace.TenantId)
+                    .ToListAsync(ct);
+                if (webhookRows.Count > 1)
+                {
+                    return Results.Conflict(new
+                    {
+                        error = "WebhookEndpointAmbiguous",
+                        message = "More than one webhook endpoint. Use /admin/webhooks."
+                    });
+                }
+
+                var webhookRow = webhookRows.SingleOrDefault();
                 var created = false;
                 if (webhookRow is null)
                 {
                     webhookRow = new OutboundWebhookEndpoint
                     {
+                        Id = Guid.NewGuid(),
                         TenantId = workspace.TenantId,
+                        Name = "default",
                         Enabled = false,
                         Url = string.Empty,
                         Secret = null,
+                        SubscribedEvents = WebhookEventTypes.DefaultSubscribed,
+                        ChannelFilter = [],
                         UpdatedAt = clock.UtcNow
                     };
                     db.OutboundWebhookEndpoints.Add(webhookRow);
@@ -826,6 +841,157 @@ internal static class AdministrationEndpoints
                 workspace, profile.Id, RuntimeSecretKinds.WebhookSigningSecret, request.Value ?? string.Empty, ct);
             return result.Ok
                 ? Results.Ok(new { configured = result.Configured, mask = result.Mask, keyVersion = result.KeyVersion, rotatedAt = result.RotatedAt })
+                : Results.Json(new { error = result.Error, message = result.Message }, statusCode: result.StatusCode);
+        }).RequirePermission(Permissions.Workspace.Admin);
+
+        v1.MapPost("/admin/webhooks", async (
+            UpsertWebhookEndpointRequest request,
+            HttpContext http,
+            VibeChatDbContext db,
+            ITenantContext tenant,
+            IPermissionChecker permissions,
+            WebhookAdminService webhooks,
+            IClock clock,
+            CancellationToken ct) =>
+        {
+            var access = await ResolveSensitiveSettingsAccessAsync(
+                http, db, tenant, permissions, request.WorkspaceId, clock, ct);
+            if (access is null)
+            {
+                return Results.Forbid();
+            }
+
+            var (profile, workspace) = access.Value;
+            var result = await webhooks.CreateAsync(
+                workspace,
+                profile.Id,
+                request.Name,
+                request.Url,
+                request.Enabled ?? false,
+                request.SubscribedEvents,
+                request.ChannelFilter,
+                request.Secret,
+                ct);
+            return result.Ok
+                ? Results.Json(result.Body, statusCode: result.StatusCode)
+                : Results.Json(new { error = result.Error, message = result.Message }, statusCode: result.StatusCode);
+        }).RequirePermission(Permissions.Workspace.Admin);
+
+        v1.MapPut("/admin/webhooks/{endpointId:guid}", async (
+            Guid endpointId,
+            UpsertWebhookEndpointRequest request,
+            HttpContext http,
+            VibeChatDbContext db,
+            ITenantContext tenant,
+            IPermissionChecker permissions,
+            WebhookAdminService webhooks,
+            IClock clock,
+            CancellationToken ct) =>
+        {
+            var access = await ResolveSensitiveSettingsAccessAsync(
+                http, db, tenant, permissions, request.WorkspaceId, clock, ct);
+            if (access is null)
+            {
+                return Results.Forbid();
+            }
+
+            var (profile, workspace) = access.Value;
+            if (!string.IsNullOrWhiteSpace(request.Secret))
+            {
+                return Results.BadRequest(new
+                {
+                    error = "SecretsNotWritable",
+                    message = "Use POST /admin/webhooks/{id}/rotate to rotate the signing secret."
+                });
+            }
+
+            var result = await webhooks.UpdateAsync(
+                workspace,
+                profile.Id,
+                endpointId,
+                request.Name,
+                request.Url,
+                request.Enabled,
+                request.SubscribedEvents,
+                request.ChannelFilter,
+                ct);
+            return result.Ok
+                ? Results.Ok(result.Body)
+                : Results.Json(new { error = result.Error, message = result.Message }, statusCode: result.StatusCode);
+        }).RequirePermission(Permissions.Workspace.Admin);
+
+        v1.MapDelete("/admin/webhooks/{endpointId:guid}", async (
+            Guid endpointId,
+            Guid? workspaceId,
+            HttpContext http,
+            VibeChatDbContext db,
+            ITenantContext tenant,
+            IPermissionChecker permissions,
+            WebhookAdminService webhooks,
+            IClock clock,
+            CancellationToken ct) =>
+        {
+            var access = await ResolveSensitiveSettingsAccessAsync(
+                http, db, tenant, permissions, workspaceId, clock, ct);
+            if (access is null)
+            {
+                return Results.Forbid();
+            }
+
+            var (profile, workspace) = access.Value;
+            var result = await webhooks.DeleteAsync(workspace, profile.Id, endpointId, ct);
+            return result.Ok
+                ? Results.NoContent()
+                : Results.Json(new { error = result.Error, message = result.Message }, statusCode: result.StatusCode);
+        }).RequirePermission(Permissions.Workspace.Admin);
+
+        v1.MapPost("/admin/webhooks/{endpointId:guid}/rotate", async (
+            Guid endpointId,
+            RotateWebhookEndpointRequest request,
+            HttpContext http,
+            VibeChatDbContext db,
+            ITenantContext tenant,
+            IPermissionChecker permissions,
+            WebhookAdminService webhooks,
+            IClock clock,
+            CancellationToken ct) =>
+        {
+            var access = await ResolveSensitiveSettingsAccessAsync(
+                http, db, tenant, permissions, request.WorkspaceId, clock, ct);
+            if (access is null)
+            {
+                return Results.Forbid();
+            }
+
+            var (profile, workspace) = access.Value;
+            var result = await webhooks.RotateAsync(workspace, profile.Id, endpointId, request.Value ?? string.Empty, ct);
+            return result.Ok
+                ? Results.Ok(result.Body)
+                : Results.Json(new { error = result.Error, message = result.Message }, statusCode: result.StatusCode);
+        }).RequirePermission(Permissions.Workspace.Admin);
+
+        v1.MapPost("/admin/webhooks/{endpointId:guid}/test", async (
+            Guid endpointId,
+            RotateWebhookEndpointRequest request,
+            HttpContext http,
+            VibeChatDbContext db,
+            ITenantContext tenant,
+            IPermissionChecker permissions,
+            WebhookAdminService webhooks,
+            IClock clock,
+            CancellationToken ct) =>
+        {
+            var access = await ResolveSensitiveSettingsAccessAsync(
+                http, db, tenant, permissions, request.WorkspaceId, clock, ct);
+            if (access is null)
+            {
+                return Results.Forbid();
+            }
+
+            var (_, workspace) = access.Value;
+            var result = await webhooks.PingAsync(workspace, endpointId, ct);
+            return result.Ok
+                ? Results.Ok(result.Body)
                 : Results.Json(new { error = result.Error, message = result.Message }, statusCode: result.StatusCode);
         }).RequirePermission(Permissions.Workspace.Admin);
 

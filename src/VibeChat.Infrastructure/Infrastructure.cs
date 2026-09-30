@@ -486,10 +486,16 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
         modelBuilder.Entity<OutboundWebhookEndpoint>(entity =>
         {
             entity.ToTable("webhook_endpoints", "integrations");
-            entity.HasKey(x => x.TenantId);
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.Name).HasMaxLength(WebhookPolicies.MaxNameLength).IsRequired();
             entity.Property(x => x.Url).HasMaxLength(2048);
             entity.Property(x => x.Secret).HasMaxLength(512).IsRequired(false);
+            entity.Property(x => x.SubscribedEvents).HasColumnType("text[]").IsRequired();
+            entity.Property(x => x.ChannelFilter).HasColumnType("uuid[]").IsRequired();
+            entity.Property(x => x.LastError).HasMaxLength(WebhookPolicies.MaxLastErrorLength);
+            entity.HasIndex(x => x.TenantId);
             MapEncryptedSecret(entity.OwnsOne(x => x.SigningSecret), "SigningSecret");
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
@@ -2372,10 +2378,20 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     }
                 }
 
-                // B-048: best-effort outbound webhook after realtime (MessageCreated only in this slice).
-                if (outbox.Type == nameof(MessageCreatedEvent))
+                // B-048 / B-108: best-effort outbound webhook after realtime.
+                // HTTP failure must not throw — the outbox row is still marked processed.
+                if (outbox.Type is nameof(MessageCreatedEvent)
+                    or nameof(MessageEditedEvent)
+                    or nameof(MessageDeletedEvent)
+                    or nameof(ReactionChangedEvent))
                 {
-                    await webhooks.TryDispatchAsync(tenantId, eventName, outbox.Id, outbox.Payload, cancellationToken);
+                    await webhooks.TryDispatchAsync(
+                        tenantId,
+                        eventName,
+                        outbox.Id,
+                        outbox.Payload,
+                        channelId.Value,
+                        cancellationToken);
                 }
 
                 // B-091: link preview after realtime — never on SendMessage hot path.
@@ -2650,10 +2666,12 @@ public sealed class SmtpEmailSender(
     }
 }
 
-/// <summary>HTTP POST outbound webhooks with HMAC-SHA256 (B-048 / ADR-020). Failures are logged, never thrown.</summary>
+/// <summary>HTTP POST outbound webhooks with HMAC-SHA256 (B-048 / B-108 / ADR-026). Failures are logged, never thrown.</summary>
 public sealed class OutboundWebhookDispatcher(
+    VibeChatDbContext dbContext,
     WebhookEndpointResolver webhookResolver,
     IHttpClientFactory httpClientFactory,
+    IClock clock,
     ILogger<OutboundWebhookDispatcher> logger) : IOutboundWebhookDispatcher
 {
     public const string HttpClientName = "OutboundWebhooks";
@@ -2663,49 +2681,162 @@ public sealed class OutboundWebhookDispatcher(
         string eventName,
         Guid deliveryId,
         string payloadJson,
+        Guid channelId,
         CancellationToken cancellationToken)
     {
+        IReadOnlyList<EffectiveWebhookEndpoint> endpoints;
         try
         {
-            var endpoint = await webhookResolver.ResolveAsync(tenantId, cancellationToken);
-            if (endpoint is null
-                || !endpoint.Enabled
-                || !SecretMasking.IsConfigured(endpoint.Url)
+            endpoints = await webhookResolver.ListAsync(tenantId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Outbound webhook lookup failed for tenant {TenantId}", tenantId.Value);
+            return;
+        }
+
+        foreach (var endpoint in endpoints)
+        {
+            if (!endpoint.Enabled
+                || !WebhookDelivery.MatchesSubscription(
+                    endpoint.SubscribedEvents,
+                    endpoint.ChannelFilter,
+                    eventName,
+                    channelId))
+            {
+                continue;
+            }
+
+            await DeliverOneAsync(
+                tenantId,
+                endpoint,
+                eventName,
+                deliveryId,
+                payloadJson,
+                persistImmediately: false,
+                cancellationToken);
+        }
+    }
+
+    public async Task<WebhookPingResult> PingAsync(
+        TenantId tenantId,
+        Guid endpointId,
+        CancellationToken cancellationToken)
+    {
+        var endpoints = await webhookResolver.ListAsync(tenantId, cancellationToken);
+        var endpoint = endpoints.FirstOrDefault(x => x.Id == endpointId);
+        if (endpoint is null)
+        {
+            return new WebhookPingResult(false, 404, "WebhookEndpointNotFound", null, null);
+        }
+
+        if (!SecretMasking.IsConfigured(endpoint.Url)
+            || !SecretMasking.IsConfigured(endpoint.SigningSecret)
+            || !WebhookDelivery.IsValidHttpsUrl(endpoint.Url))
+        {
+            return new WebhookPingResult(false, 400, "WebhookIncomplete", null, null);
+        }
+
+        var sentAt = clock.UtcNow;
+        var payload = JsonSerializer.Serialize(new
+        {
+            type = WebhookEventTypes.WebhookTest,
+            tenantId = tenantId.Value,
+            endpointId,
+            sentAt
+        });
+        var (httpStatus, error) = await DeliverOneAsync(
+            tenantId,
+            endpoint,
+            WebhookEventTypes.WebhookTest,
+            Guid.NewGuid(),
+            payload,
+            persistImmediately: true,
+            cancellationToken);
+        var ok = httpStatus is >= 200 and < 300;
+        return new WebhookPingResult(ok, ok ? 200 : 502, ok ? null : "WebhookDeliveryFailed", httpStatus, error);
+    }
+
+    private async Task<(int? HttpStatus, string? Error)> DeliverOneAsync(
+        TenantId tenantId,
+        EffectiveWebhookEndpoint endpoint,
+        string eventName,
+        Guid deliveryId,
+        string payloadJson,
+        bool persistImmediately,
+        CancellationToken cancellationToken)
+    {
+        int? httpStatus = null;
+        string? error = null;
+        try
+        {
+            if (!SecretMasking.IsConfigured(endpoint.Url)
                 || !SecretMasking.IsConfigured(endpoint.SigningSecret)
                 || !WebhookDelivery.IsValidHttpsUrl(endpoint.Url))
             {
-                return;
+                error = "WebhookIncomplete";
             }
-
-            var client = httpClientFactory.CreateClient(HttpClientName);
-            using var request = new HttpRequestMessage(HttpMethod.Post, endpoint.Url.Trim())
+            else
             {
-                Content = new StringContent(payloadJson, Encoding.UTF8, "application/json")
-            };
-            request.Headers.TryAddWithoutValidation(WebhookDelivery.EventHeader, eventName);
-            request.Headers.TryAddWithoutValidation(WebhookDelivery.DeliveryIdHeader, deliveryId.ToString("D"));
-            request.Headers.TryAddWithoutValidation(
-                WebhookDelivery.SignatureHeader,
-                WebhookDelivery.ComputeSignature(endpoint.SigningSecret!.Trim(), payloadJson));
+                var client = httpClientFactory.CreateClient(HttpClientName);
+                using var request = new HttpRequestMessage(HttpMethod.Post, endpoint.Url.Trim())
+                {
+                    Content = new StringContent(payloadJson, Encoding.UTF8, "application/json")
+                };
+                request.Headers.TryAddWithoutValidation(WebhookDelivery.EventHeader, eventName);
+                request.Headers.TryAddWithoutValidation(WebhookDelivery.DeliveryIdHeader, deliveryId.ToString("D"));
+                request.Headers.TryAddWithoutValidation(
+                    WebhookDelivery.SignatureHeader,
+                    WebhookDelivery.ComputeSignature(endpoint.SigningSecret!.Trim(), payloadJson));
 
-            using var response = await client.SendAsync(request, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-            {
-                logger.LogWarning(
-                    "Outbound webhook delivery {DeliveryId} for tenant {TenantId} returned {StatusCode}",
-                    deliveryId,
-                    tenantId.Value,
-                    (int)response.StatusCode);
+                using var response = await client.SendAsync(request, cancellationToken);
+                httpStatus = (int)response.StatusCode;
+                if (!response.IsSuccessStatusCode)
+                {
+                    error = $"HTTP {httpStatus}";
+                    logger.LogWarning(
+                        "Outbound webhook delivery {DeliveryId} for tenant {TenantId} returned {StatusCode}",
+                        deliveryId,
+                        tenantId.Value,
+                        httpStatus);
+                }
             }
         }
         catch (Exception ex)
         {
+            error = ex.GetType().Name;
             logger.LogWarning(
                 ex,
                 "Outbound webhook delivery {DeliveryId} for tenant {TenantId} failed",
                 deliveryId,
                 tenantId.Value);
         }
+
+        try
+        {
+            var row = await dbContext.OutboundWebhookEndpoints
+                .FirstOrDefaultAsync(x => x.Id == endpoint.Id && x.TenantId == tenantId, cancellationToken);
+            if (row is not null)
+            {
+                row.LastDeliveryAt = clock.UtcNow;
+                row.LastStatusCode = httpStatus;
+                row.LastError = error is null
+                    ? null
+                    : error.Length > WebhookPolicies.MaxLastErrorLength
+                        ? error[..WebhookPolicies.MaxLastErrorLength]
+                        : error;
+                if (persistImmediately)
+                {
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to record webhook delivery status for endpoint {EndpointId}", endpoint.Id);
+        }
+
+        return (httpStatus, error);
     }
 }
 
@@ -3500,6 +3631,7 @@ public static class DependencyInjection
         services.AddScoped<FilesSettingsResolver>();
         services.AddScoped<RateLimitSettingsResolver>();
         services.AddScoped<WebhookEndpointResolver>();
+        services.AddScoped<WebhookAdminService>();
         services.AddScoped<RuntimeSettingsAdminService>();
         services.AddSingleton<MessageRetentionPurgeProcessor>();
         services.AddScoped<SeedData>();

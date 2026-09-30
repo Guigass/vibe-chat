@@ -677,6 +677,21 @@
     "admin.roleModerator": "版主",
     "admin.roleAdmin": "管理员",
     "admin.roleAuditor": "审计",
-    "admin.roleGuest": "访客"
+    "admin.roleGuest": "访客",
+    "admin.webhooksEmpty": "还没有 Webhook — 添加一个 HTTPS 端点",
+    "admin.webhookName": "名称",
+    "admin.webhookAdd": "添加端点",
+    "admin.webhookEvents": "事件",
+    "admin.webhookChannels": "频道",
+    "admin.webhookChannelsHint": "不选择时发送到所有频道。",
+    "admin.webhookActive": "启用",
+    "admin.webhookTest": "发送测试",
+    "admin.webhookRemove": "移除",
+    "admin.webhookSave": "保存端点",
+    "admin.webhookLastStatus": "最近 HTTP %status%",
+    "admin.webhookSaved": "端点已保存。",
+    "admin.webhookTestSent": "测试已发送（HTTP %status%）。",
+    "admin.webhookTestFailed": "测试未送达。",
+    "admin.webhookLimit": "最多 %n% 个端点。"
   }
 }
