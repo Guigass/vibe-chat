@@ -241,51 +241,136 @@
       <div class="settings__block-head">
         <h3 class="settings__block-title">Webhooks</h3>
         <p class="settings__meta">
-          <code>{{ s.webhooks.status }}</code> — {{ s.webhooks.message }}
-          · secret
-          {{
-            s.webhooks.secretConfigured
-              ? (s.webhooks.secretMask ?? ui.configuredMasc)
-              : ui.notConfiguredMasc
-          }}
-          @if (s.webhooks.secretSource) {
-            · <code>{{ s.webhooks.secretSource }}</code>
+          {{ fillTemplate(ui.adminWebhookLimit, { n: s.webhooks.maxEndpoints ?? 5 }) }}
+          @if (webhookFeedback()) {
+            · {{ webhookFeedback() }}
+          }
+          @if (webhookError()) {
+            · {{ webhookError() }}
           }
         </p>
       </div>
-      <fieldset class="settings__fields" [disabled]="settingsBusy()">
-        <label class="settings__check">
-          <input
-            form="admin-settings-form"
-            type="checkbox"
-            name="webhookEnabled"
-            [checked]="s.webhooks.enabled"
-          />
-          <span>{{ ui.adminWebhookDelivery }}</span>
+      @if ((s.webhooks.endpoints ?? []).length === 0) {
+        <p class="settings__meta">{{ ui.adminWebhooksEmpty }}</p>
+      }
+      @for (endpoint of s.webhooks.endpoints ?? []; track endpoint.id) {
+        <form class="settings__fields" (submit)="saveWebhook(endpoint, $event)">
+          <label class="settings__field">
+            <span>{{ ui.adminWebhookName }}</span>
+            <input name="name" [value]="endpoint.name" autocomplete="off" />
+          </label>
+          <label class="settings__field">
+            <span>URL</span>
+            <input name="url" type="url" [value]="endpoint.url" autocomplete="off" />
+          </label>
+          <label class="settings__check">
+            <input type="checkbox" name="enabled" [checked]="endpoint.enabled" />
+            <span>{{ ui.adminWebhookActive }}</span>
+          </label>
+          <fieldset class="settings__fields">
+            <legend>{{ ui.adminWebhookEvents }}</legend>
+            @for (eventId of webhookEventIds; track eventId) {
+              <label class="settings__check">
+                <input
+                  type="checkbox"
+                  [name]="'event' + eventId"
+                  [checked]="endpoint.subscribedEvents.includes(eventId)"
+                />
+                <span><code>{{ eventId }}</code></span>
+              </label>
+            }
+          </fieldset>
+          <fieldset class="settings__fields">
+            <legend>{{ ui.adminWebhookChannels }}</legend>
+            <p class="settings__meta">{{ ui.adminWebhookChannelsHint }}</p>
+            @for (channel of channels(); track channel.id) {
+              <label class="settings__check">
+                <input
+                  type="checkbox"
+                  [name]="'channel' + channel.id"
+                  [checked]="endpoint.channelFilter.includes(channel.id)"
+                />
+                <span>{{ channel.name }}</span>
+              </label>
+            }
+          </fieldset>
+          <p class="settings__meta">
+            secret
+            {{
+              endpoint.secretConfigured
+                ? (endpoint.secretMask ?? ui.configuredMasc)
+                : ui.notConfiguredMasc
+            }}
+            @if (endpoint.lastStatusCode != null) {
+              · {{ fillTemplate(ui.adminWebhookLastStatus, { status: endpoint.lastStatusCode }) }}
+            }
+          </p>
+          <button type="submit" class="admin-btn admin-btn--ghost" [disabled]="webhookBusy() !== null">
+            {{ ui.adminWebhookSave }}
+          </button>
+          <button
+            type="button"
+            class="admin-btn admin-btn--ghost"
+            [disabled]="webhookBusy() !== null"
+            (click)="testWebhook(endpoint.id)"
+          >
+            {{ ui.adminWebhookTest }}
+          </button>
+          <button
+            type="button"
+            class="admin-btn admin-btn--ghost"
+            [disabled]="webhookBusy() !== null"
+            (click)="deleteWebhook(endpoint.id)"
+          >
+            {{ ui.adminWebhookRemove }}
+          </button>
+        </form>
+        <form class="settings__cred" (submit)="rotateWebhook(endpoint.id, $event)">
+          <label class="settings__field">
+            <span>{{ ui.adminNewSigningSecret }}</span>
+            <input name="secret" type="password" value="" autocomplete="new-password" />
+          </label>
+          <button
+            type="submit"
+            class="admin-btn admin-btn--ghost"
+            [disabled]="webhookBusy() !== null || !s.webhooks.secretsWritable"
+          >
+            {{ ui.adminReplaceSecret }}
+          </button>
+        </form>
+      }
+      <form id="webhook-add-form" class="settings__fields" (submit)="addWebhook($event)">
+        <label class="settings__field">
+          <span>{{ ui.adminWebhookName }}</span>
+          <input name="name" autocomplete="off" />
         </label>
         <label class="settings__field">
           <span>URL</span>
-          <input
-            form="admin-settings-form"
-            name="webhookUrl"
-            type="url"
-            [value]="s.webhooks.url"
-            placeholder="https://example.com/hooks/vibechat"
-            autocomplete="off"
-          />
+          <input name="url" type="url" autocomplete="off" placeholder="https://example.com/hooks/vibechat" />
         </label>
-      </fieldset>
-      <form class="settings__cred" (submit)="rotateCredential('webhook', $event)">
         <label class="settings__field">
           <span>{{ ui.adminNewSigningSecret }}</span>
           <input name="secret" type="password" value="" autocomplete="new-password" />
         </label>
-        <button
-          type="submit"
-          class="admin-btn admin-btn--ghost"
-          [disabled]="credentialBusy() !== null || !s.webhooks.secretsWritable"
-        >
-          {{ credentialBusy() === 'webhook' ? ui.replacing : ui.adminReplaceSecret }}
+        <label class="settings__check">
+          <input type="checkbox" name="enabled" />
+          <span>{{ ui.adminWebhookActive }}</span>
+        </label>
+        <fieldset class="settings__fields">
+          <legend>{{ ui.adminWebhookEvents }}</legend>
+          @for (eventId of webhookEventIds; track eventId) {
+            <label class="settings__check">
+              <input
+                type="checkbox"
+                [name]="'event' + eventId"
+                [checked]="eventId === 'MessageCreated'"
+              />
+              <span><code>{{ eventId }}</code></span>
+            </label>
+          }
+        </fieldset>
+        <button type="submit" class="admin-btn admin-btn--ghost" [disabled]="webhookBusy() !== null">
+          {{ ui.adminWebhookAdd }}
         </button>
       </form>
     </div>

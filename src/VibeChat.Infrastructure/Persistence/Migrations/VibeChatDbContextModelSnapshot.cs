@@ -576,15 +576,41 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("VibeChat.Integrations.OutboundWebhookEndpoint", b =>
                 {
-                    b.Property<Guid>("TenantId")
+                    b.Property<Guid>("Id")
                         .HasColumnType("uuid");
+
+                    b.PrimitiveCollection<Guid[]>("ChannelFilter")
+                        .IsRequired()
+                        .HasColumnType("uuid[]");
 
                     b.Property<bool>("Enabled")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTimeOffset?>("LastDeliveryAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("LastStatusCode")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
                     b.Property<string>("Secret")
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
+
+                    b.PrimitiveCollection<string[]>("SubscribedEvents")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -594,7 +620,9 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)");
 
-                    b.HasKey("TenantId");
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("webhook_endpoints", "integrations");
                 });
@@ -1551,7 +1579,7 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                 {
                     b.OwnsOne("VibeChat.SharedKernel.EncryptedSecretEnvelope", "SigningSecret", b1 =>
                         {
-                            b1.Property<Guid>("OutboundWebhookEndpointTenantId")
+                            b1.Property<Guid>("OutboundWebhookEndpointId")
                                 .HasColumnType("uuid");
 
                             b1.Property<byte[]>("Ciphertext")
@@ -1583,12 +1611,12 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                                 .HasColumnType("bytea")
                                 .HasColumnName("SigningSecretTag");
 
-                            b1.HasKey("OutboundWebhookEndpointTenantId");
+                            b1.HasKey("OutboundWebhookEndpointId");
 
                             b1.ToTable("webhook_endpoints", "integrations");
 
                             b1.WithOwner()
-                                .HasForeignKey("OutboundWebhookEndpointTenantId");
+                                .HasForeignKey("OutboundWebhookEndpointId");
                         });
 
                     b.Navigation("SigningSecret")

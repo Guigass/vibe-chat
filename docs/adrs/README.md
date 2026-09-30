@@ -31,6 +31,7 @@ original.
 | [023](ADR-023-group-dm.md) | DM em grupo reutiliza Channel | Accepted |
 | [024](ADR-024-guests-por-convite.md) | Guest é ChannelMember sem workspace | Accepted |
 | [025](ADR-025-politica-edicao-mensagem.md) | Política de edição e exclusão | Accepted |
+| [026](ADR-026-webhooks-outbound-multi-endpoint.md) | Vários webhooks outbound por tenant | Accepted |
 
 ## Quando criar um ADR
 

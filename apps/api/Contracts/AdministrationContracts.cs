@@ -109,6 +109,17 @@ public sealed record UpdateSensitiveSettingsRequest(
 public sealed record RotateCredentialRequest(
     Guid? WorkspaceId = null,
     string? Value = null);
+public sealed record UpsertWebhookEndpointRequest(
+    Guid? WorkspaceId = null,
+    string? Name = null,
+    string? Url = null,
+    bool? Enabled = null,
+    string[]? SubscribedEvents = null,
+    Guid[]? ChannelFilter = null,
+    string? Secret = null);
+public sealed record RotateWebhookEndpointRequest(
+    Guid? WorkspaceId = null,
+    string? Value = null);
 public sealed record RotateVapidRequest(
     Guid? WorkspaceId = null,
     string? PublicKey = null,

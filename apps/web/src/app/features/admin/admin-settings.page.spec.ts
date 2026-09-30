@@ -118,6 +118,8 @@ describe('AdminSettingsPage', () => {
     rotateAdminOpenRouterCredential: ReturnType<typeof vi.fn>;
     rotateAdminSmtpCredential: ReturnType<typeof vi.fn>;
     rotateAdminWebhookCredential: ReturnType<typeof vi.fn>;
+    getChannels: ReturnType<typeof vi.fn>;
+    createAdminWebhook: ReturnType<typeof vi.fn>;
     rotateAdminVapidCredential: ReturnType<typeof vi.fn>;
     reencryptAdminSettings: ReturnType<typeof vi.fn>;
     downloadWorkspaceExport: ReturnType<typeof vi.fn>;
@@ -135,6 +137,8 @@ describe('AdminSettingsPage', () => {
       }),
       rotateAdminSmtpCredential: vi.fn(),
       rotateAdminWebhookCredential: vi.fn(),
+      getChannels: vi.fn().mockResolvedValue([]),
+      createAdminWebhook: vi.fn().mockResolvedValue({ id: 'hook-1' }),
       rotateAdminVapidCredential: vi.fn().mockResolvedValue({
         configured: true,
         mask: '••••key1',
@@ -173,6 +177,7 @@ describe('AdminSettingsPage', () => {
     expect(host.textContent).toContain(ui.adminReplaceKey);
     expect(host.textContent).toContain(ui.adminAiKill);
     expect(host.textContent).toContain('Web Push / VAPID');
+    expect(host.textContent).toContain(ui.adminWebhooksEmpty);
   });
 
   it('saves non-secret settings and keeps credential inputs separate', async () => {
@@ -194,9 +199,12 @@ describe('AdminSettingsPage', () => {
         retention: expect.objectContaining({ processEnabled: true }),
         linkPreview: expect.objectContaining({ processEnabled: true }),
         push: expect.objectContaining({ processEnabled: true }),
-        webhooks: expect.not.objectContaining({ secret: expect.anything() }),
       }),
     );
+    const saved = api.updateAdminSensitiveSettings.mock.calls[0][0] as {
+      webhooks?: { secret?: string };
+    };
+    expect(saved.webhooks).toBeUndefined();
   });
 
   it('rotates openrouter credential and clears the password input', async () => {

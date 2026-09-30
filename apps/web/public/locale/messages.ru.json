@@ -677,6 +677,21 @@
     "admin.roleModerator": "Модератор",
     "admin.roleAdmin": "Админ",
     "admin.roleAuditor": "Аудитор",
-    "admin.roleGuest": "Гость"
+    "admin.roleGuest": "Гость",
+    "admin.webhooksEmpty": "Нет вебхуков — добавьте HTTPS-endpoint",
+    "admin.webhookName": "Имя",
+    "admin.webhookAdd": "Добавить endpoint",
+    "admin.webhookEvents": "События",
+    "admin.webhookChannels": "Каналы",
+    "admin.webhookChannelsHint": "Если ничего не выбрано, отправка идёт во все каналы.",
+    "admin.webhookActive": "Активен",
+    "admin.webhookTest": "Отправить тест",
+    "admin.webhookRemove": "Удалить",
+    "admin.webhookSave": "Сохранить endpoint",
+    "admin.webhookLastStatus": "Последний HTTP %status%",
+    "admin.webhookSaved": "Endpoint сохранён.",
+    "admin.webhookTestSent": "Тест отправлен (HTTP %status%).",
+    "admin.webhookTestFailed": "Тест не доставлен.",
+    "admin.webhookLimit": "Не больше %n% endpoint."
   }
 }

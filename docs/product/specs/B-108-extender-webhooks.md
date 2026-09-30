@@ -66,12 +66,12 @@ Estender `integrations.webhook_endpoints` + UI admin (settings / B-106):
 
 ## Aceite
 
-- [ ] Assinar só `MessageEdited` → create não dispara; edit dispara
-- [ ] Dois endpoints ativos recebem o mesmo evento (se ambos assinaram)
-- [ ] Filtro de canal: mensagem em outro canal não entrega
-- [ ] Ping de teste retorna status e atualiza lastStatus
-- [ ] Secret mascarado; Member/Auditor 403
-- [ ] Limite de endpoints respeitado
+- [x] Assinar só `MessageEdited` → create não dispara; edit dispara
+- [x] Dois endpoints ativos recebem o mesmo evento (se ambos assinaram)
+- [x] Filtro de canal: mensagem em outro canal não entrega
+- [x] Ping de teste retorna status e atualiza lastStatus
+- [x] Secret mascarado; Member/Auditor 403
+- [x] Limite de endpoints respeitado
 
 ## Testes
 
