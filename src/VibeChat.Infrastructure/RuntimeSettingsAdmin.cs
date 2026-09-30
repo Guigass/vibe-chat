@@ -47,7 +47,8 @@ public sealed class RuntimeSettingsAdminService(
     {
         var ai = await aiSettings.ResolveAsync(workspace.TenantId, workspace.Id, ct);
         var smtp = await emailSettings.ResolveAsync(workspace.TenantId, ct);
-        var webhook = await webhooks.ResolveAsync(workspace.TenantId, ct);
+        var webhookList = await webhooks.ListAsync(workspace.TenantId, ct);
+        var webhook = webhookList.Count == 1 ? webhookList[0] : null;
         var files = await filesSettings.ResolveAsync(workspace.TenantId, ct);
         var rate = await rateLimits.ResolveAsync(workspace.TenantId, ct);
         var process = await processSettings.ResolveAsync(ct);
@@ -70,7 +71,30 @@ public sealed class RuntimeSettingsAdminService(
         var webhookUrlConfigured = SecretMasking.IsConfigured(webhookUrl);
         var webhookSecretConfigured = webhook?.SecretConfigured ?? false;
         var webhookEnabled = webhook?.Enabled ?? false;
-        var webhookStatus = WebhooksSettingsStatus.Resolve(webhookEnabled, webhookUrlConfigured, webhookSecretConfigured);
+        string webhookStatus;
+        string webhookMessage;
+        if (webhookList.Count <= 1)
+        {
+            webhookStatus = WebhooksSettingsStatus.Resolve(webhookEnabled, webhookUrlConfigured, webhookSecretConfigured);
+            webhookMessage = WebhooksSettingsStatus.MessageFor(webhookStatus);
+        }
+        else
+        {
+            var anyActive = webhookList.Any(x =>
+                WebhooksSettingsStatus.Resolve(
+                    x.Enabled,
+                    SecretMasking.IsConfigured(x.Url),
+                    x.SecretConfigured) == WebhooksSettingsStatus.Active);
+            var anyReady = webhookList.Any(x => SecretMasking.IsConfigured(x.Url) && x.SecretConfigured);
+            webhookStatus = anyActive
+                ? WebhooksSettingsStatus.Active
+                : anyReady ? WebhooksSettingsStatus.Disabled : WebhooksSettingsStatus.Unconfigured;
+            webhookEnabled = webhookList.Any(x => x.Enabled);
+            webhookSecretConfigured = webhookList.Any(x => x.SecretConfigured);
+            webhookUrl = string.Empty;
+            webhookUrlConfigured = false;
+            webhookMessage = $"{webhookList.Count} endpoints.";
+        }
 
         var credentialsOnActive = 0;
         var activeVersion = protector.IsEncryptionAvailable ? protector.ActiveKeyVersion : (int?)null;
@@ -86,10 +110,7 @@ public sealed class RuntimeSettingsAdminService(
                 credentialsOnActive++;
             }
 
-            if (webhook?.SecretKeyVersion == av)
-            {
-                credentialsOnActive++;
-            }
+            credentialsOnActive += webhookList.Count(x => x.SecretKeyVersion == av);
 
             if (process.VapidKeyVersion == av)
             {
@@ -145,12 +166,31 @@ public sealed class RuntimeSettingsAdminService(
                 url = webhookUrlConfigured ? webhookUrl.Trim() : string.Empty,
                 urlConfigured = webhookUrlConfigured,
                 secretConfigured = webhookSecretConfigured,
-                secretMask = webhook?.SecretMask,
-                secretSource = webhook?.SecretSource ?? "none",
-                secretKeyVersion = webhook?.SecretKeyVersion,
-                secretRotatedAt = webhook?.SecretRotatedAt,
+                secretMask = webhookList.Count > 1 ? null : webhook?.SecretMask,
+                secretSource = webhookList.Count > 1 ? "multiple" : webhook?.SecretSource ?? "none",
+                secretKeyVersion = webhookList.Count > 1 ? null : webhook?.SecretKeyVersion,
+                secretRotatedAt = webhookList.Count > 1 ? null : webhook?.SecretRotatedAt,
                 secretsWritable = DatabaseOverridesEnabled && protector.IsEncryptionAvailable,
-                message = WebhooksSettingsStatus.MessageFor(webhookStatus)
+                message = webhookMessage,
+                maxEndpoints = WebhookPolicies.MaxEndpointsPerTenant,
+                endpoints = webhookList.Select(x => new
+                {
+                    id = x.Id,
+                    name = x.Name,
+                    enabled = x.Enabled,
+                    url = SecretMasking.IsConfigured(x.Url) ? x.Url.Trim() : string.Empty,
+                    subscribedEvents = x.SubscribedEvents,
+                    channelFilter = x.ChannelFilter,
+                    secretConfigured = x.SecretConfigured,
+                    secretMask = x.SecretMask,
+                    secretSource = x.SecretSource,
+                    secretKeyVersion = x.SecretKeyVersion,
+                    secretRotatedAt = x.SecretRotatedAt,
+                    lastDeliveryAt = x.LastDeliveryAt,
+                    lastStatusCode = x.LastStatusCode,
+                    lastError = x.LastError,
+                    updatedAt = x.UpdatedAt
+                }).ToArray()
             },
             retention = new
             {
@@ -323,16 +363,29 @@ public sealed class RuntimeSettingsAdminService(
                     }
                 case RuntimeSecretKinds.WebhookSigningSecret:
                     {
-                        var row = await db.OutboundWebhookEndpoints
-                            .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
+                        var rows = await db.OutboundWebhookEndpoints
+                            .Where(x => x.TenantId == workspace.TenantId)
+                            .ToListAsync(ct);
+                        if (rows.Count > 1)
+                        {
+                            return new CredentialRotateResult(false, 409, "WebhookEndpointAmbiguous",
+                                "More than one webhook endpoint. Rotate via POST /admin/webhooks/{id}/rotate.",
+                                false, null, null, null);
+                        }
+
+                        var row = rows.SingleOrDefault();
                         if (row is null)
                         {
                             row = new OutboundWebhookEndpoint
                             {
+                                Id = Guid.NewGuid(),
                                 TenantId = workspace.TenantId,
+                                Name = "default",
                                 Enabled = false,
                                 Url = string.Empty,
                                 Secret = null,
+                                SubscribedEvents = WebhookEventTypes.DefaultSubscribed,
+                                ChannelFilter = [],
                                 UpdatedAt = now
                             };
                             db.OutboundWebhookEndpoints.Add(row);
@@ -349,7 +402,7 @@ public sealed class RuntimeSettingsAdminService(
                         row.Secret = null;
                         row.UpdatedAt = now;
                         entityType = "OutboundWebhookEndpoint";
-                        entityId = workspace.TenantId.Value.ToString("D");
+                        entityId = row.Id.ToString("D");
                         break;
                     }
                 default:
@@ -445,9 +498,10 @@ public sealed class RuntimeSettingsAdminService(
                 count++;
             }
 
-            var hook = await db.OutboundWebhookEndpoints
-                .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct);
-            if (hook is not null)
+            var hooks = await db.OutboundWebhookEndpoints
+                .Where(x => x.TenantId == workspace.TenantId)
+                .ToListAsync(ct);
+            foreach (var hook in hooks)
             {
                 if (hook.SigningSecret.IsPresent)
                 {
@@ -481,7 +535,7 @@ public sealed class RuntimeSettingsAdminService(
                         ActorUserId = actorUserId,
                         Action = AuditActions.SettingsLegacySecretMigrate,
                         EntityType = "OutboundWebhookEndpoint",
-                        EntityId = workspace.TenantId.Value.ToString("D"),
+                        EntityId = hook.Id.ToString("D"),
                         MetadataJson = JsonSerializer.Serialize(new { workspaceId = workspace.Id.Value })
                     });
                 }

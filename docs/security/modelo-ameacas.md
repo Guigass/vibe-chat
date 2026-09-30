@@ -90,8 +90,8 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | SoT | Infra (Postgres, IdP, MinIO, keyring) em env; produto (kill switches, VAPID, OpenRouter, SMTP, webhook) no DB quando `RuntimeSettings:DatabaseOverridesEnabled` (B-187 / ADR-020); chave mestra só no env |
 | Em repouso | AES-256-GCM + AAD tenant/workspace/kind; dual-read temporário do webhook plaintext legado |
 | Audit | `settings.change`, `settings.credential.rotate`, `settings.encryption.reencrypt` — sem valor/ciphertext/nonce/tag |
-| Webhooks | Delivery `MessageCreated` via outbox + HMAC; URL/secret só admin; mask no GET |
-| Flag | Off default; desligar a flag no mesmo binário é o rollback seguro |
+| Webhooks | Delivery via outbox + HMAC depois do realtime (B-048 / B-108 / ADR-026). Eventos assináveis: `MessageCreated` (default), `MessageEdited`, `MessageDeleted`, `ReactionChanged`. Até 5 endpoints. Filtro de canal só aceita id do tenant. Ping `WebhookTest` não grava mensagem. URL `https` ou localhost de lab; sem redirect; timeout 5s. Falha HTTP não reprocessa o outbox da mensagem. Secret só máscara |
+| Flag | Sem endpoint = sem fan-out. Eventos novos só se o admin assinar. Sem kill switch global (preserva B-048) |
 
 ### R-18 — Auditoria de conversa (break-glass de leitura)
 

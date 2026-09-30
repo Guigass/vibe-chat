@@ -374,6 +374,8 @@ export interface SensitiveSettings {
     secretRotatedAt?: string | null;
     secretsWritable: boolean;
     message: string;
+    maxEndpoints?: number;
+    endpoints?: WebhookEndpointSettings[];
   };
   retention: {
     processEnabled: boolean;
@@ -430,6 +432,32 @@ export interface SensitiveSettings {
     activeKeyVersion: number | null;
     credentialsUsingActiveKey: number;
   };
+}
+
+export interface WebhookEndpointSettings {
+  id: string;
+  name: string;
+  enabled: boolean;
+  url: string;
+  subscribedEvents: string[];
+  channelFilter: string[];
+  secretConfigured: boolean;
+  secretMask: string | null;
+  secretSource?: string;
+  lastDeliveryAt?: string | null;
+  lastStatusCode?: number | null;
+  lastError?: string | null;
+  updatedAt?: string;
+}
+
+export interface UpsertWebhookEndpointInput {
+  workspaceId?: string;
+  name?: string;
+  url?: string;
+  enabled?: boolean;
+  subscribedEvents?: string[];
+  channelFilter?: string[];
+  secret?: string;
 }
 
 export interface UpdateSensitiveSettingsInput {

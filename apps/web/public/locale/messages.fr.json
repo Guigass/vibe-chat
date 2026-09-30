@@ -677,6 +677,21 @@
     "admin.roleModerator": "Modérateur",
     "admin.roleAdmin": "Admin",
     "admin.roleAuditor": "Auditeur",
-    "admin.roleGuest": "Invité"
+    "admin.roleGuest": "Invité",
+    "admin.webhooksEmpty": "Aucun webhook — ajoutez un endpoint HTTPS",
+    "admin.webhookName": "Nom",
+    "admin.webhookAdd": "Ajouter un endpoint",
+    "admin.webhookEvents": "Événements",
+    "admin.webhookChannels": "Canaux",
+    "admin.webhookChannelsHint": "Aucune sélection envoie vers tous les canaux.",
+    "admin.webhookActive": "Actif",
+    "admin.webhookTest": "Envoyer un test",
+    "admin.webhookRemove": "Retirer",
+    "admin.webhookSave": "Enregistrer l'endpoint",
+    "admin.webhookLastStatus": "Dernier HTTP %status%",
+    "admin.webhookSaved": "Endpoint enregistré.",
+    "admin.webhookTestSent": "Test envoyé (HTTP %status%).",
+    "admin.webhookTestFailed": "Le test n'a pas été livré.",
+    "admin.webhookLimit": "Jusqu'à %n% endpoints."
   }
 }

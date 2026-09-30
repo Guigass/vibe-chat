@@ -677,6 +677,21 @@
     "admin.roleModerator": "운영자",
     "admin.roleAdmin": "관리자",
     "admin.roleAuditor": "감사",
-    "admin.roleGuest": "게스트"
+    "admin.roleGuest": "게스트",
+    "admin.webhooksEmpty": "웹훅 없음 — HTTPS 엔드포인트를 추가하세요",
+    "admin.webhookName": "이름",
+    "admin.webhookAdd": "엔드포인트 추가",
+    "admin.webhookEvents": "이벤트",
+    "admin.webhookChannels": "채널",
+    "admin.webhookChannelsHint": "선택하지 않으면 모든 채널로 보냅니다.",
+    "admin.webhookActive": "활성",
+    "admin.webhookTest": "테스트 보내기",
+    "admin.webhookRemove": "제거",
+    "admin.webhookSave": "엔드포인트 저장",
+    "admin.webhookLastStatus": "마지막 HTTP %status%",
+    "admin.webhookSaved": "엔드포인트를 저장했습니다.",
+    "admin.webhookTestSent": "테스트를 보냈습니다 (HTTP %status%).",
+    "admin.webhookTestFailed": "테스트가 전달되지 않았습니다.",
+    "admin.webhookLimit": "최대 %n%개 엔드포인트."
   }
 }

@@ -490,6 +490,39 @@ public sealed class BackendUnitTests
     }
 
     [Fact]
+    public void Webhook_subscription_respects_events_and_channel_filter()
+    {
+        var channel = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var other = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var editedOnly = new[] { WebhookEventTypes.MessageEdited };
+        Guid[] noFilter = [];
+
+        WebhookDelivery.MatchesSubscription(editedOnly, noFilter, WebhookEventTypes.MessageCreated, channel)
+            .Should().BeFalse();
+        WebhookDelivery.MatchesSubscription(editedOnly, noFilter, WebhookEventTypes.MessageEdited, channel)
+            .Should().BeTrue();
+        WebhookDelivery.MatchesSubscription(
+                [WebhookEventTypes.MessageCreated, WebhookEventTypes.MessageEdited],
+                [channel],
+                WebhookEventTypes.MessageCreated,
+                other)
+            .Should().BeFalse();
+        WebhookDelivery.MatchesSubscription(
+                [WebhookEventTypes.MessageCreated],
+                [channel],
+                WebhookEventTypes.MessageCreated,
+                channel)
+            .Should().BeTrue();
+        WebhookDelivery.MatchesSubscription(
+                [WebhookEventTypes.ReactionChanged],
+                noFilter,
+                WebhookEventTypes.ReactionChanged,
+                channel)
+            .Should().BeTrue();
+        WebhookEventTypes.IsSubscribable(WebhookEventTypes.WebhookTest).Should().BeFalse();
+    }
+
+    [Fact]
     public void Webhook_settings_status_resolves_from_flags()
     {
         WebhooksSettingsStatus.Resolve(true, false, true).Should().Be(WebhooksSettingsStatus.Unconfigured);

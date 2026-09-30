@@ -633,7 +633,12 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 | `PUT /api/v1/admin/settings` | Atualiza flags não-secretas (AI/email/webhooks/retention/linkPreview/files/rateLimit/`openRouterBaseUrl`/`*.processEnabled`); mesma authZ; rejeita secrets no body (`SecretsNotWritable`); audit `settings.change` |
 | `POST /api/v1/admin/settings/credentials/openrouter/rotate` | Rotaciona API key OpenRouter (envelope AES-GCM em `ai.settings`); body `{ workspaceId?, value }`; resposta `{ configured, mask, keyVersion, rotatedAt }`; `503` se keyring indisponível |
 | `POST /api/v1/admin/settings/credentials/smtp/rotate` | Rotaciona senha SMTP do tenant (envelope em `notifications.email_settings`); mesma forma de resposta |
-| `POST /api/v1/admin/settings/credentials/webhook/rotate` | Rotaciona signing secret do webhook (envelope em `integrations.webhook_endpoints`); mesma forma |
+| `POST /api/v1/admin/settings/credentials/webhook/rotate` | Rotaciona o signing secret quando o tenant tem 0 ou 1 endpoint (0 cria `default`). Mais de um → `409 WebhookEndpointAmbiguous` |
+| `POST /api/v1/admin/webhooks` | Cria endpoint (`name`, `url`, `enabled`, `subscribedEvents`, `channelFilter`, `secret` opcional). `workspace.admin`. Limite 5 → `409 WebhookEndpointLimit`. Canal fora do tenant → `400 InvalidChannelFilter`. Resposta sem secret |
+| `PUT /api/v1/admin/webhooks/{endpointId}` | Atualiza nome, URL, enabled, eventos e filtro. Secret no body → `400 SecretsNotWritable` |
+| `DELETE /api/v1/admin/webhooks/{endpointId}` | Remove o endpoint do tenant |
+| `POST /api/v1/admin/webhooks/{endpointId}/rotate` | Rotaciona o HMAC daquele endpoint; resposta só máscara/versão |
+| `POST /api/v1/admin/webhooks/{endpointId}/test` | Envia `WebhookTest` assinado e devolve `{ ok, statusCode, lastError }` |
 | `POST /api/v1/admin/settings/credentials/vapid/rotate` | Rotaciona VAPID da instância (envelope em `administration.process_settings`); body `{ workspaceId?, publicKey, privateKey, subject? }`; resposta máscara/versão; `503` se keyring indisponível (B-187) |
 | `POST /api/v1/admin/settings/encryption/reencrypt` | Regrava envelopes do workspace/tenant/instância para `ActiveKeyVersion`; migra plaintext legado de webhook; audit `settings.encryption.reencrypt` |
 | `GET /api/v1/admin/workspaces/{workspaceId}/export` | Export compliance do workspace (B-046); ZIP `application/zip` com JSON (`manifest`, `workspace`, `members`, `spaces`, `channels`, `threads`, `messages`, `attachments` metadata); corpos soft-deleted incluídos (paridade B-067); **sem** binários MinIO; exige `workspace.admin` (Auditor → 403); audit `workspace.export`; workspace fora do tenant/membership → 403 |
@@ -675,9 +680,11 @@ body de mensagem.
 | `ai.apiKeyConfigured` / `apiKeyMask` / `apiKeyKeyVersion` / `apiKeyRotatedAt` / `apiKeySource` | Máscara `••••last4`; **nunca** valor em claro; rotação via endpoint dedicado |
 | `email.*` | Enabled/host/port/user/from/startTls (override tenant); senha só máscara/versão/fonte |
 | `email.processEnabled` / `processSource` | Kill switch de processo (`Email:Enabled`) — B-187: gravável; SoT DB quando overrides on |
-| `webhooks.status` | `unconfigured` \| `disabled` \| `active` (B-048) |
-| `webhooks.enabled` / `url` / `urlConfigured` | Endpoint HTTP do tenant; URL gravável via PUT |
-| `webhooks.secretConfigured` / `secretMask` / `secretKeyVersion` / `secretRotatedAt` / `secretSource` | HMAC secret mascarado; rotação via endpoint dedicado |
+| `webhooks.status` | `unconfigured` \| `disabled` \| `active`. Com exatamente 1 endpoint, reflete essa linha (B-048). Com várias, `active` se alguma entrega |
+| `webhooks.enabled` / `url` / `urlConfigured` | Resumo do único endpoint. Com várias, `url` vem vazio — usar `endpoints` |
+| `webhooks.secretConfigured` / `secretMask` / `secretKeyVersion` / `secretRotatedAt` / `secretSource` | HMAC mascarado. Com várias, máscara do resumo fica nula (`secretSource = multiple`) |
+| `webhooks.endpoints[]` | Lista sem secret: `id`, `name`, `enabled`, `url`, `subscribedEvents`, `channelFilter`, `secretMask`, `lastStatusCode`, `lastError`, `lastDeliveryAt` |
+| `webhooks.maxEndpoints` | Limite (5) |
 | `webhooks.message` | Texto de status para UI admin |
 | `retention.processEnabled` / `processSource` | Kill switch de processo (`MessageRetention:Enabled`) — B-187: gravável; SoT DB quando overrides on |
 | `retention.enabled` / `retentionDays` | Política do tenant em `messaging.message_retention_settings` — gravável |
@@ -709,16 +716,17 @@ Regras:
 - `ConversationSequence` / `seq` não são reescritos
 - Off por default (processo + tenant)
 
-### Webhooks outbound (B-048)
+### Webhooks outbound (B-048 / B-108 / ADR-026)
 
-- Tabela `integrations.webhook_endpoints` (1 endpoint por tenant): `Enabled`, `Url`, envelope AES-GCM do signing secret (+ coluna `Secret` legado em dual-read até migration contract)
-- Delivery best-effort no `OutboxProcessor` **após** realtime, apenas `MessageCreated`
-- `POST` do payload JSON do outbox; headers:
-  - `X-VibeChat-Event: MessageCreated`
-  - `X-VibeChat-Delivery-Id: <outboxId>`
+- Tabela `integrations.webhook_endpoints` (até 5 por tenant, PK `Id`): `Name`, `Enabled`, `Url`, `SubscribedEvents` (`text[]`), `ChannelFilter` (`uuid[]`), `LastDeliveryAt`, `LastStatusCode`, `LastError`, envelope AES-GCM do signing secret (+ coluna `Secret` legado em dual-read)
+- Eventos assináveis: `MessageCreated` (default), `MessageEdited`, `MessageDeleted`, `ReactionChanged`. `WebhookTest` só no ping
+- Delivery best-effort no `OutboxProcessor` **após** realtime. Filtro vazio = todos os canais. Falha HTTP grava last status e **não** relança (o outbox da mensagem segue)
+- `POST` do payload JSON do outbox (ping: JSON sintético, sem mensagem); headers:
+  - `X-VibeChat-Event: <tipo>`
+  - `X-VibeChat-Delivery-Id: <outboxId ou id do ping>`
   - `X-VibeChat-Signature: sha256=<hmac-hex>` (HMAC-SHA256 do body com o secret)
-- URL: `https` (ou `http://localhost` / `127.0.0.1` em lab); timeout ~5s; falha não reprocessa outbox
-- RLS + query filter por `TenantId`
+- URL: `https` (ou `http://localhost` / `127.0.0.1` em lab); timeout ~5s; sem redirect
+- RLS + query filter por `TenantId`. AAD do envelope continua o id do tenant (compatível com B-048)
 
 ### Auditoria de conversa (B-067)
 
