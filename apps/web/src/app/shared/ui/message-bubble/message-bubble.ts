@@ -171,6 +171,9 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
           @if (showMeta()) {
             <header class="vc-msg__meta">
               <strong>{{ message().authorName }}</strong>
+              @if (message().authorIsBot) {
+                <span class="vc-msg__bot">{{ ui.bubbleBot }}</span>
+              }
               <time [attr.datetime]="message().createdAt">{{
                 message().createdAt | date: 'shortTime'
               }}</time>
@@ -769,6 +772,16 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
     .vc-msg__meta strong {
       font-size: 0.88rem;
       font-family: var(--vc-font-display);
+    }
+    .vc-msg__bot {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--vc-ink-muted);
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-sm);
+      padding: 0.05rem 0.35rem;
     }
     time,
     .vc-msg__status {

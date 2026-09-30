@@ -76,6 +76,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<TenantEmailSettings> TenantEmailSettings => Set<TenantEmailSettings>();
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
     public DbSet<OutboundWebhookEndpoint> OutboundWebhookEndpoints => Set<OutboundWebhookEndpoint>();
+    public DbSet<IntegrationBot> IntegrationBots => Set<IntegrationBot>();
+    public DbSet<IntegrationBotToken> IntegrationBotTokens => Set<IntegrationBotToken>();
+    public DbSet<IntegrationBotChannelScope> IntegrationBotChannelScopes => Set<IntegrationBotChannelScope>();
     public DbSet<MessageRetentionSettings> MessageRetentionSettings => Set<MessageRetentionSettings>();
     public DbSet<MessageLifecyclePolicy> MessageLifecyclePolicies => Set<MessageLifecyclePolicy>();
     public DbSet<TenantFilesSettings> TenantFilesSettings => Set<TenantFilesSettings>();
@@ -497,6 +500,45 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.LastError).HasMaxLength(WebhookPolicies.MaxLastErrorLength);
             entity.HasIndex(x => x.TenantId);
             MapEncryptedSecret(entity.OwnsOne(x => x.SigningSecret), "SigningSecret");
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<IntegrationBot>(entity =>
+        {
+            entity.ToTable("bots", "integrations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Name).HasMaxLength(BotIntegrationPolicies.MaxNameLength).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId });
+            entity.HasIndex(x => x.UserId).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<IntegrationBotToken>(entity =>
+        {
+            entity.ToTable("bot_tokens", "integrations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.TokenHash).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.Last4).HasMaxLength(8).IsRequired();
+            entity.HasIndex(x => x.TokenHash).IsUnique();
+            entity.HasIndex(x => x.BotId);
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<IntegrationBotChannelScope>(entity =>
+        {
+            entity.ToTable("bot_channel_scopes", "integrations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.HasIndex(x => new { x.BotId, x.ChannelId }).IsUnique();
+            entity.HasIndex(x => x.TenantId);
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -973,6 +1015,7 @@ public sealed class MessageWriter(
                 replyTo = replyToPayload,
                 authorId = command.UserId.Value,
                 authorName,
+                authorIsBot = command.AuthorIsBot,
                 sequence,
                 body,
                 createdAt = now,
@@ -3638,6 +3681,7 @@ public static class DependencyInjection
         // B-047: processor shared; hosted purge loop is registered only in apps/worker.
         services.Configure<GroupDmOptions>(configuration.GetSection(GroupDmOptions.SectionName));
         services.Configure<InviteOptions>(configuration.GetSection(InviteOptions.SectionName));
+        services.Configure<BotIntegrationOptions>(configuration.GetSection(BotIntegrationOptions.SectionName));
         services.Configure<MessageRetentionOptions>(configuration.GetSection(MessageRetentionOptions.SectionName));
         services.Configure<RuntimeSettingsOptions>(configuration.GetSection(RuntimeSettingsOptions.SectionName));
         services.AddMemoryCache();

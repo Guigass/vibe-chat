@@ -3,7 +3,79 @@
     {{ ui.adminPluginsLead }}
     <a routerLink="/admin/settings">{{ ui.adminNavSettings }}</a>.
   </p>
-  <p class="admin-empty">
-    {{ ui.adminPluginsEmpty }}
-  </p>
+
+  @if (loading()) {
+    <p class="admin-empty">{{ ui.adminLoadingSettings }}</p>
+  } @else if (loadError()) {
+    <p class="admin-empty">{{ ui.adminBotLoadError }}</p>
+  } @else {
+    <form class="admin-filters" (submit)="$event.preventDefault(); create()">
+      <label class="admin-filters__field">
+        <span>{{ ui.adminBotName }}</span>
+        <input [value]="name()" (input)="name.set($any($event.target).value)" [attr.aria-label]="ui.adminBotName" />
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.adminBotAllowDms }}</span>
+        <input type="checkbox" [checked]="allowDms()" (change)="allowDms.set($any($event.target).checked)" />
+      </label>
+      <div class="admin-filters__field">
+        <span>{{ ui.adminBotChannels }}</span>
+        @for (channel of channels(); track channel.id) {
+          <label>
+            <input
+              type="checkbox"
+              [checked]="selectedChannelIds().includes(channel.id)"
+              (change)="toggleChannel(channel.id, $any($event.target).checked)"
+            />
+            {{ channel.name }}
+          </label>
+        }
+      </div>
+      <button type="submit" class="admin-btn" [disabled]="busy() || !name().trim()">
+        {{ ui.adminBotCreate }}
+      </button>
+    </form>
+
+    @if (saveError()) {
+      <p class="admin-empty">{{ ui.adminBotSaveError }}</p>
+    }
+    @if (revealedToken(); as token) {
+      <p class="admin-feedback">{{ ui.adminBotTokenOnce }}</p>
+      <p class="admin-panel__lead"><code>{{ token }}</code></p>
+    }
+
+    @if (bots().length === 0) {
+      <p class="admin-empty">{{ ui.adminPluginsEmpty }}</p>
+    } @else {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.adminBotName }}</th>
+              <th>{{ ui.adminBotEnabled }}</th>
+              <th>{{ ui.adminBotLast4 }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (bot of bots(); track bot.id) {
+              <tr>
+                <td>{{ bot.name }}</td>
+                <td>{{ bot.enabled ? ui.adminBotEnabled : ui.adminBotInactive }}</td>
+                <td>{{ bot.tokenConfigured ? bot.tokenLast4 : '—' }}</td>
+                <td>
+                  <button type="button" class="admin-btn" [disabled]="busy()" (click)="rotate(bot)">
+                    {{ ui.adminBotRotate }}
+                  </button>
+                  <button type="button" class="admin-btn" [disabled]="busy()" (click)="revoke(bot)">
+                    {{ ui.adminBotRevoke }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
 </article>

@@ -8,6 +8,7 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using VibeChat.Api;
+using VibeChat.Api.Authentication;
 using VibeChat.Api.Endpoints;
 using VibeChat.BuildingBlocks;
 using VibeChat.Infrastructure;
@@ -56,6 +57,12 @@ auth.AddPolicyScheme("smart", "JWT or DevAuth", options =>
 {
     options.ForwardDefaultSelector = context =>
     {
+        var authorization = context.Request.Headers.Authorization.ToString();
+        if (authorization.StartsWith("Bearer vc_int_", StringComparison.OrdinalIgnoreCase))
+        {
+            return IntegrationPassthroughHandler.SchemeName;
+        }
+
         if (!builder.Environment.IsDevelopment())
         {
             return JwtBearerDefaults.AuthenticationScheme;
@@ -97,6 +104,7 @@ auth.AddJwtBearer(options =>
     };
 });
 auth.AddScheme<AuthenticationSchemeOptions, DevAuthHandler>(DevAuthHandler.SchemeName, _ => { });
+auth.AddScheme<AuthenticationSchemeOptions, IntegrationPassthroughHandler>(IntegrationPassthroughHandler.SchemeName, _ => { });
 
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<ICurrentUser>(sp =>
@@ -208,6 +216,7 @@ v1.MapUnreadCount();
 v1.MapNotifications();
 v1.MapAdministration();
 v1.MapAI();
+v1.MapIntegrationBots();
 v1.MapDevelopment(app);
 
 app.MapHub<ChatHub>("/hubs/chat").RequireAuthorization();

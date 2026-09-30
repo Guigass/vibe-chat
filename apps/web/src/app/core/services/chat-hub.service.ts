@@ -63,6 +63,7 @@ interface MessageCreatedPayload {
   sequence?: number;
   authorId?: string;
   authorName?: string;
+  authorIsBot?: boolean;
   body?: string;
   createdAt?: string;
   mentionedUserIds?: string[];
@@ -826,6 +827,7 @@ export class ChatHubService {
       channelId,
       authorUserId: authorId,
       authorName,
+      authorIsBot: !!payload.authorIsBot,
       body: payload.body ?? '',
       createdAt: payload.createdAt ?? new Date().toISOString(),
       seq: payload.sequence,

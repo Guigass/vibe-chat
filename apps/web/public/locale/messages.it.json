@@ -550,8 +550,8 @@
     "admin.auditEmpty": "Nessun evento corrisponde ai filtri.",
     "admin.entity": "Entità",
     "admin.actor": "Attore",
-    "admin.pluginsLead": "Area riservata all'installazione e alla gestione dei plugin (B-109 / B-110). I Webhooks e le integrazioni di base restano in",
-    "admin.pluginsEmpty": "Nessun plugin installato in questo workspace. L'API di integrazione e il catalogo dei bot arrivano nella Wave 11.",
+    "admin.pluginsLead": "I bot di integrazione pubblicano nei canali consentiti. Il token compare una sola volta. I webhook restano in",
+    "admin.pluginsEmpty": "Nessun bot in questo workspace.",
     "admin.settingsLead": "Impostazioni runtime del workspace e del tenant. Le credenziali restano cifrate — l'interfaccia mostra solo una maschera. L'infrastruttura (Postgres, Redis, OIDC, MinIO) resta nell'ambiente.",
     "admin.loadingSettings": "Caricamento delle impostazioni…",
     "admin.settingsLoadError": "Impossibile caricare le impostazioni.",
@@ -692,6 +692,19 @@
     "admin.webhookSaved": "Endpoint salvato.",
     "admin.webhookTestSent": "Test inviato (HTTP %status%).",
     "admin.webhookTestFailed": "Il test non è stato consegnato.",
-    "admin.webhookLimit": "Fino a %n% endpoint."
+    "admin.webhookLimit": "Fino a %n% endpoint.",
+    "admin.botName": "Nome del bot",
+    "admin.botAllowDms": "Consenti messaggi diretti",
+    "admin.botChannels": "Canali consentiti",
+    "admin.botCreate": "Crea bot",
+    "admin.botRotate": "Ruota token",
+    "admin.botRevoke": "Revoca token",
+    "admin.botTokenOnce": "Copia il token ora. Non verrà più mostrato.",
+    "admin.botEnabled": "Attivo",
+    "admin.botInactive": "Inattivo",
+    "admin.botLast4": "Token",
+    "admin.botLoadError": "Impossibile caricare i bot.",
+    "admin.botSaveError": "Impossibile salvare il bot.",
+    "bubble.bot": "Bot"
   }
 }

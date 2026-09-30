@@ -73,13 +73,13 @@ Fatia mínima — motor reutilizado por plugins:
 
 ## Aceite
 
-- [ ] Sistema externo posta em canal permitido; membros veem em tempo real
-- [ ] Canal fora do escopo → 403
-- [ ] DM para membro do workspace funciona com `allowDms`
-- [ ] Token revogado → 401 na hora
-- [ ] Token em claro só na criação/rotação; GET admin nunca devolve o secret
-- [ ] Idempotency-Key evita duplicar
-- [ ] Cross-tenant com token de outro tenant → 401/403
+- [x] Sistema externo posta em canal permitido; membros veem em tempo real
+- [x] Canal fora do escopo → 403
+- [x] DM para membro do workspace funciona com `allowDms`
+- [x] Token revogado → 401 na hora
+- [x] Token em claro só na criação/rotação; GET admin nunca devolve o secret
+- [x] Idempotency-Key evita duplicar
+- [x] Cross-tenant com token de outro tenant → 401/403
 
 ## Testes
 

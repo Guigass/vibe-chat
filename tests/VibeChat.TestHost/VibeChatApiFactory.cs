@@ -182,6 +182,7 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Directory:GroupDm:Enabled", "true");
         builder.UseSetting("Directory:GroupDm:MaxParticipants", "9");
         builder.UseSetting("Directory:Invites:Enabled", "true");
+        builder.UseSetting("Integrations:Bots:Enabled", "true");
         builder.UseSetting("Directory:Invites:MaxExpiryDays", "30");
         builder.UseSetting("Database:BootstrapOnStartup", "true");
         builder.UseSetting("Ai:Enabled", "true");

@@ -550,8 +550,8 @@
     "admin.auditEmpty": "Нет событий по фильтрам.",
     "admin.entity": "Сущность",
     "admin.actor": "Исполнитель",
-    "admin.pluginsLead": "Зарезервировано под установку и управление плагинами (B-109 / B-110). Базовые Webhooks и интеграции остаются в",
-    "admin.pluginsEmpty": "В этом workspace нет установленных плагинов. API интеграций и каталог ботов появятся в Wave 11.",
+    "admin.pluginsLead": "Боты интеграции пишут только в разрешённые каналы. Токен показывается один раз. Вебхуки остаются в",
+    "admin.pluginsEmpty": "В этом пространстве нет ботов.",
     "admin.settingsLead": "Runtime-настройки workspace и тенанта. Учётные данные хранятся зашифрованными — в интерфейсе только маска. Инфраструктура (Postgres, Redis, OIDC, MinIO) остаётся в окружении.",
     "admin.loadingSettings": "Загружаем настройки…",
     "admin.settingsLoadError": "Не удалось загрузить настройки.",
@@ -692,6 +692,19 @@
     "admin.webhookSaved": "Endpoint сохранён.",
     "admin.webhookTestSent": "Тест отправлен (HTTP %status%).",
     "admin.webhookTestFailed": "Тест не доставлен.",
-    "admin.webhookLimit": "Не больше %n% endpoint."
+    "admin.webhookLimit": "Не больше %n% endpoint.",
+    "admin.botName": "Имя бота",
+    "admin.botAllowDms": "Разрешить личные сообщения",
+    "admin.botChannels": "Разрешённые каналы",
+    "admin.botCreate": "Создать бота",
+    "admin.botRotate": "Сменить токен",
+    "admin.botRevoke": "Отозвать токен",
+    "admin.botTokenOnce": "Скопируйте токен сейчас. Он больше не будет показан.",
+    "admin.botEnabled": "Активен",
+    "admin.botInactive": "Неактивен",
+    "admin.botLast4": "Токен",
+    "admin.botLoadError": "Не удалось загрузить ботов.",
+    "admin.botSaveError": "Не удалось сохранить бота.",
+    "bubble.bot": "Бот"
   }
 }

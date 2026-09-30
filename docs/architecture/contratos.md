@@ -728,6 +728,26 @@ Regras:
 - URL: `https` (ou `http://localhost` / `127.0.0.1` em lab); timeout ~5s; sem redirect
 - RLS + query filter por `TenantId`. AAD do envelope continua o id do tenant (compatível com B-048)
 
+### Bots de integração (B-109 / ADR-027)
+
+Flag `Integrations:Bots:Enabled` default **false** (Development/lab pode ligar). Off → 404 `IntegrationDisabled` em admin e em send.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| GET | `/api/v1/admin/workspaces/{workspaceId}/bots` | `workspace.admin` |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/bots` | `workspace.admin`; body `{ name, channelIds[], allowDms }`; resposta inclui `token` **uma vez** |
+| PUT | `/api/v1/admin/workspaces/{workspaceId}/bots/{botId}` | `workspace.admin`; body `{ name, channelIds[], allowDms, enabled }`; sem secret |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/bots/{botId}/rotate` | `workspace.admin`; novo `token` uma vez; o anterior deixa de valer |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/bots/{botId}/revoke` | `workspace.admin`; 401 imediato no token atual |
+| POST | `/api/v1/integrations/v1/channels/{channelId}/messages` | `Authorization: Bearer vc_int_…` ou `X-VibeChat-Integration-Token` |
+| POST | `/api/v1/integrations/v1/dms` | mesmo token; exige `allowDms` |
+
+Send body: `{ body, idempotencyKey, threadId? }`. DM acrescenta `userId`. Resposta `202` `{ messageId, channelId, sequence, createdAt, idempotent }`. A chave é prefixada com o id do bot no store de idempotência. O pipeline é o `SendMessage` de B-004 (`seq` + outbox). O payload `MessageCreated` inclui `authorIsBot`.
+
+Escopo de canal é lista explícita. Fora da lista, DM/GroupDm ou outro tenant → 403. Token desconhecido ou revogado → 401. Bot `enabled=false` → 403 `BotDisabled`. GET admin devolve `tokenLast4` / `tokenConfigured`, nunca o segredo. Rate-limit próprio `t:{tenantId}:rl:integration:{botId}`.
+
+Tabelas `integrations.bots`, `integrations.bot_tokens` (só hash SHA-256), `integrations.bot_channel_scopes`. RLS FORCE. Lookup do token antes do tenant usa `app.integration_token_hash` (SET LOCAL), no mesmo espírito do convite B-040. Perfil `Role.Bot` no workspace; subject `bot:{id}` não autentica como humano.
+
 ### Auditoria de conversa (B-067)
 
 Distinta do feed `audit_events` (B-042). Viewer compliance: admin/Auditor com `admin.dashboard` lê histórico completo **dentro do tenant**, inclusive DMs onde não é membro e corpos soft-deleted (ADR-018). Membro comum → 403. Canal/thread de outro tenant → 403. Histórico normal (`GET /channels/.../messages`) continua redigindo body deletado e exigindo membership.
@@ -875,7 +895,7 @@ public interface IRateLimiter
 }
 ```
 
-Fase 1: Redis fixed-window (`INCR` + `EXPIRE`). Keys: `t:{tenantId}:rl:send:{userId}`, `t:{tenantId}:rl:hub:{userId}`. Aplicado em `POST .../messages` (429) e hub `JoinChannel`/`SendTyping`/`Heartbeat`/`SetAway` (`HubException`). Config efetiva (ADR-020): com row DB → `min(tenant DB, teto de código)`; sem row → `RateLimit:*` appsettings clamp ao teto de código; flag `DatabaseOverridesEnabled` off → defaults de código. Sem Redis configurado: fail-open.
+Fase 1: Redis fixed-window (`INCR` + `EXPIRE`). Keys: `t:{tenantId}:rl:send:{userId}`, `t:{tenantId}:rl:hub:{userId}`, `t:{tenantId}:rl:integration:{botId}` (B-109, mesmo teto de send, balde separado). Aplicado em `POST .../messages` (429) e hub `JoinChannel`/`SendTyping`/`Heartbeat`/`SetAway` (`HubException`). Config efetiva (ADR-020): com row DB → `min(tenant DB, teto de código)`; sem row → `RateLimit:*` appsettings clamp ao teto de código; flag `DatabaseOverridesEnabled` off → defaults de código. Sem Redis configurado: fail-open.
 
 ---
 

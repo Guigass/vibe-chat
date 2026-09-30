@@ -81,7 +81,8 @@ public sealed record MessageResponse(
     ForwardedFromResponse? ForwardedFrom = null,
     LinkPreviewResponse? LinkPreview = null,
     bool IsPinned = false,
-    PollDto? Poll = null);
+    PollDto? Poll = null,
+    bool AuthorIsBot = false);
 
 public sealed record PinMessageResponse(Guid MessageId, Guid ChannelId, bool Pinned, int PinCount);
 public sealed record PinnedMessageResponse(

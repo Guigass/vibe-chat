@@ -549,6 +549,7 @@ internal static class ConversationsEndpoints
                         && parentReplyTo.TryGetValue(prtid.Value, out var replyTo)
                         ? replyTo
                         : null);
+                parentResponse = (await MarkBotAuthorsAsync(db, channel.TenantId, [parentResponse], ct))[0];
             }
 
             var subscription = await db.ThreadSubscriptions.AsNoTracking()
@@ -652,6 +653,7 @@ internal static class ConversationsEndpoints
                 x.DeletedAt == null && linkPreviewByMessage.TryGetValue(x.Id.Value, out var preview) ? preview : null,
                 false,
                 x.DeletedAt == null && pollsByMessage.TryGetValue(x.Id.Value, out var poll) ? poll : null)).ToArray();
+            messages = await MarkBotAuthorsAsync(db, channel.TenantId, messages, ct);
             return Results.Ok(messages);
         });
 

@@ -154,7 +154,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-040 | Guests por convite | **Done** (W10-10) — `directory.channel_invites`; ChannelMember sem workspace; flag `Directory:Invites:Enabled` off default |
 | B-107 | Políticas de edição/apagar mensagem | **Done** (W10-11) — janela, papéis e override em `messaging.message_lifecycle_policies`; settings admin; menu respeita a política; body do soft-delete permanece na linha (snapshot de audit → B-169); ADR-025; [spec](../product/specs/B-107-politicas-edicao-mensagem.md) |
 | B-108 | Extender webhooks outbound | **Done** (W10-12) — até 5 endpoints, eventos edit/delete/reação, filtro de canal, ping; ADR-026 |
-| B-109 | Núcleo plugin — bot/token + envio msgs | Planned (W10-13) — capability `messages.send`; base da trilha; spec `docs/product/specs/B-109-api-integracao-envio-mensagens.md` |
+| B-109 | Núcleo plugin — bot/token + envio msgs | **Done** (W10-13) — `Role.Bot` + token hash + send no `MessageWriter`; flag `Integrations:Bots:Enabled` off default; ADR-027 |
 | B-110 | Instalar/gerir plugins na instância | Planned (W10-14) — manifesto local, built-in Incoming Messages; deps B-109; spec `docs/product/specs/B-110-instalar-plugins.md` |
 | B-186 | Membros do canal (lista + gestão) | Planned (W10-15) — painel direito (B-171); roster; add/remove em privado (`channel.manage`); enviar PV (B-021); fecha **BUG-020**; distinto de guest B-040 e GroupDm B-101; [spec](../product/specs/B-186-membros-do-canal.md) |
 | B-188 | Busca versátil (relevância e matching) | Planned (W10-16) — prefixo, acento, websearch, hits de canal/pessoa/anexo; fecha **BUG-023**; sem RAG (B-121) nem OpenSearch (B-060); [spec](../product/specs/B-188-busca-versatil.md) |

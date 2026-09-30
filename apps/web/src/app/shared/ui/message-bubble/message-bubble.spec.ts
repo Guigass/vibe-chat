@@ -418,6 +418,15 @@ describe('MessageBubble (B-163)', () => {
     expect(root.querySelector('.vc-msg__group-meta')).toBeTruthy();
   });
 
+  it('shows a bot badge when the author is a bot', async () => {
+    const { fixture } = await setup(
+      baseMessage({ mine: false, authorName: 'CI Bot', authorIsBot: true }),
+      { showMeta: true },
+    );
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.vc-msg__bot')?.textContent).toContain('Bot');
+  });
+
   it('applies plain surface styles for stack-embedded messages', async () => {
     const { fixture } = await setup(baseMessage({ mine: false }), {
       groupRole: 'middle',

@@ -550,8 +550,8 @@
     "admin.auditEmpty": "没有符合筛选条件的事件。",
     "admin.entity": "实体",
     "admin.actor": "操作者",
-    "admin.pluginsLead": "插件安装与管理的预留区域（B-109 / B-110）。基础 Webhooks 与集成仍在",
-    "admin.pluginsEmpty": "此工作区尚未安装插件。集成 API 与机器人目录将在 Wave 11 推出。",
+    "admin.pluginsLead": "集成机器人只向允许的频道发消息。令牌只显示一次。Webhook 仍在",
+    "admin.pluginsEmpty": "此工作区还没有机器人。",
     "admin.settingsLead": "工作区与租户的运行时设置。凭据保持加密 — 界面只显示掩码。基础设施（Postgres、Redis、OIDC、MinIO）仍在环境中配置。",
     "admin.loadingSettings": "正在加载设置…",
     "admin.settingsLoadError": "无法加载设置。",
@@ -692,6 +692,19 @@
     "admin.webhookSaved": "端点已保存。",
     "admin.webhookTestSent": "测试已发送（HTTP %status%）。",
     "admin.webhookTestFailed": "测试未送达。",
-    "admin.webhookLimit": "最多 %n% 个端点。"
+    "admin.webhookLimit": "最多 %n% 个端点。",
+    "admin.botName": "机器人名称",
+    "admin.botAllowDms": "允许私信",
+    "admin.botChannels": "允许的频道",
+    "admin.botCreate": "创建机器人",
+    "admin.botRotate": "轮换令牌",
+    "admin.botRevoke": "吊销令牌",
+    "admin.botTokenOnce": "请立即复制令牌。之后不再显示。",
+    "admin.botEnabled": "启用",
+    "admin.botInactive": "停用",
+    "admin.botLast4": "令牌",
+    "admin.botLoadError": "无法加载机器人。",
+    "admin.botSaveError": "无法保存机器人。",
+    "bubble.bot": "机器人"
   }
 }

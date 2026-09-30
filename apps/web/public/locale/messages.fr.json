@@ -550,8 +550,8 @@
     "admin.auditEmpty": "Aucun événement ne correspond aux filtres.",
     "admin.entity": "Entité",
     "admin.actor": "Acteur",
-    "admin.pluginsLead": "Zone réservée à l’installation et à la gestion des plugins (B-109 / B-110). Les Webhooks et intégrations de base restent dans",
-    "admin.pluginsEmpty": "Aucun plugin installé dans ce workspace. L’API d’intégration et le catalogue de bots arrivent dans Wave 11.",
+    "admin.pluginsLead": "Les bots d’intégration publient dans les canaux autorisés. Le jeton s’affiche une fois. Les webhooks restent dans",
+    "admin.pluginsEmpty": "Aucun bot dans ce workspace.",
     "admin.settingsLead": "Paramètres runtime du workspace et du tenant. Les identifiants restent chiffrés — l’interface n’affiche qu’un masque. L’infrastructure (Postgres, Redis, OIDC, MinIO) reste dans l’environnement.",
     "admin.loadingSettings": "Chargement des paramètres…",
     "admin.settingsLoadError": "Impossible de charger les paramètres.",
@@ -692,6 +692,19 @@
     "admin.webhookSaved": "Endpoint enregistré.",
     "admin.webhookTestSent": "Test envoyé (HTTP %status%).",
     "admin.webhookTestFailed": "Le test n'a pas été livré.",
-    "admin.webhookLimit": "Jusqu'à %n% endpoints."
+    "admin.webhookLimit": "Jusqu'à %n% endpoints.",
+    "admin.botName": "Nom du bot",
+    "admin.botAllowDms": "Autoriser les messages directs",
+    "admin.botChannels": "Canaux autorisés",
+    "admin.botCreate": "Créer un bot",
+    "admin.botRotate": "Faire tourner le jeton",
+    "admin.botRevoke": "Révoquer le jeton",
+    "admin.botTokenOnce": "Copiez le jeton maintenant. Il ne sera plus affiché.",
+    "admin.botEnabled": "Actif",
+    "admin.botInactive": "Inactif",
+    "admin.botLast4": "Jeton",
+    "admin.botLoadError": "Impossible de charger les bots.",
+    "admin.botSaveError": "Impossible d’enregistrer le bot.",
+    "bubble.bot": "Bot"
   }
 }

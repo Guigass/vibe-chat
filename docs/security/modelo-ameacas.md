@@ -186,6 +186,19 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Escala | Guest sem `workspace.read`, busca, DM, admin, convite, criar canal |
 | Rollback | Flag off no mesmo binário; migration só em lab |
 
+### B-109 / ADR-027 — Token de integração
+
+| Item | Controle |
+|------|----------|
+| Kill switch | `Integrations:Bots:Enabled` off default; admin e send → 404 `IntegrationDisabled` |
+| Segredo | SHA-256; valor cru só em create/rotate; GET não devolve; bearer `vc_int_` não passa pelo parser JWT |
+| Lookup | `app.integration_token_hash` (SET LOCAL) revela só a linha do hash; WITH CHECK continua no tenant |
+| Escopo | Lista explícita de canais; fora do escopo, DM sem `allowDms` ou canal de outro tenant → 403 |
+| Revogação | `RevokedAt` → 401 na hora. `Enabled=false` → 403 com token ainda válido |
+| Escrita | Reusa `SendMessage` (idempotência prefixada por bot, `seq`, outbox). Sem leitura de histórico |
+| Rate-limit | Chave Redis própria por bot, mesmo teto de send do tenant |
+| Rollback | Flag off no mesmo binário. `Down` remove só as tabelas do bot; mensagens ficam |
+
 ## Ameaças priorizadas para a fatia vertical
 
 1. Leitura/escrita cross-tenant

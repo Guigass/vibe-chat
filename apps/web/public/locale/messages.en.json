@@ -550,8 +550,8 @@
     "admin.auditEmpty": "No events match the filters.",
     "admin.entity": "Entity",
     "admin.actor": "Actor",
-    "admin.pluginsLead": "Reserved area for plugin install and management (B-109 / B-110). Base webhooks and integrations remain in",
-    "admin.pluginsEmpty": "No plugins installed in this workspace. The integration API and bot catalog arrive in Wave 11.",
+    "admin.pluginsLead": "Integration bots post in the channels you allow. The token is shown once. Webhooks stay in",
+    "admin.pluginsEmpty": "No bots in this workspace.",
     "admin.settingsLead": "Runtime workspace and tenant settings. Credentials stay encrypted — the UI only shows a mask. Infrastructure (Postgres, Redis, OIDC, MinIO) remains in the environment.",
     "admin.loadingSettings": "Loading settings…",
     "admin.settingsLoadError": "Could not load settings.",
@@ -692,6 +692,19 @@
     "admin.webhookSaved": "Endpoint saved.",
     "admin.webhookTestSent": "Test sent (HTTP %status%).",
     "admin.webhookTestFailed": "The test was not delivered.",
-    "admin.webhookLimit": "Up to %n% endpoints."
+    "admin.webhookLimit": "Up to %n% endpoints.",
+    "admin.botName": "Bot name",
+    "admin.botAllowDms": "Allow direct messages",
+    "admin.botChannels": "Allowed channels",
+    "admin.botCreate": "Create bot",
+    "admin.botRotate": "Rotate token",
+    "admin.botRevoke": "Revoke token",
+    "admin.botTokenOnce": "Copy the token now. It will not be shown again.",
+    "admin.botEnabled": "Active",
+    "admin.botInactive": "Inactive",
+    "admin.botLast4": "Token",
+    "admin.botLoadError": "Could not load bots.",
+    "admin.botSaveError": "Could not save the bot.",
+    "bubble.bot": "Bot"
   }
 }
