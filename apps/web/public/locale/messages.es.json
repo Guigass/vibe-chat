@@ -660,6 +660,23 @@
     "threadFollow.unfollow": "Dejar de seguir",
     "threadFollow.loadError": "No se pudieron cargar los hilos seguidos.",
     "threadFollow.actionError": "No se pudo actualizar la suscripción al hilo.",
-    "threadFollow.unreadCount": "%n% sin leer"
+    "threadFollow.unreadCount": "%n% sin leer",
+    "menu.editExpired": "La edición está disponible durante %n% min después del envío",
+    "menu.deleteExpired": "La eliminación está disponible durante %n% min después del envío",
+    "admin.messagingTitle": "Edición y eliminación de mensajes",
+    "admin.messagingDesc": "Quién puede editar o eliminar sus propios mensajes y durante cuánto tiempo después del envío.",
+    "admin.messagingEditEnabled": "El autor puede editar",
+    "admin.messagingEditWindow": "Ventana de edición (min)",
+    "admin.messagingWindowHint": "Vacío = sin límite",
+    "admin.messagingEditOverride": "La moderación puede editar mensajes de otros e ignorar la ventana",
+    "admin.messagingDeleteEnabled": "El autor puede eliminar",
+    "admin.messagingDeleteWindow": "Ventana de eliminación (min)",
+    "admin.messagingDeleteOverride": "La moderación puede eliminar mensajes de otros e ignorar la ventana",
+    "admin.messagingRoles": "Roles",
+    "admin.roleMember": "Miembro",
+    "admin.roleModerator": "Moderador",
+    "admin.roleAdmin": "Admin",
+    "admin.roleAuditor": "Auditor",
+    "admin.roleGuest": "Invitado"
   }
 }

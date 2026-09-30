@@ -660,6 +660,23 @@
     "threadFollow.unfollow": "取消关注",
     "threadFollow.loadError": "无法加载已关注的话题。",
     "threadFollow.actionError": "无法更新话题订阅。",
-    "threadFollow.unreadCount": "%n% 条未读"
+    "threadFollow.unreadCount": "%n% 条未读",
+    "menu.editExpired": "发送后 %n% 分钟内可以编辑",
+    "menu.deleteExpired": "发送后 %n% 分钟内可以删除",
+    "admin.messagingTitle": "消息编辑与删除",
+    "admin.messagingDesc": "谁可以编辑或删除自己的消息，以及发送后多久内可以。",
+    "admin.messagingEditEnabled": "作者可以编辑",
+    "admin.messagingEditWindow": "编辑时限（分钟）",
+    "admin.messagingWindowHint": "留空 = 不限制",
+    "admin.messagingEditOverride": "版主可以编辑他人的消息并忽略时限",
+    "admin.messagingDeleteEnabled": "作者可以删除",
+    "admin.messagingDeleteWindow": "删除时限（分钟）",
+    "admin.messagingDeleteOverride": "版主可以删除他人的消息并忽略时限",
+    "admin.messagingRoles": "角色",
+    "admin.roleMember": "成员",
+    "admin.roleModerator": "版主",
+    "admin.roleAdmin": "管理员",
+    "admin.roleAuditor": "审计",
+    "admin.roleGuest": "访客"
   }
 }

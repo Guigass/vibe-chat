@@ -627,6 +627,20 @@ internal static class MessagingEndpoints
 
     internal static void MapMessageActions(this RouteGroupBuilder v1)
     {
+        v1.MapGet("/channels/{channelId:guid}/messaging-policy", async (Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
+        {
+            var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+            var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+            if (channel is null)
+            {
+                return Results.Forbid();
+            }
+
+            var row = await db.MessageLifecyclePolicies.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.TenantId == channel.TenantId, ct);
+            return Results.Ok(MessageLifecyclePolicyRules.ToDto(row));
+        }).RequirePermission(Permissions.Message.Read);
+
         v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, EditMessageRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IClock clock, CancellationToken ct) =>
         {
             var profile = await EnsureProfileAsync(http.User, db, clock, ct);
@@ -658,11 +672,18 @@ internal static class MessagingEndpoints
                 return Results.NotFound();
             }
 
-            var canEditOwn = message.AuthorId == profile.Id
+            var isAuthor = message.AuthorId == profile.Id;
+            var (role, policy) = await LoadLifecycleAsync(db, channel, profile.Id, ct);
+            var hasOwn = isAuthor
                 && await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.EditOwn, ct);
-            if (!canEditOwn)
+            var hasAny = !isAuthor
+                && policy.EditAllowModeratorOverride
+                && await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.EditAny, ct);
+            var decision = MessageLifecyclePolicyRules.EvaluateEdit(
+                policy, isAuthor, hasOwn, hasAny, role, message.CreatedAt, clock.UtcNow);
+            if (decision is not null)
             {
-                return Results.Forbid();
+                return LifecycleDenied(decision);
             }
 
             message.Body = normalizedBody;
@@ -684,6 +705,15 @@ internal static class MessagingEndpoints
                 })
             });
             await db.SaveChangesAsync(ct);
+            var authorName = profile.DisplayName;
+            if (!isAuthor)
+            {
+                authorName = await db.UserProfiles.AsNoTracking()
+                    .Where(x => x.Id == message.AuthorId)
+                    .Select(x => x.DisplayName)
+                    .FirstOrDefaultAsync(ct) ?? authorName;
+            }
+
             var attachments = await db.Attachments.AsNoTracking()
                 .Where(x => x.MessageId == message.Id)
                 .OrderBy(x => x.CreatedAt)
@@ -710,7 +740,7 @@ internal static class MessagingEndpoints
                 message.CreatedAt,
                 message.EditedAt,
                 message.DeletedAt,
-                profile.DisplayName,
+                authorName,
                 attachments,
                 message.ThreadId,
                 message.ReplyToMessageId?.Value,
@@ -1388,12 +1418,18 @@ internal static class MessagingEndpoints
                 return Results.NoContent();
             }
 
-            var canDeleteOwn = message.AuthorId == profile.Id
+            var isAuthor = message.AuthorId == profile.Id;
+            var (role, policy) = await LoadLifecycleAsync(db, channel, profile.Id, ct);
+            var hasOwn = isAuthor
                 && await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.DeleteOwn, ct);
-            var canDeleteAny = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.DeleteAny, ct);
-            if (!canDeleteOwn && !canDeleteAny)
+            var hasAny = !isAuthor
+                && policy.DeleteAllowModeratorOverride
+                && await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.DeleteAny, ct);
+            var decision = MessageLifecyclePolicyRules.EvaluateDelete(
+                policy, isAuthor, hasOwn, hasAny, role, message.CreatedAt, clock.UtcNow);
+            if (decision is not null)
             {
-                return Results.Forbid();
+                return LifecycleDenied(decision);
             }
 
             message.DeletedAt = clock.UtcNow;
@@ -1423,6 +1459,7 @@ internal static class MessagingEndpoints
                     deletedAt = message.DeletedAt
                 })
             });
+            // Body stays on the row (ADR-018). B-169 snapshots it into message.delete when content audit is on.
             audit.Add(new AuditEvent { TenantId = channel.TenantId, ActorUserId = profile.Id, Action = AuditActions.MessageDelete, EntityType = "Message", EntityId = message.Id.ToString(), MetadataJson = JsonSerializer.Serialize(new { channelId, threadId = message.ThreadId, message.Sequence }) });
             await db.SaveChangesAsync(ct);
             return Results.NoContent();
@@ -1531,4 +1568,25 @@ internal static class MessagingEndpoints
             });
         });
     }
+
+    private static async Task<(Role Role, MessageLifecycleSnapshot Policy)> LoadLifecycleAsync(
+        VibeChatDbContext db,
+        Channel channel,
+        UserId userId,
+        CancellationToken ct)
+    {
+        var membership = await db.WorkspaceMembers.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.WorkspaceId == channel.WorkspaceId && x.UserId == userId, ct);
+        var row = await db.MessageLifecyclePolicies.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.TenantId == channel.TenantId, ct);
+        return (membership?.Role ?? Role.Guest, MessageLifecyclePolicyRules.SnapshotOf(row));
+    }
+
+    private static IResult LifecycleDenied(string code) => code switch
+    {
+        MessageLifecyclePolicyRules.Forbidden => Results.Forbid(),
+        MessageLifecyclePolicyRules.EditWindowExpired or MessageLifecyclePolicyRules.DeleteWindowExpired =>
+            Results.UnprocessableEntity(new { error = code }),
+        _ => Results.Json(new { error = code }, statusCode: StatusCodes.Status403Forbidden)
+    };
 }

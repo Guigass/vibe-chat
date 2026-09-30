@@ -30,6 +30,7 @@ original.
 | [022](ADR-022-web-push-vapid.md) | Web Push com VAPID da instância | Accepted |
 | [023](ADR-023-group-dm.md) | DM em grupo reutiliza Channel | Accepted |
 | [024](ADR-024-guests-por-convite.md) | Guest é ChannelMember sem workspace | Accepted |
+| [025](ADR-025-politica-edicao-mensagem.md) | Política de edição e exclusão | Accepted |
 
 ## Quando criar um ADR
 

@@ -660,6 +660,23 @@
     "threadFollow.unfollow": "팔로우 해제",
     "threadFollow.loadError": "팔로우한 스레드를 불러올 수 없습니다.",
     "threadFollow.actionError": "스레드 구독을 업데이트할 수 없습니다.",
-    "threadFollow.unreadCount": "읽지 않음 %n%개"
+    "threadFollow.unreadCount": "읽지 않음 %n%개",
+    "menu.editExpired": "편집은 보낸 후 %n%분 동안 가능합니다",
+    "menu.deleteExpired": "삭제는 보낸 후 %n%분 동안 가능합니다",
+    "admin.messagingTitle": "메시지 편집 및 삭제",
+    "admin.messagingDesc": "자신의 메시지를 누가, 보낸 후 얼마나 편집하거나 삭제할 수 있는지.",
+    "admin.messagingEditEnabled": "작성자가 편집할 수 있음",
+    "admin.messagingEditWindow": "편집 가능 시간(분)",
+    "admin.messagingWindowHint": "비우면 제한 없음",
+    "admin.messagingEditOverride": "운영자는 다른 사람의 메시지를 편집하고 시간 제한을 무시할 수 있음",
+    "admin.messagingDeleteEnabled": "작성자가 삭제할 수 있음",
+    "admin.messagingDeleteWindow": "삭제 가능 시간(분)",
+    "admin.messagingDeleteOverride": "운영자는 다른 사람의 메시지를 삭제하고 시간 제한을 무시할 수 있음",
+    "admin.messagingRoles": "역할",
+    "admin.roleMember": "멤버",
+    "admin.roleModerator": "운영자",
+    "admin.roleAdmin": "관리자",
+    "admin.roleAuditor": "감사",
+    "admin.roleGuest": "게스트"
   }
 }

@@ -68,12 +68,20 @@ export function menuActionsForMessage(options: {
   showMarkUnread?: boolean;
   replyCount?: number;
   hasLinkPreview?: boolean;
-}): Array<{ id: MessageMenuActionId; label: string; danger?: boolean }> {
+  allowEdit?: boolean;
+  allowDelete?: boolean;
+  editExpiredTitle?: string;
+  deleteExpiredTitle?: string;
+}): Array<{ id: MessageMenuActionId; label: string; danger?: boolean; disabled?: boolean; title?: string }> {
   const items: Array<{
     id: MessageMenuActionId;
     label: string;
     danger?: boolean;
+    disabled?: boolean;
+    title?: string;
   }> = [];
+  const allowEdit = options.allowEdit ?? options.mine;
+  const allowDelete = options.allowDelete ?? options.mine;
   if (options.showForward) {
     items.push({ id: 'forward', label: ui.menuForward });
   }
@@ -105,11 +113,28 @@ export function menuActionsForMessage(options: {
   if (options.showMarkUnread) {
     items.push({ id: 'mark-unread', label: ui.menuMarkUnread });
   }
-  if (options.mine) {
+  if (options.editExpiredTitle) {
+    items.push({
+      id: 'edit',
+      label: ui.menuEdit,
+      disabled: true,
+      title: options.editExpiredTitle,
+    });
+  } else if (allowEdit) {
     items.push({ id: 'edit', label: ui.menuEdit });
-    if (options.hasLinkPreview) {
-      items.push({ id: 'remove-link-preview', label: ui.menuRemovePreview });
-    }
+  }
+  if (options.mine && options.hasLinkPreview) {
+    items.push({ id: 'remove-link-preview', label: ui.menuRemovePreview });
+  }
+  if (options.deleteExpiredTitle) {
+    items.push({
+      id: 'delete',
+      label: ui.menuDelete,
+      danger: true,
+      disabled: true,
+      title: options.deleteExpiredTitle,
+    });
+  } else if (allowDelete) {
     items.push({ id: 'delete', label: ui.menuDelete, danger: true });
   }
   return items;

@@ -74,7 +74,8 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete` | permission | `file.upload` | ✓ | ✗ | ✓ | |
 | GET | `/channels/{channelId:guid}/attachments/{attachmentId:guid}/download` | permission | `file.download` + `message.read` | ✓ | ✓ | ✓ | |
 | GET | `/channels/{channelId:guid}/attachments/{attachmentId:guid}/thumbnail` | permission | `file.download` + `message.read` | ✓ | ✓ | ✓ | |
-| PUT | `/channels/{channelId:guid}/messages/{messageId:guid}` | condicional | `message.edit.own` | ✓* | ✗ | ✓* | *só autor; exempt B-023 |
+| GET | `/channels/{channelId:guid}/messaging-policy` | permission | `message.read` | ✓ | ✓ | ✓ | B-107; campos não secretos; guest do canal |
+| PUT | `/channels/{channelId:guid}/messages/{messageId:guid}` | condicional | `message.edit.own` / `message.edit.any` | ✓* | ✗ | ✓* | *autor na política, ou override `message.edit.any` (default off); exempt B-023 / B-107 |
 | PUT | `/channels/{channelId:guid}/messages/{messageId:guid}/reactions` | permission | `message.react` | ✓ | ✗ | ✓ | |
 | POST | `/channels/{channelId:guid}/messages/{messageId:guid}/pin` | permission | `message.pin` | ✓ | ✗ | ✓ | |
 | DELETE | `/channels/{channelId:guid}/messages/{messageId:guid}/pin` | permission | `message.pin` | ✓ | ✗ | ✓ | |
@@ -84,7 +85,7 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | DELETE | `/workspaces/{workspaceId:guid}/saved/{messageId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | |
 | GET | `/workspaces/{workspaceId:guid}/saved` | permission | `message.read` | ✓ | ✓ | ✓ | |
 | GET | `/channels/{channelId:guid}/messages/{messageId:guid}/reactions/{emoji}/users` | permission | `message.react` | ✓ | ✗ | ✓ | |
-| DELETE | `/channels/{channelId:guid}/messages/{messageId:guid}` | condicional | `message.delete.own` / `message.delete.any` | ✓* | ✗ | ✓ | *autor ou DeleteAny; exempt B-023 |
+| DELETE | `/channels/{channelId:guid}/messages/{messageId:guid}` | condicional | `message.delete.own` / `message.delete.any` | ✓* | ✗ | ✓* | *autor na política, ou override `message.delete.any` (default on); exempt B-023 / B-107 |
 | DELETE | `/channels/{channelId:guid}/messages/{messageId:guid}/link-preview` | condicional | autor ou `workspace.admin` | ✓* | ✗ | ✓ | exempt B-091 |
 | GET | `/channels/{channelId:guid}/messages/{messageId:guid}/link-preview/image` | membership | — | ✓ | ✓ | ✓ | Proxy de imagem já SSRF-guarded |
 | PUT | `/channels/{channelId:guid}/read-cursor` | permission | `message.read` | ✓ | ✓ | ✓ | |

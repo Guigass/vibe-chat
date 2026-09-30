@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import type { MessagingPolicy } from '../../shared/messaging/messaging-policy';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 import {
@@ -828,6 +829,10 @@ export class ApiService {
       signal?.addEventListener('abort', () => xhr.abort(), { once: true });
       xhr.send(file);
     });
+  }
+
+  async getMessagingPolicy(channelId: string): Promise<MessagingPolicy> {
+    return this.request(`/api/v1/channels/${channelId}/messaging-policy`);
   }
 
   async editMessage(channelId: string, messageId: string, body: string): Promise<ChatMessage> {

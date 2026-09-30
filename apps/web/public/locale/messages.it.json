@@ -660,6 +660,23 @@
     "threadFollow.unfollow": "Smetti di seguire",
     "threadFollow.loadError": "Impossibile caricare i thread seguiti.",
     "threadFollow.actionError": "Impossibile aggiornare l'iscrizione al thread.",
-    "threadFollow.unreadCount": "%n% non letti"
+    "threadFollow.unreadCount": "%n% non letti",
+    "menu.editExpired": "La modifica è disponibile per %n% min dopo l'invio",
+    "menu.deleteExpired": "L'eliminazione è disponibile per %n% min dopo l'invio",
+    "admin.messagingTitle": "Modifica ed eliminazione dei messaggi",
+    "admin.messagingDesc": "Chi può modificare o eliminare i propri messaggi e per quanto tempo dopo l'invio.",
+    "admin.messagingEditEnabled": "L'autore può modificare",
+    "admin.messagingEditWindow": "Finestra di modifica (min)",
+    "admin.messagingWindowHint": "Vuoto = nessun limite",
+    "admin.messagingEditOverride": "La moderazione può modificare i messaggi altrui e ignorare la finestra",
+    "admin.messagingDeleteEnabled": "L'autore può eliminare",
+    "admin.messagingDeleteWindow": "Finestra di eliminazione (min)",
+    "admin.messagingDeleteOverride": "La moderazione può eliminare i messaggi altrui e ignorare la finestra",
+    "admin.messagingRoles": "Ruoli",
+    "admin.roleMember": "Membro",
+    "admin.roleModerator": "Moderatore",
+    "admin.roleAdmin": "Admin",
+    "admin.roleAuditor": "Auditor",
+    "admin.roleGuest": "Ospite"
   }
 }

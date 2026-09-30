@@ -721,6 +721,15 @@ internal static class AdministrationEndpoints
                 return Results.Json(new { error = processResult.Error, message = processResult.Message }, statusCode: processResult.Status);
             }
 
+            if (request.Messaging is not null)
+            {
+                var policyError = await ApplyMessagingPolicyAsync(db, workspace.TenantId, request.Messaging, changes, clock, ct);
+                if (policyError is not null)
+                {
+                    return Results.BadRequest(new { error = policyError });
+                }
+            }
+
             if (changes.Count > 0)
             {
                 audit.Add(new AuditEvent

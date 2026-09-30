@@ -84,7 +84,7 @@ sobre o `<input type="file">` que já existe, nunca como caminho único.
 | Recibo de leitura / não lidas persistentes | por canal | sim | — | sim | **Done** — B-094 (cursor no Postgres) |
 | Reações | sim | sim | sim | sim | **Temos** (6 emojis fixos) |
 | Reações com emoji livre / custom | sim | sim | sim + custom | sim | **Done** — B-083 |
-| Editar / apagar | sim | sim | sim | sim | **Parcial** — B-023 Done; falta política (janela/papéis) — **B-107** |
+| Editar / apagar | sim | sim | sim | sim | **Done** — B-023 + política B-107 (janela, papéis, override) |
 | Marcar como não lida | sim | sim | sim | sim | **Done** — B-094 |
 
 ## 4. Notificações e foco

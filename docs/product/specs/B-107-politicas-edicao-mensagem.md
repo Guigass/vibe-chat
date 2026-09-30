@@ -86,14 +86,15 @@ Comportamento:
 
 ## Aceite
 
-- [ ] Com janela 15 min, editar após 16 min → erro de contrato estável; UI sem ação
-- [ ] Com `edit.enabled=false`, autor não edita; moderador só se override ligado
-- [ ] Restringir a papéis Admin: Member vê menu sem Editar
-- [ ] Soft-delete respeita janela/papéis espelhados
-- [ ] Com delete permitido pela política e `contentAuditEnabled=true` (B-169), o
+- [x] Com janela 15 min, editar após 16 min → erro de contrato estável; UI sem ação
+- [x] Com `edit.enabled=false`, autor não edita; moderador só se override ligado
+- [x] Restringir a papéis Admin: Member vê menu sem Editar
+- [x] Soft-delete respeita janela/papéis espelhados
+- [x] Com delete permitido pela política e `contentAuditEnabled=true` (B-169), o
       soft-delete **não** impede o snapshot de body em `message.delete` no audit
-- [ ] Settings mascarados: membro não lê/altera a política (403)
-- [ ] Teste cross-tenant negativo
+      (o body permanece na linha; o snapshot em si continua em B-169)
+- [x] Settings mascarados: membro não lê/altera a política (403)
+- [x] Teste cross-tenant negativo
 
 ## Testes
 

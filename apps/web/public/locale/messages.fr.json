@@ -660,6 +660,23 @@
     "threadFollow.unfollow": "Ne plus suivre",
     "threadFollow.loadError": "Impossible de charger les fils suivis.",
     "threadFollow.actionError": "Impossible de mettre à jour l'abonnement au fil.",
-    "threadFollow.unreadCount": "%n% non lus"
+    "threadFollow.unreadCount": "%n% non lus",
+    "menu.editExpired": "La modification est disponible pendant %n% min après l'envoi",
+    "menu.deleteExpired": "La suppression est disponible pendant %n% min après l'envoi",
+    "admin.messagingTitle": "Modification et suppression des messages",
+    "admin.messagingDesc": "Qui peut modifier ou supprimer ses propres messages, et pendant combien de temps après l'envoi.",
+    "admin.messagingEditEnabled": "L'auteur peut modifier",
+    "admin.messagingEditWindow": "Fenêtre de modification (min)",
+    "admin.messagingWindowHint": "Vide = sans limite",
+    "admin.messagingEditOverride": "La modération peut modifier les messages des autres et ignorer la fenêtre",
+    "admin.messagingDeleteEnabled": "L'auteur peut supprimer",
+    "admin.messagingDeleteWindow": "Fenêtre de suppression (min)",
+    "admin.messagingDeleteOverride": "La modération peut supprimer les messages des autres et ignorer la fenêtre",
+    "admin.messagingRoles": "Rôles",
+    "admin.roleMember": "Membre",
+    "admin.roleModerator": "Modérateur",
+    "admin.roleAdmin": "Admin",
+    "admin.roleAuditor": "Auditeur",
+    "admin.roleGuest": "Invité"
   }
 }

@@ -672,6 +672,27 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Cross_tenant_cannot_read_messaging_policy_or_edit()
+    {
+        var (_, foreignChannelId) = await SeedCrossTenantChannelAsync();
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+
+        var policy = await client.GetAsync($"/api/v1/channels/{foreignChannelId}/messaging-policy");
+        policy.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var edit = await client.PutAsJsonAsync(
+            $"/api/v1/channels/{foreignChannelId}/messages/{Guid.NewGuid()}",
+            new EditMessageRequest("cross-tenant"));
+        edit.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var delete = await client.DeleteAsync(
+            $"/api/v1/channels/{foreignChannelId}/messages/{Guid.NewGuid()}");
+        delete.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Cross_tenant_cannot_download_or_initiate_attachments()
     {
         var (_, foreignChannelId) = await SeedCrossTenantChannelAsync();

@@ -77,6 +77,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
     public DbSet<OutboundWebhookEndpoint> OutboundWebhookEndpoints => Set<OutboundWebhookEndpoint>();
     public DbSet<MessageRetentionSettings> MessageRetentionSettings => Set<MessageRetentionSettings>();
+    public DbSet<MessageLifecyclePolicy> MessageLifecyclePolicies => Set<MessageLifecyclePolicy>();
     public DbSet<TenantFilesSettings> TenantFilesSettings => Set<TenantFilesSettings>();
     public DbSet<TenantRateLimitSettings> TenantRateLimitSettings => Set<TenantRateLimitSettings>();
     public DbSet<ProcessSettings> ProcessSettings => Set<ProcessSettings>();
@@ -498,6 +499,16 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.ToTable("message_retention_settings", "messaging");
             entity.HasKey(x => x.TenantId);
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<MessageLifecyclePolicy>(entity =>
+        {
+            entity.ToTable("message_lifecycle_policies", "messaging");
+            entity.HasKey(x => x.TenantId);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.EditRoles).HasColumnType("text[]");
+            entity.Property(x => x.DeleteRoles).HasColumnType("text[]");
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
