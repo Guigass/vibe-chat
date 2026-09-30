@@ -83,6 +83,18 @@ const baseSettings: SensitiveSettings = {
     ceilingMaxSizeBytes: 10_485_760,
     ceilingMaxAttachmentsPerMessage: 5,
   },
+  messaging: {
+    editEnabled: true,
+    editWindowMinutes: null,
+    editRolesRestricted: false,
+    editRoles: ['Member', 'Moderator', 'Admin'],
+    editAllowModeratorOverride: false,
+    deleteEnabled: true,
+    deleteWindowMinutes: null,
+    deleteRolesRestricted: false,
+    deleteRoles: ['Member', 'Moderator', 'Admin'],
+    deleteAllowModeratorOverride: true,
+  },
   rateLimit: {
     source: 'env',
     sendPerMinute: 60,
@@ -247,6 +259,7 @@ describe('AdminSettingsPage', () => {
     expect(titles).toEqual([
       ui.adminIntegrations,
       ui.adminLimits,
+      ui.adminMessagingTitle,
       ui.adminRetentionExport,
       ui.adminEncryption,
     ]);

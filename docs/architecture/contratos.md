@@ -193,7 +193,7 @@ Membership + RLS idênticos ao histórico anterior; `seq` de outro canal nunca v
 
 | Campo | Tipo | Notas |
 |-------|------|-------|
-| Body | string | Obrigatório; só autor com `message.edit.own`; máx. **8000** code units UTF-16 |
+| Body | string | Obrigatório; autor com `message.edit.own` dentro da política B-107, ou moderação com `message.edit.any` quando `messaging.edit.allowModeratorOverride`; máx. **8000** code units UTF-16 |
 
 Erro `MessageBodyTooLong` (400):
 
@@ -205,12 +205,24 @@ Erro `MessageBodyTooLong` (400):
 }
 ```
 
-Validação ocorre em `POST .../messages`, `POST .../threads/{threadId}/messages` e `PUT .../messages/{messageId}` **antes** da transação.
+Validação de tamanho ocorre em `POST .../messages`, `POST .../threads/{threadId}/messages` e `PUT .../messages/{messageId}` **antes** da transação.
+
+Política de edição (B-107 / ADR-025), por tenant, default = comportamento anterior (edição do autor ligada, sem janela, override de moderação **desligado**):
+
+| Código | HTTP | Quando |
+|--------|------|--------|
+| `EditDisabled` | 403 | `messaging.edit.enabled=false` e o ator é o autor |
+| `EditRoleDenied` | 403 | papel do autor fora de `messaging.edit.roles` |
+| `EditWindowExpired` | 422 | `now` > `createdAt` + `windowMinutes` |
+| (Forbid vazio) | 403 | não autor e override desligado, ou sem a permissão |
+
+`GET /api/v1/channels/{channelId}/messaging-policy` devolve só esses campos não secretos a quem tem `message.read` no canal (inclui guest). Alterar a política continua em `PUT /api/v1/admin/settings` (`workspace.admin`). `windowMinutes` nulo = sem limite; `0` ou acima de 525600 → `InvalidMessagingPolicy` (400).
 
 ### Soft-delete Message
 
 - `DELETE /api/v1/channels/{channelId}/messages/{messageId}`
-- Autor com `message.delete.own` **ou** papel com `message.delete.any`
+- Autor com `message.delete.own` dentro de `messaging.delete.*`, **ou** papel com `message.delete.any` quando `messaging.delete.allowModeratorOverride` (default **ligado**)
+- Códigos estáveis: `DeleteDisabled` (403), `DeleteRoleDenied` (403), `DeleteWindowExpired` (422); não autor sem override continua 403 vazio
 - Soft-delete (`DeletedAt`); body oculto nas leituras (ADR-018)
 - Também cobre replies de thread do canal (authZ por membership do canal pai)
 - **Planned (B-169):** com `contentAuditEnabled=true`, o evento `message.delete`

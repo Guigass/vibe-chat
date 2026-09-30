@@ -660,6 +660,23 @@
     "threadFollow.unfollow": "フォロー解除",
     "threadFollow.loadError": "フォロー中のスレッドを読み込めませんでした。",
     "threadFollow.actionError": "スレッドの購読を更新できませんでした。",
-    "threadFollow.unreadCount": "未読 %n% 件"
+    "threadFollow.unreadCount": "未読 %n% 件",
+    "menu.editExpired": "編集は送信後 %n% 分まで可能です",
+    "menu.deleteExpired": "削除は送信後 %n% 分まで可能です",
+    "admin.messagingTitle": "メッセージの編集と削除",
+    "admin.messagingDesc": "自分のメッセージを誰が、送信後どれだけ編集または削除できるか。",
+    "admin.messagingEditEnabled": "投稿者が編集できる",
+    "admin.messagingEditWindow": "編集できる時間（分）",
+    "admin.messagingWindowHint": "空 = 制限なし",
+    "admin.messagingEditOverride": "モデレーターは他人のメッセージを編集し、時間制限を無視できる",
+    "admin.messagingDeleteEnabled": "投稿者が削除できる",
+    "admin.messagingDeleteWindow": "削除できる時間（分）",
+    "admin.messagingDeleteOverride": "モデレーターは他人のメッセージを削除し、時間制限を無視できる",
+    "admin.messagingRoles": "ロール",
+    "admin.roleMember": "メンバー",
+    "admin.roleModerator": "モデレーター",
+    "admin.roleAdmin": "管理者",
+    "admin.roleAuditor": "監査",
+    "admin.roleGuest": "ゲスト"
   }
 }

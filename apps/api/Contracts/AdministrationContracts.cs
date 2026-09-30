@@ -84,6 +84,17 @@ public sealed record UpdateLinkPreviewSettingsRequest(
 public sealed record UpdatePushSettingsRequest(
     bool? ProcessEnabled = null,
     string? VapidPrivateKey = null);
+public sealed record UpdateMessagingPolicyRequest(
+    bool? EditEnabled = null,
+    int? EditWindowMinutes = null,
+    bool ClearEditWindow = false,
+    string[]? EditRoles = null,
+    bool? EditAllowModeratorOverride = null,
+    bool? DeleteEnabled = null,
+    int? DeleteWindowMinutes = null,
+    bool ClearDeleteWindow = false,
+    string[]? DeleteRoles = null,
+    bool? DeleteAllowModeratorOverride = null);
 public sealed record UpdateSensitiveSettingsRequest(
     Guid? WorkspaceId = null,
     UpdateAiSensitiveSettingsRequest? Ai = null,
@@ -93,7 +104,8 @@ public sealed record UpdateSensitiveSettingsRequest(
     UpdateLinkPreviewSettingsRequest? LinkPreview = null,
     UpdateFilesSettingsRequest? Files = null,
     UpdateRateLimitSettingsRequest? RateLimit = null,
-    UpdatePushSettingsRequest? Push = null);
+    UpdatePushSettingsRequest? Push = null,
+    UpdateMessagingPolicyRequest? Messaging = null);
 public sealed record RotateCredentialRequest(
     Guid? WorkspaceId = null,
     string? Value = null);

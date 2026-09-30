@@ -17,6 +17,13 @@ export class AdminSettingsPage implements OnInit {
   readonly areaId: AdminAreaId = 'settings';
   readonly ui = ui;
   readonly fillTemplate = fillTemplate;
+  readonly messagingRoles = [
+    { id: 'Member', label: ui.adminRoleMember },
+    { id: 'Moderator', label: ui.adminRoleModerator },
+    { id: 'Admin', label: ui.adminRoleAdmin },
+    { id: 'Auditor', label: ui.adminRoleAuditor },
+    { id: 'Guest', label: ui.adminRoleGuest },
+  ] as const;
 
   private readonly api = inject(ApiService);
   readonly ctx = inject(AdminContextService);
@@ -121,6 +128,16 @@ export class AdminSettingsPage implements OnInit {
     );
     const sendPerMinute = Number(data.get('sendPerMinute') ?? current.rateLimit.sendPerMinute);
     const hubPerMinute = Number(data.get('hubPerMinute') ?? current.rateLimit.hubPerMinute);
+    const editWindowRaw = String(data.get('editWindowMinutes') ?? '').trim();
+    const deleteWindowRaw = String(data.get('deleteWindowMinutes') ?? '').trim();
+    const editWindowMinutes = editWindowRaw === '' ? null : Number(editWindowRaw);
+    const deleteWindowMinutes = deleteWindowRaw === '' ? null : Number(deleteWindowRaw);
+    const editRoles = this.messagingRoles
+      .filter((role) => data.get(`editRole${role.id}`) === 'on')
+      .map((role) => role.id);
+    const deleteRoles = this.messagingRoles
+      .filter((role) => data.get(`deleteRole${role.id}`) === 'on')
+      .map((role) => role.id);
 
     this.settingsBusy.set(true);
     this.settingsFeedback.set(null);
@@ -175,6 +192,22 @@ export class AdminSettingsPage implements OnInit {
           hubPerMinute: Number.isFinite(hubPerMinute)
             ? hubPerMinute
             : current.rateLimit.hubPerMinute,
+        },
+        messaging: {
+          editEnabled: data.get('editEnabled') === 'on',
+          editWindowMinutes:
+            editWindowMinutes != null && Number.isFinite(editWindowMinutes) ? editWindowMinutes : null,
+          clearEditWindow: editWindowMinutes == null || !Number.isFinite(editWindowMinutes),
+          editRoles,
+          editAllowModeratorOverride: data.get('editAllowModeratorOverride') === 'on',
+          deleteEnabled: data.get('deleteEnabled') === 'on',
+          deleteWindowMinutes:
+            deleteWindowMinutes != null && Number.isFinite(deleteWindowMinutes)
+              ? deleteWindowMinutes
+              : null,
+          clearDeleteWindow: deleteWindowMinutes == null || !Number.isFinite(deleteWindowMinutes),
+          deleteRoles,
+          deleteAllowModeratorOverride: data.get('deleteAllowModeratorOverride') === 'on',
         },
       });
       this.settings.set(updated);

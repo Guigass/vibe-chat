@@ -12,6 +12,10 @@ import {
 } from '../../shared/models/chat.models';
 import { ui } from '../i18n/strings';
 import { idsEqual } from './message-sync';
+import {
+  defaultMessagingPolicy,
+  type MessagingPolicy,
+} from '../../shared/messaging/messaging-policy';
 
 @Injectable({ providedIn: 'root' })
 export class ChannelStore {
@@ -31,6 +35,7 @@ export class ChannelStore {
   private readonly errorSignal = signal<string | null>(null);
   private readonly usingDemo = signal(false);
   private readonly composerPrefillSignal = signal<string | null>(null);
+  private readonly messagingPolicySignal = signal<MessagingPolicy>(defaultMessagingPolicy);
 
   readonly workspaces = this.workspacesSignal.asReadonly();
   readonly spaces = this.spacesSignal.asReadonly();
@@ -41,6 +46,7 @@ export class ChannelStore {
   readonly activeChannelId = this.activeChannelIdSignal.asReadonly();
   /** Unread count snapshotted when the channel was opened (B-088 local divider until B-094). */
   readonly openedUnreadCount = this.openedUnreadCountSignal.asReadonly();
+  readonly messagingPolicy = this.messagingPolicySignal.asReadonly();
   readonly activeWorkspace = computed(
     () => this.workspacesSignal().find((w) => w.id === this.activeWorkspaceId()) ?? null,
   );
@@ -236,6 +242,19 @@ export class ChannelStore {
       this.openedUnreadCountSignal.set(current?.unreadCount ?? 0);
     }
     this.activeChannelIdSignal.set(channelId);
+    void this.refreshMessagingPolicy(channelId);
+  }
+
+  private async refreshMessagingPolicy(channelId: string): Promise<void> {
+    if (this.usingDemo()) {
+      this.messagingPolicySignal.set(defaultMessagingPolicy);
+      return;
+    }
+    try {
+      this.messagingPolicySignal.set(await this.api.getMessagingPolicy(channelId));
+    } catch {
+      this.messagingPolicySignal.set(defaultMessagingPolicy);
+    }
   }
 
   /** Keep every channel/DM joined so unread badges can bump live (B-088). */

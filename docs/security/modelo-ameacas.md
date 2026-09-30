@@ -124,6 +124,19 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Cascata | Remove reactions; detach `attachments.MessageId` (sem delete MinIO neste slice) |
 | Audit | `message.purge` em `audit.audit_events` |
 
+### B-107 / ADR-025 — Política de edição e exclusão
+
+| Item | Controle |
+|------|----------|
+| AuthZ | Avaliação no servidor (permissão + papel + janela). UI só esconde a ação |
+| Escrita | `PUT /admin/settings` exige `workspace.admin`; membro/Auditor → 403 |
+| Leitura | `GET /channels/{id}/messaging-policy` é não secreta e exige `message.read` no canal; outro tenant → 403 |
+| Override de edição | `message.edit.any` só com `allowModeratorOverride` default **false** |
+| Override de exclusão | `message.delete.any` com default **true** (preserva moderação atual) |
+| Janela | `0` e valores fora de 1…525600 rejeitados (`InvalidMessagingPolicy`) |
+| Soft-delete | Body permanece na linha (ADR-018) para o snapshot futuro de B-169; este item não copia body para o audit |
+| Rollback | Sem linha na tabela = default atual; sem kill switch que ignore a checagem |
+
 ### B-091 / ADR-021 — Link preview / SSRF
 
 | Item | Controle |

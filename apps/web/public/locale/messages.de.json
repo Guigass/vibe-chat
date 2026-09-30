@@ -660,6 +660,23 @@
     "threadFollow.unfollow": "Nicht mehr folgen",
     "threadFollow.loadError": "Verfolgte Threads konnten nicht geladen werden.",
     "threadFollow.actionError": "Thread-Abo konnte nicht aktualisiert werden.",
-    "threadFollow.unreadCount": "%n% ungelesen"
+    "threadFollow.unreadCount": "%n% ungelesen",
+    "menu.editExpired": "Bearbeiten ist %n% Min. nach dem Senden möglich",
+    "menu.deleteExpired": "Löschen ist %n% Min. nach dem Senden möglich",
+    "admin.messagingTitle": "Nachrichten bearbeiten und löschen",
+    "admin.messagingDesc": "Wer eigene Nachrichten bearbeiten oder löschen darf und wie lange nach dem Senden.",
+    "admin.messagingEditEnabled": "Autor darf bearbeiten",
+    "admin.messagingEditWindow": "Bearbeitungsfenster (Min.)",
+    "admin.messagingWindowHint": "Leer = ohne Limit",
+    "admin.messagingEditOverride": "Moderation darf fremde Nachrichten bearbeiten und das Fenster ignorieren",
+    "admin.messagingDeleteEnabled": "Autor darf löschen",
+    "admin.messagingDeleteWindow": "Löschfenster (Min.)",
+    "admin.messagingDeleteOverride": "Moderation darf fremde Nachrichten löschen und das Fenster ignorieren",
+    "admin.messagingRoles": "Rollen",
+    "admin.roleMember": "Mitglied",
+    "admin.roleModerator": "Moderator",
+    "admin.roleAdmin": "Admin",
+    "admin.roleAuditor": "Prüfer",
+    "admin.roleGuest": "Gast"
   }
 }

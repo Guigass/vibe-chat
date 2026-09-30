@@ -6,6 +6,7 @@ import { ChannelStore } from './channel.store';
 import { ThreadStore } from './thread.store';
 import { PushNotificationService } from './push-notification.service';
 import { ui } from '../i18n/strings';
+import { editLifecycle, messagingPolicyOf } from '../../shared/messaging/messaging-policy';
 import { ChatMessage, PollSummary } from '../../shared/models/chat.models';
 import { mergeRemotePoll, preferRicherPoll } from '../../shared/polls/poll-summary';
 import {
@@ -172,13 +173,28 @@ export class MessageStore {
       !message ||
       message.deletedAt ||
       !message.mine ||
-      message.status !== 'persisted'
+      message.status !== 'persisted' ||
+      !this.policyAllowsOwnEdit(message)
     ) {
       this.editingMessageSignal.set(null);
       return;
     }
     this.replyTargetSignal.set(null);
     this.editingMessageSignal.set(message);
+  }
+
+  private policyAllowsOwnEdit(message: ChatMessage): boolean {
+    const policy = messagingPolicyOf(this.channels);
+    const role = this.channels.activeWorkspace?.()?.role;
+    return (
+      editLifecycle({
+        policy,
+        role,
+        mine: true,
+        createdAt: message.createdAt,
+        nowMs: Date.now(),
+      }) === 'allow'
+    );
   }
 
   clearEdit(): void {

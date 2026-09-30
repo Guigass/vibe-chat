@@ -836,6 +836,51 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("message_mentions", "messaging");
                 });
 
+            modelBuilder.Entity("VibeChat.Messaging.MessageLifecyclePolicy", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("DeleteAllowModeratorOverride")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("DeleteEnabled")
+                        .HasColumnType("boolean");
+
+                    b.PrimitiveCollection<string[]>("DeleteRoles")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<bool>("DeleteRolesRestricted")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("DeleteWindowMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("EditAllowModeratorOverride")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("EditEnabled")
+                        .HasColumnType("boolean");
+
+                    b.PrimitiveCollection<string[]>("EditRoles")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<bool>("EditRolesRestricted")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("EditWindowMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("TenantId");
+
+                    b.ToTable("message_lifecycle_policies", "messaging");
+                });
+
             modelBuilder.Entity("VibeChat.Messaging.MessageRetentionSettings", b =>
                 {
                     b.Property<Guid>("TenantId")

@@ -8,6 +8,7 @@ using VibeChat.Conversations;
 using VibeChat.Files;
 using VibeChat.Identity;
 using VibeChat.Infrastructure;
+using VibeChat.Messaging;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
 using static VibeChat.Api.Endpoints.IdentityEndpointHelpers;
@@ -272,5 +273,143 @@ internal static class AdministrationEndpointHelpers
         var entry = zip.CreateEntry(entryName, CompressionLevel.Optimal);
         await using var stream = entry.Open();
         await JsonSerializer.SerializeAsync(stream, payload, jsonOptions, ct);
+    }
+
+    internal static async Task<string?> ApplyMessagingPolicyAsync(
+        VibeChatDbContext db,
+        TenantId tenantId,
+        UpdateMessagingPolicyRequest request,
+        List<string> changes,
+        IClock clock,
+        CancellationToken ct)
+    {
+        if (request.ClearEditWindow && request.EditWindowMinutes is not null)
+        {
+            return MessageLifecyclePolicyRules.Invalid;
+        }
+
+        if (request.ClearDeleteWindow && request.DeleteWindowMinutes is not null)
+        {
+            return MessageLifecyclePolicyRules.Invalid;
+        }
+
+        var editWindowError = MessageLifecyclePolicyRules.NormalizeWindow(
+            request.ClearEditWindow ? null : request.EditWindowMinutes);
+        if (request.EditWindowMinutes is not null && editWindowError is not null)
+        {
+            return editWindowError;
+        }
+
+        var deleteWindowError = MessageLifecyclePolicyRules.NormalizeWindow(
+            request.ClearDeleteWindow ? null : request.DeleteWindowMinutes);
+        if (request.DeleteWindowMinutes is not null && deleteWindowError is not null)
+        {
+            return deleteWindowError;
+        }
+
+        string[]? editRoles = null;
+        if (request.EditRoles is not null)
+        {
+            var rolesError = MessageLifecyclePolicyRules.NormalizeRoles(request.EditRoles, out var normalized);
+            if (rolesError is not null)
+            {
+                return rolesError;
+            }
+
+            editRoles = normalized;
+        }
+
+        string[]? deleteRoles = null;
+        if (request.DeleteRoles is not null)
+        {
+            var rolesError = MessageLifecyclePolicyRules.NormalizeRoles(request.DeleteRoles, out var normalized);
+            if (rolesError is not null)
+            {
+                return rolesError;
+            }
+
+            deleteRoles = normalized;
+        }
+
+        var row = await db.MessageLifecyclePolicies.FirstOrDefaultAsync(x => x.TenantId == tenantId, ct);
+        if (row is null)
+        {
+            row = new MessageLifecyclePolicy
+            {
+                TenantId = tenantId,
+                UpdatedAt = clock.UtcNow
+            };
+            db.MessageLifecyclePolicies.Add(row);
+            changes.Add("messaging.created");
+        }
+
+        if (request.EditEnabled is { } editEnabled && row.EditEnabled != editEnabled)
+        {
+            row.EditEnabled = editEnabled;
+            changes.Add("messaging.edit.enabled");
+        }
+
+        if (request.ClearEditWindow && row.EditWindowMinutes is not null)
+        {
+            row.EditWindowMinutes = null;
+            changes.Add("messaging.edit.windowMinutes");
+        }
+        else if (request.EditWindowMinutes is { } editWindow && row.EditWindowMinutes != editWindow)
+        {
+            row.EditWindowMinutes = editWindow;
+            changes.Add("messaging.edit.windowMinutes");
+        }
+
+        if (editRoles is not null
+            && (!row.EditRolesRestricted || !editRoles.SequenceEqual(row.EditRoles)))
+        {
+            row.EditRoles = editRoles;
+            row.EditRolesRestricted = true;
+            changes.Add("messaging.edit.roles");
+        }
+
+        if (request.EditAllowModeratorOverride is { } editOverride && row.EditAllowModeratorOverride != editOverride)
+        {
+            row.EditAllowModeratorOverride = editOverride;
+            changes.Add("messaging.edit.allowModeratorOverride");
+        }
+
+        if (request.DeleteEnabled is { } deleteEnabled && row.DeleteEnabled != deleteEnabled)
+        {
+            row.DeleteEnabled = deleteEnabled;
+            changes.Add("messaging.delete.enabled");
+        }
+
+        if (request.ClearDeleteWindow && row.DeleteWindowMinutes is not null)
+        {
+            row.DeleteWindowMinutes = null;
+            changes.Add("messaging.delete.windowMinutes");
+        }
+        else if (request.DeleteWindowMinutes is { } deleteWindow && row.DeleteWindowMinutes != deleteWindow)
+        {
+            row.DeleteWindowMinutes = deleteWindow;
+            changes.Add("messaging.delete.windowMinutes");
+        }
+
+        if (deleteRoles is not null
+            && (!row.DeleteRolesRestricted || !deleteRoles.SequenceEqual(row.DeleteRoles)))
+        {
+            row.DeleteRoles = deleteRoles;
+            row.DeleteRolesRestricted = true;
+            changes.Add("messaging.delete.roles");
+        }
+
+        if (request.DeleteAllowModeratorOverride is { } deleteOverride && row.DeleteAllowModeratorOverride != deleteOverride)
+        {
+            row.DeleteAllowModeratorOverride = deleteOverride;
+            changes.Add("messaging.delete.allowModeratorOverride");
+        }
+
+        if (changes.Any(change => change.StartsWith("messaging.", StringComparison.Ordinal)))
+        {
+            row.UpdatedAt = clock.UtcNow;
+        }
+
+        return null;
     }
 }
