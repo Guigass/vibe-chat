@@ -550,8 +550,8 @@
     "admin.auditEmpty": "Ningún evento coincide con los filtros.",
     "admin.entity": "Entidad",
     "admin.actor": "Actor",
-    "admin.pluginsLead": "Los bots de integración publican en los canales permitidos. El token se muestra una vez. Los webhooks siguen en",
-    "admin.pluginsEmpty": "No hay bots en este espacio de trabajo.",
+    "admin.pluginsLead": "Los plugins instalados publican con un token de bot. El token se muestra una vez. Los webhooks siguen en",
+    "admin.pluginsEmpty": "Ningún plugin instalado en este espacio.",
     "admin.settingsLead": "Ajustes de ejecución del espacio de trabajo y del tenant. Las credenciales permanecen cifradas — la interfaz solo muestra una máscara. La infraestructura (Postgres, Redis, OIDC, MinIO) permanece en el entorno.",
     "admin.loadingSettings": "Cargando ajustes…",
     "admin.settingsLoadError": "No se pudieron cargar los ajustes.",
@@ -705,6 +705,16 @@
     "admin.botLast4": "Token",
     "admin.botLoadError": "No se pudieron cargar los bots.",
     "admin.botSaveError": "No se pudo guardar el bot.",
-    "bubble.bot": "Bot"
+    "bubble.bot": "Bot",
+    "admin.pluginInstallBuiltin": "Instalar Incoming Messages",
+    "admin.pluginManifest": "Manifiesto (avanzado)",
+    "admin.pluginInstallCustom": "Instalar manifiesto",
+    "admin.pluginVersion": "Versión",
+    "admin.pluginCapabilities": "Capabilities",
+    "admin.pluginFilter": "Filtrar plugins",
+    "admin.pluginUninstall": "Desinstalar",
+    "admin.pluginNoMatch": "Ningún plugin coincide con este filtro.",
+    "admin.pluginLoadError": "No se pudieron cargar los plugins.",
+    "admin.pluginSaveError": "No se pudo guardar el plugin."
   }
 }

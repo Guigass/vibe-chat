@@ -86,16 +86,16 @@ Não apresentar controles alinhados a frameworks como certificação.
 
 ### Atual
 
-Webhook mínimo é tenant-scoped, assinado e auditado.
+Webhook outbound é tenant-scoped, assinado e auditado. Bot com token (B-109) e
+plugin local (B-110) instalam o built-in Incoming Messages ou um manifesto v1
+colado. Não há loja.
 
 ### Planejado
 
-1. token/bot;
-2. instalação local;
-3. capabilities e grants;
-4. SDK/contract tests;
-5. registry assinado;
-6. bridges.
+1. capabilities além de `messages.send`;
+2. SDK/contract tests;
+3. registry assinado;
+4. bridges.
 
 Admin concede apenas canais/capabilities necessários. Plugin não recebe acesso
 ao workspace apenas por estar instalado.

@@ -550,8 +550,8 @@
     "admin.auditEmpty": "No events match the filters.",
     "admin.entity": "Entity",
     "admin.actor": "Actor",
-    "admin.pluginsLead": "Integration bots post in the channels you allow. The token is shown once. Webhooks stay in",
-    "admin.pluginsEmpty": "No bots in this workspace.",
+    "admin.pluginsLead": "Installed plugins post with a bot token. The token is shown once. Webhooks stay in",
+    "admin.pluginsEmpty": "No plugins installed in this workspace.",
     "admin.settingsLead": "Runtime workspace and tenant settings. Credentials stay encrypted — the UI only shows a mask. Infrastructure (Postgres, Redis, OIDC, MinIO) remains in the environment.",
     "admin.loadingSettings": "Loading settings…",
     "admin.settingsLoadError": "Could not load settings.",
@@ -705,6 +705,16 @@
     "admin.botLast4": "Token",
     "admin.botLoadError": "Could not load bots.",
     "admin.botSaveError": "Could not save the bot.",
-    "bubble.bot": "Bot"
+    "bubble.bot": "Bot",
+    "admin.pluginInstallBuiltin": "Install Incoming Messages",
+    "admin.pluginManifest": "Manifest (advanced)",
+    "admin.pluginInstallCustom": "Install manifest",
+    "admin.pluginVersion": "Version",
+    "admin.pluginCapabilities": "Capabilities",
+    "admin.pluginFilter": "Filter plugins",
+    "admin.pluginUninstall": "Uninstall",
+    "admin.pluginNoMatch": "No plugin matches this filter.",
+    "admin.pluginLoadError": "Could not load plugins.",
+    "admin.pluginSaveError": "Could not save the plugin."
   }
 }

@@ -61,7 +61,9 @@ Campos e defaults estão em
 [`pacotes-decisao-r3.md`](../../architecture/pacotes-decisao-r3.md).
 
 Manifesto descreve integração; não é pacote de código executável dentro do
-VibeChat.
+VibeChat. Na fatia B-110 o schema aceito é `vibechat.plugin.manifest.v1` e a
+única capability é `messages.send`. O built-in `incoming-messages` já vem no
+binário. Campo extra ou capability desconhecida é rejeitado.
 
 ## Compatibilidade
 

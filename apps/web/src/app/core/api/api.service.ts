@@ -32,6 +32,7 @@ import {
   SavedMessageItem,
   FollowedThreadItem,
   IntegrationBot,
+  InstalledPlugin,
   PollSummary,
   PushPublicKey,
   PushDevice,
@@ -375,6 +376,39 @@ export class ApiService {
   async getChannels(workspaceId: string): Promise<Channel[]> {
     const rows = await this.request<ChannelDto[]>(`/api/v1/workspaces/${workspaceId}/channels`);
     return rows.map((c) => this.mapChannel(c));
+  }
+
+  listInstalledPlugins(workspaceId: string): Promise<InstalledPlugin[]> {
+    return this.request<InstalledPlugin[]>(`/api/v1/admin/workspaces/${workspaceId}/plugins`);
+  }
+
+  installPlugin(
+    workspaceId: string,
+    input: { builtinId?: string; manifest?: Record<string, unknown>; channelIds: string[]; allowDms: boolean },
+  ): Promise<InstalledPlugin> {
+    return this.request<InstalledPlugin>(`/api/v1/admin/workspaces/${workspaceId}/plugins`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  updateInstalledPlugin(workspaceId: string, installedId: string, enabled: boolean): Promise<InstalledPlugin> {
+    return this.request<InstalledPlugin>(`/api/v1/admin/workspaces/${workspaceId}/plugins/${installedId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ enabled }),
+    });
+  }
+
+  uninstallPlugin(workspaceId: string, installedId: string): Promise<void> {
+    return this.request<void>(`/api/v1/admin/workspaces/${workspaceId}/plugins/${installedId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  rotateInstalledPlugin(workspaceId: string, installedId: string): Promise<InstalledPlugin> {
+    return this.request<InstalledPlugin>(`/api/v1/admin/workspaces/${workspaceId}/plugins/${installedId}/rotate`, {
+      method: 'POST',
+    });
   }
 
   listIntegrationBots(workspaceId: string): Promise<IntegrationBot[]> {

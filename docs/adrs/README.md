@@ -33,6 +33,7 @@ original.
 | [025](ADR-025-politica-edicao-mensagem.md) | Política de edição e exclusão | Accepted |
 | [026](ADR-026-webhooks-outbound-multi-endpoint.md) | Vários webhooks outbound por tenant | Accepted |
 | [027](ADR-027-bot-token-envio.md) | Bot de integração com token opaco | Accepted |
+| [028](ADR-028-plugins-locais.md) | Plugin local é manifesto mais bot | Accepted |
 
 ## Quando criar um ADR
 

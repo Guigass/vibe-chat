@@ -124,6 +124,11 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/bots/{botId:guid}/revoke", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
             new("POST", "/api/v1/integrations/v1/channels/{channelId:guid}/messages", "", true, "integration token auth (B-109)"),
             new("POST", "/api/v1/integrations/v1/dms", "", true, "integration token auth (B-109)"),
+            new("GET", "/api/v1/admin/workspaces/{workspaceId:guid}/plugins", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/plugins", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("PATCH", "/api/v1/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("DELETE", "/api/v1/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}/rotate", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
             new("POST", "/api/v1/dev/seed", "", true, "Development seed; AllowAnonymous lab-only"),
         ];
 

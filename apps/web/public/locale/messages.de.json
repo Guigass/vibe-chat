@@ -550,8 +550,8 @@
     "admin.auditEmpty": "Keine Ereignisse entsprechen den Filtern.",
     "admin.entity": "Entität",
     "admin.actor": "Akteur",
-    "admin.pluginsLead": "Integrations-Bots posten in den erlaubten Kanälen. Das Token erscheint einmal. Webhooks bleiben in",
-    "admin.pluginsEmpty": "Keine Bots in diesem Workspace.",
+    "admin.pluginsLead": "Installierte Plugins senden über ein Bot-Token. Das Token erscheint nur einmal. Webhooks bleiben in",
+    "admin.pluginsEmpty": "Keine Plugins in diesem Workspace installiert.",
     "admin.settingsLead": "Laufzeit-Einstellungen von Workspace und Tenant. Zugangsdaten bleiben verschlüsselt — die UI zeigt nur eine Maske. Infrastruktur (Postgres, Redis, OIDC, MinIO) bleibt in der Umgebung.",
     "admin.loadingSettings": "Einstellungen werden geladen…",
     "admin.settingsLoadError": "Einstellungen konnten nicht geladen werden.",
@@ -705,6 +705,16 @@
     "admin.botLast4": "Token",
     "admin.botLoadError": "Bots konnten nicht geladen werden.",
     "admin.botSaveError": "Bot konnte nicht gespeichert werden.",
-    "bubble.bot": "Bot"
+    "bubble.bot": "Bot",
+    "admin.pluginInstallBuiltin": "Incoming Messages installieren",
+    "admin.pluginManifest": "Manifest (erweitert)",
+    "admin.pluginInstallCustom": "Manifest installieren",
+    "admin.pluginVersion": "Version",
+    "admin.pluginCapabilities": "Capabilities",
+    "admin.pluginFilter": "Plugins filtern",
+    "admin.pluginUninstall": "Deinstallieren",
+    "admin.pluginNoMatch": "Kein Plugin passt zu diesem Filter.",
+    "admin.pluginLoadError": "Plugins konnten nicht geladen werden.",
+    "admin.pluginSaveError": "Plugin konnte nicht gespeichert werden."
   }
 }

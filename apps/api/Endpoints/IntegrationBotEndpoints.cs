@@ -106,40 +106,7 @@ internal static class IntegrationBotEndpoints
         }
 
         var now = clock.UtcNow;
-        var botId = Guid.NewGuid();
-        var userId = UserId.New();
-        var bot = new IntegrationBot
-        {
-            Id = botId,
-            TenantId = workspace.TenantId,
-            WorkspaceId = workspace.Id,
-            UserId = userId,
-            Name = name,
-            Enabled = true,
-            AllowDms = request.AllowDms,
-            CreatedAt = now
-        };
-        db.UserProfiles.Add(new UserProfile
-        {
-            Id = userId,
-            Subject = $"bot:{botId:N}",
-            Email = $"bot+{botId:N}@bots.vibechat.local",
-            DisplayName = name,
-            CreatedAt = now,
-            UpdatedAt = now
-        });
-        db.WorkspaceMembers.Add(new WorkspaceMember
-        {
-            Id = Guid.NewGuid(),
-            TenantId = workspace.TenantId,
-            WorkspaceId = workspace.Id,
-            UserId = userId,
-            Role = Role.Bot,
-            JoinedAt = now
-        });
-        db.IntegrationBots.Add(bot);
-        var (raw, token) = IssueToken(bot, now);
-        db.IntegrationBotTokens.Add(token);
+        var (bot, raw, last4) = ProvisionBot(db, workspace.TenantId, workspace.Id, name, request.AllowDms, now);
         await ReplaceScopesAsync(db, bot, channels, now, ct);
         audit.Add(new AuditEvent
         {
@@ -154,7 +121,7 @@ internal static class IntegrationBotEndpoints
         await db.SaveChangesAsync(ct);
         return Results.Created(
             $"/api/v1/admin/workspaces/{workspace.Id.Value}/bots/{bot.Id}",
-            ToSecret(bot, channels.Select(x => x.Id.Value).ToArray(), raw, token.Last4));
+            ToSecret(bot, channels.Select(x => x.Id.Value).ToArray(), raw, last4));
     }
 
     private static async Task<IResult> UpdateBot(
@@ -339,6 +306,11 @@ internal static class IntegrationBotEndpoints
             return Results.Json(new { error = "BotDisabled" }, statusCode: StatusCodes.Status403Forbidden);
         }
 
+        if (await PluginBlocksSendAsync(db, principal.Bot.Id, ct))
+        {
+            return Results.Json(new { error = "PluginDisabled" }, statusCode: StatusCodes.Status403Forbidden);
+        }
+
         var channel = await db.Channels.FirstOrDefaultAsync(
             x => x.Id == new ChannelId(channelId) && x.TenantId == principal.Bot.TenantId,
             ct);
@@ -385,6 +357,11 @@ internal static class IntegrationBotEndpoints
         if (!principal.Bot.Enabled)
         {
             return Results.Json(new { error = "BotDisabled" }, statusCode: StatusCodes.Status403Forbidden);
+        }
+
+        if (await PluginBlocksSendAsync(db, principal.Bot.Id, ct))
+        {
+            return Results.Json(new { error = "PluginDisabled" }, statusCode: StatusCodes.Status403Forbidden);
         }
 
         if (!principal.Bot.AllowDms)
@@ -590,7 +567,55 @@ internal static class IntegrationBotEndpoints
         return token.StartsWith(BotIntegrationPolicies.TokenPrefix, StringComparison.Ordinal) ? token : null;
     }
 
-    private static async Task<Channel[]?> LoadGrantChannelsAsync(
+    internal static (IntegrationBot Bot, string Raw, string Last4) ProvisionBot(
+        VibeChatDbContext db,
+        TenantId tenantId,
+        WorkspaceId workspaceId,
+        string name,
+        bool allowDms,
+        DateTimeOffset now)
+    {
+        var botId = Guid.NewGuid();
+        var userId = UserId.New();
+        var bot = new IntegrationBot
+        {
+            Id = botId,
+            TenantId = tenantId,
+            WorkspaceId = workspaceId,
+            UserId = userId,
+            Name = name,
+            Enabled = true,
+            AllowDms = allowDms,
+            CreatedAt = now
+        };
+        db.UserProfiles.Add(new UserProfile
+        {
+            Id = userId,
+            Subject = $"bot:{botId:N}",
+            Email = $"bot+{botId:N}@bots.vibechat.local",
+            DisplayName = name,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        db.WorkspaceMembers.Add(new WorkspaceMember
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            WorkspaceId = workspaceId,
+            UserId = userId,
+            Role = Role.Bot,
+            JoinedAt = now
+        });
+        db.IntegrationBots.Add(bot);
+        var (raw, token) = IssueToken(bot, now);
+        db.IntegrationBotTokens.Add(token);
+        return (bot, raw, token.Last4);
+    }
+
+    internal static Task<bool> PluginBlocksSendAsync(VibeChatDbContext db, Guid botId, CancellationToken ct) =>
+        db.InstalledPlugins.AnyAsync(x => x.BotId == botId && !x.Enabled, ct);
+
+    internal static async Task<Channel[]?> LoadGrantChannelsAsync(
         VibeChatDbContext db,
         WorkspaceId workspaceId,
         Guid[]? channelIds,
@@ -611,7 +636,7 @@ internal static class IntegrationBotEndpoints
         return rows.ToArray();
     }
 
-    private static async Task ReplaceScopesAsync(
+    internal static async Task ReplaceScopesAsync(
         VibeChatDbContext db,
         IntegrationBot bot,
         Channel[] channels,
@@ -668,7 +693,7 @@ internal static class IntegrationBotEndpoints
         }
     }
 
-    private static async Task RevokeActiveTokensAsync(VibeChatDbContext db, Guid botId, DateTimeOffset now, CancellationToken ct)
+    internal static async Task RevokeActiveTokensAsync(VibeChatDbContext db, Guid botId, DateTimeOffset now, CancellationToken ct)
     {
         var active = await db.IntegrationBotTokens.Where(x => x.BotId == botId && x.RevokedAt == null).ToListAsync(ct);
         foreach (var token in active)
@@ -677,7 +702,7 @@ internal static class IntegrationBotEndpoints
         }
     }
 
-    private static (string Raw, IntegrationBotToken Token) IssueToken(IntegrationBot bot, DateTimeOffset now)
+    internal static (string Raw, IntegrationBotToken Token) IssueToken(IntegrationBot bot, DateTimeOffset now)
     {
         var raw = IntegrationToken.CreateRaw();
         return (raw, new IntegrationBotToken
@@ -715,7 +740,7 @@ internal static class IntegrationBotEndpoints
     private static IntegrationBotSecretResponse ToSecret(IntegrationBot bot, Guid[] channelIds, string raw, string last4) =>
         new(bot.Id, bot.Name, bot.Enabled, bot.AllowDms, channelIds, raw, last4, bot.CreatedAt);
 
-    private static IResult Disabled() => Results.NotFound(new { error = "IntegrationDisabled" });
+    internal static IResult Disabled() => Results.NotFound(new { error = "IntegrationDisabled" });
 
     private sealed record BotSession(IntegrationBot Bot, IntegrationBotToken Token);
 }

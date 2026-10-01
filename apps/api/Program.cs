@@ -217,6 +217,7 @@ v1.MapNotifications();
 v1.MapAdministration();
 v1.MapAI();
 v1.MapIntegrationBots();
+v1.MapIntegrationPlugins();
 v1.MapDevelopment(app);
 
 app.MapHub<ChatHub>("/hubs/chat").RequireAuthorization();

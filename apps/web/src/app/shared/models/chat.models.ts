@@ -52,6 +52,23 @@ export interface Channel {
 }
 
 /** B-109 admin bot. `token` is present only on create/rotate. */
+export interface InstalledPlugin {
+  id: string;
+  pluginId: string;
+  name: string;
+  version: string;
+  capabilities: string[];
+  enabled: boolean;
+  botId: string;
+  allowDms: boolean;
+  channelIds: string[];
+  tokenConfigured: boolean;
+  tokenLast4?: string | null;
+  installedAt: string;
+  updatedAt: string;
+  token?: string | null;
+}
+
 export interface IntegrationBot {
   id: string;
   name: string;

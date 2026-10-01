@@ -79,6 +79,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<IntegrationBot> IntegrationBots => Set<IntegrationBot>();
     public DbSet<IntegrationBotToken> IntegrationBotTokens => Set<IntegrationBotToken>();
     public DbSet<IntegrationBotChannelScope> IntegrationBotChannelScopes => Set<IntegrationBotChannelScope>();
+    public DbSet<InstalledPlugin> InstalledPlugins => Set<InstalledPlugin>();
     public DbSet<MessageRetentionSettings> MessageRetentionSettings => Set<MessageRetentionSettings>();
     public DbSet<MessageLifecyclePolicy> MessageLifecyclePolicies => Set<MessageLifecyclePolicy>();
     public DbSet<TenantFilesSettings> TenantFilesSettings => Set<TenantFilesSettings>();
@@ -527,6 +528,23 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Last4).HasMaxLength(8).IsRequired();
             entity.HasIndex(x => x.TokenHash).IsUnique();
             entity.HasIndex(x => x.BotId);
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<InstalledPlugin>(entity =>
+        {
+            entity.ToTable("plugins", "integrations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.PluginId).HasMaxLength(PluginManifestRules.MaxPluginIdLength).IsRequired();
+            entity.Property(x => x.Name).HasMaxLength(BotIntegrationPolicies.MaxNameLength).IsRequired();
+            entity.Property(x => x.Version).HasMaxLength(PluginManifestRules.MaxVersionLength).IsRequired();
+            entity.Property(x => x.ManifestJson).HasMaxLength(PluginManifestRules.MaxManifestBytes).IsRequired();
+            entity.Property(x => x.Capabilities).HasColumnType("text[]").IsRequired();
+            entity.HasIndex(x => x.BotId).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.PluginId }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

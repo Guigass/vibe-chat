@@ -1,10 +1,11 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { ui } from '../../core/i18n/strings';
-import { Channel, IntegrationBot } from '../../shared/models/chat.models';
+import { Channel, InstalledPlugin } from '../../shared/models/chat.models';
 import { AdminContextService } from './admin-context.service';
 import { AdminAreaId } from './admin-permissions';
+import { filterInstalledPlugins } from './plugin-list';
 
 @Component({
   selector: 'vc-admin-plugins',
@@ -16,6 +17,7 @@ import { AdminAreaId } from './admin-permissions';
 export class AdminPluginsPage implements OnInit {
   readonly areaId: AdminAreaId = 'plugins';
   readonly ui = ui;
+  readonly builtinId = 'incoming-messages';
 
   private readonly api = inject(ApiService);
   readonly ctx = inject(AdminContextService);
@@ -24,12 +26,14 @@ export class AdminPluginsPage implements OnInit {
   readonly loadError = signal(false);
   readonly saveError = signal(false);
   readonly busy = signal(false);
-  readonly bots = signal<IntegrationBot[]>([]);
+  readonly plugins = signal<InstalledPlugin[]>([]);
   readonly channels = signal<Channel[]>([]);
-  readonly name = signal('');
+  readonly filterQuery = signal('');
+  readonly manifestText = signal('');
   readonly allowDms = signal(false);
   readonly selectedChannelIds = signal<string[]>([]);
   readonly revealedToken = signal<string | null>(null);
+  readonly filtered = computed(() => filterInstalledPlugins(this.plugins(), this.filterQuery()));
 
   async ngOnInit(): Promise<void> {
     await this.ctx.ensureReady();
@@ -41,11 +45,11 @@ export class AdminPluginsPage implements OnInit {
     }
 
     try {
-      const [bots, channels] = await Promise.all([
-        this.api.listIntegrationBots(workspaceId),
+      const [plugins, channels] = await Promise.all([
+        this.api.listInstalledPlugins(workspaceId),
         this.api.getChannels(workspaceId),
       ]);
-      this.bots.set(bots);
+      this.plugins.set(plugins);
       this.channels.set(channels.filter((channel) => !channel.isDirect && !channel.isGroupDm));
     } catch {
       this.loadError.set(true);
@@ -61,34 +65,36 @@ export class AdminPluginsPage implements OnInit {
     );
   }
 
-  async create(): Promise<void> {
-    const workspaceId = this.ctx.workspace()?.id;
-    const name = this.name().trim();
-    if (!workspaceId || !name || this.busy()) {
+  async installBuiltin(): Promise<void> {
+    await this.install({ builtinId: this.builtinId });
+  }
+
+  async installManifest(): Promise<void> {
+    const raw = this.manifestText().trim();
+    if (!raw) {
       return;
     }
 
-    this.busy.set(true);
-    this.saveError.set(false);
+    let manifest: Record<string, unknown>;
     try {
-      const created = await this.api.createIntegrationBot(workspaceId, {
-        name,
-        channelIds: this.selectedChannelIds(),
-        allowDms: this.allowDms(),
-      });
-      this.bots.set([...this.bots(), created]);
-      this.revealedToken.set(created.token ?? null);
-      this.name.set('');
-      this.allowDms.set(false);
-      this.selectedChannelIds.set([]);
+      const parsed: unknown = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        this.saveError.set(true);
+        return;
+      }
+      manifest = parsed as Record<string, unknown>;
     } catch {
       this.saveError.set(true);
-    } finally {
-      this.busy.set(false);
+      return;
+    }
+
+    const created = await this.install({ manifest });
+    if (created) {
+      this.manifestText.set('');
     }
   }
 
-  async rotate(bot: IntegrationBot): Promise<void> {
+  async setEnabled(plugin: InstalledPlugin, enabled: boolean): Promise<void> {
     const workspaceId = this.ctx.workspace()?.id;
     if (!workspaceId || this.busy()) {
       return;
@@ -97,8 +103,26 @@ export class AdminPluginsPage implements OnInit {
     this.busy.set(true);
     this.saveError.set(false);
     try {
-      const rotated = await this.api.rotateIntegrationBot(workspaceId, bot.id);
-      this.bots.set(this.bots().map((item) => (item.id === bot.id ? { ...item, ...rotated, token: undefined } : item)));
+      const updated = await this.api.updateInstalledPlugin(workspaceId, plugin.id, enabled);
+      this.plugins.set(this.plugins().map((item) => (item.id === plugin.id ? { ...item, ...updated, token: undefined } : item)));
+    } catch {
+      this.saveError.set(true);
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  async rotate(plugin: InstalledPlugin): Promise<void> {
+    const workspaceId = this.ctx.workspace()?.id;
+    if (!workspaceId || this.busy()) {
+      return;
+    }
+
+    this.busy.set(true);
+    this.saveError.set(false);
+    try {
+      const rotated = await this.api.rotateInstalledPlugin(workspaceId, plugin.id);
+      this.plugins.set(this.plugins().map((item) => (item.id === plugin.id ? { ...item, ...rotated, token: undefined } : item)));
       this.revealedToken.set(rotated.token ?? null);
     } catch {
       this.saveError.set(true);
@@ -107,7 +131,7 @@ export class AdminPluginsPage implements OnInit {
     }
   }
 
-  async revoke(bot: IntegrationBot): Promise<void> {
+  async uninstall(plugin: InstalledPlugin): Promise<void> {
     const workspaceId = this.ctx.workspace()?.id;
     if (!workspaceId || this.busy()) {
       return;
@@ -116,15 +140,38 @@ export class AdminPluginsPage implements OnInit {
     this.busy.set(true);
     this.saveError.set(false);
     try {
-      await this.api.revokeIntegrationBot(workspaceId, bot.id);
-      this.bots.set(
-        this.bots().map((item) =>
-          item.id === bot.id ? { ...item, tokenConfigured: false, tokenLast4: null } : item,
-        ),
-      );
+      await this.api.uninstallPlugin(workspaceId, plugin.id);
+      this.plugins.set(this.plugins().filter((item) => item.id !== plugin.id));
       this.revealedToken.set(null);
     } catch {
       this.saveError.set(true);
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  private async install(input: { builtinId?: string; manifest?: Record<string, unknown> }): Promise<boolean> {
+    const workspaceId = this.ctx.workspace()?.id;
+    if (!workspaceId || this.busy()) {
+      return false;
+    }
+
+    this.busy.set(true);
+    this.saveError.set(false);
+    try {
+      const created = await this.api.installPlugin(workspaceId, {
+        ...input,
+        channelIds: this.selectedChannelIds(),
+        allowDms: this.allowDms(),
+      });
+      this.plugins.set([...this.plugins(), created]);
+      this.revealedToken.set(created.token ?? null);
+      this.allowDms.set(false);
+      this.selectedChannelIds.set([]);
+      return true;
+    } catch {
+      this.saveError.set(true);
+      return false;
     } finally {
       this.busy.set(false);
     }

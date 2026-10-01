@@ -46,6 +46,11 @@ public static class AuditActions
     public const string IntegrationTokenRotate = "integration.token.rotate";
     public const string IntegrationTokenRevoke = "integration.token.revoke";
     public const string IntegrationMessageSend = "integration.message.send";
+    public const string IntegrationPluginInstall = "integration.plugin.install";
+    public const string IntegrationPluginEnable = "integration.plugin.enable";
+    public const string IntegrationPluginDisable = "integration.plugin.disable";
+    public const string IntegrationPluginUninstall = "integration.plugin.uninstall";
+    public const string IntegrationPluginRotate = "integration.plugin.rotate";
 }
 
 public interface IAuditWriter

@@ -550,8 +550,8 @@
     "admin.auditEmpty": "Aucun événement ne correspond aux filtres.",
     "admin.entity": "Entité",
     "admin.actor": "Acteur",
-    "admin.pluginsLead": "Les bots d’intégration publient dans les canaux autorisés. Le jeton s’affiche une fois. Les webhooks restent dans",
-    "admin.pluginsEmpty": "Aucun bot dans ce workspace.",
+    "admin.pluginsLead": "Les plugins installés publient via un jeton de bot. Le jeton n'apparaît qu'une fois. Les webhooks restent dans",
+    "admin.pluginsEmpty": "Aucun plugin installé dans cet espace.",
     "admin.settingsLead": "Paramètres runtime du workspace et du tenant. Les identifiants restent chiffrés — l’interface n’affiche qu’un masque. L’infrastructure (Postgres, Redis, OIDC, MinIO) reste dans l’environnement.",
     "admin.loadingSettings": "Chargement des paramètres…",
     "admin.settingsLoadError": "Impossible de charger les paramètres.",
@@ -705,6 +705,16 @@
     "admin.botLast4": "Jeton",
     "admin.botLoadError": "Impossible de charger les bots.",
     "admin.botSaveError": "Impossible d’enregistrer le bot.",
-    "bubble.bot": "Bot"
+    "bubble.bot": "Bot",
+    "admin.pluginInstallBuiltin": "Installer Incoming Messages",
+    "admin.pluginManifest": "Manifeste (avancé)",
+    "admin.pluginInstallCustom": "Installer le manifeste",
+    "admin.pluginVersion": "Version",
+    "admin.pluginCapabilities": "Capabilities",
+    "admin.pluginFilter": "Filtrer les plugins",
+    "admin.pluginUninstall": "Désinstaller",
+    "admin.pluginNoMatch": "Aucun plugin ne correspond à ce filtre.",
+    "admin.pluginLoadError": "Impossible de charger les plugins.",
+    "admin.pluginSaveError": "Impossible d'enregistrer le plugin."
   }
 }
