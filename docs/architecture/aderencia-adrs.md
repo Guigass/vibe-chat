@@ -30,6 +30,7 @@ testes nem uma revisão de segurança.
 | [023](../adrs/ADR-023-group-dm.md) | DM em grupo | `ChannelType.GroupDm`, `JoinedSeq`, flag `Directory:GroupDm:Enabled=false` | **Alinhado** (W10-7) |
 | [024](../adrs/ADR-024-guests-por-convite.md) | Guests por convite | `directory.channel_invites`, ChannelMember sem workspace, `Directory:Invites:Enabled=false` | **Alinhado** (W10-10) |
 | [026](../adrs/ADR-026-webhooks-outbound-multi-endpoint.md) | Vários webhooks outbound | CRUD `/admin/webhooks`, limite 5, HMAC, filtro de canal, ping sem mensagem | **Alinhado** (W10-12 / B-108) |
+| [027](../adrs/ADR-027-bot-token-envio.md) | Bot + token de envio | `integrations.bots` / tokens / scopes, flag off, send via `MessageWriter` | **Alinhado** (W10-13 / B-109) |
 
 ## Gaps transversais derivados
 

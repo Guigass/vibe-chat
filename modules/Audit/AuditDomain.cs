@@ -42,6 +42,10 @@ public static class AuditActions
     public const string PollVote = "poll.vote";
     public const string PollUnvote = "poll.unvote";
     public const string PollClose = "poll.close";
+    public const string IntegrationBotCreate = "integration.bot.create";
+    public const string IntegrationTokenRotate = "integration.token.rotate";
+    public const string IntegrationTokenRevoke = "integration.token.revoke";
+    public const string IntegrationMessageSend = "integration.message.send";
 }
 
 public interface IAuditWriter

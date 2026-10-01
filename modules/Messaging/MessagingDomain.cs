@@ -546,7 +546,8 @@ public sealed record SendMessageCommand(
     string Body,
     MessageId? ReplyToMessageId,
     Guid? ThreadId,
-    IReadOnlyList<Guid>? AttachmentIds = null);
+    IReadOnlyList<Guid>? AttachmentIds = null,
+    bool AuthorIsBot = false);
 
 public sealed record MessageSendResult(MessageId MessageId, long Sequence, DateTimeOffset CreatedAt, bool Idempotent);
 

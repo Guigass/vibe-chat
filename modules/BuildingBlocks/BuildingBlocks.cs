@@ -280,6 +280,9 @@ public static class RateLimitKeys
 
     public static string Hub(TenantId tenantId, UserId userId) =>
         $"t:{tenantId.Value}:rl:hub:{userId.Value}";
+
+    public static string IntegrationSend(TenantId tenantId, Guid botId) =>
+        $"t:{tenantId.Value}:rl:integration:{botId}";
 }
 
 public static class RateLimitPolicies

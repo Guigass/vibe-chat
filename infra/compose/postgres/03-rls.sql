@@ -6,6 +6,7 @@
 --   app.user_id    — bootstrap membership discovery before tenant is known
 --   app.job_role   — 'outbox' | 'retention' | 'polls' for worker cross-tenant claim paths only
 --   app.invite_token_hash — B-040 accept lookup only; reveals the single matching invite row
+--   app.integration_token_hash — B-109 token lookup only; reveals the single matching bot token row
 --
 -- Column names match EF defaults ("TenantId").
 
@@ -41,6 +42,14 @@ LANGUAGE sql
 STABLE
 AS $$
   SELECT NULLIF(current_setting('app.invite_token_hash', true), '');
+$$;
+
+CREATE OR REPLACE FUNCTION app.current_integration_token_hash()
+RETURNS text
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT NULLIF(current_setting('app.integration_token_hash', true), '');
 $$;
 
 -- ---------------------------------------------------------------------------
@@ -399,6 +408,34 @@ CREATE POLICY tenant_isolation_webhook_endpoints ON integrations.webhook_endpoin
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS integrations.bots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.bots FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.bot_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.bot_tokens FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.bot_channel_scopes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.bot_channel_scopes FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_bots ON integrations.bots;
+CREATE POLICY tenant_isolation_bots ON integrations.bots
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_bot_tokens ON integrations.bot_tokens;
+CREATE POLICY tenant_isolation_bot_tokens ON integrations.bot_tokens
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR (
+            app.current_integration_token_hash() IS NOT NULL
+            AND "TokenHash" = app.current_integration_token_hash()
+        )
+    )
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_bot_channel_scopes ON integrations.bot_channel_scopes;
+CREATE POLICY tenant_isolation_bot_channel_scopes ON integrations.bot_channel_scopes
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 DROP POLICY IF EXISTS tenant_isolation_files_settings ON files.settings;
 CREATE POLICY tenant_isolation_files_settings ON files.settings
     USING ("TenantId" = app.current_tenant_id())
@@ -443,6 +480,7 @@ BEGIN
     EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_user_id() TO %I', app_role);
     EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_job_role() TO %I', app_role);
     EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_invite_token_hash() TO %I', app_role);
+    EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_integration_token_hash() TO %I', app_role);
   END IF;
 
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = backup_role) THEN

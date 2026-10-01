@@ -86,6 +86,9 @@ public sealed class ArchitectureRulesTests
             "notifications.email_settings",
             "notifications.push_subscriptions",
             "integrations.webhook_endpoints",
+            "integrations.bots",
+            "integrations.bot_tokens",
+            "integrations.bot_channel_scopes",
             "files.settings",
             "building_blocks.rate_limit_settings"
         ];

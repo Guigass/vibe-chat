@@ -117,6 +117,13 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/summarize", string.Join(",", new[] { Permissions.Ai.Summarize }), false, ""),
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/suggest-reply", string.Join(",", new[] { Permissions.Ai.SuggestReply }), false, ""),
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/channels/{channelId:guid}/messages/{messageId:guid}/attachments/{attachmentId:guid}/transcribe", string.Join(",", new[] { Permissions.Ai.Transcribe }), false, ""),
+            new("GET", "/api/v1/admin/workspaces/{workspaceId:guid}/bots", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/bots", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("PUT", "/api/v1/admin/workspaces/{workspaceId:guid}/bots/{botId:guid}", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/bots/{botId:guid}/rotate", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/bots/{botId:guid}/revoke", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/integrations/v1/channels/{channelId:guid}/messages", "", true, "integration token auth (B-109)"),
+            new("POST", "/api/v1/integrations/v1/dms", "", true, "integration token auth (B-109)"),
             new("POST", "/api/v1/dev/seed", "", true, "Development seed; AllowAnonymous lab-only"),
         ];
 

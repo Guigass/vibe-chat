@@ -51,6 +51,19 @@ export interface Channel {
   hasGuests?: boolean;
 }
 
+/** B-109 admin bot. `token` is present only on create/rotate. */
+export interface IntegrationBot {
+  id: string;
+  name: string;
+  enabled: boolean;
+  allowDms: boolean;
+  channelIds: string[];
+  tokenConfigured: boolean;
+  tokenLast4?: string | null;
+  createdAt: string;
+  token?: string | null;
+}
+
 export interface WorkspaceMember {
   userId: string;
   displayName: string;
@@ -128,6 +141,8 @@ export interface ChatMessage {
   channelId: string;
   authorUserId: string;
   authorName: string;
+  /** B-109 — discreet bot marker on the timeline. */
+  authorIsBot?: boolean;
   body: string;
   createdAt: string;
   editedAt?: string | null;

@@ -311,6 +311,25 @@ public sealed class BackendUnitTests
         RateLimitKeys.SendMessage(tenant, user).Should().NotBe(RateLimitKeys.Hub(tenant, user));
         RateLimitKeys.SendMessage(tenant, user)
             .Should().NotBe(RateLimitKeys.SendMessage(otherTenant, user));
+        var botId = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
+        RateLimitKeys.IntegrationSend(tenant, botId)
+            .Should().Be($"t:{tenant.Value}:rl:integration:{botId}");
+        RateLimitKeys.IntegrationSend(tenant, botId)
+            .Should().NotBe(RateLimitKeys.IntegrationSend(otherTenant, botId));
+        RateLimitKeys.IntegrationSend(tenant, botId)
+            .Should().NotBe(RateLimitKeys.SendMessage(tenant, user));
+    }
+
+    [Fact]
+    public void Integration_token_is_prefixed_and_only_the_hash_is_stable()
+    {
+        var raw = IntegrationToken.CreateRaw();
+        raw.Should().StartWith(BotIntegrationPolicies.TokenPrefix);
+        var hash = IntegrationToken.Hash(raw);
+        hash.Should().NotContain(raw);
+        hash.Should().HaveLength(64);
+        IntegrationToken.Hash(raw).Should().Be(hash);
+        IntegrationToken.Last4(raw).Should().Be(raw[^4..]);
     }
 
     [Fact]

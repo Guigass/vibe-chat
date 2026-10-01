@@ -550,8 +550,8 @@
     "admin.auditEmpty": "フィルターに一致するイベントはありません。",
     "admin.entity": "エンティティ",
     "admin.actor": "実行者",
-    "admin.pluginsLead": "プラグインのインストールと管理用の予約領域（B-109 / B-110）。基本のWebhooksと連携は次に残ります",
-    "admin.pluginsEmpty": "このワークスペースにインストール済みのプラグインはありません。連携APIとボットカタログはWave 11で届きます。",
+    "admin.pluginsLead": "連携ボットは許可したチャンネルに投稿します。トークンは一度だけ表示されます。Webhook は引き続き",
+    "admin.pluginsEmpty": "このワークスペースにボットはありません。",
     "admin.settingsLead": "ワークスペースとテナントのランタイム設定。資格情報は暗号化されたまま — UIはマスクだけを表示します。インフラ（Postgres、Redis、OIDC、MinIO）は環境に置きます。",
     "admin.loadingSettings": "設定を読み込み中…",
     "admin.settingsLoadError": "設定を読み込めませんでした。",
@@ -692,6 +692,19 @@
     "admin.webhookSaved": "エンドポイントを保存しました。",
     "admin.webhookTestSent": "テストを送信しました (HTTP %status%)。",
     "admin.webhookTestFailed": "テストは届きませんでした。",
-    "admin.webhookLimit": "最大 %n% エンドポイント。"
+    "admin.webhookLimit": "最大 %n% エンドポイント。",
+    "admin.botName": "ボット名",
+    "admin.botAllowDms": "ダイレクトメッセージを許可",
+    "admin.botChannels": "許可するチャンネル",
+    "admin.botCreate": "ボットを作成",
+    "admin.botRotate": "トークンを再発行",
+    "admin.botRevoke": "トークンを失効",
+    "admin.botTokenOnce": "今すぐトークンをコピーしてください。再表示されません。",
+    "admin.botEnabled": "有効",
+    "admin.botInactive": "無効",
+    "admin.botLast4": "トークン",
+    "admin.botLoadError": "ボットを読み込めませんでした。",
+    "admin.botSaveError": "ボットを保存できませんでした。",
+    "bubble.bot": "ボット"
   }
 }

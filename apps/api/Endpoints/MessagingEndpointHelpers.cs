@@ -620,7 +620,32 @@ internal static class MessagingEndpointHelpers
             pinnedIds.Contains(x.Id.Value),
             x.DeletedAt == null && pollsByMessage.TryGetValue(x.Id.Value, out var poll) ? poll : null)).ToArray();
 
+        messages = await MarkBotAuthorsAsync(db, channel.TenantId, messages, ct);
         return new ChannelMessagesResponse(messages, hasMoreBefore, hasMoreAfter);
+    }
+
+    internal static async Task<MessageResponse[]> MarkBotAuthorsAsync(
+        VibeChatDbContext db,
+        TenantId tenantId,
+        MessageResponse[] messages,
+        CancellationToken ct)
+    {
+        if (messages.Length == 0)
+        {
+            return messages;
+        }
+
+        var botUserIds = await db.IntegrationBots.AsNoTracking()
+            .Where(x => x.TenantId == tenantId)
+            .Select(x => x.UserId)
+            .ToListAsync(ct);
+        if (botUserIds.Count == 0)
+        {
+            return messages;
+        }
+
+        var bots = botUserIds.Select(x => x.Value).ToHashSet();
+        return messages.Select(m => bots.Contains(m.AuthorId) ? m with { AuthorIsBot = true } : m).ToArray();
     }
 
     internal static async Task<Dictionary<Guid, LinkPreviewResponse>> LoadLinkPreviewsByMessageAsync(

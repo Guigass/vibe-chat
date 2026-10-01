@@ -31,6 +31,7 @@ import {
   PinnedMessageItem,
   SavedMessageItem,
   FollowedThreadItem,
+  IntegrationBot,
   PollSummary,
   PushPublicKey,
   PushDevice,
@@ -159,6 +160,7 @@ interface MessageDto {
   sequence: number;
   authorId: string;
   authorName?: string;
+  authorIsBot?: boolean;
   body: string;
   createdAt: string;
   editedAt?: string | null;
@@ -373,6 +375,43 @@ export class ApiService {
   async getChannels(workspaceId: string): Promise<Channel[]> {
     const rows = await this.request<ChannelDto[]>(`/api/v1/workspaces/${workspaceId}/channels`);
     return rows.map((c) => this.mapChannel(c));
+  }
+
+  listIntegrationBots(workspaceId: string): Promise<IntegrationBot[]> {
+    return this.request<IntegrationBot[]>(`/api/v1/admin/workspaces/${workspaceId}/bots`);
+  }
+
+  createIntegrationBot(
+    workspaceId: string,
+    input: { name: string; channelIds: string[]; allowDms: boolean },
+  ): Promise<IntegrationBot> {
+    return this.request<IntegrationBot>(`/api/v1/admin/workspaces/${workspaceId}/bots`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  updateIntegrationBot(
+    workspaceId: string,
+    botId: string,
+    input: { name: string; channelIds: string[]; allowDms: boolean; enabled: boolean },
+  ): Promise<IntegrationBot> {
+    return this.request<IntegrationBot>(`/api/v1/admin/workspaces/${workspaceId}/bots/${botId}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  }
+
+  rotateIntegrationBot(workspaceId: string, botId: string): Promise<IntegrationBot> {
+    return this.request<IntegrationBot>(`/api/v1/admin/workspaces/${workspaceId}/bots/${botId}/rotate`, {
+      method: 'POST',
+    });
+  }
+
+  revokeIntegrationBot(workspaceId: string, botId: string): Promise<void> {
+    return this.request<void>(`/api/v1/admin/workspaces/${workspaceId}/bots/${botId}/revoke`, {
+      method: 'POST',
+    });
   }
 
   async createChannel(
@@ -1514,6 +1553,7 @@ export class ApiService {
       channelId: m.channelId,
       authorUserId: m.authorId,
       authorName: m.authorName || m.authorId,
+      authorIsBot: !!m.authorIsBot,
       body: m.deletedAt ? '' : m.body,
       createdAt: m.createdAt,
       editedAt: m.editedAt,
