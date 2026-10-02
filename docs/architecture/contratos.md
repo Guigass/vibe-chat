@@ -267,6 +267,24 @@ Permissão `message.pin` (default: Member, Moderator, Admin, Bot — não Guest/
 | Hub | Nenhum (estado pessoal) |
 | AuthZ | Nenhum admin lê salvos de terceiros; cross-tenant → **403** |
 
+### Agendamento e lembretes (B-113)
+
+Horário de parede + fuso IANA vira um instante UTC único. Lacuna ou ambiguidade de DST → **400** (`InvalidLocalTime` / `AmbiguousLocalTime`). Passado ou além de 366 dias → **400**.
+
+| Artefato | Contrato |
+|----------|----------|
+| Tabelas | `messaging.scheduled_messages` (`TenantId`, `WorkspaceId`, `AuthorId`, `ChannelId`, `ThreadId?`, `ReplyToMessageId?`, `PlannedMessageId`, `Body`, `SendAtUtc`, `TimeZone`, `Status`, `ClientIdempotencyKey`, `SendIdempotencyKey`, `SentMessageId?`, `AttemptCount`, `ClaimedAt?`, `NextAttemptAt?`, `FailureCode?`); `messaging.reminders` (mesmo relógio; `UserId`, `TargetKind` `Time\|Message\|Thread`, `Note?`, `MessageId?`) |
+| `POST /api/v1/channels/{channelId}/scheduled-messages` | Body `{ idempotencyKey, body, sendAtLocal, timeZone, replyToMessageId?, threadId? }`; membership + `message.send`; idempotente pela chave do cliente |
+| `PATCH /api/v1/workspaces/{workspaceId}/scheduled-messages/{scheduledMessageId}` | Só o autor e só `Pending`; corpo e/ou horário; claim concorrente → **409** `ScheduleAlreadyClaimed` |
+| `DELETE …/scheduled-messages/{scheduledMessageId}` | Cancela se `Pending` (**204**); já cancelado ou ausente → **204**; já claimed/sent → **409** |
+| `GET /api/v1/workspaces/{workspaceId}/schedule?limit=&cursor=` | Lista pessoal (agendados + lembretes) do caller; `{ items, nextCursor }` |
+| `POST /api/v1/workspaces/{workspaceId}/reminders` | Body `{ idempotencyKey, targetKind, remindAtLocal, timeZone, note?, messageId?, threadId? }`; `message.read`; alvo de mensagem/thread revalida leitura agora |
+| `PATCH` / `DELETE …/reminders/{reminderId}` | Só o dono; mesma regra de `Pending` |
+| Disparo | Worker `ScheduleDispatchDispatcher` (15s, job_role `schedule`): claim `FOR UPDATE SKIP LOCKED`; envio via `SendMessage` com `SendIdempotencyKey` estável `sched:{id}`; outbox `scheduled_message.due` / `reminder.due` |
+| AuthZ no disparo | Membership + `message.send` revalidados. Perda de acesso → `MembershipRevoked`, sem mensagem, notificação ao autor sem canal nem corpo |
+| Privacidade | Lembrete não vai ao grupo do canal. Hub `ReminderDue` / `ScheduledMessageDue` só no grupo do usuário. Web Push respeita `PushEnabled`, DND e `HidePreview` |
+| Audit | `schedule.create/update/cancel/revoke`, `reminder.create/update/cancel/deliver` |
+
 ### Seguir thread (B-102)
 
 Seguir é uma assinatura por usuário; não há evento de hub dedicado — o web client
@@ -610,15 +628,15 @@ Fase 1: implementação PostgreSQL FTS (ADR-011). Filtros (B-098) só restringem
 
 | Endpoint | Notas |
 |----------|-------|
-| `GET /api/v1/search/messages?workspaceId=&q=&channelId=&authorId=&from=&to=&hasAttachment=&hasLink=&attachmentKind=&sort=&cursor=&limit=` | FTS em mensagens (`tsvector`/`GIN`); exige membership no workspace + `search.messages` + `message.read`; filtra por ACL de canal (público via workspace, privado/DM via `channel_members`); nunca retorna mensagens soft-deleted nem fora da membership. `authorId`/`channelId` de outro tenant ou sem visibilidade → **403**. `q` pode ficar vazio quando há filtro estruturado. `from`/`to` ISO-8601 (data só: início/fim do dia UTC). `attachmentKind`: `image`\|`audio`\|`document`. `sort`: `relevance` (default) \| `date`. `limit` máx. 50. |
+| `GET /api/v1/search/messages?workspaceId=&q=&channelId=&authorId=&from=&to=&hasAttachment=&hasLink=&attachmentKind=&sort=&cursor=&limit=` | FTS em mensagens (`tsvector`/`GIN`, config `public.portuguese_unaccent`); exige membership no workspace + `search.messages` + `message.read`; filtra por ACL de canal (público via workspace, privado/DM via `channel_members`); nunca retorna mensagens soft-deleted nem fora da membership. `authorId`/`channelId` de outro tenant ou sem visibilidade → **403**. `q` pode ficar vazio quando há filtro estruturado. `q` aceita sintaxe websearch: frase entre aspas, `OR` e `-termo`, com prefixo `:*` nos termos soltos e acento irrelevante (B-188). `from`/`to` ISO-8601 (data só: início/fim do dia UTC). `attachmentKind`: `image`\|`audio`\|`document`. `sort`: `relevance` (default, recência + boost de frase exata) \| `date`. `limit` máx. 50. |
 
-`SearchMessageHit`: `messageId`, `channelId`, `channelName`, `channelType`, `sequence`, `authorUserId`, `authorDisplayName`, `bodyPreview`, `createdAt`, `rank`.
+`SearchMessageHit`: `messageId`, `channelId`, `channelName`, `channelType`, `sequence`, `authorUserId`, `authorDisplayName`, `bodyPreview`, `createdAt`, `rank`, `kind` (`message`). Com termo, `bodyPreview` é `ts_headline` (marcas U+0001/U+0002 em volta do trecho).
 
-`SearchMessagesResponse` ganha `total` (contagem do recorte filtrado) e `cursor` (próxima página; ausente na última).
+`SearchMessagesResponse`: `total` (contagem do recorte de mensagens) e `cursor` (próxima página de mensagens; ausente na última). Na primeira página, com termo positivo, também `channels` (`kind=channel`), `people` (`kind=person`) e `attachments` (`kind=attachment`, só anexo `Ready` ligado a mensagem visível). Mesma ACL de membership. Filtros B-098 continuam só restringindo. `cursor` não pagina esses três grupos.
 
-Sintaxe no campo (cliente): `de:@alice em:#geral antes:2026-07-01 depois:2026-06-01 tem:anexo|link|imagem|audio|documento`. Operadores viram query params; texto restante é `q`.
+Sintaxe no campo (cliente): `de:@alice em:#geral antes:2026-07-01 depois:2026-06-01 tem:anexo|link|imagem|audio|documento`. Operadores viram query params; texto restante é `q` (aspas, `OR` e `-termo` ficam no termo).
 
-Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via outbox `MessageCreated`/`Edited`/`Deleted`); índice composto `ix_messages_tenant_channel_created` (`TenantId`, `ConversationId`, `CreatedAt`) para recorte por data/canal.
+Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via outbox `MessageCreated`/`Edited`/`Deleted`) com `public.portuguese_unaccent`; índice GIN `ix_messages_search_vector`; índice composto `ix_messages_tenant_channel_created` (`TenantId`, `ConversationId`, `CreatedAt`) para recorte por data/canal. Nome de canal, display name e filename de anexo são consultados na hora, sem índice `pg_trgm`.
 
 ---
 

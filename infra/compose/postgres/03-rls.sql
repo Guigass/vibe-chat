@@ -4,7 +4,7 @@
 -- Session GUCs (SET LOCAL / set_config is_local preferred inside transactions):
 --   app.tenant_id  — required for tenant-scoped reads/writes (fail closed when unset)
 --   app.user_id    — bootstrap membership discovery before tenant is known
---   app.job_role   — 'outbox' | 'retention' | 'polls' for worker cross-tenant claim paths only
+--   app.job_role   — 'outbox' | 'retention' | 'polls' | 'schedule' for worker cross-tenant claim paths only
 --   app.invite_token_hash — B-040 accept lookup only; reveals the single matching invite row
 --   app.integration_token_hash — B-109 token lookup only; reveals the single matching bot token row
 --
@@ -303,6 +303,33 @@ CREATE POLICY tenant_isolation_poll_votes ON messaging.poll_votes
         OR app.current_job_role() = 'polls'
     )
     WITH CHECK ("TenantId" = app.current_tenant_id());
+
+ALTER TABLE IF EXISTS messaging.scheduled_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.scheduled_messages FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.reminders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.reminders FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_scheduled_messages ON messaging.scheduled_messages;
+CREATE POLICY tenant_isolation_scheduled_messages ON messaging.scheduled_messages
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR app.current_job_role() = 'schedule'
+    )
+    WITH CHECK (
+        "TenantId" = app.current_tenant_id()
+        OR app.current_job_role() = 'schedule'
+    );
+
+DROP POLICY IF EXISTS tenant_isolation_reminders ON messaging.reminders;
+CREATE POLICY tenant_isolation_reminders ON messaging.reminders
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR app.current_job_role() = 'schedule'
+    )
+    WITH CHECK (
+        "TenantId" = app.current_tenant_id()
+        OR app.current_job_role() = 'schedule'
+    );
 
 DROP POLICY IF EXISTS tenant_isolation_message_mentions ON messaging.message_mentions;
 CREATE POLICY tenant_isolation_message_mentions ON messaging.message_mentions

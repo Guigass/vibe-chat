@@ -2,10 +2,9 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using NpgsqlTypes;
 using VibeChat.Infrastructure;
 
 #nullable disable
@@ -13,9 +12,11 @@ using VibeChat.Infrastructure;
 namespace VibeChat.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(VibeChatDbContext))]
-    partial class VibeChatDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261002191445_AddScheduling")]
+    partial class AddScheduling
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -576,49 +577,6 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("user_profiles", "identity");
                 });
 
-            modelBuilder.Entity("VibeChat.Identity.UserStatus", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("ClearAtEndOfDay")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Emoji")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<DateTimeOffset?>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("user_statuses", "identity");
-                });
-
             modelBuilder.Entity("VibeChat.Integrations.InstalledPlugin", b =>
                 {
                     b.Property<Guid>("Id")
@@ -976,12 +934,6 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid?>("ReplyToMessageId")
                         .HasColumnType("uuid");
-
-                    b.Property<NpgsqlTsVector>("SearchVector")
-                        .HasColumnType("tsvector")
-                        .HasColumnName("search_vector")
-                        .HasAnnotation("Relational:BeforeSaveBehavior", PropertySaveBehavior.Ignore)
-                        .HasAnnotation("Relational:AfterSaveBehavior", PropertySaveBehavior.Ignore);
 
                     b.Property<long>("Sequence")
                         .HasColumnType("bigint");

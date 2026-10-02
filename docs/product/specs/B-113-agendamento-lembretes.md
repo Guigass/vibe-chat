@@ -41,11 +41,11 @@ autor sem revelar conversa.
 
 ## Aceite
 
-- [ ] Horário é consistente entre fusos.
-- [ ] Retry não duplica mensagem.
-- [ ] Cancelamento antes do claim impede envio.
-- [ ] Membership revogada impede disparo.
-- [ ] Lembrete é privado.
+- [x] Horário é consistente entre fusos.
+- [x] Retry não duplica mensagem.
+- [x] Cancelamento antes do claim impede envio.
+- [x] Membership revogada impede disparo.
+- [x] Lembrete é privado.
 
 ## Testes
 

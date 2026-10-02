@@ -128,6 +128,17 @@ export interface ReactionChangedEvent {
   topUsers?: string[];
 }
 
+export interface ScheduleNoticeEvent {
+  kind: 'reminder' | 'scheduled';
+  status: string;
+  reveal: boolean;
+}
+
+interface ScheduleNoticePayload {
+  status?: string;
+  reveal?: boolean;
+}
+
 export interface PollChangedEvent {
   messageId: string;
   channelId: string;
@@ -246,6 +257,7 @@ export class ChatHubService {
   private readonly reactionHandlers = new Set<(event: ReactionChangedEvent) => void>();
   private readonly pinHandlers = new Set<(event: PinChangedEvent) => void>();
   private readonly pollHandlers = new Set<(event: PollChangedEvent) => void>();
+  private readonly scheduleNoticeHandlers = new Set<(event: ScheduleNoticeEvent) => void>();
   private readonly presenceHandlers = new Set<(event: PresenceChangedEvent) => void>();
   private readonly userStatusHandlers = new Set<(event: HubUserStatusEvent) => void>();
   private readonly reconnectedHandlers = new Set<() => void | Promise<void>>();
@@ -427,6 +439,14 @@ export class ChatHubService {
       for (const handler of this.pollHandlers) {
         handler(event);
       }
+    });
+
+    connection.on('ReminderDue', (raw: ScheduleNoticePayload | string) => {
+      this.emitScheduleNotice('reminder', raw);
+    });
+
+    connection.on('ScheduledMessageDue', (raw: ScheduleNoticePayload | string) => {
+      this.emitScheduleNotice('scheduled', raw);
     });
 
     connection.on('PinChanged', (raw: PinChangedPayload | string) => {
@@ -766,6 +786,11 @@ export class ChatHubService {
     return () => this.pinHandlers.delete(handler);
   }
 
+  onScheduleNotice(handler: (event: ScheduleNoticeEvent) => void): () => void {
+    this.scheduleNoticeHandlers.add(handler);
+    return () => this.scheduleNoticeHandlers.delete(handler);
+  }
+
   onPollChanged(handler: (event: PollChangedEvent) => void): () => void {
     this.pollHandlers.add(handler);
     return () => this.pollHandlers.delete(handler);
@@ -809,6 +834,18 @@ export class ChatHubService {
       } catch {
         // individual stores handle their own errors
       }
+    }
+  }
+
+  private emitScheduleNotice(kind: ScheduleNoticeEvent['kind'], raw: ScheduleNoticePayload | string): void {
+    const payload = this.coercePayload<ScheduleNoticePayload>(raw);
+    const event: ScheduleNoticeEvent = {
+      kind,
+      status: payload?.status ?? '',
+      reveal: payload?.reveal !== false,
+    };
+    for (const handler of this.scheduleNoticeHandlers) {
+      handler(event);
     }
   }
 
