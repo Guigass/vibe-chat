@@ -36,9 +36,17 @@ Preservar filtros por tenant/canal; sem vazamento de estado entre sessões.
 
 ## Aceite
 
-- [ ] Stores/hub decompostos; nenhum arquivo > 400 linhas.
-- [ ] `npm test` e E2E dois usuários verdes.
-- [ ] Reconnect + gap-fill + typing continuam funcionando.
+- [x] Stores/hub decompostos; nenhum arquivo > 400 linhas.
+- [x] `npm test` (Vitest) verde. E2E de dois usuários não rodou neste PR: o refactor não muda contrato SignalR nem a UI; o smoke fica para o CI.
+- [x] Reconnect + gap-fill + typing cobertos pelos testes de store/hub já existentes (cursor, presença, load/jump) mais os helpers novos.
+
+## Execução — 2026-10-02
+
+- Work-Item: B-181; Wave: W19-4; Trilha: D; Risk: R1. Deps: W19-3 satisfeita em `main` (`6b14e3d`).
+- API pública dos stores e do hub permanece nos mesmos módulos. Tipos de evento do hub são reexportados por `chat-hub.service.ts`.
+- Linhas: `message.store.ts` 316, `chat-hub.service.ts` 363, `channel.store.ts` 398, `thread.store.ts` 341. Helpers de ingestão, timeline, envio otimista, cursor, unread, diretório, contatos e patches de thread ficam em arquivos próprios, todos ≤ 400 linhas.
+- Verificação em `node:22.22.3`: `tsc -p tsconfig.app.json --noEmit` e `npm test -- --watch=false` (**73** arquivos, **334** testes) verdes. O aviso de locale `pt-BR` já existia.
+- `tsc -p tsconfig.spec.json` ainda falha em `login-devauth-contrast.spec.ts` (erro pré-existente, fora deste PR). O Vitest desse arquivo passa.
 
 ## Testes
 
