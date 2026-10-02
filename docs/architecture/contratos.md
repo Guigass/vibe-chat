@@ -267,6 +267,24 @@ Permissão `message.pin` (default: Member, Moderator, Admin, Bot — não Guest/
 | Hub | Nenhum (estado pessoal) |
 | AuthZ | Nenhum admin lê salvos de terceiros; cross-tenant → **403** |
 
+### Agendamento e lembretes (B-113)
+
+Horário de parede + fuso IANA vira um instante UTC único. Lacuna ou ambiguidade de DST → **400** (`InvalidLocalTime` / `AmbiguousLocalTime`). Passado ou além de 366 dias → **400**.
+
+| Artefato | Contrato |
+|----------|----------|
+| Tabelas | `messaging.scheduled_messages` (`TenantId`, `WorkspaceId`, `AuthorId`, `ChannelId`, `ThreadId?`, `ReplyToMessageId?`, `PlannedMessageId`, `Body`, `SendAtUtc`, `TimeZone`, `Status`, `ClientIdempotencyKey`, `SendIdempotencyKey`, `SentMessageId?`, `AttemptCount`, `ClaimedAt?`, `NextAttemptAt?`, `FailureCode?`); `messaging.reminders` (mesmo relógio; `UserId`, `TargetKind` `Time\|Message\|Thread`, `Note?`, `MessageId?`) |
+| `POST /api/v1/channels/{channelId}/scheduled-messages` | Body `{ idempotencyKey, body, sendAtLocal, timeZone, replyToMessageId?, threadId? }`; membership + `message.send`; idempotente pela chave do cliente |
+| `PATCH /api/v1/workspaces/{workspaceId}/scheduled-messages/{scheduledMessageId}` | Só o autor e só `Pending`; corpo e/ou horário; claim concorrente → **409** `ScheduleAlreadyClaimed` |
+| `DELETE …/scheduled-messages/{scheduledMessageId}` | Cancela se `Pending` (**204**); já cancelado ou ausente → **204**; já claimed/sent → **409** |
+| `GET /api/v1/workspaces/{workspaceId}/schedule?limit=&cursor=` | Lista pessoal (agendados + lembretes) do caller; `{ items, nextCursor }` |
+| `POST /api/v1/workspaces/{workspaceId}/reminders` | Body `{ idempotencyKey, targetKind, remindAtLocal, timeZone, note?, messageId?, threadId? }`; `message.read`; alvo de mensagem/thread revalida leitura agora |
+| `PATCH` / `DELETE …/reminders/{reminderId}` | Só o dono; mesma regra de `Pending` |
+| Disparo | Worker `ScheduleDispatchDispatcher` (15s, job_role `schedule`): claim `FOR UPDATE SKIP LOCKED`; envio via `SendMessage` com `SendIdempotencyKey` estável `sched:{id}`; outbox `scheduled_message.due` / `reminder.due` |
+| AuthZ no disparo | Membership + `message.send` revalidados. Perda de acesso → `MembershipRevoked`, sem mensagem, notificação ao autor sem canal nem corpo |
+| Privacidade | Lembrete não vai ao grupo do canal. Hub `ReminderDue` / `ScheduledMessageDue` só no grupo do usuário. Web Push respeita `PushEnabled`, DND e `HidePreview` |
+| Audit | `schedule.create/update/cancel/revoke`, `reminder.create/update/cancel/deliver` |
+
 ### Seguir thread (B-102)
 
 Seguir é uma assinatura por usuário; não há evento de hub dedicado — o web client

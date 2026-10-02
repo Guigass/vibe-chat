@@ -32,6 +32,7 @@ import {
   MessageLinkPreview,
   PinnedMessageItem,
   SavedMessageItem,
+  ScheduleItem,
   FollowedThreadItem,
   IntegrationBot,
   InstalledPlugin,
@@ -1050,6 +1051,115 @@ export class ApiService {
     };
   }
 
+  async createScheduledMessage(input: {
+    channelId: string;
+    body: string;
+    sendAtLocal: string;
+    timeZone: string;
+    idempotencyKey: string;
+    replyToMessageId?: string | null;
+    threadId?: string | null;
+  }): Promise<ScheduleItem> {
+    const dto = await this.request<ScheduleItemDto>(
+      `/api/v1/channels/${input.channelId}/scheduled-messages`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          idempotencyKey: input.idempotencyKey,
+          body: input.body,
+          sendAtLocal: input.sendAtLocal,
+          timeZone: input.timeZone,
+          replyToMessageId: input.replyToMessageId ?? null,
+          threadId: input.threadId ?? null,
+        }),
+      },
+    );
+    return mapScheduleItem(dto);
+  }
+
+  async updateScheduledMessage(
+    workspaceId: string,
+    id: string,
+    patch: { body?: string; sendAtLocal?: string; timeZone?: string },
+  ): Promise<ScheduleItem> {
+    const dto = await this.request<ScheduleItemDto>(
+      `/api/v1/workspaces/${workspaceId}/scheduled-messages/${id}`,
+      { method: 'PATCH', body: JSON.stringify(patch) },
+    );
+    return mapScheduleItem(dto);
+  }
+
+  async cancelScheduledMessage(workspaceId: string, id: string): Promise<void> {
+    await this.request(`/api/v1/workspaces/${workspaceId}/scheduled-messages/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getSchedule(
+    workspaceId: string,
+    options?: { limit?: number; cursor?: string | null },
+  ): Promise<{ items: ScheduleItem[]; nextCursor: string | null }> {
+    const params = new URLSearchParams();
+    if (options?.limit) params.set('limit', String(options.limit));
+    if (options?.cursor) params.set('cursor', options.cursor);
+    const qs = params.toString();
+    const dto = await this.request<{ items: ScheduleItemDto[]; nextCursor?: string | null }>(
+      `/api/v1/workspaces/${workspaceId}/schedule${qs ? `?${qs}` : ''}`,
+    );
+    return {
+      items: (dto.items ?? []).map(mapScheduleItem),
+      nextCursor: dto.nextCursor ?? null,
+    };
+  }
+
+  async createReminder(input: {
+    workspaceId: string;
+    idempotencyKey: string;
+    targetKind: 'Time' | 'Message' | 'Thread';
+    remindAtLocal: string;
+    timeZone: string;
+    note?: string | null;
+    messageId?: string | null;
+    threadId?: string | null;
+    channelId?: string | null;
+  }): Promise<ScheduleItem> {
+    const dto = await this.request<ScheduleItemDto>(
+      `/api/v1/workspaces/${input.workspaceId}/reminders`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          idempotencyKey: input.idempotencyKey,
+          targetKind: input.targetKind,
+          remindAtLocal: input.remindAtLocal,
+          timeZone: input.timeZone,
+          note: input.note ?? null,
+          messageId: input.messageId ?? null,
+          threadId: input.threadId ?? null,
+          channelId: input.channelId ?? null,
+        }),
+      },
+    );
+    return mapScheduleItem(dto);
+  }
+
+  async updateReminder(
+    workspaceId: string,
+    id: string,
+    patch: { note?: string | null; remindAtLocal?: string; timeZone?: string },
+  ): Promise<ScheduleItem> {
+    const dto = await this.request<ScheduleItemDto>(
+      `/api/v1/workspaces/${workspaceId}/reminders/${id}`,
+      { method: 'PATCH', body: JSON.stringify(patch) },
+    );
+    return mapScheduleItem(dto);
+  }
+
+  async cancelReminder(workspaceId: string, id: string): Promise<void> {
+    await this.request(`/api/v1/workspaces/${workspaceId}/reminders/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   async toggleReaction(
     channelId: string,
     messageId: string,
@@ -1801,6 +1911,46 @@ interface SavedMessageDto {
   completedAt?: string | null;
   createdAt: string;
   messageRemoved?: boolean;
+}
+
+interface ScheduleItemDto {
+  kind: 'scheduled_message' | 'reminder';
+  id: string;
+  status: string;
+  dueAtUtc: string;
+  timeZone: string;
+  body?: string | null;
+  note?: string | null;
+  targetKind?: string | null;
+  channelId?: string | null;
+  channelName?: string | null;
+  messageId?: string | null;
+  threadId?: string | null;
+  sentMessageId?: string | null;
+  failureCode?: string | null;
+  canOpen?: boolean;
+  createdAt: string;
+}
+
+function mapScheduleItem(dto: ScheduleItemDto): ScheduleItem {
+  return {
+    kind: dto.kind,
+    id: dto.id,
+    status: dto.status,
+    dueAtUtc: dto.dueAtUtc,
+    timeZone: dto.timeZone,
+    body: dto.body ?? null,
+    note: dto.note ?? null,
+    targetKind: dto.targetKind ?? null,
+    channelId: dto.channelId ?? null,
+    channelName: dto.channelName ?? null,
+    messageId: dto.messageId ?? null,
+    threadId: dto.threadId ?? null,
+    sentMessageId: dto.sentMessageId ?? null,
+    failureCode: dto.failureCode ?? null,
+    canOpen: dto.canOpen !== false,
+    createdAt: dto.createdAt,
+  };
 }
 
 function mapSavedMessage(dto: SavedMessageDto): SavedMessageItem {

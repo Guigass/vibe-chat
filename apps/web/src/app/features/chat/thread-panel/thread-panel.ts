@@ -1,5 +1,6 @@
 import { Component, computed, effect, ElementRef, inject, signal, untracked, viewChild } from '@angular/core';
 import { ThreadStore } from '../../../core/services/thread.store';
+import { ScheduleStore } from '../../../core/services/schedule.store';
 import { FollowedThreadsStore } from '../../../core/services/followed-threads.store';
 import { ApiService } from '../../../core/api/api.service';
 import { replyPreviewText } from '../../../core/services/message-sync';
@@ -16,7 +17,7 @@ import {
   MESSAGE_BODY_MAX_LENGTH,
 } from '../../../shared/models/chat.models';
 import { updateTextareaSelection } from '../../../shared/markdown/markdown-format';
-import { ui } from '../../../core/i18n/strings';
+import { fillTemplate, ui } from '../../../core/i18n/strings';
 import { MessageAnnouncer } from '../../../shared/ui/message-announcer';
 
 @Component({
@@ -75,6 +76,8 @@ import { MessageAnnouncer } from '../../../shared/ui/message-announcer';
               <vc-message-bubble
                 [message]="parent"
                 [showReplyAction]="true"
+                [showRemindAction]="true"
+                (remind)="onRemind(parent)"
                 [highlighted]="messages.highlightMessageId() === parent.id"
                 (reply)="onReply(parent)"
                 (startEdit)="onStartEdit(parent)"
@@ -96,7 +99,9 @@ import { MessageAnnouncer } from '../../../shared/ui/message-announcer';
                 <vc-message-bubble
                   [message]="message"
                   [showReplyAction]="true"
+                  [showRemindAction]="true"
                   [showShareToChannelAction]="true"
+                  (remind)="onRemind(message)"
                   [highlighted]="messages.highlightMessageId() === message.id"
                   (shareToChannel)="onShareToChannel(message.id)"
                   (reply)="onReply(message)"
@@ -162,8 +167,20 @@ import { MessageAnnouncer } from '../../../shared/ui/message-announcer';
             {{ bodyLength() }} / {{ maxLength }}
           </p>
         }
+        @if (!threads.editingMessage()) {
+          <button type="button" class="ghost" (click)="scheduleMode.set(!scheduleMode())">
+            {{ scheduleMode() ? ui.composerSendNow : ui.composerSchedule }}
+          </button>
+        }
+        @if (scheduleMode() && !threads.editingMessage()) {
+          <label class="thread__schedule">
+            {{ ui.composerScheduleAt }}
+            <input type="datetime-local" [value]="scheduleAt()" (input)="scheduleAt.set(inputValue($event))" />
+          </label>
+          <p>{{ scheduleHint() }}</p>
+        }
         <vc-button type="submit" [disabled]="submitDisabled()" [loading]="threads.sending()">
-          {{ threads.editingMessage() ? ui.composerSave : ui.threadReply }}
+          {{ threads.editingMessage() ? ui.composerSave : scheduleMode() ? ui.composerScheduleConfirm : ui.threadReply }}
         </vc-button>
       </form>
     </div>
@@ -316,6 +333,7 @@ import { MessageAnnouncer } from '../../../shared/ui/message-announcer';
 export class ThreadPanel {
   readonly ui = ui;
   readonly threads = inject(ThreadStore);
+  private readonly schedule = inject(ScheduleStore);
   readonly messages = inject(MessageStore);
   readonly followedThreads = inject(FollowedThreadsStore);
   readonly autoFollowNotice = signal(false);
@@ -326,6 +344,18 @@ export class ThreadPanel {
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
   private readonly threadTextarea = viewChild<Textarea>('threadTextarea');
   readonly draft = signal('');
+  readonly scheduleMode = signal(false);
+  readonly scheduleAt = signal('');
+  readonly scheduleZone = signal(browserTimeZone());
+  readonly scheduleHint = computed(() =>
+    this.scheduleAt()
+      ? fillTemplate(ui.composerScheduleDelay, {
+          when: this.scheduleAt().replace('T', ' '),
+          zone: this.scheduleZone(),
+        })
+      : ui.composerScheduleKept,
+  );
+  private scheduleKey: string | null = null;
   readonly maxLength = MESSAGE_BODY_MAX_LENGTH;
   readonly bodyLength = computed(() => measureMessageBodyLength(this.draft()));
   readonly bodyTooLong = computed(() => isMessageBodyTooLong(this.draft()));
@@ -488,6 +518,11 @@ export class ThreadPanel {
     const body = this.draft().trim();
     if (!body || isMessageBodyTooLong(body)) return;
 
+    if (this.scheduleMode()) {
+      await this.scheduleReply(body);
+      return;
+    }
+
     this.submitting.set(true);
     // Clear before await send so a second Enter cannot resubmit the same draft.
     this.draft.set('');
@@ -500,6 +535,48 @@ export class ThreadPanel {
       if (!ok) {
         this.draft.set(body);
         this.persistDraftSoon();
+      }
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+
+  onRemind(message: { id: string; channelId: string; threadId?: string | null; body: string }): void {
+    this.schedule.beginRemind({
+      messageId: message.id,
+      channelId: message.channelId,
+      threadId: message.threadId ?? this.threads.active()?.id ?? null,
+      preview: message.body,
+    });
+  }
+
+  inputValue(event: Event): string {
+    return (event.target as HTMLInputElement).value;
+  }
+
+  private async scheduleReply(body: string): Promise<void> {
+    const thread = this.threads.active();
+    if (!thread || !this.scheduleAt()) return;
+    this.submitting.set(true);
+    try {
+      this.scheduleKey ??= crypto.randomUUID();
+      const local = this.scheduleAt().length === 16 ? `${this.scheduleAt()}:00` : this.scheduleAt();
+      const ok = await this.schedule.createScheduled({
+        channelId: thread.channelId,
+        body,
+        sendAtLocal: local,
+        timeZone: this.scheduleZone(),
+        idempotencyKey: this.scheduleKey,
+        threadId: thread.id,
+        replyToMessageId: this.threads.replyTarget()?.id ?? null,
+      });
+      if (!ok) return;
+      this.scheduleKey = null;
+      this.draft.set('');
+      this.scheduleMode.set(false);
+      const conversationId = this.boundConversationId;
+      if (conversationId) {
+        await this.drafts.remove(conversationId);
       }
     } finally {
       this.submitting.set(false);
@@ -614,5 +691,13 @@ export class ThreadPanel {
       selectionStart: textarea?.selectionStart,
       selectionEnd: textarea?.selectionEnd,
     });
+  }
+}
+
+function browserTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
   }
 }
