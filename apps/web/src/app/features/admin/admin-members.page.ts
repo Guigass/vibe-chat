@@ -2,7 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { ApiService } from '../../core/api/api.service';
 import { fillTemplate, ui } from '../../core/i18n/strings';
-import { WorkspaceMember } from '../../shared/models/chat.models';
+import { ContactGroup, WorkspaceMember } from '../../shared/models/chat.models';
 import { Badge } from '../../shared/ui';
 import { AdminContextService } from './admin-context.service';
 import { AdminAreaId } from './admin-permissions';
@@ -42,6 +42,13 @@ export class AdminMembersPage implements OnInit {
   readonly inviteFeedback = signal<string | null>(null);
   readonly inviteError = signal<string | null>(null);
 
+  readonly departments = signal<ContactGroup[]>([]);
+  readonly departmentBusy = signal(false);
+  readonly departmentFeedback = signal<string | null>(null);
+  readonly departmentError = signal<string | null>(null);
+  readonly departmentDrafts = signal<Record<string, string[]>>({});
+  readonly confirmDeleteId = signal<string | null>(null);
+
   readonly searchQuery = signal('');
   readonly roleFilter = signal('all');
   readonly statusFilter = signal<MemberStatusFilter>('all');
@@ -80,6 +87,9 @@ export class AdminMembersPage implements OnInit {
   async ngOnInit(): Promise<void> {
     await this.ctx.ensureReady();
     await this.loadMembers();
+    if (this.canInvite()) {
+      await this.loadDepartments();
+    }
     this.loading.set(false);
   }
 
@@ -176,6 +186,110 @@ export class AdminMembersPage implements OnInit {
     } finally {
       this.roleBusyUserId.set(null);
     }
+  }
+
+  async onDepartmentSubmit(event: Event): Promise<void> {
+    event.preventDefault();
+    const workspaceId = this.ctx.workspace()?.id;
+    if (!workspaceId || !this.canInvite()) return;
+    const form = event.target as HTMLFormElement;
+    const name = String(new FormData(form).get('name') ?? '').trim();
+    if (!name) return;
+    this.departmentBusy.set(true);
+    this.departmentError.set(null);
+    this.departmentFeedback.set(null);
+    try {
+      await this.api.createContactGroup(workspaceId, { name, kind: 'department' });
+      form.reset();
+      await this.loadDepartments();
+      this.departmentFeedback.set(ui.adminDepartmentSaved);
+    } catch (err) {
+      this.departmentError.set(this.departmentErrorMessage(err));
+    } finally {
+      this.departmentBusy.set(false);
+    }
+  }
+
+  async renameDepartment(group: ContactGroup, name: string): Promise<void> {
+    const workspaceId = this.ctx.workspace()?.id;
+    const next = name.trim();
+    if (!workspaceId || !next || next === group.name) return;
+    this.departmentBusy.set(true);
+    this.departmentError.set(null);
+    try {
+      await this.api.updateContactGroup(workspaceId, group.id, { name: next });
+      await this.loadDepartments();
+      this.departmentFeedback.set(ui.adminDepartmentSaved);
+    } catch (err) {
+      this.departmentError.set(this.departmentErrorMessage(err));
+    } finally {
+      this.departmentBusy.set(false);
+    }
+  }
+
+  async deleteDepartment(groupId: string): Promise<void> {
+    const workspaceId = this.ctx.workspace()?.id;
+    if (!workspaceId) return;
+    this.departmentBusy.set(true);
+    this.departmentError.set(null);
+    try {
+      await this.api.deleteContactGroup(workspaceId, groupId);
+      this.confirmDeleteId.set(null);
+      await this.loadDepartments();
+      this.departmentFeedback.set(ui.adminDepartmentDeleted);
+    } catch (err) {
+      this.departmentError.set(this.departmentErrorMessage(err));
+    } finally {
+      this.departmentBusy.set(false);
+    }
+  }
+
+  departmentChecked(group: ContactGroup, userId: string): boolean {
+    const draft = this.departmentDrafts()[group.id];
+    return (draft ?? group.memberUserIds).includes(userId);
+  }
+
+  toggleDepartmentMember(group: ContactGroup, userId: string, checked: boolean): void {
+    const current = this.departmentDrafts()[group.id] ?? [...group.memberUserIds];
+    const next = checked ? [...current, userId] : current.filter((id) => id !== userId);
+    this.departmentDrafts.update((drafts) => ({ ...drafts, [group.id]: [...new Set(next)] }));
+  }
+
+  async saveDepartmentMembers(group: ContactGroup): Promise<void> {
+    const workspaceId = this.ctx.workspace()?.id;
+    if (!workspaceId) return;
+    const userIds = this.departmentDrafts()[group.id] ?? group.memberUserIds;
+    this.departmentBusy.set(true);
+    this.departmentError.set(null);
+    try {
+      await this.api.replaceContactGroupMembers(workspaceId, group.id, userIds);
+      await this.loadDepartments();
+      this.departmentFeedback.set(ui.adminDepartmentSaved);
+    } catch (err) {
+      this.departmentError.set(this.departmentErrorMessage(err));
+    } finally {
+      this.departmentBusy.set(false);
+    }
+  }
+
+  private async loadDepartments(): Promise<void> {
+    const workspaceId = this.ctx.workspace()?.id;
+    if (!workspaceId) {
+      this.departments.set([]);
+      return;
+    }
+    try {
+      const groups = await this.api.getContactGroups(workspaceId);
+      this.departments.set(groups.filter((group) => group.kind === 'department'));
+      this.departmentDrafts.set({});
+    } catch {
+      this.departmentError.set(ui.contactsActionError);
+    }
+  }
+
+  private departmentErrorMessage(err: unknown): string {
+    const status = (err as { status?: number } | null)?.status;
+    return status === 409 ? ui.contactsNameTaken : ui.contactsActionError;
   }
 
   private async loadMembers(): Promise<void> {

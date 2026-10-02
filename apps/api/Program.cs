@@ -199,6 +199,7 @@ v1.MapIdentity();
 v1.MapWorkspaces();
 v1.MapChannelLists();
 v1.MapSpacesAndMembers();
+v1.MapContactGroups();
 v1.MapChannelMembers();
 v1.MapWorkspaceRoles();
 v1.MapGuestInvites();

@@ -1816,7 +1816,7 @@ export class Composer {
           userId: member.userId,
           displayName: member.displayName,
           email: member.email,
-          subtitle: this.mentionStatus(member.userId),
+          subtitle: this.mentionSubtitle(member.userId),
         })),
       );
       return;
@@ -1830,13 +1830,25 @@ export class Composer {
             userId: member.userId,
             displayName: member.displayName,
             email: member.email,
-            subtitle: this.mentionStatus(member.userId),
+            subtitle: this.mentionSubtitle(member.userId),
           })),
         );
       }).catch(() => {
         this.mentionRemoteItems.set([]);
       });
     }, 200);
+  }
+
+  private contactSubtitle(userId: string): string | undefined {
+    const label = this.channels.contactLabel?.(userId);
+    return label || undefined;
+  }
+
+  private mentionSubtitle(userId: string): string | undefined {
+    const department = this.contactSubtitle(userId);
+    const status = this.mentionStatus(userId);
+    if (department && status) return `${department} · ${status}`;
+    return department || status;
   }
 
   private closeMentionMenu(): void {

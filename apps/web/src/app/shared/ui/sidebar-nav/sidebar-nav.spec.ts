@@ -2,7 +2,7 @@
 import '@angular/compiler';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { Channel, SpaceGroup, WorkspaceMember } from '../../models/chat.models';
+import { Channel, ContactSection, SpaceGroup, WorkspaceMember } from '../../models/chat.models';
 import { SidebarNav } from './sidebar-nav';
 
 const groups: SpaceGroup[] = [
@@ -36,6 +36,45 @@ describe('SidebarNav (B-184)', () => {
     fixture.componentRef.setInput('directs', directs);
     fixture.componentRef.setInput('members', members);
     fixture.detectChanges();
+  });
+
+  it('renders contact sections and keeps a person in every matching department', () => {
+    const sections: ContactSection[] = [
+      {
+        groupId: 'g-sales',
+        name: 'Vendas',
+        kind: 'department',
+        members: [
+          { userId: 'u-2', displayName: 'Bob', role: 'Member', email: 'bob@example.com' },
+        ],
+      },
+      {
+        groupId: 'g-it',
+        name: 'TI',
+        kind: 'department',
+        members: [
+          { userId: 'u-2', displayName: 'Bob', role: 'Member', email: 'bob@example.com' },
+        ],
+      },
+      {
+        groupId: null,
+        name: null,
+        kind: null,
+        members: [
+          { userId: 'u-3', displayName: 'Carol', role: 'Member', email: 'carol@example.com' },
+        ],
+      },
+    ];
+    fixture.componentRef.setInput('contactSections', sections);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="contact-sections"]')).toBeTruthy();
+    expect(root.textContent).toContain('Vendas');
+    expect(root.textContent).toContain('TI');
+    expect(root.textContent).toContain('Sem grupo');
+    expect(root.textContent).toContain('Carol');
+    expect(root.querySelectorAll('.vc-sidebar-nav__member').length).toBe(3);
   });
 
   it('filters channels, DMs and members client-side', () => {

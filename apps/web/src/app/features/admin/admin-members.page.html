@@ -42,6 +42,72 @@
   <p class="admin-feedback" role="status">{{ feedback }}</p>
 }
 
+@if (canInvite() && !loading()) {
+  <section class="admin-panel" aria-labelledby="departments-heading" data-testid="admin-departments">
+    <h2 id="departments-heading" class="invite__title">{{ ui.adminDepartments }}</h2>
+    <p class="invite__hint">{{ ui.adminDepartmentsLead }}</p>
+    <form class="invite__row" (submit)="onDepartmentSubmit($event)">
+      <label class="invite__field">
+        <span>{{ ui.adminDepartmentName }}</span>
+        <input name="name" type="text" maxlength="80" [placeholder]="ui.adminDepartmentNamePh" [disabled]="departmentBusy()" />
+      </label>
+      <button type="submit" class="admin-btn" [disabled]="departmentBusy()">{{ ui.adminNewDepartment }}</button>
+    </form>
+    @if (departmentFeedback(); as feedback) {
+      <p class="admin-feedback" role="status">{{ feedback }}</p>
+    }
+    @if (departmentError(); as err) {
+      <p class="admin-error" role="alert">{{ err }}</p>
+    }
+    @if (departments().length === 0) {
+      <p class="admin-empty">{{ ui.adminDepartmentEmpty }}</p>
+    } @else {
+      @for (group of departments(); track group.id) {
+        <article class="dept">
+          <label class="invite__field">
+            <span>{{ ui.adminDepartmentName }}</span>
+            <input
+              type="text"
+              maxlength="80"
+              [value]="group.name"
+              [disabled]="departmentBusy()"
+              (change)="renameDepartment(group, $any($event.target).value)"
+            />
+          </label>
+          <fieldset class="dept__people">
+            <legend>{{ ui.adminAssignMembers }}</legend>
+            @for (member of members(); track member.userId) {
+              <label class="dept__check">
+                <input
+                  type="checkbox"
+                  [checked]="departmentChecked(group, member.userId)"
+                  [disabled]="departmentBusy()"
+                  (change)="toggleDepartmentMember(group, member.userId, $any($event.target).checked)"
+                />
+                {{ member.displayName }}
+              </label>
+            }
+          </fieldset>
+          <div class="invite__row">
+            <button type="button" class="admin-btn" [disabled]="departmentBusy()" (click)="saveDepartmentMembers(group)">
+              {{ ui.adminSaveAssignments }}
+            </button>
+            @if (confirmDeleteId() === group.id) {
+              <button type="button" class="admin-btn" [disabled]="departmentBusy()" (click)="deleteDepartment(group.id)">
+                {{ ui.adminDepartmentDeleteConfirm }}
+              </button>
+            } @else {
+              <button type="button" class="admin-btn" [disabled]="departmentBusy()" (click)="confirmDeleteId.set(group.id)">
+                {{ ui.contactsDelete }}
+              </button>
+            }
+          </div>
+        </article>
+      }
+    }
+  </section>
+}
+
 @if (loading()) {
   <p class="admin-empty">{{ ui.adminLoadingMembers }}</p>
 } @else if (loadError()) {
@@ -144,6 +210,28 @@
     color: var(--vc-ink-muted);
     font-size: 0.85rem;
     max-width: 62ch;
+  }
+
+  .dept {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+  }
+
+  .dept__people {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.9rem;
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .dept__check {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
   }
 
   .invite__row {

@@ -60,6 +60,8 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
     public DbSet<Space> Spaces => Set<Space>();
+    public DbSet<ContactGroup> ContactGroups => Set<ContactGroup>();
+    public DbSet<ContactGroupMember> ContactGroupMembers => Set<ContactGroupMember>();
     public DbSet<ChannelInvite> ChannelInvites => Set<ChannelInvite>();
     public DbSet<WorkspaceTemplateRecord> WorkspaceTemplateRecords => Set<WorkspaceTemplateRecord>();
     public DbSet<WorkspaceOnboarding> WorkspaceOnboardings => Set<WorkspaceOnboarding>();
@@ -105,6 +107,69 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<PollVote> PollVotes => Set<PollVote>();
     public DbSet<Announcement> Announcements => Set<Announcement>();
     public DbSet<AnnouncementAcknowledgement> AnnouncementAcknowledgements => Set<AnnouncementAcknowledgement>();
+
+    public override int SaveChanges()
+    {
+        DetachContactGroupsForRemovedMembers();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+        SaveChangesAsync(acceptAllChangesOnSuccess: true, cancellationToken);
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        await DetachContactGroupsForRemovedMembersAsync(cancellationToken);
+        return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    /// <summary>
+    /// B-166: leaving a workspace drops contact-group assignments. The row trigger is the
+    /// database backstop; this runs in the same unit of work for the EF path.
+    /// </summary>
+    private void DetachContactGroupsForRemovedMembers()
+    {
+        var removed = RemovedWorkspaceMembers();
+        if (removed.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var member in removed)
+        {
+            var assignments = ContactGroupMembers.IgnoreQueryFilters()
+                .Where(x => x.TenantId == member.TenantId
+                    && x.WorkspaceId == member.WorkspaceId
+                    && x.UserId == member.UserId)
+                .ToList();
+            ContactGroupMembers.RemoveRange(assignments);
+        }
+    }
+
+    private async Task DetachContactGroupsForRemovedMembersAsync(CancellationToken cancellationToken)
+    {
+        var removed = RemovedWorkspaceMembers();
+        if (removed.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var member in removed)
+        {
+            var assignments = await ContactGroupMembers.IgnoreQueryFilters()
+                .Where(x => x.TenantId == member.TenantId
+                    && x.WorkspaceId == member.WorkspaceId
+                    && x.UserId == member.UserId)
+                .ToListAsync(cancellationToken);
+            ContactGroupMembers.RemoveRange(assignments);
+        }
+    }
+
+    private List<WorkspaceMember> RemovedWorkspaceMembers() =>
+        ChangeTracker.Entries<WorkspaceMember>()
+            .Where(entry => entry.State == EntityState.Deleted)
+            .Select(entry => entry.Entity)
+            .ToList();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -182,6 +247,39 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
             entity.Property(x => x.Name).HasMaxLength(120);
             entity.HasIndex(x => new { x.WorkspaceId, x.Order });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ContactGroup>(entity =>
+        {
+            entity.ToTable("contact_groups", "directory");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Kind)
+                .HasConversion(v => ContactGroupPolicies.ToWire(v), v => ContactGroupPolicies.ParseWire(v))
+                .HasMaxLength(16);
+            entity.Property(x => x.Name).HasMaxLength(ContactGroupPolicies.MaxNameLength);
+            entity.Property(x => x.OwnerUserId).HasConversion(
+                v => v.HasValue ? v.Value.Value : (Guid?)null,
+                v => v.HasValue ? new UserId(v.Value) : null);
+            entity.HasIndex(x => new { x.WorkspaceId, x.Kind, x.Order });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ContactGroupMember>(entity =>
+        {
+            entity.ToTable("contact_group_members", "directory");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.HasIndex(x => new { x.GroupId, x.UserId }).IsUnique();
+            entity.HasIndex(x => new { x.WorkspaceId, x.UserId });
+            entity.HasOne<ContactGroup>()
+                .WithMany()
+                .HasForeignKey(x => x.GroupId)
+                .OnDelete(DeleteBehavior.Cascade);
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

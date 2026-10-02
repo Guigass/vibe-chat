@@ -116,6 +116,9 @@ import { ui } from '../../../core/i18n/strings';
           [spaces]="channels.spaces()"
           [directs]="channels.directChannels()"
           [members]="channels.peerCandidates()"
+          [contactSections]="channels.contactSections()"
+          [directoryMembers]="channels.members()"
+          [contactError]="channels.contactError()"
           [presence]="channels.presence()"
           [activeId]="channels.activeChannelId() ?? null"
           [draftIds]="drafts.draftConversationIds()"
@@ -129,6 +132,10 @@ import { ui } from '../../../core/i18n/strings';
           (openDm)="onOpenDm($event)"
           (openGroup)="onOpenGroup($event)"
           (createChannel)="onCreate($event)"
+          (createPersonalGroup)="onCreatePersonal($event)"
+          (renamePersonalGroup)="onRenamePersonal($event)"
+          (deletePersonalGroup)="onDeletePersonal($event)"
+          (savePersonalMembers)="onSavePersonal($event)"
           (channelMuteAction)="onChannelMuteAction($event)"
         />
       }
@@ -341,6 +348,22 @@ export class ChannelList {
     if (channel) {
       await this.messages.loadChannel(channel.id);
     }
+  }
+
+  async onCreatePersonal(name: string): Promise<void> {
+    await this.channels.createPersonalGroup(name);
+  }
+
+  async onRenamePersonal(event: { groupId: string; name: string }): Promise<void> {
+    await this.channels.renamePersonalGroup(event.groupId, event.name);
+  }
+
+  async onDeletePersonal(groupId: string): Promise<void> {
+    await this.channels.deletePersonalGroup(groupId);
+  }
+
+  async onSavePersonal(event: { groupId: string; userIds: string[] }): Promise<void> {
+    await this.channels.savePersonalMembers(event.groupId, event.userIds);
   }
 
   async onCreate(input: {

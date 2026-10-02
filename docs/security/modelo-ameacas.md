@@ -61,6 +61,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 16. **Web Push** — prévia em tela bloqueada; chave VAPID vazada; push após sair do canal (B-095 / ADR-022)
 17. **Group DM** — vazamento de histórico ao adicionar participante; peer de outro tenant/workspace; hub após sair (B-101 / ADR-023)
 18. **Membros de canal privado** — add de usuário de outro workspace/tenant; membro removido continua lendo histórico ou no hub (B-186)
+19. **Grupo de contatos** — departamento criado por membro; leitura de grupo pessoal alheio; tratar o grupo como ACL de canal/DM (B-166)
 
 ## Controles mínimos obrigatórios (fase 1)
 

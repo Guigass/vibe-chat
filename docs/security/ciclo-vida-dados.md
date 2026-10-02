@@ -67,6 +67,7 @@ entram em fila de purge com grace period e evidência, não permanecem para semp
 | Backup | Janela operacional/legal separada | Expiração segura | Política precisa considerar hold | Restauração controlada |
 | Dados offline | Cache mínimo e opt-in | Logout/revoke/expiry | Não é cópia de custódia | Não |
 | Dados de plugin/bridge | Declaração por destino | Revogação/delete best-effort | Conforme contrato externo | Conforme integração |
+| Grupo de contatos | Enquanto o workspace existir | Delete do grupo apaga atribuições; sair do workspace remove a pessoa dos grupos | Não | Sim (`contact-groups.json`, admin) |
 
 ## Criação e classificação
 

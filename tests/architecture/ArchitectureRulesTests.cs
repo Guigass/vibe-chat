@@ -56,6 +56,8 @@ public sealed class ArchitectureRulesTests
             "tenancy.workspaces",
             "tenancy.workspace_members",
             "directory.spaces",
+            "directory.contact_groups",
+            "directory.contact_group_members",
             "directory.channel_invites",
             "directory.workspace_templates",
             "directory.workspace_onboarding",

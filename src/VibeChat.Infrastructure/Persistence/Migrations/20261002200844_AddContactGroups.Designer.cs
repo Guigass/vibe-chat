@@ -2,9 +2,9 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using NpgsqlTypes;
 using VibeChat.Infrastructure;
 
 #nullable disable
@@ -12,9 +12,11 @@ using VibeChat.Infrastructure;
 namespace VibeChat.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(VibeChatDbContext))]
-    partial class VibeChatDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261002200844_AddContactGroups")]
+    partial class AddContactGroups
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -474,129 +476,6 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("spaces", "directory");
                 });
 
-            modelBuilder.Entity("VibeChat.Directory.TemplateApplication", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("ResultJson")
-                        .IsRequired()
-                        .HasMaxLength(262144)
-                        .HasColumnType("character varying(262144)");
-
-                    b.Property<string>("TemplateId")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<int>("TemplateVersion")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("WorkspaceId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "WorkspaceId", "IdempotencyKey")
-                        .IsUnique();
-
-                    b.ToTable("template_applications", "directory");
-                });
-
-            modelBuilder.Entity("VibeChat.Directory.WorkspaceOnboarding", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ItemsJson")
-                        .IsRequired()
-                        .HasMaxLength(8000)
-                        .HasColumnType("character varying(8000)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<string>("TemplateId")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<int?>("TemplateVersion")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("WorkspaceId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WorkspaceId")
-                        .IsUnique();
-
-                    b.ToTable("workspace_onboarding", "directory");
-                });
-
-            modelBuilder.Entity("VibeChat.Directory.WorkspaceTemplateRecord", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ManifestJson")
-                        .IsRequired()
-                        .HasMaxLength(65536)
-                        .HasColumnType("character varying(65536)");
-
-                    b.Property<string>("TemplateId")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("WorkspaceId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "WorkspaceId", "TemplateId")
-                        .IsUnique();
-
-                    b.ToTable("workspace_templates", "directory");
-                });
-
             modelBuilder.Entity("VibeChat.Files.Attachment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -765,80 +644,6 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("user_profiles", "identity");
-                });
-
-            modelBuilder.Entity("VibeChat.Identity.UserStatus", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("ClearAtEndOfDay")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Emoji")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<DateTimeOffset?>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("user_statuses", "identity");
-                });
-
-            modelBuilder.Entity("VibeChat.Identity.UserVisualPreference", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AccentColorId")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<string>("ChatWallpaperId")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("visual_preferences", "identity");
                 });
 
             modelBuilder.Entity("VibeChat.Integrations.InstalledPlugin", b =>
@@ -1054,72 +859,6 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("webhook_endpoints", "integrations");
                 });
 
-            modelBuilder.Entity("VibeChat.Messaging.Announcement", b =>
-                {
-                    b.Property<Guid>("MessageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("AcknowledgeBy")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ChannelId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ClosedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CreatedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("RequiresAcknowledgement")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("MessageId");
-
-                    b.HasIndex("TenantId", "ChannelId");
-
-                    b.HasIndex("TenantId", "RequiresAcknowledgement", "ClosedAt", "AcknowledgeBy");
-
-                    b.ToTable("announcements", "messaging");
-                });
-
-            modelBuilder.Entity("VibeChat.Messaging.AnnouncementAcknowledgement", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("AcknowledgedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ChannelId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("MessageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "ChannelId", "MessageId");
-
-                    b.HasIndex("TenantId", "MessageId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("announcement_acknowledgements", "messaging");
-                });
-
             modelBuilder.Entity("VibeChat.Messaging.ConversationSequence", b =>
                 {
                     b.Property<Guid>("TenantId")
@@ -1264,10 +1003,6 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid?>("ReplyToMessageId")
                         .HasColumnType("uuid");
-
-                    b.Property<NpgsqlTsVector>("SearchVector")
-                        .HasColumnType("tsvector")
-                        .HasColumnName("search_vector");
 
                     b.Property<long>("Sequence")
                         .HasColumnType("bigint");
@@ -1644,86 +1379,6 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("read_cursors", "messaging");
                 });
 
-            modelBuilder.Entity("VibeChat.Messaging.Reminder", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("AttemptCount")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid?>("ChannelId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ClaimedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ClientIdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("FailureCode")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<Guid?>("MessageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("NextAttemptAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(280)
-                        .HasColumnType("character varying(280)");
-
-                    b.Property<DateTimeOffset>("RemindAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<string>("TargetKind")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ThreadId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("TimeZone")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("WorkspaceId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Status", "RemindAtUtc");
-
-                    b.HasIndex("TenantId", "UserId", "ClientIdempotencyKey")
-                        .IsUnique();
-
-                    b.ToTable("reminders", "messaging");
-                });
-
             modelBuilder.Entity("VibeChat.Messaging.SavedMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1760,93 +1415,6 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.HasIndex("TenantId", "UserId", "CompletedAt", "CreatedAt");
 
                     b.ToTable("saved_messages", "messaging");
-                });
-
-            modelBuilder.Entity("VibeChat.Messaging.ScheduledMessage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("AttemptCount")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("AuthorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasMaxLength(8000)
-                        .HasColumnType("character varying(8000)");
-
-                    b.Property<Guid>("ChannelId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ClaimedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ClientIdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("FailureCode")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<DateTimeOffset?>("NextAttemptAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("PlannedMessageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ReplyToMessageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("SendAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("SendIdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<Guid?>("SentMessageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ThreadId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("TimeZone")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("WorkspaceId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Status", "SendAtUtc");
-
-                    b.HasIndex("TenantId", "AuthorId", "ClientIdempotencyKey")
-                        .IsUnique();
-
-                    b.ToTable("scheduled_messages", "messaging");
                 });
 
             modelBuilder.Entity("VibeChat.Messaging.TenantLinkPreviewSettings", b =>

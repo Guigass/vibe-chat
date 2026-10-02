@@ -383,6 +383,12 @@ Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out Signal
 | `PUT /api/v1/workspaces/{workspaceId}/channels/{channelId}/topic` | Body `{ topic }` (máx. 250; vazio limpa); membership + `channel.create`; rejeita `Direct` (B-087 `/topico`) |
 | `GET /api/v1/workspaces/{workspaceId}/commands` | Descoberta de slash commands disponíveis ao ator (B-087); membership; filtrado por permissão; `description` segue o `locale` do caller (`me.locale`; null → `pt-BR`); `name` e `usage` são estáveis — ver tabela abaixo |
 | `GET /api/v1/workspaces/{workspaceId}/members` | Membros do workspace (membership obrigatória — D-07); inclui `role` |
+| `GET /api/v1/workspaces/{workspaceId}/contact-groups` | Departamentos do workspace + grupos pessoais do caller (B-166). Grupo de contatos **não** autoriza canal, DM ou papel |
+| `POST /api/v1/workspaces/{workspaceId}/contact-groups` | Body `{ name, kind, order? }`. `kind`: `department` (só `workspace.admin`) ou `personal` (dono = caller). Nome ≤ 80, único por (`workspace`, `kind`, dono efetivo), sem diferenciar maiúsculas. `Idempotency-Key` opcional |
+| `PATCH /api/v1/workspaces/{workspaceId}/contact-groups/{groupId}` | `{ name?, order? }`. Departamento: admin. Pessoal alheio: **404** |
+| `DELETE /api/v1/workspaces/{workspaceId}/contact-groups/{groupId}` | Mesma authZ. **204**. Atribuições caem em cascade |
+| `PUT /api/v1/workspaces/{workspaceId}/contact-groups/{groupId}/members` | Body `{ userIds: Guid[] }` substitui o conjunto. Só membros do mesmo workspace. `Idempotency-Key` opcional |
+| `GET /api/v1/workspaces/{workspaceId}/contacts?grouped=true` | Seções `{ groupId?, name?, kind?, members[] }`: departamentos, grupos pessoais do caller, depois sem grupo (`groupId` nulo) se houver alguém fora de todos. `grouped=false` → **400** `InvalidQuery` |
 | `GET /api/v1/workspaces/{workspaceId}/roles` | Papéis atribuíveis (`Member`, `Moderator`, `Auditor`, `Admin`); exige `workspace.admin` no workspace |
 | `POST /api/v1/workspaces/{workspaceId}/members` | Convite/provisionamento (B-068). Body `{ email, displayName?, role? }` (`role` default `Member`); exige `workspace.admin`; cria perfil stub `pending:{email}` se o usuário ainda não logou; 409 se já membro; rejeita `Guest`/`Bot`/owners; audit `member.invite`; e-mail opcional via outbox se `Email:Enabled`. Sem self-signup — IdP (Keycloak) continua responsável pela autenticação |
 | `PUT /api/v1/workspaces/{workspaceId}/members/{userId}/role` | Body `{ role }`; owner/admin (`workspace.admin`); não permite auto-elevação; rejeita `Guest`/`Bot`/`WorkspaceOwner`/`PlatformOwner` (D-07); audit `member.role.change`; e-mail opcional via outbox se `Email:Enabled` |
@@ -683,7 +689,7 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 | `POST /api/v1/admin/webhooks/{endpointId}/test` | Envia `WebhookTest` assinado e devolve `{ ok, statusCode, lastError }` |
 | `POST /api/v1/admin/settings/credentials/vapid/rotate` | Rotaciona VAPID da instância (envelope em `administration.process_settings`); body `{ workspaceId?, publicKey, privateKey, subject? }`; resposta máscara/versão; `503` se keyring indisponível (B-187) |
 | `POST /api/v1/admin/settings/encryption/reencrypt` | Regrava envelopes do workspace/tenant/instância para `ActiveKeyVersion`; migra plaintext legado de webhook; audit `settings.encryption.reencrypt` |
-| `GET /api/v1/admin/workspaces/{workspaceId}/export` | Export compliance do workspace (B-046); ZIP `application/zip` com JSON (`manifest`, `workspace`, `members`, `spaces`, `channels`, `threads`, `messages`, `attachments` metadata); corpos soft-deleted incluídos (paridade B-067); **sem** binários MinIO; exige `workspace.admin` (Auditor → 403); audit `workspace.export`; workspace fora do tenant/membership → 403 |
+| `GET /api/v1/admin/workspaces/{workspaceId}/export` | Export compliance do workspace (B-046); ZIP `application/zip` com JSON (`manifest`, `workspace`, `members`, `contact-groups`, `spaces`, `channels`, `threads`, `messages`, `attachments` metadata); corpos soft-deleted incluídos (paridade B-067); **sem** binários MinIO; exige `workspace.admin` (Auditor → 403); audit `workspace.export`; workspace fora do tenant/membership → 403 |
 
 `AuditEventResponse`: `id`, `action`, `entityType`, `entityId`, `actorUserId`, `occurredAt`, `metadataJson`.
 
@@ -691,7 +697,7 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 
 `AdminConversationMessageResponse`: `id`, `channelId`, `conversationId`, `sequence`, `authorId`, `authorName`, `body` (sempre o valor persistido), `createdAt`, `editedAt`, `deletedAt`, `deletedBy`, `deletedByName`, `threadId`, `replyToMessageId`, `replyCount`, `attachments`, `poll?` (B-096; anônima sem votantes).
 
-Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `settings.change`, `settings.credential.rotate`, `settings.encryption.reencrypt`, `workspace.export`, `message.purge`, `poll.create`, `poll.vote`, `poll.unvote`, `poll.close`.
+Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `contact_group.create`, `contact_group.delete`, `contact_group.members.replace` (só departamento), `settings.change`, `settings.credential.rotate`, `settings.encryption.reencrypt`, `workspace.export`, `message.purge`, `poll.create`, `poll.vote`, `poll.unvote`, `poll.close`.
 
 **Planned (B-169) — metadata de `message.delete`:** quando `contentAuditEnabled=true`,
 `metadataJson` inclui `channelId`, `threadId?`, `sequence`, `authorId`, `body`
