@@ -38,10 +38,18 @@ próprio; admin pode limpar abuso com audit.
 
 ## Aceite
 
-- [ ] Expiração automática funciona.
-- [ ] DND prevalece para notificação.
-- [ ] Status não aparece a outsider.
-- [ ] Reconnect recupera estado.
+- [x] Expiração automática funciona.
+- [x] DND prevalece para notificação.
+- [x] Status não aparece a outsider.
+- [x] Reconnect recupera estado.
+
+## Nota de implementação
+
+Expiração é avaliada na leitura (e no cliente, via `expiresAt`), no mesmo espírito
+do `MutedUntil` de B-097 — sem job novo nem role RLS extra. O hook de calendário
+(`Features:AvailabilityCalendar:Enabled`, default false) não sincroniza nem devolve
+eventos. O texto do status é controlado pelo usuário; admin limpa abuso com audit
+sem copiar o conteúdo.
 
 ## Testes
 

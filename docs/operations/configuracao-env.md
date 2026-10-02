@@ -179,6 +179,7 @@ do Keycloak como mecanismo de reset.
 | `Observability` | `GrafanaUrl` | Default appsettings; profile `observability` expõe Grafana em `GRAFANA_PORT` |
 | `RuntimeSettings` | `DatabaseOverridesEnabled`, `Encryption:*` | Feature flag + keyring; off/default seguro |
 | `Directory` | `GroupDm:Enabled`, `GroupDm:MaxParticipants`, `Invites:Enabled`, `Invites:MaxExpiryDays` | Kill switches R3 (B-101 / ADR-023 e B-040 / ADR-024); default off; lab/Development e TestHost ligam |
+| `Features` | `AvailabilityCalendar:Enabled` | B-116; default false; off devolve 404 sem agenda. Status personalizado não depende desta flag |
 
 ### Só via admin UI (não entram no `.env` mínimo)
 

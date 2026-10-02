@@ -24,6 +24,7 @@ import {
 import { withoutSelfTyping } from './typing-filter';
 import { ui } from '../i18n/strings';
 import { mapPollSummary } from '../../shared/polls/poll-summary';
+import { AvailabilityKind, UserStatusBody, UserStatusStateName } from '../../shared/status/user-status';
 
 export const AWAY_GRACE_MS = 120_000;
 
@@ -33,6 +34,14 @@ export interface PresenceChangedEvent {
   userId: string;
   status: PresenceStatus;
   tenantId?: string;
+}
+
+export interface HubUserStatusEvent {
+  userId: string;
+  tenantId?: string;
+  presence: PresenceStatus;
+  availability: AvailabilityKind;
+  status: UserStatusBody | null;
 }
 
 interface MessageCreatedPayload {
@@ -261,6 +270,7 @@ export class ChatHubService {
   private readonly announcementHandlers = new Set<(event: AnnouncementAcknowledgedEvent) => void>();
   private readonly scheduleNoticeHandlers = new Set<(event: ScheduleNoticeEvent) => void>();
   private readonly presenceHandlers = new Set<(event: PresenceChangedEvent) => void>();
+  private readonly userStatusHandlers = new Set<(event: HubUserStatusEvent) => void>();
   private readonly reconnectedHandlers = new Set<() => void | Promise<void>>();
   private readonly thumbnailReadyHandlers = new Set<(event: AttachmentThumbnailReadyEvent) => void>();
   private readonly linkPreviewReadyHandlers = new Set<(event: LinkPreviewReadyEvent) => void>();
@@ -603,6 +613,56 @@ export class ChatHubService {
         handler(event);
       }
     });
+
+    connection.on('UserStatusChanged', (raw: {
+      tenantId?: string;
+      userId: string;
+      presence?: string;
+      availability?: string;
+      status?: {
+        state?: string;
+        emoji?: string;
+        text?: string;
+        clearAtEndOfDay?: boolean;
+        expiresAt?: string | null;
+      } | null;
+    } | string) => {
+      const payload = this.coercePayload<{
+        tenantId?: string;
+        userId: string;
+        presence?: string;
+        availability?: string;
+        status?: {
+          state?: string;
+          emoji?: string;
+          text?: string;
+          clearAtEndOfDay?: boolean;
+          expiresAt?: string | null;
+        } | null;
+      }>(raw);
+      if (!payload?.userId) return;
+      const presence = (payload.presence || 'offline').toLowerCase();
+      const availability = (payload.availability || 'offline').toLowerCase();
+      const state = payload.status?.state?.toLowerCase();
+      const event: HubUserStatusEvent = {
+        userId: String(payload.userId),
+        tenantId: payload.tenantId ? String(payload.tenantId) : undefined,
+        presence: presence === 'online' || presence === 'away' ? presence : 'offline',
+        availability: isAvailability(availability) ? availability : 'offline',
+        status: payload.status && isStatusState(state)
+          ? {
+              state,
+              emoji: payload.status.emoji ?? '',
+              text: payload.status.text ?? '',
+              clearAtEndOfDay: !!payload.status.clearAtEndOfDay,
+              expiresAt: payload.status.expiresAt ?? null,
+            }
+          : null,
+      };
+      for (const handler of this.userStatusHandlers) {
+        handler(event);
+      }
+    });
   }
 
   private scheduleManualRetry(): void {
@@ -802,6 +862,11 @@ export class ChatHubService {
     return () => this.presenceHandlers.delete(handler);
   }
 
+  onUserStatusChanged(handler: (event: HubUserStatusEvent) => void): () => void {
+    this.userStatusHandlers.add(handler);
+    return () => this.userStatusHandlers.delete(handler);
+  }
+
   /** Fired after automatic reconnect + re-JoinChannel (B-070 gap-fill hook). */
   onReconnected(handler: () => void | Promise<void>): () => void {
     this.reconnectedHandlers.add(handler);
@@ -971,4 +1036,12 @@ function mapAnnouncementPayload(value: unknown): AnnouncementSummary | null {
     canAcknowledge: !!row.canAcknowledge,
     canViewReport: !!row.canViewReport,
   };
+}
+
+function isAvailability(value: string): value is AvailabilityKind {
+  return value === 'available' || value === 'away' || value === 'busy' || value === 'vacation' || value === 'offline';
+}
+
+function isStatusState(value: string | undefined): value is UserStatusStateName {
+  return value === 'focus' || value === 'meeting' || value === 'vacation' || value === 'custom';
 }

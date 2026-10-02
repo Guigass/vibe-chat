@@ -59,6 +59,7 @@ entram em fila de purge com grace period e evidência, não permanecem para semp
 | Índice de busca | Rebuildable | Remove/reindex | Não é cópia de custódia | Não |
 | Inbox/digest/cache | Curta/rebuildable | Invalida/delete | Não | Não |
 | Push payload | Mínima, TTL curto | Expira automaticamente | Não | Não |
+| Status personalizado | Até `ExpiresAt` ou clear do dono/admin | Delete da linha; sem projeção de agenda | Não | Não (texto é PII do usuário) |
 | Outbox | Janela operacional | Compacta após processamento/evidência | Não substitui hold | Não |
 | Audit | Política própria protegida | Restrito; nunca pelo ator comum | Sim quando aplicável | Sim, autorizado |
 | Logs/traces/métricas | Curta e sem body | Expiração automática | Excepcional | Não como conteúdo |
