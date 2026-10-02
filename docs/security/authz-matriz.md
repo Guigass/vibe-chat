@@ -56,6 +56,13 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | PUT | `/workspaces/{workspaceId:guid}/contact-groups/{groupId:guid}/members` | exempt | dono ou admin do departamento | ✓* | ✗ | ✓ | *pessoal próprio; alvo fora do workspace → 400 `InvalidMembers` |
 | GET | `/workspaces/{workspaceId:guid}/contacts` | membership | — | ✓ | ✓ | ✓ | B-166; `grouped=true` (default); seções + sem grupo |
 | GET | `/workspaces/{workspaceId:guid}/presence` | membership | — | ✓ | ✓ | ✓ | Presence não é conteúdo de mensagem |
+| GET | `/me/status` | permission | `message.read` | ✓ | ✓ | ✓ | B-116; status do próprio |
+| PUT | `/me/status` | permission | `message.read` | ✓ | ✓ | ✓ | B-116; só o próprio; upsert |
+| DELETE | `/me/status` | permission | `message.read` | ✓ | ✓ | ✓ | B-116; limpa o próprio |
+| GET | `/workspaces/{workspaceId:guid}/availability` | permission | `message.read` | ✓ | ✓ | ✓ | B-116; membros do workspace; sem agenda |
+| DELETE | `/workspaces/{workspaceId:guid}/members/{userId:guid}/status` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-116; clear de abuso com audit, sem texto |
+| POST | `/workspaces/{workspaceId:guid}/members/{userId:guid}/status/report` | permission | `message.read` | ✓ | ✓ | ✓ | B-116; denúncia sem copiar o texto |
+| GET | `/me/availability/calendar` | permission | `message.read` | ✓ | ✓ | ✓ | B-116; flag off → 404; sem eventos |
 | POST | `/workspaces/{workspaceId:guid}/dms` | exempt | membership-only | ✓ | ✓ | ✓ | Abrir DM (B-021); `AllowPermissionGateExempt` |
 | POST | `/workspaces/{workspaceId:guid}/group-dms` | exempt | membership-only | ✓ | ✓ | ✓ | Group DM habilitado; participantes validados no workspace |
 | POST | `/channels/{channelId:guid}/participants` | exempt | membership-only | ✓ | ✓ | ✓ | Participante atual adiciona membros do workspace |

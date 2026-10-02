@@ -852,6 +852,45 @@ export const ui = {
   adminReencryptNone: $localize`:@@admin.reencryptNone:Nenhuma credencial precisava de re-encriptação.`,
   adminReencryptForbidden: $localize`:@@admin.reencryptForbidden:Sem permissão para re-encriptar.`,
   adminReencryptError: $localize`:@@admin.reencryptError:Falha ao re-encriptar credenciais.`,
+  statusOpen: $localize`:@@status.open:Editar status`,
+  statusEmpty: $localize`:@@status.empty:Sem status`,
+  statusEditorTitle: $localize`:@@status.editorTitle:Status`,
+  statusEditorLead: $localize`:@@status.editorLead:O texto é seu. Membros do workspace veem até expirar.`,
+  statusState: $localize`:@@status.state:Estado`,
+  statusFocus: $localize`:@@status.focus:Foco`,
+  statusMeeting: $localize`:@@status.meeting:Reunião`,
+  statusVacation: $localize`:@@status.vacation:Férias`,
+  statusCustom: $localize`:@@status.custom:Personalizado`,
+  statusEmoji: $localize`:@@status.emoji:Emoji`,
+  statusText: $localize`:@@status.text:Texto`,
+  statusPreview: $localize`:@@status.preview:Prévia`,
+  statusClearEndOfDay: $localize`:@@status.clearEndOfDay:Limpar ao fim do dia`,
+  statusExpires: $localize`:@@status.expires:Expiração`,
+  statusExpiresNone: $localize`:@@status.expiresNone:Sem expiração`,
+  statusExpires1h: $localize`:@@status.expires1h:Em 1 hora`,
+  statusExpires4h: $localize`:@@status.expires4h:Em 4 horas`,
+  statusSave: $localize`:@@status.save:Salvar`,
+  statusClear: $localize`:@@status.clear:Limpar status`,
+  statusConfirmClear: $localize`:@@status.confirmClear:Confirmar limpeza`,
+  statusCancel: $localize`:@@status.cancel:Cancelar`,
+  statusReport: $localize`:@@status.report:Denunciar status`,
+  statusConfirmReport: $localize`:@@status.confirmReport:Confirmar denúncia`,
+  statusReportDone: $localize`:@@status.reportDone:Denúncia registrada.`,
+  statusAdminClear: $localize`:@@status.adminClear:Limpar status abusivo`,
+  statusConfirmAdminClear: $localize`:@@status.confirmAdminClear:Confirmar remoção`,
+  statusAvailable: $localize`:@@status.available:Disponível`,
+  statusAway: $localize`:@@status.away:Ausente`,
+  statusBusy: $localize`:@@status.busy:Ocupado`,
+  statusOffline: $localize`:@@status.offline:Offline`,
+  statusLoading: $localize`:@@status.loading:Salvando status…`,
+  statusErrorSave: $localize`:@@status.errorSave:Não foi possível salvar o status.`,
+  errorStatusTextTooLong: $localize`:@@error.StatusTextTooLong:Texto longo demais.`,
+  errorStatusEmojiTooLong: $localize`:@@error.StatusEmojiTooLong:Emoji longo demais.`,
+  errorStatusContentRequired: $localize`:@@error.StatusContentRequired:Escreva um texto ou um emoji.`,
+  errorStatusExpiresInPast: $localize`:@@error.StatusExpiresInPast:A expiração já passou.`,
+  errorInvalidStatusState: $localize`:@@error.InvalidStatusState:Estado de status inválido.`,
+  errorStatusTextInvalid: $localize`:@@error.StatusTextInvalid:Texto de status inválido.`,
+  errorCannotReportSelf: $localize`:@@error.CannotReportSelf:Você não pode denunciar o próprio status.`,
 } as const;
 
 export function fillTemplate(
@@ -899,6 +938,20 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.errorNoteTooLong;
     case 'MessageBodyTooLong':
       return ui.errorMessageBodyTooLong;
+    case 'StatusTextTooLong':
+      return ui.errorStatusTextTooLong;
+    case 'StatusEmojiTooLong':
+      return ui.errorStatusEmojiTooLong;
+    case 'StatusContentRequired':
+      return ui.errorStatusContentRequired;
+    case 'StatusExpiresInPast':
+      return ui.errorStatusExpiresInPast;
+    case 'InvalidStatusState':
+      return ui.errorInvalidStatusState;
+    case 'StatusTextInvalid':
+      return ui.errorStatusTextInvalid;
+    case 'CannotReportSelf':
+      return ui.errorCannotReportSelf;
     case 'InviteUnavailable':
       return ui.guestExpired;
     case 'AlreadyMember':

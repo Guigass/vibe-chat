@@ -93,6 +93,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Features:Import:Enabled` | instance | false | B-153 | onboarding/template manual |
 | `Features:ChatBackup:Enabled` | instance | false | B-172 | export pontual B-046 + scripts B-031 |
 | `Features:SupportBundle:Enabled` | instance | false | B-154 | health/runbooks permanecem |
+| `Features:AvailabilityCalendar:Enabled` | instance | false | B-116 | `GET /me/availability/calendar` → 404; status e disponibilidade seguem ativos |
 
 Nomes de binding podem mudar no ADR, mas semântica/default não muda
 silenciosamente.

@@ -77,22 +77,44 @@
     <vc-channel-list [navCompact]="navCompact() && !narrowViewport()" />
 
     <footer class="shell__sidebar-footer" role="contentinfo">
-      @if (canAccessAdmin()) {
-        <a
-          routerLink="/admin"
-          routerLinkActive="is-active"
-          [attr.aria-label]="navCompact() && !narrowViewport() ? ui.admin : null"
-          [vcTooltip]="navCompact() && !narrowViewport() ? ui.admin : null"
-          [tooltipDisabled]="!(navCompact() && !narrowViewport())"
-        >{{ ui.admin }}</a>
-      }
       <button
         type="button"
-        [attr.aria-label]="navCompact() && !narrowViewport() ? ui.logout : null"
-        [vcTooltip]="navCompact() && !narrowViewport() ? ui.logout : null"
-        [tooltipDisabled]="!(navCompact() && !narrowViewport())"
-        (click)="logout()"
-      >{{ ui.logout }}</button>
+        class="shell__status"
+        data-testid="user-status-open"
+        [attr.aria-label]="profileName() + ' — ' + ownStatusLabel()"
+        (click)="openStatusEditor()"
+      >
+        <vc-avatar
+          [name]="profileName()"
+          [size]="28"
+          [statusEmoji]="userStatus.emojiOf(auth.profile()?.id)"
+          [statusLabel]="ownStatusLabel()"
+        />
+        @if (!(navCompact() && !narrowViewport())) {
+          <span class="shell__status-copy">
+            <span class="shell__status-name">{{ profileName() }}</span>
+            <span class="shell__status-line">{{ ownStatusLine() }}</span>
+          </span>
+        }
+      </button>
+      <div class="shell__sidebar-links">
+        @if (canAccessAdmin()) {
+          <a
+            routerLink="/admin"
+            routerLinkActive="is-active"
+            [attr.aria-label]="navCompact() && !narrowViewport() ? ui.admin : null"
+            [vcTooltip]="navCompact() && !narrowViewport() ? ui.admin : null"
+            [tooltipDisabled]="!(navCompact() && !narrowViewport())"
+          >{{ ui.admin }}</a>
+        }
+        <button
+          type="button"
+          [attr.aria-label]="navCompact() && !narrowViewport() ? ui.logout : null"
+          [vcTooltip]="navCompact() && !narrowViewport() ? ui.logout : null"
+          [tooltipDisabled]="!(navCompact() && !narrowViewport())"
+          (click)="logout()"
+        >{{ ui.logout }}</button>
+      </div>
     </footer>
   </aside>
 
@@ -125,6 +147,24 @@
           <p>{{ channels.activeChannel()?.description }}</p>
         } @else if (channels.activeChannel()?.isDirect) {
           <p>{{ ui.directMessage }}</p>
+          @if (peerStatusLine()) {
+            <p class="shell__peer-status" data-testid="dm-status">{{ peerStatusLine() }}</p>
+          }
+          @if (peerHasStatus()) {
+            <p class="shell__peer-actions">
+              <button type="button" data-testid="dm-status-report" (click)="reportPeer()">
+                {{ confirmingReport() ? ui.statusConfirmReport : ui.statusReport }}
+              </button>
+              @if (canModerateStatus()) {
+                <button type="button" data-testid="dm-status-admin-clear" (click)="clearPeerStatus()">
+                  {{ confirmingAdminClear() ? ui.statusConfirmAdminClear : ui.statusAdminClear }}
+                </button>
+              }
+            </p>
+          }
+          @if (userStatus.reported()) {
+            <p role="status">{{ ui.statusReportDone }}</p>
+          }
         }
         @if (showChannelMembers()) {
           <button
@@ -555,3 +595,6 @@
   }
 </div>
 <vc-command-palette />
+@if (statusEditorOpen()) {
+  <vc-user-status-editor (closed)="statusEditorOpen.set(false)" />
+}

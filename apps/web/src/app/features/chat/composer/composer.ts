@@ -29,6 +29,7 @@ import { MessageStore } from '../../../core/services/message.store';
 import { replyPreviewText } from '../../../core/services/message-sync';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { UserStatusStore } from '../../../core/services/user-status.store';
 import { DraftStoreService } from '../../../core/services/draft-store.service';
 import {
   isMessageBodyTooLong,
@@ -957,6 +958,7 @@ export class Composer {
   private readonly auth = inject(AuthService);
   private readonly drafts = inject(DraftStoreService);
   private readonly locales = inject(LocaleService);
+  private readonly userStatus = inject(UserStatusStore);
   readonly schedule = inject(ScheduleStore);
 
   readonly ui = ui;
@@ -1701,6 +1703,13 @@ export class Composer {
     }
   }
 
+  private mentionStatus(userId: string): string | undefined {
+    const status = this.userStatus.entryOf(userId)?.status;
+    if (!status) return undefined;
+    const line = `${status.emoji} ${status.text}`.trim();
+    return line || undefined;
+  }
+
   private scheduleMentionFetch(query: string): void {
     if (this.mentionFetchTimer) {
       clearTimeout(this.mentionFetchTimer);
@@ -1715,7 +1724,7 @@ export class Composer {
           userId: member.userId,
           displayName: member.displayName,
           email: member.email,
-          subtitle: this.contactSubtitle(member.userId),
+          subtitle: this.mentionSubtitle(member.userId),
         })),
       );
       return;
@@ -1729,7 +1738,7 @@ export class Composer {
             userId: member.userId,
             displayName: member.displayName,
             email: member.email,
-            subtitle: this.contactSubtitle(member.userId),
+            subtitle: this.mentionSubtitle(member.userId),
           })),
         );
       }).catch(() => {
@@ -1741,6 +1750,13 @@ export class Composer {
   private contactSubtitle(userId: string): string | undefined {
     const label = this.channels.contactLabel?.(userId);
     return label || undefined;
+  }
+
+  private mentionSubtitle(userId: string): string | undefined {
+    const department = this.contactSubtitle(userId);
+    const status = this.mentionStatus(userId);
+    if (department && status) return `${department} · ${status}`;
+    return department || status;
   }
 
   private closeMentionMenu(): void {
