@@ -8,239 +8,51 @@ import {
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 import { TenantContext } from '../tenant/tenant-context';
-import {
-  AnnouncementSummary,
-  ChatMessage,
-  PollSummary,
-  PresenceStatus,
-  ReactionSummary,
-  TypingState,
-} from '../../shared/models/chat.models';
-import {
-  HUB_KEEP_ALIVE_MS,
-  HUB_SERVER_TIMEOUT_MS,
-  nextHubRetryDelayMs,
-} from './chat-hub-reconnect';
-import { withoutSelfTyping } from './typing-filter';
+import { ChatMessage, TypingState } from '../../shared/models/chat.models';
+import { HUB_KEEP_ALIVE_MS, HUB_SERVER_TIMEOUT_MS, nextHubRetryDelayMs } from './chat-hub-reconnect';
+import { bindChatHubHandlers } from './chat-hub-handlers';
+import { HubPresenceLoop } from './chat-hub-presence';
+import { HubRetrySession } from './chat-hub-session';
 import { ui } from '../i18n/strings';
-import { mapPollSummary } from '../../shared/polls/poll-summary';
-import { AvailabilityKind, UserStatusBody, UserStatusStateName } from '../../shared/status/user-status';
+import {
+  AnnouncementAcknowledgedEvent,
+  AttachmentThumbnailReadyEvent,
+  ConnectionStatus,
+  HubUserStatusEvent,
+  LinkPreviewReadyEvent,
+  MessageDeleteEvent,
+  MessageEditEvent,
+  PinChangedEvent,
+  PollChangedEvent,
+  PresenceChangedEvent,
+  ReactionChangedEvent,
+  ReadCursorChangedEvent,
+  ScheduleNoticeEvent,
+} from './chat-hub.types';
 
-export const AWAY_GRACE_MS = 120_000;
-
-export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
-
-export interface PresenceChangedEvent {
-  userId: string;
-  status: PresenceStatus;
-  tenantId?: string;
-}
-
-export interface HubUserStatusEvent {
-  userId: string;
-  tenantId?: string;
-  presence: PresenceStatus;
-  availability: AvailabilityKind;
-  status: UserStatusBody | null;
-}
-
-interface MessageCreatedPayload {
-  messageId?: string;
-  id?: string;
-  /** Echo of the client-supplied message id for optimistic UI reconciliation. */
-  clientMessageId?: string;
-  channelId: string;
-  conversationId?: string;
-  threadId?: string | null;
-  parentMessageId?: string | null;
-  replyToMessageId?: string | null;
-  replyTo?: {
-    messageId?: string;
-    authorName?: string;
-    preview?: string;
-    deleted?: boolean;
-  } | null;
-  forwardedFromMessageId?: string | null;
-  forwardedFromChannelId?: string | null;
-  forwardedFrom?: {
-    messageId?: string;
-    channelId?: string;
-    channelName?: string;
-    authorName?: string;
-    createdAt?: string;
-    isDirect?: boolean;
-  } | null;
-  sequence?: number;
-  authorId?: string;
-  authorName?: string;
-  authorIsBot?: boolean;
-  body?: string;
-  createdAt?: string;
-  mentionedUserIds?: string[];
-  mentionKinds?: string[];
-  attachments?: Array<{
-    id: string;
-    fileName: string;
-    contentType: string;
-    sizeBytes: number;
-  }>;
-  poll?: unknown;
-  announcement?: unknown;
-}
-
-interface MessageEditedPayload {
-  messageId?: string;
-  id?: string;
-  channelId: string;
-  sequence?: number;
-  body?: string;
-  editedAt?: string;
-}
-
-interface MessageDeletedPayload {
-  messageId?: string;
-  id?: string;
-  channelId: string;
-  sequence?: number;
-  deletedAt?: string;
-}
-
-export interface MessageEditEvent {
-  id: string;
-  channelId: string;
-  body: string;
-  editedAt: string;
-  seq?: number;
-}
-
-export interface MessageDeleteEvent {
-  id: string;
-  channelId: string;
-  deletedAt: string;
-  seq?: number;
-}
-
-export interface ReactionChangedEvent {
-  messageId: string;
-  channelId: string;
-  emoji: string;
-  userId: string;
-  added: boolean;
-  reactions: ReactionSummary[];
-  topUsers?: string[];
-}
-
-export interface ScheduleNoticeEvent {
-  kind: 'reminder' | 'scheduled';
-  status: string;
-  reveal: boolean;
-}
-
-interface ScheduleNoticePayload {
-  status?: string;
-  reveal?: boolean;
-}
-
-export interface PollChangedEvent {
-  messageId: string;
-  channelId: string;
-  poll: PollSummary;
-}
-
-export interface AnnouncementAcknowledgedEvent {
-  messageId: string;
-  channelId: string;
-  acknowledgementCount?: number;
-  acknowledgedByUserId?: string | null;
-  closedAt?: string | null;
-}
-
-export interface PinChangedEvent {
-  messageId: string;
-  channelId: string;
-  pinned: boolean;
-  byUserId: string;
-}
-
-export interface AttachmentThumbnailReadyEvent {
-  attachmentId: string;
-  channelId: string;
-  thumbnailStatus: string | null;
-  width?: number | null;
-  height?: number | null;
-  pageCount?: number | null;
-}
-
-export interface LinkPreviewReadyEvent {
-  tenantId?: string;
-  channelId: string;
-  messageId: string;
-  linkPreviewId: string;
-  url: string;
-  title?: string | null;
-  description?: string | null;
-  siteName?: string | null;
-  hasImage: boolean;
-  status: string;
-}
-
-export interface ReadCursorChangedEvent {
-  channelId: string;
-  userId: string;
-  lastReadSequence: number;
-  tenantId?: string;
-}
-
-interface ReactionChangedPayload {
-  messageId?: string;
-  channelId: string;
-  emoji?: string;
-  userId?: string;
-  added?: boolean;
-  topUsers?: string[];
-  reactions?: Array<{ emoji: string; count: number; userIds?: string[]; me?: boolean }>;
-}
-
-interface PinChangedPayload {
-  messageId?: string;
-  channelId?: string;
-  pinned?: boolean;
-  byUserId?: string;
-}
-
-interface AttachmentThumbnailReadyPayload {
-  attachmentId?: string;
-  channelId?: string;
-  thumbnailStatus?: string | null;
-  width?: number | null;
-  height?: number | null;
-  pageCount?: number | null;
-}
-
-interface LinkPreviewReadyPayload {
-  tenantId?: string;
-  channelId?: string;
-  messageId?: string;
-  linkPreviewId?: string;
-  url?: string;
-  title?: string | null;
-  description?: string | null;
-  siteName?: string | null;
-  hasImage?: boolean;
-  status?: string;
-}
-
-interface ReadCursorChangedPayload {
-  tenantId?: string;
-  channelId?: string;
-  userId?: string;
-  lastReadSequence?: number;
-}
+export {
+  AWAY_GRACE_MS,
+  type AnnouncementAcknowledgedEvent,
+  type AttachmentThumbnailReadyEvent,
+  type ConnectionStatus,
+  type HubUserStatusEvent,
+  type LinkPreviewReadyEvent,
+  type MessageDeleteEvent,
+  type MessageEditEvent,
+  type PinChangedEvent,
+  type PollChangedEvent,
+  type PresenceChangedEvent,
+  type ReactionChangedEvent,
+  type ReadCursorChangedEvent,
+  type ScheduleNoticeEvent,
+} from './chat-hub.types';
 
 @Injectable({ providedIn: 'root' })
 export class ChatHubService {
   private readonly auth = inject(AuthService);
   private readonly tenant = inject(TenantContext);
+  private readonly presenceLoop = new HubPresenceLoop();
+  private readonly retry = new HubRetrySession();
   private connection: HubConnection | null = null;
   /**
    * Channels this client is subscribed to (SignalR groups). Unlike a single
@@ -248,12 +60,6 @@ export class ChatHubService {
    * badges can bump live for channels the user isn't currently viewing (B-088).
    */
   private readonly joinedChannelIds = new Set<string>();
-  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-  private awayTimer: ReturnType<typeof setTimeout> | null = null;
-  private visibilityHandler: (() => void) | null = null;
-  private onlineHandler: (() => void) | null = null;
-  private retryTimer: ReturnType<typeof setTimeout> | null = null;
-  private manualRetryCount = 0;
   /** True while the shell wants a live hub (until explicit disconnect). */
   private wantConnected = false;
   private connectInFlight: Promise<void> | null = null;
@@ -282,7 +88,7 @@ export class ChatHubService {
   async connect(): Promise<void> {
     if (this.auth.isOfflineDemo()) return;
     this.wantConnected = true;
-    this.ensureNetworkListeners();
+    this.retry.ensureNetworkListeners(this.retryHooks());
 
     if (this.connection?.state === HubConnectionState.Connected) return;
     if (
@@ -305,7 +111,7 @@ export class ChatHubService {
   }
 
   private async startConnection(): Promise<void> {
-    this.clearManualRetry();
+    this.retry.clear();
     this.statusSignal.set('connecting');
 
     if (!this.connection) {
@@ -314,14 +120,14 @@ export class ChatHubService {
 
     try {
       await this.connection.start();
-      this.manualRetryCount = 0;
+      this.retry.resetCount();
       this.statusSignal.set('connected');
       await this.heartbeat();
       await this.rejoinAllChannels();
       this.startPresenceLoop();
     } catch {
       this.statusSignal.set('disconnected');
-      this.scheduleManualRetry();
+      this.retry.schedule(this.retryHooks());
     }
   }
 
@@ -346,7 +152,7 @@ export class ChatHubService {
 
     connection.onreconnecting(() => this.statusSignal.set('reconnecting'));
     connection.onreconnected(async () => {
-      this.manualRetryCount = 0;
+      this.retry.resetCount();
       this.statusSignal.set('connected');
       try {
         await this.heartbeat();
@@ -361,379 +167,47 @@ export class ChatHubService {
       this.statusSignal.set('disconnected');
       // Automatic reconnect only arms after a successful start(); cover the rest.
       if (this.wantConnected) {
-        this.scheduleManualRetry();
+        this.retry.schedule(this.retryHooks());
       }
     });
 
-    this.bindHubHandlers(connection);
+    bindChatHubHandlers(connection, {
+      profileId: () => this.auth.profile()?.id,
+      typing: this.typingSignal,
+      messageHandlers: this.messageHandlers,
+      editedHandlers: this.editedHandlers,
+      deletedHandlers: this.deletedHandlers,
+      reactionHandlers: this.reactionHandlers,
+      pinHandlers: this.pinHandlers,
+      pollHandlers: this.pollHandlers,
+      announcementHandlers: this.announcementHandlers,
+      scheduleNoticeHandlers: this.scheduleNoticeHandlers,
+      presenceHandlers: this.presenceHandlers,
+      userStatusHandlers: this.userStatusHandlers,
+      thumbnailReadyHandlers: this.thumbnailReadyHandlers,
+      linkPreviewReadyHandlers: this.linkPreviewReadyHandlers,
+      readCursorHandlers: this.readCursorHandlers,
+    });
     return connection;
   }
 
-  private bindHubHandlers(connection: HubConnection): void {
-    connection.on('MessageCreated', (raw: MessageCreatedPayload | string) => {
-      const payload = this.coercePayload<MessageCreatedPayload>(raw);
-      if (!payload) return;
-      const message = this.mapPayload(payload);
-      if (!message) return;
-      for (const handler of this.messageHandlers) {
-        handler(message);
-      }
-    });
-
-    connection.on('MessageEdited', (raw: MessageEditedPayload | string) => {
-      const payload = this.coercePayload<MessageEditedPayload>(raw);
-      if (!payload) return;
-      const id = payload.messageId ?? payload.id;
-      if (!id || !payload.channelId || !payload.body) return;
-      const event: MessageEditEvent = {
-        id: String(id),
-        channelId: String(payload.channelId),
-        body: payload.body,
-        editedAt: payload.editedAt ?? new Date().toISOString(),
-        seq: payload.sequence,
-      };
-      for (const handler of this.editedHandlers) {
-        handler(event);
-      }
-    });
-
-    connection.on('MessageDeleted', (raw: MessageDeletedPayload | string) => {
-      const payload = this.coercePayload<MessageDeletedPayload>(raw);
-      if (!payload) return;
-      const id = payload.messageId ?? payload.id;
-      if (!id || !payload.channelId) return;
-      const event: MessageDeleteEvent = {
-        id: String(id),
-        channelId: String(payload.channelId),
-        deletedAt: payload.deletedAt ?? new Date().toISOString(),
-        seq: payload.sequence,
-      };
-      for (const handler of this.deletedHandlers) {
-        handler(event);
-      }
-    });
-
-    connection.on('ReactionChanged', (raw: ReactionChangedPayload | string) => {
-      const payload = this.coercePayload<ReactionChangedPayload>(raw);
-      if (!payload?.messageId || !payload.channelId || !payload.emoji) return;
-      const me = this.auth.profile()?.id;
-      const event: ReactionChangedEvent = {
-        messageId: String(payload.messageId),
-        channelId: String(payload.channelId),
-        emoji: payload.emoji,
-        userId: String(payload.userId ?? ''),
-        added: !!payload.added,
-        topUsers: payload.topUsers?.map(String),
-        reactions: (payload.reactions ?? []).map((r) => {
-          const userIds = (r.userIds ?? []).map(String);
-          return {
-            emoji: r.emoji,
-            count: r.count,
-            me: me ? userIds.includes(me) : !!r.me,
-          };
-        }),
-      };
-      for (const handler of this.reactionHandlers) {
-        handler(event);
-      }
-    });
-
-    connection.on(
-      'announcement.acknowledged',
-      (raw: {
-        messageId?: string;
-        channelId?: string;
-        acknowledgementCount?: number;
-        acknowledgedByUserId?: string | null;
-        closedAt?: string | null;
-      } | string) => {
-        const payload = this.coercePayload<{
-          messageId?: string;
-          channelId?: string;
-          acknowledgementCount?: number;
-          acknowledgedByUserId?: string | null;
-          closedAt?: string | null;
-        }>(raw);
-        if (!payload?.messageId || !payload.channelId) return;
-        const event: AnnouncementAcknowledgedEvent = {
-          messageId: String(payload.messageId),
-          channelId: String(payload.channelId),
-          acknowledgementCount: payload.acknowledgementCount,
-          acknowledgedByUserId: payload.acknowledgedByUserId ? String(payload.acknowledgedByUserId) : null,
-          closedAt: payload.closedAt ?? null,
-        };
-        for (const handler of this.announcementHandlers) {
-          handler(event);
-        }
-      },
-    );
-
-    connection.on('PollChanged', (raw: { messageId?: string; channelId?: string; poll?: unknown } | string) => {
-      const payload = this.coercePayload<{ messageId?: string; channelId?: string; poll?: unknown }>(raw);
-      const poll = mapPollSummary(payload?.poll);
-      if (!payload?.messageId || !payload.channelId || !poll) return;
-      const event: PollChangedEvent = {
-        messageId: String(payload.messageId),
-        channelId: String(payload.channelId),
-        poll,
-      };
-      for (const handler of this.pollHandlers) {
-        handler(event);
-      }
-    });
-
-    connection.on('ReminderDue', (raw: ScheduleNoticePayload | string) => {
-      this.emitScheduleNotice('reminder', raw);
-    });
-
-    connection.on('ScheduledMessageDue', (raw: ScheduleNoticePayload | string) => {
-      this.emitScheduleNotice('scheduled', raw);
-    });
-
-    connection.on('PinChanged', (raw: PinChangedPayload | string) => {
-      const payload = this.coercePayload<PinChangedPayload>(raw);
-      if (!payload?.messageId || !payload.channelId) return;
-      const event: PinChangedEvent = {
-        messageId: String(payload.messageId),
-        channelId: String(payload.channelId),
-        pinned: !!payload.pinned,
-        byUserId: String(payload.byUserId ?? ''),
-      };
-      for (const handler of this.pinHandlers) {
-        handler(event);
-      }
-    });
-
-    connection.on('AttachmentThumbnailReady', (raw: AttachmentThumbnailReadyPayload | string) => {
-      const payload = this.coercePayload<AttachmentThumbnailReadyPayload>(raw);
-      if (!payload?.attachmentId || !payload.channelId) return;
-      const event: AttachmentThumbnailReadyEvent = {
-        attachmentId: String(payload.attachmentId),
-        channelId: String(payload.channelId),
-        thumbnailStatus: payload.thumbnailStatus ?? null,
-        width: payload.width ?? null,
-        height: payload.height ?? null,
-        pageCount: payload.pageCount ?? null,
-      };
-      for (const handler of this.thumbnailReadyHandlers) {
-        handler(event);
-      }
-    });
-
-    connection.on('LinkPreviewReady', (raw: LinkPreviewReadyPayload | string) => {
-      const payload = this.coercePayload<LinkPreviewReadyPayload>(raw);
-      if (!payload?.messageId || !payload.channelId || !payload.linkPreviewId || !payload.url) {
-        return;
-      }
-      const event: LinkPreviewReadyEvent = {
-        tenantId: payload.tenantId ? String(payload.tenantId) : undefined,
-        channelId: String(payload.channelId),
-        messageId: String(payload.messageId),
-        linkPreviewId: String(payload.linkPreviewId),
-        url: payload.url,
-        title: payload.title ?? null,
-        description: payload.description ?? null,
-        siteName: payload.siteName ?? null,
-        hasImage: !!payload.hasImage,
-        status: payload.status ?? 'Ready',
-      };
-      for (const handler of this.linkPreviewReadyHandlers) {
-        handler(event);
-      }
-    });
-
-    connection.on('ReadCursorChanged', (raw: ReadCursorChangedPayload | string) => {
-      const payload = this.coercePayload<ReadCursorChangedPayload>(raw);
-      if (!payload?.channelId || payload.userId == null || payload.lastReadSequence == null) {
-        return;
-      }
-      const event: ReadCursorChangedEvent = {
-        tenantId: payload.tenantId ? String(payload.tenantId) : undefined,
-        channelId: String(payload.channelId),
-        userId: String(payload.userId),
-        lastReadSequence: Number(payload.lastReadSequence),
-      };
-      for (const handler of this.readCursorHandlers) {
-        handler(event);
-      }
-    });
-
-    connection.on('Typing', (raw: {
-      channelId: string;
-      userId: string;
-      displayName: string;
-    } | string) => {
-      const payload = this.coercePayload<{
-        channelId: string;
-        userId: string;
-        displayName: string;
-      }>(raw);
-      if (!payload?.channelId) return;
-      const typing: TypingState = {
-        channelId: String(payload.channelId),
-        userId: String(payload.userId),
-        displayName: payload.displayName,
-      };
-      // Hub uses OthersInGroup; still ignore self if echo arrives (B-071).
-      const me = this.auth.profile()?.id;
-      if (me && typing.userId === me) return;
-      this.typingSignal.update((list) => {
-        const filtered = list.filter(
-          (t) => !(t.channelId === typing.channelId && t.userId === typing.userId),
-        );
-        return withoutSelfTyping([...filtered, typing], me);
-      });
-      window.setTimeout(() => {
-        this.typingSignal.update((list) =>
-          list.filter(
-            (t) => !(t.channelId === typing.channelId && t.userId === typing.userId),
-          ),
-        );
-      }, 3000);
-    });
-
-    connection.on('PresenceChanged', (raw: {
-      tenantId?: string;
-      userId: string;
-      status: string;
-    } | string) => {
-      const payload = this.coercePayload<{
-        tenantId?: string;
-        userId: string;
-        status: string;
-      }>(raw);
-      if (!payload?.userId) return;
-      const status = (payload.status || 'offline').toLowerCase();
-      const event: PresenceChangedEvent = {
-        userId: String(payload.userId),
-        tenantId: payload.tenantId ? String(payload.tenantId) : undefined,
-        status: status === 'online' || status === 'away' ? status : 'offline',
-      };
-      for (const handler of this.presenceHandlers) {
-        handler(event);
-      }
-    });
-
-    connection.on('UserStatusChanged', (raw: {
-      tenantId?: string;
-      userId: string;
-      presence?: string;
-      availability?: string;
-      status?: {
-        state?: string;
-        emoji?: string;
-        text?: string;
-        clearAtEndOfDay?: boolean;
-        expiresAt?: string | null;
-      } | null;
-    } | string) => {
-      const payload = this.coercePayload<{
-        tenantId?: string;
-        userId: string;
-        presence?: string;
-        availability?: string;
-        status?: {
-          state?: string;
-          emoji?: string;
-          text?: string;
-          clearAtEndOfDay?: boolean;
-          expiresAt?: string | null;
-        } | null;
-      }>(raw);
-      if (!payload?.userId) return;
-      const presence = (payload.presence || 'offline').toLowerCase();
-      const availability = (payload.availability || 'offline').toLowerCase();
-      const state = payload.status?.state?.toLowerCase();
-      const event: HubUserStatusEvent = {
-        userId: String(payload.userId),
-        tenantId: payload.tenantId ? String(payload.tenantId) : undefined,
-        presence: presence === 'online' || presence === 'away' ? presence : 'offline',
-        availability: isAvailability(availability) ? availability : 'offline',
-        status: payload.status && isStatusState(state)
-          ? {
-              state,
-              emoji: payload.status.emoji ?? '',
-              text: payload.status.text ?? '',
-              clearAtEndOfDay: !!payload.status.clearAtEndOfDay,
-              expiresAt: payload.status.expiresAt ?? null,
-            }
-          : null,
-      };
-      for (const handler of this.userStatusHandlers) {
-        handler(event);
-      }
-    });
-  }
-
-  private scheduleManualRetry(): void {
-    if (!this.wantConnected || this.retryTimer) return;
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      // wait for window 'online' listener
-      return;
-    }
-    const delay = nextHubRetryDelayMs(this.manualRetryCount);
-    this.manualRetryCount += 1;
-    this.statusSignal.set('reconnecting');
-    this.retryTimer = setTimeout(() => {
-      this.retryTimer = null;
-      // Drop dead connection so the next start rebuilds cleanly.
-      if (this.connection?.state === HubConnectionState.Disconnected) {
+  private retryHooks() {
+    return {
+      wantConnected: () => this.wantConnected,
+      status: () => this.statusSignal(),
+      setStatus: (status: ConnectionStatus) => this.statusSignal.set(status),
+      connection: () => this.connection,
+      dropConnection: () => {
         this.connection = null;
-      }
-      void this.connect();
-    }, delay);
-  }
-
-  private clearManualRetry(): void {
-    if (this.retryTimer) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = null;
-    }
-  }
-
-  private ensureNetworkListeners(): void {
-    if (typeof window === 'undefined') return;
-    if (!this.onlineHandler) {
-      this.onlineHandler = () => {
-        if (this.wantConnected && this.statusSignal() !== 'connected') {
-          this.manualRetryCount = 0;
-          this.clearManualRetry();
-          void this.connect();
-        }
-      };
-      window.addEventListener('online', this.onlineHandler);
-    }
-    if (!this.visibilityRetryHandler && typeof document !== 'undefined') {
-      this.visibilityRetryHandler = () => {
-        if (
-          document.visibilityState === 'visible' &&
-          this.wantConnected &&
-          this.statusSignal() !== 'connected'
-        ) {
-          this.manualRetryCount = 0;
-          this.clearManualRetry();
-          void this.connect();
-        }
-      };
-      document.addEventListener('visibilitychange', this.visibilityRetryHandler);
-    }
-  }
-
-  private removeNetworkListeners(): void {
-    if (typeof window !== 'undefined' && this.onlineHandler) {
-      window.removeEventListener('online', this.onlineHandler);
-      this.onlineHandler = null;
-    }
-    if (typeof document !== 'undefined' && this.visibilityRetryHandler) {
-      document.removeEventListener('visibilitychange', this.visibilityRetryHandler);
-      this.visibilityRetryHandler = null;
-    }
+      },
+      connect: () => this.connect(),
+    };
   }
 
   async disconnect(): Promise<void> {
     this.wantConnected = false;
-    this.clearManualRetry();
-    this.removeNetworkListeners();
+    this.retry.clear();
+    this.retry.removeNetworkListeners();
     this.stopPresenceLoop();
     if (!this.connection) {
       this.statusSignal.set('disconnected');
@@ -803,74 +277,67 @@ export class ChatHubService {
   }
 
   onMessage(handler: (message: ChatMessage) => void): () => void {
-    this.messageHandlers.add(handler);
-    return () => this.messageHandlers.delete(handler);
+    return this.listen(this.messageHandlers, handler);
   }
 
   onMessageEdited(handler: (event: MessageEditEvent) => void): () => void {
-    this.editedHandlers.add(handler);
-    return () => this.editedHandlers.delete(handler);
+    return this.listen(this.editedHandlers, handler);
   }
 
   onMessageDeleted(handler: (event: MessageDeleteEvent) => void): () => void {
-    this.deletedHandlers.add(handler);
-    return () => this.deletedHandlers.delete(handler);
+    return this.listen(this.deletedHandlers, handler);
   }
 
   onReactionChanged(handler: (event: ReactionChangedEvent) => void): () => void {
-    this.reactionHandlers.add(handler);
-    return () => this.reactionHandlers.delete(handler);
+    return this.listen(this.reactionHandlers, handler);
   }
 
   onPinChanged(handler: (event: PinChangedEvent) => void): () => void {
-    this.pinHandlers.add(handler);
-    return () => this.pinHandlers.delete(handler);
+    return this.listen(this.pinHandlers, handler);
   }
 
   onScheduleNotice(handler: (event: ScheduleNoticeEvent) => void): () => void {
-    this.scheduleNoticeHandlers.add(handler);
-    return () => this.scheduleNoticeHandlers.delete(handler);
+    return this.listen(this.scheduleNoticeHandlers, handler);
   }
 
   onPollChanged(handler: (event: PollChangedEvent) => void): () => void {
-    this.pollHandlers.add(handler);
-    return () => this.pollHandlers.delete(handler);
+    return this.listen(this.pollHandlers, handler);
   }
 
   onAnnouncementAcknowledged(handler: (event: AnnouncementAcknowledgedEvent) => void): () => void {
-    this.announcementHandlers.add(handler);
-    return () => this.announcementHandlers.delete(handler);
+    return this.listen(this.announcementHandlers, handler);
   }
 
   onAttachmentThumbnailReady(handler: (event: AttachmentThumbnailReadyEvent) => void): () => void {
-    this.thumbnailReadyHandlers.add(handler);
-    return () => this.thumbnailReadyHandlers.delete(handler);
+    return this.listen(this.thumbnailReadyHandlers, handler);
   }
 
   onLinkPreviewReady(handler: (event: LinkPreviewReadyEvent) => void): () => void {
-    this.linkPreviewReadyHandlers.add(handler);
-    return () => this.linkPreviewReadyHandlers.delete(handler);
+    return this.listen(this.linkPreviewReadyHandlers, handler);
   }
 
   onReadCursorChanged(handler: (event: ReadCursorChangedEvent) => void): () => void {
-    this.readCursorHandlers.add(handler);
-    return () => this.readCursorHandlers.delete(handler);
+    return this.listen(this.readCursorHandlers, handler);
   }
 
   onPresenceChanged(handler: (event: PresenceChangedEvent) => void): () => void {
-    this.presenceHandlers.add(handler);
-    return () => this.presenceHandlers.delete(handler);
+    return this.listen(this.presenceHandlers, handler);
   }
 
   onUserStatusChanged(handler: (event: HubUserStatusEvent) => void): () => void {
-    this.userStatusHandlers.add(handler);
-    return () => this.userStatusHandlers.delete(handler);
+    return this.listen(this.userStatusHandlers, handler);
   }
 
   /** Fired after automatic reconnect + re-JoinChannel (B-070 gap-fill hook). */
   onReconnected(handler: () => void | Promise<void>): () => void {
-    this.reconnectedHandlers.add(handler);
-    return () => this.reconnectedHandlers.delete(handler);
+    return this.listen(this.reconnectedHandlers, handler);
+  }
+
+  private listen<T>(set: Set<(event: T) => void>, handler: (event: T) => void): () => void {
+    set.add(handler);
+    return () => {
+      set.delete(handler);
+    };
   }
 
   private async notifyReconnected(): Promise<void> {
@@ -883,165 +350,14 @@ export class ChatHubService {
     }
   }
 
-  private emitScheduleNotice(kind: ScheduleNoticeEvent['kind'], raw: ScheduleNoticePayload | string): void {
-    const payload = this.coercePayload<ScheduleNoticePayload>(raw);
-    const event: ScheduleNoticeEvent = {
-      kind,
-      status: payload?.status ?? '',
-      reveal: payload?.reveal !== false,
-    };
-    for (const handler of this.scheduleNoticeHandlers) {
-      handler(event);
-    }
-  }
-
-  private coercePayload<T extends object>(payload: T | string | null | undefined): T | null {
-    if (payload == null) return null;
-    if (typeof payload === 'string') {
-      try {
-        return JSON.parse(payload) as T;
-      } catch {
-        return null;
-      }
-    }
-    return payload;
-  }
-
   private startPresenceLoop(): void {
-    this.stopPresenceLoop();
-    this.heartbeatTimer = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        void this.heartbeat();
-      }
-    }, 20000);
-
-    this.visibilityHandler = () => {
-      if (document.visibilityState === 'hidden') {
-        this.clearAwayTimer();
-        this.awayTimer = setTimeout(() => {
-          this.awayTimer = null;
-          void this.setAway();
-        }, AWAY_GRACE_MS);
-      } else {
-        this.clearAwayTimer();
-        void this.heartbeat();
-      }
-    };
-    document.addEventListener('visibilitychange', this.visibilityHandler);
-  }
-
-  private clearAwayTimer(): void {
-    if (this.awayTimer) {
-      clearTimeout(this.awayTimer);
-      this.awayTimer = null;
-    }
+    this.presenceLoop.start({
+      heartbeat: () => this.heartbeat(),
+      setAway: () => this.setAway(),
+    });
   }
 
   private stopPresenceLoop(): void {
-    this.clearAwayTimer();
-    if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer);
-      this.heartbeatTimer = null;
-    }
-    if (this.visibilityHandler) {
-      document.removeEventListener('visibilitychange', this.visibilityHandler);
-      this.visibilityHandler = null;
-    }
+    this.presenceLoop.stop();
   }
-
-  private mapPayload(payload: MessageCreatedPayload): ChatMessage | null {
-    const raw = payload as MessageCreatedPayload & {
-      AuthorId?: string;
-      AuthorName?: string;
-      MessageId?: string;
-      Id?: string;
-    };
-    const id = payload.messageId ?? payload.id ?? raw.MessageId ?? raw.Id;
-    if (!id || !payload.channelId) return null;
-    const authorId = String(payload.authorId ?? raw.AuthorId ?? '');
-    const authorName = payload.authorName || raw.AuthorName || authorId;
-    const me = this.auth.profile()?.id;
-    const conversationId = String(payload.conversationId || payload.channelId);
-    const channelId = String(payload.channelId);
-    const mentionedUserIds = (payload.mentionedUserIds ?? []).map(String);
-    const mentionsMe = !!me && mentionedUserIds.includes(me);
-    const clientMessageId = payload.clientMessageId
-      ? String(payload.clientMessageId)
-      : undefined;
-    return {
-      id: String(id),
-      clientMessageId,
-      conversationId,
-      channelId,
-      authorUserId: authorId,
-      authorName,
-      authorIsBot: !!payload.authorIsBot,
-      body: payload.body ?? '',
-      createdAt: payload.createdAt ?? new Date().toISOString(),
-      seq: payload.sequence,
-      status: 'persisted',
-      mine: !!me && me.toLowerCase() === authorId.toLowerCase(),
-      mentionsMe,
-      threadId: payload.threadId ? String(payload.threadId) : null,
-      parentMessageId: payload.parentMessageId ? String(payload.parentMessageId) : null,
-      replyToMessageId: payload.replyToMessageId ? String(payload.replyToMessageId) : null,
-      replyTo: payload.replyTo?.messageId
-        ? {
-            messageId: String(payload.replyTo.messageId),
-            authorName: payload.replyTo.authorName ?? '',
-            preview: payload.replyTo.preview ?? '',
-            deleted: !!payload.replyTo.deleted,
-          }
-        : null,
-      forwardedFromMessageId: payload.forwardedFromMessageId
-        ? String(payload.forwardedFromMessageId)
-        : null,
-      forwardedFromChannelId: payload.forwardedFromChannelId
-        ? String(payload.forwardedFromChannelId)
-        : null,
-      forwardedFrom: payload.forwardedFrom?.messageId
-        ? {
-            messageId: String(payload.forwardedFrom.messageId),
-            channelId: String(payload.forwardedFrom.channelId ?? ''),
-            channelName: payload.forwardedFrom.channelName ?? '',
-            authorName: payload.forwardedFrom.authorName ?? '',
-            createdAt: payload.forwardedFrom.createdAt ?? new Date().toISOString(),
-            isDirect: !!payload.forwardedFrom.isDirect,
-          }
-        : null,
-      attachments: (payload.attachments ?? []).map((a) => ({
-        id: String(a.id),
-        fileName: a.fileName,
-        contentType: a.contentType,
-        sizeBytes: a.sizeBytes,
-        status: 'Ready',
-      })),
-      poll: mapPollSummary(payload.poll),
-      announcement: mapAnnouncementPayload(payload.announcement),
-    };
-  }
-}
-
-function mapAnnouncementPayload(value: unknown): AnnouncementSummary | null {
-  if (!value || typeof value !== 'object') return null;
-  const row = value as Partial<AnnouncementSummary>;
-  if (!row.messageId) return null;
-  return {
-    messageId: String(row.messageId),
-    requiresAcknowledgement: !!row.requiresAcknowledgement,
-    acknowledgeBy: row.acknowledgeBy ?? null,
-    closedAt: row.closedAt ?? null,
-    acknowledgedByMe: !!row.acknowledgedByMe,
-    acknowledgementCount: row.acknowledgementCount ?? 0,
-    canAcknowledge: !!row.canAcknowledge,
-    canViewReport: !!row.canViewReport,
-  };
-}
-
-function isAvailability(value: string): value is AvailabilityKind {
-  return value === 'available' || value === 'away' || value === 'busy' || value === 'vacation' || value === 'offline';
-}
-
-function isStatusState(value: string | undefined): value is UserStatusStateName {
-  return value === 'focus' || value === 'meeting' || value === 'vacation' || value === 'custom';
 }

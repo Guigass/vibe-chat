@@ -15,6 +15,11 @@ export function isOwnAuthor(
   return idsEqual(authorUserId, me);
 }
 
+/** Timeline order: sequence, then createdAt. */
+export function compareMessagesBySeq(a: ChatMessage, b: ChatMessage): number {
+  return (a.seq ?? 0) - (b.seq ?? 0) || a.createdAt.localeCompare(b.createdAt);
+}
+
 /** Highest persisted sequence for a channel (ignores optimistic/sending without seq). */
 export function maxSeqForChannel(messages: readonly ChatMessage[], channelId: string): number {
   let max = 0;
