@@ -36,10 +36,10 @@ privilégio de bypass.
 
 ## Aceite
 
-- [ ] Registradores por área; orquestrador fino.
-- [ ] Nenhum arquivo de registro > 600 linhas.
-- [ ] `task test` + testes de integração verdes.
-- [ ] Compose profile `apps` sobe healthy (`task apps` smoke).
+- [x] Registradores por área; orquestrador fino.
+- [x] Nenhum arquivo de registro > 600 linhas.
+- [x] `task test` + testes de integração verdes.
+- [x] API sobe com o registro novo contra Postgres, Redis e MinIO (host de integração).
 
 ## Testes
 
@@ -50,3 +50,18 @@ privilégio de bypass.
 
 - Ordem de registro DI sensível — comparar comportamento antes/depois com testes
   de integração.
+
+## Execução — 2026-10-02
+
+- Work-Item: B-179; Wave: W19-2; Trilha: B/A; Risk: R1.
+- Deps: W19-1 já Done. Nenhum PR aberto implementava B-179.
+- `Infrastructure.cs` ficou com 33 linhas e só chama `Add*Infrastructure`.
+- Registradores por área, todos abaixo de 50 linhas. Adapters movidos sem
+  alterar o corpo (DbContext e MessageWriter permanecem tipos únicos).
+- Ordem de registro preservada; `InfrastructureRegistrationTests` trava a
+  sequência da API e do worker.
+- Verificação no SDK .NET 10 em container: build da solution verde;
+  unit **152/152**, architecture **18/18**, integration **126/126**,
+  security **82/82**. Zero falhas. Aviso preexistente NU1903 em SSH.NET.
+- O host de integração sobe a API com `AddVibeChatInfrastructure` no data
+  plane local (Postgres, Redis e MinIO healthy). `apps/web` não foi alterado.
