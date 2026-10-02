@@ -784,6 +784,25 @@
     "system.memberLeft": "%name% вышел из канала",
     "error.LastChannelManager": "Последний управляющий не может выйти или быть удалён.",
     "error.AlreadyChannelMember": "Этот человек уже в канале.",
-    "error.ChannelMembershipNotPrivate": "Только закрытый канал принимает это изменение."
+    "error.ChannelMembershipNotPrivate": "Только закрытый канал принимает это изменение.",
+    "settings.wallpaper": "Фон беседы",
+    "settings.wallpaperHint": "Выберите фон из каталога. Восстановление возвращает стандарт продукта.",
+    "settings.accent": "Акцентный цвет",
+    "settings.accentHint": "Действует на вашу реплику и кольцо фокуса беседы.",
+    "settings.appearanceDefault": "По умолчанию",
+    "settings.wallpaperTide": "Прилив",
+    "settings.wallpaperMist": "Туман",
+    "settings.wallpaperEmber": "Уголь",
+    "settings.wallpaperSlate": "Сланец",
+    "settings.accentOcean": "Океан",
+    "settings.accentAmber": "Янтарь",
+    "settings.accentRose": "Роза",
+    "settings.accentSlate": "Сланец",
+    "settings.appearanceSave": "Сохранить оформление",
+    "settings.appearanceSaving": "Сохранение…",
+    "settings.appearanceSaved": "Оформление сохранено",
+    "settings.appearanceReset": "Восстановить стандарт",
+    "settings.appearanceError": "Не удалось сохранить оформление.",
+    "settings.appearancePreview": "Просмотр"
   }
 }

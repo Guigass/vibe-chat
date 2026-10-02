@@ -27,6 +27,10 @@ import { TypingState } from '../../models/chat.models';
       align-items: center;
       gap: 0.55rem;
       min-height: 1.5rem;
+      width: fit-content;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--vc-radius-md);
+      background: var(--vc-surface);
       color: var(--vc-ink-muted);
       font-size: 0.85rem;
     }

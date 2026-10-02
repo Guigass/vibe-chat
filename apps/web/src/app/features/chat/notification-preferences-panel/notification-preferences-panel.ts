@@ -7,6 +7,7 @@ import { idsEqual } from '../../../core/services/message-sync';
 import { NotificationPreferencesStore } from '../../../core/services/notification-preferences.store';
 import { PushNotificationService } from '../../../core/services/push-notification.service';
 import { NotificationLevel, NotificationPreferences, WorkspaceMember } from '../../../shared/models/chat.models';
+import { AppearancePanel } from '../appearance-panel/appearance-panel';
 import { Button, IconButton, Input, LocaleControl, PushDevicesControl } from '../../../shared/ui';
 
 const PRIORITY_CONTACT_LIMIT = 50;
@@ -58,7 +59,7 @@ function weekdayLabels(locale: string): Array<{ bit: number; label: string }> {
 @Component({
   selector: 'vc-notification-preferences-panel',
   standalone: true,
-  imports: [Button, IconButton, Input, LocaleControl, PushDevicesControl],
+  imports: [AppearancePanel, Button, IconButton, Input, LocaleControl, PushDevicesControl],
   template: `
     <section class="notif-panel" data-testid="prefs-panel" [attr.aria-label]="ui.settings">
       <header class="notif-panel__header">
@@ -77,6 +78,8 @@ function weekdayLabels(locale: string): Array<{ bit: number; label: string }> {
         <legend>{{ ui.language }}</legend>
         <vc-locale-control variant="field" />
       </fieldset>
+
+      <vc-appearance-panel />
 
       @if (store.loading() && !store.preferences()) {
         <p class="notif-panel__status">{{ ui.notifLoading }}</p>
