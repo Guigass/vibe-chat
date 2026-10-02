@@ -147,6 +147,15 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | PATCH | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | `enabled`; outro workspace → 404 |
 | DELETE | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Revoga o token na mesma transação |
 | POST | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Token só na resposta |
+| GET | `/admin/workspaces/{workspaceId:guid}/templates` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-115; built-ins + custom do workspace |
+| POST | `/admin/workspaces/{workspaceId:guid}/templates/validate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Rejeita campo/versão desconhecidos |
+| POST | `/admin/workspaces/{workspaceId:guid}/templates/preview` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Dry-run; não persiste |
+| POST | `/admin/workspaces/{workspaceId:guid}/templates/apply` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Idempotente; conflito → 409 sem gravar |
+| POST | `/admin/workspaces/{workspaceId:guid}/templates/import` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Sem membros/secrets |
+| GET | `/admin/workspaces/{workspaceId:guid}/templates/export` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Estrutura, sem PII |
+| GET | `/admin/workspaces/{workspaceId:guid}/templates/{templateId}/export` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Outro workspace → 404 |
+| GET | `/admin/workspaces/{workspaceId:guid}/onboarding` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Checklist; não obriga template |
+| PUT | `/admin/workspaces/{workspaceId:guid}/onboarding` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Pular e retomar |
 | POST | `/integrations/v1/channels/{channelId:guid}/messages` | exempt | integration token | — | — | — | B-109; `AllowAnonymous` + hash; fora do escopo → 403 |
 | POST | `/integrations/v1/dms` | exempt | integration token | — | — | — | Exige `allowDms`; peer do mesmo workspace |
 | POST | `/admin/settings/credentials/vapid/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-187 |

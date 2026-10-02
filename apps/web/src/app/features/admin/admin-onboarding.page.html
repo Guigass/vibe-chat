@@ -1,0 +1,138 @@
+<article class="admin-panel admin-onboarding">
+  <p class="admin-panel__lead">{{ ui.adminOnboardingLead }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty">{{ ui.adminLoadingConsole }}</p>
+  } @else if (loadError()) {
+    <p class="admin-error" role="alert">{{ ui.adminOnboardingLoadError }}</p>
+  } @else {
+    <div class="admin-onboarding__actions">
+      <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy()" (click)="exportTemplate()">
+        {{ ui.adminOnboardingExport }}
+      </button>
+    </div>
+
+    @if (onboarding()?.status === 'skipped') {
+      <p class="admin-empty" role="status">{{ ui.adminOnboardingSkipped }}</p>
+      <button type="button" class="admin-btn" [disabled]="busy()" (click)="resume()">
+        {{ ui.adminOnboardingResume }}
+      </button>
+    } @else {
+      @switch (step()) {
+        @case ('choose') {
+          <h2 #stepHeading tabindex="-1">{{ ui.adminOnboardingChoose }}</h2>
+          <form id="choose-template" class="admin-choice" (submit)="$event.preventDefault(); previewSelected()">
+            <fieldset>
+              <legend>{{ ui.adminOnboardingChoose }}</legend>
+              @for (template of builtins(); track template.id) {
+                <label [attr.for]="'template-' + template.id">
+                  <input
+                    type="radio"
+                    name="workspaceTemplate"
+                    [id]="'template-' + template.id"
+                    [value]="template.id"
+                    [checked]="selectedId() === template.id"
+                    (change)="selectedId.set(template.id)"
+                  />
+                  <span>{{ templateName(template.id) }}</span>
+                  <span class="admin-panel__lead">{{ templateLead(template.id) }}</span>
+                </label>
+              }
+            </fieldset>
+            <div class="admin-onboarding__actions">
+              <button type="submit" class="admin-btn" [disabled]="busy()">{{ ui.adminOnboardingPreview }}</button>
+              <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy()" (click)="skip()">
+                {{ ui.adminOnboardingSkip }}
+              </button>
+            </div>
+          </form>
+
+          <form id="import-template" (submit)="$event.preventDefault(); previewImport()">
+            <label for="template-import">{{ ui.adminOnboardingImport }}</label>
+            <textarea
+              id="template-import"
+              rows="6"
+              [value]="manifestText()"
+              (input)="manifestText.set($any($event.target).value)"
+            ></textarea>
+            <button type="submit" class="admin-btn admin-btn--ghost" [disabled]="busy() || !manifestText().trim()">
+              {{ ui.adminOnboardingPreviewImport }}
+            </button>
+          </form>
+        }
+        @case ('preview') {
+          <h2 #stepHeading tabindex="-1">{{ ui.adminOnboardingPreview }}</h2>
+          <p class="admin-empty">{{ ui.adminOnboardingPreviewHint }}</p>
+          <ul>
+            @for (item of plan()?.items ?? []; track item.kind + item.key) {
+              <li>{{ kindLabel(item.kind) }} · {{ item.name }} · {{ actionLabel(item.action) }}</li>
+            }
+          </ul>
+          <form (submit)="$event.preventDefault(); apply()">
+            <div class="admin-onboarding__actions">
+              <button type="submit" class="admin-btn" [disabled]="busy()">{{ ui.adminOnboardingApply }}</button>
+              <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy()" (click)="back()">
+                {{ ui.adminOnboardingBack }}
+              </button>
+            </div>
+          </form>
+        }
+        @case ('conflicts') {
+          <h2 #stepHeading tabindex="-1">{{ ui.adminOnboardingConflicts }}</h2>
+          <p class="admin-error" role="alert">{{ ui.adminOnboardingConflictBody }}</p>
+          <ul>
+            @for (item of conflictItems(); track item.kind + item.key) {
+              <li>
+                {{ kindLabel(item.kind) }} · {{ item.name }} · {{ actionLabel(item.action) }}
+                @if (detailLabel(item.detail); as detail) {
+                  <span>{{ detail }}</span>
+                }
+              </li>
+            }
+          </ul>
+          <button type="button" class="admin-btn admin-btn--ghost" (click)="back()">{{ ui.adminOnboardingBack }}</button>
+        }
+        @case ('applying') {
+          <h2 #stepHeading tabindex="-1">{{ ui.adminOnboardingApplying }}</h2>
+          <progress [attr.aria-label]="ui.adminOnboardingApplying"></progress>
+          <p role="status">{{ ui.adminOnboardingApplying }}</p>
+        }
+        @case ('summary') {
+          <h2 #stepHeading tabindex="-1">{{ ui.adminOnboardingSummary }}</h2>
+          <p class="admin-feedback" role="status">{{ ui.adminOnboardingReady }}</p>
+          <p class="admin-empty">{{ ui.adminOnboardingRefreshHint }}</p>
+          <ul>
+            @for (item of plan()?.items ?? []; track item.kind + item.key) {
+              <li>{{ kindLabel(item.kind) }} · {{ item.name }} · {{ actionLabel(item.action) }}</li>
+            }
+          </ul>
+          <button type="button" class="admin-btn admin-btn--ghost" (click)="back()">{{ ui.adminOnboardingBack }}</button>
+        }
+      }
+    }
+
+    @if (error()) {
+      <p class="admin-error" role="alert">{{ error() }}</p>
+    }
+
+    @if (onboarding(); as state) {
+      <h2>{{ ui.adminOnboardingChecklist }}</h2>
+      <ul class="admin-choice">
+        @for (item of state.items; track item.key) {
+          <li>
+            <label [attr.for]="'check-' + item.key">
+              <input
+                type="checkbox"
+                [id]="'check-' + item.key"
+                [checked]="item.state === 'done'"
+                [disabled]="busy()"
+                (change)="toggleItem(item, $any($event.target).checked)"
+              />
+              {{ checklistLabel(item.key) }}
+            </label>
+          </li>
+        }
+      </ul>
+    }
+  }
+</article>

@@ -636,6 +636,54 @@ export const ui = {
   adminNavAudit: $localize`:@@admin.navAudit:Audit log`,
   adminNavSettings: $localize`:@@admin.navSettings:Settings`,
   adminNavPlugins: $localize`:@@admin.navPlugins:Plugins`,
+  adminNavOnboarding: $localize`:@@admin.navOnboarding:Onboarding`,
+  adminOnboardingLead: $localize`:@@admin.onboardingLead:Escolha um template ou pule. Dá para retomar depois. O chat não depende disso.`,
+  adminOnboardingSkip: $localize`:@@admin.onboardingSkip:Pular por agora`,
+  adminOnboardingResume: $localize`:@@admin.onboardingResume:Retomar onboarding`,
+  adminOnboardingSkipped: $localize`:@@admin.onboardingSkipped:O onboarding está pausado. O chat continua disponível.`,
+  adminOnboardingChoose: $localize`:@@admin.onboardingChoose:Template`,
+  adminOnboardingImport: $localize`:@@admin.onboardingImport:Importar JSON`,
+  adminOnboardingPreview: $localize`:@@admin.onboardingPreview:Pré-visualizar`,
+  adminOnboardingPreviewImport: $localize`:@@admin.onboardingPreviewImport:Pré-visualizar importação`,
+  adminOnboardingApply: $localize`:@@admin.onboardingApply:Aplicar template`,
+  adminOnboardingBack: $localize`:@@admin.onboardingBack:Voltar`,
+  adminOnboardingConflicts: $localize`:@@admin.onboardingConflicts:Conflitos`,
+  adminOnboardingConflictBody: $localize`:@@admin.onboardingConflictBody:Estes itens já existem com outra forma. Nada foi salvo.`,
+  adminOnboardingApplying: $localize`:@@admin.onboardingApplying:Aplicando template…`,
+  adminOnboardingSummary: $localize`:@@admin.onboardingSummary:Resumo`,
+  adminOnboardingReady: $localize`:@@admin.onboardingReady:A estrutura do workspace está pronta.`,
+  adminOnboardingChecklist: $localize`:@@admin.onboardingChecklist:Checklist`,
+  adminOnboardingExport: $localize`:@@admin.onboardingExport:Exportar template`,
+  adminOnboardingLoadError: $localize`:@@admin.onboardingLoadError:Não foi possível carregar o onboarding.`,
+  adminOnboardingApplyError: $localize`:@@admin.onboardingApplyError:Não foi possível aplicar o template.`,
+  adminOnboardingValidateError: $localize`:@@admin.onboardingValidateError:Este template foi recusado.`,
+  adminOnboardingPreviewHint: $localize`:@@admin.onboardingPreviewHint:A pré-visualização não salva nada.`,
+  adminOnboardingWillCreate: $localize`:@@admin.onboardingWillCreate:Criar`,
+  adminOnboardingWillReuse: $localize`:@@admin.onboardingWillReuse:Já existe`,
+  adminOnboardingConflictItem: $localize`:@@admin.onboardingConflictItem:Conflito`,
+  adminTemplateTeam: $localize`:@@admin.templateTeam:Time`,
+  adminTemplateTeamLead: $localize`:@@admin.templateTeamLead:Um space de time, com canal geral e avisos.`,
+  adminTemplateProject: $localize`:@@admin.templateProject:Projeto`,
+  adminTemplateProjectLead: $localize`:@@admin.templateProjectLead:Um space de projeto para planejamento e entregas.`,
+  adminTemplateCommunity: $localize`:@@admin.templateCommunity:Comunidade`,
+  adminTemplateCommunityLead: $localize`:@@admin.templateCommunityLead:Um space de comunidade para boas-vindas e conversa.`,
+  adminTemplateIncidents: $localize`:@@admin.templateIncidents:Incidentes`,
+  adminTemplateIncidentsLead: $localize`:@@admin.templateIncidentsLead:Um space de incidente com canal de status.`,
+  adminChecklistInviteMembers: $localize`:@@admin.checklistInviteMembers:Convidar membros`,
+  adminChecklistReviewChannels: $localize`:@@admin.checklistReviewChannels:Revisar canais`,
+  adminChecklistConfirmPolicy: $localize`:@@admin.checklistConfirmPolicy:Confirmar a política de mensagens`,
+  adminOnboardingKindSpace: $localize`:@@admin.onboardingKindSpace:Space`,
+  adminOnboardingKindChannel: $localize`:@@admin.onboardingKindChannel:Canal`,
+  adminOnboardingKindPolicy: $localize`:@@admin.onboardingKindPolicy:Política`,
+  adminOnboardingConflictType: $localize`:@@admin.onboardingConflictType:O tipo do canal não confere.`,
+  adminOnboardingConflictSpace: $localize`:@@admin.onboardingConflictSpace:O canal está em outro space.`,
+  adminOnboardingConflictPolicy: $localize`:@@admin.onboardingConflictPolicy:A política de mensagens já é diferente.`,
+  adminOnboardingRefreshHint: $localize`:@@admin.onboardingRefreshHint:Os canais aparecem ao voltar ao chat.`,
+  errorUnknownTemplateSchema: $localize`:@@error.unknownTemplateSchema:Versão de template desconhecida.`,
+  errorUnknownTemplateField: $localize`:@@error.unknownTemplateField:Campo não permitido: %path%`,
+  errorInvalidTemplate: $localize`:@@error.invalidTemplate:Template inválido.`,
+  errorTemplateConflict: $localize`:@@error.templateConflict:O template conflita com o workspace atual.`,
+  errorTemplateNotFound: $localize`:@@error.templateNotFound:Template não encontrado.`,
   adminNoAccessTitle: $localize`:@@admin.noAccessTitle:Sem acesso`,
   adminNavAria: $localize`:@@admin.navAria:Navegação administrativa`,
   adminBackToChat: $localize`:@@admin.backToChat:← Voltar ao chat`,
@@ -952,6 +1000,17 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.errorAlreadyChannelMember;
     case 'ChannelMembershipNotPrivate':
       return ui.errorChannelMembershipNotPrivate;
+    case 'UnknownTemplateSchema':
+      return ui.errorUnknownTemplateSchema;
+    case 'InvalidTemplate':
+    case 'TemplateExportEmpty':
+    case 'TemplateReserved':
+    case 'TemplateLimitReached':
+      return ui.errorInvalidTemplate;
+    case 'TemplateConflict':
+      return ui.errorTemplateConflict;
+    case 'TemplateNotFound':
+      return ui.errorTemplateNotFound;
     default:
       return code ?? '';
   }

@@ -115,6 +115,18 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Audit | `workspace.export` em `audit.audit_events` |
 | Membro/Auditor | 403 |
 
+### Templates de workspace (B-115)
+
+| Item | Controle |
+|------|----------|
+| AuthZ | validate/preview/apply/import/export/onboarding exigem `workspace.admin` |
+| Tenant | O manifesto não traz `TenantId`; o recurso criado usa o tenant do contexto |
+| Conteúdo | Allowlist declarativa (spaces, canais, tópico, política de mensagem). Campo extra, membro, secret ou schema desconhecido → 400 |
+| Dry-run | Preview e `dryRun` não gravam. Conflito no apply → 409 e rollback da transação |
+| Export | Sem membros, e-mails, tokens ou tenant. DM/GroupDm ficam de fora |
+| Audit | `space.create` / `channel.create` por recurso, mais `template.apply` / `template.import` / `template.export` |
+| RLS | `directory.workspace_templates`, `workspace_onboarding`, `template_applications` com FORCE |
+
 ### Retenção / purge (B-047)
 
 | Item | Controle |

@@ -61,6 +61,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
     public DbSet<Space> Spaces => Set<Space>();
     public DbSet<ChannelInvite> ChannelInvites => Set<ChannelInvite>();
+    public DbSet<WorkspaceTemplateRecord> WorkspaceTemplateRecords => Set<WorkspaceTemplateRecord>();
+    public DbSet<WorkspaceOnboarding> WorkspaceOnboardings => Set<WorkspaceOnboarding>();
+    public DbSet<TemplateApplication> TemplateApplications => Set<TemplateApplication>();
     public DbSet<Channel> Channels => Set<Channel>();
     public DbSet<ChannelMember> ChannelMembers => Set<ChannelMember>();
     public DbSet<Message> Messages => Set<Message>();
@@ -196,6 +199,49 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Email).HasMaxLength(256);
             entity.HasIndex(x => x.TokenHash).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.ChannelId, x.CreatedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<WorkspaceTemplateRecord>(entity =>
+        {
+            entity.ToTable("workspace_templates", "directory");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.TemplateId).HasMaxLength(WorkspaceTemplateRules.MaxIdLength).IsRequired();
+            entity.Property(x => x.ManifestJson).HasMaxLength(WorkspaceTemplateRules.MaxManifestBytes).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.TemplateId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<WorkspaceOnboarding>(entity =>
+        {
+            entity.ToTable("workspace_onboarding", "directory");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Status).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.TemplateId).HasMaxLength(WorkspaceTemplateRules.MaxIdLength);
+            entity.Property(x => x.ItemsJson).HasMaxLength(8000).IsRequired();
+            entity.HasIndex(x => x.WorkspaceId).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<TemplateApplication>(entity =>
+        {
+            entity.ToTable("template_applications", "directory");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ActorUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(WorkspaceTemplateRules.MaxIdempotencyKeyLength).IsRequired();
+            entity.Property(x => x.TemplateId).HasMaxLength(WorkspaceTemplateRules.MaxIdLength).IsRequired();
+            entity.Property(x => x.ResultJson).HasMaxLength(262_144).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.IdempotencyKey }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

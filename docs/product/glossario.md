@@ -17,6 +17,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | Termo | Definição |
 |-------|-----------|
 | **Space** | Agrupamento organizacional de **canais** dentro de um workspace (ex.: área, projeto). Não organiza a lista de contatos — isso é Contact group (B-166). |
+| **Template de workspace** | Manifesto declarativo `vibechat.workspace-template.v1` que cria spaces, canais, tópicos e defaults de política de mensagem (B-115). Não contém tenant, membros, mensagens nem secrets. Built-ins: time, projeto, comunidade e incidentes. Aplicação idempotente, com pré-visualização; o onboarding de owner/admin pode ser pulado e retomado. |
 | **Channel** | Canal de mensagens (público, privado ou DM). Unidade principal de conversa. Em privado, quem entra é `channel_members` (roster e add/remove em B-186); guest externo é B-040. |
 | **DM (Direct Message)** | Canal especial 1:1 (`Direct`) ou grupo pequeno (`GroupDm`, 3–9 participantes), sem Space obrigatório. Quem entra depois não lê o histórico anterior (`JoinedSeq`). |
 | **Thread** | Subconversa ancorada em uma mensagem pai dentro de um channel. |
