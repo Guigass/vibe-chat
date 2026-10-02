@@ -736,6 +736,25 @@
     "system.memberLeft": "%name% 님이 채널을 나갔습니다",
     "error.LastChannelManager": "마지막 관리자는 나가거나 제거될 수 없습니다.",
     "error.AlreadyChannelMember": "이미 채널에 있는 사람입니다.",
-    "error.ChannelMembershipNotPrivate": "비공개 채널만 이 변경을 허용합니다."
+    "error.ChannelMembershipNotPrivate": "비공개 채널만 이 변경을 허용합니다.",
+    "settings.wallpaper": "대화 배경",
+    "settings.wallpaperHint": "카탈로그에서 배경을 고릅니다. 복원하면 제품 기본값으로 돌아갑니다.",
+    "settings.accent": "강조색",
+    "settings.accentHint": "내 말풍선과 대화 초점 링에 적용됩니다.",
+    "settings.appearanceDefault": "기본",
+    "settings.wallpaperTide": "밀물",
+    "settings.wallpaperMist": "안개",
+    "settings.wallpaperEmber": "잔불",
+    "settings.wallpaperSlate": "슬레이트",
+    "settings.accentOcean": "오션",
+    "settings.accentAmber": "앰버",
+    "settings.accentRose": "로즈",
+    "settings.accentSlate": "슬레이트",
+    "settings.appearanceSave": "모양 저장",
+    "settings.appearanceSaving": "저장 중…",
+    "settings.appearanceSaved": "모양을 저장했습니다",
+    "settings.appearanceReset": "기본값 복원",
+    "settings.appearanceError": "모양을 저장하지 못했습니다.",
+    "settings.appearancePreview": "미리보기"
   }
 }

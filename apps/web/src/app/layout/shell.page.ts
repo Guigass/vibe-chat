@@ -22,6 +22,7 @@ import { SavedStore } from '../core/services/saved.store';
 import { FollowedThreadsStore } from '../core/services/followed-threads.store';
 import { PushNotificationService } from '../core/services/push-notification.service';
 import { NotificationPreferencesStore } from '../core/services/notification-preferences.store';
+import { VisualPreferenceService } from '../core/services/visual-preference.service';
 import { ChannelList } from '../features/chat/channel-list/channel-list';
 import { Composer } from '../features/chat/composer/composer';
 import { Timeline } from '../features/chat/timeline/timeline';
@@ -124,6 +125,7 @@ export class ShellPage implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   readonly palette = inject(CommandPaletteService);
   private readonly locales = inject(LocaleService);
+  private readonly visual = inject(VisualPreferenceService);
   readonly ui = ui;
   readonly dmPanel = signal<'add' | 'rename' | 'leave' | null>(null);
   readonly memberQuery = signal('');
@@ -446,6 +448,7 @@ export class ShellPage implements OnInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
     await this.locales.syncFromProfile();
+    await this.visual.load();
     this.unsubPresence = this.hub.onPresenceChanged((event) => {
       this.channels.setPresence(event.userId, event.status);
     });

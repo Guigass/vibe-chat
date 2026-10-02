@@ -233,13 +233,21 @@ const NEAR_TOP_PX = 120;
       color: var(--vc-text-muted);
       font-size: 0.78rem;
       letter-spacing: 0.02em;
+      background: var(--vc-surface);
+      border-radius: var(--vc-radius-md);
+    }
+    .timeline vc-empty-state {
+      display: block;
+      margin-top: auto;
+      background: var(--vc-surface);
+      border-radius: var(--vc-radius-md);
     }
     .timeline__retry {
       display: block;
       width: 100%;
       border: 1px dashed var(--vc-border-subtle);
       border-radius: var(--vc-radius-md, 8px);
-      background: transparent;
+      background: var(--vc-surface);
       color: var(--vc-brand);
       font: inherit;
       font-size: 0.82rem;
@@ -331,6 +339,9 @@ const NEAR_TOP_PX = 120;
     }
     .timeline__unread span {
       white-space: nowrap;
+      padding: 0.12rem 0.65rem;
+      border-radius: var(--vc-radius-md);
+      background: var(--vc-surface);
     }
     .timeline__jump {
       position: absolute;

@@ -70,8 +70,9 @@ o cliente traduz pelo código (não usa `Accept-Language` no servidor).
 
 | Método | Contrato |
 |--------|----------|
-| `GET /api/v1/me` | `{ userId, subject, email, displayName, roles, locale }` — `locale` é um de `pt-BR` \| `en` \| `es` \| `fr` \| `de` \| `it` \| `ja` \| `zh-CN` \| `ko` \| `ru` ou `null` se ainda não persistido |
-| `PUT /api/v1/me` | Body `{ locale }` — só um locale suportado; outro valor → **400** `InvalidLocale`. Atualiza só o caller |
+| `GET /api/v1/me` | `{ userId, subject, email, displayName, roles, locale, chatWallpaperId, accentColorId }` — `locale` é um de `pt-BR` \| `en` \| `es` \| `fr` \| `de` \| `it` \| `ja` \| `zh-CN` \| `ko` \| `ru` ou `null` se ainda não persistido. `chatWallpaperId` e `accentColorId` são ids do catálogo ou `null` (padrão do produto); id desconhecido no banco volta como `null` |
+| `PUT /api/v1/me` | Body `{ locale }` — só um locale suportado; outro valor → **400** `InvalidLocale`. Atualiza só o caller. Não altera wallpaper/accent |
+| `PUT /api/v1/users/{userId}/appearance` | Body `{ chatWallpaperId, accentColorId }`. Só o caller (`userId` diferente → **403**, inclusive admin). Sem tenant do caller → **403**. `null` ou vazio restaura o padrão. Id fora do catálogo → **400** `InvalidWallpaper` ou `InvalidAccent` e nada é gravado. Linha em `identity.visual_preferences` (RLS por tenant) |
 
 Logs do servidor permanecem em inglês e não interpolam texto traduzido.
 `GET /api/v1/workspaces/{id}/commands.description` é locale-sensitive (mesmo shape; valor no idioma do caller).

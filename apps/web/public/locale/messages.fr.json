@@ -736,6 +736,25 @@
     "system.memberLeft": "%name% a quitté le canal",
     "error.LastChannelManager": "Le dernier gestionnaire ne peut pas partir ni être retiré.",
     "error.AlreadyChannelMember": "Cette personne est déjà dans le canal.",
-    "error.ChannelMembershipNotPrivate": "Seul un canal privé accepte ce changement."
+    "error.ChannelMembershipNotPrivate": "Seul un canal privé accepte ce changement.",
+    "settings.wallpaper": "Fond de la conversation",
+    "settings.wallpaperHint": "Choisissez un fond du catalogue. Restaurer revient au défaut du produit.",
+    "settings.accent": "Couleur d'accent",
+    "settings.accentHint": "S'applique à votre bulle et à l'anneau de focus de la conversation.",
+    "settings.appearanceDefault": "Par défaut",
+    "settings.wallpaperTide": "Marée",
+    "settings.wallpaperMist": "Brume",
+    "settings.wallpaperEmber": "Braise",
+    "settings.wallpaperSlate": "Ardoise",
+    "settings.accentOcean": "Océan",
+    "settings.accentAmber": "Ambre",
+    "settings.accentRose": "Rose",
+    "settings.accentSlate": "Ardoise",
+    "settings.appearanceSave": "Enregistrer l'apparence",
+    "settings.appearanceSaving": "Enregistrement…",
+    "settings.appearanceSaved": "Apparence enregistrée",
+    "settings.appearanceReset": "Restaurer le défaut",
+    "settings.appearanceError": "Impossible d'enregistrer l'apparence.",
+    "settings.appearancePreview": "Aperçu"
   }
 }

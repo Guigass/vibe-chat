@@ -108,7 +108,7 @@ organiza. Estados:
 | Status personalizado e agenda | Planned | B-116 / W11 |
 | Emojis/stickers da organização | Later | Reavaliar depois de B-083 |
 | Perfis ricos (cargo, sobre, destaque, avatar) | Planned | B-167 / W11 |
-| Personalização visual (wallpaper/accent) | Planned | B-185 / W11 |
+| Personalização visual (wallpaper/accent) | Done | B-185 / W11 |
 | Diretório de expertise / skills | Later | Reavaliar depois de B-167 e B-128 |
 | Temas/branding por tenant | Planned | B-140 / W15 |
 

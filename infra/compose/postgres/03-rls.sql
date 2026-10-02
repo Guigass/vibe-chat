@@ -436,8 +436,15 @@ CREATE POLICY tenant_isolation_bot_channel_scopes ON integrations.bot_channel_sc
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS identity.visual_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.visual_preferences FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS integrations.plugins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS integrations.plugins FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_visual_preferences ON identity.visual_preferences;
+CREATE POLICY tenant_isolation_visual_preferences ON identity.visual_preferences
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
 
 DROP POLICY IF EXISTS tenant_isolation_plugins ON integrations.plugins;
 CREATE POLICY tenant_isolation_plugins ON integrations.plugins

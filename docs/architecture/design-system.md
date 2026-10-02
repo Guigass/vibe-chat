@@ -278,6 +278,7 @@ Arquivos estáticos servidos pelo Angular a partir de `apps/web/public/` (glob `
 | Avatar placeholder | `/assets/images/user-ph.png` |
 | Fundo app light/dark | `/assets/background/light.webp`, `/assets/background/dark.webp` |
 | Fundo chat light/dark | `/assets/background/light_chat.webp`, `/assets/background/dark_chat.webp` |
+| Wallpapers pessoais (B-185) | `/assets/background/wallpapers/{tide,mist,ember,slate}-{light,dark}.svg` — catálogo fechado; o padrão continua `light_chat` / `dark_chat` |
 | Som mensagem | `/assets/audios/msg_n1.mp3` … `msg_n4.mp3` |
 | Favicon / apple | `/favicon.ico`, `/icons/favicon-32x32.png`, `/icons/apple-touch-icon.png` |
 | Ícones PWA | `/icons/icon-72x72.png` … `/icons/icon-512x512.png` (+ variantes `.webp`) |
