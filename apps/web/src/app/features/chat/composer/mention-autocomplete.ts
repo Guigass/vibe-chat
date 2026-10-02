@@ -67,6 +67,9 @@ import { MentionAutocompleteItem } from '../../../shared/markdown/mention-tokens
     .mention-menu__subtitle {
       font-size: 0.75rem;
       color: var(--vc-ink-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   `,
 })

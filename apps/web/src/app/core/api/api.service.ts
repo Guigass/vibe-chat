@@ -46,6 +46,12 @@ import {
 } from '../../shared/models/chat.models';
 import { mapPollSummary } from '../../shared/polls/poll-summary';
 import {
+  AvailabilityKind,
+  MemberAvailability,
+  UserStatusBody,
+  UserStatusStateName,
+} from '../../shared/status/user-status';
+import {
   mapChannelNotificationOverride,
   mapNotificationPreferences,
 } from '../../shared/notifications/notification-preferences';
@@ -578,6 +584,59 @@ export class ApiService {
         status === 'online' || status === 'away' ? status : 'offline';
     }
     return map;
+  }
+
+  async getMyStatus(): Promise<MemberAvailability> {
+    const dto = await this.request<UserStatusResponseDto>('/api/v1/me/status');
+    const me = this.auth.profile()?.id ?? '';
+    return mapAvailability(me, dto);
+  }
+
+  async setMyStatus(input: {
+    state: UserStatusStateName;
+    emoji: string;
+    text: string;
+    clearAtEndOfDay: boolean;
+    expiresAt: string | null;
+  }): Promise<MemberAvailability> {
+    const dto = await this.request<UserStatusResponseDto>('/api/v1/me/status', {
+      method: 'PUT',
+      body: JSON.stringify({
+        state: input.state,
+        emoji: input.emoji,
+        text: input.text,
+        clearAtEndOfDay: input.clearAtEndOfDay,
+        expiresAt: input.expiresAt,
+      }),
+    });
+    const me = this.auth.profile()?.id ?? '';
+    return mapAvailability(me, dto);
+  }
+
+  async clearMyStatus(): Promise<MemberAvailability> {
+    const dto = await this.request<UserStatusResponseDto>('/api/v1/me/status', { method: 'DELETE' });
+    const me = this.auth.profile()?.id ?? '';
+    return mapAvailability(me, dto);
+  }
+
+  async getWorkspaceAvailability(workspaceId: string): Promise<MemberAvailability[]> {
+    const rows = await this.request<MemberAvailabilityDto[]>(
+      `/api/v1/workspaces/${workspaceId}/availability`,
+    );
+    return rows.map((row) => mapAvailability(row.userId, row));
+  }
+
+  async reportUserStatus(workspaceId: string, userId: string): Promise<void> {
+    await this.request<void>(
+      `/api/v1/workspaces/${workspaceId}/members/${userId}/status/report`,
+      { method: 'POST' },
+    );
+  }
+
+  async clearMemberStatus(workspaceId: string, userId: string): Promise<void> {
+    await this.request<void>(`/api/v1/workspaces/${workspaceId}/members/${userId}/status`, {
+      method: 'DELETE',
+    });
   }
 
   async openDirectMessage(workspaceId: string, userId: string): Promise<Channel> {
@@ -1998,5 +2057,30 @@ function mapFollowedThread(dto: FollowedThreadDto): FollowedThreadItem {
     unreadCount: dto.unreadCount ?? 0,
     lastActivityAt: dto.lastActivityAt,
   };
+}
+
+interface UserStatusResponseDto {
+  presence?: string;
+  availability?: string;
+  status?: UserStatusBody | null;
+}
+
+interface MemberAvailabilityDto extends UserStatusResponseDto {
+  userId: string;
+}
+
+function mapAvailability(userId: string, dto: UserStatusResponseDto): MemberAvailability {
+  const presence = (dto.presence || 'offline').toLowerCase();
+  const availability = (dto.availability || 'offline').toLowerCase();
+  return {
+    userId,
+    presence: presence === 'online' || presence === 'away' ? presence : 'offline',
+    availability: isAvailabilityKind(availability) ? availability : 'offline',
+    status: dto.status ?? null,
+  };
+}
+
+function isAvailabilityKind(value: string): value is AvailabilityKind {
+  return value === 'available' || value === 'away' || value === 'busy' || value === 'vacation' || value === 'offline';
 }
 
