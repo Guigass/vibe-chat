@@ -183,10 +183,19 @@ public static class SystemEventTokens
 {
     public const string PinPrefix = "<system:pin:";
     public const string UnpinPrefix = "<system:unpin:";
+    public const string MemberAddPrefix = "<system:member-add:";
+    public const string MemberRemovePrefix = "<system:member-remove:";
+    public const string MemberLeavePrefix = "<system:member-leave:";
 
     public static string PinBody(MessageId messageId) => $"{PinPrefix}{messageId.Value}>";
 
     public static string UnpinBody(MessageId messageId) => $"{UnpinPrefix}{messageId.Value}>";
+
+    public static string MemberAddBody(Guid userId) => $"{MemberAddPrefix}{userId:D}>";
+
+    public static string MemberRemoveBody(Guid userId) => $"{MemberRemovePrefix}{userId:D}>";
+
+    public static string MemberLeaveBody(Guid userId) => $"{MemberLeavePrefix}{userId:D}>";
 
     public static bool TryParse(string body, out bool pinned, out Guid targetMessageId)
     {

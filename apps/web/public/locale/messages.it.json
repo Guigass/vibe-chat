@@ -754,6 +754,27 @@
     "error.StatusExpiresInPast": "Questa scadenza è già passata.",
     "error.InvalidStatusState": "Stato non valido.",
     "error.StatusTextInvalid": "Testo di stato non valido.",
-    "error.CannotReportSelf": "Non puoi segnalare il tuo stato."
+    "error.CannotReportSelf": "Non puoi segnalare il tuo stato.",
+"plural.member.one": "1 membro",
+    "plural.member.other": "{$count} membri",
+    "shell.channelMembers": "Membri",
+    "shell.channelMembersAdd": "Aggiungi persone",
+    "shell.channelMembersSearch": "Cerca nel workspace",
+    "shell.channelMembersSearchEmpty": "Nessuno fuori dal canale.",
+    "shell.channelMembersRemove": "Rimuovi",
+    "shell.channelMembersLeave": "Esci",
+    "shell.channelMembersDirect": "Messaggio diretto",
+    "shell.channelMembersEmpty": "Nessun membro.",
+    "shell.channelMemberGuest": "Ospite",
+    "shell.channelMembersPublicHint": "Tutti del workspace. Nessuna aggiunta individuale.",
+    "shell.channelMembersError": "Impossibile aggiornare i membri.",
+    "presence.online": "Online",
+    "presence.away": "Assente",
+    "system.memberAdded": "%name% ha aggiunto un membro",
+    "system.memberRemoved": "%name% ha rimosso un membro",
+    "system.memberLeft": "%name% è uscito dal canale",
+    "error.LastChannelManager": "L'ultimo gestore non può uscire né essere rimosso.",
+    "error.AlreadyChannelMember": "Questa persona è già nel canale.",
+    "error.ChannelMembershipNotPrivate": "Solo un canale privato accetta questa modifica."
   }
 }

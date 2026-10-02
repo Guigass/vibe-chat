@@ -21,7 +21,13 @@ export function formatLocaleNumber(value: number, locale: AppLocale = activeLoca
 }
 
 /** ICU-style 0 / 1 / N labels. Source strings are pt-BR; $localize swaps the catalog. */
-export function pluralCount(count: number, kind: 'result' | 'pin'): string {
+export function pluralCount(count: number, kind: 'result' | 'pin' | 'member'): string {
+  if (kind === 'member') {
+    if (count === 1) {
+      return $localize`:@@plural.member.one:1 membro`;
+    }
+    return $localize`:@@plural.member.other:${count}:count: membros`;
+  }
   if (kind === 'pin') {
     if (count === 1) {
       return $localize`:@@plural.pin.one:1 fixada`;

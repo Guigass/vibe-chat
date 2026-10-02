@@ -754,6 +754,27 @@
     "error.StatusExpiresInPast": "Esa expiración ya pasó.",
     "error.InvalidStatusState": "Estado de status inválido.",
     "error.StatusTextInvalid": "Texto de status inválido.",
-    "error.CannotReportSelf": "No puedes denunciar tu propio estado."
+    "error.CannotReportSelf": "No puedes denunciar tu propio estado.",
+"plural.member.one": "1 miembro",
+    "plural.member.other": "{$count} miembros",
+    "shell.channelMembers": "Miembros",
+    "shell.channelMembersAdd": "Añadir personas",
+    "shell.channelMembersSearch": "Buscar en el espacio",
+    "shell.channelMembersSearchEmpty": "Nadie fuera del canal.",
+    "shell.channelMembersRemove": "Quitar",
+    "shell.channelMembersLeave": "Salir",
+    "shell.channelMembersDirect": "Mensaje directo",
+    "shell.channelMembersEmpty": "Ningún miembro.",
+    "shell.channelMemberGuest": "Invitado",
+    "shell.channelMembersPublicHint": "Todos del espacio. Sin alta ni baja individual.",
+    "shell.channelMembersError": "No se pudieron actualizar los miembros.",
+    "presence.online": "En línea",
+    "presence.away": "Ausente",
+    "system.memberAdded": "%name% añadió un miembro",
+    "system.memberRemoved": "%name% quitó un miembro",
+    "system.memberLeft": "%name% salió del canal",
+    "error.LastChannelManager": "El último gestor no puede salir ni ser eliminado.",
+    "error.AlreadyChannelMember": "Esa persona ya está en el canal.",
+    "error.ChannelMembershipNotPrivate": "Solo un canal privado acepta este cambio."
   }
 }

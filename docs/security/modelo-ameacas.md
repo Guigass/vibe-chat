@@ -60,6 +60,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 15. **Link preview / egress HTTP** — SSRF via URL em mensagem (B-091 / ADR-021)
 16. **Web Push** — prévia em tela bloqueada; chave VAPID vazada; push após sair do canal (B-095 / ADR-022)
 17. **Group DM** — vazamento de histórico ao adicionar participante; peer de outro tenant/workspace; hub após sair (B-101 / ADR-023)
+18. **Membros de canal privado** — add de usuário de outro workspace/tenant; membro removido continua lendo histórico ou no hub (B-186)
 
 ## Controles mínimos obrigatórios (fase 1)
 
@@ -174,6 +175,18 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Get-or-create | `ParticipantSetKey` ordenado + índice único; add em DM 1:1 cria **outra** conversa |
 | Rollback | Flag off no mesmo binário; migration só em lab |
 
+### B-186 — Membros do canal
+
+| Item | Controle |
+|------|----------|
+| Superfície | Só canal `Private`; público/DM/GroupDm → 400 `ChannelMembershipNotPrivate` |
+| Quem gere | Criador ainda membro ou `channel.manage` (admin/owner). Member comum → 403 |
+| Alvo | `workspace_members` do mesmo workspace; outro tenant/workspace → 403 |
+| Último gestor | Não sai nem é removido (`409 LastChannelManager`) enquanto for o único criador ou holder de `channel.manage` |
+| Saída | `LeftAt`; history e `JoinChannel` 403; evict do grupo SignalR |
+| Quem entra | `JoinedSeq = 0` (vê o histórico). Reentrada limpa `LeftAt` na mesma linha |
+| Audit | `channel.member.add` / `channel.member.remove` / `channel.member.leave` |
+
 ### B-040 / ADR-024 — Guests por convite
 
 | Item | Controle |
@@ -225,7 +238,8 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 9. SSRF via link preview (B-091 / ADR-021)
 10. Prévia de push em tela bloqueada / VAPID vazada / push pós-saída (B-095 / ADR-022)
 11. Vazamento de histórico de Group DM / peer cross-tenant / hub após sair (B-101 / ADR-023)
-12. Guest escalando para o workspace / enumeração de convite (B-040 / ADR-024)
+12. Add cross-workspace ou leitura/hub após sair de canal privado (B-186)
+13. Guest escalando para o workspace / enumeração de convite (B-040 / ADR-024)
 
 ### B-116 — Status personalizado
 

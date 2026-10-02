@@ -754,6 +754,27 @@
     "error.StatusExpiresInPast": "만료 시각이 이미 지났습니다.",
     "error.InvalidStatusState": "상태 값이 올바르지 않습니다.",
     "error.StatusTextInvalid": "상태 텍스트가 올바르지 않습니다.",
-    "error.CannotReportSelf": "자신의 상태는 신고할 수 없습니다."
+    "error.CannotReportSelf": "자신의 상태는 신고할 수 없습니다.",
+"plural.member.one": "1명",
+    "plural.member.other": "{$count}명",
+    "shell.channelMembers": "멤버",
+    "shell.channelMembersAdd": "사람 추가",
+    "shell.channelMembersSearch": "워크스페이스에서 찾기",
+    "shell.channelMembersSearchEmpty": "채널 밖에 아무도 없습니다.",
+    "shell.channelMembersRemove": "제거",
+    "shell.channelMembersLeave": "나가기",
+    "shell.channelMembersDirect": "다이렉트 메시지",
+    "shell.channelMembersEmpty": "멤버가 없습니다.",
+    "shell.channelMemberGuest": "게스트",
+    "shell.channelMembersPublicHint": "워크스페이스 전체입니다. 개별 추가는 없습니다.",
+    "shell.channelMembersError": "멤버를 업데이트하지 못했습니다.",
+    "presence.online": "온라인",
+    "presence.away": "자리 비움",
+    "system.memberAdded": "%name% 님이 멤버를 추가했습니다",
+    "system.memberRemoved": "%name% 님이 멤버를 제거했습니다",
+    "system.memberLeft": "%name% 님이 채널을 나갔습니다",
+    "error.LastChannelManager": "마지막 관리자는 나가거나 제거될 수 없습니다.",
+    "error.AlreadyChannelMember": "이미 채널에 있는 사람입니다.",
+    "error.ChannelMembershipNotPrivate": "비공개 채널만 이 변경을 허용합니다."
   }
 }

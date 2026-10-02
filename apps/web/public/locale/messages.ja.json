@@ -754,6 +754,27 @@
     "error.StatusExpiresInPast": "その期限はすでに過ぎています。",
     "error.InvalidStatusState": "ステータスの状態が無効です。",
     "error.StatusTextInvalid": "ステータスのテキストが無効です。",
-    "error.CannotReportSelf": "自分のステータスは報告できません。"
+    "error.CannotReportSelf": "自分のステータスは報告できません。",
+"plural.member.one": "1人",
+    "plural.member.other": "{$count}人",
+    "shell.channelMembers": "メンバー",
+    "shell.channelMembersAdd": "人を追加",
+    "shell.channelMembersSearch": "ワークスペースを検索",
+    "shell.channelMembersSearchEmpty": "チャネル外の人はいません。",
+    "shell.channelMembersRemove": "削除",
+    "shell.channelMembersLeave": "退出",
+    "shell.channelMembersDirect": "ダイレクトメッセージ",
+    "shell.channelMembersEmpty": "メンバーはいません。",
+    "shell.channelMemberGuest": "ゲスト",
+    "shell.channelMembersPublicHint": "ワークスペース全員。個別の追加はありません。",
+    "shell.channelMembersError": "メンバーを更新できませんでした。",
+    "presence.online": "オンライン",
+    "presence.away": "離席中",
+    "system.memberAdded": "%name% がメンバーを追加しました",
+    "system.memberRemoved": "%name% がメンバーを削除しました",
+    "system.memberLeft": "%name% がチャネルを退出しました",
+    "error.LastChannelManager": "最後の管理者は退出も削除もできません。",
+    "error.AlreadyChannelMember": "その人はすでにチャネルにいます。",
+    "error.ChannelMembershipNotPrivate": "プライベートチャネルだけがこの変更を受け付けます。"
   }
 }
