@@ -88,6 +88,22 @@ export interface WorkspaceMember {
   role: string;
 }
 
+export interface ChannelRosterMember {
+  userId: string;
+  displayName: string;
+  email: string;
+  joinedAt?: string | null;
+  presence?: 'online' | 'away' | 'offline' | null;
+  isGuest: boolean;
+}
+
+export interface ChannelRosterPage {
+  items: ChannelRosterMember[];
+  nextCursor: string | null;
+  total: number;
+  canManage: boolean;
+}
+
 export interface SpaceGroup {
   space: Space | null;
   channels: Channel[];

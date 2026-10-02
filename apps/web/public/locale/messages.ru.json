@@ -715,6 +715,27 @@
     "admin.pluginUninstall": "Удалить",
     "admin.pluginNoMatch": "Нет плагинов по этому фильтру.",
     "admin.pluginLoadError": "Не удалось загрузить плагины.",
-    "admin.pluginSaveError": "Не удалось сохранить плагин."
+    "admin.pluginSaveError": "Не удалось сохранить плагин.",
+    "plural.member.one": "1 участник",
+    "plural.member.other": "{$count} участников",
+    "shell.channelMembers": "Участники",
+    "shell.channelMembersAdd": "Добавить людей",
+    "shell.channelMembersSearch": "Искать в пространстве",
+    "shell.channelMembersSearchEmpty": "Никого вне канала.",
+    "shell.channelMembersRemove": "Удалить",
+    "shell.channelMembersLeave": "Выйти",
+    "shell.channelMembersDirect": "Личное сообщение",
+    "shell.channelMembersEmpty": "Нет участников.",
+    "shell.channelMemberGuest": "Гость",
+    "shell.channelMembersPublicHint": "Все из пространства. Без индивидуального добавления.",
+    "shell.channelMembersError": "Не удалось обновить участников.",
+    "presence.online": "В сети",
+    "presence.away": "Отошёл",
+    "system.memberAdded": "%name% добавил участника",
+    "system.memberRemoved": "%name% удалил участника",
+    "system.memberLeft": "%name% вышел из канала",
+    "error.LastChannelManager": "Последний управляющий не может выйти или быть удалён.",
+    "error.AlreadyChannelMember": "Этот человек уже в канале.",
+    "error.ChannelMembershipNotPrivate": "Только закрытый канал принимает это изменение."
   }
 }

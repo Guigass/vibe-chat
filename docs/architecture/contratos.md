@@ -311,7 +311,7 @@ Enquete é uma mensagem (`seq` + outbox `MessageCreated` + idempotência). Discr
 | Corpo | Tokens estáveis `<@userId>`, `<@here>`, `<@channel>` |
 | Tabela | `messaging.message_mentions` (`TenantId`, `MessageId`, `ChannelId`, `MentionedUserId?`, `Kind`: `User`/`Here`/`Channel`) |
 | Escrita | Mesma transação de `SendMessage` |
-| Autocomplete | `GET /api/v1/workspaces/{workspaceId}/channels/{channelId}/members?query=` — membership do canal; até 8 resultados |
+| Autocomplete | `GET /api/v1/workspaces/{workspaceId}/channels/{channelId}/members?query=` — membership do canal; até 8 resultados. Sem `query`, o mesmo path devolve o roster paginado (B-186) |
 | Unread (por canal) | `GET /api/v1/channels/{channelId}/unread-count` → `{ unreadCount, mentionCount }` |
 | Unread (batch) | `GET /api/v1/workspaces/{workspaceId}/channels/unread` → `[{ channelId, unreadCount, mentionCount, lastReadSeq }]` |
 | Read cursor | `PUT /api/v1/channels/{channelId}/read-cursor` → `{ lastReadSequence, allowRetrograde? }`; monotônico salvo; retrocesso só com `allowRetrograde: true` (marcar como não lida) |
@@ -337,6 +337,10 @@ Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out Signal
 | `GET /api/v1/workspaces/{workspaceId}/spaces` | Lista spaces do workspace (membership obrigatória — D-07); ordenado por `order` |
 | `POST /api/v1/workspaces/{workspaceId}/spaces` | Body `{ name, order? }`; exige `channel.create` |
 | `GET /api/v1/workspaces/{workspaceId}/channels` | Channels do workspace; `spaceId` e `topic` opcionais no response |
+| `GET /api/v1/workspaces/{workspaceId}/channels/{channelId}/members` | Sem `query`: roster `{ items, nextCursor, total, canManage }` (`limit` 1–200, default 50, `cursor` opaco). Público/anúncio = membros do workspace (`canManage=false`). Privado = `channel_members` ativos; `canManage` se criador ou `channel.manage`. Com `?query=`: autocomplete até 8 (array) |
+| `POST /api/v1/workspaces/{workspaceId}/channels/{channelId}/members` | Body `{ userId }`. Só `Private`. Criador ou `channel.manage`. Alvo no mesmo workspace. 409 `AlreadyChannelMember` / `LastChannelManager` não se aplica no add. 400 `ChannelMembershipNotPrivate`. Fora do workspace → 403. Audit `channel.member.add`. Mensagem `<system:member-add:userId>` + outbox `MessageCreated`. `JoinedSeq=0` |
+| `DELETE /api/v1/workspaces/{workspaceId}/channels/{channelId}/members/{userId}` | Remove outro membro do privado. Não remove o último gestor (criador ainda membro ou `channel.manage`). 409 `LastChannelManager`. Audit `channel.member.remove`. `LeftAt` + evict SignalR |
+| `DELETE /api/v1/workspaces/{workspaceId}/channels/{channelId}/members/me` | Sair do privado. Mesma regra do último gestor. Audit `channel.member.leave` |
 | `POST /api/v1/workspaces/{workspaceId}/channels` | Body `{ name, type, spaceId? }`; exige `channel.create`; `spaceId` deve pertencer ao workspace |
 | `PUT /api/v1/workspaces/{workspaceId}/channels/{channelId}/topic` | Body `{ topic }` (máx. 250; vazio limpa); membership + `channel.create`; rejeita `Direct` (B-087 `/topico`) |
 | `GET /api/v1/workspaces/{workspaceId}/commands` | Descoberta de slash commands disponíveis ao ator (B-087); membership; filtrado por permissão; `description` segue o `locale` do caller (`me.locale`; null → `pt-BR`); `name` e `usage` são estáveis — ver tabela abaixo |

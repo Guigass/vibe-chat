@@ -715,6 +715,27 @@
     "admin.pluginUninstall": "Uninstall",
     "admin.pluginNoMatch": "No plugin matches this filter.",
     "admin.pluginLoadError": "Could not load plugins.",
-    "admin.pluginSaveError": "Could not save the plugin."
+    "admin.pluginSaveError": "Could not save the plugin.",
+    "plural.member.one": "1 member",
+    "plural.member.other": "{$count} members",
+    "shell.channelMembers": "Members",
+    "shell.channelMembersAdd": "Add people",
+    "shell.channelMembersSearch": "Search the workspace",
+    "shell.channelMembersSearchEmpty": "No one outside the channel.",
+    "shell.channelMembersRemove": "Remove",
+    "shell.channelMembersLeave": "Leave",
+    "shell.channelMembersDirect": "Direct message",
+    "shell.channelMembersEmpty": "No members.",
+    "shell.channelMemberGuest": "Guest",
+    "shell.channelMembersPublicHint": "Everyone in the workspace. No individual add or remove.",
+    "shell.channelMembersError": "Could not update members.",
+    "presence.online": "Online",
+    "presence.away": "Away",
+    "system.memberAdded": "%name% added a member",
+    "system.memberRemoved": "%name% removed a member",
+    "system.memberLeft": "%name% left the channel",
+    "error.LastChannelManager": "The last manager cannot leave or be removed.",
+    "error.AlreadyChannelMember": "That person is already in the channel.",
+    "error.ChannelMembershipNotPrivate": "Only a private channel accepts this change."
   }
 }
