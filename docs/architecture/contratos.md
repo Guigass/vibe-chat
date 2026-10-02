@@ -748,6 +748,22 @@ Escopo de canal é lista explícita. Fora da lista, DM/GroupDm ou outro tenant �
 
 Tabelas `integrations.bots`, `integrations.bot_tokens` (só hash SHA-256), `integrations.bot_channel_scopes`. RLS FORCE. Lookup do token antes do tenant usa `app.integration_token_hash` (SET LOCAL), no mesmo espírito do convite B-040. Perfil `Role.Bot` no workspace; subject `bot:{id}` não autentica como humano.
 
+### Plugins locais (B-110 / ADR-028)
+
+Mesma flag `Integrations:Bots:Enabled`. Off → 404 `IntegrationDisabled`. O plugin é configuração: manifesto JSON + bot 1:1. Não executa código de terceiro.
+
+Manifesto v1 estrito (`vibechat.plugin.manifest.v1`): `id`, `name`, `version` (`N.N.N`), `capabilities`. Campo extra → 400 `InvalidPluginManifest`. Capability diferente de `messages.send` → 400 `UnknownPluginCapability`. Corpo acima de 4 KiB → 400 `PluginManifestTooLarge`. Built-in do binário: `incoming-messages`.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| GET | `/api/v1/admin/workspaces/{workspaceId}/plugins` | `workspace.admin` |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/plugins` | `workspace.admin`; body com exatamente um de `builtinId` ou `manifest`, mais `channelIds[]` e `allowDms`; resposta inclui `token` **uma vez** |
+| PATCH | `/api/v1/admin/workspaces/{workspaceId}/plugins/{installedId}` | `workspace.admin`; body `{ enabled }`; desligar responde 403 nos sends novos e preserva histórico |
+| DELETE | `/api/v1/admin/workspaces/{workspaceId}/plugins/{installedId}` | `workspace.admin`; revoga o token na mesma transação; 204 |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/plugins/{installedId}/rotate` | `workspace.admin`; novo `token` uma vez |
+
+Slug duplicado ou acima de 20 plugins no workspace → 409 (`PluginAlreadyInstalled` / `PluginLimitReached`). Id de outro workspace → 404 `PluginNotFound`. Member → 403. Tabela `integrations.plugins` com RLS FORCE e FK para `integrations.bots`. Uninstall não apaga mensagens.
+
 ### Auditoria de conversa (B-067)
 
 Distinta do feed `audit_events` (B-042). Viewer compliance: admin/Auditor com `admin.dashboard` lê histórico completo **dentro do tenant**, inclusive DMs onde não é membro e corpos soft-deleted (ADR-018). Membro comum → 403. Canal/thread de outro tenant → 403. Histórico normal (`GET /channels/.../messages`) continua redigindo body deletado e exigindo membership.

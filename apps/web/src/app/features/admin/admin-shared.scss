@@ -119,6 +119,16 @@
   cursor: not-allowed;
 }
 
+.admin-chip {
+  display: inline-block;
+  margin: 0 0.35rem 0.2rem 0;
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--vc-radius-md);
+  background: color-mix(in srgb, var(--vc-brand) 12%, transparent);
+  color: var(--vc-ink);
+  font-size: 0.75rem;
+}
+
 .admin-btn--ghost {
   background: var(--vc-surface);
   color: var(--vc-ink);

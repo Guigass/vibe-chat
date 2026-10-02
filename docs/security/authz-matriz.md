@@ -120,6 +120,11 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | PUT | `/admin/workspaces/{workspaceId:guid}/bots/{botId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Sem token no body |
 | POST | `/admin/workspaces/{workspaceId:guid}/bots/{botId:guid}/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Token só na resposta |
 | POST | `/admin/workspaces/{workspaceId:guid}/bots/{botId:guid}/revoke` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Invalida na hora |
+| GET | `/admin/workspaces/{workspaceId:guid}/plugins` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-110; flag off → 404; sem secret |
+| POST | `/admin/workspaces/{workspaceId:guid}/plugins` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Built-in ou manifesto; token só na criação |
+| PATCH | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | `enabled`; outro workspace → 404 |
+| DELETE | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Revoga o token na mesma transação |
+| POST | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Token só na resposta |
 | POST | `/integrations/v1/channels/{channelId:guid}/messages` | exempt | integration token | — | — | — | B-109; `AllowAnonymous` + hash; fora do escopo → 403 |
 | POST | `/integrations/v1/dms` | exempt | integration token | — | — | — | Exige `allowDms`; peer do mesmo workspace |
 | POST | `/admin/settings/credentials/vapid/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-187 |

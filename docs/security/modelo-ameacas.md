@@ -199,6 +199,19 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Rate-limit | Chave Redis própria por bot, mesmo teto de send do tenant |
 | Rollback | Flag off no mesmo binário. `Down` remove só as tabelas do bot; mensagens ficam |
 
+### B-110 / ADR-028 — Plugin local
+
+| Item | Controle |
+|------|----------|
+| Kill switch | Mesma flag `Integrations:Bots:Enabled`; admin de plugin e send → 404 se off |
+| Código | Manifesto é JSON. Campo extra, schema errado ou capability fora de `messages.send` → 400. Nenhum DLL/JS é carregado |
+| Identidade | 1:1 com bot de B-109. O instalador não empresta o próprio papel |
+| Segredo | Token só na install/rotação. GET não devolve. Uninstall revoga na mesma transação |
+| Isolamento | RLS FORCE em `integrations.plugins`. Id de outro workspace → 404. Member → 403 |
+| Disable | `enabled=false` bloqueia send novo (403) e preserva histórico |
+| Capacidade | Máximo 20 plugins por workspace |
+| Rollback | Flag off no mesmo binário. `Down` remove só `integrations.plugins`; bots e mensagens ficam |
+
 ## Ameaças priorizadas para a fatia vertical
 
 1. Leitura/escrita cross-tenant

@@ -550,8 +550,8 @@
     "admin.auditEmpty": "Нет событий по фильтрам.",
     "admin.entity": "Сущность",
     "admin.actor": "Исполнитель",
-    "admin.pluginsLead": "Боты интеграции пишут только в разрешённые каналы. Токен показывается один раз. Вебхуки остаются в",
-    "admin.pluginsEmpty": "В этом пространстве нет ботов.",
+    "admin.pluginsLead": "Установленные плагины публикуют сообщения токеном бота. Токен показывается один раз. Вебхуки остаются в",
+    "admin.pluginsEmpty": "В этом пространстве нет установленных плагинов.",
     "admin.settingsLead": "Runtime-настройки workspace и тенанта. Учётные данные хранятся зашифрованными — в интерфейсе только маска. Инфраструктура (Postgres, Redis, OIDC, MinIO) остаётся в окружении.",
     "admin.loadingSettings": "Загружаем настройки…",
     "admin.settingsLoadError": "Не удалось загрузить настройки.",
@@ -705,6 +705,16 @@
     "admin.botLast4": "Токен",
     "admin.botLoadError": "Не удалось загрузить ботов.",
     "admin.botSaveError": "Не удалось сохранить бота.",
-    "bubble.bot": "Бот"
+    "bubble.bot": "Бот",
+    "admin.pluginInstallBuiltin": "Установить Incoming Messages",
+    "admin.pluginManifest": "Манифест (дополнительно)",
+    "admin.pluginInstallCustom": "Установить манифест",
+    "admin.pluginVersion": "Версия",
+    "admin.pluginCapabilities": "Capabilities",
+    "admin.pluginFilter": "Фильтр плагинов",
+    "admin.pluginUninstall": "Удалить",
+    "admin.pluginNoMatch": "Нет плагинов по этому фильтру.",
+    "admin.pluginLoadError": "Не удалось загрузить плагины.",
+    "admin.pluginSaveError": "Не удалось сохранить плагин."
   }
 }

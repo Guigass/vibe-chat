@@ -7,13 +7,9 @@
   @if (loading()) {
     <p class="admin-empty">{{ ui.adminLoadingSettings }}</p>
   } @else if (loadError()) {
-    <p class="admin-empty">{{ ui.adminBotLoadError }}</p>
+    <p class="admin-empty">{{ ui.adminPluginLoadError }}</p>
   } @else {
-    <form class="admin-filters" (submit)="$event.preventDefault(); create()">
-      <label class="admin-filters__field">
-        <span>{{ ui.adminBotName }}</span>
-        <input [value]="name()" (input)="name.set($any($event.target).value)" [attr.aria-label]="ui.adminBotName" />
-      </label>
+    <form class="admin-filters" (submit)="$event.preventDefault(); installBuiltin()">
       <label class="admin-filters__field">
         <span>{{ ui.adminBotAllowDms }}</span>
         <input type="checkbox" [checked]="allowDms()" (change)="allowDms.set($any($event.target).checked)" />
@@ -31,51 +27,94 @@
           </label>
         }
       </div>
-      <button type="submit" class="admin-btn" [disabled]="busy() || !name().trim()">
-        {{ ui.adminBotCreate }}
+      <button type="submit" class="admin-btn" [disabled]="busy()">
+        {{ ui.adminPluginInstallBuiltin }}
+      </button>
+    </form>
+
+    <form class="admin-filters" (submit)="$event.preventDefault(); installManifest()">
+      <label class="admin-filters__field">
+        <span>{{ ui.adminPluginManifest }}</span>
+        <textarea
+          rows="5"
+          [value]="manifestText()"
+          (input)="manifestText.set($any($event.target).value)"
+          [attr.aria-label]="ui.adminPluginManifest"
+        ></textarea>
+      </label>
+      <button type="submit" class="admin-btn" [disabled]="busy() || !manifestText().trim()">
+        {{ ui.adminPluginInstallCustom }}
       </button>
     </form>
 
     @if (saveError()) {
-      <p class="admin-empty">{{ ui.adminBotSaveError }}</p>
+      <p class="admin-empty">{{ ui.adminPluginSaveError }}</p>
     }
     @if (revealedToken(); as token) {
       <p class="admin-feedback">{{ ui.adminBotTokenOnce }}</p>
       <p class="admin-panel__lead"><code>{{ token }}</code></p>
     }
 
-    @if (bots().length === 0) {
+    @if (plugins().length === 0) {
       <p class="admin-empty">{{ ui.adminPluginsEmpty }}</p>
     } @else {
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>{{ ui.adminBotName }}</th>
-              <th>{{ ui.adminBotEnabled }}</th>
-              <th>{{ ui.adminBotLast4 }}</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (bot of bots(); track bot.id) {
+      <label class="admin-filters__field">
+        <span>{{ ui.adminPluginFilter }}</span>
+        <input
+          [value]="filterQuery()"
+          (input)="filterQuery.set($any($event.target).value)"
+          [attr.aria-label]="ui.adminPluginFilter"
+        />
+      </label>
+      @if (filtered().length === 0) {
+        <p class="admin-empty">{{ ui.adminPluginNoMatch }}</p>
+      } @else {
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
               <tr>
-                <td>{{ bot.name }}</td>
-                <td>{{ bot.enabled ? ui.adminBotEnabled : ui.adminBotInactive }}</td>
-                <td>{{ bot.tokenConfigured ? bot.tokenLast4 : '—' }}</td>
-                <td>
-                  <button type="button" class="admin-btn" [disabled]="busy()" (click)="rotate(bot)">
-                    {{ ui.adminBotRotate }}
-                  </button>
-                  <button type="button" class="admin-btn" [disabled]="busy()" (click)="revoke(bot)">
-                    {{ ui.adminBotRevoke }}
-                  </button>
-                </td>
+                <th>{{ ui.adminBotName }}</th>
+                <th>{{ ui.adminPluginVersion }}</th>
+                <th>{{ ui.adminPluginCapabilities }}</th>
+                <th>{{ ui.adminBotEnabled }}</th>
+                <th>{{ ui.adminBotLast4 }}</th>
+                <th></th>
               </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              @for (plugin of filtered(); track plugin.id) {
+                <tr>
+                  <td>{{ plugin.name }}</td>
+                  <td>{{ plugin.version }}</td>
+                  <td>
+                    @for (capability of plugin.capabilities; track capability) {
+                      <span class="admin-chip">{{ capability }}</span>
+                    }
+                  </td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      [checked]="plugin.enabled"
+                      [disabled]="busy()"
+                      [attr.aria-label]="ui.adminBotEnabled"
+                      (change)="setEnabled(plugin, $any($event.target).checked)"
+                    />
+                  </td>
+                  <td>{{ plugin.tokenConfigured ? plugin.tokenLast4 : '—' }}</td>
+                  <td>
+                    <button type="button" class="admin-btn" [disabled]="busy()" (click)="rotate(plugin)">
+                      {{ ui.adminBotRotate }}
+                    </button>
+                    <button type="button" class="admin-btn" [disabled]="busy()" (click)="uninstall(plugin)">
+                      {{ ui.adminPluginUninstall }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     }
   }
 </article>

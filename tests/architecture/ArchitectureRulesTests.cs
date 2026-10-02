@@ -89,6 +89,7 @@ public sealed class ArchitectureRulesTests
             "integrations.bots",
             "integrations.bot_tokens",
             "integrations.bot_channel_scopes",
+            "integrations.plugins",
             "files.settings",
             "building_blocks.rate_limit_settings"
         ];

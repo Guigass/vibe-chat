@@ -69,12 +69,11 @@ disable, listagem no admin e built-in que só encapsula a API de envio — tudo
 
 ## Aceite
 
-- [ ] Instalar built-in “Incoming Messages” cria bot+token usable (B-109)
-- [ ] Disable impede novos sends (401/403) sem apagar histórico
-- [ ] Uninstall revoga token; manifesto custom inválido → 400
-- [ ] Capability desconhecida na fatia 1 → rejeitada ou ignorada com aviso
-  (documentar uma das duas; preferir rejeitar)
-- [ ] Sem UI de loja remota
+- [x] Instalar built-in “Incoming Messages” cria bot+token usable (B-109)
+- [x] Disable impede novos sends (401/403) sem apagar histórico
+- [x] Uninstall revoga token; manifesto custom inválido → 400
+- [x] Capability desconhecida na fatia 1 → rejeitada (`UnknownPluginCapability`)
+- [x] Sem UI de loja remota
 
 ## Testes
 

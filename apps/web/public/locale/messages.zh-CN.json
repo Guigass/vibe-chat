@@ -550,8 +550,8 @@
     "admin.auditEmpty": "没有符合筛选条件的事件。",
     "admin.entity": "实体",
     "admin.actor": "操作者",
-    "admin.pluginsLead": "集成机器人只向允许的频道发消息。令牌只显示一次。Webhook 仍在",
-    "admin.pluginsEmpty": "此工作区还没有机器人。",
+    "admin.pluginsLead": "已安装的插件通过机器人令牌发消息。令牌只显示一次。Webhook 仍在",
+    "admin.pluginsEmpty": "此工作区尚未安装插件。",
     "admin.settingsLead": "工作区与租户的运行时设置。凭据保持加密 — 界面只显示掩码。基础设施（Postgres、Redis、OIDC、MinIO）仍在环境中配置。",
     "admin.loadingSettings": "正在加载设置…",
     "admin.settingsLoadError": "无法加载设置。",
@@ -705,6 +705,16 @@
     "admin.botLast4": "令牌",
     "admin.botLoadError": "无法加载机器人。",
     "admin.botSaveError": "无法保存机器人。",
-    "bubble.bot": "机器人"
+    "bubble.bot": "机器人",
+    "admin.pluginInstallBuiltin": "安装 Incoming Messages",
+    "admin.pluginManifest": "清单（高级）",
+    "admin.pluginInstallCustom": "安装清单",
+    "admin.pluginVersion": "版本",
+    "admin.pluginCapabilities": "Capabilities",
+    "admin.pluginFilter": "筛选插件",
+    "admin.pluginUninstall": "卸载",
+    "admin.pluginNoMatch": "没有插件符合此筛选。",
+    "admin.pluginLoadError": "无法加载插件。",
+    "admin.pluginSaveError": "无法保存插件。"
   }
 }

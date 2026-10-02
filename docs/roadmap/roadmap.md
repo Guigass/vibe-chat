@@ -320,7 +320,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 | W10-11 | B/C/D | Políticas de edição/apagar mensagem (B-107) | B-023, B-069 | [B-107](../product/specs/B-107-politicas-edicao-mensagem.md); ADR-025 | **Done** |
 | W10-12 | B/C/D | Extender webhooks outbound (B-108) | B-048, B-069 | [B-108](../product/specs/B-108-extender-webhooks.md); ADR-026 | **Done** |
 | W10-13 | B/C/D/E | Núcleo plugin — bot/token + envio msgs (B-109) | B-004, B-069, B-021 | [B-109](../product/specs/B-109-api-integracao-envio-mensagens.md); ADR-027 | **Done** |
-| W10-14 | B/C/D | Instalar/gerir plugins na instância (B-110) | W10-13 | [B-110](../product/specs/B-110-instalar-plugins.md) | Planned |
+| W10-14 | B/C/D | Instalar/gerir plugins na instância (B-110) | W10-13 | [B-110](../product/specs/B-110-instalar-plugins.md); ADR-028 | **Done** |
 | W10-15 | B/D | Membros do canal — painel direito, add/remove em privado, enviar PV (B-186; fecha BUG-020) | B-020 | [B-186](../product/specs/B-186-membros-do-canal.md) | Planned |
 | W10-16 | C/D | Busca versátil — matching e relevância no FTS (B-188; fecha BUG-023) | W10-4 | [B-188](../product/specs/B-188-busca-versatil.md) | Planned |
 
