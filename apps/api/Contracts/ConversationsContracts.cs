@@ -60,4 +60,5 @@ public sealed record ChannelUnreadSummaryResponse(
     Guid ChannelId,
     int UnreadCount,
     int MentionCount,
-    long LastReadSeq);
+    long LastReadSeq,
+    int PendingAnnouncementCount = 0);

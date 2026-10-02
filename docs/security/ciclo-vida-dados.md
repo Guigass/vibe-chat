@@ -47,6 +47,7 @@ entram em fila de purge com grace period e evidência, não permanecem para semp
 | Mensagem atual | Tenant + ADR-018 | soft-delete → purge | Sim | Sim |
 | Versões editadas | Herda conteúdo/policy própria explícita | Purge com origem | Sim | Sim, se autorizado |
 | Reação/read cursor | Necessidade funcional | Delete com usuário/conversa | Normalmente não | Opcional |
+| Confirmação de anúncio | Necessidade funcional do canal Announcement | Delete com a mensagem/usuário | Não é prova legal | Agregado no relatório do publisher |
 | Anexo original | Herda mensagem/policy de Files | Remove objeto + metadata governada | Sim | Sim |
 | Thumbnail/preview | Herda origem; curta se possível | Delete/rebuild | Sim enquanto necessário à evidência | Não canônico |
 | Link preview | Herda mensagem | Delete/rebuild | Conforme conteúdo persistido | Opcional |

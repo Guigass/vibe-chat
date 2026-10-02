@@ -100,6 +100,8 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<Poll> Polls => Set<Poll>();
     public DbSet<PollOption> PollOptions => Set<PollOption>();
     public DbSet<PollVote> PollVotes => Set<PollVote>();
+    public DbSet<Announcement> Announcements => Set<Announcement>();
+    public DbSet<AnnouncementAcknowledgement> AnnouncementAcknowledgements => Set<AnnouncementAcknowledgement>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -419,6 +421,32 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.PollId).HasConversion(v => v.Value, v => new MessageId(v));
             entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
             entity.HasIndex(x => new { x.TenantId, x.PollId, x.OptionId, x.UserId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<Announcement>(entity =>
+        {
+            entity.ToTable("announcements", "messaging");
+            entity.HasKey(x => x.MessageId);
+            entity.Property(x => x.MessageId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.CreatedByUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.HasIndex(x => new { x.TenantId, x.ChannelId });
+            entity.HasIndex(x => new { x.TenantId, x.RequiresAcknowledgement, x.ClosedAt, x.AcknowledgeBy });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<AnnouncementAcknowledgement>(entity =>
+        {
+            entity.ToTable("announcement_acknowledgements", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.MessageId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.HasIndex(x => new { x.TenantId, x.MessageId, x.UserId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.ChannelId, x.MessageId });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -953,6 +981,28 @@ public sealed class MessageWriter(
             throw new UnauthorizedAccessException("User cannot send messages to this channel.");
         }
 
+        var parentChannel = await dbContext.Channels.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == parentChannelId && x.TenantId == command.TenantId, cancellationToken);
+        if (parentChannel is null)
+        {
+            VibeChatMetrics.MessagesRejected.Add(1);
+            throw new UnauthorizedAccessException("User cannot send messages to this channel.");
+        }
+
+        var announcementChannel = parentChannel.Type == ChannelType.Announcement;
+        if (announcementChannel
+            && !await permissions.HasPermissionAsync(command.TenantId, command.UserId, Permissions.Announcement.Publish, cancellationToken))
+        {
+            VibeChatMetrics.MessagesRejected.Add(1);
+            throw new UnauthorizedAccessException("AnnouncementPublishForbidden");
+        }
+
+        AnnouncementPolicies.ValidateRequest(
+            command.RequiresAcknowledgement,
+            command.AcknowledgeBy,
+            announcementChannel,
+            clock.UtcNow);
+
         object? replyToPayload = null;
         if (command.ReplyToMessageId is MessageId replyToId)
         {
@@ -1103,6 +1153,20 @@ public sealed class MessageWriter(
             .Select(x => x.DisplayName)
             .FirstOrDefaultAsync(cancellationToken) ?? command.UserId.Value.ToString();
 
+        var announcementSnapshot = parentChannel.Type == ChannelType.Announcement
+            ? new
+            {
+                messageId = message.Id.Value,
+                requiresAcknowledgement = command.RequiresAcknowledgement,
+                acknowledgeBy = command.AcknowledgeBy,
+                closedAt = (DateTimeOffset?)null,
+                acknowledgedByMe = false,
+                acknowledgementCount = 0,
+                canAcknowledge = false,
+                canViewReport = false
+            }
+            : null;
+
         outbox.Add(new OutboxMessage
         {
             TenantId = command.TenantId,
@@ -1117,6 +1181,7 @@ public sealed class MessageWriter(
                 messageId = command.MessageId.Value,
                 // Same UUID the client sent as messageId — reconciles optimistic UI (BUG-001).
                 clientMessageId = command.MessageId.Value,
+                announcement = announcementSnapshot,
                 replyToMessageId = command.ReplyToMessageId?.Value,
                 replyTo = replyToPayload,
                 authorId = command.UserId.Value,
@@ -1156,6 +1221,19 @@ public sealed class MessageWriter(
                 attachmentIds
             })
         });
+
+        AnnouncementPublication.Attach(
+            dbContext,
+            outbox,
+            audit,
+            parentChannel.Type,
+            command.TenantId,
+            parentChannelId,
+            message,
+            command.UserId,
+            command.RequiresAcknowledgement,
+            command.AcknowledgeBy,
+            now);
 
         await idempotencyStore.StoreAsync(new IdempotencyRecord(command.TenantId, command.IdempotencyKey, hash, JsonSerializer.Serialize(result), now), cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -1235,6 +1313,7 @@ public sealed class MessageWriter(
             throw new UnauthorizedAccessException("User cannot access source channel.");
         }
 
+        var announcementTargets = new HashSet<ChannelId>();
         foreach (var targetId in targetIds)
         {
             var target = await dbContext.Channels.AsNoTracking()
@@ -1244,6 +1323,16 @@ public sealed class MessageWriter(
                 || !await channels.CanAccessAsync(command.TenantId, targetId, command.UserId, cancellationToken))
             {
                 throw new UnauthorizedAccessException("User cannot forward to one or more target channels.");
+            }
+
+            if (target.Type == ChannelType.Announcement)
+            {
+                if (!await permissions.HasPermissionAsync(command.TenantId, command.UserId, Permissions.Announcement.Publish, cancellationToken))
+                {
+                    throw new UnauthorizedAccessException("AnnouncementPublishForbidden");
+                }
+
+                announcementTargets.Add(targetId);
             }
         }
 
@@ -1324,6 +1413,21 @@ public sealed class MessageWriter(
                 CreatedAt = now
             };
             dbContext.Messages.Add(message);
+            if (announcementTargets.Contains(targetId))
+            {
+                AnnouncementPublication.Attach(
+                    dbContext,
+                    outbox,
+                    audit,
+                    ChannelType.Announcement,
+                    command.TenantId,
+                    targetId,
+                    message,
+                    command.UserId,
+                    requiresAcknowledgement: false,
+                    acknowledgeBy: null,
+                    now);
+            }
 
             var clonedAttachments = new List<Attachment>(sourceAttachments.Length);
             foreach (var original in sourceAttachments)
@@ -3799,6 +3903,7 @@ public static class DependencyInjection
         services.AddScoped<IConversationSequenceStore, ConversationSequenceStore>();
         services.AddScoped<IMessageWriter, MessageWriter>();
         services.AddScoped<IPollWriter, PollWriter>();
+        services.AddScoped<IAnnouncementWriter, AnnouncementWriter>();
         services.AddSingleton<PollCloseProcessor>();
         services.AddSingleton<ScheduleDispatchProcessor>();
         services.AddScoped<ISearchIndexer, PostgresSearchIndexer>();

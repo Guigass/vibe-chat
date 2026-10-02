@@ -64,7 +64,7 @@ import { ScheduleStore } from '../../../core/services/schedule.store';
   standalone: true,
   imports: [Button, IconButton, Input, Textarea, MentionAutocomplete, SlashAutocomplete, EmojiPicker, SchedulePanel],
   template: `
-    <form class="composer" (submit)="onSubmit($event)">
+    <form class="composer" [class.composer--locked]="announcementReadOnly()" (submit)="onSubmit($event)">
       @if (schedule.notice(); as notice) {
         <p class="composer__schedule-notice" role="status">{{ notice }}</p>
       }
@@ -72,6 +72,33 @@ import { ScheduleStore } from '../../../core/services/schedule.store';
         <vc-schedule-panel />
       }
       <div class="composer__main">
+        @if (announcementReadOnly()) {
+          <p class="composer__readonly" role="status">{{ ui.composerAnnouncementReadonly }}</p>
+        }
+        @if (canPublishAnnouncement()) {
+          <div class="composer__ack">
+            <label class="composer__ack-flag" for="vc-announcement-ack">
+              <input
+                id="vc-announcement-ack"
+                type="checkbox"
+                [checked]="requireAck()"
+                (change)="onRequireAckChange($event)"
+              />
+              <span>{{ ui.composerRequireAck }}</span>
+            </label>
+            @if (requireAck()) {
+              <label class="composer__ack-by" for="vc-announcement-by">
+                <span>{{ ui.composerAckBy }}</span>
+                <input
+                  id="vc-announcement-by"
+                  type="datetime-local"
+                  [value]="ackByLocal()"
+                  (change)="onAckByChange($event)"
+                />
+              </label>
+            }
+          </div>
+        }
         @if (messages.replyTarget(); as cite) {
           <div class="composer__reply" role="status">
             <div class="composer__reply-meta">
@@ -354,6 +381,7 @@ import { ScheduleStore } from '../../../core/services/schedule.store';
               [(value)]="draft"
               [placeholder]="composerPlaceholder()"
               [label]="''"
+              [disabled]="announcementReadOnly()"
               (keydown)="onKeydown($event)"
               (textInput)="onInput()"
               (paste)="onPaste($event)"
@@ -526,6 +554,35 @@ import { ScheduleStore } from '../../../core/services/schedule.store';
       position: relative;
       z-index: 6;
       flex: 0 0 auto;
+    }
+    .composer__readonly,
+    .composer__ack {
+      margin: 0 0 0.5rem;
+      color: var(--vc-ink-muted);
+      font-size: 0.85rem;
+    }
+    .composer__ack {
+      display: grid;
+      gap: 0.35rem;
+    }
+    .composer__ack-flag,
+    .composer__ack-by {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .composer__ack input[type='datetime-local'] {
+      font: inherit;
+      color: inherit;
+      background: transparent;
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-sm);
+      min-height: 2.75rem;
+      padding: 0.25rem 0.5rem;
+    }
+    .composer--locked .composer__input-wrap,
+    .composer--locked .composer__tools {
+      opacity: 0.55;
     }
     .composer {
       padding: var(--vc-composer-pad);
@@ -967,6 +1024,16 @@ export class Composer {
   readonly emojiLocale = computed(() => (this.locales.locale() === 'en' ? 'en' : 'pt'));
 
   readonly draft = signal('');
+  readonly requireAck = signal(false);
+  readonly ackByLocal = signal('');
+  readonly announcementReadOnly = computed(() => {
+    const channel = this.channels.activeChannel();
+    return channel?.type === 'announcement' && !this.channels.canPublishAnnouncement();
+  });
+  readonly canPublishAnnouncement = computed(() => {
+    const channel = this.channels.activeChannel();
+    return channel?.type === 'announcement' && this.channels.canPublishAnnouncement() && !this.messages.editingMessage();
+  });
   readonly validationError = signal<string | null>(null);
   readonly mentionOpen = signal(false);
   readonly mentionActiveIndex = signal(0);
@@ -1012,12 +1079,33 @@ export class Composer {
   });
 
   composerPlaceholder(): string {
+    if (this.announcementReadOnly()) {
+      return ui.composerAnnouncementReadonly;
+    }
     if (this.messages.editingMessage()) {
       return ui.composerEdit;
     }
     return `${ui.composerPlaceholder} #${this.channels.activeChannel()?.name || 'channel'}`;
   }
+
+  onRequireAckChange(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.requireAck.set(checked);
+    if (!checked) this.ackByLocal.set('');
+  }
+
+  onAckByChange(event: Event): void {
+    this.ackByLocal.set((event.target as HTMLInputElement).value);
+  }
+
+  private announcementDraft(): { requiresAcknowledgement: boolean; acknowledgeBy?: string | null } | undefined {
+    if (!this.canPublishAnnouncement() || !this.requireAck()) return undefined;
+    const local = this.ackByLocal().trim();
+    const acknowledgeBy = local ? new Date(local).toISOString() : null;
+    return { requiresAcknowledgement: true, acknowledgeBy };
+  }
   readonly submitDisabled = computed(() => {
+    if (this.announcementReadOnly()) return true;
     if (this.submitting() || this.messages.sending() || this.sendingAudio()) return true;
     if (this.messages.editingMessage()) {
       return !this.draft().trim() || this.bodyTooLong();
@@ -1226,6 +1314,7 @@ export class Composer {
 
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
+    if (this.announcementReadOnly()) return;
     if (this.submitting() || this.sendingAudio()) return;
     if (this.mentionOpen() || this.slashOpen()) return;
 
@@ -1294,7 +1383,10 @@ export class Composer {
         await this.drafts.remove(channelId);
       }
 
-      const ok = await this.messages.send(body, attachmentIds);
+      const announcement = this.announcementDraft();
+      const ok = announcement
+        ? await this.messages.send(body, attachmentIds, announcement)
+        : await this.messages.send(body, attachmentIds);
       if (!ok) {
         this.draft.set(display);
         this.persistDraftSoon();

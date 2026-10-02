@@ -41,6 +41,10 @@ public static class AuditActions
     public const string WorkspaceExport = "workspace.export";
     public const string MessagePurge = "message.purge";
     public const string AiTranscribe = "ai.transcribe";
+    public const string AnnouncementCreated = "announcement.created";
+    public const string AnnouncementPublished = "announcement.published";
+    public const string AnnouncementEdited = "announcement.edited";
+    public const string AnnouncementClosed = "announcement.closed";
     public const string PollCreate = "poll.create";
     public const string PollVote = "poll.vote";
     public const string PollUnvote = "poll.unvote";

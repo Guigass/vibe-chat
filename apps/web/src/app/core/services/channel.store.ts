@@ -4,6 +4,7 @@ import { AuthService } from '../auth/auth.service';
 import { ChatHubService } from './chat-hub.service';
 import {
   Channel,
+  PendingAnnouncement,
   PresenceStatus,
   Space,
   SpaceGroup,
@@ -83,6 +84,12 @@ export class ChannelStore {
     const role = this.activeWorkspace()?.role;
     return !!role && ['PlatformOwner', 'WorkspaceOwner', 'Admin', 'Moderator', 'Member'].includes(role);
   });
+  readonly canPublishAnnouncement = computed(() => {
+    const role = this.activeWorkspace()?.role;
+    return !!role && ['PlatformOwner', 'WorkspaceOwner', 'Admin', 'Moderator'].includes(role);
+  });
+  private readonly pendingAnnouncementsSignal = signal<PendingAnnouncement[]>([]);
+  readonly pendingAnnouncements = this.pendingAnnouncementsSignal.asReadonly();
   readonly isGuest = computed(() => this.activeWorkspace()?.role === 'Guest');
   readonly canInviteGuest = computed(() => {
     const role = this.activeWorkspace()?.role;
@@ -98,6 +105,9 @@ export class ChannelStore {
       const me = this.auth.profile()?.id;
       if (!me || event.userId !== me) return;
       void this.syncChannelUnread(event.channelId);
+    });
+    this.hub.onReconnected(() => {
+      void this.refreshPendingAnnouncements();
     });
   }
 
@@ -163,12 +173,30 @@ export class ChannelStore {
             ...channel,
             unreadCount: row.unreadCount,
             mentionCount: row.mentionCount,
+            pendingAnnouncementCount: row.pendingAnnouncementCount,
           };
         }),
       );
+      await this.refreshPendingAnnouncements();
     } catch {
       // keep current badges; next reconnect can retry
     }
+  }
+
+  async refreshPendingAnnouncements(): Promise<void> {
+    if (this.usingDemo()) return;
+    const workspace = this.activeWorkspace();
+    if (!workspace) return;
+    try {
+      const rows = await this.api.getPendingAnnouncements(workspace.id);
+      this.pendingAnnouncementsSignal.set(rows);
+    } catch {
+      // inbox degrades; the channel badge still comes from unread
+    }
+  }
+
+  forgetPendingAnnouncement(messageId: string): void {
+    this.pendingAnnouncementsSignal.update((list) => list.filter((item) => !idsEqual(item.messageId, messageId)));
   }
 
   async syncChannelUnread(channelId: string): Promise<void> {
@@ -178,6 +206,7 @@ export class ChannelStore {
       this.patchChannel(channelId, {
         unreadCount: counts.unreadCount,
         mentionCount: counts.mentionCount,
+        pendingAnnouncementCount: counts.pendingAnnouncementCount,
       });
       if (idsEqual(channelId, this.activeChannelIdSignal())) {
         this.openedUnreadCountSignal.set(counts.unreadCount);

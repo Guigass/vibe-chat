@@ -37,6 +37,9 @@ import {
   IntegrationBot,
   InstalledPlugin,
   PollSummary,
+  AnnouncementSummary,
+  AnnouncementReportItem,
+  PendingAnnouncement,
   PushPublicKey,
   PushDevice,
   NotificationPreferences,
@@ -187,6 +190,18 @@ interface MessageDto {
   linkPreview?: LinkPreviewDto | null;
   isPinned?: boolean;
   poll?: PollDto | null;
+  announcement?: AnnouncementDto | null;
+}
+
+interface AnnouncementDto {
+  messageId: string;
+  requiresAcknowledgement: boolean;
+  acknowledgeBy?: string | null;
+  closedAt?: string | null;
+  acknowledgedByMe?: boolean;
+  acknowledgementCount?: number;
+  canAcknowledge?: boolean;
+  canViewReport?: boolean;
 }
 
 interface PollDto {
@@ -704,15 +719,19 @@ export class ApiService {
     idempotencyKey: string;
     attachmentIds?: string[];
     replyToMessageId?: string;
+    requiresAcknowledgement?: boolean;
+    acknowledgeBy?: string | null;
   }): Promise<ChatMessage> {
     const dto = await this.request<MessageDto>(`/api/v1/channels/${input.channelId}/messages`, {
       method: 'POST',
-      body: JSON.stringify({
+        body: JSON.stringify({
         messageId: input.clientMessageId,
         idempotencyKey: input.idempotencyKey,
         body: input.body,
         attachmentIds: input.attachmentIds ?? [],
         replyToMessageId: input.replyToMessageId ?? null,
+        requiresAcknowledgement: input.requiresAcknowledgement ?? false,
+        acknowledgeBy: input.acknowledgeBy ?? null,
       }),
     });
     return this.mapMessage(dto, this.auth.profile()?.id);
@@ -1367,6 +1386,7 @@ export class ApiService {
       unreadCount: number;
       mentionCount: number;
       lastReadSeq: number;
+      pendingAnnouncementCount: number;
     }>
   > {
     const rows = await this.request<
@@ -1375,6 +1395,7 @@ export class ApiService {
         unreadCount: number;
         mentionCount: number;
         lastReadSeq: number;
+        pendingAnnouncementCount?: number;
       }>
     >(`/api/v1/workspaces/${workspaceId}/channels/unread`);
     return (rows ?? []).map((row) => ({
@@ -1382,13 +1403,19 @@ export class ApiService {
       unreadCount: row.unreadCount ?? 0,
       mentionCount: row.mentionCount ?? 0,
       lastReadSeq: row.lastReadSeq ?? 0,
+      pendingAnnouncementCount: row.pendingAnnouncementCount ?? 0,
     }));
   }
 
-  async getUnreadCount(channelId: string): Promise<{ unreadCount: number; mentionCount: number }> {
-    return this.request<{ unreadCount: number; mentionCount: number }>(
+  async getUnreadCount(channelId: string): Promise<{ unreadCount: number; mentionCount: number; pendingAnnouncementCount: number }> {
+    const row = await this.request<{ unreadCount: number; mentionCount: number; pendingAnnouncementCount?: number }>(
       `/api/v1/channels/${channelId}/unread-count`,
     );
+    return {
+      unreadCount: row.unreadCount ?? 0,
+      mentionCount: row.mentionCount ?? 0,
+      pendingAnnouncementCount: row.pendingAnnouncementCount ?? 0,
+    };
   }
 
   async getChannelMembers(
@@ -1873,11 +1900,71 @@ export class ApiService {
       linkPreview: this.mapLinkPreview(m.linkPreview),
       isPinned: !!m.isPinned,
       poll: this.mapPoll(m.poll),
+      announcement: this.mapAnnouncement(m.announcement),
     };
   }
 
   private mapPoll(poll?: PollDto | null): PollSummary | null {
     return mapPollSummary(poll);
+  }
+
+  private mapAnnouncement(row?: AnnouncementDto | null): AnnouncementSummary | null {
+    if (!row?.messageId) return null;
+    return {
+      messageId: String(row.messageId),
+      requiresAcknowledgement: !!row.requiresAcknowledgement,
+      acknowledgeBy: row.acknowledgeBy ?? null,
+      closedAt: row.closedAt ?? null,
+      acknowledgedByMe: !!row.acknowledgedByMe,
+      acknowledgementCount: row.acknowledgementCount ?? 0,
+      canAcknowledge: !!row.canAcknowledge,
+      canViewReport: !!row.canViewReport,
+    };
+  }
+
+  async acknowledgeAnnouncement(channelId: string, messageId: string): Promise<AnnouncementSummary | null> {
+    const dto = await this.request<AnnouncementDto>(
+      `/api/v1/channels/${channelId}/messages/${messageId}/acknowledgements`,
+      { method: 'POST' },
+    );
+    return this.mapAnnouncement(dto);
+  }
+
+  async closeAnnouncement(channelId: string, messageId: string): Promise<AnnouncementSummary | null> {
+    const dto = await this.request<AnnouncementDto>(
+      `/api/v1/channels/${channelId}/messages/${messageId}/acknowledgements/close`,
+      { method: 'POST' },
+    );
+    return this.mapAnnouncement(dto);
+  }
+
+  async getAnnouncementReport(
+    channelId: string,
+    messageId: string,
+  ): Promise<AnnouncementReportItem[]> {
+    const dto = await this.request<{ items?: AnnouncementReportItem[] }>(
+      `/api/v1/channels/${channelId}/messages/${messageId}/acknowledgements`,
+    );
+    return (dto.items ?? []).map((item) => ({
+      userId: String(item.userId),
+      displayName: item.displayName,
+      acknowledgedAt: item.acknowledgedAt,
+    }));
+  }
+
+  async getPendingAnnouncements(workspaceId: string): Promise<PendingAnnouncement[]> {
+    const rows = await this.request<PendingAnnouncement[]>(
+      `/api/v1/workspaces/${workspaceId}/announcements/pending`,
+    );
+    return (rows ?? []).map((row) => ({
+      messageId: String(row.messageId),
+      channelId: String(row.channelId),
+      channelName: row.channelName,
+      authorName: row.authorName,
+      bodyPreview: row.bodyPreview,
+      createdAt: row.createdAt,
+      acknowledgeBy: row.acknowledgeBy ?? null,
+    }));
   }
 
   private mapLinkPreview(preview?: LinkPreviewDto | null): MessageLinkPreview | null {

@@ -138,6 +138,17 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Soft-delete | Body permanece na linha (ADR-018) para o snapshot futuro de B-169; este item não copia body para o audit |
 | Rollback | Sem linha na tabela = default atual; sem kill switch que ignore a checagem |
 
+### B-112 — Anúncios e confirmação de leitura
+
+| Item | Controle |
+|------|----------|
+| Publicação | Canal `Announcement`: `message.send` não basta; exige `announcement.publish`. Membro/Auditor/Guest/Bot → 403 |
+| Leitura | Mesma ACL do canal. Relatório de confirmações exige `announcement.publish` ou `workspace.admin` |
+| Isolamento | `messaging.announcements` e `messaging.announcement_acknowledgements` com FORCE RLS. Outro tenant ou outro canal não entra na lista |
+| Idempotência | Unique `(TenantId, MessageId, UserId)` — confirmação repetida não duplica a contagem |
+| Prova | Confirmação não é assinatura legal; o texto da UI deixa isso explícito |
+| Fan-out | Relatório e inbox paginam (máx. 50). Contagem é agregada |
+
 ### B-091 / ADR-021 — Link preview / SSRF
 
 | Item | Controle |

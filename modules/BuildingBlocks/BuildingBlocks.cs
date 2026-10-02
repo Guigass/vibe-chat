@@ -151,7 +151,8 @@ public static class RolePermissionCatalog
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.EditAny, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny, Permissions.Message.Pin,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
-        Permissions.Admin.Dashboard, Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe
+        Permissions.Admin.Dashboard, Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe,
+        Permissions.Announcement.Publish, Permissions.Announcement.Acknowledge
     ];
 
     private static readonly HashSet<string> ModeratorPermissions =
@@ -160,13 +161,15 @@ public static class RolePermissionCatalog
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.EditAny, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny, Permissions.Message.Pin,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
-        Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe
+        Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe,
+        Permissions.Announcement.Publish, Permissions.Announcement.Acknowledge
     ];
 
     private static readonly HashSet<string> AuditorPermissions =
     [
         Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Message.Read, Permissions.Files.Download,
-        Permissions.Search.Messages, Permissions.Admin.Dashboard
+        Permissions.Search.Messages, Permissions.Admin.Dashboard,
+        Permissions.Announcement.Acknowledge
     ];
 
     private static readonly HashSet<string> MemberPermissions =
@@ -175,14 +178,16 @@ public static class RolePermissionCatalog
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn, Permissions.Message.Pin,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
-        Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe
+        Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe,
+        Permissions.Announcement.Acknowledge
     ];
 
     private static readonly HashSet<string> GuestPermissions =
     [
         Permissions.Channel.Read,
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React,
-        Permissions.Files.Upload, Permissions.Files.Download
+        Permissions.Files.Upload, Permissions.Files.Download,
+        Permissions.Announcement.Acknowledge
     ];
 
     private static readonly HashSet<string> BotPermissions =

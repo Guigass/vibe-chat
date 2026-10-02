@@ -91,6 +91,26 @@ import { ui } from '../../../core/i18n/strings';
         </div>
         }
 
+        @if (channels.pendingAnnouncements().length) {
+          <section class="channel-list__inbox" [attr.aria-label]="ui.inboxAnnouncements">
+            @if (!navCompact()) {
+              <p class="channel-list__inbox-label">{{ ui.inboxAnnouncements }}</p>
+            }
+            <ul>
+              @for (item of channels.pendingAnnouncements(); track item.messageId) {
+                <li>
+                  <button type="button" class="channel-list__inbox-item" (click)="onSelect(item.channelId)">
+                    <span>{{ item.channelName }}</span>
+                    @if (!navCompact()) {
+                      <span class="channel-list__inbox-preview">{{ item.bodyPreview }}</span>
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
         <vc-sidebar-nav
           [groups]="channels.spaceGroups()"
           [spaces]="channels.spaces()"
@@ -103,6 +123,7 @@ import { ui } from '../../../core/i18n/strings';
           [overrideIds]="notificationPrefs.channelsWithOverride()"
           [followAllThreadsIds]="notificationPrefs.followAllThreadsChannelIds()"
           [canCreate]="channels.canCreateChannel()"
+          [canPublishAnnouncement]="channels.canPublishAnnouncement()"
           [compact]="navCompact()"
           (select)="onSelect($event)"
           (openDm)="onOpenDm($event)"
@@ -129,6 +150,48 @@ import { ui } from '../../../core/i18n/strings';
       display: grid;
       gap: 0.5rem;
       padding: 0 var(--vc-space-4);
+    }
+    .channel-list__inbox {
+      display: grid;
+      gap: 0.25rem;
+      padding: 0 var(--vc-space-3) var(--vc-space-2);
+    }
+    .channel-list__inbox-label {
+      margin: 0;
+      color: var(--vc-ink-muted);
+      font-size: 0.75rem;
+    }
+    .channel-list__inbox ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.25rem;
+    }
+    .channel-list__inbox-item {
+      width: 100%;
+      display: grid;
+      gap: 0.1rem;
+      text-align: start;
+      min-height: 2.75rem;
+      padding: 0.35rem 0.55rem;
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-sm);
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+    .channel-list__inbox-item:focus-visible {
+      outline: 2px solid var(--vc-brand);
+      outline-offset: 2px;
+    }
+    .channel-list__inbox-preview {
+      color: var(--vc-ink-muted);
+      font-size: 0.75rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .channel-list__shortcuts {
       padding: 0 var(--vc-space-3) var(--vc-space-2);

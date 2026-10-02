@@ -206,6 +206,7 @@ v1.MapPresence();
 v1.MapChannelCreation();
 v1.MapCommands();
 v1.MapPolls();
+v1.MapAnnouncements();
 v1.MapMessages();
 v1.MapThreads();
 v1.MapFiles();

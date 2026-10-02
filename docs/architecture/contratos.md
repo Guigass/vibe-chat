@@ -323,6 +323,25 @@ Enquete é uma mensagem (`seq` + outbox `MessageCreated` + idempotência). Discr
 | Audit | `poll.create`, `poll.vote`, `poll.unvote`, `poll.close` |
 | Slash | `/enquete` no catálogo só com `message.send` |
 
+### Anúncios e canais somente leitura (B-112)
+
+Modo de canal `Announcement` (`ChannelType`). Não converte canal existente. Confirmação é leitura explícita, **não** assinatura legal.
+
+| Item | Regra |
+|------|--------|
+| Criar canal | `POST /api/v1/workspaces/{workspaceId}/channels` com `type: Announcement` exige `channel.create` e `announcement.publish`. Senão **403** `AnnouncementPublishForbidden`. Audit `announcement.created` |
+| Publicar | `POST /api/v1/channels/{channelId}/messages` no canal Announcement exige `message.send` e `announcement.publish`. Membro → **403**. Body opcional `requiresAcknowledgement`, `acknowledgeBy` (UTC, futuro). Fora do modo → **400** `InvalidAnnouncementChannel`. Prazo sem flag → **400** `AcknowledgementDeadlineRequiresFlag`. Prazo no passado → **400** `InvalidAcknowledgeBy`. A mensagem preserva `Message` e `seq` |
+| Tabelas | `messaging.announcements` (`MessageId` PK, `TenantId`, `ChannelId`, `CreatedByUserId`, `RequiresAcknowledgement`, `AcknowledgeBy?`, `ClosedAt?`, `CreatedAt`); `messaging.announcement_acknowledgements` (`Id`, `TenantId`, `MessageId`, `ChannelId`, `UserId`, `AcknowledgedAt`); unique `(TenantId, MessageId, UserId)`; FORCE RLS |
+| Confirmar | `POST /api/v1/channels/{channelId}/messages/{messageId}/acknowledgements` — `announcement.acknowledge`; idempotente (repetir não aumenta `acknowledgementCount`); **409** `AnnouncementClosed` ou `AnnouncementAcknowledgementNotRequired`; outro canal → **404** |
+| Relatório | `GET .../acknowledgements?limit=&cursor=` — `announcement.publish` ou `workspace.admin`. `{ count, items[{ userId, displayName, acknowledgedAt }], nextCursor }`. Página máx. 50. Não inclui outro tenant nem outro canal |
+| Encerrar | `POST .../acknowledgements/close` — `announcement.publish`; idempotente. Audit `announcement.closed` |
+| Inbox | `GET /api/v1/workspaces/{workspaceId}/announcements/pending` — `message.read`. Até 50 itens ainda abertos que o caller não confirmou. `channels/unread` inclui `pendingAnnouncementCount` (não é read cursor) |
+| Edição | `PUT` da mensagem segue B-107. Se houver anúncio, audit `announcement.edited` |
+| Eventos | Outbox `announcement.published` e `announcement.acknowledged` (`tenantId`, `channelId`, `messageId`). Encerramento reenvia `announcement.acknowledged` com `closedAt` para o cliente derrubar a pendência |
+| Permissões | `announcement.publish`: Admin/Owner e Moderator. `announcement.acknowledge`: Member, Guest, Auditor, Moderator, Admin/Owner. Bot não publica nem confirma |
+
+`AnnouncementDto` no history: `requiresAcknowledgement`, `acknowledgeBy`, `closedAt`, `acknowledgedByMe`, `acknowledgementCount`, `canAcknowledge`, `canViewReport`. A contagem é agregada; nomes só no relatório.
+
 ### Menções (B-082)
 
 | Artefato | Contrato |
