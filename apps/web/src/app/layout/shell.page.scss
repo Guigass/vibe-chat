@@ -592,6 +592,23 @@
   background: color-mix(in srgb, var(--vc-brand) 14%, var(--vc-surface));
 }
 
+.shell__member-count {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--vc-ink-muted);
+  font: inherit;
+  font-size: var(--vc-text-sm);
+  cursor: pointer;
+  text-align: start;
+}
+
+.shell__member-count:hover,
+.shell__member-count:focus-visible {
+  color: var(--vc-brand);
+}
+
 .shell__context {
   display: flex;
   flex-direction: column;
@@ -611,6 +628,7 @@
 .shell__context > vc-thread-panel,
 .shell__context > vc-pins-panel,
 .shell__context > vc-saved-panel,
+.shell__context > vc-channel-members-panel,
 .shell__context > vc-notification-preferences-panel {
   flex: 1 1 auto;
   min-height: 0;

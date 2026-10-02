@@ -4,7 +4,7 @@
   [class.shell--sidebar-collapsed]="!sidebarOpen()"
   [class.shell--narrow]="narrowViewport()"
   [class.shell--nav-compact]="navCompact() && !narrowViewport()"
-  [class.shell--context-open]="pins.panelOpen() || saved.panelOpen() || followedThreads.panelOpen() || notificationPrefs.panelOpen()"
+  [class.shell--context-open]="membersOpen() || pins.panelOpen() || saved.panelOpen() || followedThreads.panelOpen() || notificationPrefs.panelOpen()"
   [class.shell--thread-open]="threads.open()"
 >
   @if (narrowViewport() && sidebarOpen()) {
@@ -125,6 +125,17 @@
           <p>{{ channels.activeChannel()?.description }}</p>
         } @else if (channels.activeChannel()?.isDirect) {
           <p>{{ ui.directMessage }}</p>
+        }
+        @if (showChannelMembers()) {
+          <button
+            type="button"
+            class="shell__member-count"
+            data-testid="channel-member-count"
+            [attr.aria-expanded]="membersOpen()"
+            (click)="toggleMembersPanel()"
+          >
+            {{ memberCountLabel() }}
+          </button>
         }
         @if (channels.isGuest()) {
           <p data-testid="guest-limited">{{ ui.guestLimitedAccess }}</p>
@@ -467,6 +478,14 @@
   @if (threads.open()) {
     <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.thread">
       <vc-thread-panel />
+    </aside>
+  } @else if (membersOpen()) {
+    <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.channelMembers">
+      <vc-channel-members-panel
+        (close)="closeMembersPanel()"
+        (changed)="onMembersChanged()"
+        (left)="onLeftChannel()"
+      />
     </aside>
   } @else if (saved.panelOpen()) {
     <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.savedMessages">
