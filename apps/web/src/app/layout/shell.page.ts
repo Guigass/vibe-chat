@@ -471,12 +471,10 @@ export class ShellPage implements OnInit, OnDestroy {
       this.channels.setPresence(event.userId, event.status);
     });
     this.userStatus.start();
-    await Promise.all([
-      this.channels.load(),
-      this.hub.connect(),
-      this.notificationPrefs.load(),
-      this.userStatus.refresh(),
-    ]);
+    // Status refresh reads the active workspace. It has to follow load();
+    // in parallel the workspace is still empty and reload never shows the status.
+    await Promise.all([this.channels.load(), this.hub.connect(), this.notificationPrefs.load()]);
+    await this.userStatus.refresh();
     await this.applyPushDeepLink();
     const active = this.channels.activeChannel();
     if (active) {

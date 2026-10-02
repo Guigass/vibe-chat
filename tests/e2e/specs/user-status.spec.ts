@@ -19,8 +19,8 @@ test.describe('user status (B-116)', () => {
     await expect(editor).toBeHidden();
     await expect(page.getByTestId('user-status-open')).not.toContainText('revisando o plano');
 
-    // Reload in CI takes longer than a 1.5s TTL, so the row is already purged
-    // when the shell reads availability and the button stays on "Sem status".
+    // The shell reads availability only after the workspace load. Keep the TTL
+    // longer than the reload so the row is still active when the button renders.
     const expiresAt = new Date(Date.now() + 20_000);
     const set = await page.request.put(`${API_BASE_URL}/api/v1/me/status`, {
       headers: { 'X-Dev-User': 'alice', 'content-type': 'application/json' },
