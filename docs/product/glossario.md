@@ -17,7 +17,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | Termo | Definição |
 |-------|-----------|
 | **Space** | Agrupamento organizacional de **canais** dentro de um workspace (ex.: área, projeto). Não organiza a lista de contatos — isso é Contact group (B-166). |
-| **Channel** | Canal de mensagens (público, privado ou DM). Unidade principal de conversa. Em privado, quem entra é `channel_members` (roster/gestão em B-186); guest externo é B-040. |
+| **Channel** | Canal de mensagens (público, privado ou DM). Unidade principal de conversa. Em privado, quem entra é `channel_members` (roster e add/remove em B-186); guest externo é B-040. |
 | **DM (Direct Message)** | Canal especial 1:1 (`Direct`) ou grupo pequeno (`GroupDm`, 3–9 participantes), sem Space obrigatório. Quem entra depois não lê o histórico anterior (`JoinedSeq`). |
 | **Thread** | Subconversa ancorada em uma mensagem pai dentro de um channel. |
 | **Topic** | Assunto/etiqueta opcional associado a um channel ou thread (organização semântica; não substitui channel). |

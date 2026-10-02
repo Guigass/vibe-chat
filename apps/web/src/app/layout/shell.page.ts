@@ -25,6 +25,7 @@ import { NotificationPreferencesStore } from '../core/services/notification-pref
 import { ChannelList } from '../features/chat/channel-list/channel-list';
 import { Composer } from '../features/chat/composer/composer';
 import { Timeline } from '../features/chat/timeline/timeline';
+import { ChannelMembersPanel } from '../features/chat/channel-members-panel/channel-members-panel';
 import { PinsPanel } from '../features/chat/pins-panel/pins-panel';
 import { SavedPanel } from '../features/chat/saved-panel/saved-panel';
 import { FollowedThreadsPanel } from '../features/chat/followed-threads-panel/followed-threads-panel';
@@ -83,6 +84,7 @@ import { pluralCount } from '../core/i18n/format';
     Timeline,
     Composer,
     ThreadPanel,
+    ChannelMembersPanel,
     PinsPanel,
     SavedPanel,
     FollowedThreadsPanel,
@@ -131,6 +133,14 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly inviteUrl = signal<string | null>(null);
   readonly inviteError = signal<string | null>(null);
   readonly inviteBusy = signal(false);
+  readonly membersOpen = signal(false);
+  readonly memberCount = signal<number | null>(null);
+  readonly showChannelMembers = computed(() => {
+    const channel = this.channels.activeChannel();
+    if (!channel || channel.isDirect || channel.isGroupDm) return false;
+    const type = (channel.type ?? '').toLowerCase();
+    return type !== 'direct' && type !== 'groupdm' && type !== 'group';
+  });
   readonly groupName = signal('');
   readonly addableMembers = computed(() => {
     const active = this.channels.activeChannel();
@@ -228,6 +238,68 @@ export class ShellPage implements OnInit, OnDestroy {
     this.memberQuery.set('');
   }
 
+  memberCountLabel(): string {
+    const count = this.memberCount();
+    if (count === null) return this.ui.channelMembers;
+    return pluralCount(count, 'member');
+  }
+
+  toggleMembersPanel(): void {
+    if (this.membersOpen()) {
+      this.membersOpen.set(false);
+      return;
+    }
+    this.threads.close();
+    this.pins.closePanel();
+    this.saved.closePanel();
+    this.followedThreads.closePanel();
+    this.notificationPrefs.closePanel();
+    this.membersOpen.set(true);
+  }
+
+  closeMembersPanel(): void {
+    this.membersOpen.set(false);
+  }
+
+  onMembersChanged(): void {
+    this.refreshMemberCount();
+  }
+
+  async onLeftChannel(): Promise<void> {
+    this.membersOpen.set(false);
+    const workspaceId = this.channels.activeWorkspace()?.id;
+    if (workspaceId) {
+      await this.channels.selectWorkspace(workspaceId);
+    }
+    const active = this.channels.activeChannel();
+    if (active) {
+      await this.messages.loadChannel(active.id);
+    }
+  }
+
+  private refreshMemberCount(): void {
+    const channel = this.channels.activeChannel();
+    const workspace = this.channels.activeWorkspace();
+    if (!channel || !workspace || !this.showChannelMembers()) {
+      this.memberCount.set(null);
+      return;
+    }
+    if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
+      this.memberCount.set(this.channels.members().length);
+      return;
+    }
+    const channelId = channel.id;
+    void this.api.getChannelRoster(workspace.id, channelId, { limit: 1 }).then((page) => {
+      if (this.channels.activeChannel()?.id === channelId) {
+        this.memberCount.set(page.total);
+      }
+    }).catch(() => {
+      if (this.channels.activeChannel()?.id === channelId) {
+        this.memberCount.set(null);
+      }
+    });
+  }
+
   groupDmCountLabel(): string {
     const count = this.channels.activeChannel()?.participantCount ?? 0;
     return count === 1
@@ -319,6 +391,7 @@ export class ShellPage implements OnInit, OnDestroy {
       const channelId = this.channels.activeChannelId() ?? null;
       if (this.lastChannelId !== null && this.lastChannelId !== channelId) {
         this.closeDmPanel();
+        this.membersOpen.set(false);
         this.threads.close();
         this.pins.closePanel();
         this.saved.closePanel();
@@ -328,6 +401,7 @@ export class ShellPage implements OnInit, OnDestroy {
         }
       }
       this.lastChannelId = channelId;
+      this.refreshMemberCount();
       if (channelId) {
         void this.pins.loadForChannel(channelId);
       }

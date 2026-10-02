@@ -32,7 +32,7 @@ Regras do registro:
 | BUG-023 | Busca / relevância | Resultados rígidos; FTS não acha prefixo, acento, pessoa ou anexo     | Média      | Aberto — fecha em **B-188** |
 | BUG-022 | Header / busca    | Painel desalinhado na 1ª abertura; selecionar opção fecha a barra     | Média      | Aberto                                       |
 | BUG-021 | Group DM / realtime | Convidado para DM em grupo não vê a conversa até recarregar         | Média      | Aberto                                       |
-| BUG-020 | Canal / membros   | Sem painel de membros, add no canal nem enviar PV a partir do roster  | Média      | Aberto — fecha em **B-186** |
+| BUG-020 | Canal / membros   | Sem painel de membros, add no canal nem enviar PV a partir do roster  | Média      | **Done** — B-186 |
 | BUG-002 | Sidebar / unread  | Badges de novas mensagens não limpam de forma persistente após reload | Média      | **Done** — B-094 |
 | BUG-008 | Presence          | Minimizar a janela marca ausente na hora                              | Média      | Done                                         |
 | BUG-010 | Timeline / scroll | Ao abrir a conversa não rola até as mensagens mais recentes           | Média      | Done                                         |
@@ -205,7 +205,7 @@ Regras do registro:
 
 ### BUG-020 — Sem membros do canal nem add / PV no painel
 
-- Status: **Aberto** — fecha em **B-186** (W10-15).
+- Status: **Done** — B-186 (W10-15).
 - Severidade: **Média** (não quebra envio/leitura; impede gerir quem está no
   canal e puxar um PV a partir do roster).
 - Observado em: 2026-09-09; relato de produto + código do shell Compose

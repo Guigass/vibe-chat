@@ -41,7 +41,10 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/invites` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-040; lista sem token + guests ativos |
 | DELETE | `/invites/{inviteId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-040; revoga + evict hub |
 | POST | `/invites/{token}/accept` | exempt | authenticated | ✓* | ✓* | ✓* | *qualquer identidade autenticada; token inválido/gasto/expirado → 410 genérico |
-| GET | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/members` | membership | — | ✓ | ✓ | ✓ | Autocomplete menções |
+| GET | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/members` | membership | — | ✓ | ✓ | ✓ | `?query=` autocomplete (máx. 8); sem query, roster paginado (B-186) |
+| POST | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/members` | exempt | criador ou `channel.manage` | ✓* | ✗ | ✓ | *só o criador se for Member; canal privado; alvo do mesmo workspace |
+| DELETE | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/members/me` | exempt | membership | ✓ | ✓ | ✓ | Sair do privado; último gestor → 409 `LastChannelManager` |
+| DELETE | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/members/{userId:guid}` | exempt | criador ou `channel.manage` | ✓* | ✗ | ✓ | Remove outro; não remove o último gestor |
 | GET | `/workspaces/{workspaceId:guid}/roles` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Catálogo assignable |
 | POST | `/workspaces/{workspaceId:guid}/members` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Invite B-068 |
 | PUT | `/workspaces/{workspaceId:guid}/members/{userId:guid}/role` | permission | `workspace.admin` | ✗ | ✗ | ✓ | |

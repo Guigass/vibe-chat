@@ -18,6 +18,11 @@ describe('system-event', () => {
     });
     expect(isSystemEventBody(`<system:pin:${id}>`)).toBe(true);
     expect(isSystemEventBody('hello')).toBe(false);
+    expect(parseSystemEventBody(`<system:member-add:${id}>`)).toEqual({
+      kind: 'member-add',
+      targetUserId: id,
+    });
+    expect(parseSystemEventBody(`<system:member-leave:${id}>`)?.kind).toBe('member-leave');
   });
 
   it('formats labels in pt-BR', () => {
@@ -28,5 +33,11 @@ describe('system-event', () => {
     expect(
       formatSystemEventLabel('Bob', { kind: 'unpin', targetMessageId: id }),
     ).toBe('Bob desafixou uma mensagem');
+    expect(
+      formatSystemEventLabel('Alice', { kind: 'member-add', targetUserId: id }),
+    ).toBe('Alice adicionou um membro');
+    expect(
+      formatSystemEventLabel('Alice', { kind: 'member-leave', targetUserId: id }),
+    ).toBe('Alice saiu do canal');
   });
 });

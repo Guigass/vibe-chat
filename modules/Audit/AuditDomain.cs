@@ -18,6 +18,9 @@ public static class AuditActions
 {
     public const string AdminLogin = "admin.login";
     public const string ChannelCreate = "channel.create";
+    public const string ChannelMemberAdd = "channel.member.add";
+    public const string ChannelMemberRemove = "channel.member.remove";
+    public const string ChannelMemberLeave = "channel.member.leave";
     public const string SpaceCreate = "space.create";
     public const string MessageSend = "message.send";
     public const string MessageForward = "message.forward";

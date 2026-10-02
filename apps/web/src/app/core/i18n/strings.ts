@@ -29,6 +29,25 @@ export const ui = {
   groupDmLeaveHint: $localize`:@@shell.groupDmLeaveHint:Você deixa de receber mensagens daqui.`,
   groupDmOne: $localize`:@@shell.groupDmOne:1 participante`,
   groupDmCount: $localize`:@@shell.groupDmCount:%count% participantes`,
+  channelMembers: $localize`:@@shell.channelMembers:Membros`,
+  channelMembersAdd: $localize`:@@shell.channelMembersAdd:Adicionar pessoas`,
+  channelMembersSearch: $localize`:@@shell.channelMembersSearch:Buscar no workspace`,
+  channelMembersSearchEmpty: $localize`:@@shell.channelMembersSearchEmpty:Nenhuma pessoa fora do canal.`,
+  channelMembersRemove: $localize`:@@shell.channelMembersRemove:Remover`,
+  channelMembersLeave: $localize`:@@shell.channelMembersLeave:Sair`,
+  channelMembersDirect: $localize`:@@shell.channelMembersDirect:Mensagem direta`,
+  channelMembersEmpty: $localize`:@@shell.channelMembersEmpty:Nenhum membro.`,
+  channelMemberGuest: $localize`:@@shell.channelMemberGuest:Convidado`,
+  channelMembersPublicHint: $localize`:@@shell.channelMembersPublicHint:Todos do workspace. Sem inclusão individual.`,
+  channelMembersError: $localize`:@@shell.channelMembersError:Não foi possível atualizar os membros.`,
+  presenceOnline: $localize`:@@presence.online:Online`,
+  presenceAway: $localize`:@@presence.away:Ausente`,
+  systemMemberAdded: $localize`:@@system.memberAdded:%name% adicionou um membro`,
+  systemMemberRemoved: $localize`:@@system.memberRemoved:%name% removeu um membro`,
+  systemMemberLeft: $localize`:@@system.memberLeft:%name% saiu do canal`,
+  errorLastChannelManager: $localize`:@@error.LastChannelManager:O último gestor não pode sair nem ser removido.`,
+  errorAlreadyChannelMember: $localize`:@@error.AlreadyChannelMember:Essa pessoa já está no canal.`,
+  errorChannelMembershipNotPrivate: $localize`:@@error.ChannelMembershipNotPrivate:Só um canal privado aceita esta alteração.`,
   searchPlaceholder: $localize`:@@shell.searchPlaceholder:Buscar (Ctrl/Cmd+Shift+F)`,
   searchAria: $localize`:@@shell.searchAria:Buscar mensagens`,
   searchFilters: $localize`:@@shell.searchFilters:Filtros da busca`,
@@ -834,6 +853,12 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.guestExpired;
     case 'AlreadyMember':
       return ui.guestExpired;
+    case 'LastChannelManager':
+      return ui.errorLastChannelManager;
+    case 'AlreadyChannelMember':
+      return ui.errorAlreadyChannelMember;
+    case 'ChannelMembershipNotPrivate':
+      return ui.errorChannelMembershipNotPrivate;
     default:
       return code ?? '';
   }

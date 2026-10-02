@@ -759,6 +759,27 @@
     "schedule.dueRevoked": "Der geplante Versand wurde abgebrochen, weil du keinen Zugriff mehr hast.",
     "schedule.dueFailed": "Der geplante Versand ist fehlgeschlagen.",
     "schedule.openList": "Geplante Nachrichten und Erinnerungen öffnen",
-    "schedule.closeList": "Liste schließen"
+    "schedule.closeList": "Liste schließen",
+    "plural.member.one": "1 Mitglied",
+    "plural.member.other": "{$count} Mitglieder",
+    "shell.channelMembers": "Mitglieder",
+    "shell.channelMembersAdd": "Personen hinzufügen",
+    "shell.channelMembersSearch": "Im Workspace suchen",
+    "shell.channelMembersSearchEmpty": "Niemand außerhalb des Kanals.",
+    "shell.channelMembersRemove": "Entfernen",
+    "shell.channelMembersLeave": "Verlassen",
+    "shell.channelMembersDirect": "Direktnachricht",
+    "shell.channelMembersEmpty": "Keine Mitglieder.",
+    "shell.channelMemberGuest": "Gast",
+    "shell.channelMembersPublicHint": "Alle im Workspace. Kein einzelnes Hinzufügen.",
+    "shell.channelMembersError": "Mitglieder konnten nicht aktualisiert werden.",
+    "presence.online": "Online",
+    "presence.away": "Abwesend",
+    "system.memberAdded": "%name% hat ein Mitglied hinzugefügt",
+    "system.memberRemoved": "%name% hat ein Mitglied entfernt",
+    "system.memberLeft": "%name% hat den Kanal verlassen",
+    "error.LastChannelManager": "Der letzte Verwalter kann nicht gehen oder entfernt werden.",
+    "error.AlreadyChannelMember": "Diese Person ist bereits im Kanal.",
+    "error.ChannelMembershipNotPrivate": "Nur ein privater Kanal akzeptiert diese Änderung."
   }
 }
