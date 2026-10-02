@@ -99,8 +99,8 @@
   font-size: 0.78rem;
 }
 
-.shell--nav-compact .shell__sidebar-footer a,
-.shell--nav-compact .shell__sidebar-footer button {
+.shell--nav-compact .shell__sidebar-links a,
+.shell--nav-compact .shell__sidebar-links button {
   padding: 0.25rem;
 }
 
@@ -136,15 +136,74 @@
 }
 
 .shell__sidebar-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
+  display: grid;
+  gap: 0.65rem;
   padding: var(--vc-space-3) var(--vc-space-4) 0;
   border-top: 1px solid var(--vc-border);
 }
 
-.shell__sidebar-footer a,
-.shell__sidebar-footer button {
+.shell__status {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.25rem;
+  border: 0;
+  background: transparent;
+  color: var(--vc-ink);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.shell__status-copy {
+  display: grid;
+  min-width: 0;
+}
+
+.shell__status-name {
+  font-weight: 600;
+}
+
+.shell__status-line,
+.shell__peer-status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--vc-ink-muted);
+  font-size: 0.8rem;
+}
+
+.shell__peer-status,
+.shell__peer-actions {
+  margin: 0;
+}
+
+.shell__peer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.shell__peer-actions button {
+  border: 0;
+  background: transparent;
+  color: var(--vc-ink-muted);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.shell__sidebar-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.shell__sidebar-links a,
+.shell__sidebar-links button {
   border: 0;
   background: transparent;
   color: var(--vc-ink-muted);
@@ -153,9 +212,11 @@
   padding: 0.35rem 0;
 }
 
-.shell__sidebar-footer a.is-active,
-.shell__sidebar-footer a:hover,
-.shell__sidebar-footer button:hover {
+.shell__sidebar-links a.is-active,
+.shell__sidebar-links a:hover,
+.shell__sidebar-links button:hover,
+.shell__status:hover,
+.shell__peer-actions button:hover {
   color: var(--vc-brand);
 }
 

@@ -6,6 +6,7 @@ import { replyPreviewText } from '../../../core/services/message-sync';
 import { MessageStore } from '../../../core/services/message.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { DraftStoreService } from '../../../core/services/draft-store.service';
+import { UserStatusStore } from '../../../core/services/user-status.store';
 import { threadConversationId } from '../../../core/services/draft-storage';
 import { Button, EmptyState, IconButton, MessageBubble, Skeleton, Textarea } from '../../../shared/ui';
 import {
@@ -74,6 +75,8 @@ import { MessageAnnouncer } from '../../../shared/ui/message-announcer';
             <div class="thread__parent">
               <vc-message-bubble
                 [message]="parent"
+                [statusEmoji]="statusEmoji(parent.authorUserId)"
+                [statusLabel]="statusLabel(parent.authorUserId)"
                 [showReplyAction]="true"
                 [highlighted]="messages.highlightMessageId() === parent.id"
                 (reply)="onReply(parent)"
@@ -95,6 +98,8 @@ import { MessageAnnouncer } from '../../../shared/ui/message-announcer';
               @for (message of threads.sortedMessages(); track message.id) {
                 <vc-message-bubble
                   [message]="message"
+                  [statusEmoji]="statusEmoji(message.authorUserId)"
+                  [statusLabel]="statusLabel(message.authorUserId)"
                   [showReplyAction]="true"
                   [showShareToChannelAction]="true"
                   [highlighted]="messages.highlightMessageId() === message.id"
@@ -323,6 +328,16 @@ export class ThreadPanel {
   private readonly api = inject(ApiService);
   private readonly hub = inject(ChatHubService);
   private readonly drafts = inject(DraftStoreService);
+  private readonly userStatus = inject(UserStatusStore);
+
+  statusEmoji(userId: string): string | null {
+    return this.userStatus.emojiOf(userId);
+  }
+
+  statusLabel(userId: string): string | null {
+    const label = this.userStatus.labelOf(userId);
+    return label || null;
+  }
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
   private readonly threadTextarea = viewChild<Textarea>('threadTextarea');
   readonly draft = signal('');

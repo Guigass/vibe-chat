@@ -49,6 +49,8 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | Termo | Definição |
 |-------|-----------|
 | **Presence** | Estado online/away/offline do usuário, tipicamente no Redis com TTL. |
+| **Status personalizado** | Texto curto e emoji do próprio usuário, por tenant, com expiração (B-116). Distinto da presence e do perfil público (B-167). O usuário controla o conteúdo. |
+| **Disponibilidade** | Valor derivado de presence, DND e status (`available`, `away`, `busy`, `vacation`, `offline`). Não publica agenda. DND continua mandando na notificação (B-097). |
 | **Typing** | Indicador de “digitando…” com TTL curto no Redis. |
 | **Hub / Connection** | Conexão SignalR autenticada; grupos por tenant/workspace/channel. |
 | **Web Push** | Notificação do navegador via protocolo Web Push + VAPID da instância (D-13 / B-095). Opt-in por dispositivo; payload mínimo; off por default (`Push:Enabled`). Distinto de e-mail (B-043) e de preferências/DND (B-097). |

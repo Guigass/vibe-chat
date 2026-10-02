@@ -161,7 +161,12 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
       @if (!own() && surface() !== 'plain') {
         <div class="vc-msg__avatar-slot">
           @if (showAvatar()) {
-            <vc-avatar [name]="message().authorName" [size]="avatarSize()" />
+            <vc-avatar
+              [name]="message().authorName"
+              [size]="avatarSize()"
+              [statusEmoji]="statusEmoji()"
+              [statusLabel]="statusLabel()"
+            />
           }
         </div>
       }
@@ -1079,6 +1084,8 @@ export class MessageBubble {
   private readonly contextMenu = viewChild(CdkContextMenuTrigger);
 
   readonly message = input.required<ChatMessage>();
+  readonly statusEmoji = input<string | null>(null);
+  readonly statusLabel = input<string | null>(null);
   readonly showMeta = input(true);
   readonly showAvatar = input(true);
   /** Role inside an author/time group (B-088). */

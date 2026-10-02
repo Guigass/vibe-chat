@@ -227,6 +227,17 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 11. Vazamento de histórico de Group DM / peer cross-tenant / hub após sair (B-101 / ADR-023)
 12. Guest escalando para o workspace / enumeração de convite (B-040 / ADR-024)
 
+### B-116 — Status personalizado
+
+| Item | Controle |
+|------|----------|
+| AuthZ | Leitura no workspace exige membership + `message.read`. Escrita só do próprio. Outro workspace/tenant → 403 |
+| Conteúdo | Texto e emoji são PII controlada pelo usuário. Máx. 80 / 16. Sem inferência de produtividade |
+| Agenda | Flag `Features:AvailabilityCalendar:Enabled` default false. Resposta não traz eventos nem janela de DND |
+| Notificação | DND de B-097 continua suprimindo push. Status “disponível” não fura o DND |
+| Abuso | `POST .../status/report` audita sem o texto. `DELETE` admin audita `user_status.clear` sem o texto |
+| Realtime | `UserStatusChanged` só no grupo do tenant, sem dado de agenda |
+
 ## O que está fora (por ora)
 
 - E2EE client-side (mensagens são legíveis ao servidor por design self-host)

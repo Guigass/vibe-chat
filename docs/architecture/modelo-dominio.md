@@ -102,7 +102,7 @@ Abstração técnica de ordenação e entrega:
 | Conversations | Channel, ChannelMember, Thread, Conversation |
 | Messaging | Message, Reaction, ReadCursor, Idempotency |
 | Files | Attachment |
-| Identity | User (projeção/espelho), claims de sessão |
+| Identity | User (projeção/espelho), claims de sessão, UserStatus (B-116, por tenant) |
 | Audit | AuditEvent |
 | Administration | Settings e projeções administrativas |
 | AI | Settings e UsageRecord |

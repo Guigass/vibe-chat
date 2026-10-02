@@ -13,6 +13,7 @@ import { ApiService } from '../../../core/api/api.service';
 import { MessageStore, type MessageScrollRequest } from '../../../core/services/message.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { UserStatusStore } from '../../../core/services/user-status.store';
 import { ThemeService } from '../../../core/services/theme.service';
 import { LocaleService } from '../../../core/i18n/locale.service';
 import { ThreadStore } from '../../../core/services/thread.store';
@@ -122,6 +123,8 @@ const NEAR_TOP_PX = 120;
                       <vc-avatar
                         [name]="item.messages[0].message.authorName"
                         [size]="avatarSize()"
+                        [statusEmoji]="statusEmoji(item.messages[0].message.authorUserId)"
+                        [statusLabel]="statusLabel(item.messages[0].message.authorUserId)"
                       />
                     </div>
                   }
@@ -380,8 +383,18 @@ export class Timeline {
   private readonly api = inject(ApiService);
   private readonly theme = inject(ThemeService);
   private readonly locales = inject(LocaleService);
+  private readonly userStatus = inject(UserStatusStore);
   private readonly destroyRef = inject(DestroyRef);
   readonly avatarSize = computed(() => (this.theme.density() === 'compact' ? 28 : 34));
+
+  statusEmoji(userId: string): string | null {
+    return this.userStatus.emojiOf(userId);
+  }
+
+  statusLabel(userId: string): string | null {
+    const label = this.userStatus.labelOf(userId);
+    return label || null;
+  }
 
   isOwnStack(item: TimelineStackItem): boolean {
     return idsEqual(item.messages[0]?.message.authorUserId, this.auth.profile()?.id);

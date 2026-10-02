@@ -34,5 +34,7 @@ internal static class RealtimeEndpoints
             }).ToArray();
             return Results.Ok(response);
         });
+
+        v1.MapUserStatus();
     }
 }

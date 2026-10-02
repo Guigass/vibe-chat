@@ -105,7 +105,7 @@ organiza. Estados:
 |------------|--------|---------------|
 | Light/dark, marca e sons | Atual | Preservar tokens |
 | Emoji/reactions livres e a11y | Committed | Waves 8–10 |
-| Status personalizado e agenda | Planned | B-116 / W11 |
+| Status personalizado e agenda | Atual | B-116 — calendário permanece desligado |
 | Emojis/stickers da organização | Later | Reavaliar depois de B-083 |
 | Perfis ricos (cargo, sobre, destaque, avatar) | Planned | B-167 / W11 |
 | Personalização visual (wallpaper/accent) | Planned | B-185 / W11 |

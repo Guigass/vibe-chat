@@ -900,6 +900,37 @@ Redis (prefixo tenant-first, ver `multi-tenant.md`):
 
 Typing permanece em `ITypingService`.
 
+### Status personalizado e disponibilidade (B-116)
+
+Uma linha por `(TenantId, UserId)` em `identity.user_statuses` (RLS, FORCE):
+`State` (`focus`|`meeting`|`vacation`|`custom`), `Emoji` (máx. 16), `Text` (máx. 80),
+`ClearAtEndOfDay`, `ExpiresAt?`, `UpdatedAt`. O usuário altera só o próprio.
+`ExpiresAt` no passado some na leitura (como o mute de B-097) e o cliente também
+esconde pelo `expiresAt`. “Limpar ao fim do dia” grava o instante UTC da meia-noite
+seguinte no fuso IANA das preferências de notificação (fallback UTC).
+
+Disponibilidade é derivada, não armazenada: DND ativo → `busy` (e continua
+suprimindo push; status não fura o DND — a exceção segue o contato prioritário de
+B-097); senão férias → `vacation`; foco/reunião → `busy`; senão presence
+`online`/`away`/`offline` → `available`/`away`/`offline`. A resposta não inclui
+janela de DND nem eventos de agenda.
+
+Evento SignalR `UserStatusChanged` no grupo `t:{tenantId}`:
+`{ tenantId, userId, presence, availability, status? }`. Sem dado de agenda.
+
+| Endpoint | AuthZ | Notas |
+|----------|-------|-------|
+| `GET /api/v1/me/status` | `message.read` | Próprio; `status` null se vazio ou expirado |
+| `PUT /api/v1/me/status` | `message.read` | Upsert. Body `{ state, emoji?, text?, clearAtEndOfDay?, expiresAt? }` |
+| `DELETE /api/v1/me/status` | `message.read` | Limpa o próprio |
+| `GET /api/v1/workspaces/{workspaceId}/availability` | membership + `message.read` | Membros do workspace. Outsider → 403 |
+| `DELETE /api/v1/workspaces/{workspaceId}/members/{userId}/status` | `workspace.admin` | Clear de abuso. Audit `user_status.clear` sem o texto |
+| `POST /api/v1/workspaces/{workspaceId}/members/{userId}/status/report` | `message.read` | Denúncia. Audit `user_status.report` sem o texto. Não denuncia a si |
+| `GET /api/v1/me/availability/calendar` | `message.read` | Flag `Features:AvailabilityCalendar:Enabled` default **false** → 404 `CalendarIntegrationDisabled`. Ligada: `{ enabled: true, connected: false }` e nenhum evento |
+
+O conteúdo do status é controlado pelo usuário (PII possível). Tamanho limitado;
+admin limpa abuso. Esta fatia não sincroniza calendário.
+
 ---
 
 ## Rate limit (Platform)

@@ -53,6 +53,7 @@ public static class VibeChatMetrics
 public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> options, ITenantContext tenantContext) : DbContext(options)
 {
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+    public DbSet<UserStatus> UserStatuses => Set<UserStatus>();
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
     public DbSet<Space> Spaces => Set<Space>();
@@ -109,6 +110,20 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Locale).HasMaxLength(16);
             entity.HasIndex(x => x.Subject).IsUnique();
             entity.HasIndex(x => x.Email);
+        });
+
+        modelBuilder.Entity<UserStatus>(entity =>
+        {
+            entity.ToTable("user_statuses", "identity");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.State).HasConversion<string>().HasMaxLength(16);
+            entity.Property(x => x.Emoji).HasMaxLength(UserStatusRules.MaxEmojiLength);
+            entity.Property(x => x.Text).HasMaxLength(UserStatusRules.MaxTextLength);
+            entity.HasIndex(x => new { x.TenantId, x.UserId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
         modelBuilder.Entity<Workspace>(entity =>
@@ -3697,6 +3712,7 @@ public static class DependencyInjection
         services.AddSingleton<OutboxProcessor>();
         services.AddHostedService<OutboxDispatcher>();
         // B-047: processor shared; hosted purge loop is registered only in apps/worker.
+        services.Configure<AvailabilityCalendarOptions>(configuration.GetSection(AvailabilityCalendarOptions.SectionName));
         services.Configure<GroupDmOptions>(configuration.GetSection(GroupDmOptions.SectionName));
         services.Configure<InviteOptions>(configuration.GetSection(InviteOptions.SectionName));
         services.Configure<BotIntegrationOptions>(configuration.GetSection(BotIntegrationOptions.SectionName));

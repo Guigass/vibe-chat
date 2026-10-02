@@ -51,6 +51,8 @@ public static class AuditActions
     public const string IntegrationPluginDisable = "integration.plugin.disable";
     public const string IntegrationPluginUninstall = "integration.plugin.uninstall";
     public const string IntegrationPluginRotate = "integration.plugin.rotate";
+    public const string UserStatusClear = "user_status.clear";
+    public const string UserStatusReport = "user_status.report";
 }
 
 public interface IAuditWriter

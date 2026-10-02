@@ -22,6 +22,8 @@ import { SavedStore } from '../core/services/saved.store';
 import { FollowedThreadsStore } from '../core/services/followed-threads.store';
 import { PushNotificationService } from '../core/services/push-notification.service';
 import { NotificationPreferencesStore } from '../core/services/notification-preferences.store';
+import { UserStatusStore } from '../core/services/user-status.store';
+import { UserStatusEditor } from '../features/chat/user-status/user-status-editor';
 import { ChannelList } from '../features/chat/channel-list/channel-list';
 import { Composer } from '../features/chat/composer/composer';
 import { Timeline } from '../features/chat/timeline/timeline';
@@ -53,6 +55,7 @@ import {
 import {
   ConnectionBanner,
   DensityControl,
+  Avatar,
   Button,
   IconButton,
   Input,
@@ -95,9 +98,11 @@ import { pluralCount } from '../core/i18n/format';
     InAppNoticeBanner,
     ThemeToggle,
     DensityControl,
+    Avatar,
     Button,
     IconButton,
     Input,
+    UserStatusEditor,
     VcTooltip,
     CommandPalette,
   ],
@@ -116,6 +121,7 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly hub = inject(ChatHubService);
   readonly push = inject(PushNotificationService);
   readonly notificationPrefs = inject(NotificationPreferencesStore);
+  readonly userStatus = inject(UserStatusStore);
   private readonly api = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly attachments = inject(AttachmentQueueService);
@@ -124,6 +130,9 @@ export class ShellPage implements OnInit, OnDestroy {
   private readonly locales = inject(LocaleService);
   readonly ui = ui;
   readonly dmPanel = signal<'add' | 'rename' | 'leave' | null>(null);
+  readonly statusEditorOpen = signal(false);
+  readonly confirmingReport = signal(false);
+  readonly confirmingAdminClear = signal(false);
   readonly memberQuery = signal('');
   readonly inviteOpen = signal(false);
   readonly inviteEmail = signal('');
@@ -301,6 +310,18 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly canAccessAdmin = computed(() =>
     this.channels.workspaces().some((workspace) => hasAdminDashboard(workspace.role)),
   );
+  readonly profileName = computed(() => this.auth.profile()?.name || this.ui.you);
+  readonly ownStatusLine = computed(() => this.userStatus.lineOf(this.auth.profile()?.id) || this.ui.statusEmpty);
+  readonly ownStatusLabel = computed(() => this.userStatus.labelOf(this.auth.profile()?.id) || this.ui.statusEmpty);
+  readonly peerUserId = computed(() => {
+    const channel = this.channels.activeChannel();
+    return channel?.isDirect ? channel.peerUserId ?? null : null;
+  });
+  readonly peerStatusLine = computed(() => this.userStatus.lineOf(this.peerUserId()));
+  readonly canModerateStatus = computed(() => {
+    const role = this.channels.activeWorkspace()?.role;
+    return role === 'Admin' || role === 'WorkspaceOwner' || role === 'PlatformOwner';
+  });
   /** Workspace select: expanded rail only, and only when there is a choice. */
   readonly showWorkspaceSelector = computed(
     () => this.channels.workspaces().length > 1 && !(this.navCompact() && !this.narrowViewport()),
@@ -375,7 +396,13 @@ export class ShellPage implements OnInit, OnDestroy {
     this.unsubPresence = this.hub.onPresenceChanged((event) => {
       this.channels.setPresence(event.userId, event.status);
     });
-    await Promise.all([this.channels.load(), this.hub.connect(), this.notificationPrefs.load()]);
+    this.userStatus.start();
+    await Promise.all([
+      this.channels.load(),
+      this.hub.connect(),
+      this.notificationPrefs.load(),
+      this.userStatus.refresh(),
+    ]);
     await this.applyPushDeepLink();
     const active = this.channels.activeChannel();
     if (active) {
@@ -401,6 +428,11 @@ export class ShellPage implements OnInit, OnDestroy {
   @HostListener('window:keydown', ['$event'])
   onGlobalKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape' && !event.shiftKey) {
+      if (this.statusEditorOpen()) {
+        event.preventDefault();
+        this.statusEditorOpen.set(false);
+        return;
+      }
       if (this.palette.sheetOpen()) {
         event.preventDefault();
         this.palette.closeShortcutSheet();
@@ -621,6 +653,40 @@ export class ShellPage implements OnInit, OnDestroy {
 
   private hasFileDrag(event: DragEvent): boolean {
     return !!event.dataTransfer?.types.includes('Files');
+  }
+
+  openStatusEditor(): void {
+    this.confirmingReport.set(false);
+    this.confirmingAdminClear.set(false);
+    this.userStatus.dismissReport();
+    this.statusEditorOpen.set(true);
+  }
+
+  peerHasStatus(): boolean {
+    const id = this.peerUserId();
+    return !!id && !!this.userStatus.entryOf(id)?.status;
+  }
+
+  async reportPeer(): Promise<void> {
+    const id = this.peerUserId();
+    if (!id) return;
+    if (!this.confirmingReport()) {
+      this.confirmingReport.set(true);
+      return;
+    }
+    await this.userStatus.report(id);
+    this.confirmingReport.set(false);
+  }
+
+  async clearPeerStatus(): Promise<void> {
+    const id = this.peerUserId();
+    if (!id) return;
+    if (!this.confirmingAdminClear()) {
+      this.confirmingAdminClear.set(true);
+      return;
+    }
+    await this.userStatus.clearMember(id);
+    this.confirmingAdminClear.set(false);
   }
 
   async logout(): Promise<void> {
