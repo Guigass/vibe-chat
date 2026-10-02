@@ -263,6 +263,28 @@ CREATE POLICY tenant_isolation_contact_group_members ON directory.contact_group_
 ALTER TABLE IF EXISTS directory.channel_invites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS directory.channel_invites FORCE ROW LEVEL SECURITY;
 
+ALTER TABLE IF EXISTS directory.workspace_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.workspace_templates FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.workspace_onboarding ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.workspace_onboarding FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.template_applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.template_applications FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_workspace_templates ON directory.workspace_templates;
+CREATE POLICY tenant_isolation_workspace_templates ON directory.workspace_templates
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_workspace_onboarding ON directory.workspace_onboarding;
+CREATE POLICY tenant_isolation_workspace_onboarding ON directory.workspace_onboarding
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_template_applications ON directory.template_applications;
+CREATE POLICY tenant_isolation_template_applications ON directory.template_applications
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 DROP POLICY IF EXISTS tenant_isolation_channel_invites ON directory.channel_invites;
 CREATE POLICY tenant_isolation_channel_invites ON directory.channel_invites
     USING (
@@ -284,6 +306,10 @@ ALTER TABLE IF EXISTS messaging.poll_options ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.poll_options FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.poll_votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.poll_votes FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.announcements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.announcements FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.announcement_acknowledgements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.announcement_acknowledgements FORCE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS tenant_isolation_saved_messages ON messaging.saved_messages;
 CREATE POLICY tenant_isolation_saved_messages ON messaging.saved_messages
@@ -317,6 +343,16 @@ CREATE POLICY tenant_isolation_poll_votes ON messaging.poll_votes
         "TenantId" = app.current_tenant_id()
         OR app.current_job_role() = 'polls'
     )
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_announcements ON messaging.announcements;
+CREATE POLICY tenant_isolation_announcements ON messaging.announcements
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_announcement_acknowledgements ON messaging.announcement_acknowledgements;
+CREATE POLICY tenant_isolation_announcement_acknowledgements ON messaging.announcement_acknowledgements
+    USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
 ALTER TABLE IF EXISTS messaging.scheduled_messages ENABLE ROW LEVEL SECURITY;

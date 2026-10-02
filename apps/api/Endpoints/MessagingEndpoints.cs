@@ -312,6 +312,232 @@ internal static class MessagingEndpoints
         }).RequirePermission(Permissions.Message.Send);
     }
 
+    internal static void MapAnnouncements(this RouteGroupBuilder v1)
+    {
+        v1.MapPost("/channels/{channelId:guid}/messages/{messageId:guid}/acknowledgements", async (
+            Guid channelId,
+            Guid messageId,
+            HttpContext http,
+            VibeChatDbContext db,
+            ITenantContext tenant,
+            IAnnouncementWriter announcements,
+            IRateLimiter rateLimiter,
+            RateLimitSettingsResolver rateLimits,
+            IClock clock,
+            CancellationToken ct) =>
+        {
+            var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+            var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+            if (channel is null || channel.Type != ChannelType.Announcement)
+            {
+                return Results.Forbid();
+            }
+
+            var rate = await rateLimits.ResolveAsync(channel.TenantId, ct);
+            if (!await rateLimiter.TryAcquireAsync(
+                    RateLimitKeys.SendMessage(channel.TenantId, profile.Id),
+                    rate.SendPerMinute,
+                    TimeSpan.FromMinutes(1),
+                    ct))
+            {
+                return Results.StatusCode(StatusCodes.Status429TooManyRequests);
+            }
+
+            try
+            {
+                var dto = await announcements.AcknowledgeAsync(
+                    channel.TenantId, profile.Id, channel.Id, new MessageId(messageId), ct);
+                return Results.Ok(dto);
+            }
+            catch (AnnouncementNotFoundException)
+            {
+                return Results.NotFound();
+            }
+            catch (AnnouncementClosedException)
+            {
+                return Results.Conflict(new { error = "AnnouncementClosed" });
+            }
+            catch (AnnouncementAcknowledgementNotRequiredException)
+            {
+                return Results.Conflict(new { error = "AnnouncementAcknowledgementNotRequired" });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Results.Forbid();
+            }
+        }).RequirePermission(Permissions.Announcement.Acknowledge);
+
+        v1.MapGet("/channels/{channelId:guid}/messages/{messageId:guid}/acknowledgements", async (
+            Guid channelId,
+            Guid messageId,
+            int? limit,
+            string? cursor,
+            HttpContext http,
+            VibeChatDbContext db,
+            ITenantContext tenant,
+            IPermissionChecker permissions,
+            IClock clock,
+            CancellationToken ct) =>
+        {
+            var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+            var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+            if (channel is null)
+            {
+                return Results.Forbid();
+            }
+
+            var canReport = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Announcement.Publish, ct)
+                || await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Workspace.Admin, ct);
+            if (!canReport)
+            {
+                return Results.Forbid();
+            }
+
+            await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+            var announcement = await db.Announcements.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.MessageId == new MessageId(messageId) && x.ChannelId == channel.Id, ct);
+            if (announcement is null)
+            {
+                return Results.NotFound();
+            }
+
+            var take = Math.Clamp(limit ?? AnnouncementPolicies.DefaultReportPageSize, 1, AnnouncementPolicies.MaxReportPageSize);
+            var query = db.AnnouncementAcknowledgements.AsNoTracking()
+                .Where(x => x.MessageId == announcement.MessageId && x.ChannelId == channel.Id);
+            if (AnnouncementCursors.TryDecode(cursor, out var cursorAt, out _))
+            {
+                query = query.Where(x => x.AcknowledgedAt > cursorAt);
+            }
+
+            var page = await query
+                .OrderBy(x => x.AcknowledgedAt)
+                .ThenBy(x => x.Id)
+                .Take(take + 1)
+                .ToListAsync(ct);
+            var hasMore = page.Count > take;
+            if (hasMore)
+            {
+                page.RemoveAt(page.Count - 1);
+            }
+
+            var userIds = page.Select(x => x.UserId).Distinct().ToArray();
+            var names = await db.UserProfiles.AsNoTracking()
+                .Where(x => userIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, x => x.DisplayName, ct);
+            var count = await db.AnnouncementAcknowledgements.CountAsync(
+                x => x.MessageId == announcement.MessageId && x.ChannelId == channel.Id, ct);
+            string? next = null;
+            if (hasMore && page.Count > 0)
+            {
+                var last = page[^1];
+                next = AnnouncementCursors.Encode(last.AcknowledgedAt, last.Id);
+            }
+
+            return Results.Ok(new AnnouncementReportDto(
+                announcement.MessageId.Value,
+                count,
+                announcement.RequiresAcknowledgement,
+                announcement.AcknowledgeBy,
+                announcement.ClosedAt,
+                page.Select(x => new AnnouncementAcknowledgementItemDto(
+                    x.UserId.Value,
+                    names.GetValueOrDefault(x.UserId) ?? x.UserId.Value.ToString(),
+                    x.AcknowledgedAt)).ToArray(),
+                next));
+        }).AllowPermissionGateExempt("announcement.publish or workspace.admin (B-112)");
+
+        v1.MapPost("/channels/{channelId:guid}/messages/{messageId:guid}/acknowledgements/close", async (
+            Guid channelId,
+            Guid messageId,
+            HttpContext http,
+            VibeChatDbContext db,
+            ITenantContext tenant,
+            IAnnouncementWriter announcements,
+            IPermissionChecker permissions,
+            IClock clock,
+            CancellationToken ct) =>
+        {
+            var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+            var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
+            if (channel is null)
+            {
+                return Results.Forbid();
+            }
+
+            var asAdmin = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Workspace.Admin, ct);
+            try
+            {
+                var dto = await announcements.CloseAsync(
+                    channel.TenantId, profile.Id, channel.Id, new MessageId(messageId), asAdmin, ct);
+                return Results.Ok(dto);
+            }
+            catch (AnnouncementNotFoundException)
+            {
+                return Results.NotFound();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Results.Forbid();
+            }
+        }).RequirePermission(Permissions.Announcement.Publish);
+
+        v1.MapGet("/workspaces/{workspaceId:guid}/announcements/pending", async (
+            Guid workspaceId,
+            HttpContext http,
+            VibeChatDbContext db,
+            ITenantContext tenant,
+            IClock clock,
+            CancellationToken ct) =>
+        {
+            var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+            var (workspace, isGuest) = await ResolveWorkspaceOrGuestAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
+            if (workspace is null)
+            {
+                return Results.Forbid();
+            }
+
+            var memberChannelIds = await db.ChannelMembers
+                .Where(x => x.UserId == profile.Id && x.LeftAt == null)
+                .Select(x => x.ChannelId)
+                .ToListAsync(ct);
+            var channelIds = await db.Channels.AsNoTracking()
+                .Where(x => x.WorkspaceId == workspace.Id
+                    && x.Type == ChannelType.Announcement
+                    && (!isGuest || memberChannelIds.Contains(x.Id)))
+                .Select(x => x.Id)
+                .ToListAsync(ct);
+
+            var now = clock.UtcNow;
+            var rows = await (
+                from announcement in db.Announcements.AsNoTracking()
+                join message in db.Messages.AsNoTracking() on announcement.MessageId equals message.Id
+                join channel in db.Channels.AsNoTracking() on announcement.ChannelId equals channel.Id
+                join author in db.UserProfiles.AsNoTracking() on message.AuthorId equals author.Id into authors
+                from author in authors.DefaultIfEmpty()
+                where channelIds.Contains(announcement.ChannelId)
+                    && announcement.RequiresAcknowledgement
+                    && announcement.ClosedAt == null
+                    && (announcement.AcknowledgeBy == null || announcement.AcknowledgeBy > now)
+                    && message.DeletedAt == null
+                    && !db.AnnouncementAcknowledgements.Any(a =>
+                        a.MessageId == announcement.MessageId && a.UserId == profile.Id)
+                orderby message.CreatedAt
+                select new PendingAnnouncementDto(
+                    message.Id.Value,
+                    channel.Id.Value,
+                    channel.Name,
+                    author != null ? author.DisplayName : message.AuthorId.Value.ToString(),
+                    message.Body.Length > AnnouncementPolicies.BodyPreviewLength
+                        ? message.Body.Substring(0, AnnouncementPolicies.BodyPreviewLength)
+                        : message.Body,
+                    message.CreatedAt,
+                    announcement.AcknowledgeBy)
+            ).Take(AnnouncementPolicies.MaxPendingItems).ToListAsync(ct);
+
+            return Results.Ok(rows);
+        }).RequirePermission(Permissions.Message.Read);
+    }
+
     internal static void MapMessages(this RouteGroupBuilder v1)
     {
         v1.MapGet("/channels/{channelId:guid}/messages", async (
@@ -346,10 +572,14 @@ internal static class MessagingEndpoints
 
             var take = Math.Clamp(limit ?? 50, 1, 100);
             var canVote = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Message.Send, ct);
+            var canAcknowledge = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Announcement.Acknowledge, ct);
+            var canViewReport = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Announcement.Publish, ct)
+                || await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Workspace.Admin, ct);
             var membership = await db.ChannelMembers.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.ChannelId == channel.Id && x.UserId == profile.Id, ct);
             var minSeq = channel.Type == ChannelType.GroupDm ? membership?.JoinedSeq ?? 0 : 0;
-            var page = await ListChannelMessagesAsync(channel, profile, db, take, after, before, around, canVote, minSeq, ct);
+            var page = await ListChannelMessagesAsync(
+                channel, profile, db, take, after, before, around, canVote, minSeq, clock.UtcNow, canAcknowledge, canViewReport, ct);
             return Results.Ok(page);
         });
 
@@ -360,6 +590,7 @@ internal static class MessagingEndpoints
             VibeChatDbContext db,
             ITenantContext tenant,
             IMessageWriter writer,
+            IPermissionChecker permissions,
             IRateLimiter rateLimiter,
             RateLimitSettingsResolver rateLimits,
             FilesSettingsResolver filesSettings,
@@ -420,7 +651,9 @@ internal static class MessagingEndpoints
                     normalizedBody,
                     request.ReplyToMessageId is null ? null : new MessageId(request.ReplyToMessageId.Value),
                     request.ThreadId,
-                    request.AttachmentIds), ct);
+                    request.AttachmentIds,
+                    RequiresAcknowledgement: request.RequiresAcknowledgement,
+                    AcknowledgeBy: request.AcknowledgeBy), ct);
 
                 var attachments = await db.Attachments.AsNoTracking()
                     .Where(x => x.MessageId == result.MessageId)
@@ -443,6 +676,11 @@ internal static class MessagingEndpoints
                 var replyToId = request.ReplyToMessageId is Guid rid ? new MessageId(rid) : (MessageId?)null;
                 var replyToById = await LoadReplyToByIdsAsync(db, [replyToId], ct);
                 replyToById.TryGetValue(request.ReplyToMessageId ?? Guid.Empty, out var replyTo);
+                var canAcknowledge = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Announcement.Acknowledge, ct);
+                var canViewReport = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Announcement.Publish, ct)
+                    || await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Workspace.Admin, ct);
+                var announcement = await AnnouncementQuery.LoadAsync(
+                    db, result.MessageId, profile.Id, canAcknowledge, canViewReport, clock.UtcNow, ct);
 
                 return Results.Accepted(
                     $"/api/v1/channels/{channel.Id.Value}/messages?after={result.Sequence - 1}",
@@ -462,7 +700,8 @@ internal static class MessagingEndpoints
                         0,
                         channel.Id.Value,
                         null,
-                        replyTo));
+                        replyTo,
+                        Announcement: announcement));
             }
             catch (ArgumentException ex)
             {
@@ -641,7 +880,7 @@ internal static class MessagingEndpoints
             return Results.Ok(MessageLifecyclePolicyRules.ToDto(row));
         }).RequirePermission(Permissions.Message.Read);
 
-        v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, EditMessageRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IClock clock, CancellationToken ct) =>
+        v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, EditMessageRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IAuditWriter audit, IClock clock, CancellationToken ct) =>
         {
             var profile = await EnsureProfileAsync(http.User, db, clock, ct);
             var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
@@ -688,6 +927,22 @@ internal static class MessagingEndpoints
 
             message.Body = normalizedBody;
             message.EditedAt = clock.UtcNow;
+            var announcementRow = await db.Announcements.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.MessageId == message.Id && x.ChannelId == channel.Id, ct);
+            if (announcementRow is not null)
+            {
+                audit.Add(new AuditEvent
+                {
+                    TenantId = channel.TenantId,
+                    ActorUserId = profile.Id,
+                    Action = AuditActions.AnnouncementEdited,
+                    EntityType = "Announcement",
+                    EntityId = message.Id.ToString(),
+                    MetadataJson = JsonSerializer.Serialize(new { channelId, sequence = message.Sequence }),
+                    OccurredAt = message.EditedAt.Value
+                });
+            }
+
             outbox.Add(new OutboxMessage
             {
                 TenantId = channel.TenantId,
@@ -731,6 +986,11 @@ internal static class MessagingEndpoints
                     x.Height,
                     x.PageCount))
                 .ToArrayAsync(ct);
+            var canAcknowledge = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Announcement.Acknowledge, ct);
+            var canViewReport = await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Announcement.Publish, ct)
+                || await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Workspace.Admin, ct);
+            var announcement = await AnnouncementQuery.LoadAsync(
+                db, message.Id, profile.Id, canAcknowledge, canViewReport, clock.UtcNow, ct);
             return Results.Ok(new MessageResponse(
                 message.Id.Value,
                 channel.Id.Value,
@@ -745,7 +1005,8 @@ internal static class MessagingEndpoints
                 message.ThreadId,
                 message.ReplyToMessageId?.Value,
                 0,
-                message.ConversationId.Value));
+                message.ConversationId.Value,
+                Announcement: announcement));
         }).AllowPermissionGateExempt("conditional EditOwn vs authorship (B-023)");
 
         v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}/reactions", async (

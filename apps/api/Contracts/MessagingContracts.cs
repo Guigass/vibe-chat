@@ -3,7 +3,15 @@ using VibeChat.Messaging;
 using VibeChat.SharedKernel;
 
 public sealed record SlashCommandResponse(string Name, string Description, string Usage, string? Permission = null);
-public sealed record SendMessageRequest(Guid MessageId, string IdempotencyKey, string Body, Guid? ReplyToMessageId, Guid? ThreadId, Guid[]? AttachmentIds = null);
+public sealed record SendMessageRequest(
+    Guid MessageId,
+    string IdempotencyKey,
+    string Body,
+    Guid? ReplyToMessageId,
+    Guid? ThreadId,
+    Guid[]? AttachmentIds = null,
+    bool RequiresAcknowledgement = false,
+    DateTimeOffset? AcknowledgeBy = null);
 public sealed record CreatePollRequest(
     Guid MessageId,
     string IdempotencyKey,
@@ -82,7 +90,8 @@ public sealed record MessageResponse(
     LinkPreviewResponse? LinkPreview = null,
     bool IsPinned = false,
     PollDto? Poll = null,
-    bool AuthorIsBot = false);
+    bool AuthorIsBot = false,
+    AnnouncementDto? Announcement = null);
 
 public sealed record PinMessageResponse(Guid MessageId, Guid ChannelId, bool Pinned, int PinCount);
 public sealed record PinnedMessageResponse(

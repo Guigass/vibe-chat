@@ -116,6 +116,18 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Audit | `workspace.export` em `audit.audit_events` |
 | Membro/Auditor | 403 |
 
+### Templates de workspace (B-115)
+
+| Item | Controle |
+|------|----------|
+| AuthZ | validate/preview/apply/import/export/onboarding exigem `workspace.admin` |
+| Tenant | O manifesto não traz `TenantId`; o recurso criado usa o tenant do contexto |
+| Conteúdo | Allowlist declarativa (spaces, canais, tópico, política de mensagem). Campo extra, membro, secret ou schema desconhecido → 400 |
+| Dry-run | Preview e `dryRun` não gravam. Conflito no apply → 409 e rollback da transação |
+| Export | Sem membros, e-mails, tokens ou tenant. DM/GroupDm ficam de fora |
+| Audit | `space.create` / `channel.create` por recurso, mais `template.apply` / `template.import` / `template.export` |
+| RLS | `directory.workspace_templates`, `workspace_onboarding`, `template_applications` com FORCE |
+
 ### Retenção / purge (B-047)
 
 | Item | Controle |
@@ -138,6 +150,17 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Janela | `0` e valores fora de 1…525600 rejeitados (`InvalidMessagingPolicy`) |
 | Soft-delete | Body permanece na linha (ADR-018) para o snapshot futuro de B-169; este item não copia body para o audit |
 | Rollback | Sem linha na tabela = default atual; sem kill switch que ignore a checagem |
+
+### B-112 — Anúncios e confirmação de leitura
+
+| Item | Controle |
+|------|----------|
+| Publicação | Canal `Announcement`: `message.send` não basta; exige `announcement.publish`. Membro/Auditor/Guest/Bot → 403 |
+| Leitura | Mesma ACL do canal. Relatório de confirmações exige `announcement.publish` ou `workspace.admin` |
+| Isolamento | `messaging.announcements` e `messaging.announcement_acknowledgements` com FORCE RLS. Outro tenant ou outro canal não entra na lista |
+| Idempotência | Unique `(TenantId, MessageId, UserId)` — confirmação repetida não duplica a contagem |
+| Prova | Confirmação não é assinatura legal; o texto da UI deixa isso explícito |
+| Fan-out | Relatório e inbox paginam (máx. 50). Contagem é agregada |
 
 ### B-091 / ADR-021 — Link preview / SSRF
 

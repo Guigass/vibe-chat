@@ -17,6 +17,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | Termo | Definição |
 |-------|-----------|
 | **Space** | Agrupamento organizacional de **canais** dentro de um workspace (ex.: área, projeto). Não organiza a lista de contatos — isso é Contact group (B-166). |
+| **Template de workspace** | Manifesto declarativo `vibechat.workspace-template.v1` que cria spaces, canais, tópicos e defaults de política de mensagem (B-115). Não contém tenant, membros, mensagens nem secrets. Built-ins: time, projeto, comunidade e incidentes. Aplicação idempotente, com pré-visualização; o onboarding de owner/admin pode ser pulado e retomado. |
 | **Channel** | Canal de mensagens (público, privado ou DM). Unidade principal de conversa. Em privado, quem entra é `channel_members` (roster e add/remove em B-186); guest externo é B-040. |
 | **DM (Direct Message)** | Canal especial 1:1 (`Direct`) ou grupo pequeno (`GroupDm`, 3–9 participantes), sem Space obrigatório. Quem entra depois não lê o histórico anterior (`JoinedSeq`). |
 | **Thread** | Subconversa ancorada em uma mensagem pai dentro de um channel. |
@@ -42,7 +43,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Attachment** | Arquivo associado a mensagem; bytes no object storage (MinIO); metadados no PostgreSQL. |
 | **Busca com filtros** | FTS PostgreSQL em mensagens visíveis ao membership (`GET /search/messages`). Filtros `de:`/`em:`/`antes:`/`tem:` só restringem; nunca ampliam ACL (B-098). Matching versátil (prefixo, acento, websearch, canal/pessoa/anexo) entregue em **B-188**. Distinta da busca semântica (B-121 / ADR-016). Atalho: `Ctrl/Cmd+Shift+F`. |
 | **Paleta de comandos** | Overlay de navegação (`Ctrl/Cmd+K`) sobre canais com membership, pessoas visíveis, ações locais e comandos de `GET /commands` (B-087 / B-099). Não substitui a busca de mensagens. |
-| **Announcement / Anúncio** | Mensagem ou conversa de broadcast com regras de publicação e, opcionalmente, confirmação de leitura; não é sinônimo de notificação push. |
+| **Announcement / Anúncio** | Canal `Announcement` (B-112): só quem tem `announcement.publish` escreve; os demais leem. A mensagem continua `Message` + `seq`. Confirmação opcional até um prazo é leitura explícita, não assinatura legal. |
 | **Action item** | Ação estruturada derivada de uma conversa e ligada à mensagem de origem; pode evoluir para tarefa, mas preserva evidência. |
 | **Digest / Catch-up** | Resumo periódico de atividade autorizada, com links para conversas de origem. |
 

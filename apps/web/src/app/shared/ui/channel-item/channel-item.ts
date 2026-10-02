@@ -47,6 +47,8 @@ import { fillTemplate, ui } from '../../../core/i18n/strings';
             <line x1="2" y1="2" x2="22" y2="22" />
           </svg>
         </span>
+      } @else if ((channel().pendingAnnouncementCount ?? 0) > 0) {
+        <vc-badge tone="danger">{{ channel().pendingAnnouncementCount }}</vc-badge>
       } @else if (channel().mentionCount && channel().mentionCount! > 0) {
         <vc-badge tone="warn">{{ channel().mentionCount }}</vc-badge>
       } @else if (channel().unreadCount > 0) {
@@ -300,7 +302,9 @@ export class ChannelItem {
     if (this.muted()) {
       parts.push(ui.channelMutedHint);
     }
-    if (ch.mentionCount && ch.mentionCount > 0) {
+    if ((ch.pendingAnnouncementCount ?? 0) > 0) {
+      parts.push(fillTemplate(ui.announcementPendingCount, { n: ch.pendingAnnouncementCount ?? 0 }));
+    } else if (ch.mentionCount && ch.mentionCount > 0) {
       parts.push(fillTemplate(ui.channelMentionsCount, { n: ch.mentionCount }));
     } else if (ch.unreadCount > 0) {
       parts.push(fillTemplate(ui.channelUnreadCount, { n: ch.unreadCount }));
@@ -311,6 +315,7 @@ export class ChannelItem {
   prefix(): string {
     if (this.channel().isGroupDm) return '··';
     if (this.channel().isDirect) return '@';
+    if (this.channel().type === 'announcement') return '!';
     return this.channel().isPrivate ? '◦' : '#';
   }
 

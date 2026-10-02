@@ -40,11 +40,11 @@ tenant do contexto.
 
 ## Aceite
 
-- [ ] Built-in cria estrutura prevista.
-- [ ] Dry-run não persiste.
-- [ ] Retry não duplica.
-- [ ] Import rejeita campo/versão desconhecidos com erro útil.
-- [ ] Nenhum membro/secret é exportado.
+- [x] Built-in cria estrutura prevista.
+- [x] Dry-run não persiste.
+- [x] Retry não duplica.
+- [x] Import rejeita campo/versão desconhecidos com erro útil.
+- [x] Nenhum membro/secret é exportado.
 
 ## Testes
 

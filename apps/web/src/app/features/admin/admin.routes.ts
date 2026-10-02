@@ -41,6 +41,12 @@ export const ADMIN_CHILD_ROUTES: Routes = [
       import('./admin-settings.page').then((m) => m.AdminSettingsPage),
   },
   {
+    path: 'onboarding',
+    canActivate: [adminAreaGuard('onboarding')],
+    loadComponent: () =>
+      import('./admin-onboarding.page').then((m) => m.AdminOnboardingPage),
+  },
+  {
     path: 'plugins',
     canActivate: [adminAreaGuard('plugins')],
     loadComponent: () =>

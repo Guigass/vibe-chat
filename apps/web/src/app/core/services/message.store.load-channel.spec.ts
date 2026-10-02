@@ -60,6 +60,7 @@ describe('MessageStore loadChannel (OPS-E2E-B097)', () => {
             onAttachmentThumbnailReady: () => () => undefined,
             onLinkPreviewReady: () => () => undefined,
             onPollChanged: () => () => undefined,
+            onAnnouncementAcknowledged: () => () => undefined,
             onReconnected: () => () => undefined,
           },
         },

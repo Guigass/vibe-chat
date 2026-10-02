@@ -225,6 +225,12 @@ public static class Permissions
         public const string SuggestReply = "ai.suggest_reply";
         public const string Transcribe = "ai.transcribe";
     }
+
+    public static class Announcement
+    {
+        public const string Publish = "announcement.publish";
+        public const string Acknowledge = "announcement.acknowledge";
+    }
 }
 
 public enum Role

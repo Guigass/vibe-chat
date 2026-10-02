@@ -44,6 +44,10 @@ public static class AuditActions
     public const string WorkspaceExport = "workspace.export";
     public const string MessagePurge = "message.purge";
     public const string AiTranscribe = "ai.transcribe";
+    public const string AnnouncementCreated = "announcement.created";
+    public const string AnnouncementPublished = "announcement.published";
+    public const string AnnouncementEdited = "announcement.edited";
+    public const string AnnouncementClosed = "announcement.closed";
     public const string PollCreate = "poll.create";
     public const string PollVote = "poll.vote";
     public const string PollUnvote = "poll.unvote";
@@ -67,6 +71,10 @@ public static class AuditActions
     public const string ReminderUpdate = "reminder.update";
     public const string ReminderCancel = "reminder.cancel";
     public const string ReminderDeliver = "reminder.deliver";
+    public const string TemplateApply = "template.apply";
+    public const string TemplateImport = "template.import";
+    public const string TemplateExport = "template.export";
+    public const string OnboardingUpdate = "onboarding.update";
 }
 
 public interface IAuditWriter

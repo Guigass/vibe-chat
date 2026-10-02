@@ -10,6 +10,7 @@ const chatHubMock = () => ({
   joinChannel: vi.fn(),
   joinChannels: vi.fn(),
   onReadCursorChanged: () => () => undefined,
+  onReconnected: () => () => undefined,
 });
 
 describe('ChannelStore.activeChannelId (mic recording)', () => {

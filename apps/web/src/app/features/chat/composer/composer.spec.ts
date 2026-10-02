@@ -155,6 +155,7 @@ describe('Composer audio submit (BUG-004)', () => {
           useValue: {
             activeChannelId: activeChannelId.asReadonly(),
             activeChannel: () => ({ id: 'channel-1', name: 'geral' }),
+            canPublishAnnouncement: () => false,
             activeWorkspace: () => ({ id: 'ws-1' }),
             composerPrefill: () => null,
             consumeComposerPrefill: () => null,

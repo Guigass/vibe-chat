@@ -38,6 +38,7 @@ export interface Channel {
   description?: string;
   unreadCount: number;
   mentionCount?: number;
+  pendingAnnouncementCount?: number;
   isPrivate?: boolean;
   isDirect?: boolean;
   isGroupDm?: boolean;
@@ -223,6 +224,8 @@ export interface ChatMessage {
   isSaved?: boolean;
   /** B-096 channel poll card. */
   poll?: PollSummary | null;
+  /** B-112 announcement on a read-only channel message. */
+  announcement?: AnnouncementSummary | null;
 }
 
 export interface PollVoter {
@@ -238,6 +241,33 @@ export interface PollOptionSummary {
   percent: number;
   votedByMe: boolean;
   voters?: PollVoter[] | null;
+}
+
+export interface AnnouncementSummary {
+  messageId: string;
+  requiresAcknowledgement: boolean;
+  acknowledgeBy?: string | null;
+  closedAt?: string | null;
+  acknowledgedByMe: boolean;
+  acknowledgementCount: number;
+  canAcknowledge: boolean;
+  canViewReport: boolean;
+}
+
+export interface PendingAnnouncement {
+  messageId: string;
+  channelId: string;
+  channelName: string;
+  authorName: string;
+  bodyPreview: string;
+  createdAt: string;
+  acknowledgeBy?: string | null;
+}
+
+export interface AnnouncementReportItem {
+  userId: string;
+  displayName: string;
+  acknowledgedAt: string;
 }
 
 export interface PollSummary {
@@ -709,4 +739,48 @@ export interface NotificationPreferences {
   channelOverrides: ChannelNotificationOverride[];
   /** B-102 — channels where the caller auto-follows every new thread. */
   followAllThreadsChannelIds: string[];
+}
+
+export interface WorkspaceTemplateSummary {
+  id: string;
+  version: number;
+  spaceCount: number;
+  channelCount: number;
+  checklist: string[];
+  builtin: boolean;
+}
+
+export interface WorkspaceTemplateCatalog {
+  builtins: WorkspaceTemplateSummary[];
+  custom: WorkspaceTemplateSummary[];
+}
+
+export interface TemplatePlanItem {
+  kind: string;
+  action: string;
+  key: string;
+  name?: string | null;
+  detail?: string | null;
+  resourceId?: string | null;
+}
+
+export interface TemplatePlan {
+  templateId: string;
+  version: number;
+  hasConflicts: boolean;
+  dryRun: boolean;
+  idempotent?: boolean;
+  items: TemplatePlanItem[];
+}
+
+export interface OnboardingItem {
+  key: string;
+  state: string;
+}
+
+export interface WorkspaceOnboardingState {
+  status: string;
+  templateId?: string | null;
+  templateVersion?: number | null;
+  items: OnboardingItem[];
 }
