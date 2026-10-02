@@ -19,15 +19,18 @@ test.describe('user status (B-116)', () => {
     await expect(editor).toBeHidden();
     await expect(page.getByTestId('user-status-open')).not.toContainText('revisando o plano');
 
-    const expiresAt = new Date(Date.now() + 1500).toISOString();
+    // Reload in CI takes longer than a 1.5s TTL, so the row is already purged
+    // when the shell reads availability and the button stays on "Sem status".
+    const expiresAt = new Date(Date.now() + 20_000);
     const set = await page.request.put(`${API_BASE_URL}/api/v1/me/status`, {
       headers: { 'X-Dev-User': 'alice', 'content-type': 'application/json' },
-      data: { state: 'custom', emoji: '⏳', text: 'some em instantes', expiresAt },
+      data: { state: 'custom', emoji: '⏳', text: 'some em instantes', expiresAt: expiresAt.toISOString() },
     });
     expect(set.ok()).toBeTruthy();
     await page.reload();
     await expect(page.getByTestId('user-status-open')).toContainText('some em instantes');
-    await page.waitForTimeout(2500);
+    const remaining = expiresAt.getTime() - Date.now();
+    await page.waitForTimeout(Math.max(remaining, 0) + 2_000);
     await page.reload();
     await expect(page.getByTestId('user-status-open')).not.toContainText('some em instantes');
   });
