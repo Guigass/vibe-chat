@@ -29,6 +29,8 @@ import {
   WebhookEndpointSettings,
   Workspace,
   WorkspaceMember,
+  ContactGroup,
+  ContactSection,
   MessageLinkPreview,
   PinnedMessageItem,
   SavedMessageItem,
@@ -502,6 +504,79 @@ export class ApiService {
       displayName: m.displayName,
       email: m.email,
       role: m.role,
+    }));
+  }
+
+  async getContactGroups(workspaceId: string): Promise<ContactGroup[]> {
+    const rows = await this.request<ContactGroup[]>(`/api/v1/workspaces/${workspaceId}/contact-groups`);
+    return rows.map((row) => ({
+      id: row.id,
+      workspaceId: row.workspaceId,
+      kind: row.kind,
+      name: row.name,
+      order: row.order,
+      ownerUserId: row.ownerUserId,
+      memberUserIds: row.memberUserIds ?? [],
+    }));
+  }
+
+  async createContactGroup(
+    workspaceId: string,
+    input: { name: string; kind: 'department' | 'personal'; order?: number },
+  ): Promise<ContactGroup> {
+    return this.request<ContactGroup>(`/api/v1/workspaces/${workspaceId}/contact-groups`, {
+      method: 'POST',
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify({ name: input.name, kind: input.kind, order: input.order ?? null }),
+    });
+  }
+
+  async updateContactGroup(
+    workspaceId: string,
+    groupId: string,
+    input: { name?: string; order?: number },
+  ): Promise<ContactGroup> {
+    return this.request<ContactGroup>(`/api/v1/workspaces/${workspaceId}/contact-groups/${groupId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteContactGroup(workspaceId: string, groupId: string): Promise<void> {
+    await this.request(`/api/v1/workspaces/${workspaceId}/contact-groups/${groupId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async replaceContactGroupMembers(
+    workspaceId: string,
+    groupId: string,
+    userIds: string[],
+  ): Promise<ContactGroup> {
+    return this.request<ContactGroup>(
+      `/api/v1/workspaces/${workspaceId}/contact-groups/${groupId}/members`,
+      {
+        method: 'PUT',
+        headers: { 'Idempotency-Key': crypto.randomUUID() },
+        body: JSON.stringify({ userIds }),
+      },
+    );
+  }
+
+  async getGroupedContacts(workspaceId: string): Promise<ContactSection[]> {
+    const rows = await this.request<ContactSection[]>(
+      `/api/v1/workspaces/${workspaceId}/contacts?grouped=true`,
+    );
+    return rows.map((row) => ({
+      groupId: row.groupId,
+      name: row.name,
+      kind: row.kind,
+      members: (row.members ?? []).map((member) => ({
+        userId: member.userId,
+        displayName: member.displayName,
+        email: member.email,
+        role: member.role,
+      })),
     }));
   }
 

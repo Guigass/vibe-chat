@@ -1715,6 +1715,7 @@ export class Composer {
           userId: member.userId,
           displayName: member.displayName,
           email: member.email,
+          subtitle: this.contactSubtitle(member.userId),
         })),
       );
       return;
@@ -1728,12 +1729,18 @@ export class Composer {
             userId: member.userId,
             displayName: member.displayName,
             email: member.email,
+            subtitle: this.contactSubtitle(member.userId),
           })),
         );
       }).catch(() => {
         this.mentionRemoteItems.set([]);
       });
     }, 200);
+  }
+
+  private contactSubtitle(userId: string): string | undefined {
+    const label = this.channels.contactLabel?.(userId);
+    return label || undefined;
   }
 
   private closeMentionMenu(): void {

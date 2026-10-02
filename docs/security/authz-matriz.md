@@ -48,6 +48,12 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/workspaces/{workspaceId:guid}/roles` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Catálogo assignable |
 | POST | `/workspaces/{workspaceId:guid}/members` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Invite B-068 |
 | PUT | `/workspaces/{workspaceId:guid}/members/{userId:guid}/role` | permission | `workspace.admin` | ✗ | ✗ | ✓ | |
+| GET | `/workspaces/{workspaceId:guid}/contact-groups` | membership | — | ✓ | ✓ | ✓ | B-166; departamentos de todos + pessoais só do dono |
+| POST | `/workspaces/{workspaceId:guid}/contact-groups` | exempt | `department` exige `workspace.admin`; `personal` é o caller | ✓* | ✗ | ✓ | *só `personal`; departamento → 403 |
+| PATCH | `/workspaces/{workspaceId:guid}/contact-groups/{groupId:guid}` | exempt | dono ou admin do departamento | ✓* | ✗ | ✓ | *pessoal próprio; pessoal alheio → 404; departamento sem admin → 403 |
+| DELETE | `/workspaces/{workspaceId:guid}/contact-groups/{groupId:guid}` | exempt | dono ou admin do departamento | ✓* | ✗ | ✓ | *pessoal próprio |
+| PUT | `/workspaces/{workspaceId:guid}/contact-groups/{groupId:guid}/members` | exempt | dono ou admin do departamento | ✓* | ✗ | ✓ | *pessoal próprio; alvo fora do workspace → 400 `InvalidMembers` |
+| GET | `/workspaces/{workspaceId:guid}/contacts` | membership | — | ✓ | ✓ | ✓ | B-166; `grouped=true` (default); seções + sem grupo |
 | GET | `/workspaces/{workspaceId:guid}/presence` | membership | — | ✓ | ✓ | ✓ | Presence não é conteúdo de mensagem |
 | POST | `/workspaces/{workspaceId:guid}/dms` | exempt | membership-only | ✓ | ✓ | ✓ | Abrir DM (B-021); `AllowPermissionGateExempt` |
 | POST | `/workspaces/{workspaceId:guid}/group-dms` | exempt | membership-only | ✓ | ✓ | ✓ | Group DM habilitado; participantes validados no workspace |

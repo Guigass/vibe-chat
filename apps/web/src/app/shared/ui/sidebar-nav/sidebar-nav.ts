@@ -2,6 +2,7 @@ import { Component, HostListener, computed, effect, input, output, signal } from
 import {
   Channel,
   ChannelMuteAction,
+  ContactSection,
   PresenceStatus,
   Space,
   SpaceGroup,
@@ -150,7 +151,158 @@ function matchesFilter(text: string, query: string): boolean {
         </section>
       }
 
-      @if (filteredMembers().length) {
+      @if (!compact() && filteredContactSections().length) {
+        <section class="vc-sidebar-nav__block" [attr.aria-label]="ui.navMembers" data-testid="contact-sections">
+          <p class="vc-sidebar-nav__label">{{ ui.navMembers }}</p>
+          @if (contactError()) {
+            <p class="vc-sidebar-nav__error" role="alert">{{ contactError() }}</p>
+          }
+          @if (!personalOpen()) {
+            <button
+              type="button"
+              class="vc-sidebar-nav__create-toggle"
+              data-testid="contact-personal-create"
+              (click)="personalOpen.set(true)"
+            >
+              {{ ui.contactsNewPersonal }}
+            </button>
+          } @else {
+            <form class="vc-sidebar-nav__form" (submit)="submitPersonal($event)">
+              <vc-input
+                controlId="vc-personal-group"
+                [label]="ui.contactsGroupName"
+                [placeholder]="ui.contactsGroupNamePh"
+                [(value)]="personalName"
+              />
+              <div class="vc-sidebar-nav__form-actions">
+                <vc-button type="submit">{{ ui.create }}</vc-button>
+                <vc-button type="button" variant="ghost" (click)="personalOpen.set(false)">{{ ui.cancel }}</vc-button>
+              </div>
+            </form>
+          }
+          <button
+            type="button"
+            class="vc-sidebar-nav__create-toggle"
+            data-testid="group-dm-picker-toggle"
+            (click)="pickerOpen.set(!pickerOpen())"
+          >
+            {{ pickerOpen() ? ui.navCancelConversation : ui.navNewConversation }}
+          </button>
+          @if (pickerOpen()) {
+            <div class="vc-sidebar-nav__picker" data-testid="group-dm-picker">
+              @if (selectedIds().length) {
+                <div class="vc-sidebar-nav__chips">
+                  @for (member of selectedMembers(); track member.userId) {
+                    <button type="button" class="vc-sidebar-nav__chip" (click)="togglePick(member.userId)">
+                      {{ member.displayName }}
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  }
+                </div>
+              }
+              <p class="vc-sidebar-nav__picker-hint">
+                {{ selectedIds().length >= 2 ? ui.navGroupDm : ui.navGroupDmHint }}
+              </p>
+              <vc-button
+                type="button"
+                data-testid="group-dm-open"
+                [disabled]="selectedIds().length === 0"
+                (click)="confirmPicker()"
+              >
+                {{ ui.navOpenConversation }}
+              </vc-button>
+            </div>
+          }
+          @for (section of filteredContactSections(); track sectionKey(section)) {
+            <div class="vc-sidebar-nav__space" [attr.data-testid]="'contact-section'">
+              <button
+                type="button"
+                class="vc-sidebar-nav__section-toggle"
+                [attr.aria-expanded]="!isCollapsed(section)"
+                [attr.aria-label]="sectionToggleLabel(section)"
+                (click)="toggleSection(section)"
+              >
+                <span>{{ sectionTitle(section) }}</span>
+                @if (section.kind === 'department' || section.kind === 'personal') {
+                  <span class="vc-sidebar-nav__section-kind">
+                    {{ section.kind === 'department' ? ui.contactsDepartment : ui.contactsPersonal }}
+                  </span>
+                }
+              </button>
+              @if (section.kind === 'personal' && section.groupId && !isCollapsed(section)) {
+                <div class="vc-sidebar-nav__form-actions">
+                  @if (renamingId() === section.groupId) {
+                    <form class="vc-sidebar-nav__form" (submit)="submitRename($event, section.groupId)">
+                      <vc-input
+                        [controlId]="'vc-rename-' + section.groupId"
+                        [label]="ui.contactsRename"
+                        [(value)]="renameValue"
+                      />
+                      <vc-button type="submit">{{ ui.contactsRename }}</vc-button>
+                    </form>
+                  } @else {
+                    <button type="button" class="vc-sidebar-nav__create-toggle" (click)="startRename(section)">
+                      {{ ui.contactsRename }}
+                    </button>
+                    @if (confirmDeleteId() === section.groupId) {
+                      <button type="button" class="vc-sidebar-nav__create-toggle" (click)="confirmDelete(section.groupId)">
+                        {{ ui.contactsDeleteConfirm }}
+                      </button>
+                    } @else {
+                      <button type="button" class="vc-sidebar-nav__create-toggle" (click)="confirmDeleteId.set(section.groupId)">
+                        {{ ui.contactsDelete }}
+                      </button>
+                    }
+                  }
+                </div>
+              }
+              @if (!isCollapsed(section)) {
+                @if (!section.members.length) {
+                  <p class="vc-sidebar-nav__picker-hint">{{ ui.contactsEmptySection }}</p>
+                }
+                <ul class="vc-sidebar-nav__members">
+                  @for (member of section.members; track member.userId) {
+                    <li>
+                      <button
+                        type="button"
+                        class="vc-sidebar-nav__member"
+                        [attr.aria-label]="memberLabel(member)"
+                        (click)="onMemberClick(member.userId)"
+                      >
+                        <span
+                          class="vc-presence"
+                          [attr.data-status]="presenceOf(member.userId)"
+                          aria-hidden="true"
+                        ></span>
+                        <span aria-hidden="true">@</span>
+                        {{ member.displayName }}
+                      </button>
+                    </li>
+                  }
+                </ul>
+                @if (section.kind === 'personal' && section.groupId) {
+                  <details class="vc-sidebar-nav__people">
+                    <summary>{{ ui.contactsAddPeople }}</summary>
+                    @for (person of directoryMembers(); track person.userId) {
+                      <label class="vc-sidebar-nav__check">
+                        <input
+                          type="checkbox"
+                          [checked]="draftHas(section.groupId, person.userId, section)"
+                          (change)="toggleDraft(section.groupId, person.userId, section, $any($event.target).checked)"
+                        />
+                        {{ person.displayName }}
+                      </label>
+                    }
+                    <button type="button" class="vc-sidebar-nav__create-toggle" (click)="savePeople(section.groupId)">
+                      {{ ui.contactsSavePeople }}
+                    </button>
+                  </details>
+                }
+              }
+            </div>
+          }
+        </section>
+      } @else if (filteredMembers().length) {
         <section class="vc-sidebar-nav__block" [attr.aria-label]="ui.navMembers">
           @if (!compact()) {
             <p class="vc-sidebar-nav__label">{{ ui.navMembers }}</p>
@@ -404,6 +556,42 @@ function matchesFilter(text: string, query: string): boolean {
       font-size: 0.72rem;
       color: var(--vc-ink-subtle);
     }
+    .vc-sidebar-nav__section-toggle {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--vc-space-2);
+      width: 100%;
+      margin: 0.45rem 0 0.15rem;
+      padding: 0.15rem 0.35rem;
+      border: 0;
+      background: transparent;
+      color: var(--vc-ink-muted);
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-align: left;
+    }
+    .vc-sidebar-nav__section-kind {
+      font-weight: 500;
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--vc-ink-subtle);
+    }
+    .vc-sidebar-nav__people {
+      display: grid;
+      gap: 0.25rem;
+      padding: 0.25rem 0.35rem 0.45rem;
+      font-size: 0.78rem;
+    }
+    .vc-sidebar-nav__check {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
   `,
 })
 export class SidebarNav {
@@ -414,6 +602,9 @@ export class SidebarNav {
   readonly spaces = input<Space[]>([]);
   readonly directs = input<Channel[]>([]);
   readonly members = input<WorkspaceMember[]>([]);
+  readonly contactSections = input<ContactSection[]>([]);
+  readonly directoryMembers = input<WorkspaceMember[]>([]);
+  readonly contactError = input<string | null>(null);
   readonly presence = input<Record<string, PresenceStatus>>({});
   readonly activeId = input<string | null>(null);
   readonly draftIds = input<ReadonlySet<string>>(new Set());
@@ -432,6 +623,10 @@ export class SidebarNav {
     spaceId?: string | null;
     newSpaceName?: string;
   }>();
+  readonly createPersonalGroup = output<string>();
+  readonly renamePersonalGroup = output<{ groupId: string; name: string }>();
+  readonly deletePersonalGroup = output<string>();
+  readonly savePersonalMembers = output<{ groupId: string; userIds: string[] }>();
 
   readonly filterQuery = signal('');
   readonly filterOpen = signal(false);
@@ -443,6 +638,13 @@ export class SidebarNav {
   readonly selectedSpaceId = signal('');
   readonly channelType = signal('Public');
   readonly pickerOpen = signal(false);
+  readonly personalOpen = signal(false);
+  readonly personalName = signal('');
+  readonly renamingId = signal<string | null>(null);
+  readonly renameValue = signal('');
+  readonly confirmDeleteId = signal<string | null>(null);
+  readonly collapsed = signal<ReadonlySet<string>>(new Set());
+  readonly peopleDraft = signal<Record<string, string[]>>({});
   readonly selectedIds = signal<string[]>([]);
   readonly selectedMembers = computed(() =>
     this.members().filter((m) => this.selectedIds().includes(m.userId)),
@@ -470,11 +672,28 @@ export class SidebarNav {
     return this.members().filter((m) => matchesFilter(m.displayName, q));
   });
 
+  readonly filteredContactSections = computed(() => {
+    const q = this.filterQuery().trim().toLowerCase();
+    return this.contactSections()
+      .map((section) => {
+        const title = (section.name ?? '').toLowerCase();
+        const titleHit = !q || title.includes(q);
+        return {
+          ...section,
+          members: section.members.filter(
+            (member) => titleHit || matchesFilter(member.displayName, q),
+          ),
+        };
+      })
+      .filter((section) => section.members.length > 0 || (!q && !!section.groupId));
+  });
+
   readonly isEmpty = computed(
     () =>
       this.filteredGroups().length === 0
       && this.filteredDirects().length === 0
-      && this.filteredMembers().length === 0,
+      && this.filteredMembers().length === 0
+      && this.filteredContactSections().length === 0,
   );
 
   constructor() {
@@ -510,6 +729,80 @@ export class SidebarNav {
 
   memberLabel(member: WorkspaceMember): string {
     return fillTemplate(ui.navMessageTo, { name: member.displayName });
+  }
+
+  sectionKey(section: ContactSection): string {
+    return section.groupId ?? 'ungrouped';
+  }
+
+  sectionTitle(section: ContactSection): string {
+    return section.name?.trim() || ui.contactsUngrouped;
+  }
+
+  sectionToggleLabel(section: ContactSection): string {
+    const name = this.sectionTitle(section);
+    return fillTemplate(this.isCollapsed(section) ? ui.contactsExpand : ui.contactsCollapse, { name });
+  }
+
+  isCollapsed(section: ContactSection): boolean {
+    return this.collapsed().has(this.sectionKey(section));
+  }
+
+  toggleSection(section: ContactSection): void {
+    const key = this.sectionKey(section);
+    this.collapsed.update((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  submitPersonal(event: Event): void {
+    event.preventDefault();
+    const name = this.personalName().trim();
+    if (!name) return;
+    this.createPersonalGroup.emit(name);
+    this.personalName.set('');
+    this.personalOpen.set(false);
+  }
+
+  startRename(section: ContactSection): void {
+    if (!section.groupId) return;
+    this.renamingId.set(section.groupId);
+    this.renameValue.set(section.name ?? '');
+    this.confirmDeleteId.set(null);
+  }
+
+  submitRename(event: Event, groupId: string): void {
+    event.preventDefault();
+    const name = this.renameValue().trim();
+    if (!name) return;
+    this.renamePersonalGroup.emit({ groupId, name });
+    this.renamingId.set(null);
+  }
+
+  confirmDelete(groupId: string): void {
+    this.deletePersonalGroup.emit(groupId);
+    this.confirmDeleteId.set(null);
+  }
+
+  draftHas(groupId: string, userId: string, section: ContactSection): boolean {
+    const draft = this.peopleDraft()[groupId];
+    const ids = draft ?? section.members.map((member) => member.userId);
+    return ids.includes(userId);
+  }
+
+  toggleDraft(groupId: string, userId: string, section: ContactSection, checked: boolean): void {
+    const current = this.peopleDraft()[groupId] ?? section.members.map((member) => member.userId);
+    const next = checked ? [...current, userId] : current.filter((id) => id !== userId);
+    this.peopleDraft.update((drafts) => ({ ...drafts, [groupId]: [...new Set(next)] }));
+  }
+
+  savePeople(groupId: string): void {
+    const section = this.contactSections().find((item) => item.groupId === groupId);
+    const ids = this.peopleDraft()[groupId] ?? section?.members.map((member) => member.userId) ?? [];
+    this.savePersonalMembers.emit({ groupId, userIds: ids });
   }
 
   onMemberClick(userId: string): void {

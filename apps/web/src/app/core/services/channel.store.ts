@@ -4,6 +4,7 @@ import { AuthService } from '../auth/auth.service';
 import { ChatHubService } from './chat-hub.service';
 import {
   Channel,
+  ContactSection,
   PresenceStatus,
   Space,
   SpaceGroup,
@@ -27,6 +28,8 @@ export class ChannelStore {
   private readonly spacesSignal = signal<Space[]>([]);
   private readonly channelsSignal = signal<Channel[]>([]);
   private readonly membersSignal = signal<WorkspaceMember[]>([]);
+  private readonly contactSectionsSignal = signal<ContactSection[]>([]);
+  private readonly contactErrorSignal = signal<string | null>(null);
   private readonly presenceSignal = signal<Record<string, PresenceStatus>>({});
   private readonly activeWorkspaceId = signal<string | null>(null);
   private readonly activeChannelIdSignal = signal<string | null>(null);
@@ -41,6 +44,8 @@ export class ChannelStore {
   readonly spaces = this.spacesSignal.asReadonly();
   readonly channels = this.channelsSignal.asReadonly();
   readonly members = this.membersSignal.asReadonly();
+  readonly contactSections = this.contactSectionsSignal.asReadonly();
+  readonly contactError = this.contactErrorSignal.asReadonly();
   readonly presence = this.presenceSignal.asReadonly();
   /** Stable id signal — prefer this over `activeChannel()?.id` in effects that must not re-run on channel list refresh. */
   readonly activeChannelId = this.activeChannelIdSignal.asReadonly();
@@ -138,6 +143,7 @@ export class ChannelStore {
       this.spacesSignal.set([]);
       this.channelsSignal.set([]);
       this.membersSignal.set([]);
+      this.contactSectionsSignal.set([]);
       this.presenceSignal.set({});
       this.activeWorkspaceId.set(null);
       this.activeChannelIdSignal.set(null);
@@ -198,6 +204,7 @@ export class ChannelStore {
         this.spacesSignal.set(this.demoSpaces(workspaceId));
         this.channelsSignal.set(this.demoChannels(workspaceId));
         this.membersSignal.set(this.demoMembers());
+        this.contactSectionsSignal.set(this.demoContactSections());
         this.presenceSignal.set({
           'u-alice': 'online',
           'u-bob': 'away',
@@ -205,17 +212,19 @@ export class ChannelStore {
       } else {
         const workspace = this.workspacesSignal().find((item) => item.id === workspaceId);
         const guest = workspace?.role === 'Guest';
-        const [spaces, channels, members, presence] = await Promise.all([
+        const [spaces, channels, members, presence, sections] = await Promise.all([
           guest ? Promise.resolve([]) : this.api.getSpaces(workspaceId),
           this.api.getChannels(workspaceId),
           guest ? Promise.resolve([]) : this.api.getMembers(workspaceId),
           guest
             ? Promise.resolve({} as Record<string, PresenceStatus>)
             : this.api.getPresence(workspaceId).catch(() => ({}) as Record<string, PresenceStatus>),
+          guest ? Promise.resolve([]) : this.api.getGroupedContacts(workspaceId).catch(() => []),
         ]);
         this.spacesSignal.set(spaces);
         this.channelsSignal.set(channels);
         this.membersSignal.set(members);
+        this.contactSectionsSignal.set(this.withoutSelf(sections));
         this.presenceSignal.set(presence);
         this.joinAllChannels();
       }
@@ -489,11 +498,100 @@ export class ChannelStore {
     this.spacesSignal.set(this.demoSpaces(workspace.id));
     this.channelsSignal.set(this.demoChannels(workspace.id));
     this.membersSignal.set(this.demoMembers());
+    this.contactSectionsSignal.set(this.demoContactSections());
     this.presenceSignal.set({
       'u-alice': 'online',
       'u-bob': 'away',
     });
     this.selectChannel('ch-general');
+  }
+
+  contactLabel(userId: string): string | null {
+    const names = this.contactSectionsSignal()
+      .filter(
+        (section) =>
+          section.kind === 'department' &&
+          section.members.some((member) => idsEqual(member.userId, userId)),
+      )
+      .map((section) => section.name)
+      .filter((name): name is string => !!name);
+    return names.length ? names.join(', ') : null;
+  }
+
+  async createPersonalGroup(name: string): Promise<void> {
+    const workspaceId = this.activeWorkspaceId();
+    if (!workspaceId || this.usingDemo()) return;
+    this.contactErrorSignal.set(null);
+    try {
+      await this.api.createContactGroup(workspaceId, { name, kind: 'personal' });
+      await this.refreshContacts();
+    } catch (err) {
+      this.contactErrorSignal.set(this.contactErrorMessage(err));
+    }
+  }
+
+  async renamePersonalGroup(groupId: string, name: string): Promise<void> {
+    const workspaceId = this.activeWorkspaceId();
+    if (!workspaceId || this.usingDemo()) return;
+    this.contactErrorSignal.set(null);
+    try {
+      await this.api.updateContactGroup(workspaceId, groupId, { name });
+      await this.refreshContacts();
+    } catch (err) {
+      this.contactErrorSignal.set(this.contactErrorMessage(err));
+    }
+  }
+
+  async deletePersonalGroup(groupId: string): Promise<void> {
+    const workspaceId = this.activeWorkspaceId();
+    if (!workspaceId || this.usingDemo()) return;
+    this.contactErrorSignal.set(null);
+    try {
+      await this.api.deleteContactGroup(workspaceId, groupId);
+      await this.refreshContacts();
+    } catch (err) {
+      this.contactErrorSignal.set(this.contactErrorMessage(err));
+    }
+  }
+
+  async savePersonalMembers(groupId: string, userIds: string[]): Promise<void> {
+    const workspaceId = this.activeWorkspaceId();
+    if (!workspaceId || this.usingDemo()) return;
+    this.contactErrorSignal.set(null);
+    try {
+      await this.api.replaceContactGroupMembers(workspaceId, groupId, userIds);
+      await this.refreshContacts();
+    } catch (err) {
+      this.contactErrorSignal.set(this.contactErrorMessage(err));
+    }
+  }
+
+  private async refreshContacts(): Promise<void> {
+    const workspaceId = this.activeWorkspaceId();
+    if (!workspaceId || this.usingDemo() || this.isGuest()) return;
+    const [members, sections] = await Promise.all([
+      this.api.getMembers(workspaceId),
+      this.api.getGroupedContacts(workspaceId),
+    ]);
+    this.membersSignal.set(members);
+    this.contactSectionsSignal.set(this.withoutSelf(sections));
+  }
+
+  private withoutSelf(sections: ContactSection[]): ContactSection[] {
+    const me = this.auth.profile()?.id;
+    return sections.map((section) => ({
+      ...section,
+      members: section.members.filter((member) => !idsEqual(member.userId, me)),
+    }));
+  }
+
+  private demoContactSections(): ContactSection[] {
+    return [{ groupId: null, name: null, kind: null, members: this.peerCandidates() }];
+  }
+
+  private contactErrorMessage(err: unknown): string {
+    const status = (err as { status?: number } | null)?.status;
+    return status === 409 ? ui.contactsNameTaken : ui.contactsActionError;
   }
 
   private demoMembers(): WorkspaceMember[] {

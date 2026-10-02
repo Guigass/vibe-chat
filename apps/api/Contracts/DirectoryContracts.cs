@@ -18,3 +18,19 @@ public sealed record ChannelInviteResponse(
 public sealed record ChannelGuestResponse(Guid UserId, string DisplayName, string Email, DateTimeOffset JoinedAt);
 public sealed record ChannelInvitesPageResponse(ChannelInviteResponse[] Invites, ChannelGuestResponse[] Guests);
 public sealed record AcceptInviteResponse(Guid ChannelId, Guid WorkspaceId, string ChannelName);
+public sealed record CreateContactGroupRequest(string? Name, string? Kind, int? Order);
+public sealed record UpdateContactGroupRequest(string? Name, int? Order);
+public sealed record ReplaceContactGroupMembersRequest(Guid[]? UserIds);
+public sealed record ContactGroupResponse(
+    Guid Id,
+    Guid WorkspaceId,
+    string Kind,
+    string Name,
+    int Order,
+    Guid? OwnerUserId,
+    Guid[] MemberUserIds);
+public sealed record ContactSectionResponse(
+    Guid? GroupId,
+    string? Name,
+    string? Kind,
+    WorkspaceMemberResponse[] Members);

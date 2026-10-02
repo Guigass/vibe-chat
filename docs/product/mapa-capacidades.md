@@ -13,7 +13,7 @@ organiza. Estados:
 | Capacidade | Estado | Próximo passo |
 |------------|--------|---------------|
 | Channels, spaces, DM 1:1, threads | Atual | Painel de membros + add + PV → B-186 / W10-15 (BUG-020) |
-| Grupos na lista de contatos (departamentos + pessoais) | Planned | B-166 / W11 |
+| Grupos na lista de contatos (departamentos + pessoais) | Done | B-166 / W11 |
 | Timeline rica, menções, anexos múltiplos, áudio, vídeo curto | Committed | Waves 8–9 |
 | Message bubble moderno (layout tipado + ações + preview) | Done | B-163 / W9-0 |
 | Editar mensagem no composer (não inline na bolha) | Done | B-173 / W9-10 |

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using VibeChat.Api;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
+using VibeChat.Directory;
 using VibeChat.Files;
 using VibeChat.Identity;
 using VibeChat.Infrastructure;
@@ -128,6 +129,29 @@ internal static class AdministrationEndpointHelpers
                 joinedAt = m.JoinedAt
             }).ToListAsync(ct);
 
+        var contactGroupRows = await db.ContactGroups.AsNoTracking()
+            .Where(x => x.TenantId == workspace.TenantId && x.WorkspaceId == workspace.Id)
+            .OrderBy(x => x.Kind)
+            .ThenBy(x => x.Order)
+            .ThenBy(x => x.Name)
+            .ToListAsync(ct);
+        var contactGroups = contactGroupRows.Select(x => new
+        {
+            id = x.Id,
+            kind = ContactGroupPolicies.ToWire(x.Kind),
+            name = x.Name,
+            order = x.Order,
+            ownerUserId = x.OwnerUserId?.Value,
+            createdAt = x.CreatedAt
+        }).ToList();
+
+        var contactGroupIds = contactGroups.Select(x => x.id).ToArray();
+        var contactGroupMembers = await db.ContactGroupMembers.AsNoTracking()
+            .Where(x => x.TenantId == workspace.TenantId && contactGroupIds.Contains(x.GroupId))
+            .OrderBy(x => x.GroupId)
+            .Select(x => new { groupId = x.GroupId, userId = x.UserId.Value })
+            .ToListAsync(ct);
+
         var spaces = await db.Spaces.AsNoTracking()
             .Where(x => x.TenantId == workspace.TenantId && x.WorkspaceId == workspace.Id)
             .OrderBy(x => x.Order)
@@ -229,6 +253,7 @@ internal static class AdministrationEndpointHelpers
             counts = new
             {
                 members = members.Count,
+                contactGroups = contactGroups.Count,
                 spaces = spaces.Count,
                 channels = channels.Count,
                 threads = threads.Count,
@@ -253,6 +278,7 @@ internal static class AdministrationEndpointHelpers
             await WriteZipJsonEntryAsync(zip, "manifest.json", manifest, jsonOptions, ct);
             await WriteZipJsonEntryAsync(zip, "workspace.json", workspacePayload, jsonOptions, ct);
             await WriteZipJsonEntryAsync(zip, "members.json", members, jsonOptions, ct);
+            await WriteZipJsonEntryAsync(zip, "contact-groups.json", new { groups = contactGroups, members = contactGroupMembers }, jsonOptions, ct);
             await WriteZipJsonEntryAsync(zip, "spaces.json", spaces, jsonOptions, ct);
             await WriteZipJsonEntryAsync(zip, "channels.json", channels, jsonOptions, ct);
             await WriteZipJsonEntryAsync(zip, "threads.json", threads, jsonOptions, ct);

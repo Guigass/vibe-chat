@@ -243,6 +243,21 @@ CREATE POLICY tenant_isolation_pinned_messages ON messaging.pinned_messages
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS directory.contact_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.contact_groups FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.contact_group_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.contact_group_members FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_contact_groups ON directory.contact_groups;
+CREATE POLICY tenant_isolation_contact_groups ON directory.contact_groups
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_contact_group_members ON directory.contact_group_members;
+CREATE POLICY tenant_isolation_contact_group_members ON directory.contact_group_members
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 ALTER TABLE IF EXISTS directory.channel_invites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS directory.channel_invites FORCE ROW LEVEL SECURITY;
 

@@ -30,6 +30,9 @@ public static class AuditActions
     public const string AttachmentUpload = "attachment.upload";
     public const string MemberRoleChange = "member.role.change";
     public const string MemberInvite = "member.invite";
+    public const string ContactGroupCreate = "contact_group.create";
+    public const string ContactGroupDelete = "contact_group.delete";
+    public const string ContactGroupMembersReplace = "contact_group.members.replace";
     public const string GuestInvite = "guest.invite";
     public const string GuestAccept = "guest.accept";
     public const string GuestRevoke = "guest.revoke";

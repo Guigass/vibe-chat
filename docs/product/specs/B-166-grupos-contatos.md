@@ -82,14 +82,14 @@ unicidade de nome por (`workspaceId`, `kind`, `ownerUserId` efetivo).
 
 ## Aceite
 
-- [ ] Admin cria departamentos Vendas/Estoque/TI e atribui membros; todos os
+- [x] Admin cria departamentos Vendas/Estoque/TI e atribui membros; todos os
       membros veem as seções.
-- [ ] Membro cria grupo pessoal e só ele o vê.
-- [ ] Membro em vários departamentos aparece em todas as seções correspondentes.
-- [ ] Remover membership do workspace remove o usuário das atribuições de grupo.
-- [ ] Grupo de contatos não altera acesso a canais/DMs.
-- [ ] Cross-tenant e leitura de grupo pessoal alheio falham com 403/404.
-- [ ] Distinto de Space, B-101 e B-128 na UX/docs.
+- [x] Membro cria grupo pessoal e só ele o vê.
+- [x] Membro em vários departamentos aparece em todas as seções correspondentes.
+- [x] Remover membership do workspace remove o usuário das atribuições de grupo.
+- [x] Grupo de contatos não altera acesso a canais/DMs.
+- [x] Cross-tenant e leitura de grupo pessoal alheio falham com 403/404.
+- [x] Distinto de Space, B-101 e B-128 na UX/docs.
 
 ## Testes
 

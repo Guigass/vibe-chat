@@ -88,6 +88,24 @@ export interface WorkspaceMember {
   role: string;
 }
 
+/** B-166. A contact group organizes people. It does not grant channel or DM access. */
+export interface ContactGroup {
+  id: string;
+  workspaceId: string;
+  kind: 'department' | 'personal';
+  name: string;
+  order: number;
+  ownerUserId: string | null;
+  memberUserIds: string[];
+}
+
+export interface ContactSection {
+  groupId: string | null;
+  name: string | null;
+  kind: 'department' | 'personal' | null;
+  members: WorkspaceMember[];
+}
+
 export interface ChannelRosterMember {
   userId: string;
   displayName: string;
