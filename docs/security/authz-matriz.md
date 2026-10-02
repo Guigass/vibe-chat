@@ -63,6 +63,10 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/polls/{pollId:guid}/votes` | permission | `message.send` + membership | ✓ | ✗ | ✓ | Fechada → 409; outro tenant → 403 |
 | DELETE | `/polls/{pollId:guid}/votes` | permission | `message.send` + membership | ✓ | ✗ | ✓ | |
 | POST | `/polls/{pollId:guid}/close` | permission | `message.send` + autor ou `workspace.admin` | ✓* | ✗ | ✓ | *autor ou admin; tenant via send |
+| POST | `/channels/{channelId:guid}/messages/{messageId:guid}/acknowledgements` | permission | `announcement.acknowledge` | ✓ | ✓ | ✓ | B-112; idempotente; canal Announcement; prazo/encerrado → 409 |
+| GET | `/channels/{channelId:guid}/messages/{messageId:guid}/acknowledgements` | condicional | `announcement.publish` ou `workspace.admin` | ✗ | ✗ | ✓ | B-112; lista limitada; outro canal/tenant → 404/403 |
+| POST | `/channels/{channelId:guid}/messages/{messageId:guid}/acknowledgements/close` | permission | `announcement.publish` | ✗ | ✗ | ✓ | B-112; idempotente; audit `announcement.closed` |
+| GET | `/workspaces/{workspaceId:guid}/announcements/pending` | permission | `message.read` | ✓ | ✓ | ✓ | B-112; inbox de confirmação pendente do caller |
 | POST | `/workspaces/{workspaceId:guid}/messages/{messageId:guid}/forward` | permission | `message.send` | ✓ | ✗ | ✓ | |
 | POST | `/channels/{channelId:guid}/messages/{messageId:guid}/threads` | permission | `message.send` | ✓ | ✗ | ✓ | Get-or-create + reply |
 | GET | `/threads/{threadId:guid}` | membership | — | ✓ | ✓ | ✓ | |

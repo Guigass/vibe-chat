@@ -36,6 +36,7 @@ import { idsEqual } from '../../../core/services/message-sync';
 import { ThemeService } from '../../../core/services/theme.service';
 import { EmojiPicker } from '../emoji-picker/emoji-picker';
 import { PollCard } from '../poll-card/poll-card';
+import { AnnouncementCard } from '../announcement-card/announcement-card';
 import { rememberRecentEmoji } from '../../emoji/emoji-data';
 import { environment } from '../../../../environments/environment';
 import { LocaleService } from '../../../core/i18n/locale.service';
@@ -127,6 +128,7 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
     MarkdownBody,
     EmojiPicker,
     PollCard,
+    AnnouncementCard,
     CdkContextMenuTrigger,
     CdkMenuTrigger,
     CdkMenu,
@@ -343,6 +345,18 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
                     <span>{{ cite.preview }}</span>
                   </button>
                 }
+              }
+              @if (message().announcement; as announcement) {
+                <vc-announcement-card
+                  [announcement]="announcement"
+                  [authorName]="message().authorName"
+                  [createdAt]="message().createdAt"
+                  [report]="announcementReport()"
+                  [error]="announcementError()"
+                  (acknowledge)="onAcknowledge()"
+                  (close)="onCloseAnnouncement()"
+                  (loadReport)="onLoadAnnouncementReport()"
+                />
               }
               @if (message().poll; as poll) {
                 <vc-poll-card
@@ -1155,6 +1169,29 @@ export class MessageBubble {
     const poll = this.message().poll;
     if (!poll) return;
     void this.messages.closePoll(poll.id, this.message().id);
+  }
+
+  readonly announcementReport = signal<Array<{ userId: string; displayName: string }>>([]);
+  readonly announcementError = signal<string | null>(null);
+
+  async onAcknowledge(): Promise<void> {
+    this.announcementError.set(null);
+    const ok = await this.messages.acknowledgeAnnouncement(this.message());
+    if (!ok) this.announcementError.set(ui.announcementActionFailed);
+  }
+
+  async onCloseAnnouncement(): Promise<void> {
+    this.announcementError.set(null);
+    const ok = await this.messages.closeAnnouncement(this.message());
+    if (!ok) this.announcementError.set(ui.announcementActionFailed);
+  }
+
+  async onLoadAnnouncementReport(): Promise<void> {
+    try {
+      this.announcementReport.set(await this.messages.loadAnnouncementReport(this.message()));
+    } catch {
+      this.announcementError.set(ui.announcementActionFailed);
+    }
   }
   readonly showActions = computed(
     () => !this.message().deletedAt && this.message().status === 'persisted',

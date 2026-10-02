@@ -736,6 +736,22 @@
     "system.memberLeft": "%name% 离开了频道",
     "error.LastChannelManager": "最后一位管理者不能离开或被移除。",
     "error.AlreadyChannelMember": "此人已在频道中。",
-    "error.ChannelMembershipNotPrivate": "只有私密频道接受此更改。"
+    "error.ChannelMembershipNotPrivate": "只有私密频道接受此更改。",
+    "announcement.confirm": "确认已读",
+    "announcement.confirmed": "已确认阅读",
+    "announcement.closed": "确认已截止",
+    "announcement.deadline": "截止：%date%",
+    "announcement.count": "%n% 次确认",
+    "announcement.notLegal": "这是阅读确认，不是法律签名。",
+    "announcement.close": "结束确认",
+    "announcement.by": "由 %name% 发布",
+    "announcement.report": "查看确认",
+    "announcement.pendingCount": "%n% 条待确认公告",
+    "inbox.announcements": "待确认公告",
+    "composer.announcementReadonly": "此频道为只读。只有发布者可以写。",
+    "composer.requireAck": "要求阅读确认",
+    "composer.ackBy": "确认截止",
+    "nav.announcement": "公告",
+    "announcement.actionFailed": "无法更新确认。"
   }
 }

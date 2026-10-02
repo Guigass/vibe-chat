@@ -736,6 +736,22 @@
     "system.memberLeft": "%name% 님이 채널을 나갔습니다",
     "error.LastChannelManager": "마지막 관리자는 나가거나 제거될 수 없습니다.",
     "error.AlreadyChannelMember": "이미 채널에 있는 사람입니다.",
-    "error.ChannelMembershipNotPrivate": "비공개 채널만 이 변경을 허용합니다."
+    "error.ChannelMembershipNotPrivate": "비공개 채널만 이 변경을 허용합니다.",
+    "announcement.confirm": "읽음 확인",
+    "announcement.confirmed": "읽음이 확인되었습니다",
+    "announcement.closed": "확인이 마감되었습니다",
+    "announcement.deadline": "기한: %date%",
+    "announcement.count": "확인 %n%건",
+    "announcement.notLegal": "읽음 확인입니다. 법적 서명이 아닙니다.",
+    "announcement.close": "확인 마감",
+    "announcement.by": "%name% 님이 게시",
+    "announcement.report": "확인 목록",
+    "announcement.pendingCount": "대기 중인 공지 %n%건",
+    "inbox.announcements": "대기 중인 공지",
+    "composer.announcementReadonly": "이 채널은 읽기 전용입니다. 게시 권한이 있는 사람만 쓸 수 있습니다.",
+    "composer.requireAck": "읽음 확인 필요",
+    "composer.ackBy": "확인 기한",
+    "nav.announcement": "공지",
+    "announcement.actionFailed": "확인을 업데이트하지 못했습니다."
   }
 }

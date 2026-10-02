@@ -18,7 +18,7 @@ describe('ChannelStore authenticated API failure', () => {
         },
         {
           provide: ChatHubService,
-          useValue: { onReadCursorChanged: () => () => undefined },
+          useValue: { onReadCursorChanged: () => () => undefined, onReconnected: () => () => undefined },
         },
         {
           provide: AuthService,

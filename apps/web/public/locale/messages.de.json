@@ -736,6 +736,22 @@
     "system.memberLeft": "%name% hat den Kanal verlassen",
     "error.LastChannelManager": "Der letzte Verwalter kann nicht gehen oder entfernt werden.",
     "error.AlreadyChannelMember": "Diese Person ist bereits im Kanal.",
-    "error.ChannelMembershipNotPrivate": "Nur ein privater Kanal akzeptiert diese Änderung."
+    "error.ChannelMembershipNotPrivate": "Nur ein privater Kanal akzeptiert diese Änderung.",
+    "announcement.confirm": "Lesen bestätigen",
+    "announcement.confirmed": "Lesen bestätigt",
+    "announcement.closed": "Bestätigung geschlossen",
+    "announcement.deadline": "Frist: %date%",
+    "announcement.count": "%n% Bestätigungen",
+    "announcement.notLegal": "Lesebestätigung. Keine rechtliche Signatur.",
+    "announcement.close": "Bestätigung schließen",
+    "announcement.by": "Veröffentlicht von %name%",
+    "announcement.report": "Bestätigungen ansehen",
+    "announcement.pendingCount": "%n% offene Ankündigungen",
+    "inbox.announcements": "Offene Ankündigungen",
+    "composer.announcementReadonly": "Dieser Kanal ist schreibgeschützt. Nur wer veröffentlicht, kann schreiben.",
+    "composer.requireAck": "Lesebestätigung verlangen",
+    "composer.ackBy": "Bestätigen bis",
+    "nav.announcement": "Ankündigung",
+    "announcement.actionFailed": "Die Bestätigung konnte nicht aktualisiert werden."
   }
 }

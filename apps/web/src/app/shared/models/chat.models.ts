@@ -38,6 +38,7 @@ export interface Channel {
   description?: string;
   unreadCount: number;
   mentionCount?: number;
+  pendingAnnouncementCount?: number;
   isPrivate?: boolean;
   isDirect?: boolean;
   isGroupDm?: boolean;
@@ -205,6 +206,8 @@ export interface ChatMessage {
   isSaved?: boolean;
   /** B-096 channel poll card. */
   poll?: PollSummary | null;
+  /** B-112 announcement on a read-only channel message. */
+  announcement?: AnnouncementSummary | null;
 }
 
 export interface PollVoter {
@@ -220,6 +223,33 @@ export interface PollOptionSummary {
   percent: number;
   votedByMe: boolean;
   voters?: PollVoter[] | null;
+}
+
+export interface AnnouncementSummary {
+  messageId: string;
+  requiresAcknowledgement: boolean;
+  acknowledgeBy?: string | null;
+  closedAt?: string | null;
+  acknowledgedByMe: boolean;
+  acknowledgementCount: number;
+  canAcknowledge: boolean;
+  canViewReport: boolean;
+}
+
+export interface PendingAnnouncement {
+  messageId: string;
+  channelId: string;
+  channelName: string;
+  authorName: string;
+  bodyPreview: string;
+  createdAt: string;
+  acknowledgeBy?: string | null;
+}
+
+export interface AnnouncementReportItem {
+  userId: string;
+  displayName: string;
+  acknowledgedAt: string;
 }
 
 export interface PollSummary {

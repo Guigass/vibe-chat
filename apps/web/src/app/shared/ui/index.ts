@@ -11,6 +11,7 @@ export { SidebarNav } from './sidebar-nav/sidebar-nav';
 export { ChannelItem } from './channel-item/channel-item';
 export { EmojiPicker } from './emoji-picker/emoji-picker';
 export { MessageBubble } from './message-bubble/message-bubble';
+export { AnnouncementCard } from './announcement-card/announcement-card';
 export { TypingIndicator } from './typing-indicator/typing-indicator';
 export { ConnectionBanner } from './connection-banner/connection-banner';
 export { UpdateBanner } from './update-banner/update-banner';

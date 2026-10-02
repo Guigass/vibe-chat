@@ -736,6 +736,22 @@
     "system.memberLeft": "%name% è uscito dal canale",
     "error.LastChannelManager": "L'ultimo gestore non può uscire né essere rimosso.",
     "error.AlreadyChannelMember": "Questa persona è già nel canale.",
-    "error.ChannelMembershipNotPrivate": "Solo un canale privato accetta questa modifica."
+    "error.ChannelMembershipNotPrivate": "Solo un canale privato accetta questa modifica.",
+    "announcement.confirm": "Conferma lettura",
+    "announcement.confirmed": "Lettura confermata",
+    "announcement.closed": "Conferma chiusa",
+    "announcement.deadline": "Scadenza: %date%",
+    "announcement.count": "%n% conferme",
+    "announcement.notLegal": "Conferma di lettura. Non è una firma legale.",
+    "announcement.close": "Chiudi conferma",
+    "announcement.by": "Pubblicato da %name%",
+    "announcement.report": "Vedi conferme",
+    "announcement.pendingCount": "%n% annunci in sospeso",
+    "inbox.announcements": "Annunci in sospeso",
+    "composer.announcementReadonly": "Questo canale è di sola lettura. Solo chi pubblica può scrivere.",
+    "composer.requireAck": "Richiedi conferma di lettura",
+    "composer.ackBy": "Confermare entro",
+    "nav.announcement": "Annuncio",
+    "announcement.actionFailed": "Impossibile aggiornare la conferma."
   }
 }

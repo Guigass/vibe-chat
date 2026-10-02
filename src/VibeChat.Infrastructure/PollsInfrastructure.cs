@@ -119,7 +119,9 @@ public sealed class PollWriter(
         if (channel is null
             || channel.Type is ChannelType.Direct or ChannelType.Group or ChannelType.GroupDm
             || !await channels.CanAccessAsync(command.TenantId, command.ChannelId, command.UserId, cancellationToken)
-            || !await permissions.HasPermissionAsync(command.TenantId, command.UserId, Permissions.Message.Send, cancellationToken))
+            || !await permissions.HasPermissionAsync(command.TenantId, command.UserId, Permissions.Message.Send, cancellationToken)
+            || (channel.Type == ChannelType.Announcement
+                && !await permissions.HasPermissionAsync(command.TenantId, command.UserId, Permissions.Announcement.Publish, cancellationToken)))
         {
             throw new UnauthorizedAccessException("User cannot create a poll in this channel.");
         }
@@ -240,6 +242,19 @@ public sealed class PollWriter(
             }),
             OccurredAt = now
         });
+
+        AnnouncementPublication.Attach(
+            dbContext,
+            outbox,
+            audit,
+            channel.Type,
+            command.TenantId,
+            command.ChannelId,
+            message,
+            command.UserId,
+            requiresAcknowledgement: false,
+            acknowledgeBy: null,
+            now);
 
         await idempotencyStore.StoreAsync(
             new IdempotencyRecord(command.TenantId, command.IdempotencyKey, hash, JsonSerializer.Serialize(result), now),

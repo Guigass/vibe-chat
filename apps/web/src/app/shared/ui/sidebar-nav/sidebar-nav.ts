@@ -108,6 +108,9 @@ function matchesFilter(text: string, query: string): boolean {
                     <select [value]="channelType()" (change)="onTypeChange($event)">
                       <option value="Public">{{ ui.navPublic }}</option>
                       <option value="Private">{{ ui.navPrivate }}</option>
+                      @if (canPublishAnnouncement()) {
+                        <option value="Announcement">{{ ui.navAnnouncement }}</option>
+                      }
                     </select>
                   </label>
                   @if (createError()) {
@@ -421,6 +424,7 @@ export class SidebarNav {
   readonly overrideIds = input<ReadonlySet<string>>(new Set());
   readonly followAllThreadsIds = input<ReadonlySet<string>>(new Set());
   readonly canCreate = input(false);
+  readonly canPublishAnnouncement = input(false);
   readonly compact = input(false);
   readonly select = output<string>();
   readonly openDm = output<string>();

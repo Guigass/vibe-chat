@@ -75,6 +75,8 @@ public sealed class ArchitectureRulesTests
             "messaging.polls",
             "messaging.poll_options",
             "messaging.poll_votes",
+            "messaging.announcements",
+            "messaging.announcement_acknowledgements",
             "messaging.link_previews",
             "messaging.message_link_previews",
             "messaging.link_preview_settings",

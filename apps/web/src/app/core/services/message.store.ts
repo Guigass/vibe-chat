@@ -7,7 +7,7 @@ import { ThreadStore } from './thread.store';
 import { PushNotificationService } from './push-notification.service';
 import { ui } from '../i18n/strings';
 import { editLifecycle, messagingPolicyOf } from '../../shared/messaging/messaging-policy';
-import { ChatMessage, PollSummary } from '../../shared/models/chat.models';
+import { AnnouncementSummary, ChatMessage, PollSummary } from '../../shared/models/chat.models';
 import { mergeRemotePoll, preferRicherPoll } from '../../shared/polls/poll-summary';
 import {
   bumpChannelParentForThreadReply,
@@ -73,6 +73,7 @@ export class MessageStore {
   private unsubThumbnail: (() => void) | null = null;
   private unsubLinkPreview: (() => void) | null = null;
   private unsubPoll: (() => void) | null = null;
+  private unsubAnnouncement: (() => void) | null = null;
   private unsubReconnected: (() => void) | null = null;
 
   readonly messages = this.messagesSignal.asReadonly();
@@ -144,6 +145,7 @@ export class MessageStore {
       this.applyLinkPreviewReady(event),
     );
     this.unsubPoll = this.hub.onPollChanged((event) => this.applyRemotePoll(event.messageId, event.poll));
+    this.unsubAnnouncement = this.hub.onAnnouncementAcknowledged((event) => this.applyAnnouncementEvent(event));
     this.unsubReconnected = this.hub.onReconnected(() => {
       void this.gapFillActiveChannel();
       void this.threads.gapFillActive();
@@ -397,7 +399,11 @@ export class MessageStore {
     }
   }
 
-  async send(body: string, attachmentIds: string[] = []): Promise<boolean> {
+  async send(
+    body: string,
+    attachmentIds: string[] = [],
+    announcement?: { requiresAcknowledgement: boolean; acknowledgeBy?: string | null },
+  ): Promise<boolean> {
     const channel = this.channels.activeChannel();
     const profile = this.auth.profile();
     const text = body.trim();
@@ -472,6 +478,8 @@ export class MessageStore {
         idempotencyKey,
         attachmentIds,
         replyToMessageId: replyToMessageId ?? undefined,
+        requiresAcknowledgement: announcement?.requiresAcknowledgement ?? false,
+        acknowledgeBy: announcement?.acknowledgeBy ?? null,
       });
 
       this.patchByClientId(clientMessageId, {
@@ -571,6 +579,77 @@ export class MessageStore {
         return merged === message.poll ? message : { ...message, poll: merged };
       }),
     );
+  }
+
+  async acknowledgeAnnouncement(message: ChatMessage): Promise<boolean> {
+    const card = message.announcement;
+    if (!card || message.status !== 'persisted') return false;
+    try {
+      const updated = await this.api.acknowledgeAnnouncement(message.channelId, message.id);
+      if (!updated) return false;
+      this.applyAnnouncement(message.id, updated);
+      this.channels.forgetPendingAnnouncement(message.id);
+      void this.channels.refreshPendingAnnouncements();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async closeAnnouncement(message: ChatMessage): Promise<boolean> {
+    if (!message.announcement || message.status !== 'persisted') return false;
+    try {
+      const updated = await this.api.closeAnnouncement(message.channelId, message.id);
+      if (!updated) return false;
+      this.applyAnnouncement(message.id, updated);
+      void this.channels.refreshPendingAnnouncements();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async loadAnnouncementReport(message: ChatMessage) {
+    return this.api.getAnnouncementReport(message.channelId, message.id);
+  }
+
+  private applyAnnouncement(messageId: string, announcement: AnnouncementSummary): void {
+    this.messagesSignal.update((list) =>
+      list.map((message) =>
+        idsEqual(message.id, messageId) || idsEqual(message.announcement?.messageId, messageId)
+          ? { ...message, announcement }
+          : message,
+      ),
+    );
+  }
+
+  private applyAnnouncementEvent(event: {
+    messageId: string;
+    acknowledgementCount?: number;
+    acknowledgedByUserId?: string | null;
+    closedAt?: string | null;
+  }): void {
+    const me = this.auth.profile()?.id;
+    this.messagesSignal.update((list) =>
+      list.map((message) => {
+        if (!idsEqual(message.id, event.messageId) || !message.announcement) return message;
+        const mine = !!me && !!event.acknowledgedByUserId && idsEqual(event.acknowledgedByUserId, me);
+        const announcement: AnnouncementSummary = {
+          ...message.announcement,
+          acknowledgementCount: event.acknowledgementCount ?? message.announcement.acknowledgementCount,
+          acknowledgedByMe: message.announcement.acknowledgedByMe || mine,
+          closedAt: event.closedAt ?? message.announcement.closedAt,
+          canAcknowledge:
+            message.announcement.requiresAcknowledgement &&
+            !(event.closedAt ?? message.announcement.closedAt) &&
+            !(message.announcement.acknowledgedByMe || mine),
+        };
+        return { ...message, announcement };
+      }),
+    );
+    if (me && event.acknowledgedByUserId && idsEqual(event.acknowledgedByUserId, me)) {
+      this.channels.forgetPendingAnnouncement(event.messageId);
+    }
   }
 
   async edit(messageId: string, body: string): Promise<void> {

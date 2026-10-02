@@ -787,6 +787,72 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("bot_tokens", "integrations");
                 });
 
+            modelBuilder.Entity("VibeChat.Messaging.Announcement", b =>
+                {
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("AcknowledgeBy")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ChannelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("RequiresAcknowledgement")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("TenantId", "ChannelId");
+
+                    b.HasIndex("TenantId", "RequiresAcknowledgement", "ClosedAt", "AcknowledgeBy");
+
+                    b.ToTable("announcements", "messaging");
+                });
+
+            modelBuilder.Entity("VibeChat.Messaging.AnnouncementAcknowledgement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("AcknowledgedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ChannelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "ChannelId", "MessageId");
+
+                    b.HasIndex("TenantId", "MessageId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("announcement_acknowledgements", "messaging");
+                });
+
             modelBuilder.Entity("VibeChat.Messaging.ConversationSequence", b =>
                 {
                     b.Property<Guid>("TenantId")

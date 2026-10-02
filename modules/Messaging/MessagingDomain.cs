@@ -179,6 +179,82 @@ public sealed class PollNotFoundException : InvalidOperationException
     public PollNotFoundException() : base("PollNotFound") { }
 }
 
+/// <summary>
+/// Announcement attached to a channel message (B-112). The message and seq stay the source of truth.
+/// Acknowledgement is a read confirmation, not a legal signature.
+/// </summary>
+public sealed class Announcement
+{
+    public MessageId MessageId { get; set; }
+    public TenantId TenantId { get; set; }
+    public ChannelId ChannelId { get; set; }
+    public UserId CreatedByUserId { get; set; }
+    public bool RequiresAcknowledgement { get; set; }
+    public DateTimeOffset? AcknowledgeBy { get; set; }
+    public DateTimeOffset? ClosedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public sealed class AnnouncementAcknowledgement
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public MessageId MessageId { get; set; }
+    public ChannelId ChannelId { get; set; }
+    public UserId UserId { get; set; }
+    public DateTimeOffset AcknowledgedAt { get; set; }
+}
+
+public static class AnnouncementPolicies
+{
+    public const int MaxReportPageSize = 50;
+    public const int DefaultReportPageSize = 30;
+    public const int MaxPendingItems = 50;
+    public const int BodyPreviewLength = 140;
+
+    public static bool IsOpen(DateTimeOffset? closedAt, DateTimeOffset? acknowledgeBy, DateTimeOffset now) =>
+        closedAt is null && (acknowledgeBy is null || acknowledgeBy > now);
+
+    public static void ValidateRequest(bool requiresAcknowledgement, DateTimeOffset? acknowledgeBy, bool announcementChannel, DateTimeOffset now)
+    {
+        if ((requiresAcknowledgement || acknowledgeBy is not null) && !announcementChannel)
+        {
+            throw new ArgumentException("InvalidAnnouncementChannel");
+        }
+
+        if (acknowledgeBy is not null && !requiresAcknowledgement)
+        {
+            throw new ArgumentException("AcknowledgementDeadlineRequiresFlag");
+        }
+
+        if (acknowledgeBy is not null && acknowledgeBy <= now)
+        {
+            throw new ArgumentException("InvalidAcknowledgeBy");
+        }
+    }
+}
+
+public static class AnnouncementEvents
+{
+    public const string Published = "announcement.published";
+    public const string Acknowledged = "announcement.acknowledged";
+}
+
+public sealed class AnnouncementClosedException : InvalidOperationException
+{
+    public AnnouncementClosedException() : base("AnnouncementClosed") { }
+}
+
+public sealed class AnnouncementNotFoundException : InvalidOperationException
+{
+    public AnnouncementNotFoundException() : base("AnnouncementNotFound") { }
+}
+
+public sealed class AnnouncementAcknowledgementNotRequiredException : InvalidOperationException
+{
+    public AnnouncementAcknowledgementNotRequiredException() : base("AnnouncementAcknowledgementNotRequired") { }
+}
+
 public static class SystemEventTokens
 {
     public const string PinPrefix = "<system:pin:";
@@ -556,7 +632,9 @@ public sealed record SendMessageCommand(
     MessageId? ReplyToMessageId,
     Guid? ThreadId,
     IReadOnlyList<Guid>? AttachmentIds = null,
-    bool AuthorIsBot = false);
+    bool AuthorIsBot = false,
+    bool RequiresAcknowledgement = false,
+    DateTimeOffset? AcknowledgeBy = null);
 
 public sealed record MessageSendResult(MessageId MessageId, long Sequence, DateTimeOffset CreatedAt, bool Idempotent);
 
@@ -591,8 +669,9 @@ public static class MessageIdempotency
         var attachmentPart = command.AttachmentIds is { Count: > 0 }
             ? string.Join(',', command.AttachmentIds.OrderBy(x => x))
             : string.Empty;
+        var ackBy = command.AcknowledgeBy?.UtcTicks.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
-            $"{command.MessageId}:{command.ChannelId}:{command.Body}:{command.ReplyToMessageId}:{command.ThreadId}:{attachmentPart}")));
+            $"{command.MessageId}:{command.ChannelId}:{command.Body}:{command.ReplyToMessageId}:{command.ThreadId}:{attachmentPart}:{command.RequiresAcknowledgement}:{ackBy}")));
     }
 
     public static string ComputeForwardRequestHash(ForwardMessageCommand command)

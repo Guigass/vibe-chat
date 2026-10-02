@@ -9,6 +9,7 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 import { TenantContext } from '../tenant/tenant-context';
 import {
+  AnnouncementSummary,
   ChatMessage,
   PollSummary,
   PresenceStatus,
@@ -75,6 +76,7 @@ interface MessageCreatedPayload {
     sizeBytes: number;
   }>;
   poll?: unknown;
+  announcement?: unknown;
 }
 
 interface MessageEditedPayload {
@@ -123,6 +125,14 @@ export interface PollChangedEvent {
   messageId: string;
   channelId: string;
   poll: PollSummary;
+}
+
+export interface AnnouncementAcknowledgedEvent {
+  messageId: string;
+  channelId: string;
+  acknowledgementCount?: number;
+  acknowledgedByUserId?: string | null;
+  closedAt?: string | null;
 }
 
 export interface PinChangedEvent {
@@ -237,6 +247,7 @@ export class ChatHubService {
   private readonly reactionHandlers = new Set<(event: ReactionChangedEvent) => void>();
   private readonly pinHandlers = new Set<(event: PinChangedEvent) => void>();
   private readonly pollHandlers = new Set<(event: PollChangedEvent) => void>();
+  private readonly announcementHandlers = new Set<(event: AnnouncementAcknowledgedEvent) => void>();
   private readonly presenceHandlers = new Set<(event: PresenceChangedEvent) => void>();
   private readonly reconnectedHandlers = new Set<() => void | Promise<void>>();
   private readonly thumbnailReadyHandlers = new Set<(event: AttachmentThumbnailReadyEvent) => void>();
@@ -404,6 +415,36 @@ export class ChatHubService {
         handler(event);
       }
     });
+
+    connection.on(
+      'announcement.acknowledged',
+      (raw: {
+        messageId?: string;
+        channelId?: string;
+        acknowledgementCount?: number;
+        acknowledgedByUserId?: string | null;
+        closedAt?: string | null;
+      } | string) => {
+        const payload = this.coercePayload<{
+          messageId?: string;
+          channelId?: string;
+          acknowledgementCount?: number;
+          acknowledgedByUserId?: string | null;
+          closedAt?: string | null;
+        }>(raw);
+        if (!payload?.messageId || !payload.channelId) return;
+        const event: AnnouncementAcknowledgedEvent = {
+          messageId: String(payload.messageId),
+          channelId: String(payload.channelId),
+          acknowledgementCount: payload.acknowledgementCount,
+          acknowledgedByUserId: payload.acknowledgedByUserId ? String(payload.acknowledgedByUserId) : null,
+          closedAt: payload.closedAt ?? null,
+        };
+        for (const handler of this.announcementHandlers) {
+          handler(event);
+        }
+      },
+    );
 
     connection.on('PollChanged', (raw: { messageId?: string; channelId?: string; poll?: unknown } | string) => {
       const payload = this.coercePayload<{ messageId?: string; channelId?: string; poll?: unknown }>(raw);
@@ -711,6 +752,11 @@ export class ChatHubService {
     return () => this.pollHandlers.delete(handler);
   }
 
+  onAnnouncementAcknowledged(handler: (event: AnnouncementAcknowledgedEvent) => void): () => void {
+    this.announcementHandlers.add(handler);
+    return () => this.announcementHandlers.delete(handler);
+  }
+
   onAttachmentThumbnailReady(handler: (event: AttachmentThumbnailReadyEvent) => void): () => void {
     this.thumbnailReadyHandlers.add(handler);
     return () => this.thumbnailReadyHandlers.delete(handler);
@@ -869,6 +915,23 @@ export class ChatHubService {
         status: 'Ready',
       })),
       poll: mapPollSummary(payload.poll),
+      announcement: mapAnnouncementPayload(payload.announcement),
     };
   }
+}
+
+function mapAnnouncementPayload(value: unknown): AnnouncementSummary | null {
+  if (!value || typeof value !== 'object') return null;
+  const row = value as Partial<AnnouncementSummary>;
+  if (!row.messageId) return null;
+  return {
+    messageId: String(row.messageId),
+    requiresAcknowledgement: !!row.requiresAcknowledgement,
+    acknowledgeBy: row.acknowledgeBy ?? null,
+    closedAt: row.closedAt ?? null,
+    acknowledgedByMe: !!row.acknowledgedByMe,
+    acknowledgementCount: row.acknowledgementCount ?? 0,
+    canAcknowledge: !!row.canAcknowledge,
+    canViewReport: !!row.canViewReport,
+  };
 }

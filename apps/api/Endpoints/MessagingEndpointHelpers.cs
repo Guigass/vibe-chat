@@ -543,6 +543,9 @@ internal static class MessagingEndpointHelpers
         long? around,
         bool canVote,
         long minSeq,
+        DateTimeOffset now,
+        bool canAcknowledge,
+        bool canViewReport,
         CancellationToken ct)
     {
         ChannelMessageRow[] rows;
@@ -651,6 +654,8 @@ internal static class MessagingEndpointHelpers
             ct);
         var linkPreviewByMessage = await LoadLinkPreviewsByMessageAsync(db, messageIds, ct);
         var pollsByMessage = await PollQuery.LoadByMessageIdsAsync(db, messageIds, profile.Id, canVote, includeVoters: true, ct);
+        var announcementsByMessage = await AnnouncementQuery.LoadByMessageIdsAsync(
+            db, messageIds, profile.Id, canAcknowledge, canViewReport, now, ct);
         var pinnedIds = messageIds.Length == 0
             ? new HashSet<Guid>()
             : (await db.PinnedMessages.AsNoTracking()
@@ -680,7 +685,8 @@ internal static class MessagingEndpointHelpers
             x.ForwardedFromMessageId is MessageId ffid && forwardedFromById.TryGetValue(ffid.Value, out var forwarded) ? forwarded : null,
             x.DeletedAt == null && linkPreviewByMessage.TryGetValue(x.Id.Value, out var preview) ? preview : null,
             pinnedIds.Contains(x.Id.Value),
-            x.DeletedAt == null && pollsByMessage.TryGetValue(x.Id.Value, out var poll) ? poll : null)).ToArray();
+            x.DeletedAt == null && pollsByMessage.TryGetValue(x.Id.Value, out var poll) ? poll : null,
+            Announcement: x.DeletedAt == null && announcementsByMessage.TryGetValue(x.Id.Value, out var announcement) ? announcement : null)).ToArray();
 
         messages = await MarkBotAuthorsAsync(db, channel.TenantId, messages, ct);
         return new ChannelMessagesResponse(messages, hasMoreBefore, hasMoreAfter);

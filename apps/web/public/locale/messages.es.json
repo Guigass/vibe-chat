@@ -736,6 +736,22 @@
     "system.memberLeft": "%name% salió del canal",
     "error.LastChannelManager": "El último gestor no puede salir ni ser eliminado.",
     "error.AlreadyChannelMember": "Esa persona ya está en el canal.",
-    "error.ChannelMembershipNotPrivate": "Solo un canal privado acepta este cambio."
+    "error.ChannelMembershipNotPrivate": "Solo un canal privado acepta este cambio.",
+    "announcement.confirm": "Confirmar lectura",
+    "announcement.confirmed": "Lectura confirmada",
+    "announcement.closed": "Confirmación cerrada",
+    "announcement.deadline": "Plazo: %date%",
+    "announcement.count": "%n% confirmaciones",
+    "announcement.notLegal": "Confirmación de lectura. No es una firma legal.",
+    "announcement.close": "Cerrar confirmación",
+    "announcement.by": "Publicado por %name%",
+    "announcement.report": "Ver confirmaciones",
+    "announcement.pendingCount": "%n% anuncios pendientes",
+    "inbox.announcements": "Anuncios pendientes",
+    "composer.announcementReadonly": "Este canal es de solo lectura. Solo quien publica puede escribir.",
+    "composer.requireAck": "Exigir confirmación de lectura",
+    "composer.ackBy": "Confirmar hasta",
+    "nav.announcement": "Anuncio",
+    "announcement.actionFailed": "No se pudo actualizar la confirmación."
   }
 }

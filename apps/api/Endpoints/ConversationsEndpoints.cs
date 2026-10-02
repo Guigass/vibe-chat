@@ -127,6 +127,14 @@ internal static class ConversationsEndpoints
                     lastRead));
             }
 
+            var pending = await AnnouncementQuery.PendingCountsAsync(db, channels, profile.Id, clock.UtcNow, ct);
+            summaries = summaries
+                .Select(x => x with
+                {
+                    PendingAnnouncementCount = pending.GetValueOrDefault(x.ChannelId)
+                })
+                .ToList();
+
             return Results.Ok(summaries);
         });
     }
@@ -184,7 +192,7 @@ internal static class ConversationsEndpoints
 
         GroupDmEndpoints.Map(v1);
 
-        v1.MapPost("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, CreateChannelRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IAuditWriter audit, IClock clock, CancellationToken ct) =>
+        v1.MapPost("/workspaces/{workspaceId:guid}/channels", async (Guid workspaceId, CreateChannelRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IAuditWriter audit, IPermissionChecker permissions, IClock clock, CancellationToken ct) =>
         {
             var profile = await EnsureProfileAsync(http.User, db, clock, ct);
             var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
@@ -221,6 +229,13 @@ internal static class ConversationsEndpoints
                 spaceId = space.Id;
             }
 
+            var channelType = Enum.TryParse<ChannelType>(request.Type, true, out var type) ? type : ChannelType.Public;
+            if (channelType == ChannelType.Announcement
+                && !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Announcement.Publish, ct))
+            {
+                return Results.Json(new { error = "AnnouncementPublishForbidden" }, statusCode: StatusCodes.Status403Forbidden);
+            }
+
             var channel = new Channel
             {
                 Id = ChannelId.New(),
@@ -228,7 +243,7 @@ internal static class ConversationsEndpoints
                 WorkspaceId = workspace.Id,
                 SpaceId = spaceId,
                 Name = name,
-                Type = Enum.TryParse<ChannelType>(request.Type, true, out var type) ? type : ChannelType.Public,
+                Type = channelType,
                 CreatedAt = clock.UtcNow,
                 CreatedBy = profile.Id
             };
@@ -243,6 +258,20 @@ internal static class ConversationsEndpoints
                 EntityId = channel.Id.ToString(),
                 MetadataJson = JsonSerializer.Serialize(new { workspaceId, type = channel.Type.ToString(), spaceId })
             });
+            if (channel.Type == ChannelType.Announcement)
+            {
+                audit.Add(new AuditEvent
+                {
+                    TenantId = workspace.TenantId,
+                    ActorUserId = profile.Id,
+                    Action = AuditActions.AnnouncementCreated,
+                    EntityType = "Channel",
+                    EntityId = channel.Id.ToString(),
+                    MetadataJson = JsonSerializer.Serialize(new { workspaceId, mode = channel.Type.ToString() }),
+                    OccurredAt = channel.CreatedAt
+                });
+            }
+
             await db.SaveChangesAsync(ct);
             return Results.Created(
                 $"/api/v1/channels/{channel.Id.Value}",
@@ -665,7 +694,9 @@ internal static class ConversationsEndpoints
                     normalizedBody,
                     request.ReplyToMessageId is null ? new MessageId(thread.ParentMessageId.Value) : new MessageId(request.ReplyToMessageId.Value),
                     thread.Id,
-                    request.AttachmentIds), ct);
+                    request.AttachmentIds,
+                    RequiresAcknowledgement: request.RequiresAcknowledgement,
+                    AcknowledgeBy: request.AcknowledgeBy), ct);
 
                 var attachments = await db.Attachments.AsNoTracking()
                     .Where(x => x.MessageId == result.MessageId)
@@ -1086,7 +1117,14 @@ internal static class ConversationsEndpoints
                     && message.DeletedAt == null
                 select mention.MessageId
             ).Distinct().CountAsync(ct);
-            return Results.Ok(new { channelId, unreadCount = count, mentionCount });
+            var pending = await AnnouncementQuery.PendingCountsAsync(db, [channel.Id], profile.Id, clock.UtcNow, ct);
+            return Results.Ok(new
+            {
+                channelId,
+                unreadCount = count,
+                mentionCount,
+                pendingAnnouncementCount = pending.GetValueOrDefault(channelId)
+            });
         });
     }
 }

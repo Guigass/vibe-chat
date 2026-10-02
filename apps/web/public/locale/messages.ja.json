@@ -736,6 +736,22 @@
     "system.memberLeft": "%name% がチャネルを退出しました",
     "error.LastChannelManager": "最後の管理者は退出も削除もできません。",
     "error.AlreadyChannelMember": "その人はすでにチャネルにいます。",
-    "error.ChannelMembershipNotPrivate": "プライベートチャネルだけがこの変更を受け付けます。"
+    "error.ChannelMembershipNotPrivate": "プライベートチャネルだけがこの変更を受け付けます。",
+    "announcement.confirm": "既読を確認",
+    "announcement.confirmed": "既読を確認しました",
+    "announcement.closed": "確認は終了しました",
+    "announcement.deadline": "期限: %date%",
+    "announcement.count": "%n% 件の確認",
+    "announcement.notLegal": "既読の確認です。法的な署名ではありません。",
+    "announcement.close": "確認を終了",
+    "announcement.by": "%name% が公開",
+    "announcement.report": "確認一覧",
+    "announcement.pendingCount": "未確認の告知 %n% 件",
+    "inbox.announcements": "未確認の告知",
+    "composer.announcementReadonly": "このチャンネルは読み取り専用です。公開できる人だけが書けます。",
+    "composer.requireAck": "既読確認を必須にする",
+    "composer.ackBy": "確認期限",
+    "nav.announcement": "告知",
+    "announcement.actionFailed": "確認を更新できませんでした。"
   }
 }

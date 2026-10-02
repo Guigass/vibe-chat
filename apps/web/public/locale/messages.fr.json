@@ -736,6 +736,22 @@
     "system.memberLeft": "%name% a quitté le canal",
     "error.LastChannelManager": "Le dernier gestionnaire ne peut pas partir ni être retiré.",
     "error.AlreadyChannelMember": "Cette personne est déjà dans le canal.",
-    "error.ChannelMembershipNotPrivate": "Seul un canal privé accepte ce changement."
+    "error.ChannelMembershipNotPrivate": "Seul un canal privé accepte ce changement.",
+    "announcement.confirm": "Confirmer la lecture",
+    "announcement.confirmed": "Lecture confirmée",
+    "announcement.closed": "Confirmation close",
+    "announcement.deadline": "Échéance : %date%",
+    "announcement.count": "%n% confirmations",
+    "announcement.notLegal": "Confirmation de lecture. Ce n'est pas une signature légale.",
+    "announcement.close": "Clore la confirmation",
+    "announcement.by": "Publié par %name%",
+    "announcement.report": "Voir les confirmations",
+    "announcement.pendingCount": "%n% annonces en attente",
+    "inbox.announcements": "Annonces en attente",
+    "composer.announcementReadonly": "Ce canal est en lecture seule. Seuls les publieurs peuvent écrire.",
+    "composer.requireAck": "Exiger une confirmation de lecture",
+    "composer.ackBy": "Confirmer avant",
+    "nav.announcement": "Annonce",
+    "announcement.actionFailed": "Impossible de mettre à jour la confirmation."
   }
 }

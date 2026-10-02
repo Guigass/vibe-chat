@@ -736,6 +736,22 @@
     "system.memberLeft": "%name% вышел из канала",
     "error.LastChannelManager": "Последний управляющий не может выйти или быть удалён.",
     "error.AlreadyChannelMember": "Этот человек уже в канале.",
-    "error.ChannelMembershipNotPrivate": "Только закрытый канал принимает это изменение."
+    "error.ChannelMembershipNotPrivate": "Только закрытый канал принимает это изменение.",
+    "announcement.confirm": "Подтвердить прочтение",
+    "announcement.confirmed": "Прочтение подтверждено",
+    "announcement.closed": "Подтверждение закрыто",
+    "announcement.deadline": "Срок: %date%",
+    "announcement.count": "Подтверждений: %n%",
+    "announcement.notLegal": "Подтверждение прочтения. Это не юридическая подпись.",
+    "announcement.close": "Закрыть подтверждение",
+    "announcement.by": "Опубликовал %name%",
+    "announcement.report": "Список подтверждений",
+    "announcement.pendingCount": "Ожидают подтверждения: %n%",
+    "inbox.announcements": "Ожидают подтверждения",
+    "composer.announcementReadonly": "Этот канал только для чтения. Писать могут только те, кто публикует.",
+    "composer.requireAck": "Требовать подтверждение прочтения",
+    "composer.ackBy": "Подтвердить до",
+    "nav.announcement": "Объявление",
+    "announcement.actionFailed": "Не удалось обновить подтверждение."
   }
 }
