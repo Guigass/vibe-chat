@@ -137,6 +137,9 @@ modules/
   Notifications/ Realtime/ Search/ Tenancy/
 src/
   VibeChat.Infrastructure/
+    Ai/ Announcements/ Files/ Health/ Integrations/ Messaging/
+    Notifications/ Outbox/ Persistence/ Polls/ RateLimiting/ Redis/
+    RuntimeSettings/ Scheduling/ Search/
   VibeChat.SharedKernel/
 tests/
   architecture/ integration/ security/ unit/ e2e/ load/
