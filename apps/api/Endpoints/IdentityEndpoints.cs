@@ -45,7 +45,8 @@ internal static class IdentityEndpoints
                 }
             }
 
-            return Results.Ok(new MeResponse(profile.Id.Value, profile.Subject, profile.Email, profile.DisplayName, roles.Select(x => x.ToString()).ToArray(), profile.Locale));
+            var (wallpaper, accent) = await ReadAppearanceAsync(db, tenant, profile.Id, ct);
+            return Results.Ok(ToMe(profile, roles, wallpaper, accent));
         });
 
         v1.MapPut("/me", async (UpdateMeRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
@@ -68,7 +69,122 @@ internal static class IdentityEndpoints
             {
                 roles = [Role.Guest];
             }
-            return Results.Ok(new MeResponse(profile.Id.Value, profile.Subject, profile.Email, profile.DisplayName, roles.Select(x => x.ToString()).ToArray(), profile.Locale));
+            var (wallpaper, accent) = await ReadAppearanceAsync(db, tenant, profile.Id, ct);
+            return Results.Ok(ToMe(profile, roles, wallpaper, accent));
         }).AllowPermissionGateExempt("caller-only profile locale update");
+
+        // B-185: wallpaper and accent are personal and tenant-scoped. The route user
+        // must be the caller — admins cannot edit someone else's appearance.
+        v1.MapPut("/users/{userId:guid}/appearance", async (
+            Guid userId,
+            UpdateAppearanceRequest request,
+            HttpContext http,
+            VibeChatDbContext db,
+            ITenantContext tenant,
+            IClock clock,
+            CancellationToken ct) =>
+        {
+            var profile = await EnsureProfileAsync(http.User, db, clock, ct);
+            if (profile.Id.Value != userId)
+            {
+                return Results.Forbid();
+            }
+
+            await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+            var tenantId = await ResolvePersonalTenantAsync(db, profile.Id, ct);
+            if (tenantId is null)
+            {
+                return Results.Forbid();
+            }
+
+            if (!VisualPreferenceCatalog.TryNormalizeWallpaper(request.ChatWallpaperId, out var wallpaper))
+            {
+                return Results.BadRequest(new { error = VisualPreferenceCatalog.InvalidWallpaper });
+            }
+
+            if (!VisualPreferenceCatalog.TryNormalizeAccent(request.AccentColorId, out var accent))
+            {
+                return Results.BadRequest(new { error = VisualPreferenceCatalog.InvalidAccent });
+            }
+
+            tenant.SetTenant(tenantId.Value);
+            await RlsSession.EnsureAppliedAsync(db, tenant, ct);
+            var row = await db.UserVisualPreferences.FirstOrDefaultAsync(x => x.UserId == profile.Id, ct);
+            if (row is null)
+            {
+                if (wallpaper is null && accent is null)
+                {
+                    return Results.Ok(new AppearanceResponse(null, null));
+                }
+
+                row = new UserVisualPreference
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId.Value,
+                    UserId = profile.Id
+                };
+                db.UserVisualPreferences.Add(row);
+            }
+
+            row.ChatWallpaperId = wallpaper;
+            row.AccentColorId = accent;
+            row.UpdatedAt = clock.UtcNow;
+            await db.SaveChangesAsync(ct);
+            return Results.Ok(new AppearanceResponse(wallpaper, accent));
+        }).AllowPermissionGateExempt("caller-only visual preference (B-185)");
+    }
+
+    private static MeResponse ToMe(UserProfile profile, Role[] roles, string? wallpaper, string? accent) =>
+        new(
+            profile.Id.Value,
+            profile.Subject,
+            profile.Email,
+            profile.DisplayName,
+            roles.Select(x => x.ToString()).ToArray(),
+            profile.Locale,
+            wallpaper,
+            accent);
+
+    private static async Task<(string? Wallpaper, string? Accent)> ReadAppearanceAsync(
+        VibeChatDbContext db,
+        ITenantContext tenant,
+        UserId userId,
+        CancellationToken ct)
+    {
+        var tenantId = await ResolvePersonalTenantAsync(db, userId, ct);
+        if (tenantId is null)
+        {
+            return (null, null);
+        }
+
+        tenant.SetTenant(tenantId.Value);
+        await RlsSession.EnsureAppliedAsync(db, tenant, ct);
+        var row = await db.UserVisualPreferences.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == userId, ct);
+        return (
+            VisualPreferenceCatalog.ResolveWallpaper(row?.ChatWallpaperId),
+            VisualPreferenceCatalog.ResolveAccent(row?.AccentColorId));
+    }
+
+    private static async Task<TenantId?> ResolvePersonalTenantAsync(
+        VibeChatDbContext db,
+        UserId userId,
+        CancellationToken ct)
+    {
+        var fromWorkspace = await db.WorkspaceMembers.IgnoreQueryFilters()
+            .Where(x => x.UserId == userId)
+            .OrderBy(x => x.JoinedAt)
+            .Select(x => x.TenantId)
+            .FirstOrDefaultAsync(ct);
+        if (fromWorkspace.Value != Guid.Empty)
+        {
+            return fromWorkspace;
+        }
+
+        var fromChannel = await db.ChannelMembers.IgnoreQueryFilters()
+            .Where(x => x.UserId == userId && x.LeftAt == null)
+            .Select(x => x.TenantId)
+            .FirstOrDefaultAsync(ct);
+        return fromChannel.Value == Guid.Empty ? null : fromChannel;
     }
 }

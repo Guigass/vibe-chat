@@ -782,6 +782,11 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
       flex-wrap: wrap;
       gap: 0.45rem;
       align-items: center;
+      width: fit-content;
+      max-width: 100%;
+      padding: 0.05rem 0.35rem;
+      border-radius: var(--vc-radius-sm);
+      background: var(--vc-surface);
     }
     .vc-msg__meta strong {
       font-size: 0.88rem;

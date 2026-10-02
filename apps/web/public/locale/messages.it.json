@@ -800,6 +800,25 @@
     "composer.requireAck": "Richiedi conferma di lettura",
     "composer.ackBy": "Confermare entro",
     "nav.announcement": "Annuncio",
-    "announcement.actionFailed": "Impossibile aggiornare la conferma."
+    "announcement.actionFailed": "Impossibile aggiornare la conferma.",
+    "settings.wallpaper": "Sfondo della conversazione",
+    "settings.wallpaperHint": "Scegli uno sfondo del catalogo. Ripristina torna al predefinito del prodotto.",
+    "settings.accent": "Colore di accento",
+    "settings.accentHint": "Vale per la tua bolla e per l'anello di focus della conversazione.",
+    "settings.appearanceDefault": "Predefinito",
+    "settings.wallpaperTide": "Marea",
+    "settings.wallpaperMist": "Nebbia",
+    "settings.wallpaperEmber": "Brace",
+    "settings.wallpaperSlate": "Ardesia",
+    "settings.accentOcean": "Oceano",
+    "settings.accentAmber": "Ambra",
+    "settings.accentRose": "Rosa",
+    "settings.accentSlate": "Ardesia",
+    "settings.appearanceSave": "Salva aspetto",
+    "settings.appearanceSaving": "Salvataggio…",
+    "settings.appearanceSaved": "Aspetto salvato",
+    "settings.appearanceReset": "Ripristina predefinito",
+    "settings.appearanceError": "Impossibile salvare l'aspetto.",
+    "settings.appearancePreview": "Anteprima"
   }
 }

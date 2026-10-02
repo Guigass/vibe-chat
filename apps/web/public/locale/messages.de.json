@@ -800,6 +800,25 @@
     "composer.requireAck": "Lesebestätigung verlangen",
     "composer.ackBy": "Bestätigen bis",
     "nav.announcement": "Ankündigung",
-    "announcement.actionFailed": "Die Bestätigung konnte nicht aktualisiert werden."
+    "announcement.actionFailed": "Die Bestätigung konnte nicht aktualisiert werden.",
+    "settings.wallpaper": "Gesprächshintergrund",
+    "settings.wallpaperHint": "Wählen Sie einen Kataloghintergrund. Wiederherstellen setzt den Produktstandard.",
+    "settings.accent": "Akzentfarbe",
+    "settings.accentHint": "Gilt für Ihre Sprechblase und den Fokusring der Unterhaltung.",
+    "settings.appearanceDefault": "Standard",
+    "settings.wallpaperTide": "Gezeit",
+    "settings.wallpaperMist": "Nebel",
+    "settings.wallpaperEmber": "Glut",
+    "settings.wallpaperSlate": "Schiefer",
+    "settings.accentOcean": "Ozean",
+    "settings.accentAmber": "Bernstein",
+    "settings.accentRose": "Rose",
+    "settings.accentSlate": "Schiefer",
+    "settings.appearanceSave": "Erscheinung speichern",
+    "settings.appearanceSaving": "Speichern…",
+    "settings.appearanceSaved": "Erscheinung gespeichert",
+    "settings.appearanceReset": "Standard wiederherstellen",
+    "settings.appearanceError": "Erscheinung konnte nicht gespeichert werden.",
+    "settings.appearancePreview": "Vorschau"
   }
 }

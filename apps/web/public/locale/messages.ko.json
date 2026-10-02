@@ -800,6 +800,25 @@
     "composer.requireAck": "읽음 확인 필요",
     "composer.ackBy": "확인 기한",
     "nav.announcement": "공지",
-    "announcement.actionFailed": "확인을 업데이트하지 못했습니다."
+    "announcement.actionFailed": "확인을 업데이트하지 못했습니다.",
+    "settings.wallpaper": "대화 배경",
+    "settings.wallpaperHint": "카탈로그에서 배경을 고릅니다. 복원하면 제품 기본값으로 돌아갑니다.",
+    "settings.accent": "강조색",
+    "settings.accentHint": "내 말풍선과 대화 초점 링에 적용됩니다.",
+    "settings.appearanceDefault": "기본",
+    "settings.wallpaperTide": "밀물",
+    "settings.wallpaperMist": "안개",
+    "settings.wallpaperEmber": "잔불",
+    "settings.wallpaperSlate": "슬레이트",
+    "settings.accentOcean": "오션",
+    "settings.accentAmber": "앰버",
+    "settings.accentRose": "로즈",
+    "settings.accentSlate": "슬레이트",
+    "settings.appearanceSave": "모양 저장",
+    "settings.appearanceSaving": "저장 중…",
+    "settings.appearanceSaved": "모양을 저장했습니다",
+    "settings.appearanceReset": "기본값 복원",
+    "settings.appearanceError": "모양을 저장하지 못했습니다.",
+    "settings.appearancePreview": "미리보기"
   }
 }
