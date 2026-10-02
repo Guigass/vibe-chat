@@ -35,8 +35,8 @@ Preservar propagação de token e headers de tenant; sem atalho cross-tenant.
 
 ## Aceite
 
-- [ ] Services por domínio com responsabilidade clara.
-- [ ] `api.service.ts` ≤ 200 linhas ou removido com migração completa.
+- [x] Services por domínio com responsabilidade clara.
+- [x] `api.service.ts` ≤ 200 linhas ou removido com migração completa.
 - [ ] `npm test` (Vitest) e `ng build` verdes.
 - [ ] E2E smoke (DevAuth + envio) verde.
 
