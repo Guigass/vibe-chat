@@ -33,11 +33,17 @@ import { ThreadPanel } from '../features/chat/thread-panel/thread-panel';
 import { NotificationPreferencesPanel } from '../features/chat/notification-preferences-panel/notification-preferences-panel';
 import { SuggestReplyButton } from '../features/ai/suggest-reply-button';
 import { SummarizeButton } from '../features/ai/summarize-button';
-import { SearchMessageHit, WorkspaceMember } from '../shared/models/chat.models';
+import {
+  SearchAttachmentHit,
+  SearchChannelHit,
+  SearchMessageHit,
+  SearchPersonHit,
+  WorkspaceMember,
+} from '../shared/models/chat.models';
 import {
   applySearchOperator,
   hasSearchFilter,
-  highlightSearchParts,
+  highlightSearchPreview,
   parseSearchQuery,
   removeSearchChip,
   type SearchChip,
@@ -354,6 +360,9 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly search = signal('');
   readonly searchFocused = signal(false);
   readonly searchResults = signal<SearchMessageHit[]>([]);
+  readonly searchChannels = signal<SearchChannelHit[]>([]);
+  readonly searchPeople = signal<SearchPersonHit[]>([]);
+  readonly searchAttachments = signal<SearchAttachmentHit[]>([]);
   readonly searchLoading = signal(false);
   readonly searchError = signal<string | null>(null);
   readonly searchOpen = signal(false);
@@ -366,6 +375,13 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly searchChips = computed(() => this.parsedSearch().chips);
   readonly searchSuggestions = computed(() => this.buildSearchSuggestions());
   readonly searchGroups = computed(() => this.groupSearchHits(this.searchResults()));
+  readonly searchHasHits = computed(
+    () =>
+      this.searchResults().length > 0 ||
+      this.searchChannels().length > 0 ||
+      this.searchPeople().length > 0 ||
+      this.searchAttachments().length > 0,
+  );
   readonly searchCanRun = computed(() => {
     const parsed = this.parsedSearch();
     return parsed.term.length >= 2 || hasSearchFilter(parsed);
@@ -426,11 +442,9 @@ export class ShellPage implements OnInit, OnDestroy {
       }
 
       if (!workspaceId || !canRun || this.auth.isOfflineDemo() || this.channels.isDemo()) {
-        this.searchResults.set([]);
+        this.clearSearchHits();
         this.searchError.set(null);
         this.searchLoading.set(false);
-        this.searchTotal.set(0);
-        this.searchCursor.set(null);
         this.searchOpen.set(this.searchFocused());
         return;
       }
@@ -711,21 +725,29 @@ export class ShellPage implements OnInit, OnDestroy {
   }
 
   async openSearchHit(hit: SearchMessageHit): Promise<void> {
-    const userId = this.auth.profile()?.id;
-    if (userId && this.search().trim()) {
-      this.searchRecent.set(writeRecentSearch(userId, this.search().trim()));
+    this.rememberSearch();
+    await this.jumpToSearchMessage(hit.channelId, hit.sequence, hit.messageId);
+  }
+
+  async openSearchChannel(hit: SearchChannelHit): Promise<void> {
+    this.rememberSearch();
+    this.channels.selectChannel(hit.channelId);
+    await this.messages.loadChannel(hit.channelId);
+    this.closeSearch();
+  }
+
+  async openSearchPerson(hit: SearchPersonHit): Promise<void> {
+    this.rememberSearch();
+    const channel = await this.channels.openDirectMessage(hit.userId);
+    if (channel) {
+      await this.messages.loadChannel(channel.id);
     }
-    await this.channels.selectChannel(hit.channelId);
-    const result = await this.messages.jumpToSequence(hit.channelId, hit.sequence, hit.messageId);
-    if (result === 'deleted') {
-      this.searchJumpNotice.set(ui.searchJumpRemoved);
-    } else if (result === 'missing') {
-      this.searchJumpNotice.set(ui.searchJumpMissing);
-    } else {
-      this.searchJumpNotice.set(null);
-    }
-    this.searchOpen.set(false);
-    this.searchFocused.set(false);
+    this.closeSearch();
+  }
+
+  async openSearchAttachment(hit: SearchAttachmentHit): Promise<void> {
+    this.rememberSearch();
+    await this.jumpToSearchMessage(hit.channelId, hit.sequence, hit.messageId);
   }
 
   onSearchFocus(): void {
@@ -760,7 +782,7 @@ export class ShellPage implements OnInit, OnDestroy {
   }
 
   highlightParts(text: string): Array<{ text: string; hit: boolean }> {
-    return highlightSearchParts(text, this.parsedSearch().term);
+    return highlightSearchPreview(text, this.parsedSearch().term);
   }
 
   async loadMoreSearch(): Promise<void> {
@@ -771,6 +793,40 @@ export class ShellPage implements OnInit, OnDestroy {
     }
     const seq = ++this.searchSeq;
     await this.runSearch(workspaceId, this.parsedSearch(), seq, cursor);
+  }
+
+  private clearSearchHits(): void {
+    this.searchResults.set([]);
+    this.searchChannels.set([]);
+    this.searchPeople.set([]);
+    this.searchAttachments.set([]);
+    this.searchTotal.set(0);
+    this.searchCursor.set(null);
+  }
+
+  private rememberSearch(): void {
+    const userId = this.auth.profile()?.id;
+    if (userId && this.search().trim()) {
+      this.searchRecent.set(writeRecentSearch(userId, this.search().trim()));
+    }
+  }
+
+  private closeSearch(): void {
+    this.searchOpen.set(false);
+    this.searchFocused.set(false);
+  }
+
+  private async jumpToSearchMessage(channelId: string, sequence: number, messageId: string): Promise<void> {
+    await this.channels.selectChannel(channelId);
+    const result = await this.messages.jumpToSequence(channelId, sequence, messageId);
+    if (result === 'deleted') {
+      this.searchJumpNotice.set(ui.searchJumpRemoved);
+    } else if (result === 'missing') {
+      this.searchJumpNotice.set(ui.searchJumpMissing);
+    } else {
+      this.searchJumpNotice.set(null);
+    }
+    this.closeSearch();
   }
 
   private refreshRecentSearches(): void {
@@ -906,6 +962,11 @@ export class ShellPage implements OnInit, OnDestroy {
         return;
       }
       this.searchResults.set(cursor ? [...this.searchResults(), ...result.items] : result.items);
+      if (!cursor) {
+        this.searchChannels.set(result.channels ?? []);
+        this.searchPeople.set(result.people ?? []);
+        this.searchAttachments.set(result.attachments ?? []);
+      }
       this.searchTotal.set(result.total ?? result.items.length);
       this.searchCursor.set(result.cursor ?? null);
       this.searchError.set(null);
@@ -914,9 +975,7 @@ export class ShellPage implements OnInit, OnDestroy {
         return;
       }
       if (!cursor) {
-        this.searchResults.set([]);
-        this.searchTotal.set(0);
-        this.searchCursor.set(null);
+        this.clearSearchHits();
       }
       this.searchError.set(ui.searchFailed);
     } finally {

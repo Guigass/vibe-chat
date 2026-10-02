@@ -2,10 +2,9 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using NpgsqlTypes;
 using VibeChat.Infrastructure;
 
 #nullable disable
@@ -13,9 +12,11 @@ using VibeChat.Infrastructure;
 namespace VibeChat.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(VibeChatDbContext))]
-    partial class VibeChatDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261002191445_AddScheduling")]
+    partial class AddScheduling
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -789,72 +790,6 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("webhook_endpoints", "integrations");
                 });
 
-            modelBuilder.Entity("VibeChat.Messaging.Announcement", b =>
-                {
-                    b.Property<Guid>("MessageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("AcknowledgeBy")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ChannelId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ClosedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CreatedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("RequiresAcknowledgement")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("MessageId");
-
-                    b.HasIndex("TenantId", "ChannelId");
-
-                    b.HasIndex("TenantId", "RequiresAcknowledgement", "ClosedAt", "AcknowledgeBy");
-
-                    b.ToTable("announcements", "messaging");
-                });
-
-            modelBuilder.Entity("VibeChat.Messaging.AnnouncementAcknowledgement", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("AcknowledgedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ChannelId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("MessageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "ChannelId", "MessageId");
-
-                    b.HasIndex("TenantId", "MessageId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("announcement_acknowledgements", "messaging");
-                });
-
             modelBuilder.Entity("VibeChat.Messaging.ConversationSequence", b =>
                 {
                     b.Property<Guid>("TenantId")
@@ -999,12 +934,6 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid?>("ReplyToMessageId")
                         .HasColumnType("uuid");
-
-                    b.Property<NpgsqlTsVector>("SearchVector")
-                        .HasColumnType("tsvector")
-                        .HasColumnName("search_vector")
-                        .HasAnnotation("Relational:BeforeSaveBehavior", PropertySaveBehavior.Ignore)
-                        .HasAnnotation("Relational:AfterSaveBehavior", PropertySaveBehavior.Ignore);
 
                     b.Property<long>("Sequence")
                         .HasColumnType("bigint");

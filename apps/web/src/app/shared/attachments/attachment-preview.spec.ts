@@ -77,8 +77,9 @@ describe('attachment preview helpers', () => {
         showThread: false,
         showSave: true,
         isSaved: false,
+        showRemind: true,
       }).map((item) => item.id),
-    ).toEqual(['save']);
+    ).toEqual(['save', 'remind']);
 
     expect(
       menuActionsForMessage({

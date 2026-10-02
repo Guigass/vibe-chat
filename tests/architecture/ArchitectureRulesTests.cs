@@ -63,6 +63,8 @@ public sealed class ArchitectureRulesTests
             "messaging.threads",
             "messaging.pinned_messages",
             "messaging.saved_messages",
+            "messaging.scheduled_messages",
+            "messaging.reminders",
             "messaging.thread_subscriptions",
             "files.attachments",
             "messaging.reactions",

@@ -120,7 +120,28 @@ internal static class SearchEndpoints
                         x.CreatedAt,
                         x.Rank)).ToArray(),
                     page.Total,
-                    page.Cursor));
+                    page.Cursor,
+                    (page.Channels ?? []).Select(x => new SearchChannelHitResponse(
+                        "channel",
+                        x.ChannelId,
+                        x.ChannelName,
+                        x.ChannelType,
+                        x.Rank)).ToArray(),
+                    (page.People ?? []).Select(x => new SearchPersonHitResponse(
+                        "person",
+                        x.UserId,
+                        x.DisplayName,
+                        x.Rank)).ToArray(),
+                    (page.Attachments ?? []).Select(x => new SearchAttachmentHitResponse(
+                        "attachment",
+                        x.AttachmentId,
+                        x.FileName,
+                        x.MessageId,
+                        x.ChannelId,
+                        x.ChannelName,
+                        x.ChannelType,
+                        x.Sequence,
+                        x.Rank)).ToArray()));
             }
             catch (Exception ex)
             {

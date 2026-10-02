@@ -50,7 +50,7 @@ e entram na **safety lane** do Build (antes de novas features de wave).
 | BUG-020 | Sem painel de membros / add no canal / PV | **Done** — B-186 (W10-15) |
 | BUG-021 | Convidado para DM em grupo: front não atualiza | Aberto (Média) — sidebar/hub do convidado só após F5 |
 | BUG-022 | Busca do header: painel desalinhado / fecha ao selecionar | Aberto (Média) — 1ª abertura fora do campo; opção fecha a barra |
-| BUG-023 | Busca rígida / resultados insatisfatórios | Aberto (Média) — fecha em **B-188** (prefixo, acento, canal/pessoa/anexo) |
+| BUG-023 | Busca rígida / resultados insatisfatórios | **Done** (Média) — B-188 (prefixo, acento, canal/pessoa/anexo) |
 | BUG-024 | Comandos slash não traduzem com o locale | Aberto (Média) — `/topico` `/ajuda` `/convidar` e usage ficam em PT-BR |
 | BUG-003 | Upload de arquivo com erro | **Done** — presign no PublicEndpoint + CORS fail-closed + resolveContentType |
 | BUG-004 | Áudio do microfone não envia | **Done** — MIME base + erros visíveis + discard/onstop + regressão Vitest |
@@ -157,7 +157,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-109 | Núcleo plugin — bot/token + envio msgs | **Done** (W10-13) — `Role.Bot` + token hash + send no `MessageWriter`; flag `Integrations:Bots:Enabled` off default; ADR-027 |
 | B-110 | Instalar/gerir plugins na instância | **Done** (W10-14) — `integrations.plugins` + manifesto v1 + built-in Incoming Messages; flag de B-109; ADR-028 |
 | B-186 | Membros do canal (lista + gestão) | **Done** (W10-15) — painel direito (B-171); roster paginado; add/remove em privado (criador ou `channel.manage`); enviar PV (B-021); fecha **BUG-020**; distinto de guest B-040 e GroupDm B-101; [spec](../product/specs/B-186-membros-do-canal.md) |
-| B-188 | Busca versátil (relevância e matching) | Planned (W10-16) — prefixo, acento, websearch, hits de canal/pessoa/anexo; fecha **BUG-023**; sem RAG (B-121) nem OpenSearch (B-060); [spec](../product/specs/B-188-busca-versatil.md) |
+| B-188 | Busca versátil (relevância e matching) | **Done** (W10-16) — prefixo, acento, websearch, hits de canal/pessoa/anexo; fecha **BUG-023**; sem RAG (B-121) nem OpenSearch (B-060); [spec](../product/specs/B-188-busca-versatil.md) |
 
 ## P3 — Capacidades condicionais e itens promovidos
 
@@ -220,7 +220,7 @@ Ordem daqui para frente: **safety lane** (`BUG-*` Alta) antes de inventar ou
 avançar feature de wave; depois **paridade de mensageria** na ordem das
 waves — 8 (composição; W8-9 / B-087 Done), 9 (leitura; W9-0 / B-163 Done; W9-1 / B-088 Done; B-094 fecha
 BUG-002 / não lidas persistentes; W9-11 / B-184 nav esquerda), 10 (notificações, organização, acesso e
-núcleo de plugins: B-109 → B-108 → B-110; membros do canal B-186 / W10-15 Done; busca versátil B-188 / W10-16, fecha BUG-023). Depois **Wave 19** (organização do
+núcleo de plugins: B-109 → B-108 → B-110; membros do canal B-186 / W10-15 Done; busca versátil B-188 / W10-16 Done, fecha BUG-023). Depois **Wave 19** (organização do
 código — recomendada antes de W11) ou seguir W11–W17; a trilha avançada de
 plugins continua em W15 com B-066 → B-111/B-136. Dentro de cada wave, seguir a
 ordem da tabela; itens sem dependência entre si podem ir em paralelo por trilhas

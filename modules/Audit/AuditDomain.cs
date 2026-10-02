@@ -58,6 +58,14 @@ public static class AuditActions
     public const string IntegrationPluginDisable = "integration.plugin.disable";
     public const string IntegrationPluginUninstall = "integration.plugin.uninstall";
     public const string IntegrationPluginRotate = "integration.plugin.rotate";
+    public const string ScheduleCreate = "schedule.create";
+    public const string ScheduleUpdate = "schedule.update";
+    public const string ScheduleCancel = "schedule.cancel";
+    public const string ScheduleRevoke = "schedule.revoke";
+    public const string ReminderCreate = "reminder.create";
+    public const string ReminderUpdate = "reminder.update";
+    public const string ReminderCancel = "reminder.cancel";
+    public const string ReminderDeliver = "reminder.deliver";
 }
 
 public interface IAuditWriter

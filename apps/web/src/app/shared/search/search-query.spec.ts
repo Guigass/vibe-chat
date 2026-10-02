@@ -3,6 +3,7 @@ import {
   applySearchOperator,
   hasSearchFilter,
   highlightSearchParts,
+  highlightSearchPreview,
   parseSearchQuery,
   removeSearchChip,
   serializeSearchQuery,
@@ -51,5 +52,32 @@ describe('search query parser', () => {
   it('hasSearchFilter is true for operator-only queries', () => {
     expect(hasSearchFilter(parseSearchQuery('de:@alice tem:anexo'))).toBe(true);
     expect(hasSearchFilter(parseSearchQuery('hello'))).toBe(false);
+  });
+
+  it('keeps websearch syntax out of B-098 operators', () => {
+    const parsed = parseSearchQuery('de:@alice em:#geral "relatorio tem:anexo" -rascunho OR reuniao');
+    expect(parsed.authorToken).toBe('@alice');
+    expect(parsed.channelToken).toBe('#geral');
+    expect(parsed.hasAttachment).toBeUndefined();
+    expect(parsed.term).toBe('"relatorio tem:anexo" -rascunho OR reuniao');
+    expect(parsed.chips.map((c) => c.key)).toEqual(['author', 'channel']);
+  });
+
+  it('does not treat a quoted operator as a filter', () => {
+    const parsed = parseSearchQuery('"de:@alice" hello');
+    expect(parsed.authorToken).toBeUndefined();
+    expect(parsed.term).toBe('"de:@alice" hello');
+  });
+
+  it('uses headline markers when the server marked a snippet', () => {
+    expect(highlightSearchPreview('antes \u0001reunião\u0002 depois', 'reuniao')).toEqual([
+      { text: 'antes ', hit: false },
+      { text: 'reunião', hit: true },
+      { text: ' depois', hit: false },
+    ]);
+    expect(highlightSearchPreview('PDF da Alice', 'alice')).toEqual([
+      { text: 'PDF da ', hit: false },
+      { text: 'Alice', hit: true },
+    ]);
   });
 });
