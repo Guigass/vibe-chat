@@ -61,8 +61,9 @@ export function parseSearchQuery(input: string): ParsedSearchQuery {
   let hasLink: boolean | undefined;
   let attachmentKind: SearchAttachmentKind | undefined;
   const ranges: Array<{ start: number; end: number }> = [];
+  const masked = maskQuotedSpans(input);
 
-  for (const match of input.matchAll(OPERATOR)) {
+  for (const match of masked.matchAll(OPERATOR)) {
     const prefix = match[1] ?? '';
     const op = (match[2] ?? '').toLowerCase();
     const value = match[3] ?? '';
@@ -107,13 +108,14 @@ export function parseSearchQuery(input: string): ParsedSearchQuery {
   }
   term = term.replace(/\s+/g, ' ').trim();
 
-  const tail = input.match(TAIL_OPERATOR);
+  const tail = masked.match(TAIL_OPERATOR);
   let activeOperator: SearchOperatorContext | null = null;
-  if (tail) {
+  if (tail && tail.index !== undefined) {
     const rawOp = tail[1].toLowerCase();
     const op: SearchOperatorContext['op'] =
       rawOp === 'desde' ? 'depois' : (rawOp as SearchOperatorContext['op']);
-    activeOperator = { op, query: tail[2] ?? '' };
+    const valueStart = tail.index + tail[0].length - (tail[2]?.length ?? 0);
+    activeOperator = { op, query: input.slice(valueStart, valueStart + (tail[2]?.length ?? 0)) };
   }
 
   return {
@@ -180,6 +182,29 @@ export function hasSearchFilter(parsed: ParsedSearchQuery): boolean {
   );
 }
 
+const HEADLINE_START = '\u0001';
+const HEADLINE_STOP = '\u0002';
+
+/** Prefers server headline markers (B-188); otherwise highlights the typed term. */
+export function highlightSearchPreview(text: string, term: string): Array<{ text: string; hit: boolean }> {
+  if (!text.includes(HEADLINE_START)) {
+    return highlightSearchParts(text, term);
+  }
+
+  const parts: Array<{ text: string; hit: boolean }> = [];
+  for (const chunk of text.split(HEADLINE_START)) {
+    const end = chunk.indexOf(HEADLINE_STOP);
+    if (end < 0) {
+      if (chunk) parts.push({ text: chunk, hit: false });
+      continue;
+    }
+    if (end > 0) parts.push({ text: chunk.slice(0, end), hit: true });
+    const rest = chunk.slice(end + HEADLINE_STOP.length);
+    if (rest) parts.push({ text: rest, hit: false });
+  }
+  return parts.length ? parts : [{ text: text.replaceAll(HEADLINE_START, '').replaceAll(HEADLINE_STOP, ''), hit: false }];
+}
+
 export function highlightSearchParts(text: string, term: string): Array<{ text: string; hit: boolean }> {
   const needle = term.trim();
   if (!needle) {
@@ -202,6 +227,20 @@ export function highlightSearchParts(text: string, term: string): Array<{ text: 
     parts.push({ text: text.slice(last), hit: false });
   }
   return parts.length ? parts : [{ text, hit: false }];
+}
+
+function maskQuotedSpans(input: string): string {
+  let out = '';
+  let inQuote = false;
+  for (const ch of input) {
+    if (ch === '"') {
+      inQuote = !inQuote;
+      out += ' ';
+      continue;
+    }
+    out += inQuote ? ' ' : ch;
+  }
+  return out;
 }
 
 function formatAuthor(value: string): string {

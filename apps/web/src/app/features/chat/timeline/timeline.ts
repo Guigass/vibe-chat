@@ -22,6 +22,7 @@ import { Avatar, EmptyState, MessageBubble, Skeleton, TypingIndicator } from '..
 import { ForwardDialog } from '../forward-dialog/forward-dialog';
 import { PinStore } from '../../../core/services/pin.store';
 import { SavedStore } from '../../../core/services/saved.store';
+import { ScheduleStore } from '../../../core/services/schedule.store';
 import {
   buildTimelineItems,
   unreadDividerAfterSeq,
@@ -138,6 +139,7 @@ const NEAR_TOP_PX = 120;
                         [showThreadAction]="true"
                         [showPinAction]="true"
                         [showSaveAction]="true"
+                        [showRemindAction]="true"
                         [showMarkUnreadAction]="true"
                         [highlighted]="messages.highlightMessageId() === entry.message.id"
                         (startEdit)="onStartEdit(entry.message)"
@@ -152,6 +154,7 @@ const NEAR_TOP_PX = 120;
                         (unpin)="onUnpin(entry.message.id)"
                         (save)="onSave(entry.message.id)"
                         (unsave)="onUnsave(entry.message.id)"
+                        (remind)="onRemind(entry.message)"
                         (markUnread)="onMarkUnread(entry.message)"
                       />
                     }
@@ -385,6 +388,7 @@ export class Timeline {
   readonly channels = inject(ChannelStore);
   private readonly pins = inject(PinStore);
   private readonly saved = inject(SavedStore);
+  private readonly schedule = inject(ScheduleStore);
   private readonly threads = inject(ThreadStore);
   private readonly hub = inject(ChatHubService);
   private readonly auth = inject(AuthService);
@@ -703,6 +707,15 @@ export class Timeline {
 
   async onUnsave(messageId: string): Promise<void> {
     await this.saved.unsaveMessage(messageId);
+  }
+
+  onRemind(message: { id: string; channelId: string; threadId?: string | null; body: string }): void {
+    this.schedule.beginRemind({
+      messageId: message.id,
+      channelId: message.channelId,
+      threadId: message.threadId ?? null,
+      preview: message.body,
+    });
   }
 
   async onMarkUnread(message: ChatMessage): Promise<void> {

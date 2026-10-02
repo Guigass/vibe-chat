@@ -54,6 +54,7 @@ export type MessageMenuActionId =
   | 'unpin'
   | 'save'
   | 'unsave'
+  | 'remind'
   | 'mark-unread';
 
 export function menuActionsForMessage(options: {
@@ -65,6 +66,7 @@ export function menuActionsForMessage(options: {
   isPinned?: boolean;
   showSave?: boolean;
   isSaved?: boolean;
+  showRemind?: boolean;
   showMarkUnread?: boolean;
   replyCount?: number;
   hasLinkPreview?: boolean;
@@ -109,6 +111,9 @@ export function menuActionsForMessage(options: {
       id: options.isSaved ? 'unsave' : 'save',
       label: options.isSaved ? ui.menuUnsave : ui.menuSave,
     });
+  }
+  if (options.showRemind) {
+    items.push({ id: 'remind', label: ui.menuRemind });
   }
   if (options.showMarkUnread) {
     items.push({ id: 'mark-unread', label: ui.menuMarkUnread });

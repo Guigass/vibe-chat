@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lib.Net.Http.WebPush;
 using Lib.Net.Http.WebPush.Authentication;
@@ -291,6 +292,82 @@ public sealed class PushDispatcher(
         {
             dbContext.PushSubscriptions.RemoveRange(gone);
             logger.LogInformation("Removed {Count} expired web push subscriptions", gone.Count);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task TryDispatchUserNoticeAsync(
+        TenantId tenantId,
+        UserId userId,
+        string title,
+        string body,
+        string url,
+        string tag,
+        CancellationToken cancellationToken)
+    {
+        var process = await processSettings.ResolveAsync(cancellationToken);
+        if (!process.PushEnabled || !pushSender.IsEnabled)
+        {
+            return;
+        }
+
+        var subscriptions = await dbContext.PushSubscriptions
+            .Where(x => x.TenantId == tenantId && x.UserId == userId)
+            .OrderBy(x => x.CreatedAt)
+            .Take(PushDispatchPolicies.MaxSubscriptionsPerMessage)
+            .ToListAsync(cancellationToken);
+        if (subscriptions.Count == 0)
+        {
+            return;
+        }
+
+        var payload = JsonSerializer.Serialize(new
+        {
+            notification = new
+            {
+                title,
+                body,
+                icon = "/icons/icon-192x192.png",
+                tag,
+                data = new
+                {
+                    onActionClick = new
+                    {
+                        @default = new
+                        {
+                            operation = "navigateLastFocusedOrOpen",
+                            url
+                        }
+                    }
+                }
+            }
+        });
+        var now = clock.UtcNow;
+        var gone = new List<PushSubscriptionEntity>();
+        foreach (var subscription in subscriptions)
+        {
+            var result = await pushSender.SendAsync(
+                new PushDeliveryRequest(subscription.Endpoint, subscription.P256dh, subscription.Auth, payload),
+                cancellationToken);
+            if (result.Status == PushSendStatus.Gone)
+            {
+                gone.Add(subscription);
+            }
+            else if (result.Status == PushSendStatus.Failed)
+            {
+                subscription.FailedAt = now;
+            }
+            else
+            {
+                subscription.LastSeenAt = now;
+                subscription.FailedAt = null;
+            }
+        }
+
+        if (gone.Count > 0)
+        {
+            dbContext.PushSubscriptions.RemoveRange(gone);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

@@ -56,11 +56,11 @@ justificar. Sem dual-write.
 
 ## Aceite
 
-- [ ] Prefixo e termo sem acento devolvem a mensagem canônica
-- [ ] `"frase exata"` e `-excluir` recortam como websearch
-- [ ] Hit de canal/pessoa/anexo nunca vaza membership
-- [ ] Filtros B-098 e ordenação `relevance`/`date` intactos
-- [ ] Kill switch de IA / B-121 não é requisito
+- [x] Prefixo e termo sem acento devolvem a mensagem canônica
+- [x] `"frase exata"` e `-excluir` recortam como websearch
+- [x] Hit de canal/pessoa/anexo nunca vaza membership
+- [x] Filtros B-098 e ordenação `relevance`/`date` intactos
+- [x] Kill switch de IA / B-121 não é requisito
 
 ## Testes
 

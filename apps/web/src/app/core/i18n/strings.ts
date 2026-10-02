@@ -60,7 +60,11 @@ export const ui = {
   searchRecent: $localize`:@@shell.searchRecent:Buscas recentes`,
   searchSuggestions: $localize`:@@shell.searchSuggestions:Sugestões`,
   searchLoading: $localize`:@@shell.searchLoading:Buscando…`,
-  searchEmpty: $localize`:@@shell.searchEmpty:Nada encontrado. Remova um filtro ou tente outro termo.`,
+  searchEmpty: $localize`:@@shell.searchEmpty:Nada encontrado. Tente o começo da palavra, uma "frase entre aspas" ou -palavra para excluir.`,
+  searchGroupMessages: $localize`:@@shell.searchGroupMessages:Mensagens`,
+  searchGroupChannels: $localize`:@@shell.searchGroupChannels:Canais`,
+  searchGroupPeople: $localize`:@@shell.searchGroupPeople:Pessoas`,
+  searchGroupAttachments: $localize`:@@shell.searchGroupAttachments:Anexos`,
   searchMore: $localize`:@@shell.searchMore:Carregar mais`,
   dndDisableNow: $localize`:@@shell.dndDisableNow:Não perturbe · Desativar agora`,
   notificationPrefs: $localize`:@@shell.notificationPrefs:Preferências de notificação`,
@@ -147,6 +151,14 @@ export const ui = {
   errorInvalidEmoji: $localize`:@@error.InvalidEmoji:Emoji inválido ou não suportado.`,
   errorWrongChannel: $localize`:@@error.WrongChannel:A mensagem não pertence a este canal.`,
   errorPinLimitReached: $localize`:@@error.PinLimitReached:Limite de mensagens fixadas atingido. Desafixe uma antes de continuar.`,
+  errorInvalidTimeZone: $localize`:@@error.InvalidTimeZone:Fuso horário inválido.`,
+  errorInvalidScheduleTime: $localize`:@@error.InvalidScheduleTime:Data ou hora inválida.`,
+  errorInvalidLocalTime: $localize`:@@error.InvalidLocalTime:Esse horário não existe neste fuso (horário de verão).`,
+  errorAmbiguousLocalTime: $localize`:@@error.AmbiguousLocalTime:Esse horário ocorre duas vezes neste fuso. Escolha outro.`,
+  errorSendAtInPast: $localize`:@@error.SendAtInPast:Escolha um horário no futuro.`,
+  errorScheduleTooFar: $localize`:@@error.ScheduleTooFar:O horário passa do limite de um ano.`,
+  errorScheduleAlreadyClaimed: $localize`:@@error.ScheduleAlreadyClaimed:Este item já está em envio e não pode ser alterado.`,
+  errorScheduleLimitReached: $localize`:@@error.ScheduleLimitReached:Limite de agendamentos pendentes atingido.`,
   errorNoteTooLong: $localize`:@@error.NoteTooLong:A nota é longa demais.`,
   errorMessageBodyTooLong: $localize`:@@error.MessageBodyTooLong:A mensagem excede o limite de 8000 caracteres.`,
 
@@ -341,6 +353,42 @@ export const ui = {
   menuPin: $localize`:@@menu.pin:Fixar`,
   menuUnsave: $localize`:@@menu.unsave:Remover dos salvos`,
   menuSave: $localize`:@@menu.save:Salvar`,
+  menuRemind: $localize`:@@menu.remind:Lembrar deste item`,
+  composerSchedule: $localize`:@@composer.schedule:Agendar`,
+  composerSendNow: $localize`:@@composer.sendNow:Enviar agora`,
+  composerScheduleAt: $localize`:@@composer.scheduleAt:Data e hora`,
+  composerTimeZone: $localize`:@@composer.timeZone:Fuso horário`,
+  composerScheduleDelay: $localize`:@@composer.scheduleDelay:Envia %when% (%zone%)`,
+  composerScheduleConfirm: $localize`:@@composer.scheduleConfirm:Agendar envio`,
+  composerScheduleFailed: $localize`:@@composer.scheduleFailed:Não foi possível agendar.`,
+  composerScheduleKept: $localize`:@@composer.scheduleKept:O rascunho fica até a confirmação.`,
+  composerScheduleList: $localize`:@@composer.scheduleList:Agendados e lembretes`,
+  composerScheduleEmpty: $localize`:@@composer.scheduleEmpty:Nenhum agendamento ou lembrete.`,
+  composerScheduleCancel: $localize`:@@composer.scheduleCancel:Cancelar agendamento`,
+  composerScheduleEdit: $localize`:@@composer.scheduleEdit:Salvar alteração`,
+  composerCancelScheduleConfirm: $localize`:@@composer.cancelScheduleConfirm:Cancelar este envio? A mensagem não será enviada.`,
+  composerScheduleNoAttachments: $localize`:@@composer.scheduleNoAttachments:Agendar envia só texto. Remova os anexos ou envie agora.`,
+  scheduleRemindTitle: $localize`:@@schedule.remindTitle:Lembrete`,
+  scheduleRemindNote: $localize`:@@schedule.remindNote:Nota do lembrete`,
+  scheduleRemindNotePh: $localize`:@@schedule.remindNotePh:Nota pessoal (opcional)`,
+  scheduleRemindSave: $localize`:@@schedule.remindSave:Criar lembrete`,
+  scheduleRemindFailed: $localize`:@@schedule.remindFailed:Não foi possível criar o lembrete.`,
+  scheduleStatusPending: $localize`:@@schedule.statusPending:Pendente`,
+  scheduleStatusSent: $localize`:@@schedule.statusSent:Enviado`,
+  scheduleStatusDelivered: $localize`:@@schedule.statusDelivered:Entregue`,
+  scheduleStatusCancelled: $localize`:@@schedule.statusCancelled:Cancelado`,
+  scheduleStatusFailed: $localize`:@@schedule.statusFailed:Falhou`,
+  scheduleStatusRevoked: $localize`:@@schedule.statusRevoked:Sem acesso no disparo`,
+  scheduleKindMessage: $localize`:@@schedule.kindMessage:Mensagem agendada`,
+  scheduleKindReminder: $localize`:@@schedule.kindReminder:Lembrete`,
+  scheduleLoadError: $localize`:@@schedule.loadError:Não foi possível carregar a lista.`,
+  scheduleCancelError: $localize`:@@schedule.cancelError:Não foi possível cancelar.`,
+  scheduleEditError: $localize`:@@schedule.editError:Não foi possível atualizar.`,
+  scheduleDueReminder: $localize`:@@schedule.dueReminder:Lembrete`,
+  scheduleDueRevoked: $localize`:@@schedule.dueRevoked:O envio agendado foi cancelado porque você não tem mais acesso.`,
+  scheduleDueFailed: $localize`:@@schedule.dueFailed:O envio agendado falhou.`,
+  scheduleOpenList: $localize`:@@schedule.openList:Abrir agendados e lembretes`,
+  scheduleCloseList: $localize`:@@schedule.closeList:Fechar lista`,
   menuMarkUnread: $localize`:@@menu.markUnread:Marcar como não lida`,
   menuEdit: $localize`:@@menu.edit:Editar`,
   menuEditExpired: $localize`:@@menu.editExpired:Edição disponível por %n% min após o envio`,
@@ -802,6 +850,24 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.errorWrongChannel;
     case 'PinLimitReached':
       return ui.errorPinLimitReached;
+    case 'InvalidTimeZone':
+      return ui.errorInvalidTimeZone;
+    case 'InvalidScheduleTime':
+      return ui.errorInvalidScheduleTime;
+    case 'InvalidLocalTime':
+      return ui.errorInvalidLocalTime;
+    case 'AmbiguousLocalTime':
+      return ui.errorAmbiguousLocalTime;
+    case 'SendAtInPast':
+      return ui.errorSendAtInPast;
+    case 'ScheduleTooFar':
+      return ui.errorScheduleTooFar;
+    case 'ScheduleAlreadyClaimed':
+    case 'ReminderAlreadyClaimed':
+      return ui.errorScheduleAlreadyClaimed;
+    case 'ScheduleLimitReached':
+    case 'ReminderLimitReached':
+      return ui.errorScheduleLimitReached;
     case 'NoteTooLong':
       return ui.errorNoteTooLong;
     case 'MessageBodyTooLong':

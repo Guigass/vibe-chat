@@ -1059,3 +1059,43 @@ public sealed class BackendUnitTests
         }));
     }
 }
+
+public sealed class ScheduleTimeTests
+{
+    [Fact]
+    public void Same_instant_is_stable_across_iana_zones()
+    {
+        ScheduleTime.TryToUtc("2026-12-01T07:00:00", "America/Sao_Paulo", out var saoPaulo, out var saoError).Should().BeTrue(saoError);
+        ScheduleTime.TryToUtc("2026-12-01T10:00:00", "Europe/Lisbon", out var lisbon, out var lisbonError).Should().BeTrue(lisbonError);
+        ScheduleTime.TryToUtc("2026-12-01T10:00:00", "Etc/UTC", out var utc, out var utcError).Should().BeTrue(utcError);
+
+        saoPaulo.Should().Be(new DateTimeOffset(2026, 12, 1, 10, 0, 0, TimeSpan.Zero));
+        lisbon.Should().Be(saoPaulo);
+        utc.Should().Be(saoPaulo);
+    }
+
+    [Fact]
+    public void Rejects_dst_gap_ambiguity_and_offsets()
+    {
+        ScheduleTime.TryToUtc("2026-03-08T02:30:00", "America/New_York", out _, out var gap).Should().BeFalse();
+        gap.Should().Be("InvalidLocalTime");
+
+        ScheduleTime.TryToUtc("2026-11-01T01:30:00", "America/New_York", out _, out var ambiguous).Should().BeFalse();
+        ambiguous.Should().Be("AmbiguousLocalTime");
+
+        ScheduleTime.TryToUtc("2026-12-01T10:00:00Z", "Etc/UTC", out _, out var offset).Should().BeFalse();
+        offset.Should().Be("InvalidScheduleTime");
+
+        ScheduleTime.TryToUtc("2026-12-01T10:00:00", "Not/AZone", out _, out var zone).Should().BeFalse();
+        zone.Should().Be("InvalidTimeZone");
+    }
+
+    [Fact]
+    public void Horizon_rejects_past_and_far_future()
+    {
+        var now = new DateTimeOffset(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
+        ScheduleTime.ValidateHorizon(now, now).Should().Be("SendAtInPast");
+        ScheduleTime.ValidateHorizon(now.AddMinutes(5), now).Should().BeNull();
+        ScheduleTime.ValidateHorizon(now.AddDays(400), now).Should().Be("ScheduleTooFar");
+    }
+}

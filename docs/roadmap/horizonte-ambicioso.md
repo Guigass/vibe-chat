@@ -44,7 +44,7 @@ completamente novas.
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
 | B-112 | B/C/D | Anúncios e canais somente leitura, com confirmação opcional | W9-7, B-041 | [B-112](../product/specs/B-112-anuncios-canais-leitura.md) | Planned |
-| B-113 | C/D | Agendar mensagem, lembrete pessoal e “lembrar deste item” | W9-7, B-093 | [B-113](../product/specs/B-113-agendamento-lembretes.md) | Planned |
+| B-113 | C/D | Agendar mensagem, lembrete pessoal e “lembrar deste item” | W9-7, B-093 | [B-113](../product/specs/B-113-agendamento-lembretes.md) | **Done** |
 | B-114 | C/D/E | Histórico de edição e movimentação de mensagens | B-107, B-089 | [B-114](../product/specs/B-114-historico-edicao-movimentacao.md) | Planned |
 | B-115 | B/D | Templates de workspace/channel e onboarding guiado | B-106 | [B-115](../product/specs/B-115-templates-onboarding.md) | Planned |
 | B-166 | B/D | Grupos na lista de contatos (departamentos + grupos pessoais) | B-021 | [B-166](../product/specs/B-166-grupos-contatos.md) | Planned |

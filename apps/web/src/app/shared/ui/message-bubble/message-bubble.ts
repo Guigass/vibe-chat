@@ -1096,6 +1096,7 @@ export class MessageBubble {
   readonly showShareToChannelAction = input(false);
   readonly showPinAction = input(false);
   readonly showSaveAction = input(false);
+  readonly showRemindAction = input(false);
   readonly showMarkUnreadAction = input(false);
   readonly highlighted = input(false);
   readonly delete = output<void>();
@@ -1110,6 +1111,7 @@ export class MessageBubble {
   readonly unpin = output<void>();
   readonly save = output<void>();
   readonly unsave = output<void>();
+  readonly remind = output<void>();
   readonly markUnread = output<void>();
   readonly startEdit = output<void>();
 
@@ -1181,6 +1183,7 @@ export class MessageBubble {
       isPinned: !!this.message().isPinned,
       showSave: this.showSaveAction(),
       isSaved: !!this.message().isSaved,
+      showRemind: this.showRemindAction(),
       showMarkUnread: this.showMarkUnreadAction(),
       replyCount: this.message().replyCount,
       hasLinkPreview: !!this.visibleLinkPreview(),
@@ -1394,6 +1397,9 @@ export class MessageBubble {
         break;
       case 'unsave':
         this.unsave.emit();
+        break;
+      case 'remind':
+        this.remind.emit();
         break;
       case 'mark-unread':
         this.markUnread.emit();
