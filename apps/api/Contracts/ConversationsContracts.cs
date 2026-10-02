@@ -11,7 +11,21 @@ public sealed record ChannelResponse(
     string[]? ParticipantNames = null,
     Guid[]? ParticipantUserIds = null,
     bool HasGuests = false);
-public sealed record ChannelMemberResponse(Guid UserId, string DisplayName, string Email);
+public sealed record ChannelMemberResponse(
+    Guid UserId,
+    string DisplayName,
+    string Email,
+    DateTimeOffset? JoinedAt = null,
+    string? Presence = null,
+    bool IsGuest = false);
+
+public sealed record ChannelMemberPageResponse(
+    ChannelMemberResponse[] Items,
+    string? NextCursor,
+    int Total,
+    bool CanManage);
+
+public sealed record AddChannelMemberRequest(Guid UserId);
 public sealed record UpdateChannelTopicRequest(string Topic);
 public sealed record OpenDirectMessageRequest(Guid UserId);
 public sealed record CreateSpaceRequest(string Name, int? Order = null);

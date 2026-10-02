@@ -10,6 +10,8 @@ import {
   AiSuggestReplyResult,
   AiSummaryResult,
   Channel,
+  ChannelRosterMember,
+  ChannelRosterPage,
   ChatMessage,
   ChatThread,
   MessageAttachment,
@@ -1208,7 +1210,7 @@ export class ApiService {
     channelId: string,
     query = '',
   ): Promise<Array<{ userId: string; displayName: string; email: string }>> {
-    const params = query ? `?query=${encodeURIComponent(query)}` : '';
+    const params = `?query=${encodeURIComponent(query)}`;
     const rows = await this.request<Array<{ userId: string; displayName: string; email: string }>>(
       `/api/v1/workspaces/${workspaceId}/channels/${channelId}/members${params}`,
     );
@@ -1217,6 +1219,64 @@ export class ApiService {
       displayName: row.displayName,
       email: row.email,
     }));
+  }
+
+  async getChannelRoster(
+    workspaceId: string,
+    channelId: string,
+    options?: { cursor?: string; limit?: number },
+  ): Promise<ChannelRosterPage> {
+    const params = new URLSearchParams();
+    if (options?.cursor) {
+      params.set('cursor', options.cursor);
+    }
+    if (options?.limit) {
+      params.set('limit', String(options.limit));
+    }
+    const queryString = params.toString();
+    const query = queryString ? `?${queryString}` : '';
+    const page = await this.request<ChannelRosterPage>(
+      `/api/v1/workspaces/${workspaceId}/channels/${channelId}/members${query}`,
+    );
+    return {
+      items: (page.items ?? []).map((item) => this.mapRosterMember(item)),
+      nextCursor: page.nextCursor ?? null,
+      total: page.total ?? 0,
+      canManage: !!page.canManage,
+    };
+  }
+
+  async addChannelMember(workspaceId: string, channelId: string, userId: string): Promise<void> {
+    await this.request(`/api/v1/workspaces/${workspaceId}/channels/${channelId}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    });
+  }
+
+  async removeChannelMember(workspaceId: string, channelId: string, userId: string): Promise<void> {
+    await this.request(`/api/v1/workspaces/${workspaceId}/channels/${channelId}/members/${userId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async leaveChannel(workspaceId: string, channelId: string): Promise<void> {
+    await this.request(`/api/v1/workspaces/${workspaceId}/channels/${channelId}/members/me`, {
+      method: 'DELETE',
+    });
+  }
+
+  private mapRosterMember(item: ChannelRosterMember): ChannelRosterMember {
+    const presence = item.presence === 'online' || item.presence === 'away' || item.presence === 'offline'
+      ? item.presence
+      : null;
+    return {
+      userId: String(item.userId),
+      displayName: item.displayName,
+      email: item.email ?? '',
+      joinedAt: item.joinedAt ?? null,
+      presence,
+      isGuest: !!item.isGuest,
+    };
   }
 
   async searchMessages(input: {

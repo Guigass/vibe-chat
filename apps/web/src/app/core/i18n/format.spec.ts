@@ -18,5 +18,7 @@ describe('format', () => {
     expect(pluralCount(3, 'result')).toBe('3 resultados');
     expect(pluralCount(1, 'pin')).toBe('1 fixada');
     expect(pluralCount(4, 'pin')).toBe('4 fixadas');
+    expect(pluralCount(1, 'member')).toBe('1 membro');
+    expect(pluralCount(3, 'member')).toBe('3 membros');
   });
 });

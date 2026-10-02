@@ -291,6 +291,68 @@ internal static class MessagingEndpointHelpers
         });
     }
 
+    internal static Task AppendMembershipSystemEventAsync(
+        VibeChatDbContext db,
+        IConversationSequenceStore sequences,
+        IOutboxWriter outbox,
+        IClock clock,
+        TenantId tenantId,
+        ChannelId channelId,
+        UserId actorId,
+        string actorName,
+        string body,
+        CancellationToken ct) =>
+        AppendSystemEventAsync(db, sequences, outbox, clock, tenantId, channelId, actorId, actorName, body, ct);
+
+    private static async Task AppendSystemEventAsync(
+        VibeChatDbContext db,
+        IConversationSequenceStore sequences,
+        IOutboxWriter outbox,
+        IClock clock,
+        TenantId tenantId,
+        ChannelId channelId,
+        UserId actorId,
+        string actorName,
+        string body,
+        CancellationToken ct)
+    {
+        var systemMessageId = new MessageId(Guid.NewGuid());
+        var sequence = await sequences.NextAsync(tenantId, channelId, ct);
+        var now = clock.UtcNow;
+        db.Messages.Add(new Message
+        {
+            Id = systemMessageId,
+            TenantId = tenantId,
+            ConversationId = channelId,
+            Sequence = sequence,
+            AuthorId = actorId,
+            Body = body,
+            CreatedAt = now
+        });
+
+        outbox.Add(new OutboxMessage
+        {
+            TenantId = tenantId,
+            Type = nameof(MessageCreatedEvent),
+            Payload = JsonSerializer.Serialize(new
+            {
+                tenantId = tenantId.Value,
+                channelId = channelId.Value,
+                conversationId = channelId.Value,
+                messageId = systemMessageId.Value,
+                clientMessageId = systemMessageId.Value,
+                authorId = actorId.Value,
+                authorName = actorName,
+                sequence,
+                body,
+                createdAt = now,
+                mentionedUserIds = Array.Empty<Guid>(),
+                mentionKinds = Array.Empty<string>(),
+                attachments = Array.Empty<object>()
+            })
+        });
+    }
+
     internal static async Task<Message?> FindMessageInChannelAsync(
         VibeChatDbContext db,
         ChannelId channelId,

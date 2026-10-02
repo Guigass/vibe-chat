@@ -719,6 +719,27 @@
     "admin.pluginUninstall": "卸载",
     "admin.pluginNoMatch": "没有插件符合此筛选。",
     "admin.pluginLoadError": "无法加载插件。",
-    "admin.pluginSaveError": "无法保存插件。"
+    "admin.pluginSaveError": "无法保存插件。",
+    "plural.member.one": "1 位成员",
+    "plural.member.other": "{$count} 位成员",
+    "shell.channelMembers": "成员",
+    "shell.channelMembersAdd": "添加成员",
+    "shell.channelMembersSearch": "在工作区中搜索",
+    "shell.channelMembersSearchEmpty": "没有频道外的人。",
+    "shell.channelMembersRemove": "移除",
+    "shell.channelMembersLeave": "离开",
+    "shell.channelMembersDirect": "私信",
+    "shell.channelMembersEmpty": "没有成员。",
+    "shell.channelMemberGuest": "访客",
+    "shell.channelMembersPublicHint": "工作区全员。不能单独添加或移除。",
+    "shell.channelMembersError": "无法更新成员。",
+    "presence.online": "在线",
+    "presence.away": "离开",
+    "system.memberAdded": "%name% 添加了一位成员",
+    "system.memberRemoved": "%name% 移除了一位成员",
+    "system.memberLeft": "%name% 离开了频道",
+    "error.LastChannelManager": "最后一位管理者不能离开或被移除。",
+    "error.AlreadyChannelMember": "此人已在频道中。",
+    "error.ChannelMembershipNotPrivate": "只有私密频道接受此更改。"
   }
 }

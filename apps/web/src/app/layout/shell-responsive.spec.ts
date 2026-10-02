@@ -90,6 +90,7 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
             workspaces: () => workspaces().map((w) => ({ ...w, role: workspaceRole() })),
             error: () => null,
             isDemo: () => true,
+            members: () => [],
             load: vi.fn().mockResolvedValue(undefined),
             selectWorkspace: vi.fn(),
             setPresence: vi.fn(),

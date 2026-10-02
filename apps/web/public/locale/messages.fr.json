@@ -719,6 +719,27 @@
     "admin.pluginUninstall": "Désinstaller",
     "admin.pluginNoMatch": "Aucun plugin ne correspond à ce filtre.",
     "admin.pluginLoadError": "Impossible de charger les plugins.",
-    "admin.pluginSaveError": "Impossible d'enregistrer le plugin."
+    "admin.pluginSaveError": "Impossible d'enregistrer le plugin.",
+    "plural.member.one": "1 membre",
+    "plural.member.other": "{$count} membres",
+    "shell.channelMembers": "Membres",
+    "shell.channelMembersAdd": "Ajouter des personnes",
+    "shell.channelMembersSearch": "Chercher dans l'espace",
+    "shell.channelMembersSearchEmpty": "Personne hors du canal.",
+    "shell.channelMembersRemove": "Retirer",
+    "shell.channelMembersLeave": "Quitter",
+    "shell.channelMembersDirect": "Message direct",
+    "shell.channelMembersEmpty": "Aucun membre.",
+    "shell.channelMemberGuest": "Invité",
+    "shell.channelMembersPublicHint": "Tout l'espace. Pas d'ajout individuel.",
+    "shell.channelMembersError": "Impossible de mettre à jour les membres.",
+    "presence.online": "En ligne",
+    "presence.away": "Absent",
+    "system.memberAdded": "%name% a ajouté un membre",
+    "system.memberRemoved": "%name% a retiré un membre",
+    "system.memberLeft": "%name% a quitté le canal",
+    "error.LastChannelManager": "Le dernier gestionnaire ne peut pas partir ni être retiré.",
+    "error.AlreadyChannelMember": "Cette personne est déjà dans le canal.",
+    "error.ChannelMembershipNotPrivate": "Seul un canal privé accepte ce changement."
   }
 }
