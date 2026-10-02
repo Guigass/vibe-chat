@@ -823,6 +823,25 @@
     "system.memberLeft": "%name% left the channel",
     "error.LastChannelManager": "The last manager cannot leave or be removed.",
     "error.AlreadyChannelMember": "That person is already in the channel.",
-    "error.ChannelMembershipNotPrivate": "Only a private channel accepts this change."
+    "error.ChannelMembershipNotPrivate": "Only a private channel accepts this change.",
+    "settings.wallpaper": "Conversation background",
+    "settings.wallpaperHint": "Pick a catalog background. Restore returns the product default.",
+    "settings.accent": "Accent color",
+    "settings.accentHint": "Applies to your bubble and the conversation focus ring.",
+    "settings.appearanceDefault": "Default",
+    "settings.wallpaperTide": "Tide",
+    "settings.wallpaperMist": "Mist",
+    "settings.wallpaperEmber": "Ember",
+    "settings.wallpaperSlate": "Slate",
+    "settings.accentOcean": "Ocean",
+    "settings.accentAmber": "Amber",
+    "settings.accentRose": "Rose",
+    "settings.accentSlate": "Slate",
+    "settings.appearanceSave": "Save appearance",
+    "settings.appearanceSaving": "Saving…",
+    "settings.appearanceSaved": "Appearance saved",
+    "settings.appearanceReset": "Restore default",
+    "settings.appearanceError": "Could not save appearance.",
+    "settings.appearancePreview": "Preview"
   }
 }

@@ -56,6 +56,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
 {
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<UserStatus> UserStatuses => Set<UserStatus>();
+    public DbSet<UserVisualPreference> UserVisualPreferences => Set<UserVisualPreference>();
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
     public DbSet<Space> Spaces => Set<Space>();
@@ -127,6 +128,18 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.State).HasConversion<string>().HasMaxLength(16);
             entity.Property(x => x.Emoji).HasMaxLength(UserStatusRules.MaxEmojiLength);
             entity.Property(x => x.Text).HasMaxLength(UserStatusRules.MaxTextLength);
+            entity.HasIndex(x => new { x.TenantId, x.UserId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<UserVisualPreference>(entity =>
+        {
+            entity.ToTable("visual_preferences", "identity");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.ChatWallpaperId).HasMaxLength(32);
+            entity.Property(x => x.AccentColorId).HasMaxLength(32);
             entity.HasIndex(x => new { x.TenantId, x.UserId }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });

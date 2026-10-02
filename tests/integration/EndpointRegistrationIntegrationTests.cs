@@ -25,6 +25,7 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
         [
             new("GET", "/api/v1/me", "", false, ""),
             new("PUT", "/api/v1/me", "", false, "caller-only profile locale update"),
+            new("PUT", "/api/v1/users/{userId:guid}/appearance", "", false, "caller-only visual preference (B-185)"),
             new("GET", "/api/v1/workspaces", "", false, ""),
             new("GET", "/api/v1/workspaces/{workspaceId:guid}/channels", "", false, ""),
             new("GET", "/api/v1/workspaces/{workspaceId:guid}/channels/unread", "", false, ""),

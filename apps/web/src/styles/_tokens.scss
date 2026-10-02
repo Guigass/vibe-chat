@@ -75,6 +75,7 @@ html:not([data-theme='dark']) {
   --vc-msg-mine: #ccfbf1;
   --vc-msg-theirs: #ffffff;
   --vc-composer-bg: #ffffff;
+  --vc-chat-wallpaper: url('/assets/background/light_chat.webp');
 
   --vc-focus-ring: 0 0 0 3px rgba(13, 148, 136, 0.35);
   --vc-shadow-soft: 0 8px 30px rgba(15, 23, 42, 0.08);
@@ -115,6 +116,7 @@ html[data-theme='dark'] {
   --vc-msg-mine: #115e59;
   --vc-msg-theirs: #1c1917;
   --vc-composer-bg: #161a1f;
+  --vc-chat-wallpaper: url('/assets/background/dark_chat.webp');
 
   --vc-presence-online: #2dd4bf;
   --vc-presence-away: #fbbf24;
@@ -146,4 +148,68 @@ html[data-density='comfortable'] {
   --vc-msg-gap: 0.7rem;
   --vc-msg-avatar: 2.125rem;
   --vc-composer-pad: var(--vc-space-3);
+}
+
+/* B-185: curated wallpapers. Default stays the official chat backgrounds. */
+html[data-wallpaper='tide']:not([data-theme='dark']) {
+  --vc-chat-wallpaper: url('/assets/background/wallpapers/tide-light.svg');
+}
+html[data-wallpaper='tide'][data-theme='dark'] {
+  --vc-chat-wallpaper: url('/assets/background/wallpapers/tide-dark.svg');
+}
+html[data-wallpaper='mist']:not([data-theme='dark']) {
+  --vc-chat-wallpaper: url('/assets/background/wallpapers/mist-light.svg');
+}
+html[data-wallpaper='mist'][data-theme='dark'] {
+  --vc-chat-wallpaper: url('/assets/background/wallpapers/mist-dark.svg');
+}
+html[data-wallpaper='ember']:not([data-theme='dark']) {
+  --vc-chat-wallpaper: url('/assets/background/wallpapers/ember-light.svg');
+}
+html[data-wallpaper='ember'][data-theme='dark'] {
+  --vc-chat-wallpaper: url('/assets/background/wallpapers/ember-dark.svg');
+}
+html[data-wallpaper='slate']:not([data-theme='dark']) {
+  --vc-chat-wallpaper: url('/assets/background/wallpapers/slate-light.svg');
+}
+html[data-wallpaper='slate'][data-theme='dark'] {
+  --vc-chat-wallpaper: url('/assets/background/wallpapers/slate-dark.svg');
+}
+
+/* Personal accent only retints the own bubble and the conversation focus ring. */
+html[data-accent='ocean']:not([data-theme='dark']) {
+  --vc-msg-mine: #dbeafe;
+  --vc-focus-ring-personal: 0 0 0 3px rgba(29, 78, 216, 0.45);
+}
+html[data-accent='ocean'][data-theme='dark'] {
+  --vc-msg-mine: #1e3a5f;
+  --vc-focus-ring-personal: 0 0 0 3px rgba(147, 197, 253, 0.45);
+}
+html[data-accent='amber']:not([data-theme='dark']) {
+  --vc-msg-mine: #fef3c7;
+  --vc-focus-ring-personal: 0 0 0 3px rgba(180, 83, 9, 0.45);
+}
+html[data-accent='amber'][data-theme='dark'] {
+  --vc-msg-mine: #78350f;
+  --vc-focus-ring-personal: 0 0 0 3px rgba(251, 191, 36, 0.45);
+}
+html[data-accent='rose']:not([data-theme='dark']) {
+  --vc-msg-mine: #ffe4e6;
+  --vc-focus-ring-personal: 0 0 0 3px rgba(190, 18, 60, 0.4);
+}
+html[data-accent='rose'][data-theme='dark'] {
+  --vc-msg-mine: #9f1239;
+  --vc-focus-ring-personal: 0 0 0 3px rgba(253, 164, 175, 0.45);
+}
+html[data-accent='slate']:not([data-theme='dark']) {
+  --vc-msg-mine: #f5f5f4;
+  --vc-focus-ring-personal: 0 0 0 3px rgba(68, 64, 60, 0.4);
+}
+html[data-accent='slate'][data-theme='dark'] {
+  --vc-msg-mine: #44403c;
+  --vc-focus-ring-personal: 0 0 0 3px rgba(214, 211, 209, 0.45);
+}
+
+html[data-accent] .shell__conversation {
+  --vc-focus-ring: var(--vc-focus-ring-personal);
 }

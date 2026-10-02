@@ -31,6 +31,7 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 |--------|------|------|----------------|---|---|----|-------|
 | GET | `/me` | membership | — | ✓ | ✓ | ✓ | Perfil do caller |
 | PUT | `/me` | exempt | caller-only | ✓ | ✓ | ✓ | Só o próprio `locale`; exceção explícita, sem mudar authZ; `InvalidLocale` → 400 |
+| PUT | `/users/{userId:guid}/appearance` | exempt | caller-only | ✓ | ✓ | ✓ | Wallpaper/accent do próprio usuário (B-185); outro `userId` ou cross-tenant → 403; id fora do catálogo → 400 |
 | GET | `/workspaces` | membership | — | ✓ | ✓ | ✓ | Lista só workspaces do caller |
 | GET | `/workspaces/{workspaceId:guid}/channels` | membership | — | ✓ | ✓ | ✓ | Roster de canais |
 | GET | `/workspaces/{workspaceId:guid}/channels/unread` | membership | — | ✓ | ✓ | ✓ | Contagens do caller |

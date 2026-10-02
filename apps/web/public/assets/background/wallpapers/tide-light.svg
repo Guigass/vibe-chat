@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+  <rect width="800" height="600" fill="#e6fffb"/>
+  <path d="M0 390C150 330 250 470 420 420C590 370 660 490 800 430V600H0Z" fill="#99f6e4"/>
+  <path d="M0 470C180 420 320 540 500 490C660 450 720 550 800 520V600H0Z" fill="#5eead4"/>
+</svg>

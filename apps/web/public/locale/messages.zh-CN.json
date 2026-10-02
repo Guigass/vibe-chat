@@ -823,6 +823,25 @@
     "system.memberLeft": "%name% 离开了频道",
     "error.LastChannelManager": "最后一位管理者不能离开或被移除。",
     "error.AlreadyChannelMember": "此人已在频道中。",
-    "error.ChannelMembershipNotPrivate": "只有私密频道接受此更改。"
+    "error.ChannelMembershipNotPrivate": "只有私密频道接受此更改。",
+    "settings.wallpaper": "会话背景",
+    "settings.wallpaperHint": "从目录中选择背景。恢复将回到产品默认。",
+    "settings.accent": "强调色",
+    "settings.accentHint": "用于你的气泡和会话焦点环。",
+    "settings.appearanceDefault": "默认",
+    "settings.wallpaperTide": "潮汐",
+    "settings.wallpaperMist": "薄雾",
+    "settings.wallpaperEmber": "余烬",
+    "settings.wallpaperSlate": "石板",
+    "settings.accentOcean": "海洋",
+    "settings.accentAmber": "琥珀",
+    "settings.accentRose": "玫瑰",
+    "settings.accentSlate": "石板",
+    "settings.appearanceSave": "保存外观",
+    "settings.appearanceSaving": "正在保存…",
+    "settings.appearanceSaved": "外观已保存",
+    "settings.appearanceReset": "恢复默认",
+    "settings.appearanceError": "无法保存外观。",
+    "settings.appearancePreview": "预览"
   }
 }

@@ -61,12 +61,12 @@ de outro usuário. Cross-tenant → 403. Sem impacto em authZ de canal.
 
 ## Aceite
 
-- [ ] Usuário escolhe wallpaper do catálogo e vê na área de conversa (light/dark)
-- [ ] Usuário escolhe accent da paleta; destaques locais respeitam AA
-- [ ] Reset restaura fundos/cores padrão do produto
-- [ ] Preferência persiste entre sessões no mesmo tenant
-- [ ] IDs inválidos fazem fallback; sem CSS arbitrário
-- [ ] Distinto de B-140 (tenant) e de light/dark global (B-049)
+- [x] Usuário escolhe wallpaper do catálogo e vê na área de conversa (light/dark)
+- [x] Usuário escolhe accent da paleta; destaques locais respeitam AA
+- [x] Reset restaura fundos/cores padrão do produto
+- [x] Preferência persiste entre sessões no mesmo tenant
+- [x] IDs inválidos fazem fallback; sem CSS arbitrário
+- [x] Distinto de B-140 (tenant) e de light/dark global (B-049)
 
 ## Testes
 

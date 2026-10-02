@@ -823,6 +823,25 @@
     "system.memberLeft": "%name% がチャネルを退出しました",
     "error.LastChannelManager": "最後の管理者は退出も削除もできません。",
     "error.AlreadyChannelMember": "その人はすでにチャネルにいます。",
-    "error.ChannelMembershipNotPrivate": "プライベートチャネルだけがこの変更を受け付けます。"
+    "error.ChannelMembershipNotPrivate": "プライベートチャネルだけがこの変更を受け付けます。",
+    "settings.wallpaper": "会話の背景",
+    "settings.wallpaperHint": "カタログから背景を選びます。復元すると製品の初期値に戻ります。",
+    "settings.accent": "アクセントカラー",
+    "settings.accentHint": "自分の吹き出しと会話のフォーカスリングに適用されます。",
+    "settings.appearanceDefault": "標準",
+    "settings.wallpaperTide": "潮",
+    "settings.wallpaperMist": "霧",
+    "settings.wallpaperEmber": "残り火",
+    "settings.wallpaperSlate": "スレート",
+    "settings.accentOcean": "オーシャン",
+    "settings.accentAmber": "アンバー",
+    "settings.accentRose": "ローズ",
+    "settings.accentSlate": "スレート",
+    "settings.appearanceSave": "外観を保存",
+    "settings.appearanceSaving": "保存中…",
+    "settings.appearanceSaved": "外観を保存しました",
+    "settings.appearanceReset": "標準に戻す",
+    "settings.appearanceError": "外観を保存できませんでした。",
+    "settings.appearancePreview": "プレビュー"
   }
 }

@@ -32,7 +32,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | **Spoofing** | Roubo de token; JWT forjado; IdP broker mal configurado; linking por e-mail | OIDC Keycloak; validar issuer/aud/exp; HTTPS; rotação de chaves; app rejeita tokens do IdP externo; linking só com política explícita (B-164) |
 | **Tampering** | Alterar messageId/seq; forjar tenant_id | Constraints DB; tenant só do contexto; assinatura não necessária se SoT é DB |
 | **Repudiation** | Negar ação admin | Audit log; correlation ids |
-| **Information Disclosure** | Cross-tenant read; IDOR channel; Member em `/admin/*` | RLS + membership + `RequirePermission`; matriz [`authz-matriz.md`](authz-matriz.md); testes security |
+| **Information Disclosure** | Cross-tenant read; IDOR channel; Member em `/admin/*`; wallpaper/accent de outro usuário | RLS + membership + `RequirePermission`; preferência visual só do caller (B-185); matriz [`authz-matriz.md`](authz-matriz.md); testes security |
 | **Denial of Service** | Flood de mensagens/hubs | Rate-limit Redis; limites de payload; timeouts |
 | **Elevation of Privilege** | Guest→admin; bypass membership; typing sem `message.send` | AuthZ centralizada; least privilege; reviews |
 

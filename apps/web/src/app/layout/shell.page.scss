@@ -245,6 +245,12 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+  background-color: var(--vc-surface);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--vc-surface) 28%, transparent), color-mix(in srgb, var(--vc-surface) 28%, transparent)),
+    var(--vc-chat-wallpaper, none);
+  background-size: cover;
+  background-position: center;
 }
 
 .shell__conversation > vc-timeline {
