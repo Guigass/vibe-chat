@@ -227,6 +227,14 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 11. Vazamento de histórico de Group DM / peer cross-tenant / hub após sair (B-101 / ADR-023)
 12. Guest escalando para o workspace / enumeração de convite (B-040 / ADR-024)
 
+### B-113 — Agendamento e lembretes
+
+- Claim cross-tenant só com `app.job_role = schedule` (FORCE RLS). API de usuário não seta esse GUC.
+- Disparo revalida membership e `message.send`. Sem acesso, não cria mensagem e a notificação ao autor não inclui canal nem corpo.
+- Lembrete e evento `scheduled_message.due` vão ao grupo SignalR do usuário, não ao grupo do canal.
+- Web Push do lembrete/falha respeita preferência, DND e ocultar prévia.
+- Retry do worker reusa a idempotency key do envio; cancelamento compete com o claim na linha `Pending`.
+
 ## O que está fora (por ora)
 
 - E2EE client-side (mensagens são legíveis ao servidor por design self-host)

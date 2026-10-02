@@ -37,6 +37,8 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Unread / Não lidas** | Contagem derivada de `maxSeq - lastReadSeq` (e menções). Badge na sidebar hidrata do servidor; só zera de forma definitiva ao avançar o cursor. |
 | **Reaction** | Reação emoji (ou similar) a uma mensagem. |
 | **Enquete / Poll** | Mensagem com pergunta e 2–10 opções (`messaging.polls`). Voto único ou múltiplo; anônima ou visível; prazo opcional. Auditor lê e não vota. |
+| **Mensagem agendada** | Envio futuro do autor (`messaging.scheduled_messages`): horário de parede + fuso IANA, instante UTC canônico. No disparo revalida membership e usa o comando de mensagem com idempotency key estável (B-113). |
+| **Lembrete** | Aviso pessoal sobre um horário, uma mensagem ou uma thread (`messaging.reminders`). Não é visível ao canal. Push segue as preferências do dono (B-113). |
 | **Attachment** | Arquivo associado a mensagem; bytes no object storage (MinIO); metadados no PostgreSQL. |
 | **Busca com filtros** | FTS PostgreSQL em mensagens visíveis ao membership (`GET /search/messages`). Filtros `de:`/`em:`/`antes:`/`tem:` só restringem; nunca ampliam ACL (B-098). Qualidade/versatilidade do matching (prefixo, acento, canal/pessoa/anexo) → **B-188**. Distinta da busca semântica (B-121 / ADR-016). Atalho: `Ctrl/Cmd+Shift+F`. |
 | **Paleta de comandos** | Overlay de navegação (`Ctrl/Cmd+K`) sobre canais com membership, pessoas visíveis, ações locais e comandos de `GET /commands` (B-087 / B-099). Não substitui a busca de mensagens. |

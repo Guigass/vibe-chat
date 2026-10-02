@@ -808,3 +808,214 @@ public static class LinkPreviewPolicies
     public static bool TryParseHostAsIp(string host, out System.Net.IPAddress address) =>
         System.Net.IPAddress.TryParse(host, out address!);
 }
+
+/// <summary>B-113 statuses shared by scheduled sends and personal reminders.</summary>
+public static class ScheduleStatuses
+{
+    public const string Pending = "Pending";
+    public const string Claimed = "Claimed";
+    public const string Sent = "Sent";
+    public const string Delivered = "Delivered";
+    public const string Cancelled = "Cancelled";
+    public const string Failed = "Failed";
+    public const string MembershipRevoked = "MembershipRevoked";
+
+    public static bool IsOpen(string? status) =>
+        status is Pending or Claimed;
+}
+
+public static class ReminderTargets
+{
+    public const string Time = "Time";
+    public const string Message = "Message";
+    public const string Thread = "Thread";
+}
+
+public static class ScheduleEventTypes
+{
+    public const string ScheduledMessageDue = "scheduled_message.due";
+    public const string ReminderDue = "reminder.due";
+}
+
+/// <summary>Personal scheduled channel send (B-113). UTC instant plus the IANA zone the author chose.</summary>
+public sealed class ScheduledMessage
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public WorkspaceId WorkspaceId { get; set; }
+    public UserId AuthorId { get; set; }
+    public ChannelId ChannelId { get; set; }
+    public Guid? ThreadId { get; set; }
+    public MessageId? ReplyToMessageId { get; set; }
+    public MessageId PlannedMessageId { get; set; }
+    public string Body { get; set; } = string.Empty;
+    public DateTimeOffset SendAtUtc { get; set; }
+    public string TimeZone { get; set; } = "UTC";
+    public string Status { get; set; } = ScheduleStatuses.Pending;
+    public string ClientIdempotencyKey { get; set; } = string.Empty;
+    public string SendIdempotencyKey { get; set; } = string.Empty;
+    public MessageId? SentMessageId { get; set; }
+    public int AttemptCount { get; set; }
+    public DateTimeOffset? ClaimedAt { get; set; }
+    public DateTimeOffset? NextAttemptAt { get; set; }
+    public string? FailureCode { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+/// <summary>Personal reminder (B-113). Never shared with the channel.</summary>
+public sealed class Reminder
+{
+    public Guid Id { get; set; }
+    public TenantId TenantId { get; set; }
+    public WorkspaceId WorkspaceId { get; set; }
+    public UserId UserId { get; set; }
+    public string TargetKind { get; set; } = ReminderTargets.Time;
+    public ChannelId? ChannelId { get; set; }
+    public MessageId? MessageId { get; set; }
+    public Guid? ThreadId { get; set; }
+    public string? Note { get; set; }
+    public DateTimeOffset RemindAtUtc { get; set; }
+    public string TimeZone { get; set; } = "UTC";
+    public string Status { get; set; } = ScheduleStatuses.Pending;
+    public string ClientIdempotencyKey { get; set; } = string.Empty;
+    public int AttemptCount { get; set; }
+    public DateTimeOffset? ClaimedAt { get; set; }
+    public DateTimeOffset? NextAttemptAt { get; set; }
+    public string? FailureCode { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public static class SchedulePolicies
+{
+    public const int MaxNoteLength = 280;
+    public const int MaxPendingPerUser = 100;
+    public const int MaxTimeZoneLength = 64;
+    public const int MaxIdempotencyKeyLength = 200;
+    public const int MaxAttempts = 5;
+    public const int DefaultPageSize = 30;
+    public const int MaxPageSize = 100;
+    public static readonly TimeSpan MaxHorizon = TimeSpan.FromDays(366);
+    public static readonly TimeSpan ClaimLease = TimeSpan.FromMinutes(2);
+
+    public static TimeSpan RetryDelay(int attemptCount) =>
+        TimeSpan.FromSeconds(Math.Clamp(attemptCount, 1, MaxAttempts) * 15);
+}
+
+/// <summary>
+/// Converts a wall-clock local time plus an IANA zone into one UTC instant.
+/// Rejects offsets, gaps and ambiguous DST times so the stored instant is unique.
+/// </summary>
+public static class ScheduleTime
+{
+    private static readonly string[] LocalFormats = ["yyyy-MM-ddTHH:mm", "yyyy-MM-ddTHH:mm:ss"];
+
+    public static bool TryToUtc(string? localDateTime, string? timeZoneId, out DateTimeOffset utc, out string errorCode)
+    {
+        utc = default;
+        errorCode = "InvalidScheduleTime";
+        if (string.IsNullOrWhiteSpace(localDateTime) || string.IsNullOrWhiteSpace(timeZoneId))
+        {
+            return false;
+        }
+
+        var zoneId = timeZoneId.Trim();
+        if (zoneId.Length > SchedulePolicies.MaxTimeZoneLength || !TryFindZone(zoneId, out var zone))
+        {
+            errorCode = "InvalidTimeZone";
+            return false;
+        }
+
+        var text = localDateTime.Trim();
+        if (!DateTime.TryParseExact(text, LocalFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var local))
+        {
+            return false;
+        }
+
+        if (zone.IsInvalidTime(local))
+        {
+            errorCode = "InvalidLocalTime";
+            return false;
+        }
+
+        if (zone.IsAmbiguousTime(local))
+        {
+            errorCode = "AmbiguousLocalTime";
+            return false;
+        }
+
+        utc = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(local, zone), TimeSpan.Zero);
+        return true;
+    }
+
+    public static string? ValidateHorizon(DateTimeOffset utc, DateTimeOffset nowUtc)
+    {
+        if (utc <= nowUtc)
+        {
+            return "SendAtInPast";
+        }
+
+        if (utc - nowUtc > SchedulePolicies.MaxHorizon)
+        {
+            return "ScheduleTooFar";
+        }
+
+        return null;
+    }
+
+    public static bool TryFindZone(string timeZoneId, out TimeZoneInfo zone)
+    {
+        try
+        {
+            zone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            return true;
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            zone = TimeZoneInfo.Utc;
+            return false;
+        }
+        catch (InvalidTimeZoneException)
+        {
+            zone = TimeZoneInfo.Utc;
+            return false;
+        }
+    }
+}
+
+/// <summary>Push/in-app copy for B-113. Non-English locales other than <c>en</c> fall back to pt-BR.</summary>
+public static class ScheduleNoticeCopy
+{
+    public static (string Title, string Body) Reminder(string? locale, string? note, bool hidePreview)
+    {
+        var en = IsEnglish(locale);
+        var title = en ? "Reminder" : "Lembrete";
+        if (hidePreview)
+        {
+            return (title, string.Empty);
+        }
+
+        var noteText = (note ?? string.Empty).Trim();
+        return (title, noteText.Length == 0 ? title : noteText);
+    }
+
+    public static (string Title, string Body) ScheduledRevoked(string? locale)
+    {
+        var en = IsEnglish(locale);
+        return en
+            ? ("Scheduled message was not sent", "You no longer have access.")
+            : ("Mensagem agendada não enviada", "Você não tem mais acesso.");
+    }
+
+    public static (string Title, string Body) ScheduledFailed(string? locale)
+    {
+        var en = IsEnglish(locale);
+        return en
+            ? ("Scheduled message failed", "The send could not be completed.")
+            : ("Falha no envio agendado", "Não foi possível concluir o envio.");
+    }
+
+    private static bool IsEnglish(string? locale) =>
+        locale is not null && locale.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+}

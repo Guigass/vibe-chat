@@ -55,13 +55,21 @@ import { SlashCommandsService } from './slash-commands.service';
 import { CommandPaletteService } from '../../../core/services/command-palette.service';
 import { EmojiPicker } from '../../../shared/ui/emoji-picker/emoji-picker';
 import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
+import { SchedulePanel } from '../schedule-panel/schedule-panel';
+import { ScheduleStore } from '../../../core/services/schedule.store';
 
 @Component({
   selector: 'vc-composer',
   standalone: true,
-  imports: [Button, IconButton, Input, Textarea, MentionAutocomplete, SlashAutocomplete, EmojiPicker],
+  imports: [Button, IconButton, Input, Textarea, MentionAutocomplete, SlashAutocomplete, EmojiPicker, SchedulePanel],
   template: `
     <form class="composer" (submit)="onSubmit($event)">
+      @if (schedule.notice(); as notice) {
+        <p class="composer__schedule-notice" role="status">{{ notice }}</p>
+      }
+      @if (schedule.panelOpen()) {
+        <vc-schedule-panel />
+      }
       <div class="composer__main">
         @if (messages.replyTarget(); as cite) {
           <div class="composer__reply" role="status">
@@ -363,6 +371,31 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
             />
           </div>
 
+          @if (scheduleMode() && !messages.editingMessage()) {
+            <div class="composer__poll-deadline">
+              <label>
+                {{ ui.composerScheduleAt }}
+                <input
+                  type="datetime-local"
+                  data-testid="schedule-at"
+                  [value]="scheduleAt()"
+                  (input)="scheduleAt.set(inputValue($event))"
+                  [attr.aria-label]="ui.composerScheduleAt"
+                />
+              </label>
+              <label>
+                {{ ui.composerTimeZone }}
+                <input
+                  data-testid="schedule-zone"
+                  [value]="scheduleZone()"
+                  (input)="scheduleZone.set(inputValue($event))"
+                  [attr.aria-label]="ui.composerTimeZone"
+                />
+              </label>
+              <p>{{ scheduleHint() }}</p>
+              <p>{{ ui.composerScheduleKept }}</p>
+            </div>
+          }
           <div class="composer__actions">
             @if (!messages.editingMessage()) {
             <label class="composer__attach">
@@ -445,6 +478,25 @@ import { rememberRecentEmoji } from '../../../shared/emoji/emoji-data';
             } @else {
               <span class="composer__mic-hint" [attr.title]="ui.composerMicUnavailableTitle">{{ ui.composerMicUnavailable }}</span>
             }
+            }
+            @if (!messages.editingMessage()) {
+              <button
+                type="button"
+                class="ghost"
+                data-testid="schedule-toggle"
+                (click)="toggleScheduleMode()"
+              >
+                {{ scheduleMode() ? ui.composerSendNow : ui.composerSchedule }}
+              </button>
+              <button
+                type="button"
+                class="ghost"
+                data-testid="schedule-list"
+                [attr.aria-label]="schedule.panelOpen() ? ui.scheduleCloseList : ui.scheduleOpenList"
+                (click)="schedule.togglePanel()"
+              >
+                {{ ui.composerScheduleList }}
+              </button>
             }
             <vc-button
               type="submit"
@@ -905,6 +957,7 @@ export class Composer {
   private readonly auth = inject(AuthService);
   private readonly drafts = inject(DraftStoreService);
   private readonly locales = inject(LocaleService);
+  readonly schedule = inject(ScheduleStore);
 
   readonly ui = ui;
   readonly fillTemplate = fillTemplate;
@@ -935,11 +988,24 @@ export class Composer {
   readonly showCounter = computed(() => this.bodyLength() >= MESSAGE_BODY_COUNTER_THRESHOLD);
   readonly readyCount = computed(() => this.attachments.readyAttachmentIds().length);
   readonly sendingAudio = signal(false);
+  readonly scheduleMode = signal(false);
+  readonly scheduleAt = signal('');
+  readonly scheduleZone = signal(browserTimeZone());
+  readonly scheduleHint = computed(() =>
+    this.scheduleAt()
+      ? fillTemplate(ui.composerScheduleDelay, {
+          when: this.scheduleAt().replace('T', ' '),
+          zone: this.scheduleZone(),
+        })
+      : ui.composerTimeZone,
+  );
+  private scheduleKey: string | null = null;
   /** Primary CTA — Salvar while editing (B-173); Enviar áudio while mic active. */
   readonly primarySubmitLabel = computed(() => {
     if (this.messages.editingMessage()) return ui.composerSave;
     const phase = this.audioRecorder.phase();
     if (phase === 'recording' || phase === 'preview') return ui.composerSendAudio;
+    if (this.scheduleMode()) return ui.composerScheduleConfirm;
     return ui.composerSend;
   });
 
@@ -1198,6 +1264,10 @@ export class Composer {
     }
 
     const display = this.draft().trim();
+    if (this.scheduleMode()) {
+      await this.scheduleCurrentDraft(display);
+      return;
+    }
     if (looksLikeSlashCommand(display)) {
       await this.runSlashCommand(display);
       return;
@@ -1227,6 +1297,53 @@ export class Composer {
         this.draft.set(display);
         this.persistDraftSoon();
       }
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+
+  toggleScheduleMode(): void {
+    this.scheduleMode.update((open) => !open);
+  }
+
+  inputValue(event: Event): string {
+    return (event.target as HTMLInputElement).value;
+  }
+
+  private async scheduleCurrentDraft(display: string): Promise<void> {
+    const channelId = this.boundChannelId;
+    const body = this.toSendBody(display);
+    if (!channelId || !body || isMessageBodyTooLong(body)) return;
+    if (this.attachments.items().length > 0) {
+      this.validationError.set(ui.composerScheduleNoAttachments);
+      return;
+    }
+    if (!this.scheduleAt()) {
+      this.validationError.set(ui.errorInvalidScheduleTime);
+      return;
+    }
+
+    this.submitting.set(true);
+    try {
+      this.scheduleKey ??= crypto.randomUUID();
+      const local = this.scheduleAt().length === 16 ? `${this.scheduleAt()}:00` : this.scheduleAt();
+      const ok = await this.schedule.createScheduled({
+        channelId,
+        body,
+        sendAtLocal: local,
+        timeZone: this.scheduleZone(),
+        idempotencyKey: this.scheduleKey,
+        replyToMessageId: this.messages.replyTarget()?.id ?? null,
+      });
+      if (!ok) {
+        this.validationError.set(this.schedule.error() ?? ui.composerScheduleFailed);
+        return;
+      }
+      this.scheduleKey = null;
+      this.draft.set('');
+      this.scheduleMode.set(false);
+      this.validationError.set(null);
+      await this.drafts.remove(channelId);
     } finally {
       this.submitting.set(false);
     }
@@ -1690,5 +1807,13 @@ export class Composer {
     }
     this.validationError.set(null);
     this.closePollComposer();
+  }
+}
+
+function browserTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
   }
 }

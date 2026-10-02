@@ -20,7 +20,7 @@ organiza. Estados:
 | Políticas de edição/apagar (janela, papéis) | Done | B-107 / W10-11 |
 | Não lidas, notificações, DM em grupo, guests | Committed | Waves 9–10 |
 | Anúncios e canais somente leitura | Planned | B-112 / W11 |
-| Agendar mensagem e lembrete | Planned | B-113 / W11 |
+| Agendar mensagem e lembrete | Done | B-113 / W11 |
 | Histórico de edição/movimentação | Planned | B-114 / W11 |
 | Migração/importação assistida | Planned | B-153 / W11 |
 | Inbox unificada e prioridade | Planned | B-117 / W11 |

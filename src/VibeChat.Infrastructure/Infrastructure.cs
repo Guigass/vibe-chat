@@ -90,6 +90,8 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<TenantLinkPreviewSettings> TenantLinkPreviewSettings => Set<TenantLinkPreviewSettings>();
     public DbSet<PinnedMessage> PinnedMessages => Set<PinnedMessage>();
     public DbSet<SavedMessage> SavedMessages => Set<SavedMessage>();
+    public DbSet<ScheduledMessage> ScheduledMessages => Set<ScheduledMessage>();
+    public DbSet<Reminder> Reminders => Set<Reminder>();
     public DbSet<ThreadSubscription> ThreadSubscriptions => Set<ThreadSubscription>();
     public DbSet<Poll> Polls => Set<Poll>();
     public DbSet<PollOption> PollOptions => Set<PollOption>();
@@ -295,6 +297,56 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Note).HasMaxLength(SavedMessagePolicies.MaxNoteLength);
             entity.HasIndex(x => new { x.TenantId, x.UserId, x.MessageId }).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.UserId, x.CompletedAt, x.CreatedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ScheduledMessage>(entity =>
+        {
+            entity.ToTable("scheduled_messages", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.AuthorId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.ReplyToMessageId).HasConversion(
+                v => v.HasValue ? v.Value.Value : (Guid?)null,
+                v => v.HasValue ? new MessageId(v.Value) : null);
+            entity.Property(x => x.PlannedMessageId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.SentMessageId).HasConversion(
+                v => v.HasValue ? v.Value.Value : (Guid?)null,
+                v => v.HasValue ? new MessageId(v.Value) : null);
+            entity.Property(x => x.Body).HasMaxLength(MessageBodyPolicies.MaxLength);
+            entity.Property(x => x.TimeZone).HasMaxLength(SchedulePolicies.MaxTimeZoneLength);
+            entity.Property(x => x.Status).HasMaxLength(32);
+            entity.Property(x => x.ClientIdempotencyKey).HasMaxLength(SchedulePolicies.MaxIdempotencyKeyLength);
+            entity.Property(x => x.SendIdempotencyKey).HasMaxLength(SchedulePolicies.MaxIdempotencyKeyLength);
+            entity.Property(x => x.FailureCode).HasMaxLength(64);
+            entity.HasIndex(x => new { x.TenantId, x.AuthorId, x.ClientIdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.Status, x.SendAtUtc });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<Reminder>(entity =>
+        {
+            entity.ToTable("reminders", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.ChannelId).HasConversion(
+                v => v.HasValue ? v.Value.Value : (Guid?)null,
+                v => v.HasValue ? new ChannelId(v.Value) : null);
+            entity.Property(x => x.MessageId).HasConversion(
+                v => v.HasValue ? v.Value.Value : (Guid?)null,
+                v => v.HasValue ? new MessageId(v.Value) : null);
+            entity.Property(x => x.Note).HasMaxLength(SchedulePolicies.MaxNoteLength);
+            entity.Property(x => x.TimeZone).HasMaxLength(SchedulePolicies.MaxTimeZoneLength);
+            entity.Property(x => x.TargetKind).HasMaxLength(16);
+            entity.Property(x => x.Status).HasMaxLength(32);
+            entity.Property(x => x.ClientIdempotencyKey).HasMaxLength(SchedulePolicies.MaxIdempotencyKeyLength);
+            entity.Property(x => x.FailureCode).HasMaxLength(64);
+            entity.HasIndex(x => new { x.TenantId, x.UserId, x.ClientIdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.Status, x.RemindAtUtc });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
@@ -2283,7 +2335,7 @@ public sealed class RedisChannelChatPublisher(RedisConnection redis) : IChatPubl
     }
 }
 
-public sealed record RedisRealtimeEnvelope(string EventName, Guid TenantId, Guid ChannelId, object Payload);
+public sealed record RedisRealtimeEnvelope(string EventName, Guid TenantId, Guid ChannelId, object Payload, Guid? UserId = null);
 
 public sealed class RedisSignalRBridge(RedisConnection redis, IHubContext<ChatHub> hubContext, ILogger<RedisSignalRBridge> logger) : BackgroundService
 {
@@ -2307,6 +2359,13 @@ public sealed class RedisSignalRBridge(RedisConnection redis, IHubContext<ChatHu
 
                 // Normalize payload to JsonNode so the JS client receives an object, not a string.
                 var payload = RealtimePayloadNormalization.Normalize(envelope.Payload);
+                if (envelope.UserId is Guid userId && userId != Guid.Empty)
+                {
+                    await hubContext.Clients.Group(ChatHub.UserGroup(new TenantId(envelope.TenantId), new UserId(userId)))
+                        .SendAsync(envelope.EventName, payload, stoppingToken);
+                    return;
+                }
+
                 await hubContext.Clients.Group(ChatHub.ChannelGroup(
                         new TenantId(envelope.TenantId),
                         new ChannelId(envelope.ChannelId)))
@@ -2394,6 +2453,25 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     await emailSender.SendAsync(
                         new EmailMessage(to, subject, body, From: null, TenantId: emailTenantId ?? outbox.TenantId.Value),
                         cancellationToken);
+
+                    outbox.ProcessedAt = now;
+                    outbox.Error = null;
+                    continue;
+                }
+
+                if (outbox.Type is ScheduleEventTypes.ScheduledMessageDue or ScheduleEventTypes.ReminderDue)
+                {
+                    try
+                    {
+                        await ScheduleNoticeFanout.DispatchAsync(scope.ServiceProvider, outbox, cancellationToken);
+                    }
+                    catch (Exception noticeEx)
+                    {
+                        logger.LogWarning(
+                            noticeEx,
+                            "Schedule notice failed for outbox {OutboxMessageId}",
+                            outbox.Id);
+                    }
 
                     outbox.ProcessedAt = now;
                     outbox.Error = null;
@@ -3037,6 +3115,17 @@ public sealed class MessageRetentionPurgeProcessor(
                 db.SavedMessages.RemoveRange(saved);
             }
 
+            var reminderCandidates = await db.Reminders.IgnoreQueryFilters()
+                .Where(x => x.TenantId == policy.TenantId && x.MessageId != null)
+                .ToListAsync(cancellationToken);
+            var reminders = reminderCandidates
+                .Where(x => x.MessageId is MessageId reminderMessageId && messageIds.Contains(reminderMessageId))
+                .ToList();
+            if (reminders.Count > 0)
+            {
+                db.Reminders.RemoveRange(reminders);
+            }
+
             var mentions = await db.MessageMentions.IgnoreQueryFilters()
                 .Where(x => x.TenantId == policy.TenantId && messageIds.Contains(x.MessageId))
                 .ToListAsync(cancellationToken);
@@ -3192,6 +3281,9 @@ public sealed class ChatHub(
     public static string ChannelGroup(TenantId tenantId, ChannelId channelId) =>
         $"t:{tenantId.Value}:c:{channelId.Value}";
 
+    public static string UserGroup(TenantId tenantId, UserId userId) =>
+        $"t:{tenantId.Value}:u:{userId.Value}";
+
     public static string TenantGroup(TenantId tenantId) => $"t:{tenantId.Value}";
 
     public override async Task OnConnectedAsync()
@@ -3316,6 +3408,7 @@ public sealed class ChatHub(
         Context.Items["tenantId"] = tenantId.Value;
         Context.Items["userId"] = userId.Value;
         await Groups.AddToGroupAsync(Context.ConnectionId, TenantGroup(tenantId), Context.ConnectionAborted);
+        await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(tenantId, userId), Context.ConnectionAborted);
     }
 
     private Task BroadcastPresenceAsync(TenantId tenantId, UserId userId, PresenceStatus status) =>
@@ -3671,6 +3764,7 @@ public static class DependencyInjection
         services.AddScoped<IMessageWriter, MessageWriter>();
         services.AddScoped<IPollWriter, PollWriter>();
         services.AddSingleton<PollCloseProcessor>();
+        services.AddSingleton<ScheduleDispatchProcessor>();
         services.AddScoped<ISearchIndexer, PostgresSearchIndexer>();
         services.AddScoped<ISearchQuery, PostgresSearchQuery>();
         services.AddSingleton<IRateLimiter, RedisRateLimiter>();

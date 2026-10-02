@@ -232,6 +232,25 @@ export interface PinnedMessageItem {
   limit?: number;
 }
 
+export interface ScheduleItem {
+  kind: 'scheduled_message' | 'reminder';
+  id: string;
+  status: string;
+  dueAtUtc: string;
+  timeZone: string;
+  body: string | null;
+  note: string | null;
+  targetKind: string | null;
+  channelId: string | null;
+  channelName: string | null;
+  messageId: string | null;
+  threadId: string | null;
+  sentMessageId: string | null;
+  failureCode: string | null;
+  canOpen: boolean;
+  createdAt: string;
+}
+
 export interface SavedMessageItem {
   messageId: string;
   channelId: string;
