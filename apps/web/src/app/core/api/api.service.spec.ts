@@ -107,7 +107,7 @@ describe('ApiService facade', () => {
     expect(message.mine).toBe(true);
     expect(message.seq).toBe(1);
     expect(fetchMock).toHaveBeenCalledOnce();
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe('http://localhost:5080/api/v1/channels/c1/messages');
     const headers = new Headers(init.headers);
     expect(headers.get('X-Dev-User')).toBe('alice');
@@ -132,7 +132,7 @@ describe('ApiService facade', () => {
 
     await api.applyWorkspaceTemplate('ws-1', { templateId: 't1' }, 'idem-header');
 
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe('http://localhost:5080/api/v1/admin/workspaces/ws-1/templates/apply');
     expect(new Headers(init.headers).get('Idempotency-Key')).toBe('idem-header');
   });
@@ -157,7 +157,7 @@ describe('ApiService facade', () => {
 
     await api.getMe();
 
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     const headers = new Headers(init.headers);
     expect(headers.get('Authorization')).toBe('Bearer token-1');
     expect(headers.get('X-Dev-User')).toBeNull();
