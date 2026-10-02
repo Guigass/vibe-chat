@@ -62,6 +62,10 @@ public static class AuditActions
     public const string ReminderUpdate = "reminder.update";
     public const string ReminderCancel = "reminder.cancel";
     public const string ReminderDeliver = "reminder.deliver";
+    public const string TemplateApply = "template.apply";
+    public const string TemplateImport = "template.import";
+    public const string TemplateExport = "template.export";
+    public const string OnboardingUpdate = "onboarding.update";
 }
 
 public interface IAuditWriter

@@ -786,6 +786,32 @@ Manifesto v1 estrito (`vibechat.plugin.manifest.v1`): `id`, `name`, `version` (`
 
 Slug duplicado ou acima de 20 plugins no workspace → 409 (`PluginAlreadyInstalled` / `PluginLimitReached`). Id de outro workspace → 404 `PluginNotFound`. Member → 403. Tabela `integrations.plugins` com RLS FORCE e FK para `integrations.bots`. Uninstall não apaga mensagens.
 
+### Templates de workspace (B-115)
+
+Manifesto declarativo `vibechat.workspace-template.v1`. Não carrega `tenantId`, membros, e-mails, tokens nem secrets. Recursos criados recebem o tenant do contexto. Só `workspace.admin` (Auditor/membro → 403).
+
+Campos: `schema`, `id`, `version` (inteiro ≥ 1), `spaces[]` (`key`, `name`, `channels[]` com `key`, `name`, `type`, `topic?`), `policyDefaults?`, `checklist?`. `type` permitido: `Public`, `Private`, `Announcement`, `Group`. Campo ou schema desconhecido → 400 `UnknownTemplateField` (com `path`) ou `UnknownTemplateSchema`. Corpo inválido → 400 `InvalidTemplate`.
+
+`policyDefaults` é a política de edição/apagar já existente (B-107). Não grava credencial, webhook nem flag. Se a política do tenant já diverge, o apply responde 409 `TemplateConflict` e não persiste.
+
+Built-ins versionados no binário: `team`, `project`, `community`, `incidents`. Importar um desses ids → 409 `TemplateReserved`. Acima de 20 templates customizados → 409 `TemplateLimitReached`.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| GET | `/api/v1/admin/workspaces/{workspaceId}/templates` | `workspace.admin`; built-ins + custom do workspace |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/templates/validate` | corpo = manifesto |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/templates/preview` | `{ templateId }` **ou** `{ manifest }`; não persiste |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/templates/apply` | o mesmo, mais `dryRun?`; sem dry-run exige `Idempotency-Key` |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/templates/import` | corpo = manifesto; sem dados pessoais |
+| GET | `/api/v1/admin/workspaces/{workspaceId}/templates/export` | estrutura atual, sem DM/membros/secrets |
+| GET | `/api/v1/admin/workspaces/{workspaceId}/templates/{templateId}/export` | built-in ou custom deste workspace |
+| GET | `/api/v1/admin/workspaces/{workspaceId}/onboarding` | checklist; ausência de linha = `pending` |
+| PUT | `/api/v1/admin/workspaces/{workspaceId}/onboarding` | `{ status?, items? }`; `skipped` / `in_progress` / `completed` |
+
+Preview e `dryRun: true` não gravam. Retry do mesmo template reutiliza space/canal compatível (nome no workspace). Conflito de tipo, space ou política → 409 sem gravar. A mesma `Idempotency-Key` devolve o resultado anterior (`idempotent: true`). Audit por recurso criado (`space.create`, `channel.create`) mais `template.apply`, `template.import`, `template.export` e `onboarding.update`.
+
+Tabelas `directory.workspace_templates`, `directory.workspace_onboarding`, `directory.template_applications`. RLS FORCE. O wizard em `/admin/onboarding` pode ser pulado e retomado; não bloqueia o chat.
+
 ### Auditoria de conversa (B-067)
 
 Distinta do feed `audit_events` (B-042). Viewer compliance: admin/Auditor com `admin.dashboard` lê histórico completo **dentro do tenant**, inclusive DMs onde não é membro e corpos soft-deleted (ADR-018). Membro comum → 403. Canal/thread de outro tenant → 403. Histórico normal (`GET /channels/.../messages`) continua redigindo body deletado e exigindo membership.

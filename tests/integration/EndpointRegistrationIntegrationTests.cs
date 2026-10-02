@@ -139,6 +139,15 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("PATCH", "/api/v1/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
             new("DELETE", "/api/v1/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
             new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}/rotate", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("GET", "/api/v1/admin/workspaces/{workspaceId:guid}/templates", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/templates/validate", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/templates/preview", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/templates/apply", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/templates/import", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("GET", "/api/v1/admin/workspaces/{workspaceId:guid}/templates/export", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("GET", "/api/v1/admin/workspaces/{workspaceId:guid}/templates/{templateId}/export", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("GET", "/api/v1/admin/workspaces/{workspaceId:guid}/onboarding", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("PUT", "/api/v1/admin/workspaces/{workspaceId:guid}/onboarding", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
             new("POST", "/api/v1/dev/seed", "", true, "Development seed; AllowAnonymous lab-only"),
         ];
 

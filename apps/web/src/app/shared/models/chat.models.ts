@@ -692,3 +692,47 @@ export interface NotificationPreferences {
   /** B-102 — channels where the caller auto-follows every new thread. */
   followAllThreadsChannelIds: string[];
 }
+
+export interface WorkspaceTemplateSummary {
+  id: string;
+  version: number;
+  spaceCount: number;
+  channelCount: number;
+  checklist: string[];
+  builtin: boolean;
+}
+
+export interface WorkspaceTemplateCatalog {
+  builtins: WorkspaceTemplateSummary[];
+  custom: WorkspaceTemplateSummary[];
+}
+
+export interface TemplatePlanItem {
+  kind: string;
+  action: string;
+  key: string;
+  name?: string | null;
+  detail?: string | null;
+  resourceId?: string | null;
+}
+
+export interface TemplatePlan {
+  templateId: string;
+  version: number;
+  hasConflicts: boolean;
+  dryRun: boolean;
+  idempotent?: boolean;
+  items: TemplatePlanItem[];
+}
+
+export interface OnboardingItem {
+  key: string;
+  state: string;
+}
+
+export interface WorkspaceOnboardingState {
+  status: string;
+  templateId?: string | null;
+  templateVersion?: number | null;
+  items: OnboardingItem[];
+}

@@ -1,0 +1,83 @@
+.admin-onboarding fieldset {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.admin-onboarding h2 {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.admin-onboarding h2:focus {
+  outline: none;
+}
+
+.admin-onboarding h2:focus-visible {
+  outline: 2px solid var(--vc-brand);
+  outline-offset: 2px;
+}
+
+.admin-choice {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  border: 0;
+}
+
+.admin-choice label {
+  display: grid;
+  gap: 0.15rem;
+  min-height: 3rem;
+  padding: 0.75rem;
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-md);
+  background: var(--vc-surface);
+}
+
+.admin-choice input {
+  accent-color: var(--vc-brand);
+}
+
+.admin-onboarding__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.admin-onboarding textarea {
+  display: block;
+  width: 100%;
+  min-height: 8rem;
+  margin: 0.35rem 0 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-sm);
+  background: var(--vc-surface);
+  color: var(--vc-ink);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.admin-onboarding button:focus-visible,
+.admin-onboarding input:focus-visible,
+.admin-onboarding textarea:focus-visible {
+  outline: 2px solid var(--vc-brand);
+  outline-offset: 2px;
+}
+
+.admin-onboarding progress {
+  display: block;
+  width: min(100%, 24rem);
+  margin: 0.5rem 0;
+  accent-color: var(--vc-brand);
+}
+
+.admin-onboarding ul {
+  margin: 0.5rem 0 1rem;
+  padding-inline-start: 1.2rem;
+}

@@ -16,6 +16,7 @@ describe('admin-permissions (B-106)', () => {
       'conversations',
       'audit',
       'settings',
+      'onboarding',
       'plugins',
     ]);
     expect(hasWorkspaceAdmin('Admin')).toBe(true);
@@ -25,6 +26,7 @@ describe('admin-permissions (B-106)', () => {
     const items = visibleNavItems('Auditor');
     expect(items.map((i) => i.id)).toEqual(['overview', 'members', 'conversations', 'audit']);
     expect(canAccessArea('Auditor', 'settings')).toBe(false);
+    expect(canAccessArea('Auditor', 'onboarding')).toBe(false);
     expect(firstAllowedPath('Auditor')).toBe('overview');
   });
 

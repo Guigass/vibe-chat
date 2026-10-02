@@ -36,6 +36,10 @@ import {
   FollowedThreadItem,
   IntegrationBot,
   InstalledPlugin,
+  OnboardingItem,
+  TemplatePlan,
+  WorkspaceOnboardingState,
+  WorkspaceTemplateCatalog,
   PollSummary,
   PushPublicKey,
   PushDevice,
@@ -411,6 +415,50 @@ export class ApiService {
   rotateInstalledPlugin(workspaceId: string, installedId: string): Promise<InstalledPlugin> {
     return this.request<InstalledPlugin>(`/api/v1/admin/workspaces/${workspaceId}/plugins/${installedId}/rotate`, {
       method: 'POST',
+    });
+  }
+
+  listWorkspaceTemplates(workspaceId: string): Promise<WorkspaceTemplateCatalog> {
+    return this.request<WorkspaceTemplateCatalog>(`/api/v1/admin/workspaces/${workspaceId}/templates`);
+  }
+
+  previewWorkspaceTemplate(
+    workspaceId: string,
+    body: { templateId?: string; manifest?: Record<string, unknown> },
+  ): Promise<TemplatePlan> {
+    return this.request<TemplatePlan>(`/api/v1/admin/workspaces/${workspaceId}/templates/preview`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  applyWorkspaceTemplate(
+    workspaceId: string,
+    body: { templateId?: string; manifest?: Record<string, unknown>; dryRun?: boolean },
+    idempotencyKey: string,
+  ): Promise<TemplatePlan> {
+    return this.request<TemplatePlan>(`/api/v1/admin/workspaces/${workspaceId}/templates/apply`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { 'Idempotency-Key': idempotencyKey },
+    });
+  }
+
+  exportWorkspaceTemplate(workspaceId: string): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(`/api/v1/admin/workspaces/${workspaceId}/templates/export`);
+  }
+
+  getOnboarding(workspaceId: string): Promise<WorkspaceOnboardingState> {
+    return this.request<WorkspaceOnboardingState>(`/api/v1/admin/workspaces/${workspaceId}/onboarding`);
+  }
+
+  updateOnboarding(
+    workspaceId: string,
+    body: { status?: string; items?: OnboardingItem[] },
+  ): Promise<WorkspaceOnboardingState> {
+    return this.request<WorkspaceOnboardingState>(`/api/v1/admin/workspaces/${workspaceId}/onboarding`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
     });
   }
 

@@ -246,6 +246,28 @@ CREATE POLICY tenant_isolation_pinned_messages ON messaging.pinned_messages
 ALTER TABLE IF EXISTS directory.channel_invites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS directory.channel_invites FORCE ROW LEVEL SECURITY;
 
+ALTER TABLE IF EXISTS directory.workspace_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.workspace_templates FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.workspace_onboarding ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.workspace_onboarding FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.template_applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.template_applications FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_workspace_templates ON directory.workspace_templates;
+CREATE POLICY tenant_isolation_workspace_templates ON directory.workspace_templates
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_workspace_onboarding ON directory.workspace_onboarding;
+CREATE POLICY tenant_isolation_workspace_onboarding ON directory.workspace_onboarding
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_template_applications ON directory.template_applications;
+CREATE POLICY tenant_isolation_template_applications ON directory.template_applications
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 DROP POLICY IF EXISTS tenant_isolation_channel_invites ON directory.channel_invites;
 CREATE POLICY tenant_isolation_channel_invites ON directory.channel_invites
     USING (
