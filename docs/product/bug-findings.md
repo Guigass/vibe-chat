@@ -29,7 +29,7 @@ Regras do registro:
 | ------- | ----------------- | --------------------------------------------------------------------- | ---------- | -------------------------------------------- |
 | BUG-025 | Sidebar / filtro  | Cada mudança no filtro da rail loga TypeError em `setActiveChannel`  | Baixa      | Aberto                                       |
 | BUG-024 | Composer / slash  | Comandos `/` não acompanham o idioma da UI                            | Média      | Aberto                                       |
-| BUG-023 | Busca / relevância | Resultados rígidos; FTS não acha prefixo, acento, pessoa ou anexo     | Média      | Aberto — fecha em **B-188** |
+| BUG-023 | Busca / relevância | Resultados rígidos; FTS não acha prefixo, acento, pessoa ou anexo     | Média      | **Done** — B-188 |
 | BUG-022 | Header / busca    | Painel desalinhado na 1ª abertura; selecionar opção fecha a barra     | Média      | Aberto                                       |
 | BUG-021 | Group DM / realtime | Convidado para DM em grupo não vê a conversa até recarregar         | Média      | Aberto                                       |
 | BUG-020 | Canal / membros   | Sem painel de membros, add no canal nem enviar PV a partir do roster  | Média      | Aberto — fecha em **B-186** |
@@ -120,7 +120,7 @@ Regras do registro:
 
 ### BUG-023 — Busca: resultados rígidos, pouco versáteis
 
-- Status: **Aberto** — fecha em **B-188** (W10-16).
+- Status: **Done** — B-188 (W10-16). Prefixo, acento, websearch e hits de canal/pessoa/anexo no FTS, com a ACL de membership.
 - Severidade: **Média** (a busca responde, mas o matching não acha o que o
   usuário espera no dia a dia).
 - Observado em: 2026-09-09; relato de produto no lab Compose após B-027/B-098

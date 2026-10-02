@@ -5,7 +5,7 @@ Snapshot factual para orientação rápida. Não substitui o
 
 - **Data de corte:** 2026-10-01
 - **Fase:** Wave 10 — W10-14 / B-110 Done (plugin local por manifesto)
-- **Safety lane obrigatória:** OPS-E2E-B100 Resolved (Playwright `locale: pt-BR` + isolamento i18n E2E + foco paleta + select Settings); OPS-E2E-B099 Resolved (#154); OPS-E2E-B098 Resolved (#148); OPS-E2E-B097 Resolved (#145+#149); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); BUG-020 Aberto (Média, fecha em B-186 / W10-15 — painel de membros + add + PV); BUG-021 Aberto (Média — convidado para DM em grupo não atualiza o front até F5); BUG-022 Aberto (Média — busca do header desalinhada na 1ª abertura e fecha ao selecionar opção); BUG-023 Aberto (Média, fecha em B-188 / W10-16 — resultados de busca rígidos); BUG-024 Aberto (Média — comandos slash não acompanham o idioma da UI); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
+- **Safety lane obrigatória:** OPS-E2E-B100 Resolved (Playwright `locale: pt-BR` + isolamento i18n E2E + foco paleta + select Settings); OPS-E2E-B099 Resolved (#154); OPS-E2E-B098 Resolved (#148); OPS-E2E-B097 Resolved (#145+#149); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); BUG-020 Aberto (Média, fecha em B-186 / W10-15 — painel de membros + add + PV); BUG-021 Aberto (Média — convidado para DM em grupo não atualiza o front até F5); BUG-022 Aberto (Média — busca do header desalinhada na 1ª abertura e fecha ao selecionar opção); BUG-023 Done (Média, B-188 / W10-16 — busca versátil); BUG-024 Aberto (Média — comandos slash não acompanham o idioma da UI); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
 - **Próximo item elegível:** W10-15 / B-186 (membros do canal)
 - **Override humano concluído:** W19-1 / B-178 — decomposição da API em maps por fronteira; `Program.cs` com 220 linhas; build e 241 testes verdes. A fila W10 permanece na ordem acima.
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
@@ -121,6 +121,8 @@ off default; ADR-027).
 W10-14 / B-110 **Done** (plugin local: manifesto v1, built-in Incoming Messages,
 enable/disable/uninstall com revogação do token, teto de 20 por workspace;
 ADR-028). Mesma flag de B-109.
+W10-16 / B-188 **Done** (busca versátil: prefixo, acento, websearch e hits de
+canal/pessoa/anexo no FTS; fecha BUG-023). W10-15 / B-186 segue Planned.
 
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W19. Wave 19
 (organização do código) é recomendada antes de W11. Ele não altera a prioridade
@@ -128,7 +130,7 @@ imediata: o Build só consome W11+ depois de W7–W10 `Done`.
 
 ## Baseline de planejamento
 
-- 89 itens `Planned` entre W8–W19 (B-110/W10-14 Done; B-103/W10-9 Done; B-188/W10-16 — busca versátil, fecha BUG-023; B-186/W10-15 — membros do canal; B-178…B-183
+- 88 itens `Planned` entre W8–W19 (B-110/W10-14 Done; B-103/W10-9 Done; B-188/W10-16 Done — busca versátil, fecha BUG-023; B-186/W10-15 — membros do canal; B-178…B-183
   catalogados em W19 — organização do código; B-104/W7-6 Done via #82;
   B-076/W7-3 Done via #84; B-165/W7-9 Done 2026-08-10; B-088/W9-1 Done;
   B-171/W9-9 Done via #129; B-173/W9-10 Done; B-177/W7-13 Done;

@@ -2313,6 +2313,120 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Search_matches_prefix_unaccent_phrase_negation_and_keeps_filters()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var bob = factory.CreateClient();
+        bob.DefaultRequestHeaders.Add("X-Dev-User", "bob");
+
+        var token = $"versatil{Guid.NewGuid():N}";
+        var suffix = token[^8..];
+        var workspace = SeedData.DemoWorkspaceId.Value;
+
+        var channelName = $"planeja{suffix}";
+        var createChannel = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspace}/channels",
+            new CreateChannelRequestDto(channelName, "Public", SeedData.DemoSpaceGeralId));
+        createChannel.StatusCode.Should().Be(HttpStatusCode.Created);
+        var channel = await createChannel.Content.ReadFromJsonAsync<ChannelDto>(JsonOptions);
+        channel.Should().NotBeNull();
+
+        var phraseId = Guid.NewGuid();
+        (await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(
+                phraseId,
+                $"idem-vers-phrase-{phraseId:N}",
+                $"A reunião canônica do plano Q3 {token} ficou registrada",
+                null,
+                null))).EnsureSuccessStatusCode();
+
+        var looseId = Guid.NewGuid();
+        (await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(
+                looseId,
+                $"idem-vers-loose-{looseId:N}",
+                $"O plano do Q3 {token} ficou distante",
+                null,
+                null))).EnsureSuccessStatusCode();
+
+        var excludedId = Guid.NewGuid();
+        (await bob.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(
+                excludedId,
+                $"idem-vers-ex-{excludedId:N}",
+                $"reunião {token} marcada para excluir",
+                null,
+                null))).EnsureSuccessStatusCode();
+
+        var otherChannelId = Guid.NewGuid();
+        (await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{channel!.Id}/messages",
+            new SendMessageRequest(
+                otherChannelId,
+                $"idem-vers-ch-{otherChannelId:N}",
+                $"reunião {token} em outro canal",
+                null,
+                null))).EnsureSuccessStatusCode();
+
+        var content = "planilha"u8.ToArray();
+        var attachmentId = await UploadReadyAttachmentAsync(alice, $"orçamento{suffix}.txt", content);
+        var attachmentMessageId = Guid.NewGuid();
+        (await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{DemoChannelId}/messages",
+            new SendMessageRequest(
+                attachmentMessageId,
+                $"idem-vers-att-{attachmentMessageId:N}",
+                $"segue o arquivo {token}",
+                null,
+                null,
+                [attachmentId]))).EnsureSuccessStatusCode();
+
+        var byPrefix = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q=reuni&limit=50",
+            JsonOptions);
+        byPrefix!.Items.Should().Contain(x => x.MessageId == phraseId);
+        byPrefix.Items.Single(x => x.MessageId == phraseId).BodyPreview.Should().Contain("\u0001");
+
+        var byUnaccent = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q=reuniao&limit=50",
+            JsonOptions);
+        byUnaccent!.Items.Should().Contain(x => x.MessageId == phraseId);
+
+        var byPhrase = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={Uri.EscapeDataString($"\"plano Q3\" {token}")}&limit=20",
+            JsonOptions);
+        byPhrase!.Items.Should().Contain(x => x.MessageId == phraseId);
+        byPhrase.Items.Should().NotContain(x => x.MessageId == looseId);
+
+        var byNegation = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={Uri.EscapeDataString($"{token} -excluir")}&limit=20",
+            JsonOptions);
+        byNegation!.Items.Should().Contain(x => x.MessageId == phraseId);
+        byNegation.Items.Should().NotContain(x => x.MessageId == excludedId);
+
+        var filtered = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q=reuni&authorId={SeedData.AliceUserId.Value}&channelId={DemoChannelId}&limit=20",
+            JsonOptions);
+        filtered!.Items.Should().Contain(x => x.MessageId == phraseId);
+        filtered.Items.Should().NotContain(x => x.MessageId == excludedId);
+        filtered.Items.Should().NotContain(x => x.MessageId == otherChannelId);
+
+        var channelHits = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={Uri.EscapeDataString(channelName)}&limit=20",
+            JsonOptions);
+        channelHits!.Channels.Should().Contain(x => x.ChannelId == channel.Id && x.Kind == "channel");
+
+        var fileHits = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={Uri.EscapeDataString($"orcamento{suffix}")}&limit=20",
+            JsonOptions);
+        fileHits!.Attachments.Should().Contain(x => x.AttachmentId == attachmentId && x.MessageId == attachmentMessageId && x.Kind == "attachment");
+    }
+
+    [Fact]
     public async Task Ai_summarize_uses_mock_provider_outside_send_path()
     {
         using var client = factory.CreateClient();
@@ -2778,12 +2892,28 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         DateTimeOffset CreatedAt,
         double Rank);
 
+    private sealed record SearchChannelHitDto(string Kind, Guid ChannelId, string ChannelName, string ChannelType, double Rank);
+    private sealed record SearchPersonHitDto(string Kind, Guid UserId, string DisplayName, double Rank);
+    private sealed record SearchAttachmentHitDto(
+        string Kind,
+        Guid AttachmentId,
+        string FileName,
+        Guid MessageId,
+        Guid ChannelId,
+        string ChannelName,
+        string ChannelType,
+        long Sequence,
+        double Rank);
+
     private sealed record SearchMessagesDto(
         string Query,
         int Limit,
         SearchMessageHitDto[] Items,
         int Total = 0,
-        string? Cursor = null);
+        string? Cursor = null,
+        SearchChannelHitDto[]? Channels = null,
+        SearchPersonHitDto[]? People = null,
+        SearchAttachmentHitDto[]? Attachments = null);
 
     private sealed record ChannelMemberDto(Guid UserId, string DisplayName, string Email);
 }

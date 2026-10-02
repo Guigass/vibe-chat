@@ -206,16 +206,61 @@
               }
             }
             @if (searchCanRun()) {
-              @if (searchLoading() && searchResults().length === 0) {
+              @if (searchLoading() && !searchHasHits()) {
                 <p class="shell__search-status">{{ ui.searchLoading }}</p>
               } @else if (searchError()) {
                 <p class="shell__search-status" role="alert">{{ searchError() }}</p>
-              } @else if (searchResults().length === 0) {
+              } @else if (!searchHasHits()) {
                 <p class="shell__search-status">
                   {{ ui.searchEmpty }}
                 </p>
               } @else {
-                <p class="shell__search-hint">{{ resultCountLabel(searchTotal()) }}</p>
+                @if (searchTotal() > 0) {
+                  <p class="shell__search-hint">{{ resultCountLabel(searchTotal()) }}</p>
+                }
+                @if (searchChannels().length) {
+                  <p class="shell__search-group">{{ ui.searchGroupChannels }}</p>
+                  @for (hit of searchChannels(); track hit.channelId) {
+                    <button
+                      type="button"
+                      class="shell__search-hit"
+                      role="option"
+                      (mousedown)="openSearchChannel(hit)"
+                    >
+                      <span class="shell__search-hit-body">#{{ hit.channelName }}</span>
+                    </button>
+                  }
+                }
+                @if (searchPeople().length) {
+                  <p class="shell__search-group">{{ ui.searchGroupPeople }}</p>
+                  @for (hit of searchPeople(); track hit.userId) {
+                    <button
+                      type="button"
+                      class="shell__search-hit"
+                      role="option"
+                      (mousedown)="openSearchPerson(hit)"
+                    >
+                      <span class="shell__search-hit-body">{{ hit.displayName }}</span>
+                    </button>
+                  }
+                }
+                @if (searchAttachments().length) {
+                  <p class="shell__search-group">{{ ui.searchGroupAttachments }}</p>
+                  @for (hit of searchAttachments(); track hit.attachmentId) {
+                    <button
+                      type="button"
+                      class="shell__search-hit"
+                      role="option"
+                      (mousedown)="openSearchAttachment(hit)"
+                    >
+                      <span class="shell__search-hit-meta">#{{ hit.channelName }}</span>
+                      <span class="shell__search-hit-body">{{ hit.fileName }}</span>
+                    </button>
+                  }
+                }
+                @if (searchResults().length) {
+                  <p class="shell__search-group">{{ ui.searchGroupMessages }}</p>
+                }
                 @for (group of searchGroups(); track group.channelId) {
                   <p class="shell__search-group">#{{ group.channelName }} · {{ group.count }}</p>
                   @for (hit of group.items; track hit.messageId) {

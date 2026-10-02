@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,7 @@ using VibeChat.Integrations;
 using VibeChat.Messaging;
 using VibeChat.Notifications;
 using VibeChat.Realtime;
+using NpgsqlTypes;
 using VibeChat.Search;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
@@ -98,6 +100,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ConfigureShared(modelBuilder);
+        SearchSql.Configure(modelBuilder);
 
         modelBuilder.Entity<UserProfile>(entity =>
         {
@@ -211,6 +214,11 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.ForwardedFromMessageId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new MessageId(v.Value) : null);
             entity.Property(x => x.ForwardedFromChannelId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new ChannelId(v.Value) : null);
             entity.Property(x => x.Body).HasMaxLength(8000);
+            var searchVector = entity.Property<NpgsqlTsVector>("SearchVector")
+                .HasColumnName("search_vector")
+                .HasColumnType("tsvector");
+            searchVector.Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Ignore);
+            searchVector.Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
             entity.HasIndex(x => new { x.ConversationId, x.Sequence }).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.ConversationId, x.CreatedAt })
                 .HasDatabaseName("ix_messages_tenant_channel_created");

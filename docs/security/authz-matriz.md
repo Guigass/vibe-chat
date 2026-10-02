@@ -89,7 +89,7 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | DELETE | `/channels/{channelId:guid}/messages/{messageId:guid}/link-preview` | condicional | autor ou `workspace.admin` | ✓* | ✗ | ✓ | exempt B-091 |
 | GET | `/channels/{channelId:guid}/messages/{messageId:guid}/link-preview/image` | membership | — | ✓ | ✓ | ✓ | Proxy de imagem já SSRF-guarded |
 | PUT | `/channels/{channelId:guid}/read-cursor` | permission | `message.read` | ✓ | ✓ | ✓ | |
-| GET | `/search/messages` | permission | `search.messages` + `message.read` | ✓ | ✓ | ✓ | Filtros B-098 só restringem; `authorId`/`channelId` invisível → 403 |
+| GET | `/search/messages` | permission | `search.messages` + `message.read` | ✓ | ✓ | ✓ | Filtros B-098 só restringem; hits de canal/pessoa/anexo usam a mesma membership; `authorId`/`channelId` invisível → 403 |
 | GET | `/channels/{channelId:guid}/unread-count` | membership | — | ✓ | ✓ | ✓ | Contagem do caller |
 | GET | `/notifications/push/public-key` | permission | `message.read` | ✓ | ✓ | ✓ | `{ enabled, publicKey? }`; off sem erro |
 | GET | `/notifications/push/subscriptions` | permission | `message.read` | ✓ | ✓ | ✓ | Só o actor |
