@@ -37,8 +37,8 @@ Preservar propagação de token e headers de tenant; sem atalho cross-tenant.
 
 - [x] Services por domínio com responsabilidade clara.
 - [x] `api.service.ts` ≤ 200 linhas ou removido com migração completa.
-- [ ] `npm test` (Vitest) e `ng build` verdes.
-- [ ] E2E smoke (DevAuth + envio) verde.
+- [x] `npm test` (Vitest) e `ng build` verdes.
+- [ ] E2E smoke (DevAuth + envio) verde. O refactor não muda contrato HTTP nem a UI; o smoke de browser fica para o CI do PR.
 
 ## Testes
 
@@ -49,3 +49,17 @@ Preservar propagação de token e headers de tenant; sem atalho cross-tenant.
 
 - Imports circulares entre services — manter dependências unidirecionais
   (domínio → `HttpClient`, não entre domínios).
+
+## Execução — 2026-10-02
+
+- Work-Item: B-180; Wave: W19-3; Trilha: D; Risk: R1.
+- `api.service.ts` com 160 linhas. Chamadas em `profile`, `directory`,
+  `messaging`, `files`, `admin`, `notifications`, `search` e `ai`.
+  `HttpApiClient` concentra `fetch`, token e `X-Dev-User`.
+- Injeções de `ApiService` na UI, stores e hub permanecem. Sem mudança de
+  contrato HTTP.
+- Verificação em `node:22.22.3`: `tsc -p tsconfig.app.json --noEmit`,
+  `npm test -- --watch=false` (**70** arquivos, **323** testes) e `ng build`
+  verdes. O aviso de locale `pt-BR` e os budgets de CSS já existiam.
+- E2E smoke de browser não rodou neste PR. O caminho DevAuth + envio não
+  mudou de contrato; fica para o CI.
