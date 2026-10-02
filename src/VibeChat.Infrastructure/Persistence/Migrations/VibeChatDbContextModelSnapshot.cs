@@ -2,8 +2,10 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using NpgsqlTypes;
 using VibeChat.Infrastructure;
 
 #nullable disable
@@ -931,6 +933,12 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid?>("ReplyToMessageId")
                         .HasColumnType("uuid");
+
+                    b.Property<NpgsqlTsVector>("SearchVector")
+                        .HasColumnType("tsvector")
+                        .HasColumnName("search_vector")
+                        .HasAnnotation("Relational:BeforeSaveBehavior", PropertySaveBehavior.Ignore)
+                        .HasAnnotation("Relational:AfterSaveBehavior", PropertySaveBehavior.Ignore);
 
                     b.Property<long>("Sequence")
                         .HasColumnType("bigint");

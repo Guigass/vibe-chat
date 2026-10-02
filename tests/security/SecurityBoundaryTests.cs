@@ -830,6 +830,104 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Search_does_not_leak_private_channel_attachment_or_foreign_person()
+    {
+        using var alice = factory.CreateClient();
+        alice.DefaultRequestHeaders.Add("X-Dev-User", "alice");
+        using var demo = factory.CreateClient();
+        demo.DefaultRequestHeaders.Add("X-Dev-User", "demo");
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var channelName = $"sigilo{suffix}";
+        var workspace = SeedData.DemoWorkspaceId.Value;
+        var createChannel = await alice.PostAsJsonAsync(
+            $"/api/v1/workspaces/{workspace}/channels",
+            new { name = channelName, type = "Private", spaceId = (Guid?)null });
+        createChannel.EnsureSuccessStatusCode();
+        var channel = await createChannel.Content.ReadFromJsonAsync<ChannelDto>();
+        channel.Should().NotBeNull();
+
+        var content = "segredo"u8.ToArray();
+        var initiate = await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{channel!.Id}/attachments",
+            new CreateAttachmentUploadRequest($"secreto{suffix}.txt", "text/plain", content.Length));
+        initiate.EnsureSuccessStatusCode();
+        var upload = await initiate.Content.ReadFromJsonAsync<AttachmentUploadDto>();
+        upload.Should().NotBeNull();
+        using var putClient = new HttpClient();
+        (await putClient.PutAsync(upload!.UploadUrl, new ByteArrayContent(content))).EnsureSuccessStatusCode();
+        (await alice.PostAsync(
+            $"/api/v1/channels/{channel.Id}/attachments/{upload.AttachmentId}/complete",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"))).EnsureSuccessStatusCode();
+
+        var messageId = Guid.NewGuid();
+        var token = $"sigilomsg{suffix}";
+        (await alice.PostAsJsonAsync(
+            $"/api/v1/channels/{channel.Id}/messages",
+            new SendMessageRequest(messageId, $"sec-vers-{messageId:N}", $"privado {token}", null, null, [upload.AttachmentId])))
+            .EnsureSuccessStatusCode();
+
+        var foreignName = $"Zzzforeign{suffix}";
+        var foreignUserId = UserId.New();
+        var (foreignWorkspaceId, _) = await SeedCrossTenantWorkspaceWithMessageAsync();
+        await using (var db = factory.CreateMigratorDbContext())
+        {
+            var now = DateTimeOffset.UtcNow;
+            db.UserProfiles.Add(new VibeChat.Identity.UserProfile
+            {
+                Id = foreignUserId,
+                Subject = $"sec:foreign:{suffix}",
+                Email = $"{suffix}@foreign.test",
+                DisplayName = foreignName,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+            db.WorkspaceMembers.Add(new WorkspaceMember
+            {
+                Id = Guid.NewGuid(),
+                TenantId = new TenantId(foreignWorkspaceId),
+                WorkspaceId = new WorkspaceId(foreignWorkspaceId),
+                UserId = foreignUserId,
+                Role = Role.Member,
+                JoinedAt = now
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var demoChannel = await demo.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={channelName}");
+        demoChannel!.Items.Should().NotContain(x => x.MessageId == messageId);
+        demoChannel.Channels.Should().NotContain(x => x.ChannelId == channel.Id);
+        demoChannel.Attachments.Should().NotContain(x => x.AttachmentId == upload.AttachmentId);
+
+        var demoMessage = await demo.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={token}");
+        demoMessage!.Items.Should().NotContain(x => x.MessageId == messageId);
+        demoMessage.Attachments.Should().NotContain(x => x.AttachmentId == upload.AttachmentId);
+
+        var demoPerson = await demo.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={foreignName}");
+        demoPerson!.People.Should().NotContain(x => x.UserId == foreignUserId.Value);
+
+        var aliceChannel = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={channelName}");
+        aliceChannel!.Channels.Should().Contain(x => x.ChannelId == channel.Id && x.Kind == "channel");
+        aliceChannel.Items.Should().NotContain(x => x.ChannelId != channel.Id && x.MessageId == messageId);
+
+        var aliceMessage = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={token}");
+        aliceMessage!.Items.Should().Contain(x => x.MessageId == messageId);
+
+        var aliceFile = await alice.GetFromJsonAsync<SearchMessagesDto>(
+            $"/api/v1/search/messages?workspaceId={workspace}&q={Uri.EscapeDataString($"secreto{suffix}")}");
+        aliceFile!.Attachments.Should().Contain(x => x.AttachmentId == upload.AttachmentId && x.Kind == "attachment" && x.MessageId == messageId);
+
+        var foreignWorkspace = await alice.GetAsync(
+            $"/api/v1/search/messages?workspaceId={foreignWorkspaceId}&q={foreignName}");
+        foreignWorkspace.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Search_filters_foreign_author_or_channel_are_forbidden()
     {
         using var client = factory.CreateClient();
@@ -1372,7 +1470,16 @@ public sealed class SecurityBoundaryTests(VibeChatApiFactory factory)
     private sealed record PollOptionDto(Guid Id, string Text, int Position, int VoteCount);
     private sealed record AttachmentUploadDto(Guid AttachmentId, string UploadUrl);
     private sealed record SearchMessageHitDto(Guid MessageId, Guid ChannelId, string BodyPreview);
-    private sealed record SearchMessagesDto(string Query, int Limit, SearchMessageHitDto[] Items);
+    private sealed record SearchChannelHitDto(string Kind, Guid ChannelId, string ChannelName);
+    private sealed record SearchPersonHitDto(string Kind, Guid UserId, string DisplayName);
+    private sealed record SearchAttachmentHitDto(string Kind, Guid AttachmentId, string FileName, Guid MessageId, Guid ChannelId);
+    private sealed record SearchMessagesDto(
+        string Query,
+        int Limit,
+        SearchMessageHitDto[] Items,
+        SearchChannelHitDto[]? Channels = null,
+        SearchPersonHitDto[]? People = null,
+        SearchAttachmentHitDto[]? Attachments = null);
     private sealed record SavedMessageResponseDto(Guid MessageId, Guid ChannelId, string BodyPreview);
     private sealed record SavedMessagesPageDto(SavedMessageResponseDto[] Items, string? NextCursor, int PendingCount);
     private sealed record ThreadDto(Guid Id, Guid ChannelId, Guid ParentMessageId, Guid CreatedBy, DateTimeOffset CreatedAt, int ReplyCount);

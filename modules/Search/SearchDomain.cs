@@ -46,12 +46,121 @@ public sealed record SearchMessageHit(
     DateTimeOffset CreatedAt,
     double Rank);
 
+public sealed record SearchChannelHit(
+    Guid ChannelId,
+    string ChannelName,
+    string ChannelType,
+    double Rank);
+
+public sealed record SearchPersonHit(
+    Guid UserId,
+    string DisplayName,
+    double Rank);
+
+public sealed record SearchAttachmentHit(
+    Guid AttachmentId,
+    string FileName,
+    Guid MessageId,
+    Guid ChannelId,
+    string ChannelName,
+    string ChannelType,
+    long Sequence,
+    double Rank);
+
 public sealed record SearchResultPage(
     string Query,
     IReadOnlyList<SearchMessageHit> Items,
     int Limit,
     int Total = 0,
-    string? Cursor = null);
+    string? Cursor = null,
+    IReadOnlyList<SearchChannelHit>? Channels = null,
+    IReadOnlyList<SearchPersonHit>? People = null,
+    IReadOnlyList<SearchAttachmentHit>? Attachments = null);
+
+/// <summary>
+/// Positive terms of a websearch string. Name surfaces skip queries that are
+/// only negations, which would otherwise match every row.
+/// </summary>
+public static class SearchQuerySyntax
+{
+    public static bool HasPositiveTerm(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return false;
+        }
+
+        var src = raw.Trim();
+        var buf = new StringBuilder();
+        var inQuote = false;
+        for (var i = 0; i < src.Length; i++)
+        {
+            var ch = src[i];
+            if (inQuote)
+            {
+                if (ch == '"')
+                {
+                    if (buf.ToString().Trim().Length > 0)
+                    {
+                        return true;
+                    }
+
+                    buf.Clear();
+                    inQuote = false;
+                }
+                else
+                {
+                    buf.Append(ch);
+                }
+
+                continue;
+            }
+
+            if (ch == '"')
+            {
+                if (IsPositiveWord(buf))
+                {
+                    return true;
+                }
+
+                buf.Clear();
+                inQuote = true;
+                continue;
+            }
+
+            if (char.IsWhiteSpace(ch))
+            {
+                if (IsPositiveWord(buf))
+                {
+                    return true;
+                }
+
+                buf.Clear();
+                continue;
+            }
+
+            buf.Append(ch);
+        }
+
+        if (inQuote)
+        {
+            return buf.ToString().Trim().Length > 0;
+        }
+
+        return IsPositiveWord(buf);
+    }
+
+    private static bool IsPositiveWord(StringBuilder buf)
+    {
+        var token = buf.ToString().Trim();
+        if (token.Length == 0 || token.Equals("OR", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return !(token.StartsWith('-') && token.Length > 1);
+    }
+}
 
 public sealed record SearchPageCursor(
     SearchSort Sort,
@@ -76,7 +185,14 @@ public static class SearchPolicies
     public const int DefaultLimit = 20;
     public const int MaxLimit = 50;
     public const int PreviewLength = 160;
-    public const string TextConfig = "portuguese";
+    /// <summary>
+    /// Portuguese stemming plus unaccent, so "reuniao" matches "reunião".
+    /// The migration owns the text search configuration with this name.
+    /// </summary>
+    public const string TextConfig = "public.portuguese_unaccent";
+
+    public const char HeadlineStart = '\u0001';
+    public const char HeadlineStop = '\u0002';
 
     public static readonly HashSet<string> AttachmentKinds = new(StringComparer.OrdinalIgnoreCase)
     {

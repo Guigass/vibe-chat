@@ -304,6 +304,34 @@ export interface SearchMessageHit {
   bodyPreview: string;
   createdAt: string;
   rank: number;
+  kind?: 'message';
+}
+
+export interface SearchChannelHit {
+  kind: 'channel';
+  channelId: string;
+  channelName: string;
+  channelType: string;
+  rank: number;
+}
+
+export interface SearchPersonHit {
+  kind: 'person';
+  userId: string;
+  displayName: string;
+  rank: number;
+}
+
+export interface SearchAttachmentHit {
+  kind: 'attachment';
+  attachmentId: string;
+  fileName: string;
+  messageId: string;
+  channelId: string;
+  channelName: string;
+  channelType: string;
+  sequence: number;
+  rank: number;
 }
 
 export interface SearchMessagesResult {
@@ -312,6 +340,9 @@ export interface SearchMessagesResult {
   items: SearchMessageHit[];
   total?: number;
   cursor?: string | null;
+  channels?: SearchChannelHit[];
+  people?: SearchPersonHit[];
+  attachments?: SearchAttachmentHit[];
 }
 
 export interface AdminStats {
