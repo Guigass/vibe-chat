@@ -3,18 +3,23 @@ import { ApiService } from '../api/api.service';
 import { AuthService } from '../auth/auth.service';
 import { ChatHubService } from './chat-hub.service';
 import { ChannelStore } from './channel.store';
-import { ui } from '../i18n/strings';
 import { editLifecycle, messagingPolicyOf } from '../../shared/messaging/messaging-policy';
 import { ChatMessage, ChatThread } from '../../shared/models/chat.models';
+import { compareMessagesBySeq, gapFillAfterSeq, idsEqual, mergeMessagesById } from './message-sync';
 import {
-  findMessageByCorrelators,
-  gapFillAfterSeq,
-  idsEqual,
-  markReplyQuotesDeleted,
-  mergeMessagesById,
-  replyPreviewText,
-  upsertRemoteMessage,
-} from './message-sync';
+  ThreadPatchState,
+  applyThreadDelete,
+  applyThreadEdit,
+  applyThreadLinkPreview,
+  applyThreadReactions,
+  applyThreadThumbnail,
+  clearThreadLinkPreview,
+  demoThread,
+  ingestThreadMessage,
+  normalizeThreadMessage,
+  toggleThreadReactionLocal,
+} from './thread-patches';
+import { sendThreadMessage } from './thread-send';
 
 @Injectable({ providedIn: 'root' })
 export class ThreadStore {
@@ -39,11 +44,7 @@ export class ThreadStore {
   readonly open = this.openSignal.asReadonly();
   readonly replyTarget = this.replyTargetSignal.asReadonly();
   readonly editingMessage = this.editingMessageSignal.asReadonly();
-  readonly sortedMessages = computed(() =>
-    [...this.messagesSignal()].sort(
-      (a, b) => (a.seq ?? 0) - (b.seq ?? 0) || a.createdAt.localeCompare(b.createdAt),
-    ),
-  );
+  readonly sortedMessages = computed(() => [...this.messagesSignal()].sort(compareMessagesBySeq));
 
   constructor() {
     this.hub.onMessage((message) => this.ingestRemote(message));
@@ -61,7 +62,7 @@ export class ThreadStore {
     this.editingMessageSignal.set(null);
     try {
       if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
-        const demo = this.demoThread(channelId, messageId);
+        const demo = demoThread(channelId, messageId, this.auth.profile()?.id ?? 'me');
         this.activeSignal.set(demo);
         this.messagesSignal.set([]);
         return;
@@ -149,10 +150,7 @@ export class ThreadStore {
 
   lastOwnPersistedMessage(): ChatMessage | null {
     const parent = this.activeSignal()?.parentMessage;
-    const candidates = [
-      ...(parent ? [parent] : []),
-      ...this.sortedMessages(),
-    ];
+    const candidates = [...(parent ? [parent] : []), ...this.sortedMessages()];
     for (let i = candidates.length - 1; i >= 0; i--) {
       const m = candidates[i];
       if (m.mine && !m.deletedAt && m.status === 'persisted') return m;
@@ -160,31 +158,8 @@ export class ThreadStore {
     return null;
   }
 
-  async edit(messageId: string, body: string): Promise<void> {
-    const thread = this.activeSignal();
-    const text = body.trim();
-    if (!thread || !text) return;
-
-    if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
-      this.applyEdit({
-        id: messageId,
-        channelId: thread.channelId,
-        body: text,
-        editedAt: new Date().toISOString(),
-      });
-      this.editingMessageSignal.set(null);
-      return;
-    }
-
-    const updated = await this.api.editMessage(thread.channelId, messageId, text);
-    this.applyEdit({
-      id: updated.id,
-      channelId: updated.channelId,
-      body: updated.body,
-      editedAt: updated.editedAt ?? new Date().toISOString(),
-      seq: updated.seq,
-    });
-    this.editingMessageSignal.set(null);
+  edit(messageId: string, body: string): Promise<void> {
+    return this.editMessage(messageId, body);
   }
 
   bumpReplyCount(threadId: string): void {
@@ -236,12 +211,64 @@ export class ThreadStore {
     }
   }
 
-  async toggleReaction(messageId: string, emoji: string): Promise<void> {
+  toggleReaction(messageId: string, emoji: string): Promise<void> {
+    return this.toggleThreadReaction(messageId, emoji);
+  }
+
+  send(body: string): Promise<boolean> {
+    return sendThreadMessage(
+      {
+        api: this.api,
+        isDemo: () => this.channels.isDemo(),
+        isOfflineDemo: () => this.auth.isOfflineDemo(),
+        profile: () => this.auth.profile(),
+        state: this.patchState(),
+        replyTarget: () => this.replyTargetSignal(),
+        setReplyTarget: (message) => this.replyTargetSignal.set(message),
+        setSending: (value) => this.sendingSignal.set(value),
+        bumpReplyCount: (threadId) => this.bumpReplyCount(threadId),
+      },
+      body,
+    );
+  }
+
+  applyLinkPreviewCleared(messageId: string): void {
+    clearThreadLinkPreview(this.patchState(), messageId);
+  }
+
+  private async editMessage(messageId: string, body: string): Promise<void> {
+    const thread = this.activeSignal();
+    const text = body.trim();
+    if (!thread || !text) return;
+
+    if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
+      this.applyEdit({
+        id: messageId,
+        channelId: thread.channelId,
+        body: text,
+        editedAt: new Date().toISOString(),
+      });
+      this.editingMessageSignal.set(null);
+      return;
+    }
+
+    const updated = await this.api.editMessage(thread.channelId, messageId, text);
+    this.applyEdit({
+      id: updated.id,
+      channelId: updated.channelId,
+      body: updated.body,
+      editedAt: updated.editedAt ?? new Date().toISOString(),
+      seq: updated.seq,
+    });
+    this.editingMessageSignal.set(null);
+  }
+
+  private async toggleThreadReaction(messageId: string, emoji: string): Promise<void> {
     const thread = this.activeSignal();
     if (!thread || !emoji) return;
 
     if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
-      this.applyReactionsLocal(messageId, emoji);
+      toggleThreadReactionLocal(this.patchState(), messageId, emoji);
       return;
     }
 
@@ -249,143 +276,12 @@ export class ThreadStore {
     this.applyReactions(result.messageId, result.reactions);
   }
 
-  async send(body: string): Promise<boolean> {
-    const thread = this.activeSignal();
-    const profile = this.auth.profile();
-    const text = body.trim();
-    if (!thread || !text) return false;
-
-    const replyTarget = this.replyTargetSignal();
-    const replyToMessageId = replyTarget?.id ?? thread.parentMessageId;
-    const replyTo =
-      replyTarget && !replyTarget.deletedAt
-        ? {
-            messageId: replyTarget.id,
-            authorName: replyTarget.authorName,
-            preview: replyPreviewText(replyTarget.body),
-            deleted: false,
-          }
-        : replyTarget
-          ? null
-          : thread.parentMessage && !thread.parentMessage.deletedAt
-            ? {
-                messageId: thread.parentMessageId,
-                authorName: thread.parentMessage.authorName,
-                preview: replyPreviewText(thread.parentMessage.body),
-                deleted: false,
-              }
-            : {
-                messageId: thread.parentMessageId,
-                authorName: '',
-                preview: '',
-                deleted: false,
-              };
-
-    const clientMessageId = crypto.randomUUID();
-    const idempotencyKey = crypto.randomUUID();
-    const optimistic: ChatMessage = {
-      id: clientMessageId,
-      clientMessageId,
-      conversationId: thread.id,
-      channelId: thread.channelId,
-      authorUserId: profile?.id ?? 'me',
-      authorName: profile?.name ?? ui.you,
-      body: text,
-      createdAt: new Date().toISOString(),
-      status: 'sending',
-      mine: true,
-      threadId: thread.id,
-      replyToMessageId,
-      replyTo,
-      parentMessageId: thread.parentMessageId,
-    };
-
-    this.messagesSignal.update((list) => [...list, optimistic]);
-    this.replyTargetSignal.set(null);
-    this.sendingSignal.set(true);
-
-    try {
-      if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
-        await new Promise((r) => setTimeout(r, 350));
-        this.patchByClientId(clientMessageId, {
-          status: 'sent',
-          id: crypto.randomUUID(),
-          seq: this.messagesSignal().length,
-        });
-        this.bumpReplyCount(thread.id);
-        return true;
-      }
-
-      const persisted = await this.api.sendThreadMessage({
-        threadId: thread.id,
-        body: text,
-        clientMessageId,
-        idempotencyKey,
-        replyToMessageId,
-      });
-
-      this.patchByClientId(clientMessageId, {
-        ...this.normalize(persisted),
-        status: 'persisted',
-        mine: true,
-        clientMessageId,
-      });
-      // replyCount is bumped when the outbox/hub event arrives (or by MessageStore)
-      return true;
-    } catch {
-      this.patchByClientId(clientMessageId, { status: 'failed' });
-      return false;
-    } finally {
-      this.sendingSignal.set(false);
-    }
-  }
-
   private ingestRemote(message: ChatMessage): void {
-    const active = this.activeSignal();
-    if (!active || !message.threadId || !idsEqual(message.threadId, active.id)) return;
-    if (idsEqual(message.conversationId, message.channelId)) return;
-
-    const normalized = this.normalize(message);
-    const mine = idsEqual(normalized.authorUserId, this.auth.profile()?.id);
-    const remote: ChatMessage = { ...normalized, mine, status: 'persisted' };
-    const existing = findMessageByCorrelators(this.messagesSignal(), remote);
-
-    if (existing?.clientMessageId) {
-      this.patchByClientId(existing.clientMessageId, {
-        ...remote,
-        clientMessageId: existing.clientMessageId,
-        mine,
-      });
-      return;
-    }
-
-    this.messagesSignal.update((list) => upsertRemoteMessage(list, remote));
+    ingestThreadMessage(this.patchState(), message);
   }
 
   private applyDelete(messageId: string): void {
-    this.messagesSignal.update((list) => {
-      const deleted = list.map((m) =>
-        idsEqual(m.id, messageId)
-          ? { ...m, body: '', deletedAt: m.deletedAt ?? new Date().toISOString() }
-          : m,
-      );
-      return markReplyQuotesDeleted(deleted, messageId);
-    });
-    const active = this.activeSignal();
-    if (active?.parentMessage && idsEqual(active.parentMessage.id, messageId)) {
-      this.activeSignal.set({
-        ...active,
-        parentMessage: {
-          ...active.parentMessage,
-          body: '',
-          deletedAt: active.parentMessage.deletedAt ?? new Date().toISOString(),
-        },
-      });
-    }
-    const editing = this.editingMessageSignal();
-    if (editing && idsEqual(editing.id, messageId)) {
-      this.editingMessageSignal.set(null);
-    }
+    applyThreadDelete(this.patchState(), messageId);
   }
 
   private applyEdit(patch: {
@@ -395,55 +291,14 @@ export class ThreadStore {
     editedAt: string;
     seq?: number;
   }): void {
-    const patchList = (list: ChatMessage[]): ChatMessage[] =>
-      list.map((m) =>
-        idsEqual(m.id, patch.id)
-          ? {
-              ...m,
-              body: patch.body,
-              editedAt: patch.editedAt,
-              seq: patch.seq ?? m.seq,
-              deletedAt: null,
-            }
-          : m,
-      );
-
-    this.messagesSignal.update(patchList);
-    const active = this.activeSignal();
-    if (active?.parentMessage && idsEqual(active.parentMessage.id, patch.id)) {
-      this.activeSignal.set({
-        ...active,
-        parentMessage: {
-          ...active.parentMessage,
-          body: patch.body,
-          editedAt: patch.editedAt,
-          seq: patch.seq ?? active.parentMessage.seq,
-          deletedAt: null,
-        },
-      });
-    }
-  }
-
-  private patchByClientId(clientMessageId: string, patch: Partial<ChatMessage>): void {
-    this.messagesSignal.update((list) =>
-      list.map((m) => (idsEqual(m.clientMessageId, clientMessageId) ? { ...m, ...patch } : m)),
-    );
+    applyThreadEdit(this.patchState(), patch);
   }
 
   private applyReactions(
     messageId: string,
     reactions: Array<{ emoji: string; count: number; me: boolean }>,
   ): void {
-    this.messagesSignal.update((list) =>
-      list.map((m) => (idsEqual(m.id, messageId) ? { ...m, reactions: [...reactions] } : m)),
-    );
-    const active = this.activeSignal();
-    if (active?.parentMessage && idsEqual(active.parentMessage.id, messageId)) {
-      this.activeSignal.set({
-        ...active,
-        parentMessage: { ...active.parentMessage, reactions: [...reactions] },
-      });
-    }
+    applyThreadReactions(this.patchState(), messageId, reactions);
   }
 
   private applyThumbnailReady(event: {
@@ -454,48 +309,7 @@ export class ThreadStore {
     height?: number | null;
     pageCount?: number | null;
   }): void {
-    const patchAttachments = (list: ChatMessage[]): ChatMessage[] =>
-      list.map((m) => {
-        if (!idsEqual(m.channelId, event.channelId) || !m.attachments?.length) {
-          return m;
-        }
-        let changed = false;
-        const attachments = m.attachments.map((a) => {
-          if (!idsEqual(a.id, event.attachmentId)) return a;
-          changed = true;
-          return {
-            ...a,
-            thumbnailStatus: event.thumbnailStatus,
-            width: event.width ?? a.width,
-            height: event.height ?? a.height,
-            pageCount: event.pageCount ?? a.pageCount,
-          };
-        });
-        return changed ? { ...m, attachments } : m;
-      });
-
-    this.messagesSignal.update(patchAttachments);
-    const active = this.activeSignal();
-    if (active?.parentMessage) {
-      const [parent] = patchAttachments([active.parentMessage]);
-      if (parent !== active.parentMessage) {
-        this.activeSignal.set({ ...active, parentMessage: parent });
-      }
-    }
-  }
-
-  applyLinkPreviewCleared(messageId: string): void {
-    const clear = (list: ChatMessage[]): ChatMessage[] =>
-      list.map((m) => (idsEqual(m.id, messageId) ? { ...m, linkPreview: null } : m));
-
-    this.messagesSignal.update(clear);
-    const active = this.activeSignal();
-    if (active?.parentMessage && idsEqual(active.parentMessage.id, messageId)) {
-      this.activeSignal.set({
-        ...active,
-        parentMessage: { ...active.parentMessage, linkPreview: null },
-      });
-    }
+    applyThreadThumbnail(this.patchState(), event);
   }
 
   private applyLinkPreviewReady(event: {
@@ -509,99 +323,19 @@ export class ThreadStore {
     hasImage: boolean;
     status: string;
   }): void {
-    const patch = (list: ChatMessage[]): ChatMessage[] =>
-      list.map((m) => {
-        if (!idsEqual(m.id, event.messageId) || !idsEqual(m.channelId, event.channelId)) {
-          return m;
-        }
-        return {
-          ...m,
-          linkPreview: {
-            id: event.linkPreviewId,
-            url: event.url,
-            title: event.title ?? null,
-            description: event.description ?? null,
-            siteName: event.siteName ?? null,
-            hasImage: event.hasImage,
-            status: event.status,
-          },
-        };
-      });
-
-    this.messagesSignal.update(patch);
-    const active = this.activeSignal();
-    if (active?.parentMessage) {
-      const [parent] = patch([active.parentMessage]);
-      if (parent !== active.parentMessage) {
-        this.activeSignal.set({ ...active, parentMessage: parent });
-      }
-    }
-  }
-
-  private applyReactionsLocal(messageId: string, emoji: string): void {
-    const toggle = (list: ChatMessage[]): ChatMessage[] =>
-      list.map((m) => {
-        if (!idsEqual(m.id, messageId)) return m;
-        const current = [...(m.reactions ?? [])];
-        const idx = current.findIndex((r) => r.emoji === emoji);
-        if (idx >= 0) {
-          const item = current[idx];
-          if (item.me) {
-            if (item.count <= 1) current.splice(idx, 1);
-            else current[idx] = { ...item, count: item.count - 1, me: false };
-          } else {
-            current[idx] = { ...item, count: item.count + 1, me: true };
-          }
-        } else {
-          current.push({ emoji, count: 1, me: true });
-        }
-        return { ...m, reactions: current };
-      });
-
-    this.messagesSignal.update(toggle);
-    const active = this.activeSignal();
-    if (active?.parentMessage && idsEqual(active.parentMessage.id, messageId)) {
-      const [updated] = toggle([active.parentMessage]);
-      this.activeSignal.set({ ...active, parentMessage: updated });
-    }
+    applyThreadLinkPreview(this.patchState(), event);
   }
 
   private normalize(message: ChatMessage): ChatMessage {
-    return {
-      ...message,
-      channelId: message.channelId || message.conversationId,
-      status: message.status ?? 'persisted',
-      mine: idsEqual(message.authorUserId, this.auth.profile()?.id),
-      authorName: message.authorName || 'Membro',
-      body: message.deletedAt ? '' : message.body,
-      reactions: message.reactions ?? [],
-      replyTo: message.replyTo ?? null,
-    };
+    return normalizeThreadMessage(message, this.auth.profile()?.id);
   }
 
-  private demoThread(channelId: string, messageId: string): ChatThread {
+  private patchState(): ThreadPatchState {
     return {
-      id: `thread-${messageId}`,
-      channelId,
-      parentMessageId: messageId,
-      createdBy: this.auth.profile()?.id ?? 'me',
-      createdAt: new Date().toISOString(),
-      replyCount: 0,
-      following: false,
-      followSource: null,
-      parentMessage: {
-        id: messageId,
-        conversationId: channelId,
-        channelId,
-        authorUserId: 'u-alice',
-        authorName: 'Alice Mendes',
-        body: 'Mensagem de origem da thread (demo).',
-        createdAt: new Date().toISOString(),
-        status: 'persisted',
-        mine: false,
-        threadId: `thread-${messageId}`,
-        replyCount: 0,
-      },
+      messages: this.messagesSignal,
+      active: this.activeSignal,
+      editing: this.editingMessageSignal,
+      profileId: () => this.auth.profile()?.id,
     };
   }
 }

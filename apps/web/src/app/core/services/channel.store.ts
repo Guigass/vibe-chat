@@ -8,7 +8,6 @@ import {
   PendingAnnouncement,
   PresenceStatus,
   Space,
-  SpaceGroup,
   Workspace,
   WorkspaceMember,
 } from '../../shared/models/chat.models';
@@ -18,6 +17,43 @@ import {
   defaultMessagingPolicy,
   type MessagingPolicy,
 } from '../../shared/messaging/messaging-policy';
+import {
+  demoChannels,
+  demoContactSections,
+  demoMembers,
+  demoPresence,
+  demoSpaces,
+  demoWorkspace,
+} from './channel-demo';
+import {
+  bumpChannelMention,
+  bumpChannelUnread,
+  forgetPendingAnnouncement,
+  refreshChannelUnreads,
+  refreshPendingAnnouncementInbox,
+  syncOneChannelUnread,
+} from './channel-unread';
+import {
+  PersonalGroupDeps,
+  contactDepartmentLabel,
+  createPersonalGroup,
+  deletePersonalGroup,
+  renamePersonalGroup,
+  savePersonalMembers,
+} from './channel-contacts';
+import {
+  ChannelDirectoryDeps,
+  addGroupDmParticipantsDirectory,
+  createChannelDirectory,
+  createSpaceDirectory,
+  groupChannelsBySpace,
+  leaveGroupDmDirectory,
+  openDirectMessageDirectory,
+  openGroupDmDirectory,
+  renameGroupDmDirectory,
+  selectWorkspaceDirectory,
+  upsertChannelList,
+} from './channel-directory';
 
 @Injectable({ providedIn: 'root' })
 export class ChannelStore {
@@ -40,6 +76,7 @@ export class ChannelStore {
   private readonly usingDemo = signal(false);
   private readonly composerPrefillSignal = signal<string | null>(null);
   private readonly messagingPolicySignal = signal<MessagingPolicy>(defaultMessagingPolicy);
+  private readonly pendingAnnouncementsSignal = signal<PendingAnnouncement[]>([]);
 
   readonly workspaces = this.workspacesSignal.asReadonly();
   readonly spaces = this.spacesSignal.asReadonly();
@@ -53,33 +90,11 @@ export class ChannelStore {
   /** Unread count snapshotted when the channel was opened (B-088 local divider until B-094). */
   readonly openedUnreadCount = this.openedUnreadCountSignal.asReadonly();
   readonly messagingPolicy = this.messagingPolicySignal.asReadonly();
-  readonly activeWorkspace = computed(
-    () => this.workspacesSignal().find((w) => w.id === this.activeWorkspaceId()) ?? null,
-  );
-  readonly activeChannel = computed(
-    () => this.channelsSignal().find((c) => idsEqual(c.id, this.activeChannelIdSignal())) ?? null,
-  );
-  readonly publicChannels = computed(() =>
-    this.channelsSignal().filter((c) => !c.isDirect),
-  );
-  readonly directChannels = computed(() =>
-    this.channelsSignal().filter((c) => !!c.isDirect),
-  );
-  readonly spaceGroups = computed((): SpaceGroup[] => {
-    const spaces = [...this.spacesSignal()].sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
-    const channels = this.publicChannels();
-    const grouped: SpaceGroup[] = spaces.map((space) => ({
-      space,
-      channels: channels.filter((c) => c.spaceId === space.id),
-    }));
-    const ungrouped = channels.filter(
-      (c) => !c.spaceId || !spaces.some((s) => s.id === c.spaceId),
-    );
-    if (ungrouped.length) {
-      grouped.push({ space: null, channels: ungrouped });
-    }
-    return grouped.filter((g) => g.channels.length > 0 || g.space !== null);
-  });
+  readonly activeWorkspace = computed(() => this.workspacesSignal().find((w) => w.id === this.activeWorkspaceId()) ?? null);
+  readonly activeChannel = computed(() => this.channelsSignal().find((c) => idsEqual(c.id, this.activeChannelIdSignal())) ?? null);
+  readonly publicChannels = computed(() => this.channelsSignal().filter((c) => !c.isDirect));
+  readonly directChannels = computed(() => this.channelsSignal().filter((c) => !!c.isDirect));
+  readonly spaceGroups = computed(() => groupChannelsBySpace(this.spacesSignal(), this.publicChannels()));
   readonly peerCandidates = computed(() => {
     const me = this.auth.profile()?.id;
     return this.membersSignal().filter((m) => !idsEqual(m.userId, me));
@@ -93,7 +108,6 @@ export class ChannelStore {
     const role = this.activeWorkspace()?.role;
     return !!role && ['PlatformOwner', 'WorkspaceOwner', 'Admin', 'Moderator'].includes(role);
   });
-  private readonly pendingAnnouncementsSignal = signal<PendingAnnouncement[]>([]);
   readonly pendingAnnouncements = this.pendingAnnouncementsSignal.asReadonly();
   readonly isGuest = computed(() => this.activeWorkspace()?.role === 'Guest');
   readonly canInviteGuest = computed(() => {
@@ -164,109 +178,117 @@ export class ChannelStore {
     }
   }
 
-  async refreshUnreads(): Promise<void> {
-    if (this.usingDemo()) return;
-    const workspace = this.activeWorkspace();
-    if (!workspace) return;
-    try {
-      const rows = await this.api.getWorkspaceChannelUnreads(workspace.id);
-      const byId = new Map(rows.map((row) => [row.channelId.toLowerCase(), row]));
-      this.channelsSignal.update((list) =>
-        list.map((channel) => {
-          const row = byId.get(channel.id.toLowerCase());
-          if (!row) return channel;
-          return {
-            ...channel,
-            unreadCount: row.unreadCount,
-            mentionCount: row.mentionCount,
-            pendingAnnouncementCount: row.pendingAnnouncementCount,
-          };
-        }),
-      );
-      await this.refreshPendingAnnouncements();
-    } catch {
-      // keep current badges; next reconnect can retry
-    }
+  refreshUnreads(): Promise<void> {
+    return refreshChannelUnreads(this.unreadDeps());
   }
 
-  async refreshPendingAnnouncements(): Promise<void> {
-    if (this.usingDemo()) return;
-    const workspace = this.activeWorkspace();
-    if (!workspace) return;
-    try {
-      const rows = await this.api.getPendingAnnouncements(workspace.id);
-      this.pendingAnnouncementsSignal.set(rows);
-    } catch {
-      // inbox degrades; the channel badge still comes from unread
-    }
+  refreshPendingAnnouncements(): Promise<void> {
+    return refreshPendingAnnouncementInbox({
+      api: this.api,
+      isDemo: () => this.usingDemo(),
+      workspaceId: () => this.activeWorkspace()?.id,
+      setPending: (rows) => this.pendingAnnouncementsSignal.set(rows),
+    });
   }
 
   forgetPendingAnnouncement(messageId: string): void {
-    this.pendingAnnouncementsSignal.update((list) => list.filter((item) => !idsEqual(item.messageId, messageId)));
+    this.pendingAnnouncementsSignal.update((list) => forgetPendingAnnouncement(list, messageId));
   }
 
-  async syncChannelUnread(channelId: string): Promise<void> {
-    if (this.usingDemo()) return;
-    try {
-      const counts = await this.api.getUnreadCount(channelId);
-      this.patchChannel(channelId, {
-        unreadCount: counts.unreadCount,
-        mentionCount: counts.mentionCount,
-        pendingAnnouncementCount: counts.pendingAnnouncementCount,
-      });
-      if (idsEqual(channelId, this.activeChannelIdSignal())) {
-        this.openedUnreadCountSignal.set(counts.unreadCount);
-      }
-    } catch {
-      // best-effort
-    }
+  syncChannelUnread(channelId: string): Promise<void> {
+    return syncOneChannelUnread(this.unreadDeps(), channelId);
   }
 
   setOpenedUnreadCount(count: number): void {
     this.openedUnreadCountSignal.set(Math.max(0, count));
   }
 
-  async selectWorkspace(workspaceId: string): Promise<void> {
-    this.activeWorkspaceId.set(workspaceId);
-    try {
-      if (this.usingDemo()) {
-        this.spacesSignal.set(this.demoSpaces(workspaceId));
-        this.channelsSignal.set(this.demoChannels(workspaceId));
-        this.membersSignal.set(this.demoMembers());
-        this.contactSectionsSignal.set(this.demoContactSections());
-        this.presenceSignal.set({
-          'u-alice': 'online',
-          'u-bob': 'away',
-        });
-      } else {
-        const workspace = this.workspacesSignal().find((item) => item.id === workspaceId);
-        const guest = workspace?.role === 'Guest';
-        const [spaces, channels, members, presence, sections] = await Promise.all([
-          guest ? Promise.resolve([]) : this.api.getSpaces(workspaceId),
-          this.api.getChannels(workspaceId),
-          guest ? Promise.resolve([]) : this.api.getMembers(workspaceId),
-          guest
-            ? Promise.resolve({} as Record<string, PresenceStatus>)
-            : this.api.getPresence(workspaceId).catch(() => ({}) as Record<string, PresenceStatus>),
-          guest ? Promise.resolve([]) : this.api.getGroupedContacts(workspaceId).catch(() => []),
-        ]);
-        this.spacesSignal.set(spaces);
-        this.channelsSignal.set(channels);
-        this.membersSignal.set(members);
-        this.contactSectionsSignal.set(this.withoutSelf(sections));
-        this.presenceSignal.set(presence);
-        this.joinAllChannels();
-      }
-      const first = this.channelsSignal()[0];
-      if (first) this.selectChannel(first.id);
-      else this.setActiveChannel(null);
-    } catch (err) {
-      this.errorSignal.set(err instanceof Error ? err.message : ui.errorLoadChannels);
-    }
+  selectWorkspace(workspaceId: string): Promise<void> {
+    return selectWorkspaceDirectory(this.directoryDeps(), workspaceId);
   }
 
   selectChannel(channelId: string): void {
     this.setActiveChannel(channelId);
+  }
+
+  patchChannel(channelId: string, patch: Partial<Channel>): void {
+    this.channelsSignal.update((list) =>
+      list.map((c) => (c.id === channelId ? { ...c, ...patch } : c)),
+    );
+  }
+
+  setPresence(userId: string, status: PresenceStatus): void {
+    this.presenceSignal.update((current) => ({ ...current, [userId]: status }));
+  }
+
+  presenceOf(userId: string | undefined | null): PresenceStatus {
+    if (!userId) return 'offline';
+    return this.presenceSignal()[userId] ?? 'offline';
+  }
+
+  createSpace(name: string): Promise<Space | null> {
+    return createSpaceDirectory(this.directoryDeps(), name);
+  }
+
+  createChannel(input: {
+    name: string;
+    type?: string;
+    spaceId?: string | null;
+    newSpaceName?: string;
+  }): Promise<Channel | null> {
+    return createChannelDirectory(this.directoryDeps(), input);
+  }
+
+  openDirectMessage(userId: string): Promise<Channel | null> {
+    return openDirectMessageDirectory(this.directoryDeps(), userId);
+  }
+
+  openGroupDm(userIds: string[], name?: string): Promise<Channel | null> {
+    return openGroupDmDirectory(this.directoryDeps(), userIds, name);
+  }
+
+  addGroupDmParticipants(channelId: string, userIds: string[]): Promise<Channel | null> {
+    return addGroupDmParticipantsDirectory(this.directoryDeps(), channelId, userIds);
+  }
+
+  leaveGroupDm(channelId: string): Promise<void> {
+    return leaveGroupDmDirectory(this.directoryDeps(), channelId);
+  }
+
+  renameGroupDm(channelId: string, name: string): Promise<Channel | null> {
+    return renameGroupDmDirectory(this.directoryDeps(), channelId, name);
+  }
+
+  bumpUnread(channelId: string): void {
+    this.channelsSignal.update((list) => bumpChannelUnread(list, channelId));
+  }
+
+  bumpMention(channelId: string): void {
+    this.channelsSignal.update((list) => bumpChannelMention(list, channelId));
+  }
+
+  mentionLabels(): Record<string, string> {
+    return Object.fromEntries(this.membersSignal().map((m) => [m.userId, m.displayName]));
+  }
+
+  contactLabel(userId: string): string | null {
+    return contactDepartmentLabel(this.contactSectionsSignal(), userId);
+  }
+
+  createPersonalGroup(name: string): Promise<void> {
+    return createPersonalGroup(this.personalDeps(), name);
+  }
+
+  renamePersonalGroup(groupId: string, name: string): Promise<void> {
+    return renamePersonalGroup(this.personalDeps(), groupId, name);
+  }
+
+  deletePersonalGroup(groupId: string): Promise<void> {
+    return deletePersonalGroup(this.personalDeps(), groupId);
+  }
+
+  savePersonalMembers(groupId: string, userIds: string[]): Promise<void> {
+    return savePersonalMembers(this.personalDeps(), groupId, userIds);
   }
 
   private setActiveChannel(channelId: string | null): void {
@@ -301,382 +323,76 @@ export class ChannelStore {
     void this.hub.joinChannels(this.channelsSignal().map((c) => c.id));
   }
 
-  patchChannel(channelId: string, patch: Partial<Channel>): void {
-    this.channelsSignal.update((list) =>
-      list.map((c) => (c.id === channelId ? { ...c, ...patch } : c)),
-    );
-  }
-
-  setPresence(userId: string, status: PresenceStatus): void {
-    this.presenceSignal.update((current) => ({ ...current, [userId]: status }));
-  }
-
-  presenceOf(userId: string | undefined | null): PresenceStatus {
-    if (!userId) return 'offline';
-    return this.presenceSignal()[userId] ?? 'offline';
-  }
-
-  async createSpace(name: string): Promise<Space | null> {
-    const workspace = this.activeWorkspace();
-    const trimmed = name.trim();
-    if (!workspace || !trimmed) return null;
-
-    if (this.usingDemo() || this.auth.isOfflineDemo()) {
-      const space: Space = {
-        id: `sp-${crypto.randomUUID()}`,
-        workspaceId: workspace.id,
-        name: trimmed,
-        order: this.spacesSignal().length,
-      };
-      this.spacesSignal.update((list) => [...list, space]);
-      return space;
-    }
-
-    const space = await this.api.createSpace(workspace.id, trimmed);
-    this.spacesSignal.update((list) => [...list, space]);
-    return space;
-  }
-
-  async createChannel(input: {
-    name: string;
-    type?: string;
-    spaceId?: string | null;
-    newSpaceName?: string;
-  }): Promise<Channel | null> {
-    const workspace = this.activeWorkspace();
-    const trimmed = input.name.trim();
-    if (!workspace || !trimmed) return null;
-
-    let spaceId = input.spaceId ?? null;
-    if (input.newSpaceName?.trim()) {
-      const space = await this.createSpace(input.newSpaceName.trim());
-      spaceId = space?.id ?? null;
-    }
-
-    if (this.usingDemo() || this.auth.isOfflineDemo()) {
-      const channel: Channel = {
-        id: `ch-${crypto.randomUUID()}`,
-        workspaceId: workspace.id,
-        name: trimmed,
-        unreadCount: 0,
-        type: (input.type ?? 'public').toLowerCase(),
-        isPrivate: (input.type ?? 'public').toLowerCase() === 'private',
-        spaceId,
-      };
-      this.channelsSignal.update((list) => [...list, channel]);
-      this.selectChannel(channel.id);
-      return channel;
-    }
-
-    const channel = await this.api.createChannel(workspace.id, {
-      name: trimmed,
-      type: input.type ?? 'Public',
-      spaceId,
-    });
-    this.channelsSignal.update((list) => [...list, channel]);
-    void this.hub.joinChannel(channel.id);
-    this.selectChannel(channel.id);
-    return channel;
-  }
-
-  async openDirectMessage(userId: string): Promise<Channel | null> {
-    const workspace = this.activeWorkspace();
-    if (!workspace) return null;
-
-    if (this.usingDemo() || this.auth.isOfflineDemo()) {
-      const member = this.membersSignal().find((m) => m.userId === userId);
-      const existing = this.channelsSignal().find((c) => c.isDirect && c.peerUserId === userId);
-      if (existing) {
-        this.selectChannel(existing.id);
-        return existing;
-      }
-      const channel: Channel = {
-        id: `dm-${userId}`,
-        workspaceId: workspace.id,
-        name: member?.displayName ?? 'DM',
-        unreadCount: 0,
-        isDirect: true,
-        type: 'direct',
-        peerUserId: userId,
-        peerDisplayName: member?.displayName,
-      };
-      this.channelsSignal.update((list) => [...list, channel]);
-      this.selectChannel(channel.id);
-      return channel;
-    }
-
-    const channel = await this.api.openDirectMessage(workspace.id, userId);
-    this.channelsSignal.update((list) => {
-      if (list.some((c) => c.id === channel.id)) {
-        return list.map((c) => (c.id === channel.id ? { ...c, ...channel } : c));
-      }
-      return [...list, channel];
-    });
-    void this.hub.joinChannel(channel.id);
-    this.selectChannel(channel.id);
-    return channel;
-  }
-
-  async openGroupDm(userIds: string[], name?: string): Promise<Channel | null> {
-    const workspace = this.activeWorkspace();
-    if (!workspace || userIds.length === 0) return null;
-
-    if (this.usingDemo() || this.auth.isOfflineDemo()) {
-      const members = this.membersSignal().filter((m) => userIds.includes(m.userId));
-      const label = members.map((m) => m.displayName).join(', ') || ui.groupFallback;
-      const channel: Channel = {
-        id: `gdm-${userIds.slice().sort().join('-')}`,
-        workspaceId: workspace.id,
-        name: name?.trim() || label,
-        unreadCount: 0,
-        isDirect: true,
-        isGroupDm: true,
-        type: 'groupdm',
-        participantCount: userIds.length + 1,
-        participantNames: members.map((m) => m.displayName),
-      };
-      this.channelsSignal.update((list) => {
-        const existing = list.find((c) => c.id === channel.id);
-        return existing ? list : [...list, channel];
-      });
-      this.selectChannel(channel.id);
-      return channel;
-    }
-
-    const channel = await this.api.openGroupDm(workspace.id, userIds, name);
-    this.upsertChannel(channel);
-    void this.hub.joinChannel(channel.id);
-    this.selectChannel(channel.id);
-    return channel;
-  }
-
-  async addGroupDmParticipants(channelId: string, userIds: string[]): Promise<Channel | null> {
-    if (userIds.length === 0) return null;
-    if (this.usingDemo() || this.auth.isOfflineDemo()) return null;
-    const channel = await this.api.addGroupDmParticipants(channelId, userIds);
-    this.upsertChannel(channel);
-    this.selectChannel(channel.id);
-    return channel;
-  }
-
-  async leaveGroupDm(channelId: string): Promise<void> {
-    if (!this.usingDemo() && !this.auth.isOfflineDemo()) {
-      await this.api.leaveGroupDm(channelId);
-    }
-    this.channelsSignal.update((list) => list.filter((c) => c.id !== channelId));
-    const remaining = this.channelsSignal();
-    if (remaining[0]) {
-      this.selectChannel(remaining[0].id);
-    } else {
-      this.setActiveChannel(null);
-    }
-  }
-
-  async renameGroupDm(channelId: string, name: string): Promise<Channel | null> {
-    if (this.usingDemo() || this.auth.isOfflineDemo()) {
-      this.channelsSignal.update((list) =>
-        list.map((c) => (c.id === channelId ? { ...c, name } : c)),
-      );
-      return this.channelsSignal().find((c) => c.id === channelId) ?? null;
-    }
-    const channel = await this.api.renameGroupDm(channelId, name);
-    this.upsertChannel(channel);
-    return channel;
-  }
-
   private upsertChannel(channel: Channel): void {
-    this.channelsSignal.update((list) => {
-      if (list.some((c) => c.id === channel.id)) {
-        return list.map((c) => (c.id === channel.id ? { ...c, ...channel } : c));
-      }
-      return [...list, channel];
-    });
-  }
-
-  bumpUnread(channelId: string): void {
-    this.channelsSignal.update((list) =>
-      list.map((c) =>
-        idsEqual(c.id, channelId) ? { ...c, unreadCount: c.unreadCount + 1 } : c,
-      ),
-    );
-  }
-
-  bumpMention(channelId: string): void {
-    this.channelsSignal.update((list) =>
-      list.map((c) =>
-        idsEqual(c.id, channelId)
-          ? { ...c, mentionCount: (c.mentionCount ?? 0) + 1, unreadCount: c.unreadCount + 1 }
-          : c,
-      ),
-    );
-  }
-
-  mentionLabels(): Record<string, string> {
-    return Object.fromEntries(this.membersSignal().map((m) => [m.userId, m.displayName]));
+    this.channelsSignal.update((list) => upsertChannelList(list, channel));
   }
 
   private seedDemo(): void {
-    const workspace: Workspace = {
-      id: 'ws-demo',
-      name: 'Atlantic Ops',
-      slug: 'atlantic-ops',
-      role: 'Member',
-    };
+    const workspace = demoWorkspace();
     this.workspacesSignal.set([workspace]);
     this.activeWorkspaceId.set(workspace.id);
-    this.spacesSignal.set(this.demoSpaces(workspace.id));
-    this.channelsSignal.set(this.demoChannels(workspace.id));
-    this.membersSignal.set(this.demoMembers());
-    this.contactSectionsSignal.set(this.demoContactSections());
-    this.presenceSignal.set({
-      'u-alice': 'online',
-      'u-bob': 'away',
-    });
+    this.spacesSignal.set(demoSpaces(workspace.id));
+    this.channelsSignal.set(demoChannels(workspace.id));
+    this.membersSignal.set(demoMembers());
+    this.contactSectionsSignal.set(demoContactSections(this.peerCandidates()));
+    this.presenceSignal.set(demoPresence());
     this.selectChannel('ch-general');
   }
 
-  contactLabel(userId: string): string | null {
-    const names = this.contactSectionsSignal()
-      .filter(
-        (section) =>
-          section.kind === 'department' &&
-          section.members.some((member) => idsEqual(member.userId, userId)),
-      )
-      .map((section) => section.name)
-      .filter((name): name is string => !!name);
-    return names.length ? names.join(', ') : null;
+  private unreadDeps() {
+    return {
+      api: this.api,
+      isDemo: () => this.usingDemo(),
+      workspaceId: () => this.activeWorkspace()?.id,
+      channels: () => this.channelsSignal(),
+      updateChannels: (fn: (list: Channel[]) => Channel[]) => this.channelsSignal.update(fn),
+      patchChannel: (channelId: string, patch: Partial<Channel>) => this.patchChannel(channelId, patch),
+      activeChannelId: () => this.activeChannelIdSignal(),
+      setOpenedUnreadCount: (count: number) => this.openedUnreadCountSignal.set(count),
+      setPending: (rows: PendingAnnouncement[]) => this.pendingAnnouncementsSignal.set(rows),
+      refreshPending: () => this.refreshPendingAnnouncements(),
+    };
   }
 
-  async createPersonalGroup(name: string): Promise<void> {
-    const workspaceId = this.activeWorkspaceId();
-    if (!workspaceId || this.usingDemo()) return;
-    this.contactErrorSignal.set(null);
-    try {
-      await this.api.createContactGroup(workspaceId, { name, kind: 'personal' });
-      await this.refreshContacts();
-    } catch (err) {
-      this.contactErrorSignal.set(this.contactErrorMessage(err));
-    }
+  private directoryDeps(): ChannelDirectoryDeps {
+    return {
+      api: this.api,
+      isDemo: () => this.usingDemo(),
+      isOfflineDemo: () => this.auth.isOfflineDemo(),
+      activeWorkspace: () => this.activeWorkspace(),
+      workspaces: () => this.workspacesSignal(),
+      spaces: () => this.spacesSignal(),
+      channels: () => this.channelsSignal(),
+      members: () => this.membersSignal(),
+      peerCandidates: () => this.peerCandidates(),
+      profileId: () => this.auth.profile()?.id,
+      setActiveWorkspaceId: (id) => this.activeWorkspaceId.set(id),
+      setSpaces: (spaces) => this.spacesSignal.set(spaces),
+      setChannels: (channels) => this.channelsSignal.set(channels),
+      updateChannels: (fn) => this.channelsSignal.update(fn),
+      updateSpaces: (fn) => this.spacesSignal.update(fn),
+      setMembers: (members) => this.membersSignal.set(members),
+      setContactSections: (sections) => this.contactSectionsSignal.set(sections),
+      setPresence: (presence) => this.presenceSignal.set(presence),
+      setError: (message) => this.errorSignal.set(message),
+      selectChannel: (channelId) => this.selectChannel(channelId),
+      setActiveChannel: (channelId) => this.setActiveChannel(channelId),
+      joinAllChannels: () => this.joinAllChannels(),
+      joinChannel: (channelId) => void this.hub.joinChannel(channelId),
+      upsertChannel: (channel) => this.upsertChannel(channel),
+    };
   }
 
-  async renamePersonalGroup(groupId: string, name: string): Promise<void> {
-    const workspaceId = this.activeWorkspaceId();
-    if (!workspaceId || this.usingDemo()) return;
-    this.contactErrorSignal.set(null);
-    try {
-      await this.api.updateContactGroup(workspaceId, groupId, { name });
-      await this.refreshContacts();
-    } catch (err) {
-      this.contactErrorSignal.set(this.contactErrorMessage(err));
-    }
-  }
-
-  async deletePersonalGroup(groupId: string): Promise<void> {
-    const workspaceId = this.activeWorkspaceId();
-    if (!workspaceId || this.usingDemo()) return;
-    this.contactErrorSignal.set(null);
-    try {
-      await this.api.deleteContactGroup(workspaceId, groupId);
-      await this.refreshContacts();
-    } catch (err) {
-      this.contactErrorSignal.set(this.contactErrorMessage(err));
-    }
-  }
-
-  async savePersonalMembers(groupId: string, userIds: string[]): Promise<void> {
-    const workspaceId = this.activeWorkspaceId();
-    if (!workspaceId || this.usingDemo()) return;
-    this.contactErrorSignal.set(null);
-    try {
-      await this.api.replaceContactGroupMembers(workspaceId, groupId, userIds);
-      await this.refreshContacts();
-    } catch (err) {
-      this.contactErrorSignal.set(this.contactErrorMessage(err));
-    }
-  }
-
-  private async refreshContacts(): Promise<void> {
-    const workspaceId = this.activeWorkspaceId();
-    if (!workspaceId || this.usingDemo() || this.isGuest()) return;
-    const [members, sections] = await Promise.all([
-      this.api.getMembers(workspaceId),
-      this.api.getGroupedContacts(workspaceId),
-    ]);
-    this.membersSignal.set(members);
-    this.contactSectionsSignal.set(this.withoutSelf(sections));
-  }
-
-  private withoutSelf(sections: ContactSection[]): ContactSection[] {
-    const me = this.auth.profile()?.id;
-    return sections.map((section) => ({
-      ...section,
-      members: section.members.filter((member) => !idsEqual(member.userId, me)),
-    }));
-  }
-
-  private demoContactSections(): ContactSection[] {
-    return [{ groupId: null, name: null, kind: null, members: this.peerCandidates() }];
-  }
-
-  private contactErrorMessage(err: unknown): string {
-    const status = (err as { status?: number } | null)?.status;
-    return status === 409 ? ui.contactsNameTaken : ui.contactsActionError;
-  }
-
-  private demoMembers(): WorkspaceMember[] {
-    return [
-      {
-        userId: 'u-alice',
-        displayName: 'Alice Mendes',
-        email: 'alice@vibechat.local',
-        role: 'Member',
-      },
-      {
-        userId: 'u-bob',
-        displayName: 'Bob Costa',
-        email: 'bob@vibechat.local',
-        role: 'Member',
-      },
-    ];
-  }
-
-  private demoSpaces(workspaceId: string): Space[] {
-    return [
-      { id: 'sp-geral', workspaceId, name: 'Geral', order: 0 },
-      { id: 'sp-eng', workspaceId, name: 'Engenharia', order: 1 },
-    ];
-  }
-
-  private demoChannels(workspaceId: string): Channel[] {
-    return [
-      {
-        id: 'ch-general',
-        workspaceId,
-        name: 'geral',
-        description: 'Pulso do workspace',
-        unreadCount: 2,
-        type: 'public',
-        spaceId: 'sp-geral',
-      },
-      {
-        id: 'ch-design',
-        workspaceId,
-        name: 'design-system',
-        description: 'Tokens e UI',
-        unreadCount: 0,
-        type: 'public',
-        spaceId: 'sp-eng',
-      },
-      {
-        id: 'ch-ops',
-        workspaceId,
-        name: 'incidentes',
-        description: 'War room calma',
-        unreadCount: 5,
-        isPrivate: true,
-        type: 'private',
-        spaceId: 'sp-eng',
-      },
-    ];
+  private personalDeps(): PersonalGroupDeps {
+    return {
+      api: this.api,
+      workspaceId: () => this.activeWorkspaceId(),
+      isDemo: () => this.usingDemo(),
+      isGuest: () => this.isGuest(),
+      profileId: () => this.auth.profile()?.id,
+      setError: (message) => this.contactErrorSignal.set(message),
+      setMembers: (members) => this.membersSignal.set(members),
+      setSections: (sections) => this.contactSectionsSignal.set(sections),
+    };
   }
 }
