@@ -91,7 +91,31 @@ public sealed record MessageResponse(
     bool IsPinned = false,
     PollDto? Poll = null,
     bool AuthorIsBot = false,
-    AnnouncementDto? Announcement = null);
+    AnnouncementDto? Announcement = null,
+    Guid? MovedToMessageId = null,
+    Guid? MovedToChannelId = null,
+    long? MovedToSequence = null,
+    bool MovedToAccessible = false,
+    Guid? MovedFromMessageId = null,
+    Guid? MovedFromChannelId = null,
+    long? MovedFromSequence = null);
+
+public sealed record MoveMessageRequest(string IdempotencyKey, Guid TargetChannelId, string? Scope = null, bool? LeaveTombstone = null);
+
+public sealed record MoveMessageResponse(
+    Guid SourceMessageId,
+    Guid DestinationMessageId,
+    Guid DestinationChannelId,
+    long DestinationSequence,
+    bool Tombstone);
+
+public sealed record MessageMoveLinkResponse(bool Accessible, Guid? ChannelId = null, Guid? MessageId = null, long? Sequence = null);
+
+public sealed record MessageMoveLinksResponse(MessageMoveLinkResponse Destination, MessageMoveLinkResponse Origin);
+
+public sealed record MessageVersionResponse(int Version, string Body, Guid ActorUserId, DateTimeOffset CreatedAt);
+
+public sealed record MessageHistoryResponse(MessageVersionResponse[] Versions, string CurrentBody, DateTimeOffset? EditedAt);
 
 public sealed record PinMessageResponse(Guid MessageId, Guid ChannelId, bool Pinned, int PinCount);
 public sealed record PinnedMessageResponse(

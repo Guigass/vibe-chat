@@ -3,7 +3,8 @@ import { ChannelStore } from '../../../core/services/channel.store';
 import { fillTemplate, ui } from '../../../core/i18n/strings';
 import { ChatMessage } from '../../models/chat.models';
 import { menuActionsForMessage, type MessageMenuActionId } from '../../attachments/attachment-preview';
-import { deleteLifecycle, editLifecycle, messagingPolicyOf } from '../../messaging/messaging-policy';
+import { canMoveMessages, deleteLifecycle, editLifecycle, messagingPolicyOf } from '../../messaging/messaging-policy';
+import { MOVED_BODY } from '../../messaging/message-history';
 
 export const MINE_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
   { originX: 'start', originY: 'bottom', overlayX: 'end', overlayY: 'top', offsetX: 0, offsetY: 4 },
@@ -65,6 +66,12 @@ export function buildMessageMenuItems(
       remove === 'expired' && policy.deleteWindowMinutes != null
         ? fillTemplate(ui.menuDeleteExpired, { n: policy.deleteWindowMinutes })
         : undefined,
+    showHistory: policy.historyEnabled && !message.deletedAt && (!!message.editedAt || message.body === MOVED_BODY),
+    showMove:
+      canMoveMessages(role) &&
+      !message.deletedAt &&
+      message.body !== MOVED_BODY &&
+      !message.body.startsWith('<system:'),
   });
 }
 
@@ -81,6 +88,8 @@ export interface MessageMenuTarget {
   unsave: { emit(): void };
   remind: { emit(): void };
   markUnread: { emit(): void };
+  openHistory: { emit(): void };
+  openMove: { emit(): void };
 }
 
 export function emitMessageMenuAction(id: MessageMenuActionId, target: MessageMenuTarget): void {
@@ -120,6 +129,12 @@ export function emitMessageMenuAction(id: MessageMenuActionId, target: MessageMe
       break;
     case 'mark-unread':
       target.markUnread.emit();
+      break;
+    case 'history':
+      target.openHistory.emit();
+      break;
+    case 'move':
+      target.openMove.emit();
       break;
   }
 }

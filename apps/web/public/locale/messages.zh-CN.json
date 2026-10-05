@@ -933,6 +933,20 @@
     "admin.departmentEmpty": "还没有部门。",
     "admin.departmentSaved": "部门已更新。",
     "admin.departmentDeleted": "部门已删除。",
-    "admin.departmentDeleteConfirm": "删除此部门？频道访问权限不会改变。"
+    "admin.departmentDeleteConfirm": "删除此部门？频道访问权限不会改变。",
+    "history.moved": "消息已移动",
+    "history.openDestination": "打开目标",
+    "history.noAccess": "你无权访问另一个频道。",
+    "menu.history": "历史",
+    "menu.move": "移动",
+    "history.title": "消息历史",
+    "history.empty": "没有更早的版本。",
+    "history.current": "当前",
+    "history.error": "无法加载历史。",
+    "history.close": "关闭",
+    "move.title": "移动消息",
+    "move.confirm": "移动",
+    "move.empty": "没有其他频道。",
+    "move.error": "无法移动。"
   }
 }

@@ -933,6 +933,20 @@
     "admin.departmentEmpty": "Aucun département pour l'instant.",
     "admin.departmentSaved": "Département mis à jour.",
     "admin.departmentDeleted": "Département supprimé.",
-    "admin.departmentDeleteConfirm": "Supprimer ce département ? L'accès aux canaux ne change pas."
+    "admin.departmentDeleteConfirm": "Supprimer ce département ? L'accès aux canaux ne change pas.",
+    "history.moved": "Message déplacé",
+    "history.openDestination": "Ouvrir la destination",
+    "history.noAccess": "Vous n'avez pas accès à l'autre canal.",
+    "menu.history": "Historique",
+    "menu.move": "Déplacer",
+    "history.title": "Historique du message",
+    "history.empty": "Aucune version antérieure.",
+    "history.current": "Actuel",
+    "history.error": "Impossible de charger l'historique.",
+    "history.close": "Fermer",
+    "move.title": "Déplacer le message",
+    "move.confirm": "Déplacer",
+    "move.empty": "Aucun autre canal.",
+    "move.error": "Impossible de déplacer."
   }
 }

@@ -42,6 +42,9 @@ import { MessageLinkPreviewCard } from './message-link-preview';
 import { MessageQuote } from './message-quote';
 import { MessageReactions } from './message-reactions';
 import { MessageStatusIcons } from './message-status-icons';
+import { MessageHistoryDialog } from '../message-history/message-history-dialog';
+import { MessageMoveDialog } from '../message-history/message-move-dialog';
+import { MOVED_BODY } from '../../messaging/message-history';
 
 @Component({
   selector: 'vc-message-bubble',
@@ -64,6 +67,8 @@ import { MessageStatusIcons } from './message-status-icons';
     MessageLinkPreviewCard,
     MessageAttachments,
     MessageReactions,
+    MessageHistoryDialog,
+    MessageMoveDialog,
   ],
   templateUrl: './message-bubble.html',
   styleUrl: './message-bubble.scss',
@@ -122,6 +127,11 @@ export class MessageBubble {
   );
   readonly reactionPickerOpen = signal(false);
   readonly menuOpen = signal(false);
+  readonly historyOpen = signal(false);
+  readonly moveOpen = signal(false);
+  readonly movedBody = MOVED_BODY;
+  readonly openHistory = { emit: () => this.historyOpen.set(true) };
+  readonly openMove = { emit: () => this.moveOpen.set(true) };
   readonly reactionTooltips = signal<Record<string, string>>({});
   readonly lightboxOpen = signal(false);
   readonly lightboxStartId = signal<string | null>(null);
@@ -249,6 +259,15 @@ export class MessageBubble {
       this.reactionTooltips,
       this.channels.isDemo(),
     );
+  }
+
+  openMovedTarget(): void {
+    const message = this.message();
+    const channelId = message.movedToChannelId;
+    const messageId = message.movedToMessageId;
+    if (!message.movedToAccessible || !channelId || !messageId) return;
+    this.channels.selectChannel(channelId);
+    void this.messages.jumpToSequence(channelId, message.movedToSequence ?? 0, messageId);
   }
 
   onMenuAction(id: MessageMenuActionId): void {

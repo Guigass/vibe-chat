@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpApiClient } from './http-api.client';
-import { mapAttachment, type AttachmentDto } from './api-mappers';
+import { mapAttachment, mapMoveFields, type AttachmentDto } from './api-mappers';
 import { mapPollSummary } from '../../shared/polls/poll-summary';
 import type { MessagingPolicy } from '../../shared/messaging/messaging-policy';
 import {
@@ -915,7 +915,7 @@ export class MessagingApiService extends HttpApiClient {
       linkPreview: this.mapLinkPreview(m.linkPreview),
       isPinned: !!m.isPinned,
       poll: this.mapPoll(m.poll),
-      announcement: this.mapAnnouncement(m.announcement),
+      announcement: this.mapAnnouncement(m.announcement), ...mapMoveFields(m),
     };
   }
 

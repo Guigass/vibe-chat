@@ -67,6 +67,8 @@ export function mapMessageCreated(
     forwardedFromChannelId: payload.forwardedFromChannelId
       ? String(payload.forwardedFromChannelId)
       : null,
+    movedFromMessageId: payload.movedFromMessageId ? String(payload.movedFromMessageId) : null,
+    movedFromChannelId: payload.movedFromChannelId ? String(payload.movedFromChannelId) : null,
     forwardedFrom: payload.forwardedFrom?.messageId
       ? {
           messageId: String(payload.forwardedFrom.messageId),

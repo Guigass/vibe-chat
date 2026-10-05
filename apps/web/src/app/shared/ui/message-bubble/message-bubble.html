@@ -77,6 +77,11 @@
                   (toggle)="onPollToggle($event)"
                   (close)="onPollClose()"
                 />
+              } @else if (message().body === movedBody) {
+                <p class="vc-msg__moved">{{ ui.historyMoved }}</p>
+                @if (message().movedToAccessible && message().movedToChannelId && message().movedToMessageId) {
+                  <button type="button" (click)="openMovedTarget()">{{ ui.historyOpenDestination }}</button>
+                }
               } @else if (message().body) {
                 <vc-markdown-body
                   [source]="message().body"
@@ -191,6 +196,19 @@
       </div>
     </ng-template>
 
+    <vc-message-history-dialog
+      [open]="historyOpen()"
+      [channelId]="message().channelId"
+      [messageId]="message().id"
+      (closed)="historyOpen.set(false)"
+    />
+    <vc-message-move-dialog
+      [open]="moveOpen()"
+      [channelId]="message().channelId"
+      [messageId]="message().id"
+      [threadId]="message().threadId ?? null"
+      (closed)="moveOpen.set(false)"
+    />
     <vc-image-lightbox
       [open]="lightboxOpen()"
       [images]="lightboxImages()"

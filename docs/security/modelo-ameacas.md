@@ -138,6 +138,19 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Cascata | Remove reactions; detach `attachments.MessageId` (sem delete MinIO neste slice) |
 | Audit | `message.purge` em `audit.audit_events` |
 
+### B-114 / ADR-029 — Histórico de edição e movimentação
+
+| Item | Controle |
+|------|----------|
+| Flag | `Messaging:History:Enabled` off default; history/move → 404 `HistoryDisabled` |
+| Versão | Body anterior em `messaging.message_versions` com RLS FORCE; o vivo fica na mensagem |
+| Leitura | `message.history.read`; política `historyEnabled=false` → 403 `HistoryHidden`; admin break-glass auditado, sem body no audit |
+| Move | `message.move` + membership nos dois canais do mesmo workspace; outro tenant não resolve o destino |
+| Tombstone | Corpo `<system:moved>` sem id de destino. Quem não é membro não recebe id, seq nem body do destino |
+| Seq | Origem conserva o seq; destino recebe identidade e seq novos |
+| Export / purge | Versões entram no ZIP; soft-delete as preserva; purge de retenção remove versões e moves |
+| Hold | B-129 ainda não suspende o purge; as linhas existem para esse hold |
+
 ### B-107 / ADR-025 — Política de edição e exclusão
 
 | Item | Controle |

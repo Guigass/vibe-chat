@@ -933,6 +933,20 @@
     "admin.departmentEmpty": "部門はまだありません。",
     "admin.departmentSaved": "部門を更新しました。",
     "admin.departmentDeleted": "部門を削除しました。",
-    "admin.departmentDeleteConfirm": "この部門を削除しますか？チャネルへのアクセスは変わりません。"
+    "admin.departmentDeleteConfirm": "この部門を削除しますか？チャネルへのアクセスは変わりません。",
+    "history.moved": "メッセージを移動しました",
+    "history.openDestination": "移動先を開く",
+    "history.noAccess": "別のチャンネルにアクセスできません。",
+    "menu.history": "履歴",
+    "menu.move": "移動",
+    "history.title": "メッセージの履歴",
+    "history.empty": "以前の版はありません。",
+    "history.current": "現在",
+    "history.error": "履歴を読み込めませんでした。",
+    "history.close": "閉じる",
+    "move.title": "メッセージを移動",
+    "move.confirm": "移動",
+    "move.empty": "他のチャンネルはありません。",
+    "move.error": "移動できませんでした。"
   }
 }

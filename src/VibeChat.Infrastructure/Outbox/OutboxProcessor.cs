@@ -157,6 +157,7 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                 {
                     nameof(MessageCreatedEvent) => "MessageCreated",
                     nameof(MessageEditedEvent) => "MessageEdited",
+                    nameof(MessageMovedEvent) => "MessageMoved",
                     nameof(MessageDeletedEvent) => "MessageDeleted",
                     nameof(ReactionChangedEvent) => "ReactionChanged",
                     nameof(PinChangedEvent) => "PinChanged",

@@ -73,6 +73,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Directory:GroupDm:Enabled` | instance | false | B-101 | create/add/leave/rename → 404; history existente permanece para quem ainda é membro |
 | `Directory:Invites:Enabled` | instance | false | B-040 | create/list/revoke/accept → 404; guests já aceitos permanecem até revogar |
 | `Integrations:Bots:Enabled` | instance | false | B-109 | create/list/rotate/revoke/send → 404; mensagens já gravadas permanecem |
+| `Messaging:History:Enabled` | instance | false | B-114 | history/move → 404; edição não grava versão; versões já gravadas permanecem |
 
 ## Registro inicial de flags futuras
 

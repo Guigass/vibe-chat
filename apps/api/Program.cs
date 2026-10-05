@@ -212,6 +212,7 @@ v1.MapMessages();
 v1.MapThreads();
 v1.MapFiles();
 v1.MapMessageActions();
+v1.MapMessageHistory();
 v1.MapScheduling();
 v1.MapReadCursor();
 v1.MapSearch();

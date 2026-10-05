@@ -74,6 +74,8 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<InstalledPlugin> InstalledPlugins => Set<InstalledPlugin>();
     public DbSet<MessageRetentionSettings> MessageRetentionSettings => Set<MessageRetentionSettings>();
     public DbSet<MessageLifecyclePolicy> MessageLifecyclePolicies => Set<MessageLifecyclePolicy>();
+    public DbSet<MessageVersion> MessageVersions => Set<MessageVersion>();
+    public DbSet<MessageMove> MessageMoves => Set<MessageMove>();
     public DbSet<TenantFilesSettings> TenantFilesSettings => Set<TenantFilesSettings>();
     public DbSet<TenantRateLimitSettings> TenantRateLimitSettings => Set<TenantRateLimitSettings>();
     public DbSet<ProcessSettings> ProcessSettings => Set<ProcessSettings>();
@@ -372,6 +374,10 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.ReplyToMessageId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new MessageId(v.Value) : null);
             entity.Property(x => x.ForwardedFromMessageId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new MessageId(v.Value) : null);
             entity.Property(x => x.ForwardedFromChannelId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new ChannelId(v.Value) : null);
+            entity.Property(x => x.MovedFromMessageId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new MessageId(v.Value) : null);
+            entity.Property(x => x.MovedFromChannelId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new ChannelId(v.Value) : null);
+            entity.Property(x => x.MovedToMessageId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new MessageId(v.Value) : null);
+            entity.Property(x => x.MovedToChannelId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new ChannelId(v.Value) : null);
             entity.Property(x => x.Body).HasMaxLength(8000);
             var searchVector = entity.Property<NpgsqlTsVector>("SearchVector")
                 .HasColumnName("search_vector")
@@ -818,6 +824,39 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.Property(x => x.EditRoles).HasColumnType("text[]");
             entity.Property(x => x.DeleteRoles).HasColumnType("text[]");
+            entity.Property(x => x.HistoryEnabled).HasDefaultValue(true);
+            entity.Property(x => x.LeaveTombstone).HasDefaultValue(true);
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<MessageVersion>(entity =>
+        {
+            entity.ToTable("message_versions", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.MessageId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.ActorUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Body).HasMaxLength(8000);
+            entity.HasIndex(x => new { x.TenantId, x.MessageId, x.VersionNumber }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<MessageMove>(entity =>
+        {
+            entity.ToTable("message_moves", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.SourceMessageId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.SourceChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.DestinationMessageId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.DestinationChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.ActorUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(MessageHistoryPolicies.MaxIdempotencyKeyLength);
+            entity.Property(x => x.Scope).HasMaxLength(16);
+            entity.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.SourceMessageId }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

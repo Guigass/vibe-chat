@@ -32,6 +32,7 @@ testes nem uma revisão de segurança.
 | [026](../adrs/ADR-026-webhooks-outbound-multi-endpoint.md) | Vários webhooks outbound | CRUD `/admin/webhooks`, limite 5, HMAC, filtro de canal, ping sem mensagem | **Alinhado** (W10-12 / B-108) |
 | [027](../adrs/ADR-027-bot-token-envio.md) | Bot + token de envio | `integrations.bots` / tokens / scopes, flag off, send via `MessageWriter` | **Alinhado** (W10-13 / B-109) |
 | [028](../adrs/ADR-028-plugins-locais.md) | Plugin local = manifesto + bot | `integrations.plugins`, manifesto v1, built-in Incoming Messages, mesma flag | **Alinhado** (W10-14 / B-110) |
+| [029](../adrs/ADR-029-historico-edicao-movimentacao.md) | Histórico de edição e move | `message_versions`, `message_moves`, flag `Messaging:History:Enabled=false` | **Alinhado** (W11 / B-114) |
 
 ## Gaps transversais derivados
 

@@ -19,6 +19,10 @@ public sealed class MessageLifecyclePolicy
     public string[] DeleteRoles { get; set; } = [];
     public bool DeleteRolesRestricted { get; set; }
     public bool DeleteAllowModeratorOverride { get; set; } = true;
+    /// <summary>Members with <c>message.history.read</c> may open the version list (B-114). Recording follows the process flag.</summary>
+    public bool HistoryEnabled { get; set; } = true;
+    /// <summary>Leave a neutral tombstone in the previous channel when a message is moved.</summary>
+    public bool LeaveTombstone { get; set; } = true;
     public DateTimeOffset UpdatedAt { get; set; }
 }
 
@@ -32,7 +36,9 @@ public sealed record MessagingPolicyDto(
     int? DeleteWindowMinutes,
     bool DeleteRolesRestricted,
     string[] DeleteRoles,
-    bool DeleteAllowModeratorOverride);
+    bool DeleteAllowModeratorOverride,
+    bool HistoryEnabled = true,
+    bool LeaveTombstone = true);
 
 public readonly record struct MessageLifecycleSnapshot(
     bool EditEnabled,
@@ -44,7 +50,9 @@ public readonly record struct MessageLifecycleSnapshot(
     int? DeleteWindowMinutes,
     bool DeleteRolesRestricted,
     IReadOnlyList<string> DeleteRoles,
-    bool DeleteAllowModeratorOverride);
+    bool DeleteAllowModeratorOverride,
+    bool HistoryEnabled = true,
+    bool LeaveTombstone = true);
 
 public static class MessageLifecyclePolicyRules
 {
@@ -71,7 +79,9 @@ public static class MessageLifecyclePolicyRules
         DeleteWindowMinutes: null,
         DeleteRolesRestricted: false,
         DeleteRoles: [],
-        DeleteAllowModeratorOverride: true);
+        DeleteAllowModeratorOverride: true,
+        HistoryEnabled: true,
+        LeaveTombstone: true);
 
     public static MessageLifecycleSnapshot SnapshotOf(MessageLifecyclePolicy? row) =>
         row is null
@@ -86,7 +96,9 @@ public static class MessageLifecyclePolicyRules
                 row.DeleteWindowMinutes,
                 row.DeleteRolesRestricted,
                 row.DeleteRoles,
-                row.DeleteAllowModeratorOverride);
+                row.DeleteAllowModeratorOverride,
+                row.HistoryEnabled,
+                row.LeaveTombstone);
 
     public static MessagingPolicyDto ToDto(MessageLifecyclePolicy? row)
     {
@@ -101,7 +113,9 @@ public static class MessageLifecyclePolicyRules
             snapshot.DeleteWindowMinutes,
             snapshot.DeleteRolesRestricted,
             snapshot.DeleteRolesRestricted ? snapshot.DeleteRoles.ToArray() : FormDefaultRoles,
-            snapshot.DeleteAllowModeratorOverride);
+            snapshot.DeleteAllowModeratorOverride,
+            snapshot.HistoryEnabled,
+            snapshot.LeaveTombstone);
     }
 
     public static string? NormalizeWindow(int? minutes) =>

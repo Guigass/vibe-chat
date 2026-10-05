@@ -933,6 +933,20 @@
     "admin.departmentEmpty": "Nessun reparto ancora.",
     "admin.departmentSaved": "Reparto aggiornato.",
     "admin.departmentDeleted": "Reparto eliminato.",
-    "admin.departmentDeleteConfirm": "Eliminare questo reparto? L'accesso ai canali non cambia."
+    "admin.departmentDeleteConfirm": "Eliminare questo reparto? L'accesso ai canali non cambia.",
+    "history.moved": "Messaggio spostato",
+    "history.openDestination": "Apri destinazione",
+    "history.noAccess": "Non hai accesso all'altro canale.",
+    "menu.history": "Cronologia",
+    "menu.move": "Sposta",
+    "history.title": "Cronologia del messaggio",
+    "history.empty": "Nessuna versione precedente.",
+    "history.current": "Attuale",
+    "history.error": "Impossibile caricare la cronologia.",
+    "history.close": "Chiudi",
+    "move.title": "Sposta messaggio",
+    "move.confirm": "Sposta",
+    "move.empty": "Nessun altro canale.",
+    "move.error": "Impossibile spostare."
   }
 }

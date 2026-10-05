@@ -617,6 +617,7 @@ internal static class ConversationsEndpoints
                 false,
                 x.DeletedAt == null && pollsByMessage.TryGetValue(x.Id.Value, out var poll) ? poll : null)).ToArray();
             messages = await MarkBotAuthorsAsync(db, channel.TenantId, messages, ct);
+            messages = await MessageHistoryEndpoints.ApplyMoveLinksAsync(db, profile.Id, messages, ct);
             return Results.Ok(messages);
         });
 

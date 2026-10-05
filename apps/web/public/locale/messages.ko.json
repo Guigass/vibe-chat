@@ -933,6 +933,20 @@
     "admin.departmentEmpty": "아직 부서가 없습니다.",
     "admin.departmentSaved": "부서를 업데이트했습니다.",
     "admin.departmentDeleted": "부서를 삭제했습니다.",
-    "admin.departmentDeleteConfirm": "이 부서를 삭제할까요? 채널 접근 권한은 바뀌지 않습니다."
+    "admin.departmentDeleteConfirm": "이 부서를 삭제할까요? 채널 접근 권한은 바뀌지 않습니다.",
+    "history.moved": "메시지를 옮겼습니다",
+    "history.openDestination": "대상 열기",
+    "history.noAccess": "다른 채널에 접근할 수 없습니다.",
+    "menu.history": "기록",
+    "menu.move": "이동",
+    "history.title": "메시지 기록",
+    "history.empty": "이전 버전이 없습니다.",
+    "history.current": "현재",
+    "history.error": "기록을 불러오지 못했습니다.",
+    "history.close": "닫기",
+    "move.title": "메시지 이동",
+    "move.confirm": "이동",
+    "move.empty": "다른 채널이 없습니다.",
+    "move.error": "이동하지 못했습니다."
   }
 }

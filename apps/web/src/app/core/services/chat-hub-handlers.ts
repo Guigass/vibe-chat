@@ -57,6 +57,16 @@ export function bindChatHubHandlers(connection: HubConnection, deps: ChatHubHand
     }
   });
 
+  connection.on('MessageMoved', (raw: MessageCreatedPayload | string) => {
+    const payload = coerceHubPayload<MessageCreatedPayload>(raw);
+    if (!payload) return;
+    const message = mapMessageCreated(payload, deps.profileId());
+    if (!message) return;
+    for (const handler of deps.messageHandlers) {
+      handler(message);
+    }
+  });
+
   connection.on('MessageEdited', (raw: MessageEditedPayload | string) => {
     const payload = coerceHubPayload<MessageEditedPayload>(raw);
     if (!payload) return;

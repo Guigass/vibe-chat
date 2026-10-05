@@ -933,6 +933,20 @@
     "admin.departmentEmpty": "Aún no hay departamentos.",
     "admin.departmentSaved": "Departamento actualizado.",
     "admin.departmentDeleted": "Departamento eliminado.",
-    "admin.departmentDeleteConfirm": "¿Eliminar este departamento? El acceso a los canales no cambia."
+    "admin.departmentDeleteConfirm": "¿Eliminar este departamento? El acceso a los canales no cambia.",
+    "history.moved": "Mensaje movido",
+    "history.openDestination": "Abrir destino",
+    "history.noAccess": "No tienes acceso al otro canal.",
+    "menu.history": "Historial",
+    "menu.move": "Mover",
+    "history.title": "Historial del mensaje",
+    "history.empty": "No hay una versión anterior.",
+    "history.current": "Actual",
+    "history.error": "No se pudo cargar el historial.",
+    "history.close": "Cerrar",
+    "move.title": "Mover mensaje",
+    "move.confirm": "Mover",
+    "move.empty": "No hay otro canal.",
+    "move.error": "No se pudo mover."
   }
 }

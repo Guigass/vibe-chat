@@ -689,6 +689,7 @@ internal static class MessagingEndpointHelpers
             Announcement: x.DeletedAt == null && announcementsByMessage.TryGetValue(x.Id.Value, out var announcement) ? announcement : null)).ToArray();
 
         messages = await MarkBotAuthorsAsync(db, channel.TenantId, messages, ct);
+        messages = await MessageHistoryEndpoints.ApplyMoveLinksAsync(db, profile.Id, messages, ct);
         return new ChannelMessagesResponse(messages, hasMoreBefore, hasMoreAfter);
     }
 

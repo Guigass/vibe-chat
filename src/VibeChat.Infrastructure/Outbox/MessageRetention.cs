@@ -145,6 +145,23 @@ public sealed class MessageRetentionPurgeProcessor(
                 db.Reminders.RemoveRange(reminders);
             }
 
+            var versions = await db.MessageVersions.IgnoreQueryFilters()
+                .Where(x => x.TenantId == policy.TenantId && messageIds.Contains(x.MessageId))
+                .ToListAsync(cancellationToken);
+            if (versions.Count > 0)
+            {
+                db.MessageVersions.RemoveRange(versions);
+            }
+
+            var moves = await db.MessageMoves.IgnoreQueryFilters()
+                .Where(x => x.TenantId == policy.TenantId
+                    && (messageIds.Contains(x.SourceMessageId) || messageIds.Contains(x.DestinationMessageId)))
+                .ToListAsync(cancellationToken);
+            if (moves.Count > 0)
+            {
+                db.MessageMoves.RemoveRange(moves);
+            }
+
             var mentions = await db.MessageMentions.IgnoreQueryFilters()
                 .Where(x => x.TenantId == policy.TenantId && messageIds.Contains(x.MessageId))
                 .ToListAsync(cancellationToken);

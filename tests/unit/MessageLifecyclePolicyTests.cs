@@ -112,6 +112,8 @@ public sealed class MessageLifecyclePolicyTests
         dto.EditRolesRestricted.Should().BeFalse();
         dto.EditAllowModeratorOverride.Should().BeFalse();
         dto.DeleteAllowModeratorOverride.Should().BeTrue();
+        dto.HistoryEnabled.Should().BeTrue();
+        dto.LeaveTombstone.Should().BeTrue();
         dto.EditRoles.Should().Equal("Member", "Moderator", "Admin");
     }
 }
