@@ -1,0 +1,22 @@
+:host {
+  display: contents;
+}
+    .vc-msg__forwarded {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin: 0;
+      min-width: 0;
+      font-size: 0.78rem;
+      color: var(--vc-ink-muted);
+      overflow-wrap: anywhere;
+    }
+    .vc-msg__forwarded svg {
+      flex-shrink: 0;
+    }
+
+.vc-msg__forwarded {
+  white-space: pre-wrap;
+  line-height: 1.45;
+  word-break: break-word;
+}

@@ -1,0 +1,14 @@
+              @if (message().replyTo; as cite) {
+                @if (cite.deleted) {
+                  <div class="vc-msg__quote vc-msg__quote--deleted">{{ ui.bubbleRemoved }}</div>
+                } @else {
+                  <button
+                    type="button"
+                    class="vc-msg__quote"
+                    (click)="quoteClick.emit(cite.messageId)"
+                  >
+                    <strong>{{ cite.authorName }}</strong>
+                    <span>{{ cite.preview }}</span>
+                  </button>
+                }
+              }

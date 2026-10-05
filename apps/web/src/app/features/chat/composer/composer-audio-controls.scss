@@ -1,0 +1,47 @@
+:host {
+  display: contents;
+}
+    .composer__mic-hint {
+      color: var(--vc-ink-subtle);
+      cursor: help;
+      font-size: 0.68rem;
+      padding: 0.2rem 0.35rem;
+    }
+    .composer__audio-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      align-items: center;
+      font-size: 0.72rem;
+      color: var(--vc-ink-muted);
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .composer__audio-timer {
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      color: var(--vc-brand);
+    }
+    .composer__audio-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      border: 0;
+      background: transparent;
+      color: var(--vc-brand);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15rem 0.3rem;
+      border-radius: var(--vc-radius-sm);
+    }
+    .composer__audio-btn:hover,
+    .composer__audio-btn:focus-visible {
+      background: color-mix(in srgb, var(--vc-brand) 12%, transparent);
+      color: var(--vc-ink);
+    }
+    .composer__audio-panel audio {
+      max-width: 10rem;
+      height: 1.6rem;
+    }

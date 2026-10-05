@@ -1,0 +1,121 @@
+<form class="composer" [class.composer--locked]="announcementReadOnly()" (submit)="onSubmit($event)">
+      @if (schedule.notice(); as notice) {
+        <p class="composer__schedule-notice" role="status">{{ notice }}</p>
+      }
+      @if (schedule.panelOpen()) {
+        <vc-schedule-panel />
+      }
+      <div class="composer__main">
+        <vc-composer-announcement-ack />
+        <vc-composer-context-bar (cancelEdit)="cancelEdit()" />
+        <vc-composer-attachment-list />
+        @if (attachments.liveAnnouncement(); as announcement) {
+          <p class="vc-sr-only" aria-live="polite">{{ announcement }}</p>
+        }
+
+        @if (validationError()) {
+          <p class="composer__validation" role="alert">{{ validationError() }}</p>
+        }
+
+        <vc-composer-poll-form />
+        <vc-composer-slash-notice />
+        <div class="composer__shell">
+          <vc-composer-format-toolbar (format)="applyFormat($event)" (emoji)="insertEmoji($event)" />
+          <div class="composer__input-wrap">
+            <vc-textarea
+              #composerTextarea
+              [(value)]="draft"
+              [placeholder]="composerPlaceholder()"
+              [label]="''"
+              [disabled]="announcementReadOnly()"
+              (keydown)="onKeydown($event)"
+              (textInput)="onInput()"
+              (paste)="onPaste($event)"
+            />
+            <vc-mention-autocomplete
+              [open]="mentionOpen()"
+              [items]="mentionItems()"
+              [activeIndex]="mentionActiveIndex()"
+              (select)="applyMention($event)"
+            />
+            <vc-slash-autocomplete
+              [open]="slashOpen()"
+              [items]="slashItems()"
+              [activeIndex]="slashActiveIndex()"
+              (select)="applySlash($event)"
+            />
+          </div>
+
+          <vc-composer-schedule-fields />
+          <div class="composer__actions">
+            @if (!messages.editingMessage()) {
+            <label class="composer__attach">
+              <input
+                type="file"
+                multiple
+                [disabled]="messages.sending() || !attachments.canAcceptMore()"
+                (change)="onFileSelected($event)"
+                accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,video/mp4,video/webm"
+                [attr.aria-label]="ui.composerAttachFile"
+              />
+              <span class="composer__attach-face" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551" />
+                </svg>
+              </span>
+            </label>
+            @if (!channels.activeChannel()?.isDirect) {
+              <vc-icon-button
+                [label]="ui.composerPoll"
+                [disabled]="messages.sending() || messages.editingMessage() !== null"
+                (click)="openPollComposer()"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 19V9" />
+                  <path d="M10 19V5" />
+                  <path d="M16 19v-7" />
+                  <path d="M22 19V8" />
+                </svg>
+              </vc-icon-button>
+            }
+            <vc-composer-audio-controls />
+            }
+            @if (!messages.editingMessage()) {
+              <button
+                type="button"
+                class="ghost"
+                data-testid="schedule-toggle"
+                (click)="scheduler.toggle()"
+              >
+                {{ scheduler.mode() ? ui.composerSendNow : ui.composerSchedule }}
+              </button>
+              <button
+                type="button"
+                class="ghost"
+                data-testid="schedule-list"
+                [attr.aria-label]="schedule.panelOpen() ? ui.scheduleCloseList : ui.scheduleOpenList"
+                (click)="schedule.togglePanel()"
+              >
+                {{ ui.composerScheduleList }}
+              </button>
+            }
+            <vc-button
+              type="submit"
+              [disabled]="submitDisabled()"
+              [loading]="messages.sending() || attachments.hasActiveUploads() || sendingAudio()"
+            >
+              {{ primarySubmitLabel() }}
+            </vc-button>
+          </div>
+        </div>
+        @if (showCounter()) {
+          <p
+            class="composer__counter"
+            [class.composer__counter--over]="bodyTooLong()"
+            aria-live="polite"
+          >
+            {{ bodyLength() }} / {{ maxLength }}
+          </p>
+        }
+      </div>
+    </form>

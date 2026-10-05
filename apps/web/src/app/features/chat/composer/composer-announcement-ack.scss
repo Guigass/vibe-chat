@@ -1,0 +1,28 @@
+:host {
+  display: contents;
+}
+    .composer__readonly,
+    .composer__ack {
+      margin: 0 0 0.5rem;
+      color: var(--vc-ink-muted);
+      font-size: 0.85rem;
+    }
+    .composer__ack {
+      display: grid;
+      gap: 0.35rem;
+    }
+    .composer__ack-flag,
+    .composer__ack-by {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .composer__ack input[type='datetime-local'] {
+      font: inherit;
+      color: inherit;
+      background: transparent;
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-sm);
+      min-height: 2.75rem;
+      padding: 0.25rem 0.5rem;
+    }

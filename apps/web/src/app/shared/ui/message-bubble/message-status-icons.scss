@@ -1,0 +1,22 @@
+:host {
+  display: contents;
+}
+
+.vc-msg__status {
+  font-size: 0.72rem;
+  color: var(--vc-ink-subtle);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+:host-context(.vc-msg--mine) .vc-msg__status {
+  color: var(--vc-msg-mine-muted);
+}
+.vc-msg__status--pin,
+.vc-msg__status--saved {
+  color: color-mix(in srgb, var(--vc-brand) 72%, var(--vc-ink-subtle));
+}
+.vc-msg__status--fail {
+  color: var(--vc-danger);
+}

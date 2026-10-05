@@ -1,0 +1,40 @@
+        @if (pollComposerOpen()) {
+          <div class="composer__poll">
+            <header class="composer__poll-head">
+              <strong>{{ ui.composerNewPoll }}</strong>
+              <button type="button" class="ghost" (click)="closePollComposer()">{{ ui.cancel }}</button>
+            </header>
+            <vc-input
+              [label]="ui.composerPollQuestion"
+              [placeholder]="ui.composerPollQuestionPh"
+              [(value)]="pollQuestion"
+            />
+            @for (option of pollOptions(); track $index; let i = $index) {
+              <vc-input
+                [label]="fillTemplate(ui.composerPollOptionN, { n: i + 1 })"
+                [value]="option"
+                (valueChange)="setPollOption(i, $event)"
+              />
+            }
+            <div class="composer__poll-tools">
+              <button type="button" class="ghost" (click)="addPollOption()" [disabled]="pollOptions().length >= 10">
+                {{ ui.composerPollAddOption }}
+              </button>
+              <label class="composer__poll-toggle">
+                <input type="checkbox" [checked]="pollAllowMultiple()" (change)="pollAllowMultiple.set($any($event.target).checked)" />
+                {{ ui.composerPollMultiple }}
+              </label>
+              <label class="composer__poll-toggle">
+                <input type="checkbox" [checked]="pollAnonymous()" (change)="pollAnonymous.set($any($event.target).checked)" />
+                {{ ui.composerPollAnonymous }}
+              </label>
+            </div>
+            <label class="composer__poll-deadline">
+              {{ ui.composerPollDeadline }}
+              <input type="datetime-local" [value]="pollClosesAt()" (input)="pollClosesAt.set($any($event.target).value)" />
+            </label>
+            <div class="composer__poll-footer">
+              <vc-button type="button" variant="primary" (click)="submitPoll($event)">{{ ui.composerPollPublish }}</vc-button>
+            </div>
+          </div>
+        }

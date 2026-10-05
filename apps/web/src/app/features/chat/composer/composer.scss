@@ -1,0 +1,170 @@
+    :host {
+      display: block;
+      position: relative;
+      z-index: 6;
+      flex: 0 0 auto;
+    }
+
+    .composer--locked .composer__input-wrap,
+    .composer--locked .composer__tools {
+      opacity: 0.55;
+    }
+    .composer {
+      padding: var(--vc-composer-pad);
+      border-top: 1px solid var(--vc-border);
+      background: color-mix(in srgb, var(--vc-surface-elevated) 88%, transparent);
+      overflow: visible;
+    }
+    .composer__main {
+      display: grid;
+      gap: var(--vc-space-2);
+    }
+
+    .composer__shell {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+      gap: 0.15rem 0.35rem;
+      padding: 0.3rem 0.4rem 0.35rem;
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-md);
+      background: var(--vc-composer-bg);
+      overflow: visible;
+      transition:
+        border-color var(--vc-dur-fast) var(--vc-ease-out),
+        box-shadow var(--vc-dur-fast) var(--vc-ease-out);
+    }
+    .composer__shell:focus-within {
+      border-color: color-mix(in srgb, var(--vc-brand) 55%, var(--vc-border));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--vc-brand) 22%, transparent);
+    }
+    .composer__input-wrap {
+      position: relative;
+      display: grid;
+      gap: 0.25rem;
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+    .composer__input-wrap ::ng-deep .vc-field__control {
+      border: 0;
+      background: transparent;
+      min-height: 1.85rem;
+      max-height: 8rem;
+      padding: 0.2rem 0.35rem;
+      line-height: 1.4;
+      font-size: 0.92rem;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .composer__input-wrap ::ng-deep .vc-field__control:focus,
+    .composer__input-wrap ::ng-deep .vc-field__control:focus-visible {
+      outline: none;
+      border: 0;
+      box-shadow: none;
+    }
+    .composer__input-wrap vc-mention-autocomplete,
+    .composer__input-wrap vc-slash-autocomplete {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: calc(100% + 0.35rem);
+      z-index: 20;
+    }
+
+
+.composer__actions ::ng-deep .vc-icon-btn {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+
+    .composer__validation {
+      margin: 0;
+      font-size: 0.75rem;
+      color: var(--vc-danger);
+    }
+
+    .ghost {
+      border: 0;
+      background: transparent;
+      color: var(--vc-brand);
+      cursor: pointer;
+      font: inherit;
+      padding: 0;
+    }
+    .composer__actions {
+      display: flex;
+      gap: 0.15rem;
+      align-items: center;
+      flex-wrap: wrap;
+      grid-column: 2;
+      grid-row: 2;
+      justify-self: end;
+    }
+    .composer__actions ::ng-deep .vc-btn {
+      min-height: 1.85rem;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.82rem;
+    }
+    .composer__attach {
+      position: relative;
+      overflow: hidden;
+      display: inline-grid;
+      place-items: center;
+      width: 1.7rem;
+      height: 1.7rem;
+      border-radius: var(--vc-radius-sm);
+      color: var(--vc-ink-muted);
+      cursor: pointer;
+      transition:
+        color var(--vc-dur-fast) var(--vc-ease-out),
+        background var(--vc-dur-fast) var(--vc-ease-out);
+    }
+    .composer__attach:hover {
+      color: var(--vc-ink);
+      background: color-mix(in srgb, var(--vc-brand) 12%, transparent);
+    }
+    .composer__attach:has(input:disabled) {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .composer__attach:has(input:disabled):hover {
+      color: var(--vc-ink-muted);
+      background: transparent;
+    }
+    .composer__attach input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .composer__attach:has(input:disabled) input {
+      cursor: not-allowed;
+    }
+    .composer__attach-face {
+      display: inline-grid;
+      place-items: center;
+      pointer-events: none;
+    }
+
+    .composer__counter {
+      margin: 0;
+      font-size: 0.7rem;
+      color: var(--vc-ink-subtle);
+      text-align: right;
+    }
+    .composer__counter--over {
+      color: var(--vc-danger);
+    }
+
+@media (max-width: 720px) {
+  .composer__shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  .composer__actions {
+    grid-column: 1;
+    grid-row: 3;
+    justify-self: stretch;
+    justify-content: flex-end;
+  }
+}

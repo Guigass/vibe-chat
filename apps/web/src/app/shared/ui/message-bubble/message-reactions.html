@@ -1,0 +1,21 @@
+              @if (message().reactions?.length) {
+                <ul class="vc-msg__reactions" [attr.aria-label]="ui.bubbleReactions">
+                  @for (reaction of message().reactions; track reaction.emoji) {
+                    <li>
+                      <button
+                        type="button"
+                        [class.active]="reaction.me"
+                        [attr.aria-pressed]="reaction.me"
+                        [attr.aria-label]="reactionAriaLabel(reaction.emoji)"
+                        [title]="reactionTooltip(reaction.emoji)"
+                        (mouseenter)="loadReactionTooltip(reaction.emoji)"
+                        (focus)="loadReactionTooltip(reaction.emoji)"
+                        (click)="react.emit(reaction.emoji)"
+                      >
+                        <span aria-hidden="true">{{ reaction.emoji }}</span>
+                        <span>{{ reaction.count }}</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }

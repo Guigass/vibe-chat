@@ -1,0 +1,29 @@
+        @if (slash.notice(); as notice) {
+          <aside
+            class="composer__notice"
+            [class.composer__notice--error]="notice.kind === 'error'"
+            [attr.role]="notice.kind === 'error' ? 'alert' : 'status'"
+          >
+            <header>
+              <strong>
+                @switch (notice.kind) {
+                  @case ('help') { {{ ui.composerHelp }} }
+                  @case ('summary') { {{ ui.composerSummary }} }
+                  @case ('error') { {{ ui.composerCommand }} }
+                  @default { {{ ui.composerCommand }} }
+                }
+              </strong>
+              <button type="button" class="ghost" [attr.aria-label]="ui.close" (click)="slash.clearNotice()">
+                ×
+              </button>
+            </header>
+            <p>{{ notice.text }}</p>
+            @if (notice.lines?.length) {
+              <ul>
+                @for (line of notice.lines; track line) {
+                  <li>{{ line }}</li>
+                }
+              </ul>
+            }
+          </aside>
+        }

@@ -1,0 +1,35 @@
+:host {
+  display: contents;
+}
+    .vc-msg__quote {
+      display: grid;
+      gap: 0.1rem;
+      width: 100%;
+      margin: 0;
+      padding: 0.35rem 0.55rem;
+      border: 0;
+      border-left: 3px solid var(--vc-brand);
+      border-radius: 0 var(--vc-radius-sm) var(--vc-radius-sm) 0;
+      background: color-mix(in srgb, var(--vc-brand) 8%, transparent);
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .vc-msg__quote strong {
+      font-size: 0.78rem;
+      color: var(--vc-brand);
+    }
+    .vc-msg__quote span {
+      font-size: 0.8rem;
+      color: var(--vc-ink-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .vc-msg__quote--deleted {
+      cursor: default;
+      font-style: italic;
+      color: var(--vc-ink-subtle);
+      font-size: 0.8rem;
+    }

@@ -1,0 +1,28 @@
+:host {
+  display: contents;
+}
+    .vc-msg__reactions {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .vc-msg__reactions button {
+      border: 1px solid var(--vc-border);
+      background: color-mix(in srgb, var(--vc-surface) 88%, var(--vc-brand));
+      color: var(--vc-ink);
+      border-radius: var(--vc-radius-sm);
+      font: inherit;
+      font-size: 0.78rem;
+      padding: 0.12rem 0.4rem;
+      cursor: pointer;
+      display: inline-flex;
+      gap: 0.28rem;
+      align-items: center;
+    }
+    .vc-msg__reactions button.active {
+      border-color: color-mix(in srgb, var(--vc-brand) 45%, var(--vc-border));
+      background: color-mix(in srgb, var(--vc-brand) 16%, var(--vc-surface));
+    }

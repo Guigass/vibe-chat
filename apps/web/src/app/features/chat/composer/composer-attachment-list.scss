@@ -1,0 +1,82 @@
+:host {
+  display: contents;
+}
+    .composer__attachments {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.35rem;
+    }
+    .composer__attachment {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0.45rem;
+      align-items: center;
+      padding: 0.35rem 0.45rem;
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius-sm);
+      background: color-mix(in srgb, var(--vc-surface) 92%, transparent);
+      font-size: 0.78rem;
+    }
+    .composer__attachment.is-failed {
+      border-color: color-mix(in srgb, var(--vc-danger) 45%, var(--vc-border));
+    }
+    .composer__attachment-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      color: var(--vc-ink-muted);
+    }
+    .composer__attachment-video {
+      width: 120px;
+      max-height: 72px;
+      border-radius: var(--vc-radius-sm);
+      background: #000;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+    .composer__attachment-meta {
+      display: grid;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+    .composer__attachment-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--vc-ink);
+    }
+    .composer__attachment-size,
+    .composer__attachment-ready {
+      color: var(--vc-ink-muted);
+      font-size: 0.7rem;
+    }
+    .composer__attachment-error {
+      color: var(--vc-danger);
+      font-size: 0.7rem;
+    }
+    .composer__attachment-progress {
+      width: 100%;
+      height: 0.3rem;
+      accent-color: var(--vc-brand);
+    }
+    .composer__attachment-actions {
+      display: flex;
+      gap: 0.3rem;
+      align-items: center;
+    }
+    .composer__attachment-remove {
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+.ghost {
+  border: 0;
+  background: transparent;
+  color: var(--vc-brand);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}

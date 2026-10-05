@@ -1,0 +1,49 @@
+:host {
+  display: contents;
+}
+    .composer__format {
+      display: flex;
+      gap: 0;
+      align-items: center;
+      position: relative;
+      grid-column: 1;
+      grid-row: 2;
+      min-width: 0;
+    }
+    .composer__format ::ng-deep .vc-icon-btn,
+    .composer__icon-btn {
+      width: 1.7rem;
+      height: 1.7rem;
+    }
+    .composer__icon-btn {
+      display: inline-grid;
+      place-items: center;
+      border: 1px solid transparent;
+      border-radius: var(--vc-radius-sm);
+      background: transparent;
+      color: var(--vc-ink-muted);
+      cursor: pointer;
+      padding: 0;
+      transition:
+        color var(--vc-dur-fast) var(--vc-ease-out),
+        background var(--vc-dur-fast) var(--vc-ease-out);
+    }
+    .composer__icon-btn:hover,
+    .composer__icon-btn:focus-visible {
+      color: var(--vc-ink);
+      background: color-mix(in srgb, var(--vc-brand) 12%, transparent);
+    }
+    .composer__emoji {
+      position: relative;
+    }
+    .composer__emoji vc-emoji-picker {
+      /* Anchored by CDK overlay; host only marks the origin box. */
+      z-index: 0;
+    }
+
+@media (max-width: 720px) {
+  .composer__format {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}

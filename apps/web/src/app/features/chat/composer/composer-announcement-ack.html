@@ -1,0 +1,27 @@
+        @if (announcementReadOnly()) {
+          <p class="composer__readonly" role="status">{{ ui.composerAnnouncementReadonly }}</p>
+        }
+        @if (canPublishAnnouncement()) {
+          <div class="composer__ack">
+            <label class="composer__ack-flag" for="vc-announcement-ack">
+              <input
+                id="vc-announcement-ack"
+                type="checkbox"
+                [checked]="requireAck()"
+                (change)="onRequireAckChange($event)"
+              />
+              <span>{{ ui.composerRequireAck }}</span>
+            </label>
+            @if (requireAck()) {
+              <label class="composer__ack-by" for="vc-announcement-by">
+                <span>{{ ui.composerAckBy }}</span>
+                <input
+                  id="vc-announcement-by"
+                  type="datetime-local"
+                  [value]="ackByLocal()"
+                  (change)="onAckByChange($event)"
+                />
+              </label>
+            }
+          </div>
+        }
