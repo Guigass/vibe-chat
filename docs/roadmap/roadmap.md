@@ -350,10 +350,10 @@ B-136/B-137 (SDK e registry governado).
 O roadmap executável posterior está em
 [`horizonte-ambicioso.md`](horizonte-ambicioso.md).
 
-**Wave 19 — Organização e decomposição do código** é uma wave separada de
-refatoração estrutural (arquivos menores, responsabilidades claras, sem mudança
-de contrato). Elegível após Waves 7–10; **recomendada antes da Wave 11** para
-facilitar as próximas superfícies grandes. Itens W19-1…W19-6 (`B-178`…`B-183`).
+**Wave 19 — Organização e decomposição do código** está **Done**
+(W19-1…W19-6, `B-178`…`B-183`). O gate de linhas (B-183) vive em
+`tests/architecture/SourceLineLimitTests.cs` e roda em `task test:architecture`.
+Na ordem de scan, o próximo item `Planned` é W11 / B-114.
 
 Waves 11–17 estão `Planned`, possuem specs e são elegíveis para o Build somente
 depois da conclusão das Waves 7–10 e de suas dependências (Wave 19 não bloqueia

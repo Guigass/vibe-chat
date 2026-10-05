@@ -154,6 +154,21 @@ tests/
 - módulos centrais não dependem de Infrastructure/API;
 - o catálogo RLS cobre as tabelas tenant-scoped conhecidas.
 
+`tests/architecture/SourceLineLimitTests.cs` (B-183) impede o retorno de
+arquivos monolíticos nas superfícies da Wave 19:
+
+- `apps/api/Program.cs` ≤ 500 linhas;
+- registradores de `src/VibeChat.Infrastructure` (`Infrastructure.cs` e
+  `*ServiceCollectionExtensions.cs`) ≤ 600 linhas — adapters fora desse
+  padrão de nome não entram neste teto;
+- services (`*.service.ts`), stores (`*.store.ts`) e componentes Angular
+  (`@Component` ou `*.html`) em `apps/web/src` ≤ 400 linhas.
+
+Exclusões: `node_modules`, `bin`, `obj`, `dist`, `Migrations/`, `*Designer.cs`,
+`*Snapshot.cs` e `*.spec.ts`. Arquivos que já passavam de 400 linhas antes do
+gate ficam numa lista explícita com teto congelado (não podem crescer). A
+mensagem de falha cita caminho, contagem e limite.
+
 Gap documental/técnico conhecido: a primeira regra de dependência ainda não é
 uma varredura completa de todos os assemblies. Ao adicionar módulo ou referência,
 expandir o teste de catálogo para impedir erosão silenciosa das fronteiras.
