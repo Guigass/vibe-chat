@@ -256,7 +256,7 @@ estrutural com testes verdes.
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
 | W19-1 | B | Decompor composition root da API (`Program.cs` → maps/handlers por módulo) | B-174 (recomendado) | [B-178](../product/specs/B-178-decompor-api-program.md) | **Done** — override humano W10; 220 linhas; build + 241 testes verdes |
-| W19-2 | B/A | Decompor registro de Infrastructure (`Infrastructure.cs` → registradores por área) | W19-1 (recomendado) | [B-179](../product/specs/B-179-decompor-infrastructure.md) | Planned |
+| W19-2 | B/A | Decompor registro de Infrastructure (`Infrastructure.cs` → registradores por área) | W19-1 (recomendado) | [B-179](../product/specs/B-179-decompor-infrastructure.md) | **Done** — orquestrador de 33 linhas; build + 152 unit + 18 arch + 126 integration + 82 security |
 | W19-3 | D | Decompor camada HTTP do web (`api.service.ts` → services por domínio) | — | [B-180](../product/specs/B-180-decompor-api-service-web.md) | **Done** — fachada de 160 linhas; `tsc` + 323 testes + `ng build` verdes |
 | W19-4 | D | Decompor stores e hub do web (`message.store`, `chat-hub`, `channel.store`, `thread.store`) | W19-3 (recomendado) | [B-181](../product/specs/B-181-decompor-stores-web.md) | **Done** — os quatro arquivos ≤ 400 linhas; `tsc` + 334 testes Vitest verdes |
 | W19-5 | D | Decompor componentes de chat (`composer`, `message-bubble` → subcomponentes/serviços) | W19-3, B-173 (recomendado) | [B-182](../product/specs/B-182-decompor-componentes-chat.md) | Planned |

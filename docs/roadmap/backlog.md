@@ -183,7 +183,7 @@ Waves 7–10; **recomendada antes da Wave 11**.
 | ID | Item | Notas |
 |----|------|-------|
 | B-178 | Decompor `Program.cs` da API | **Done** (W19-1) — 220 linhas; maps/helpers por fronteira; snapshot de 85 rotas; override humano W10; [evidência](../product/specs/B-178-decompor-api-program.md) |
-| B-179 | Decompor `Infrastructure.cs` | Planned (W19-2) — registradores DI/adapters por área; deps W19-1 recomendado |
+| B-179 | Decompor `Infrastructure.cs` | **Done** (W19-2) — registradores DI/adapters por área; `Infrastructure.cs` só orquestra; deps W19-1 satisfeita |
 | B-180 | Decompor `api.service.ts` | **Done** (W19-3) — fachada de 160 linhas; `tsc` + 323 testes + `ng build` verdes; [evidência](../product/specs/B-180-decompor-api-service-web.md) |
 | B-181 | Decompor stores e hub do web | **Done** (W19-4) — `message.store` 316, `chat-hub` 363, `channel.store` 398, `thread.store` 341; `tsc` + 334 testes; [evidência](../product/specs/B-181-decompor-stores-web.md) |
 | B-182 | Decompor `composer` e `message-bubble` | Planned (W19-5) — subcomponentes/serviços; deps W19-3 e B-173 recomendados |
