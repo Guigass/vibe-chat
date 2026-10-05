@@ -1,0 +1,25 @@
+          @if (scheduleMode() && !messages.editingMessage()) {
+            <div class="composer__poll-deadline">
+              <label>
+                {{ ui.composerScheduleAt }}
+                <input
+                  type="datetime-local"
+                  data-testid="schedule-at"
+                  [value]="scheduleAt()"
+                  (input)="scheduleAt.set(inputValue($event))"
+                  [attr.aria-label]="ui.composerScheduleAt"
+                />
+              </label>
+              <label>
+                {{ ui.composerTimeZone }}
+                <input
+                  data-testid="schedule-zone"
+                  [value]="scheduleZone()"
+                  (input)="scheduleZone.set(inputValue($event))"
+                  [attr.aria-label]="ui.composerTimeZone"
+                />
+              </label>
+              <p>{{ scheduleHint() }}</p>
+              <p>{{ ui.composerScheduleKept }}</p>
+            </div>
+          }

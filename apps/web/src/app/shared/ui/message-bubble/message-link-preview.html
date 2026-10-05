@@ -1,0 +1,37 @@
+              @if (visibleLinkPreview(); as preview) {
+                @if ((preview.status ?? '').toLowerCase() === 'pending') {
+                  <div
+                    class="vc-msg__link-preview vc-msg__link-preview--pending"
+                    aria-hidden="true"
+                  ></div>
+                } @else {
+                  <a
+                    class="vc-msg__link-preview"
+                    [href]="preview.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    [attr.aria-label]="linkPreviewLabel(preview)"
+                  >
+                    @if (preview.hasImage && linkPreviewImageUrl()) {
+                      <img
+                        class="vc-msg__link-preview-img"
+                        [src]="linkPreviewImageUrl()!"
+                        [alt]="preview.title || preview.siteName || 'Preview'"
+                        loading="lazy"
+                        (error)="onLinkPreviewImageError()"
+                      />
+                    }
+                    <span class="vc-msg__link-preview-body">
+                      @if (preview.siteName) {
+                        <span class="vc-msg__link-preview-site">{{ preview.siteName }}</span>
+                      }
+                      @if (preview.title) {
+                        <span class="vc-msg__link-preview-title">{{ preview.title }}</span>
+                      }
+                      @if (preview.description) {
+                        <span class="vc-msg__link-preview-desc">{{ preview.description }}</span>
+                      }
+                    </span>
+                  </a>
+                }
+              }

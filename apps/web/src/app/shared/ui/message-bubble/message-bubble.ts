@@ -1,32 +1,10 @@
 import { DatePipe } from '@angular/common';
 import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
-import type { ConnectedPosition } from '@angular/cdk/overlay';
-import {
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  output,
-  signal,
-  viewChild,
-} from '@angular/core';
-import {
-  ChatMessage,
-  MessageAttachment,
-  MessageForwardedFrom,
-  MessageLinkPreview,
-  REACTION_EMOJI_OPTIONS,
-} from '../../models/chat.models';
-import {
-  classifyAttachmentPreview,
-  isGifContentType,
-  menuActionsForMessage,
-  type MessageMenuActionId,
-} from '../../attachments/attachment-preview';
+import { Component, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
+import { ChatMessage, MessageAttachment, REACTION_EMOJI_OPTIONS } from '../../models/chat.models';
+import type { MessageMenuActionId } from '../../attachments/attachment-preview';
 import { Avatar } from '../avatar/avatar';
-import { AttachmentPreview } from '../attachment-preview/attachment-preview';
-import { ImageLightbox, type LightboxImage } from '../image-lightbox/image-lightbox';
+import { ImageLightbox } from '../image-lightbox/image-lightbox';
 import { MarkdownBody } from '../../markdown/markdown-body';
 import { ApiService } from '../../../core/api/api.service';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -42,80 +20,28 @@ import { environment } from '../../../../environments/environment';
 import { LocaleService } from '../../../core/i18n/locale.service';
 import { fillTemplate, ui } from '../../../core/i18n/strings';
 import {
-  deleteLifecycle,
-  editLifecycle,
-  messagingPolicyOf,
-} from '../../messaging/messaging-policy';
-
-const MINE_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
-  {
-    originX: 'start',
-    originY: 'bottom',
-    overlayX: 'end',
-    overlayY: 'top',
-    offsetX: 0,
-    offsetY: 4,
-  },
-  {
-    originX: 'start',
-    originY: 'top',
-    overlayX: 'end',
-    overlayY: 'bottom',
-    offsetX: 0,
-    offsetY: -4,
-  },
-  {
-    originX: 'end',
-    originY: 'bottom',
-    overlayX: 'start',
-    overlayY: 'top',
-    offsetX: 0,
-    offsetY: 4,
-  },
-  {
-    originX: 'end',
-    originY: 'top',
-    overlayX: 'start',
-    overlayY: 'bottom',
-    offsetX: 0,
-    offsetY: -4,
-  },
-];
-
-const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
-  {
-    originX: 'end',
-    originY: 'bottom',
-    overlayX: 'start',
-    overlayY: 'top',
-    offsetX: 0,
-    offsetY: 4,
-  },
-  {
-    originX: 'end',
-    originY: 'top',
-    overlayX: 'start',
-    overlayY: 'bottom',
-    offsetX: 0,
-    offsetY: -4,
-  },
-  {
-    originX: 'start',
-    originY: 'bottom',
-    overlayX: 'end',
-    overlayY: 'top',
-    offsetX: 0,
-    offsetY: 4,
-  },
-  {
-    originX: 'start',
-    originY: 'top',
-    overlayX: 'end',
-    overlayY: 'bottom',
-    offsetX: 0,
-    offsetY: -4,
-  },
-];
+  MINE_ACTION_MENU_POSITIONS,
+  THEIRS_ACTION_MENU_POSITIONS,
+  buildMessageMenuItems,
+  emitMessageMenuAction,
+} from './message-menu';
+import {
+  downloadMessageAttachment,
+  formatReactionAriaLabel,
+  lightboxImagesOf,
+  loadAttachmentDownloadUrl,
+  loadReactionTooltipText,
+  syncAttachmentUrls,
+  syncLinkPreviewImage,
+  transcribeMessageAttachment,
+  visibleLinkPreviewOf,
+} from './message-media';
+import { MessageAttachments } from './message-attachments';
+import { MessageForward } from './message-forward';
+import { MessageLinkPreviewCard } from './message-link-preview';
+import { MessageQuote } from './message-quote';
+import { MessageReactions } from './message-reactions';
+import { MessageStatusIcons } from './message-status-icons';
 
 @Component({
   selector: 'vc-message-bubble',
@@ -123,7 +49,6 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
   imports: [
     Avatar,
     DatePipe,
-    AttachmentPreview,
     ImageLightbox,
     MarkdownBody,
     EmojiPicker,
@@ -133,963 +58,15 @@ const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
     CdkMenuTrigger,
     CdkMenu,
     CdkMenuItem,
+    MessageStatusIcons,
+    MessageForward,
+    MessageQuote,
+    MessageLinkPreviewCard,
+    MessageAttachments,
+    MessageReactions,
   ],
-  template: `
-    <article
-      class="vc-msg vc-anim-fade-in"
-      tabindex="0"
-      [class.vc-msg--mine]="own()"
-      [class.vc-msg--plain]="surface() === 'plain'"
-      [class.vc-msg--group-start]="groupRole() === 'start'"
-      [class.vc-msg--group-middle]="groupRole() === 'middle'"
-      [class.vc-msg--group-end]="groupRole() === 'end'"
-      [class.vc-msg--grouped]="groupRole() === 'middle' || groupRole() === 'end'"
-      [class.vc-msg--mentioned]="message().mentionsMe"
-      [class.vc-msg--pinned]="message().isPinned"
-      [class.vc-msg--deleted]="!!message().deletedAt"
-      [class.vc-msg--highlight]="highlighted()"
-      [attr.data-status]="message().status"
-      [attr.data-group]="groupRole()"
-      [attr.data-message-id]="message().id"
-      [cdkContextMenuTriggerFor]="actionsMenu"
-      [cdkContextMenuDisabled]="!showActions()"
-      (cdkContextMenuOpened)="menuOpen.set(true)"
-      (cdkContextMenuClosed)="menuOpen.set(false)"
-      (touchstart)="onTouchStart($event)"
-      (touchend)="onTouchEnd()"
-      (touchmove)="onTouchEnd()"
-      (touchcancel)="onTouchEnd()"
-    >
-      @if (!own() && surface() !== 'plain') {
-        <div class="vc-msg__avatar-slot">
-          @if (showAvatar()) {
-            <vc-avatar
-              [name]="message().authorName"
-              [size]="avatarSize()"
-              [statusEmoji]="statusEmoji()"
-              [statusLabel]="statusLabel()"
-            />
-          }
-        </div>
-      }
-
-      <div class="vc-msg__column">
-        <div class="vc-msg__body">
-          @if (showMeta()) {
-            <header class="vc-msg__meta">
-              <strong>{{ message().authorName }}</strong>
-              @if (message().authorIsBot) {
-                <span class="vc-msg__bot">{{ ui.bubbleBot }}</span>
-              }
-              <time [attr.datetime]="message().createdAt">{{
-                message().createdAt | date: 'shortTime'
-              }}</time>
-              @if (message().editedAt && !message().deletedAt) {
-                <span role="img" class="vc-msg__status" [title]="ui.bubbleEdited" [attr.aria-label]="ui.bubbleEdited">
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                  </svg>
-                </span>
-              }
-              @if (message().isPinned && !message().deletedAt) {
-                <span
-                  role="img" class="vc-msg__status vc-msg__status--pin"
-                  [title]="ui.bubblePinned"
-                  [attr.aria-label]="ui.bubblePinned"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M12 17v5" />
-                    <path
-                      d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"
-                    />
-                  </svg>
-                </span>
-              }
-              @if (message().isSaved && !message().deletedAt) {
-                <span
-                  role="img" class="vc-msg__status vc-msg__status--saved"
-                  [title]="ui.bubbleSaved"
-                  [attr.aria-label]="ui.bubbleSaved"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                  </svg>
-                </span>
-              }
-              @if (message().status === 'sending') {
-                <span role="img" class="vc-msg__status" [title]="ui.bubbleSending" [attr.aria-label]="ui.bubbleSending">
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                  </svg>
-                </span>
-              } @else if (message().status === 'sent') {
-                <span role="img" class="vc-msg__status" [title]="ui.bubbleSent" [attr.aria-label]="ui.bubbleSent">
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M20 6 9 17l-5-5" />
-                  </svg>
-                </span>
-              } @else if (message().status === 'failed') {
-                <span
-                  role="img" class="vc-msg__status vc-msg__status--fail"
-                  [title]="ui.bubbleFailed"
-                  [attr.aria-label]="ui.bubbleFailed"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" x2="12" y1="8" y2="12" />
-                    <line x1="12" x2="12.01" y1="16" y2="16" />
-                  </svg>
-                </span>
-              }
-            </header>
-          }
-
-          <div class="vc-msg__content">
-            @if (message().deletedAt) {
-              <p class="vc-msg__deleted">{{ ui.bubbleRemoved }}</p>
-            } @else {
-              @if (message().forwardedFrom; as origin) {
-                <p
-                  class="vc-msg__forwarded"
-                  title="{{ ui.bubbleForwardedFrom }} {{ formatForwardOrigin(origin) }} · {{
-                    origin.authorName
-                  }} · {{ origin.createdAt | date: 'shortDate' }}"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <polyline points="15 14 20 9 15 4" />
-                    <path d="M4 20v-7a4 4 0 0 1 4-4h12" />
-                  </svg>
-                  <span>
-                    {{ ui.bubbleForwardedFrom }}
-                    {{ formatForwardOrigin(origin) }}
-                    · {{ origin.authorName }} · {{ origin.createdAt | date: 'shortDate' }}
-                  </span>
-                </p>
-              }
-              @if (message().replyTo; as cite) {
-                @if (cite.deleted) {
-                  <div class="vc-msg__quote vc-msg__quote--deleted">{{ ui.bubbleRemoved }}</div>
-                } @else {
-                  <button
-                    type="button"
-                    class="vc-msg__quote"
-                    (click)="quoteClick.emit(cite.messageId)"
-                  >
-                    <strong>{{ cite.authorName }}</strong>
-                    <span>{{ cite.preview }}</span>
-                  </button>
-                }
-              }
-              @if (message().announcement; as announcement) {
-                <vc-announcement-card
-                  [announcement]="announcement"
-                  [authorName]="message().authorName"
-                  [createdAt]="message().createdAt"
-                  [report]="announcementReport()"
-                  [error]="announcementError()"
-                  (acknowledge)="onAcknowledge()"
-                  (close)="onCloseAnnouncement()"
-                  (loadReport)="onLoadAnnouncementReport()"
-                />
-              }
-              @if (message().poll; as poll) {
-                <vc-poll-card
-                  [poll]="poll"
-                  [canClose]="canClosePoll()"
-                  (toggle)="onPollToggle($event)"
-                  (close)="onPollClose()"
-                />
-              } @else if (message().body) {
-                <vc-markdown-body
-                  [source]="message().body"
-                  [mentionLabels]="mentionLabels()"
-                  (mentionClick)="onMentionClick($event)"
-                />
-              }
-              @if (visibleLinkPreview(); as preview) {
-                @if ((preview.status ?? '').toLowerCase() === 'pending') {
-                  <div
-                    class="vc-msg__link-preview vc-msg__link-preview--pending"
-                    aria-hidden="true"
-                  ></div>
-                } @else {
-                  <a
-                    class="vc-msg__link-preview"
-                    [href]="preview.url"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    [attr.aria-label]="linkPreviewLabel(preview)"
-                  >
-                    @if (preview.hasImage && linkPreviewImageUrl()) {
-                      <img
-                        class="vc-msg__link-preview-img"
-                        [src]="linkPreviewImageUrl()!"
-                        [alt]="preview.title || preview.siteName || 'Preview'"
-                        loading="lazy"
-                        (error)="onLinkPreviewImageError()"
-                      />
-                    }
-                    <span class="vc-msg__link-preview-body">
-                      @if (preview.siteName) {
-                        <span class="vc-msg__link-preview-site">{{ preview.siteName }}</span>
-                      }
-                      @if (preview.title) {
-                        <span class="vc-msg__link-preview-title">{{ preview.title }}</span>
-                      }
-                      @if (preview.description) {
-                        <span class="vc-msg__link-preview-desc">{{ preview.description }}</span>
-                      }
-                    </span>
-                  </a>
-                }
-              }
-              @if (message().attachments?.length) {
-                <ul class="vc-msg__attachments">
-                  @for (attachment of message().attachments; track attachment.id) {
-                    <li>
-                      <vc-attachment-preview
-                        [attachment]="attachment"
-                        [previewUrl]="previewUrls()[attachment.id] ?? null"
-                        [downloadUrl]="downloadUrls()[attachment.id] ?? null"
-                        [showTranscribe]="attachment.kind === 'Audio' && transcribeEnabled()"
-                        (imageOpen)="openLightbox($event)"
-                        (fileOpen)="download(attachment)"
-                        (transcribe)="transcribe(attachment)"
-                      />
-                    </li>
-                  }
-                </ul>
-                @if (transcript()) {
-                  <p class="vc-msg__transcript">{{ transcript() }}</p>
-                }
-              }
-              @if (message().reactions?.length) {
-                <ul class="vc-msg__reactions" [attr.aria-label]="ui.bubbleReactions">
-                  @for (reaction of message().reactions; track reaction.emoji) {
-                    <li>
-                      <button
-                        type="button"
-                        [class.active]="reaction.me"
-                        [attr.aria-pressed]="reaction.me"
-                        [attr.aria-label]="reactionAriaLabel(reaction.emoji)"
-                        [title]="reactionTooltip(reaction.emoji)"
-                        (mouseenter)="loadReactionTooltip(reaction.emoji)"
-                        (focus)="loadReactionTooltip(reaction.emoji)"
-                        (click)="react.emit(reaction.emoji)"
-                      >
-                        <span aria-hidden="true">{{ reaction.emoji }}</span>
-                        <span>{{ reaction.count }}</span>
-                      </button>
-                    </li>
-                  }
-                </ul>
-              }
-            }
-          </div>
-          @if (!showMeta()) {
-            <div class="vc-msg__group-meta">
-              @if (message().editedAt && !message().deletedAt) {
-                <span role="img" class="vc-msg__status" [title]="ui.bubbleEdited" [attr.aria-label]="ui.bubbleEdited">
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                  </svg>
-                </span>
-              }
-              @if (message().isPinned && !message().deletedAt) {
-                <span
-                  role="img" class="vc-msg__status vc-msg__status--pin"
-                  [title]="ui.bubblePinned"
-                  [attr.aria-label]="ui.bubblePinned"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M12 17v5" />
-                    <path
-                      d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"
-                    />
-                  </svg>
-                </span>
-              }
-              @if (message().isSaved && !message().deletedAt) {
-                <span
-                  role="img" class="vc-msg__status vc-msg__status--saved"
-                  [title]="ui.bubbleSaved"
-                  [attr.aria-label]="ui.bubbleSaved"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                  </svg>
-                </span>
-              }
-              <time [attr.datetime]="message().createdAt">
-                {{ message().createdAt | date: 'shortTime' }}
-              </time>
-            </div>
-          }
-        </div>
-
-        @if (showActions()) {
-          <div
-            class="vc-msg__toolbar"
-            data-testid="msg-toolbar"
-            [class.vc-msg__toolbar--pinned]="menuOpen()"
-          >
-            <button
-              type="button"
-              class="vc-msg__toolbar-btn vc-msg__more"
-              [attr.aria-label]="ui.bubbleActions"
-              aria-haspopup="menu"
-              [cdkMenuTriggerFor]="actionsMenu"
-              [cdkMenuPosition]="actionMenuPositions()"
-              (cdkMenuOpened)="menuOpen.set(true)"
-              (cdkMenuClosed)="menuOpen.set(false)"
-            >
-              <span class="vc-msg__more-dots" aria-hidden="true"></span>
-            </button>
-          </div>
-        }
-      </div>
-    </article>
-
-    <ng-template #actionsMenu>
-      <div class="vc-msg-menu" cdkMenu>
-        <div class="vc-msg-menu__reactions" role="group" [attr.aria-label]="ui.bubbleAddReaction">
-          @for (emoji of emojiOptions; track emoji) {
-            <button
-              type="button"
-              [attr.aria-label]="fillTemplate(ui.bubbleReactWith, { emoji })"
-              (click)="onQuickReact(emoji)"
-            >
-              {{ emoji }}
-            </button>
-          }
-          <div class="vc-msg__react-more">
-            <button
-              type="button"
-              [attr.aria-label]="ui.bubbleMoreEmojis"
-              aria-haspopup="dialog"
-              [attr.aria-expanded]="reactionPickerOpen()"
-              (click)="toggleReactionPicker($event)"
-            >
-              🙂
-            </button>
-            <vc-emoji-picker
-              [open]="reactionPickerOpen()"
-              [locale]="emojiLocale()"
-              (select)="onQuickReact($event)"
-              (closed)="reactionPickerOpen.set(false)"
-            />
-          </div>
-        </div>
-        @if (showReplyAction()) {
-          <button type="button" cdkMenuItem class="vc-msg-menu__item" (click)="reply.emit()">
-            {{ ui.bubbleReply }}
-          </button>
-        }
-        @for (item of menuItems(); track item.id) {
-          <button
-            type="button"
-            cdkMenuItem
-            class="vc-msg-menu__item"
-            [class.vc-msg-menu__item--danger]="item.danger"
-            [disabled]="item.disabled"
-            [attr.title]="item.title || null"
-            (click)="onMenuAction(item.id)"
-          >
-            {{ item.label }}
-          </button>
-        }
-      </div>
-    </ng-template>
-
-    <vc-image-lightbox
-      [open]="lightboxOpen()"
-      [images]="lightboxImages()"
-      [startId]="lightboxStartId()"
-      (close)="closeLightbox()"
-    />
-  `,
-  styles: `
-    :host {
-      display: block;
-      max-width: 100%;
-      min-width: 0;
-    }
-    .vc-msg {
-      --vc-msg-max: min(44rem, 100%);
-      display: grid;
-      grid-template-columns: var(--vc-msg-avatar) minmax(0, var(--vc-msg-max));
-      gap: var(--vc-msg-gap);
-      align-items: flex-start;
-      width: fit-content;
-      max-width: 100%;
-      position: relative;
-      -webkit-touch-callout: none;
-    }
-    .vc-msg--mine {
-      --vc-msg-max: min(44rem, calc(100% - 2.75rem));
-      margin-left: auto;
-      grid-template-columns: minmax(0, var(--vc-msg-max));
-    }
-    .vc-msg--plain {
-      width: fit-content;
-      max-width: 100%;
-      grid-template-columns: minmax(0, auto);
-    }
-    .vc-msg--plain.vc-msg--mine {
-      margin-left: auto;
-      align-self: flex-end;
-    }
-    .vc-msg--plain .vc-msg__column {
-      width: fit-content;
-      max-width: 100%;
-      overflow: visible;
-    }
-    .vc-msg__avatar-slot {
-      width: var(--vc-msg-avatar);
-      flex-shrink: 0;
-    }
-    .vc-msg__column {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      min-width: 0;
-      width: 100%;
-      max-width: var(--vc-msg-max);
-      position: relative;
-    }
-    .vc-msg--mentioned:not(.vc-msg--mine) .vc-msg__body {
-      border-left: 3px solid var(--vc-brand);
-      padding-left: 0.55rem;
-      background: color-mix(in srgb, var(--vc-brand) 8%, var(--vc-msg-theirs));
-    }
-    .vc-msg__body {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-      padding: var(--vc-msg-pad-block) var(--vc-msg-pad-inline);
-      border-radius: var(--vc-radius-md);
-      background: var(--vc-msg-theirs);
-      border: 1px solid var(--vc-border);
-      min-width: 0;
-      width: 100%;
-      box-sizing: border-box;
-      position: relative;
-    }
-    .vc-msg--mine .vc-msg__body {
-      background: var(--vc-msg-mine);
-      border-color: color-mix(in srgb, var(--vc-brand) 28%, var(--vc-border));
-    }
-    .vc-msg--deleted .vc-msg__body {
-      opacity: 0.72;
-    }
-    /* Grouping removes repeated identity, never the boundary of each message. */
-    .vc-msg--plain .vc-msg__body {
-      width: fit-content;
-      max-width: 100%;
-    }
-    .vc-msg--plain.vc-msg--mentioned:not(.vc-msg--mine) .vc-msg__body {
-      border-left: 3px solid var(--vc-brand);
-      padding-left: 0.55rem;
-      background: color-mix(in srgb, var(--vc-brand) 8%, var(--vc-msg-theirs));
-    }
-    .vc-msg__group-meta {
-      position: absolute;
-      top: 50%;
-      /* Clear the ⋯ toolbar (1.5rem) + gap toward screen center. */
-      left: calc(100% + 1.9rem);
-      right: auto;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.28rem;
-      transform: translateY(-50%);
-      font-size: 0.68rem;
-      color: var(--vc-ink-subtle);
-      white-space: nowrap;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease);
-    }
-    .vc-msg:hover .vc-msg__group-meta,
-    .vc-msg:focus-within .vc-msg__group-meta {
-      opacity: 1;
-    }
-    /* Mine bubbles sit on the right — hover meta opens toward the screen center. */
-    .vc-msg--mine .vc-msg__group-meta {
-      left: auto;
-      right: calc(100% + 1.9rem);
-      flex-direction: row-reverse;
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .vc-msg__group-meta {
-        transition: none;
-      }
-    }
-    .vc-msg--highlight .vc-msg__body {
-      outline: 2px solid color-mix(in srgb, var(--vc-brand) 55%, transparent);
-      outline-offset: 2px;
-      transition: outline-color var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease);
-    }
-    .vc-msg__content {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      min-width: 0;
-    }
-    .vc-msg__forwarded {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      margin: 0;
-      min-width: 0;
-      font-size: 0.78rem;
-      color: var(--vc-ink-muted);
-      overflow-wrap: anywhere;
-    }
-    .vc-msg__forwarded svg {
-      flex-shrink: 0;
-    }
-    .vc-msg__quote {
-      display: grid;
-      gap: 0.1rem;
-      width: 100%;
-      margin: 0;
-      padding: 0.35rem 0.55rem;
-      border: 0;
-      border-left: 3px solid var(--vc-brand);
-      border-radius: 0 var(--vc-radius-sm) var(--vc-radius-sm) 0;
-      background: color-mix(in srgb, var(--vc-brand) 8%, transparent);
-      color: inherit;
-      font: inherit;
-      text-align: left;
-      cursor: pointer;
-    }
-    .vc-msg__quote strong {
-      font-size: 0.78rem;
-      color: var(--vc-brand);
-    }
-    .vc-msg__quote span {
-      font-size: 0.8rem;
-      color: var(--vc-ink-muted);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .vc-msg__quote--deleted {
-      cursor: default;
-      font-style: italic;
-      color: var(--vc-ink-subtle);
-      font-size: 0.8rem;
-    }
-    .vc-msg__meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.45rem;
-      align-items: center;
-      width: fit-content;
-      max-width: 100%;
-      padding: 0.05rem 0.35rem;
-      border-radius: var(--vc-radius-sm);
-      background: var(--vc-surface);
-    }
-    .vc-msg__meta strong {
-      font-size: 0.88rem;
-      font-family: var(--vc-font-display);
-    }
-    .vc-msg__bot {
-      font-size: 0.68rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--vc-ink-muted);
-      border: 1px solid var(--vc-border);
-      border-radius: var(--vc-radius-sm);
-      padding: 0.05rem 0.35rem;
-    }
-    time,
-    .vc-msg__status {
-      font-size: 0.72rem;
-      color: var(--vc-ink-subtle);
-    }
-    .vc-msg--mine time,
-    .vc-msg--mine .vc-msg__status { color: var(--vc-msg-mine-muted); }
-    .vc-msg__status {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
-    }
-    .vc-msg__status--pin,
-    .vc-msg__status--saved {
-      color: color-mix(in srgb, var(--vc-brand) 72%, var(--vc-ink-subtle));
-    }
-    .vc-msg__status--fail {
-      color: var(--vc-danger);
-    }
-    p {
-      margin: 0;
-      white-space: pre-wrap;
-      line-height: 1.45;
-      word-break: break-word;
-    }
-    .vc-msg__deleted {
-      font-style: italic;
-      color: var(--vc-ink-subtle);
-    }
-    .vc-msg__attachments {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: grid;
-      gap: 0.4rem;
-      width: 100%;
-    }
-    .vc-msg__link-preview {
-      display: flex;
-      flex-direction: row;
-      align-items: flex-start;
-      gap: 0.55rem;
-      /* fit-content: width 100% forced the stack bubble to --vc-msg-max
-         and left a huge empty field when there is no thumbnail. */
-      width: fit-content;
-      max-width: min(22rem, 100%);
-      box-sizing: border-box;
-      margin-top: 0.35rem;
-      padding: 0.45rem 0.55rem;
-      border: 1px solid var(--vc-border);
-      border-radius: var(--vc-radius-sm);
-      background: color-mix(in srgb, var(--vc-surface-elevated) 88%, var(--vc-surface));
-      color: inherit;
-      text-decoration: none;
-      overflow: hidden;
-    }
-    .vc-msg__link-preview:hover {
-      border-color: color-mix(in srgb, var(--vc-brand) 35%, var(--vc-border));
-    }
-    .vc-msg__link-preview--pending {
-      display: block;
-      width: min(22rem, 100%);
-      max-width: 100%;
-      min-height: 2.75rem;
-      pointer-events: none;
-      background: color-mix(in srgb, var(--vc-surface-elevated) 70%, transparent);
-    }
-    .vc-msg__link-preview-img {
-      flex: 0 0 4.5rem;
-      width: 4.5rem;
-      height: 4.5rem;
-      object-fit: cover;
-      border-radius: calc(var(--vc-radius-sm) - 2px);
-      background: var(--vc-surface);
-    }
-    .vc-msg__link-preview-body {
-      flex: 1 1 auto;
-      display: grid;
-      gap: 0.15rem;
-      min-width: 0;
-      max-width: 16rem;
-    }
-    .vc-msg__link-preview-site {
-      font-size: 0.72rem;
-      color: var(--vc-ink-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .vc-msg__link-preview-title {
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: var(--vc-ink);
-      line-height: 1.25;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .vc-msg__link-preview-desc {
-      font-size: 0.78rem;
-      color: var(--vc-ink-muted);
-      line-height: 1.35;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .vc-msg__transcript {
-      margin: 0;
-      font-size: 0.82rem;
-      color: var(--vc-ink-muted);
-      border-left: 2px solid var(--vc-border);
-      padding-left: 0.55rem;
-    }
-    .vc-msg__reactions {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-    }
-    .vc-msg__reactions button {
-      border: 1px solid var(--vc-border);
-      background: color-mix(in srgb, var(--vc-surface) 88%, var(--vc-brand));
-      color: var(--vc-ink);
-      border-radius: var(--vc-radius-sm);
-      font: inherit;
-      font-size: 0.78rem;
-      padding: 0.12rem 0.4rem;
-      cursor: pointer;
-      display: inline-flex;
-      gap: 0.28rem;
-      align-items: center;
-    }
-    .vc-msg__reactions button.active {
-      border-color: color-mix(in srgb, var(--vc-brand) 45%, var(--vc-border));
-      background: color-mix(in srgb, var(--vc-brand) 16%, var(--vc-surface));
-    }
-    .vc-msg__toolbar {
-      --vc-msg-toolbar-shift: 100%;
-      position: absolute;
-      top: 0.4rem;
-      right: 0;
-      z-index: 5;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 1.5rem;
-      height: 1.5rem;
-      margin: 0;
-      padding: 0;
-      border: 1px solid color-mix(in srgb, var(--vc-border) 72%, transparent);
-      border-radius: 999px;
-      background: color-mix(in srgb, var(--vc-surface) 92%, var(--vc-ink) 8%);
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transform: translateX(var(--vc-msg-toolbar-shift)) scale(0.88);
-      transition:
-        opacity var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease),
-        transform var(--vc-dur-fast, 120ms) var(--vc-ease-out, ease),
-        visibility 0s linear var(--vc-dur-fast, 120ms);
-      box-shadow: 0 1px 3px color-mix(in srgb, var(--vc-ink) 10%, transparent);
-    }
-    .vc-msg--mine .vc-msg__toolbar {
-      --vc-msg-toolbar-shift: -100%;
-      right: auto;
-      left: 0;
-    }
-    .vc-msg:hover .vc-msg__toolbar,
-    .vc-msg:focus-within .vc-msg__toolbar,
-    .vc-msg__toolbar--pinned {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-      transform: translateX(var(--vc-msg-toolbar-shift)) scale(1);
-      transition-delay: 0s;
-    }
-    @media (hover: none) {
-      .vc-msg__toolbar {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-        transform: translateX(var(--vc-msg-toolbar-shift)) scale(1);
-        transition: none;
-      }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .vc-msg__toolbar {
-        transition: none;
-      }
-    }
-    .vc-msg-menu__reactions {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.05rem;
-      width: 100%;
-      padding: 0.2rem 0.25rem 0.45rem;
-      margin-bottom: 0.2rem;
-      border-bottom: 1px solid var(--vc-border-subtle);
-    }
-    .vc-msg__react-more {
-      position: relative;
-    }
-    .vc-msg__react-more vc-emoji-picker {
-      /* Anchored by CDK overlay; host only marks the origin box. */
-      z-index: 0;
-    }
-    .vc-msg-menu__reactions button,
-    .vc-msg__toolbar-btn {
-      border: 0;
-      background: transparent;
-      color: var(--vc-ink-muted);
-      font: inherit;
-      font-size: 0.8rem;
-      line-height: 1;
-      cursor: pointer;
-      padding: 0.25rem 0.35rem;
-      border-radius: var(--vc-radius-sm);
-    }
-    .vc-msg-menu__reactions button:hover,
-    .vc-msg-menu__reactions button:focus-visible,
-    .vc-msg__toolbar-btn:hover,
-    .vc-msg__toolbar-btn:focus-visible {
-      color: var(--vc-ink);
-      background: color-mix(in srgb, var(--vc-brand) 10%, transparent);
-    }
-    .vc-msg__more {
-      display: grid;
-      place-items: center;
-      width: 100%;
-      height: 100%;
-      padding: 0;
-      border-radius: inherit;
-    }
-    .vc-msg__more-dots {
-      display: block;
-      width: 0.16rem;
-      height: 0.16rem;
-      border-radius: 50%;
-      background: currentColor;
-      box-shadow: -0.3rem 0 currentColor, 0.3rem 0 currentColor;
-    }
-    .vc-msg-menu {
-      display: flex;
-      flex-direction: column;
-      min-width: min(19rem, calc(100vw - 1rem));
-      max-width: calc(100vw - 1rem);
-      padding: 0.3rem;
-      border: 1px solid var(--vc-border);
-      border-radius: var(--vc-radius-md);
-      background: var(--vc-surface);
-      box-shadow: var(
-        --vc-shadow-md,
-        0 8px 24px color-mix(in srgb, var(--vc-ink) 18%, transparent)
-      );
-    }
-    .vc-msg-menu__item {
-      border: 0;
-      background: transparent;
-      color: var(--vc-ink);
-      font: inherit;
-      font-size: 0.84rem;
-      text-align: left;
-      padding: 0.45rem 0.65rem;
-      border-radius: var(--vc-radius-sm);
-      cursor: pointer;
-    }
-    .vc-msg-menu__item:hover,
-    .vc-msg-menu__item:focus-visible {
-      background: color-mix(in srgb, var(--vc-brand) 12%, transparent);
-      outline: none;
-    }
-    .vc-msg-menu__item--danger {
-      color: var(--vc-danger);
-    }
-  `,
+  templateUrl: './message-bubble.html',
+  styleUrl: './message-bubble.scss',
 })
 export class MessageBubble {
   readonly ui = ui;
@@ -1107,9 +84,7 @@ export class MessageBubble {
   readonly statusLabel = input<string | null>(null);
   readonly showMeta = input(true);
   readonly showAvatar = input(true);
-  /** Role inside an author/time group (B-088). */
   readonly groupRole = input<'start' | 'middle' | 'end' | 'single'>('single');
-  /** `plain` = content only; outer chrome comes from timeline stack bubble. */
   readonly surface = input<'bubble' | 'plain'>('bubble');
   readonly showThreadAction = input(false);
   readonly showReplyAction = input(false);
@@ -1152,41 +127,61 @@ export class MessageBubble {
   readonly lightboxStartId = signal<string | null>(null);
   readonly avatarSize = computed(() => (this.theme.density() === 'compact' ? 28 : 34));
   readonly emojiLocale = computed(() => (this.locales.locale() === 'en' ? 'en' : 'pt'));
-  readonly transcribeEnabled = computed(
-    () => environment.aiTranscribeEnabled && environment.aiSummarizeEnabled,
-  );
+  readonly transcribeEnabled = computed(() => environment.aiTranscribeEnabled && environment.aiSummarizeEnabled);
   readonly mentionLabels = computed(() => this.channels.mentionLabels());
+  readonly canClosePoll = computed(() => {
+    const poll = this.message().poll;
+    const role = this.channels.activeWorkspace()?.role?.toLowerCase();
+    return !!poll && !poll.closedAt && (this.own() || role === 'admin' || role === 'workspaceowner');
+  });
+  readonly announcementReport = signal<Array<{ userId: string; displayName: string }>>([]);
+  readonly announcementError = signal<string | null>(null);
+  readonly showActions = computed(() => !this.message().deletedAt && this.message().status === 'persisted');
+  readonly visibleLinkPreview = computed(() => visibleLinkPreviewOf(this.message()));
+  readonly menuItems = computed(() =>
+    buildMessageMenuItems(this.channels, this.message(), this.own(), {
+      showForward: this.showForwardAction(),
+      showShareToChannel: this.showShareToChannelAction(),
+      showThread: this.showThreadAction(),
+      showPin: this.showPinAction(),
+      showSave: this.showSaveAction(),
+      showRemind: this.showRemindAction(),
+      showMarkUnread: this.showMarkUnreadAction(),
+      hasLinkPreview: !!this.visibleLinkPreview(),
+    }),
+  );
+  readonly lightboxImages = computed(() =>
+    lightboxImagesOf(this.message(), this.downloadUrls(), this.previewUrls()),
+  );
+
+  private longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  private longPressPoint: { x: number; y: number } | null = null;
+
+  constructor() {
+    effect(() => {
+      syncAttachmentUrls(this.message(), this.api, this.previewUrls, this.downloadUrls);
+    });
+    effect(() => {
+      syncLinkPreviewImage(this.visibleLinkPreview(), this.message(), this.api, this.linkPreviewImageUrl);
+    });
+  }
 
   async onMentionClick(userId: string): Promise<void> {
     const me = this.auth.profile()?.id;
     if (!userId || userId === me) return;
     const channel = await this.channels.openDirectMessage(userId);
-    if (channel) {
-      await this.messages.loadChannel(channel.id);
-    }
+    if (channel) await this.messages.loadChannel(channel.id);
   }
-
-  readonly canClosePoll = computed(() => {
-    const poll = this.message().poll;
-    const me = this.auth.profile()?.id;
-    const role = this.channels.activeWorkspace()?.role?.toLowerCase();
-    return !!poll && !poll.closedAt && (this.own() || role === 'admin' || role === 'workspaceowner');
-  });
 
   onPollToggle(optionId: string): void {
     const poll = this.message().poll;
-    if (!poll) return;
-    void this.messages.votePoll(poll, optionId);
+    if (poll) void this.messages.votePoll(poll, optionId);
   }
 
   onPollClose(): void {
     const poll = this.message().poll;
-    if (!poll) return;
-    void this.messages.closePoll(poll.id, this.message().id);
+    if (poll) void this.messages.closePoll(poll.id, this.message().id);
   }
-
-  readonly announcementReport = signal<Array<{ userId: string; displayName: string }>>([]);
-  readonly announcementError = signal<string | null>(null);
 
   async onAcknowledge(): Promise<void> {
     this.announcementError.set(null);
@@ -1207,164 +202,23 @@ export class MessageBubble {
       this.announcementError.set(ui.announcementActionFailed);
     }
   }
-  readonly showActions = computed(
-    () => !this.message().deletedAt && this.message().status === 'persisted',
-  );
-  readonly menuItems = computed(() => {
-    const policy = messagingPolicyOf(this.channels);
-    const role = this.channels.activeWorkspace?.()?.role;
-    const createdAt = this.message().createdAt;
-    const nowMs = Date.now();
-    const mine = this.own();
-    const edit = editLifecycle({ policy, role, mine, createdAt, nowMs });
-    const remove = deleteLifecycle({ policy, role, mine, createdAt, nowMs });
-    return menuActionsForMessage({
-      mine,
-      showForward: this.showForwardAction(),
-      showShareToChannel: this.showShareToChannelAction(),
-      showThread: this.showThreadAction(),
-      showPin: this.showPinAction(),
-      isPinned: !!this.message().isPinned,
-      showSave: this.showSaveAction(),
-      isSaved: !!this.message().isSaved,
-      showRemind: this.showRemindAction(),
-      showMarkUnread: this.showMarkUnreadAction(),
-      replyCount: this.message().replyCount,
-      hasLinkPreview: !!this.visibleLinkPreview(),
-      allowEdit: edit === 'allow',
-      allowDelete: remove === 'allow',
-      editExpiredTitle:
-        edit === 'expired' && policy.editWindowMinutes != null
-          ? fillTemplate(ui.menuEditExpired, { n: policy.editWindowMinutes })
-          : undefined,
-      deleteExpiredTitle:
-        remove === 'expired' && policy.deleteWindowMinutes != null
-          ? fillTemplate(ui.menuDeleteExpired, { n: policy.deleteWindowMinutes })
-          : undefined,
-    });
-  });
-  readonly visibleLinkPreview = computed(() => {
-    const preview = this.message().linkPreview;
-    if (!preview || this.message().deletedAt) return null;
-    const status = (preview.status ?? 'Ready').toLowerCase();
-    if (status === 'failed' || status === 'blocked') return null;
-    if (status === 'pending' || status === 'ready') return preview;
-    return null;
-  });
-  readonly lightboxImages = computed<LightboxImage[]>(() => {
-    const urls = this.downloadUrls();
-    const previews = this.previewUrls();
-    return (this.message().attachments ?? [])
-      .filter((a) => classifyAttachmentPreview(a.contentType, a.kind) === 'image')
-      .map((a) => ({
-        id: a.id,
-        url: urls[a.id] ?? previews[a.id],
-        alt: a.fileName,
-      }))
-      .filter((a): a is LightboxImage => !!a.url);
-  });
-
-  private longPressTimer: ReturnType<typeof setTimeout> | null = null;
-  private longPressPoint: { x: number; y: number } | null = null;
-
-  constructor() {
-    effect(() => {
-      const attachments = this.message().attachments ?? [];
-      const channelId = this.message().channelId;
-      for (const attachment of attachments) {
-        const kind = classifyAttachmentPreview(attachment.contentType, attachment.kind);
-        if (kind === 'image' || kind === 'pdf') {
-          const status = attachment.thumbnailStatus;
-          if (status === 'Ready' && !this.previewUrls()[attachment.id]) {
-            void this.loadPreviewUrl(channelId, attachment.id);
-          } else if (
-            (!status || status === 'Failed') &&
-            !this.downloadUrls()[attachment.id] &&
-            kind === 'image'
-          ) {
-            // Legacy attachments without thumbnail pipeline — show original.
-            void this.loadDownloadUrl(channelId, attachment.id);
-          }
-          if (isGifContentType(attachment.contentType) && !this.downloadUrls()[attachment.id]) {
-            void this.loadDownloadUrl(channelId, attachment.id);
-          }
-        } else if ((kind === 'audio' || kind === 'video') && !this.downloadUrls()[attachment.id]) {
-          void this.loadDownloadUrl(channelId, attachment.id);
-        }
-      }
-    });
-
-    effect(() => {
-      const preview = this.visibleLinkPreview();
-      const channelId = this.message().channelId;
-      const messageId = this.message().id;
-      if (!preview || !preview.hasImage || (preview.status ?? '').toLowerCase() === 'pending') {
-        this.linkPreviewImageUrl.set(null);
-        return;
-      }
-      if (!channelId || !messageId || this.linkPreviewImageUrl()) return;
-      void this.loadLinkPreviewImage(channelId, messageId);
-    });
-  }
-
-  linkPreviewLabel(preview: MessageLinkPreview): string {
-    const title = (preview.title ?? '').trim();
-    const site = (preview.siteName ?? '').trim();
-    if (title && site) return `${title} — ${site}`;
-    if (title) return title;
-    if (site) return site;
-    return preview.url;
-  }
 
   onLinkPreviewImageError(): void {
     this.linkPreviewImageUrl.set(null);
   }
 
-  formatForwardOrigin(origin: MessageForwardedFrom): string {
-    const raw = (origin.channelName ?? '').trim();
-    const looksLikeDmSlug = /^dm:/i.test(raw);
-    const isDirect = origin.isDirect === true || looksLikeDmSlug || raw === 'DM';
-    if (isDirect) {
-      if (!raw || raw === 'DM' || looksLikeDmSlug) return 'DM';
-      return raw.startsWith('@') ? raw : `@${raw}`;
-    }
-    if (!raw) return '#';
-    if (raw.startsWith('#') || raw.startsWith('@')) return raw;
-    return `#${raw}`;
-  }
-
   async download(attachment: MessageAttachment): Promise<void> {
-    const channelId = this.message().channelId;
-    if (!channelId) return;
-    try {
-      // Always fetch a fresh presigned URL — cached preview URLs expire (TTL ~300s).
-      const result = await this.api.getAttachmentDownload(channelId, attachment.id);
-      this.downloadUrls.update((current) => ({
-        ...current,
-        [attachment.id]: result.downloadUrl,
-      }));
-      window.open(result.downloadUrl, '_blank', 'noopener,noreferrer');
-    } catch {
-      // keep UI quiet; connection banner / toast stack not present in MVP shell
-    }
+    await downloadMessageAttachment(this.api, this.message().channelId, attachment, this.downloadUrls);
   }
 
   async transcribe(attachment: MessageAttachment): Promise<void> {
-    const workspace = this.channels.activeWorkspace();
-    const channelId = this.message().channelId;
-    if (!workspace || !channelId) return;
-
-    try {
-      const result = await this.api.transcribeAttachment({
-        workspaceId: workspace.id,
-        channelId,
-        messageId: this.message().id,
-        attachmentId: attachment.id,
-      });
-      this.transcript.set(result.text);
-    } catch {
-      this.transcript.set(ui.bubbleTranscriptUnavailable);
-    }
+    await transcribeMessageAttachment(
+      this.api,
+      this.channels.activeWorkspace()?.id,
+      this.message(),
+      attachment,
+      this.transcript,
+    );
   }
 
   toggleReactionPicker(event: Event): void {
@@ -1382,79 +236,30 @@ export class MessageBubble {
     return this.reactionTooltips()[emoji] ?? '';
   }
 
-  /** Stable accessible name — never replace "Reação {emoji}" with tooltip-only text. */
   reactionAriaLabel(emoji: string): string {
-    const tip = this.reactionTooltip(emoji);
-    return tip
-      ? fillTemplate(ui.bubbleReactionTip, { emoji, tip })
-      : fillTemplate(ui.bubbleReaction, { emoji });
+    return formatReactionAriaLabel(emoji, this.reactionTooltip(emoji));
   }
 
   async loadReactionTooltip(emoji: string): Promise<void> {
-    if (this.reactionTooltips()[emoji]) return;
-    const channelId = this.message().channelId;
-    if (!channelId || this.channels.isDemo()) return;
-
-    try {
-      const result = await this.api.getReactionUsers(channelId, this.message().id, emoji);
-      const names = result.users.slice(0, 10).map((user) => user.displayName);
-      const extra =
-        result.total > names.length
-          ? fillTemplate(ui.bubbleAndMore, { n: result.total - names.length })
-          : '';
-      const text = names.length ? `${names.join(', ')}${extra}` : '';
-      this.reactionTooltips.update((current) => ({ ...current, [emoji]: text }));
-    } catch {
-      // tooltip stays empty
-    }
+    await loadReactionTooltipText(
+      this.api,
+      this.message().channelId,
+      this.message().id,
+      emoji,
+      this.reactionTooltips,
+      this.channels.isDemo(),
+    );
   }
 
   onMenuAction(id: MessageMenuActionId): void {
     if (this.menuItems().find((item) => item.id === id)?.disabled) return;
-    switch (id) {
-      case 'forward':
-        this.forward.emit();
-        break;
-      case 'share-to-channel':
-        this.shareToChannel.emit();
-        break;
-      case 'thread':
-        this.openThread.emit();
-        break;
-      case 'edit':
-        this.startEdit.emit();
-        break;
-      case 'remove-link-preview':
-        this.removeLinkPreview.emit();
-        break;
-      case 'delete':
-        this.delete.emit();
-        break;
-      case 'pin':
-        this.pin.emit();
-        break;
-      case 'unpin':
-        this.unpin.emit();
-        break;
-      case 'save':
-        this.save.emit();
-        break;
-      case 'unsave':
-        this.unsave.emit();
-        break;
-      case 'remind':
-        this.remind.emit();
-        break;
-      case 'mark-unread':
-        this.markUnread.emit();
-        break;
-    }
+    emitMessageMenuAction(id, this);
   }
 
   openLightbox(attachmentId: string): void {
     const channelId = this.message().channelId;
     if (channelId && !this.downloadUrls()[attachmentId]) {
-      void this.loadDownloadUrl(channelId, attachmentId);
+      void loadAttachmentDownloadUrl(this.api, channelId, attachmentId, this.downloadUrls);
     }
     this.lightboxStartId.set(attachmentId);
     this.lightboxOpen.set(true);
@@ -1487,36 +292,6 @@ export class MessageBubble {
     if (this.longPressTimer) {
       clearTimeout(this.longPressTimer);
       this.longPressTimer = null;
-    }
-  }
-
-  private async loadDownloadUrl(channelId: string, attachmentId: string): Promise<void> {
-    try {
-      const result = await this.api.getAttachmentDownload(channelId, attachmentId);
-      this.downloadUrls.update((current) => ({ ...current, [attachmentId]: result.downloadUrl }));
-    } catch {
-      // preview stays on file card until URL resolves
-    }
-  }
-
-  private async loadPreviewUrl(channelId: string, attachmentId: string): Promise<void> {
-    try {
-      const result = await this.api.getAttachmentThumbnail(channelId, attachmentId);
-      this.previewUrls.update((current) => ({ ...current, [attachmentId]: result.downloadUrl }));
-    } catch {
-      // fall back to original when thumbnail endpoint is not ready
-      if (!this.downloadUrls()[attachmentId]) {
-        void this.loadDownloadUrl(channelId, attachmentId);
-      }
-    }
-  }
-
-  private async loadLinkPreviewImage(channelId: string, messageId: string): Promise<void> {
-    try {
-      const result = await this.api.getLinkPreviewImage(channelId, messageId);
-      this.linkPreviewImageUrl.set(result.downloadUrl);
-    } catch {
-      // card stays text-only when image URL is unavailable
     }
   }
 }

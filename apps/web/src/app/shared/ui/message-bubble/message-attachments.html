@@ -1,0 +1,20 @@
+              @if (message().attachments?.length) {
+                <ul class="vc-msg__attachments">
+                  @for (attachment of message().attachments; track attachment.id) {
+                    <li>
+                      <vc-attachment-preview
+                        [attachment]="attachment"
+                        [previewUrl]="previewUrls()[attachment.id] ?? null"
+                        [downloadUrl]="downloadUrls()[attachment.id] ?? null"
+                        [showTranscribe]="attachment.kind === 'Audio' && transcribeEnabled()"
+                        (imageOpen)="openLightbox($event)"
+                        (fileOpen)="download(attachment)"
+                        (transcribe)="transcribe(attachment)"
+                      />
+                    </li>
+                  }
+                </ul>
+                @if (transcript()) {
+                  <p class="vc-msg__transcript">{{ transcript() }}</p>
+                }
+              }

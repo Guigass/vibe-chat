@@ -1,0 +1,24 @@
+:host {
+  display: contents;
+}
+    .vc-msg__attachments {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.4rem;
+      width: 100%;
+    }
+    .vc-msg__transcript {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--vc-ink-muted);
+      border-left: 2px solid var(--vc-border);
+      padding-left: 0.55rem;
+    }
+
+.vc-msg__transcript {
+  white-space: pre-wrap;
+  line-height: 1.45;
+  word-break: break-word;
+}

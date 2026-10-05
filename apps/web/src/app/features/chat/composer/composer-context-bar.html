@@ -1,0 +1,32 @@
+        @if (messages.replyTarget(); as cite) {
+          <div class="composer__reply" role="status">
+            <div class="composer__reply-meta">
+              <strong>{{ ui.composerReplyingTo }} {{ cite.authorName }}</strong>
+              <span>{{ citePreview(cite.body) }}</span>
+            </div>
+            <button
+              type="button"
+              class="ghost"
+              [attr.aria-label]="ui.composerCancelQuote"
+              (click)="messages.clearReplyTarget()"
+            >
+              ×
+            </button>
+          </div>
+        }
+        @if (messages.editingMessage(); as editing) {
+          <div class="composer__reply" role="status">
+            <div class="composer__reply-meta">
+              <strong>{{ ui.composerEditing }}</strong>
+              <span>{{ citePreview(editing.body) }}</span>
+            </div>
+            <button
+              type="button"
+              class="ghost"
+              [attr.aria-label]="ui.composerCancelEdit"
+              (click)="requestCancelEdit()"
+            >
+              ×
+            </button>
+          </div>
+        }

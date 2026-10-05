@@ -1,0 +1,38 @@
+:host {
+  display: contents;
+}
+    .composer__reply {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.45rem;
+      align-items: start;
+      padding: 0.35rem 0.5rem;
+      border-left: 3px solid var(--vc-brand);
+      border-radius: 0 var(--vc-radius-sm) var(--vc-radius-sm) 0;
+      background: color-mix(in srgb, var(--vc-brand) 8%, transparent);
+    }
+    .composer__reply-meta {
+      display: grid;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+    .composer__reply-meta strong {
+      font-size: 0.75rem;
+      color: var(--vc-brand);
+    }
+    .composer__reply-meta span {
+      font-size: 0.72rem;
+      color: var(--vc-ink-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+.ghost {
+  border: 0;
+  background: transparent;
+  color: var(--vc-brand);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}

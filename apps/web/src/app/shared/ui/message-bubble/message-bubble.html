@@ -1,0 +1,200 @@
+
+    <article
+      class="vc-msg vc-anim-fade-in"
+      tabindex="0"
+      [class.vc-msg--mine]="own()"
+      [class.vc-msg--plain]="surface() === 'plain'"
+      [class.vc-msg--group-start]="groupRole() === 'start'"
+      [class.vc-msg--group-middle]="groupRole() === 'middle'"
+      [class.vc-msg--group-end]="groupRole() === 'end'"
+      [class.vc-msg--grouped]="groupRole() === 'middle' || groupRole() === 'end'"
+      [class.vc-msg--mentioned]="message().mentionsMe"
+      [class.vc-msg--pinned]="message().isPinned"
+      [class.vc-msg--deleted]="!!message().deletedAt"
+      [class.vc-msg--highlight]="highlighted()"
+      [attr.data-status]="message().status"
+      [attr.data-group]="groupRole()"
+      [attr.data-message-id]="message().id"
+      [cdkContextMenuTriggerFor]="actionsMenu"
+      [cdkContextMenuDisabled]="!showActions()"
+      (cdkContextMenuOpened)="menuOpen.set(true)"
+      (cdkContextMenuClosed)="menuOpen.set(false)"
+      (touchstart)="onTouchStart($event)"
+      (touchend)="onTouchEnd()"
+      (touchmove)="onTouchEnd()"
+      (touchcancel)="onTouchEnd()"
+    >
+      @if (!own() && surface() !== 'plain') {
+        <div class="vc-msg__avatar-slot">
+          @if (showAvatar()) {
+            <vc-avatar
+              [name]="message().authorName"
+              [size]="avatarSize()"
+              [statusEmoji]="statusEmoji()"
+              [statusLabel]="statusLabel()"
+            />
+          }
+        </div>
+      }
+
+      <div class="vc-msg__column">
+        <div class="vc-msg__body">
+          @if (showMeta()) {
+            <header class="vc-msg__meta">
+              <strong>{{ message().authorName }}</strong>
+              @if (message().authorIsBot) {
+                <span class="vc-msg__bot">{{ ui.bubbleBot }}</span>
+              }
+              <time [attr.datetime]="message().createdAt">{{
+                message().createdAt | date: 'shortTime'
+              }}</time>
+              <vc-message-status-icons [message]="message()" [showDelivery]="true" />
+            </header>
+          }
+
+          <div class="vc-msg__content">
+            @if (message().deletedAt) {
+              <p class="vc-msg__deleted">{{ ui.bubbleRemoved }}</p>
+            } @else {
+              <vc-message-forward [message]="message()" />
+              <vc-message-quote [message]="message()" (quoteClick)="quoteClick.emit($event)" />
+              @if (message().announcement; as announcement) {
+                <vc-announcement-card
+                  [announcement]="announcement"
+                  [authorName]="message().authorName"
+                  [createdAt]="message().createdAt"
+                  [report]="announcementReport()"
+                  [error]="announcementError()"
+                  (acknowledge)="onAcknowledge()"
+                  (close)="onCloseAnnouncement()"
+                  (loadReport)="onLoadAnnouncementReport()"
+                />
+              }
+              @if (message().poll; as poll) {
+                <vc-poll-card
+                  [poll]="poll"
+                  [canClose]="canClosePoll()"
+                  (toggle)="onPollToggle($event)"
+                  (close)="onPollClose()"
+                />
+              } @else if (message().body) {
+                <vc-markdown-body
+                  [source]="message().body"
+                  [mentionLabels]="mentionLabels()"
+                  (mentionClick)="onMentionClick($event)"
+                />
+              }
+              <vc-message-link-preview
+                [visibleLinkPreview]="visibleLinkPreview()"
+                [linkPreviewImageUrl]="linkPreviewImageUrl()"
+                (imageError)="onLinkPreviewImageError()"
+              />
+              <vc-message-attachments
+                [message]="message()"
+                [previewUrls]="previewUrls()"
+                [downloadUrls]="downloadUrls()"
+                [transcript]="transcript()"
+                [transcribeEnabled]="transcribeEnabled()"
+                (imageOpen)="openLightbox($event)"
+                (fileOpen)="download($event)"
+                (transcribeRequest)="transcribe($event)"
+              />
+              <vc-message-reactions
+                [message]="message()"
+                [tooltips]="reactionTooltips()"
+                (react)="react.emit($event)"
+                (tooltip)="loadReactionTooltip($event)"
+              />
+            }
+          </div>
+          @if (!showMeta()) {
+            <div class="vc-msg__group-meta">
+              <vc-message-status-icons [message]="message()" />
+              <time [attr.datetime]="message().createdAt">
+                {{ message().createdAt | date: 'shortTime' }}
+              </time>
+            </div>
+          }
+        </div>
+
+        @if (showActions()) {
+          <div
+            class="vc-msg__toolbar"
+            data-testid="msg-toolbar"
+            [class.vc-msg__toolbar--pinned]="menuOpen()"
+          >
+            <button
+              type="button"
+              class="vc-msg__toolbar-btn vc-msg__more"
+              [attr.aria-label]="ui.bubbleActions"
+              aria-haspopup="menu"
+              [cdkMenuTriggerFor]="actionsMenu"
+              [cdkMenuPosition]="actionMenuPositions()"
+              (cdkMenuOpened)="menuOpen.set(true)"
+              (cdkMenuClosed)="menuOpen.set(false)"
+            >
+              <span class="vc-msg__more-dots" aria-hidden="true"></span>
+            </button>
+          </div>
+        }
+      </div>
+    </article>
+
+    <ng-template #actionsMenu>
+      <div class="vc-msg-menu" cdkMenu>
+        <div class="vc-msg-menu__reactions" role="group" [attr.aria-label]="ui.bubbleAddReaction">
+          @for (emoji of emojiOptions; track emoji) {
+            <button
+              type="button"
+              [attr.aria-label]="fillTemplate(ui.bubbleReactWith, { emoji })"
+              (click)="onQuickReact(emoji)"
+            >
+              {{ emoji }}
+            </button>
+          }
+          <div class="vc-msg__react-more">
+            <button
+              type="button"
+              [attr.aria-label]="ui.bubbleMoreEmojis"
+              aria-haspopup="dialog"
+              [attr.aria-expanded]="reactionPickerOpen()"
+              (click)="toggleReactionPicker($event)"
+            >
+              🙂
+            </button>
+            <vc-emoji-picker
+              [open]="reactionPickerOpen()"
+              [locale]="emojiLocale()"
+              (select)="onQuickReact($event)"
+              (closed)="reactionPickerOpen.set(false)"
+            />
+          </div>
+        </div>
+        @if (showReplyAction()) {
+          <button type="button" cdkMenuItem class="vc-msg-menu__item" (click)="reply.emit()">
+            {{ ui.bubbleReply }}
+          </button>
+        }
+        @for (item of menuItems(); track item.id) {
+          <button
+            type="button"
+            cdkMenuItem
+            class="vc-msg-menu__item"
+            [class.vc-msg-menu__item--danger]="item.danger"
+            [disabled]="item.disabled"
+            [attr.title]="item.title || null"
+            (click)="onMenuAction(item.id)"
+          >
+            {{ item.label }}
+          </button>
+        }
+      </div>
+    </ng-template>
+
+    <vc-image-lightbox
+      [open]="lightboxOpen()"
+      [images]="lightboxImages()"
+      [startId]="lightboxStartId()"
+      (close)="closeLightbox()"
+    />
+  
