@@ -260,7 +260,7 @@ estrutural com testes verdes.
 | W19-3 | D | Decompor camada HTTP do web (`api.service.ts` → services por domínio) | — | [B-180](../product/specs/B-180-decompor-api-service-web.md) | **Done** — fachada de 160 linhas; `tsc` + 323 testes + `ng build` verdes |
 | W19-4 | D | Decompor stores e hub do web (`message.store`, `chat-hub`, `channel.store`, `thread.store`) | W19-3 (recomendado) | [B-181](../product/specs/B-181-decompor-stores-web.md) | **Done** — os quatro arquivos ≤ 400 linhas; `tsc` + 334 testes Vitest verdes |
 | W19-5 | D | Decompor componentes de chat (`composer`, `message-bubble` → subcomponentes/serviços) | W19-3, B-173 (recomendado) | [B-182](../product/specs/B-182-decompor-componentes-chat.md) | **Done** — `composer.ts` 351 linhas, `message-bubble.ts` 297; `tsc` + 339 testes Vitest + `ng build` verdes |
-| W19-6 | E/G | Arch test: limite de linhas por arquivo (gate CI; exclusões documentadas) | W19-1…W19-5 | [B-183](../product/specs/B-183-arch-test-limite-arquivo.md) | Planned |
+| W19-6 | E/G | Arch test: limite de linhas por arquivo (gate CI; exclusões documentadas) | W19-1…W19-5 | [B-183](../product/specs/B-183-arch-test-limite-arquivo.md) | **Done** — `SourceLineLimitTests` em `task test:architecture` e no job de architecture da CI |
 
 ### Critérios de saída
 

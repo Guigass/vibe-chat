@@ -34,9 +34,23 @@ ou comentário no próprio arch test.
 
 ## Aceite
 
-- [ ] Arch test roda em `task test:architecture` e na CI.
-- [ ] Baseline pós-W19 respeitada (sem falso positivo).
-- [ ] Exclusões listadas e revisáveis.
+- [x] Arch test roda em `task test:architecture` e na CI.
+- [x] Baseline pós-W19 respeitada (sem falso positivo).
+- [x] Exclusões listadas e revisáveis.
+
+## Execução — 2026-10-05
+
+- Work-Item: B-183; Wave: W19-6; Trilha: E/G; Risk: R0.
+- Deps: W19-1…W19-5 já Done.
+- `SourceLineLimits` classifica `Program.cs` (≤ 500), registradores
+  `Infrastructure.cs` / `*ServiceCollectionExtensions.cs` (≤ 600) e
+  services, stores e componentes em `apps/web/src` (≤ 400).
+- Arquivos web que já excediam 400 linhas antes do gate ficam com teto
+  congelado na data da baseline; não podem crescer. Adapters de
+  Infrastructure fora do padrão de registrador não entram no teto de 600
+  (B-179 deixou essa implementação de fora).
+- Caso sintético cobre violação, limite exato, exclusões e crescimento
+  acima do teto congelado.
 
 ## Testes
 

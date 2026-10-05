@@ -187,7 +187,7 @@ Waves 7–10; **recomendada antes da Wave 11**.
 | B-180 | Decompor `api.service.ts` | **Done** (W19-3) — fachada de 160 linhas; `tsc` + 323 testes + `ng build` verdes; [evidência](../product/specs/B-180-decompor-api-service-web.md) |
 | B-181 | Decompor stores e hub do web | **Done** (W19-4) — `message.store` 316, `chat-hub` 363, `channel.store` 398, `thread.store` 341; `tsc` + 334 testes; [evidência](../product/specs/B-181-decompor-stores-web.md) |
 | B-182 | Decompor `composer` e `message-bubble` | **Done** (W19-5) — shells de 351 e 297 linhas; subcomponentes de anexos, formatação, reply, áudio, link e reações; `tsc` + 339 testes + `ng build`; [evidência](../product/specs/B-182-decompor-componentes-chat.md) |
-| B-183 | Arch test: limite de linhas por arquivo | Planned (W19-6) — gate CI; exclusões migrations/gerados; deps W19-1…W19-5 |
+| B-183 | Arch test: limite de linhas por arquivo | **Done** (W19-6) — gate em `SourceLineLimitTests`; exclusões migrations/gerados; teto congelado para arquivos já acima de 400 |
 
 ## Waves 11–17 — Horizonte promovido (produto)
 
