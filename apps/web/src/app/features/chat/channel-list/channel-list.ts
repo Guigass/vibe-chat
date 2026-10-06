@@ -1,5 +1,6 @@
 import { Component, input, inject } from '@angular/core';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { MemberProfileStore } from '../../../core/services/member-profile.store';
 import { DraftStoreService } from '../../../core/services/draft-store.service';
 import { MessageStore } from '../../../core/services/message.store';
 import { PinStore } from '../../../core/services/pin.store';
@@ -130,6 +131,7 @@ import { ui } from '../../../core/i18n/strings';
           [compact]="navCompact()"
           (select)="onSelect($event)"
           (openDm)="onOpenDm($event)"
+          (openProfile)="onOpenProfile($event)"
           (openGroup)="onOpenGroup($event)"
           (createChannel)="onCreate($event)"
           (createPersonalGroup)="onCreatePersonal($event)"
@@ -293,6 +295,7 @@ export class ChannelList {
   readonly ui = ui;
   readonly navCompact = input(false);
   readonly channels = inject(ChannelStore);
+  private readonly profiles = inject(MemberProfileStore);
   readonly drafts = inject(DraftStoreService);
   readonly saved = inject(SavedStore);
   readonly followedThreads = inject(FollowedThreadsStore);
@@ -331,6 +334,8 @@ export class ChannelList {
     this.channels.selectChannel(channelId);
     await this.messages.loadChannel(channelId);
   }
+
+  onOpenProfile(userId: string): void { this.profiles.open(userId); }
 
   async onOpenDm(userId: string): Promise<void> {
     this.saved.closePanel();

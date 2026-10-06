@@ -196,6 +196,7 @@ app.Use(async (context, next) =>
 var v1 = app.MapGroup("/api/v1").RequireAuthorization().AddEndpointFilter<RequirePermissionFilter>();
 
 v1.MapIdentity();
+v1.MapMemberProfiles();
 v1.MapWorkspaces();
 v1.MapChannelLists();
 v1.MapSpacesAndMembers();

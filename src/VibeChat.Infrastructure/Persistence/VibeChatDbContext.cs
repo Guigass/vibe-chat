@@ -38,6 +38,7 @@ namespace VibeChat.Infrastructure;
 public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> options, ITenantContext tenantContext) : DbContext(options)
 {
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+    public DbSet<MemberPublicProfile> MemberPublicProfiles => Set<MemberPublicProfile>();
     public DbSet<UserStatus> UserStatuses => Set<UserStatus>();
     public DbSet<UserVisualPreference> UserVisualPreferences => Set<UserVisualPreference>();
     public DbSet<Workspace> Workspaces => Set<Workspace>();
@@ -171,6 +172,22 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Locale).HasMaxLength(16);
             entity.HasIndex(x => x.Subject).IsUnique();
             entity.HasIndex(x => x.Email);
+        });
+
+        modelBuilder.Entity<MemberPublicProfile>(entity =>
+        {
+            entity.ToTable("member_profiles", "identity");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.JobTitle).HasMaxLength(MemberProfileRules.MaxJobTitleLength);
+            entity.Property(x => x.About).HasMaxLength(MemberProfileRules.MaxAboutLength);
+            entity.Property(x => x.HighlightMessage).HasMaxLength(MemberProfileRules.MaxHighlightLength);
+            entity.Property(x => x.AvatarObjectKey).HasMaxLength(512);
+            entity.Property(x => x.AvatarContentType).HasMaxLength(64);
+            entity.HasIndex(x => new { x.TenantId, x.UserId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
         modelBuilder.Entity<UserStatus>(entity =>

@@ -970,6 +970,33 @@ export const ui = {
   errorInvalidStatusState: $localize`:@@error.InvalidStatusState:Estado de status inválido.`,
   errorStatusTextInvalid: $localize`:@@error.StatusTextInvalid:Texto de status inválido.`,
   errorCannotReportSelf: $localize`:@@error.CannotReportSelf:Você não pode denunciar o próprio status.`,
+  profileMine: $localize`:@@profile.mine:Meu perfil`,
+  profileView: $localize`:@@profile.view:Ver perfil`,
+  profileTitle: $localize`:@@profile.title:Perfil`,
+  profileName: $localize`:@@profile.name:Nome`,
+  profileJobTitle: $localize`:@@profile.jobTitle:Cargo`,
+  profileAbout: $localize`:@@profile.about:Sobre`,
+  profileHighlight: $localize`:@@profile.highlight:Destaque`,
+  profileSave: $localize`:@@profile.save:Salvar perfil`,
+  profileSaving: $localize`:@@profile.saving:Salvando perfil…`,
+  profileSaved: $localize`:@@profile.saved:Perfil atualizado.`,
+  profileAvatarChange: $localize`:@@profile.avatarChange:Trocar foto`,
+  profileAvatarRemove: $localize`:@@profile.avatarRemove:Remover foto`,
+  profileEmpty: $localize`:@@profile.empty:Não informado`,
+  profileMessage: $localize`:@@profile.message:Mensagem`,
+  profileOpenMember: $localize`:@@profile.openMember:Ver perfil de %name%`,
+  profileError: $localize`:@@profile.error:Não foi possível salvar o perfil.`,
+  errorDisplayNameRequired: $localize`:@@error.DisplayNameRequired:Informe um nome.`,
+  errorDisplayNameTooLong: $localize`:@@error.DisplayNameTooLong:Nome longo demais.`,
+  errorDisplayNameInvalid: $localize`:@@error.DisplayNameInvalid:Nome inválido.`,
+  errorJobTitleTooLong: $localize`:@@error.JobTitleTooLong:Cargo longo demais.`,
+  errorAboutTooLong: $localize`:@@error.AboutTooLong:Texto sobre longo demais.`,
+  errorHighlightTooLong: $localize`:@@error.HighlightTooLong:Destaque longo demais.`,
+  errorProfileTextInvalid: $localize`:@@error.ProfileTextInvalid:Texto do perfil inválido.`,
+  errorAvatarTooLarge: $localize`:@@error.AvatarTooLarge:A foto passa do tamanho permitido.`,
+  errorAvatarTypeNotAllowed: $localize`:@@error.AvatarTypeNotAllowed:Use PNG, JPEG, WEBP ou GIF.`,
+  errorAvatarEmpty: $localize`:@@error.AvatarEmpty:Escolha uma imagem.`,
+  errorIdempotencyConflict: $localize`:@@error.IdempotencyConflict:Esta tentativa já foi usada com outros dados.`,
 } as const;
 
 export function fillTemplate(
@@ -1031,6 +1058,28 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.errorStatusTextInvalid;
     case 'CannotReportSelf':
       return ui.errorCannotReportSelf;
+    case 'DisplayNameRequired':
+      return ui.errorDisplayNameRequired;
+    case 'DisplayNameTooLong':
+      return ui.errorDisplayNameTooLong;
+    case 'DisplayNameInvalid':
+      return ui.errorDisplayNameInvalid;
+    case 'JobTitleTooLong':
+      return ui.errorJobTitleTooLong;
+    case 'AboutTooLong':
+      return ui.errorAboutTooLong;
+    case 'HighlightTooLong':
+      return ui.errorHighlightTooLong;
+    case 'ProfileTextInvalid':
+      return ui.errorProfileTextInvalid;
+    case 'AvatarTooLarge':
+      return ui.errorAvatarTooLarge;
+    case 'AvatarTypeNotAllowed':
+      return ui.errorAvatarTypeNotAllowed;
+    case 'AvatarEmpty':
+      return ui.errorAvatarEmpty;
+    case 'IdempotencyConflict':
+      return ui.errorIdempotencyConflict;
     case 'InviteUnavailable':
       return ui.guestExpired;
     case 'AlreadyMember':

@@ -3,6 +3,7 @@ import '@angular/compiler';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Channel, ContactSection, SpaceGroup, WorkspaceMember } from '../../models/chat.models';
+import { AvatarCache } from '../../../core/services/avatar-cache.service';
 import { SidebarNav } from './sidebar-nav';
 
 const groups: SpaceGroup[] = [
@@ -29,6 +30,7 @@ describe('SidebarNav (B-184)', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SidebarNav],
+      providers: [{ provide: AvatarCache, useValue: { resolve: () => Promise.resolve(null) } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SidebarNav);

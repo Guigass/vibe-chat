@@ -119,6 +119,8 @@ ALTER TABLE IF EXISTS building_blocks.rate_limit_settings ENABLE ROW LEVEL SECUR
 ALTER TABLE IF EXISTS building_blocks.rate_limit_settings FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS identity.user_statuses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS identity.user_statuses FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.member_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.member_profiles FORCE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
 -- Policies: USING + WITH CHECK (writes require tenant context)
@@ -557,6 +559,11 @@ CREATE POLICY tenant_isolation_rate_limit_settings ON building_blocks.rate_limit
 
 DROP POLICY IF EXISTS tenant_isolation_user_statuses ON identity.user_statuses;
 CREATE POLICY tenant_isolation_user_statuses ON identity.user_statuses
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_member_profiles ON identity.member_profiles;
+CREATE POLICY tenant_isolation_member_profiles ON identity.member_profiles
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

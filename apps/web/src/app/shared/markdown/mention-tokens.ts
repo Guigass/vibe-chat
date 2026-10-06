@@ -182,6 +182,7 @@ export interface MentionAutocompleteItem {
   displayName: string;
   email?: string;
   subtitle?: string;
+  avatarUrl?: string | null;
 }
 
 export function filterMentionItems(

@@ -10,6 +10,21 @@ public sealed record MeResponse(
 
 public sealed record UpdateMeRequest(string? Locale);
 
+public sealed record UpdateMemberProfileRequest(
+    string? DisplayName,
+    string? JobTitle,
+    string? About,
+    string? HighlightMessage);
+
+public sealed record MemberProfileResponse(
+    Guid UserId,
+    string DisplayName,
+    string? Email,
+    string? JobTitle,
+    string? About,
+    string? HighlightMessage,
+    string? AvatarUrl);
+
 public sealed record SetUserStatusRequest(
     string? State,
     string? Emoji,

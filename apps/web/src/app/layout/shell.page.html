@@ -107,6 +107,7 @@
             [tooltipDisabled]="!(navCompact() && !narrowViewport())"
           >{{ ui.admin }}</a>
         }
+        <button type="button" data-testid="own-profile-open" (click)="openOwnProfile()">{{ ui.profileMine }}</button>
         <button
           type="button"
           [attr.aria-label]="navCompact() && !narrowViewport() ? ui.logout : null"
@@ -147,6 +148,7 @@
           <p>{{ channels.activeChannel()?.description }}</p>
         } @else if (channels.activeChannel()?.isDirect) {
           <p>{{ ui.directMessage }}</p>
+          <button type="button" class="shell__peer-profile" data-testid="dm-profile-open" (click)="openPeerProfile()">{{ ui.profileView }}</button>
           @if (peerStatusLine()) {
             <p class="shell__peer-status" data-testid="dm-status">{{ peerStatusLine() }}</p>
           }
@@ -595,6 +597,4 @@
   }
 </div>
 <vc-command-palette />
-@if (statusEditorOpen()) {
-  <vc-user-status-editor (closed)="statusEditorOpen.set(false)" />
-}
+<vc-shell-dialogs [statusOpen]="statusEditorOpen()" (statusClosed)="statusEditorOpen.set(false)" />

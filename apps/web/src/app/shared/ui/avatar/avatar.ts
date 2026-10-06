@@ -1,4 +1,5 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { AvatarCache } from '../../../core/services/avatar-cache.service';
 
 @Component({
   selector: 'vc-avatar',
@@ -6,8 +7,8 @@ import { Component, computed, input } from '@angular/core';
   template: `
     <span class="vc-avatar-wrap" [style.width.px]="size()" [style.height.px]="size()">
       <span class="vc-avatar" role="img" [attr.aria-label]="ariaLabel()">
-        @if (src()) {
-          <img [src]="src()" alt="" />
+        @if (shownSrc()) {
+          <img [src]="shownSrc()" alt="" />
         } @else {
           <span aria-hidden="true">{{ initials() }}</span>
         }
@@ -54,9 +55,24 @@ import { Component, computed, input } from '@angular/core';
   `,
 })
 export class Avatar {
+  private readonly cache = inject(AvatarCache);
   readonly name = input.required<string>();
   readonly src = input<string | undefined>(undefined);
+  readonly authPath = input<string | null | undefined>(null);
   readonly size = input(32);
+  readonly shownSrc = signal<string | undefined>(undefined);
+
+  constructor() {
+    effect(() => {
+      const direct = this.src();
+      const path = this.authPath();
+      if (direct) {
+        this.shownSrc.set(direct);
+        return;
+      }
+      void this.cache.resolve(path).then((url) => this.shownSrc.set(url ?? undefined));
+    });
+  }
   readonly statusEmoji = input<string | null>(null);
   readonly statusLabel = input<string | null>(null);
   readonly ariaLabel = computed(() => {

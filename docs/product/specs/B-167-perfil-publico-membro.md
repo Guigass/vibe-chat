@@ -93,15 +93,15 @@ no PR de implementação.
 
 ## Aceite
 
-- [ ] Usuário preenche cargo, sobre, destaque e avatar; outros membros do
+- [x] Usuário preenche cargo, sobre, destaque e avatar; outros membros do
       mesmo workspace veem na ficha.
-- [ ] Sem avatar, UI continua com iniciais.
-- [ ] Membro de outro workspace/tenant não lê a ficha.
-- [ ] Guest sem diretório não ganha nova superfície de perfil.
-- [ ] Distinto de B-116 (status temporário), B-166 (grupos) e preferências
+- [x] Sem avatar, UI continua com iniciais.
+- [x] Membro de outro workspace/tenant não lê a ficha.
+- [x] Guest sem diretório não ganha nova superfície de perfil.
+- [x] Distinto de B-116 (status temporário), B-166 (grupos) e preferências
       B-094/B-097/B-100.
-- [ ] `contratos.md` + migration/RLS atualizados no PR de código.
-- [ ] Cross-tenant e upload inválido falham com 4xx.
+- [x] `contratos.md` + migration/RLS atualizados no PR de código.
+- [x] Cross-tenant e upload inválido falham com 4xx.
 
 ## Testes
 

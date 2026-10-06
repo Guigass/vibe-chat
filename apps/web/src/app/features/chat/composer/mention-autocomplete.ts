@@ -1,15 +1,22 @@
 import { Component, input, output } from '@angular/core';
 import { ui } from '../../../core/i18n/strings';
 import { MentionAutocompleteItem } from '../../../shared/markdown/mention-tokens';
+import { Avatar } from '../../../shared/ui/avatar/avatar';
 
 @Component({
   selector: 'vc-mention-autocomplete',
   standalone: true,
+  imports: [Avatar],
   template: `
     @if (open() && items().length) {
       <ul class="mention-menu" role="listbox" [attr.aria-label]="ui.mentionsHeading">
         @for (item of items(); track trackItem(item); let index = $index) {
-          <li>
+          <li class="mention-menu__row">
+            @if (item.kind === 'user' && item.userId) {
+              <button type="button" class="mention-menu__profile" [attr.aria-label]="ui.profileView" (mousedown)="onOpen($event, item)" (click)="onOpen($event, item)">
+                <vc-avatar [name]="item.displayName" [authPath]="item.avatarUrl" [size]="20" />
+              </button>
+            }
             <button
               type="button"
               role="option"
@@ -43,6 +50,8 @@ import { MentionAutocompleteItem } from '../../../shared/markdown/mention-tokens
       max-height: 14rem;
       overflow: auto;
     }
+    .mention-menu__row { display: flex; align-items: center; gap: 0.25rem; }
+    .mention-menu__profile { width: auto; flex: 0 0 auto; padding: 0.2rem; }
     .mention-menu button {
       width: 100%;
       display: grid;
@@ -79,6 +88,7 @@ export class MentionAutocomplete {
   readonly items = input<MentionAutocompleteItem[]>([]);
   readonly activeIndex = input(0);
   readonly select = output<MentionAutocompleteItem>();
+  readonly openProfile = output<MentionAutocompleteItem>();
 
   trackItem(item: MentionAutocompleteItem): string {
     return item.kind === 'user' ? `user-${item.userId}` : item.kind;
@@ -88,5 +98,11 @@ export class MentionAutocomplete {
     event.preventDefault();
     event.stopPropagation();
     this.select.emit(item);
+  }
+
+  onOpen(event: Event, item: MentionAutocompleteItem): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.openProfile.emit(item);
   }
 }

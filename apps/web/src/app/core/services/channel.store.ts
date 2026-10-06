@@ -49,12 +49,12 @@ import {
   groupChannelsBySpace,
   leaveGroupDmDirectory,
   openDirectMessageDirectory,
+  reloadWorkspaceMembers,
   openGroupDmDirectory,
   renameGroupDmDirectory,
   selectWorkspaceDirectory,
   upsertChannelList,
 } from './channel-directory';
-
 @Injectable({ providedIn: 'root' })
 export class ChannelStore {
   private readonly api = inject(ApiService);
@@ -242,6 +242,8 @@ export class ChannelStore {
   openDirectMessage(userId: string): Promise<Channel | null> {
     return openDirectMessageDirectory(this.directoryDeps(), userId);
   }
+
+  reloadMembers(): Promise<void> { return reloadWorkspaceMembers(this.directoryDeps()); }
 
   openGroupDm(userIds: string[], name?: string): Promise<Channel | null> {
     return openGroupDmDirectory(this.directoryDeps(), userIds, name);

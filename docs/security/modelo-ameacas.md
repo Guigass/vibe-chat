@@ -278,6 +278,16 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 12. Add cross-workspace ou leitura/hub após sair de canal privado (B-186)
 13. Guest escalando para o workspace / enumeração de convite (B-040 / ADR-024)
 
+### B-167 — Perfil público do membro
+
+| Item | Controle |
+|------|----------|
+| AuthZ | Leitura exige membership no workspace. Escrita só em `/me/profile` e `/me/profile/avatar`. Outro workspace, guest ou quem não está no diretório → 403. Alvo fora do workspace → 404 |
+| Dados | Cargo, sobre, destaque e avatar em `identity.member_profiles` com FORCE RLS. `DisplayName` permanece na identidade global |
+| Avatar | Allowlist PNG/JPEG/WEBP/GIF, 2 MiB, magic bytes, object key `{tenant}/profiles/{user}/`. Leitura só se a key pertence ao par tenant+usuário |
+| Audit | `profile.update` e `profile.avatar` sem o texto nem o binário |
+| PII | Conteúdo controlado pelo usuário. Não segue para provedor de IA nesta fatia |
+
 ### B-116 — Status personalizado
 
 | Item | Controle |

@@ -4,6 +4,7 @@ import { ui } from '../../../core/i18n/strings';
 import { MessageStore } from '../../../core/services/message.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { MemberProfileStore } from '../../../core/services/member-profile.store';
 import {
   MESSAGE_BODY_COUNTER_THRESHOLD,
   MESSAGE_BODY_MAX_LENGTH,
@@ -77,6 +78,7 @@ export class Composer {
   readonly state = inject(ComposerState);
   readonly messages = inject(MessageStore);
   readonly channels = inject(ChannelStore);
+  private readonly profiles = inject(MemberProfileStore);
   readonly attachments = inject(AttachmentQueueService);
   readonly audioRecorder = inject(AudioRecorderService);
   readonly slash = inject(SlashCommandsService);
@@ -282,6 +284,10 @@ export class Composer {
 
   applyMention(item: MentionAutocompleteItem): void {
     this.mentions.apply(item, this.draft);
+  }
+
+  openMentionProfile(item: MentionAutocompleteItem): void {
+    if (item.userId) this.profiles.open(item.userId);
   }
 
   applySlash(item: SlashCommandDef): void {
