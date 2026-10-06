@@ -24,6 +24,11 @@ export class ApiService {
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
+  readonly getMemberProfile: ProfileApiService['getMemberProfile'] = this.profile.getMemberProfile.bind(this.profile);
+  readonly updateMemberProfile: ProfileApiService['updateMemberProfile'] = this.profile.updateMemberProfile.bind(this.profile);
+  readonly uploadAvatar: ProfileApiService['uploadAvatar'] = this.profile.uploadAvatar.bind(this.profile);
+  readonly deleteAvatar: ProfileApiService['deleteAvatar'] = this.profile.deleteAvatar.bind(this.profile);
+  readonly fetchAvatar: ProfileApiService['fetchAvatar'] = this.profile.fetchAvatar.bind(this.profile);
   readonly updateAppearance: ProfileApiService['updateAppearance'] = this.profile.updateAppearance.bind(this.profile);
   readonly getWorkspaces: DirectoryApiService['getWorkspaces'] = this.directory.getWorkspaces.bind(this.directory);
   readonly getSpaces: DirectoryApiService['getSpaces'] = this.directory.getSpaces.bind(this.directory);
