@@ -974,6 +974,26 @@
     "error.AvatarTooLarge": "La photo dépasse la taille autorisée.",
     "error.AvatarTypeNotAllowed": "Utilisez PNG, JPEG, WEBP ou GIF.",
     "error.AvatarEmpty": "Choisissez une image.",
-    "error.IdempotencyConflict": "Cette tentative a déjà été utilisée avec d'autres données."
+    "error.IdempotencyConflict": "Cette tentative a déjà été utilisée avec d'autres données.",
+    "admin.navImport": "Importation",
+    "admin.importLead": "Apportez personnes, canaux et historique dans une zone de préparation. Rien n’entre dans le chat avant publication.",
+    "admin.importAdapter": "Origine",
+    "admin.importFile": "Fichier JSON",
+    "admin.importValidate": "Valider",
+    "admin.importPlan": "Simuler",
+    "admin.importExecute": "Préparer",
+    "admin.importPause": "Pause",
+    "admin.importResume": "Reprendre",
+    "admin.importPublish": "Publier",
+    "admin.importRollback": "Annuler",
+    "admin.importConfirm": "Je confirme la suppression de ce qui est déjà publié",
+    "admin.importEmpty": "Aucun fichier sélectionné.",
+    "admin.importDisabled": "L’importation est désactivée sur cette instance.",
+    "admin.importCounts": "Personnes %principals%, canaux %channels%, messages %messages%, quarantaine %quarantined%, ignorés %ignored%.",
+    "admin.importWarnings": "Avertissements",
+    "admin.importStatus": "État",
+    "error.importDisabled": "L’importation est désactivée sur cette instance.",
+    "error.importRejected": "Le fichier d’importation a été refusé.",
+    "error.importConflict": "Cette importation ne peut pas avancer dans cet état."
   }
 }

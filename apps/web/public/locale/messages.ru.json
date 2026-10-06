@@ -974,6 +974,26 @@
     "error.AvatarTooLarge": "Фото превышает допустимый размер.",
     "error.AvatarTypeNotAllowed": "Используйте PNG, JPEG, WEBP или GIF.",
     "error.AvatarEmpty": "Выберите изображение.",
-    "error.IdempotencyConflict": "Эта попытка уже использована с другими данными."
+    "error.IdempotencyConflict": "Эта попытка уже использована с другими данными.",
+    "admin.navImport": "Импорт",
+    "admin.importLead": "Люди, каналы и история сначала попадают в область подготовки. В чат ничего не попадает до публикации.",
+    "admin.importAdapter": "Источник",
+    "admin.importFile": "Файл JSON",
+    "admin.importValidate": "Проверить",
+    "admin.importPlan": "Пробный прогон",
+    "admin.importExecute": "Подготовить",
+    "admin.importPause": "Пауза",
+    "admin.importResume": "Продолжить",
+    "admin.importPublish": "Опубликовать",
+    "admin.importRollback": "Откатить",
+    "admin.importConfirm": "Подтверждаю удаление уже опубликованного",
+    "admin.importEmpty": "Файл не выбран.",
+    "admin.importDisabled": "Импорт выключен на этом экземпляре.",
+    "admin.importCounts": "Люди %principals%, каналы %channels%, сообщения %messages%, карантин %quarantined%, пропущено %ignored%.",
+    "admin.importWarnings": "Предупреждения",
+    "admin.importStatus": "Состояние",
+    "error.importDisabled": "Импорт выключен на этом экземпляре.",
+    "error.importRejected": "Файл импорта отклонён.",
+    "error.importConflict": "Импорт нельзя продолжить в этом состоянии."
   }
 }

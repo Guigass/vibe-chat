@@ -75,15 +75,15 @@ membership ativa automática.
 
 ## Aceite
 
-- [ ] Dry-run não altera domain state.
-- [ ] Retry/resume não duplica recurso nem mensagem.
-- [ ] Tenant do manifest não redireciona importação.
-- [ ] Mapping de papel proibido falha fechado.
-- [ ] Threads, timestamps e autoria suportada são preservados.
-- [ ] Anexo malicioso permanece em quarentena.
-- [ ] Publicação é atômica por batch/escopo documentado.
-- [ ] Relatório não contém secret nem body desnecessário.
-- [ ] Rollback pré-publicação remove staging e reservas.
+- [x] Dry-run não altera domain state.
+- [x] Retry/resume não duplica recurso nem mensagem.
+- [x] Tenant do manifest não redireciona importação.
+- [x] Mapping de papel proibido falha fechado.
+- [x] Threads, timestamps e autoria suportada são preservados.
+- [x] Anexo malicioso permanece em quarentena.
+- [x] Publicação é atômica por batch/escopo documentado.
+- [x] Relatório não contém secret nem body desnecessário.
+- [x] Rollback pré-publicação remove staging e reservas.
 
 ## Testes
 

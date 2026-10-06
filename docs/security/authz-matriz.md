@@ -170,6 +170,16 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/admin/workspaces/{workspaceId:guid}/templates/{templateId}/export` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Outro workspace → 404 |
 | GET | `/admin/workspaces/{workspaceId:guid}/onboarding` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Checklist; não obriga template |
 | PUT | `/admin/workspaces/{workspaceId:guid}/onboarding` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Pular e retomar |
+| POST | `/workspaces/{workspaceId:guid}/imports` | permission | `workspace.import` | ✗ | ✗ | ✓ | B-153; flag off → 404 `ImportDisabled`; manifesto não escolhe tenant |
+| GET | `/workspaces/{workspaceId:guid}/imports` | permission | `workspace.import` | ✗ | ✗ | ✓ | Resumo sem corpo |
+| GET | `/workspaces/{workspaceId:guid}/imports/{importId:guid}` | permission | `workspace.import` | ✗ | ✗ | ✓ | Sem canonical JSON |
+| GET | `/workspaces/{workspaceId:guid}/imports/{importId:guid}/report` | permission | `workspace.import` | ✗ | ✗ | ✓ | Sem body, e-mail ou payload |
+| POST | `/workspaces/{workspaceId:guid}/imports/{importId:guid}/plan` | permission | `workspace.import` | ✗ | ✗ | ✓ | Dry-run; não grava domínio |
+| POST | `/workspaces/{workspaceId:guid}/imports/{importId:guid}/execute` | permission | `workspace.import` | ✗ | ✗ | ✓ | Staging idempotente |
+| POST | `/workspaces/{workspaceId:guid}/imports/{importId:guid}/pause` | permission | `workspace.import` | ✗ | ✗ | ✓ | |
+| POST | `/workspaces/{workspaceId:guid}/imports/{importId:guid}/resume` | permission | `workspace.import` | ✗ | ✗ | ✓ | |
+| POST | `/workspaces/{workspaceId:guid}/imports/{importId:guid}/publish` | permission | `workspace.import` | ✗ | ✗ | ✓ | Atômico na transação do request |
+| POST | `/workspaces/{workspaceId:guid}/imports/{importId:guid}/rollback` | permission | `workspace.import` | ✗ | ✗ | ✓ | Publicado exige `confirm` |
 | POST | `/integrations/v1/channels/{channelId:guid}/messages` | exempt | integration token | — | — | — | B-109; `AllowAnonymous` + hash; fora do escopo → 403 |
 | POST | `/integrations/v1/dms` | exempt | integration token | — | — | — | Exige `allowDms`; peer do mesmo workspace |
 | POST | `/admin/settings/credentials/vapid/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-187 |

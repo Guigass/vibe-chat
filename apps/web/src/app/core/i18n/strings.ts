@@ -667,6 +667,23 @@ export const ui = {
   adminNavSettings: $localize`:@@admin.navSettings:Settings`,
   adminNavPlugins: $localize`:@@admin.navPlugins:Plugins`,
   adminNavOnboarding: $localize`:@@admin.navOnboarding:Onboarding`,
+  adminNavImport: $localize`:@@admin.navImport:Importação`,
+  adminImportLead: $localize`:@@admin.importLead:Traga pessoas, canais e histórico para uma área de preparação. Nada entra no chat antes de publicar.`,
+  adminImportAdapter: $localize`:@@admin.importAdapter:Origem`,
+  adminImportFile: $localize`:@@admin.importFile:Arquivo JSON`,
+  adminImportValidate: $localize`:@@admin.importValidate:Validar`,
+  adminImportPlan: $localize`:@@admin.importPlan:Simular`,
+  adminImportExecute: $localize`:@@admin.importExecute:Preparar`,
+  adminImportPause: $localize`:@@admin.importPause:Pausar`,
+  adminImportResume: $localize`:@@admin.importResume:Retomar`,
+  adminImportPublish: $localize`:@@admin.importPublish:Publicar`,
+  adminImportRollback: $localize`:@@admin.importRollback:Reverter`,
+  adminImportConfirm: $localize`:@@admin.importConfirm:Confirmo a remoção do que já foi publicado`,
+  adminImportEmpty: $localize`:@@admin.importEmpty:Nenhum arquivo selecionado.`,
+  adminImportDisabled: $localize`:@@admin.importDisabled:A importação está desligada nesta instância.`,
+  adminImportCounts: $localize`:@@admin.importCounts:Pessoas %principals%, canais %channels%, mensagens %messages%, quarentena %quarantined%, ignorados %ignored%.`,
+  adminImportWarnings: $localize`:@@admin.importWarnings:Avisos`,
+  adminImportStatus: $localize`:@@admin.importStatus:Estado`,
   adminOnboardingLead: $localize`:@@admin.onboardingLead:Escolha um template ou pule. Dá para retomar depois. O chat não depende disso.`,
   adminOnboardingSkip: $localize`:@@admin.onboardingSkip:Pular por agora`,
   adminOnboardingResume: $localize`:@@admin.onboardingResume:Retomar onboarding`,
@@ -713,6 +730,9 @@ export const ui = {
   errorUnknownTemplateField: $localize`:@@error.unknownTemplateField:Campo não permitido: %path%`,
   errorInvalidTemplate: $localize`:@@error.invalidTemplate:Template inválido.`,
   errorTemplateConflict: $localize`:@@error.templateConflict:O template conflita com o workspace atual.`,
+  errorImportDisabled: $localize`:@@error.importDisabled:A importação está desligada nesta instância.`,
+  errorImportRejected: $localize`:@@error.importRejected:O arquivo de importação foi recusado.`,
+  errorImportConflict: $localize`:@@error.importConflict:Esta importação não pode avançar nesse estado.`,
   errorTemplateNotFound: $localize`:@@error.templateNotFound:Template não encontrado.`,
   adminNoAccessTitle: $localize`:@@admin.noAccessTitle:Sem acesso`,
   adminNavAria: $localize`:@@admin.navAria:Navegação administrativa`,
@@ -1099,6 +1119,23 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.errorInvalidTemplate;
     case 'TemplateConflict':
       return ui.errorTemplateConflict;
+    case 'ImportDisabled':
+      return ui.errorImportDisabled;
+    case 'ImportRoleForbidden':
+    case 'ImportSchemaUnknown':
+    case 'ImportDocumentInvalid':
+    case 'ImportDuplicateExternalId':
+    case 'ImportMappingAmbiguous':
+    case 'ImportMappingUnknown':
+    case 'ImportQuota':
+    case 'ImportZipBomb':
+      return ui.errorImportRejected;
+    case 'ImportIdempotencyConflict':
+      return ui.errorIdempotencyConflict;
+    case 'ImportState':
+    case 'ImportConflict':
+    case 'ImportConfirmRequired':
+      return ui.errorImportConflict;
     case 'TemplateNotFound':
       return ui.errorTemplateNotFound;
     default:

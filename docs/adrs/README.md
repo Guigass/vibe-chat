@@ -35,6 +35,7 @@ original.
 | [027](ADR-027-bot-token-envio.md) | Bot de integração com token opaco | Accepted |
 | [028](ADR-028-plugins-locais.md) | Plugin local é manifesto mais bot | Accepted |
 | [029](ADR-029-historico-edicao-movimentacao.md) | Histórico de edição e movimentação | Accepted |
+| [030](ADR-030-importacao-assistida.md) | Importação assistida de workspace | Accepted |
 
 ## Quando criar um ADR
 

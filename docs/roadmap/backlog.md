@@ -197,7 +197,8 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 
 | Faixa | Tema | Estado |
 |-------|------|--------|
-| B-112…B-118, B-153/B-154, B-166, B-185 | Organização, onboarding, contatos, personalização visual, migração, diagnóstico, inbox e tópicos | Planned — W11 (B-167 Done) |
+| B-112…B-118, B-154, B-166, B-185 | Organização, onboarding, contatos, personalização visual, diagnóstico, inbox e tópicos | Planned — W11 (B-153 e B-167 Done) |
+| B-153 | Importação assistida | **Done** (W11) — dry-run, staging, publish/rollback; [spec](../product/specs/B-153-migracao-importacao.md) |
 | B-167 | Perfil público do membro | **Done** (W11) — cargo, sobre, destaque e avatar no workspace; [spec](../product/specs/B-167-perfil-publico-membro.md) |
 | B-119…B-124 | Conhecimento, decisões, RAG, tarefas e formulários | Planned — W12 |
 | B-125…B-128, B-131, B-139, B-164 | Automações, incidentes, conectores, SSO e contratos | Planned — W13 |

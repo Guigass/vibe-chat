@@ -974,6 +974,26 @@
     "error.AvatarTooLarge": "Das Foto ist zu groß.",
     "error.AvatarTypeNotAllowed": "Verwende PNG, JPEG, WEBP oder GIF.",
     "error.AvatarEmpty": "Wähle ein Bild.",
-    "error.IdempotencyConflict": "Dieser Versuch wurde bereits mit anderen Daten verwendet."
+    "error.IdempotencyConflict": "Dieser Versuch wurde bereits mit anderen Daten verwendet.",
+    "admin.navImport": "Import",
+    "admin.importLead": "Personen, Kanäle und Verlauf kommen zuerst in einen Bereitstellungsbereich. Nichts erscheint im Chat vor der Veröffentlichung.",
+    "admin.importAdapter": "Quelle",
+    "admin.importFile": "JSON-Datei",
+    "admin.importValidate": "Prüfen",
+    "admin.importPlan": "Simulieren",
+    "admin.importExecute": "Vorbereiten",
+    "admin.importPause": "Pausieren",
+    "admin.importResume": "Fortsetzen",
+    "admin.importPublish": "Veröffentlichen",
+    "admin.importRollback": "Zurücknehmen",
+    "admin.importConfirm": "Ich bestätige das Entfernen bereits veröffentlichter Inhalte",
+    "admin.importEmpty": "Keine Datei ausgewählt.",
+    "admin.importDisabled": "Der Import ist auf dieser Instanz aus.",
+    "admin.importCounts": "Personen %principals%, Kanäle %channels%, Nachrichten %messages%, Quarantäne %quarantined%, ignoriert %ignored%.",
+    "admin.importWarnings": "Hinweise",
+    "admin.importStatus": "Status",
+    "error.importDisabled": "Der Import ist auf dieser Instanz aus.",
+    "error.importRejected": "Die Importdatei wurde abgelehnt.",
+    "error.importConflict": "Dieser Import kann in diesem Zustand nicht fortfahren."
   }
 }

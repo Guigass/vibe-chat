@@ -974,6 +974,26 @@
     "error.AvatarTooLarge": "照片超出大小限制。",
     "error.AvatarTypeNotAllowed": "请使用 PNG、JPEG、WEBP 或 GIF。",
     "error.AvatarEmpty": "请选择一张图片。",
-    "error.IdempotencyConflict": "这次尝试已用于其他数据。"
+    "error.IdempotencyConflict": "这次尝试已用于其他数据。",
+    "admin.navImport": "导入",
+    "admin.importLead": "先把成员、频道和历史放进暂存区。发布之前不会进入聊天。",
+    "admin.importAdapter": "来源",
+    "admin.importFile": "JSON 文件",
+    "admin.importValidate": "校验",
+    "admin.importPlan": "预演",
+    "admin.importExecute": "暂存",
+    "admin.importPause": "暂停",
+    "admin.importResume": "继续",
+    "admin.importPublish": "发布",
+    "admin.importRollback": "回滚",
+    "admin.importConfirm": "我确认删除已经发布的内容",
+    "admin.importEmpty": "未选择文件。",
+    "admin.importDisabled": "此实例已关闭导入。",
+    "admin.importCounts": "成员 %principals%，频道 %channels%，消息 %messages%，隔离 %quarantined%，忽略 %ignored%。",
+    "admin.importWarnings": "警告",
+    "admin.importStatus": "状态",
+    "error.importDisabled": "此实例已关闭导入。",
+    "error.importRejected": "导入文件被拒绝。",
+    "error.importConflict": "当前状态无法继续此导入。"
   }
 }

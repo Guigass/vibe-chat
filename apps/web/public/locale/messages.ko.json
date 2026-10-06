@@ -974,6 +974,26 @@
     "error.AvatarTooLarge": "사진이 허용 크기를 넘습니다.",
     "error.AvatarTypeNotAllowed": "PNG, JPEG, WEBP 또는 GIF를 사용하세요.",
     "error.AvatarEmpty": "이미지를 선택하세요.",
-    "error.IdempotencyConflict": "이 시도는 다른 데이터에 이미 사용되었습니다."
+    "error.IdempotencyConflict": "이 시도는 다른 데이터에 이미 사용되었습니다.",
+    "admin.navImport": "가져오기",
+    "admin.importLead": "사람, 채널, 기록을 준비 영역으로 가져옵니다. 게시하기 전에는 채팅에 들어가지 않습니다.",
+    "admin.importAdapter": "원본",
+    "admin.importFile": "JSON 파일",
+    "admin.importValidate": "검증",
+    "admin.importPlan": "미리보기",
+    "admin.importExecute": "준비",
+    "admin.importPause": "일시정지",
+    "admin.importResume": "다시 시작",
+    "admin.importPublish": "게시",
+    "admin.importRollback": "되돌리기",
+    "admin.importConfirm": "이미 게시한 내용의 삭제를 확인합니다",
+    "admin.importEmpty": "선택한 파일이 없습니다.",
+    "admin.importDisabled": "이 인스턴스에서는 가져오기가 꺼져 있습니다.",
+    "admin.importCounts": "사람 %principals%, 채널 %channels%, 메시지 %messages%, 격리 %quarantined%, 무시 %ignored%.",
+    "admin.importWarnings": "경고",
+    "admin.importStatus": "상태",
+    "error.importDisabled": "이 인스턴스에서는 가져오기가 꺼져 있습니다.",
+    "error.importRejected": "가져오기 파일이 거부되었습니다.",
+    "error.importConflict": "이 상태에서는 가져오기를 진행할 수 없습니다."
   }
 }

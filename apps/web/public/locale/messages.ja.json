@@ -974,6 +974,26 @@
     "error.AvatarTooLarge": "写真のサイズが上限を超えています。",
     "error.AvatarTypeNotAllowed": "PNG、JPEG、WEBP、GIF を使ってください。",
     "error.AvatarEmpty": "画像を選択してください。",
-    "error.IdempotencyConflict": "この試行は別のデータですでに使われています。"
+    "error.IdempotencyConflict": "この試行は別のデータですでに使われています。",
+    "admin.navImport": "インポート",
+    "admin.importLead": "メンバー、チャンネル、履歴を準備領域に取り込みます。公開するまでチャットには入りません。",
+    "admin.importAdapter": "取り込み元",
+    "admin.importFile": "JSON ファイル",
+    "admin.importValidate": "検証",
+    "admin.importPlan": "ドライラン",
+    "admin.importExecute": "準備",
+    "admin.importPause": "一時停止",
+    "admin.importResume": "再開",
+    "admin.importPublish": "公開",
+    "admin.importRollback": "取り消す",
+    "admin.importConfirm": "公開済みの内容を削除することを確認します",
+    "admin.importEmpty": "ファイルが選択されていません。",
+    "admin.importDisabled": "このインスタンスではインポートがオフです。",
+    "admin.importCounts": "メンバー %principals%、チャンネル %channels%、メッセージ %messages%、隔離 %quarantined%、無視 %ignored%。",
+    "admin.importWarnings": "警告",
+    "admin.importStatus": "状態",
+    "error.importDisabled": "このインスタンスではインポートがオフです。",
+    "error.importRejected": "インポートファイルは拒否されました。",
+    "error.importConflict": "この状態ではインポートを進められません。"
   }
 }

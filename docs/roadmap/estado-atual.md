@@ -4,9 +4,9 @@ Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
 - **Data de corte:** 2026-10-06
-- **Fase:** W11 / B-167 Done (perfil público do membro). B-114 permanece Done. Wave 19 permanece Done (W19-6 / B-183). Wave 10 permanece Done (W10-15 / B-186, W10-16 / B-188).
+- **Fase:** W11 / B-153 Done (importação assistida). B-167 permanece Done. Wave 19 permanece Done (W19-6 / B-183). Wave 10 permanece Done (W10-15 / B-186, W10-16 / B-188).
 - **Safety lane obrigatória:** OPS-E2E-B100 Resolved (Playwright `locale: pt-BR` + isolamento i18n E2E + foco paleta + select Settings); OPS-E2E-B099 Resolved (#154); OPS-E2E-B098 Resolved (#148); OPS-E2E-B097 Resolved (#145+#149); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); BUG-020 Done (B-186 / W10-15); BUG-021 Aberto (Média — convidado para DM em grupo não atualiza o front até F5); BUG-022 Aberto (Média — busca do header desalinhada na 1ª abertura e fecha ao selecionar opção); BUG-023 Done (Média, B-188 / W10-16 — busca versátil); BUG-024 Aberto (Média — comandos slash não acompanham o idioma da UI); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
-- **Próximo item elegível:** W11 / B-153 (migração/importação), próxima linha `Planned` da Wave 11 após B-167 (B-185 já Done)
+- **Próximo item elegível:** W11 / B-154 (diagnóstico e support bundle), próxima linha `Planned` da Wave 11 após B-153
 - **Override humano concluído:** W19-1 / B-178 — decomposição da API em maps por fronteira; `Program.cs` com 220 linhas; build e 241 testes verdes. A fila W10 permanece na ordem acima.
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
@@ -79,7 +79,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W11 / B-153 | B-167 Done (perfil público); próxima linha `Planned` da Wave 11 |
+| 1 | W11 / B-154 | B-153 Done (importação assistida); próxima linha `Planned` da Wave 11 |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
@@ -127,7 +127,7 @@ canal/pessoa/anexo no FTS; fecha BUG-023).
 
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W19. Wave 19
 (organização do código, B-178…B-183) está Done, inclusive o gate de linhas
-B-183. O Build segue em W11; B-167 está Done e a primeira linha `Planned` restante é B-153.
+B-183. O Build segue em W11; B-153 está Done e a primeira linha `Planned` restante é B-154.
 
 ## Baseline de planejamento
 

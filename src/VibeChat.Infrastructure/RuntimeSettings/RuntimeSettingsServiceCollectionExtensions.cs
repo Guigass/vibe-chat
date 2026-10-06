@@ -14,6 +14,8 @@ internal static class RuntimeSettingsServiceCollectionExtensions
     internal static IServiceCollection AddRuntimeSettingsInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<AvailabilityCalendarOptions>(configuration.GetSection(AvailabilityCalendarOptions.SectionName));
+        services.Configure<ImportOptions>(configuration.GetSection(ImportOptions.SectionName));
+        services.AddScoped<WorkspaceImportService>();
         services.Configure<GroupDmOptions>(configuration.GetSection(GroupDmOptions.SectionName));
         services.Configure<InviteOptions>(configuration.GetSection(InviteOptions.SectionName));
         services.Configure<BotIntegrationOptions>(configuration.GetSection(BotIntegrationOptions.SectionName));

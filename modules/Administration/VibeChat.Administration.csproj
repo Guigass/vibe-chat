@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BuildingBlocks\VibeChat.BuildingBlocks.csproj" />
+    <ProjectReference Include="..\Files\VibeChat.Files.csproj" />
     <ProjectReference Include="..\..\src\VibeChat.SharedKernel\VibeChat.SharedKernel.csproj" />
   </ItemGroup>
 

@@ -79,6 +79,11 @@ public static class AuditActions
     public const string TemplateImport = "template.import";
     public const string TemplateExport = "template.export";
     public const string OnboardingUpdate = "onboarding.update";
+    public const string ImportValidate = "import.validate";
+    public const string ImportPlan = "import.plan";
+    public const string ImportExecute = "import.execute";
+    public const string ImportPublish = "import.publish";
+    public const string ImportRollback = "import.rollback";
 }
 
 public interface IAuditWriter

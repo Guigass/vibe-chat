@@ -9,7 +9,8 @@ export type AdminAreaId =
   | 'audit'
   | 'settings'
   | 'onboarding'
-  | 'plugins';
+  | 'plugins'
+  | 'import';
 
 const WORKSPACE_ADMIN_ROLES = new Set(['PlatformOwner', 'WorkspaceOwner', 'Admin']);
 const ADMIN_DASHBOARD_ROLES = new Set([...WORKSPACE_ADMIN_ROLES, 'Auditor']);
@@ -28,6 +29,7 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   { id: 'settings', label: ui.adminNavSettings, path: 'settings' },
   { id: 'onboarding', label: ui.adminNavOnboarding, path: 'onboarding' },
   { id: 'plugins', label: ui.adminNavPlugins, path: 'plugins' },
+  { id: 'import', label: ui.adminNavImport, path: 'import' },
 ] as const;
 
 export function hasAdminDashboard(role?: string | null): boolean {
@@ -52,6 +54,7 @@ export function canAccessArea(role: string | undefined | null, area: AdminAreaId
     case 'settings':
     case 'onboarding':
     case 'plugins':
+    case 'import':
       return hasWorkspaceAdmin(role);
     default:
       return false;

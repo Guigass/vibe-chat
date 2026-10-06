@@ -181,6 +181,7 @@ public static class Permissions
         public const string Read = "workspace.read";
         public const string Manage = "workspace.manage";
         public const string Admin = "workspace.admin";
+        public const string Import = "workspace.import";
     }
 
     public static class Channel
