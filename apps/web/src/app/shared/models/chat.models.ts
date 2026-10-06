@@ -199,6 +199,13 @@ export interface ChatMessage {
   createdAt: string;
   editedAt?: string | null;
   deletedAt?: string | null;
+  movedToMessageId?: string | null;
+  movedToChannelId?: string | null;
+  movedToSequence?: number | null;
+  movedToAccessible?: boolean;
+  movedFromMessageId?: string | null;
+  movedFromChannelId?: string | null;
+  movedFromSequence?: number | null;
   seq?: number;
   status: MessageStatus;
   mine: boolean;

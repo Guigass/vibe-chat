@@ -3,7 +3,8 @@ import { ChannelStore } from '../../../core/services/channel.store';
 import { fillTemplate, ui } from '../../../core/i18n/strings';
 import { ChatMessage } from '../../models/chat.models';
 import { menuActionsForMessage, type MessageMenuActionId } from '../../attachments/attachment-preview';
-import { deleteLifecycle, editLifecycle, messagingPolicyOf } from '../../messaging/messaging-policy';
+import { canMoveMessages, deleteLifecycle, editLifecycle, messagingPolicyOf } from '../../messaging/messaging-policy';
+import { MOVED_BODY } from '../../messaging/message-history';
 
 export const MINE_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
   { originX: 'start', originY: 'bottom', overlayX: 'end', overlayY: 'top', offsetX: 0, offsetY: 4 },
@@ -11,6 +12,46 @@ export const MINE_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
   { originX: 'end', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetX: 0, offsetY: 4 },
   { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetX: 0, offsetY: -4 },
 ];
+
+/** Keep the open actions popover inside the viewport after extra items (B-114). */
+export function clampOpenMessageMenu(): void {
+  const menus = document.querySelectorAll<HTMLElement>('.cdk-overlay-container .vc-msg-menu');
+  const menu = menus[menus.length - 1];
+  const pane = menu?.closest('.cdk-overlay-pane');
+  if (!menu || !(pane instanceof HTMLElement)) return;
+
+  const margin = 8;
+  const maxHeight = Math.max(96, window.innerHeight - margin * 2);
+  if (menu.getBoundingClientRect().height > maxHeight) {
+    menu.style.maxHeight = `${maxHeight}px`;
+    menu.style.overflowY = 'auto';
+  }
+
+  const rect = menu.getBoundingClientRect();
+  let shiftX = 0;
+  let shiftY = 0;
+  if (rect.bottom > window.innerHeight - margin) {
+    shiftY -= rect.bottom - (window.innerHeight - margin);
+  }
+  if (rect.top + shiftY < margin) {
+    shiftY += margin - (rect.top + shiftY);
+  }
+  const fittedHeight = window.innerHeight - margin - (rect.top + shiftY);
+  if (rect.height > fittedHeight) {
+    menu.style.maxHeight = `${Math.max(96, fittedHeight)}px`;
+    menu.style.overflowY = 'auto';
+  }
+  if (rect.right > window.innerWidth - margin) {
+    shiftX -= rect.right - (window.innerWidth - margin);
+  }
+  if (rect.left + shiftX < margin) {
+    shiftX += margin - (rect.left + shiftX);
+  }
+  if (shiftX !== 0 || shiftY !== 0) {
+    const current = pane.style.transform.trim();
+    pane.style.transform = `${current} translate(${shiftX}px, ${shiftY}px)`.trim();
+  }
+}
 
 export const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
   { originX: 'end', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetX: 0, offsetY: 4 },
@@ -65,6 +106,12 @@ export function buildMessageMenuItems(
       remove === 'expired' && policy.deleteWindowMinutes != null
         ? fillTemplate(ui.menuDeleteExpired, { n: policy.deleteWindowMinutes })
         : undefined,
+    showHistory: policy.historyEnabled && !message.deletedAt && (!!message.editedAt || message.body === MOVED_BODY),
+    showMove:
+      canMoveMessages(role) &&
+      !message.deletedAt &&
+      message.body !== MOVED_BODY &&
+      !message.body.startsWith('<system:'),
   });
 }
 
@@ -81,6 +128,8 @@ export interface MessageMenuTarget {
   unsave: { emit(): void };
   remind: { emit(): void };
   markUnread: { emit(): void };
+  openHistory: { emit(): void };
+  openMove: { emit(): void };
 }
 
 export function emitMessageMenuAction(id: MessageMenuActionId, target: MessageMenuTarget): void {
@@ -120,6 +169,12 @@ export function emitMessageMenuAction(id: MessageMenuActionId, target: MessageMe
       break;
     case 'mark-unread':
       target.markUnread.emit();
+      break;
+    case 'history':
+      target.openHistory.emit();
+      break;
+    case 'move':
+      target.openMove.emit();
       break;
   }
 }

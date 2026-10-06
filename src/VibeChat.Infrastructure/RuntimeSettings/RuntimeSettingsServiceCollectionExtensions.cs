@@ -5,6 +5,7 @@ using VibeChat.Conversations;
 using VibeChat.Directory;
 using VibeChat.Identity;
 using VibeChat.Integrations;
+using VibeChat.Messaging;
 
 namespace VibeChat.Infrastructure;
 
@@ -18,6 +19,7 @@ internal static class RuntimeSettingsServiceCollectionExtensions
         services.Configure<BotIntegrationOptions>(configuration.GetSection(BotIntegrationOptions.SectionName));
         services.Configure<MessageRetentionOptions>(configuration.GetSection(MessageRetentionOptions.SectionName));
         services.Configure<RuntimeSettingsOptions>(configuration.GetSection(RuntimeSettingsOptions.SectionName));
+        services.Configure<MessageHistoryOptions>(configuration.GetSection(MessageHistoryOptions.SectionName));
         services.AddMemoryCache();
         services.AddSingleton<RuntimeSecretProtector>();
         services.AddSingleton<IRuntimeSettingsCacheInvalidator, RuntimeSettingsCacheInvalidator>();

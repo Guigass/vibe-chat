@@ -933,6 +933,20 @@
     "admin.departmentEmpty": "No departments yet.",
     "admin.departmentSaved": "Department updated.",
     "admin.departmentDeleted": "Department deleted.",
-    "admin.departmentDeleteConfirm": "Delete this department? Channel access does not change."
+    "admin.departmentDeleteConfirm": "Delete this department? Channel access does not change.",
+    "history.moved": "Message moved",
+    "history.openDestination": "Open destination",
+    "history.noAccess": "You do not have access to the other channel.",
+    "menu.history": "History",
+    "menu.move": "Move",
+    "history.title": "Message history",
+    "history.empty": "No earlier version.",
+    "history.current": "Current",
+    "history.error": "Could not load history.",
+    "history.close": "Close",
+    "move.title": "Move message",
+    "move.confirm": "Move",
+    "move.empty": "No other channel.",
+    "move.error": "Could not move."
   }
 }

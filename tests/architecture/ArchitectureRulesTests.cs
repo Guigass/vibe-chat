@@ -79,6 +79,8 @@ public sealed class ArchitectureRulesTests
             "messaging.idempotency",
             "messaging.message_retention_settings",
             "messaging.message_lifecycle_policies",
+            "messaging.message_versions",
+            "messaging.message_moves",
             "messaging.polls",
             "messaging.poll_options",
             "messaging.poll_votes",

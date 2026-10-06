@@ -221,6 +221,20 @@ internal static class AdministrationEndpointHelpers
             .ToList();
 
         var messageIdSet = allMessages.Select(m => m.id).ToHashSet();
+        var versionMessageIds = allMessages.Select(m => new MessageId(m.id)).ToArray();
+        var messageVersions = await db.MessageVersions.AsNoTracking()
+            .Where(x => x.TenantId == workspace.TenantId && versionMessageIds.Contains(x.MessageId))
+            .OrderBy(x => x.MessageId)
+            .ThenBy(x => x.VersionNumber)
+            .Select(x => new
+            {
+                messageId = x.MessageId.Value,
+                version = x.VersionNumber,
+                body = x.Body,
+                actorUserId = x.ActorUserId.Value,
+                createdAt = x.CreatedAt
+            })
+            .ToListAsync(ct);
         var attachmentEntities = await db.Attachments.AsNoTracking()
             .Where(x => x.TenantId == workspace.TenantId && channelIds.Contains(x.ChannelId))
             .OrderBy(x => x.CreatedAt)
@@ -258,7 +272,8 @@ internal static class AdministrationEndpointHelpers
                 channels = channels.Count,
                 threads = threads.Count,
                 messages = allMessages.Count,
-                attachments = attachments.Count
+                attachments = attachments.Count,
+                messageVersions = messageVersions.Count
             }
         };
 
@@ -283,6 +298,7 @@ internal static class AdministrationEndpointHelpers
             await WriteZipJsonEntryAsync(zip, "channels.json", channels, jsonOptions, ct);
             await WriteZipJsonEntryAsync(zip, "threads.json", threads, jsonOptions, ct);
             await WriteZipJsonEntryAsync(zip, "messages.json", allMessages, jsonOptions, ct);
+            await WriteZipJsonEntryAsync(zip, "message-versions.json", messageVersions, jsonOptions, ct);
             await WriteZipJsonEntryAsync(zip, "attachments.json", attachments, jsonOptions, ct);
         }
 
@@ -429,6 +445,18 @@ internal static class AdministrationEndpointHelpers
         {
             row.DeleteAllowModeratorOverride = deleteOverride;
             changes.Add("messaging.delete.allowModeratorOverride");
+        }
+
+        if (request.HistoryEnabled is { } historyEnabled && row.HistoryEnabled != historyEnabled)
+        {
+            row.HistoryEnabled = historyEnabled;
+            changes.Add("messaging.history.enabled");
+        }
+
+        if (request.LeaveTombstone is { } leaveTombstone && row.LeaveTombstone != leaveTombstone)
+        {
+            row.LeaveTombstone = leaveTombstone;
+            changes.Add("messaging.move.leaveTombstone");
         }
 
         if (changes.Any(change => change.StartsWith("messaging.", StringComparison.Ordinal)))

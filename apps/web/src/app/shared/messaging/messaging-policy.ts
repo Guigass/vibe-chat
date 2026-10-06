@@ -22,6 +22,8 @@ export interface MessagingPolicy {
   deleteRolesRestricted: boolean;
   deleteRoles: string[];
   deleteAllowModeratorOverride: boolean;
+  historyEnabled: boolean;
+  leaveTombstone: boolean;
 }
 
 /** Matches the server default when no row exists (B-107). */
@@ -36,9 +38,15 @@ export const defaultMessagingPolicy: MessagingPolicy = {
   deleteRolesRestricted: false,
   deleteRoles: ['Member', 'Moderator', 'Admin'],
   deleteAllowModeratorOverride: true,
+  historyEnabled: false,
+  leaveTombstone: true,
 };
 
 const overrideRoles = new Set(['moderator', 'admin', 'workspaceowner', 'platformowner']);
+
+export function canMoveMessages(role?: string | null): boolean {
+  return overrideRoles.has((role ?? '').toLowerCase());
+}
 
 export type LifecycleUi = 'allow' | 'hide' | 'expired';
 

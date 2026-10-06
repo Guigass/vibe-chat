@@ -933,6 +933,20 @@
     "admin.departmentEmpty": "Отделов пока нет.",
     "admin.departmentSaved": "Отдел обновлён.",
     "admin.departmentDeleted": "Отдел удалён.",
-    "admin.departmentDeleteConfirm": "Удалить этот отдел? Доступ к каналам не изменится."
+    "admin.departmentDeleteConfirm": "Удалить этот отдел? Доступ к каналам не изменится.",
+    "history.moved": "Сообщение перенесено",
+    "history.openDestination": "Открыть назначение",
+    "history.noAccess": "Нет доступа к другому каналу.",
+    "menu.history": "История",
+    "menu.move": "Перенести",
+    "history.title": "История сообщения",
+    "history.empty": "Нет предыдущей версии.",
+    "history.current": "Текущая",
+    "history.error": "Не удалось загрузить историю.",
+    "history.close": "Закрыть",
+    "move.title": "Перенести сообщение",
+    "move.confirm": "Перенести",
+    "move.empty": "Нет другого канала.",
+    "move.error": "Не удалось перенести."
   }
 }

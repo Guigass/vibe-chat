@@ -226,6 +226,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             $"/api/v1/channels/{DemoChannelId}/messages",
             new SendMessageRequest(messageId, $"idem-pin-{messageId:N}", $"pin-me-{messageId:N}", null, null));
         create.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var created = await create.Content.ReadFromJsonAsync<MessageDto>(JsonOptions);
 
         var pin = await client.PostAsync(
             $"/api/v1/channels/{DemoChannelId}/messages/{messageId}/pin",
@@ -244,7 +245,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         pins.Pins.Should().ContainSingle(p => p.MessageId == messageId);
 
         var list = await client.GetFromJsonAsync<ChannelMessagesResponseDto>(
-            $"/api/v1/channels/{DemoChannelId}/messages?after=0&limit=100",
+            $"/api/v1/channels/{DemoChannelId}/messages?after={created!.Sequence - 1}",
             JsonOptions);
         list!.Messages.Single(m => m.Id == messageId).IsPinned.Should().BeTrue();
 

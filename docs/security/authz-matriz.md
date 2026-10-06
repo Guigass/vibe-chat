@@ -97,6 +97,9 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/channels/{channelId:guid}/attachments/{attachmentId:guid}/thumbnail` | permission | `file.download` + `message.read` | ✓ | ✓ | ✓ | |
 | GET | `/channels/{channelId:guid}/messaging-policy` | permission | `message.read` | ✓ | ✓ | ✓ | B-107; campos não secretos; guest do canal |
 | PUT | `/channels/{channelId:guid}/messages/{messageId:guid}` | condicional | `message.edit.own` / `message.edit.any` | ✓* | ✗ | ✓* | *autor na política, ou override `message.edit.any` (default off); exempt B-023 / B-107 |
+| GET | `/channels/{channelId:guid}/messages/{messageId:guid}/history` | permission | `message.read` + `message.history.read` | ✓ | ✗ | ✓ | B-114; flag off → 404; política oculta → 403 `HistoryHidden` (admin break-glass auditado) |
+| GET | `/channels/{channelId:guid}/messages/{messageId:guid}/move` | permission | `message.read` | ✓ | ✓ | ✓ | B-114; sem acesso ao outro canal o corpo do destino não sai |
+| POST | `/channels/{channelId:guid}/messages/{messageId:guid}/move` | permission | `message.move` | ✓ | ✗ | ✓ | B-114; membership nos dois canais; outro tenant → 403 |
 | PUT | `/channels/{channelId:guid}/messages/{messageId:guid}/reactions` | permission | `message.react` | ✓ | ✗ | ✓ | |
 | POST | `/channels/{channelId:guid}/messages/{messageId:guid}/pin` | permission | `message.pin` | ✓ | ✗ | ✓ | |
 | DELETE | `/channels/{channelId:guid}/messages/{messageId:guid}/pin` | permission | `message.pin` | ✓ | ✗ | ✓ | |

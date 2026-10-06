@@ -94,7 +94,9 @@ public sealed record UpdateMessagingPolicyRequest(
     int? DeleteWindowMinutes = null,
     bool ClearDeleteWindow = false,
     string[]? DeleteRoles = null,
-    bool? DeleteAllowModeratorOverride = null);
+    bool? DeleteAllowModeratorOverride = null,
+    bool? HistoryEnabled = null,
+    bool? LeaveTombstone = null);
 public sealed record UpdateSensitiveSettingsRequest(
     Guid? WorkspaceId = null,
     UpdateAiSensitiveSettingsRequest? Ai = null,

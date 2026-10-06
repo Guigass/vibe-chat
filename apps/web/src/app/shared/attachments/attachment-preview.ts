@@ -48,6 +48,8 @@ export type MessageMenuActionId =
   | 'thread'
   | 'share-to-channel'
   | 'edit'
+  | 'history'
+  | 'move'
   | 'remove-link-preview'
   | 'delete'
   | 'pin'
@@ -70,6 +72,8 @@ export function menuActionsForMessage(options: {
   showMarkUnread?: boolean;
   replyCount?: number;
   hasLinkPreview?: boolean;
+  showHistory?: boolean;
+  showMove?: boolean;
   allowEdit?: boolean;
   allowDelete?: boolean;
   editExpiredTitle?: string;
@@ -117,6 +121,12 @@ export function menuActionsForMessage(options: {
   }
   if (options.showMarkUnread) {
     items.push({ id: 'mark-unread', label: ui.menuMarkUnread });
+  }
+  if (options.showHistory) {
+    items.push({ id: 'history', label: ui.menuHistory });
+  }
+  if (options.showMove) {
+    items.push({ id: 'move', label: ui.menuMove });
   }
   if (options.editExpiredTitle) {
     items.push({

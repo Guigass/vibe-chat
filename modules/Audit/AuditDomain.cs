@@ -24,6 +24,8 @@ public static class AuditActions
     public const string SpaceCreate = "space.create";
     public const string MessageSend = "message.send";
     public const string MessageForward = "message.forward";
+    public const string MessageMove = "message.move";
+    public const string MessageHistoryRead = "message.history.read";
     public const string MessageDelete = "message.delete";
     public const string MessagePin = "message.pin";
     public const string MessageUnpin = "message.unpin";

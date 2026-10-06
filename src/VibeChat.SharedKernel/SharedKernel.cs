@@ -201,6 +201,8 @@ public static class Permissions
         public const string DeleteOwn = "message.delete.own";
         public const string DeleteAny = "message.delete.any";
         public const string Pin = "message.pin";
+        public const string HistoryRead = "message.history.read";
+        public const string Move = "message.move";
     }
 
     public static class Files

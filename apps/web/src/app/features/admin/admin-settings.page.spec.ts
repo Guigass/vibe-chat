@@ -94,6 +94,8 @@ const baseSettings: SensitiveSettings = {
     deleteRolesRestricted: false,
     deleteRoles: ['Member', 'Moderator', 'Admin'],
     deleteAllowModeratorOverride: true,
+    historyEnabled: false,
+    leaveTombstone: true,
   },
   rateLimit: {
     source: 'env',

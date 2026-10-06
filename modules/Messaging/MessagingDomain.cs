@@ -18,6 +18,10 @@ public sealed class Message : AggregateRoot
     public MessageId? ReplyToMessageId { get; set; }
     public MessageId? ForwardedFromMessageId { get; set; }
     public ChannelId? ForwardedFromChannelId { get; set; }
+    public MessageId? MovedFromMessageId { get; set; }
+    public ChannelId? MovedFromChannelId { get; set; }
+    public MessageId? MovedToMessageId { get; set; }
+    public ChannelId? MovedToChannelId { get; set; }
     public Guid? ThreadId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? EditedAt { get; set; }
@@ -550,6 +554,13 @@ public sealed record MessageCreatedEvent(
     long Sequence,
     UserId AuthorId,
     DateTimeOffset CreatedAt) : IntegrationEvent(TenantId);
+
+public sealed record MessageMovedEvent(
+    TenantId TenantId,
+    ChannelId ChannelId,
+    MessageId MessageId,
+    long Sequence,
+    DateTimeOffset MovedAt) : IntegrationEvent(TenantId);
 
 public sealed record MessageEditedEvent(
     TenantId TenantId,

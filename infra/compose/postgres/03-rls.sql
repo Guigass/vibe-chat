@@ -85,6 +85,10 @@ ALTER TABLE IF EXISTS messaging.message_retention_settings ENABLE ROW LEVEL SECU
 ALTER TABLE IF EXISTS messaging.message_retention_settings FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.message_lifecycle_policies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.message_lifecycle_policies FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.message_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.message_versions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.message_moves ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.message_moves FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.link_previews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.link_previews FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.message_link_previews ENABLE ROW LEVEL SECURITY;
@@ -399,6 +403,16 @@ CREATE POLICY tenant_isolation_conversation_sequences ON messaging.conversation_
 
 DROP POLICY IF EXISTS tenant_isolation_idempotency ON messaging.idempotency;
 CREATE POLICY tenant_isolation_idempotency ON messaging.idempotency
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_message_versions ON messaging.message_versions;
+CREATE POLICY tenant_isolation_message_versions ON messaging.message_versions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_message_moves ON messaging.message_moves;
+CREATE POLICY tenant_isolation_message_moves ON messaging.message_moves
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

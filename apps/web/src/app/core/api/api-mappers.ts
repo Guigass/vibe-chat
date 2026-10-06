@@ -1,4 +1,4 @@
-import { MessageAttachment } from '../../shared/models/chat.models';
+import { ChatMessage, MessageAttachment } from '../../shared/models/chat.models';
 
 export interface AttachmentDto {
   id: string;
@@ -29,5 +29,35 @@ export function mapAttachment(a: AttachmentDto): MessageAttachment {
     width: a.width ?? null,
     height: a.height ?? null,
     pageCount: a.pageCount ?? null,
+  };
+}
+
+export function mapMoveFields(raw: object): Pick<
+  ChatMessage,
+  | 'movedToMessageId'
+  | 'movedToChannelId'
+  | 'movedToSequence'
+  | 'movedToAccessible'
+  | 'movedFromMessageId'
+  | 'movedFromChannelId'
+  | 'movedFromSequence'
+> {
+  const row = raw as {
+    movedToMessageId?: string | null;
+    movedToChannelId?: string | null;
+    movedToSequence?: number | null;
+    movedToAccessible?: boolean;
+    movedFromMessageId?: string | null;
+    movedFromChannelId?: string | null;
+    movedFromSequence?: number | null;
+  };
+  return {
+    movedToMessageId: row.movedToMessageId ?? null,
+    movedToChannelId: row.movedToChannelId ?? null,
+    movedToSequence: row.movedToSequence ?? null,
+    movedToAccessible: !!row.movedToAccessible,
+    movedFromMessageId: row.movedFromMessageId ?? null,
+    movedFromChannelId: row.movedFromChannelId ?? null,
+    movedFromSequence: row.movedFromSequence ?? null,
   };
 }

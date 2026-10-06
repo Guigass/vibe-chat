@@ -933,6 +933,20 @@
     "admin.departmentEmpty": "Noch keine Abteilungen.",
     "admin.departmentSaved": "Abteilung aktualisiert.",
     "admin.departmentDeleted": "Abteilung gelöscht.",
-    "admin.departmentDeleteConfirm": "Diese Abteilung löschen? Der Kanalzugriff bleibt gleich."
+    "admin.departmentDeleteConfirm": "Diese Abteilung löschen? Der Kanalzugriff bleibt gleich.",
+    "history.moved": "Nachricht verschoben",
+    "history.openDestination": "Ziel öffnen",
+    "history.noAccess": "Kein Zugriff auf den anderen Kanal.",
+    "menu.history": "Verlauf",
+    "menu.move": "Verschieben",
+    "history.title": "Nachrichtenverlauf",
+    "history.empty": "Keine frühere Version.",
+    "history.current": "Aktuell",
+    "history.error": "Verlauf konnte nicht geladen werden.",
+    "history.close": "Schließen",
+    "move.title": "Nachricht verschieben",
+    "move.confirm": "Verschieben",
+    "move.empty": "Kein anderer Kanal.",
+    "move.error": "Verschieben nicht möglich."
   }
 }

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using VibeChat.Api;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
@@ -7,6 +8,7 @@ using VibeChat.Conversations;
 using VibeChat.Files;
 using VibeChat.Identity;
 using VibeChat.Infrastructure;
+using VibeChat.Infrastructure.Messaging;
 using VibeChat.Messaging;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
@@ -866,7 +868,7 @@ internal static class MessagingEndpoints
 
     internal static void MapMessageActions(this RouteGroupBuilder v1)
     {
-        v1.MapGet("/channels/{channelId:guid}/messaging-policy", async (Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IClock clock, CancellationToken ct) =>
+        v1.MapGet("/channels/{channelId:guid}/messaging-policy", async (Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IOptions<MessageHistoryOptions> history, IClock clock, CancellationToken ct) =>
         {
             var profile = await EnsureProfileAsync(http.User, db, clock, ct);
             var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
@@ -877,10 +879,16 @@ internal static class MessagingEndpoints
 
             var row = await db.MessageLifecyclePolicies.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.TenantId == channel.TenantId, ct);
-            return Results.Ok(MessageLifecyclePolicyRules.ToDto(row));
+            var dto = MessageLifecyclePolicyRules.ToDto(row);
+            if (!history.Value.Enabled)
+            {
+                dto = dto with { HistoryEnabled = false };
+            }
+
+            return Results.Ok(dto);
         }).RequirePermission(Permissions.Message.Read);
 
-        v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, EditMessageRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IAuditWriter audit, IClock clock, CancellationToken ct) =>
+        v1.MapPut("/channels/{channelId:guid}/messages/{messageId:guid}", async (Guid channelId, Guid messageId, EditMessageRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant, IPermissionChecker permissions, IOutboxWriter outbox, IAuditWriter audit, IOptions<MessageHistoryOptions> history, IClock clock, CancellationToken ct) =>
         {
             var profile = await EnsureProfileAsync(http.User, db, clock, ct);
             var channel = await ResolveChannelAsync(new ChannelId(channelId), profile.Id, db, tenant, ct);
@@ -923,6 +931,11 @@ internal static class MessagingEndpoints
             if (decision is not null)
             {
                 return LifecycleDenied(decision);
+            }
+
+            if (history.Value.Enabled)
+            {
+                await MessageHistoryCommands.SnapshotAsync(db, message, profile.Id, clock.UtcNow, ct);
             }
 
             message.Body = normalizedBody;

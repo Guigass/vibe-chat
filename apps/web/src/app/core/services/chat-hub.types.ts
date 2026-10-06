@@ -51,6 +51,8 @@ export interface MessageCreatedPayload {
   authorIsBot?: boolean;
   body?: string;
   createdAt?: string;
+  movedFromMessageId?: string;
+  movedFromChannelId?: string;
   mentionedUserIds?: string[];
   mentionKinds?: string[];
   attachments?: Array<{

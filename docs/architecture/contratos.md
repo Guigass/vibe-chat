@@ -217,7 +217,23 @@ Política de edição (B-107 / ADR-025), por tenant, default = comportamento ant
 | `EditWindowExpired` | 422 | `now` > `createdAt` + `windowMinutes` |
 | (Forbid vazio) | 403 | não autor e override desligado, ou sem a permissão |
 
-`GET /api/v1/channels/{channelId}/messaging-policy` devolve só esses campos não secretos a quem tem `message.read` no canal (inclui guest). Alterar a política continua em `PUT /api/v1/admin/settings` (`workspace.admin`). `windowMinutes` nulo = sem limite; `0` ou acima de 525600 → `InvalidMessagingPolicy` (400).
+`GET /api/v1/channels/{channelId}/messaging-policy` devolve só esses campos não secretos a quem tem `message.read` no canal (inclui guest), mais `historyEnabled` e `leaveTombstone` (B-114). Com `Messaging:History:Enabled=false`, `historyEnabled` sai `false`. Alterar a política continua em `PUT /api/v1/admin/settings` (`workspace.admin`). `windowMinutes` nulo = sem limite; `0` ou acima de 525600 → `InvalidMessagingPolicy` (400).
+
+### Histórico e movimentação (B-114 / ADR-029)
+
+Flag `Messaging:History:Enabled` default **false**. Off → edição não grava versão e os endpoints abaixo respondem **404** `HistoryDisabled`.
+
+| Artefato | Contrato |
+|----------|----------|
+| Tabela | `messaging.message_versions` (`TenantId`, `MessageId`, `VersionNumber`, `Body`, `ActorUserId`, `CreatedAt`); unique `(TenantId, MessageId, VersionNumber)`; RLS FORCE |
+| Move | `messaging.message_moves` (`TenantId`, `IdempotencyKey`, origem, destino, `DestinationSequence`, `Scope`, `LeaveTombstone`); unique `(TenantId, IdempotencyKey)` e `(TenantId, SourceMessageId)` |
+| Colunas | `MovedFromMessageId/ChannelId` no destino; `MovedToMessageId/ChannelId` na origem |
+| `GET …/messages/{messageId}/history` | `message.read` + `message.history.read`. `{ versions: [{ version, body, actorUserId, createdAt }], currentBody, editedAt }`. Política oculta → **403** `HistoryHidden` (admin `workspace.admin` lê e audita `message.history.read`) |
+| `GET …/messages/{messageId}/move` | `message.read`. `{ destination, origin }` com `{ accessible }` e, só se membro, `channelId`, `messageId`, `sequence`. Sem body |
+| `POST …/messages/{messageId}/move` | `message.move` + membership nos dois canais do mesmo workspace. Body `{ idempotencyKey, targetChannelId, scope?: "message"\|"thread", leaveTombstone? }`. Origem vira `<system:moved>` (ou soft-delete se `leaveTombstone=false`). Destino recebe mensagem nova e `seq` novo. Replay da mesma chave devolve o mesmo destino |
+| Erros | `SameChannel` 400, `InvalidMoveScope` 400, `NoThread` 400, `MessageHasThread` 409, `AlreadyMoved` 409, `MessageNotMovable` 409, `IdempotencyConflict` 409. Canal de outro tenant → **403** e nenhuma linha |
+| Hub | `MessageMoved` no destino (sem push/webhook). Origem: `MessageEdited` do tombstone ou `MessageDeleted` |
+| Export | `message-versions.json` no ZIP de workspace. Purge de retenção apaga versões e moves com a mensagem |
 
 ### Soft-delete Message
 
@@ -450,6 +466,23 @@ Envelope comum:
   "seq": 42,
   "authorUserId": "…",
   "preview": "texto truncado"
+}
+```
+
+### `messaging.message.moved`
+
+Evento de realtime `MessageMoved` no canal de destino. Não entra na lista de webhooks. Não carrega body do canal de origem para quem não é membro — o payload vai só ao grupo do destino.
+
+```json
+{
+  "messageId": "…",
+  "channelId": "…",
+  "conversationId": "…",
+  "sequence": 7,
+  "authorId": "…",
+  "body": "texto copiado",
+  "movedFromMessageId": "…",
+  "movedFromChannelId": "…"
 }
 ```
 
