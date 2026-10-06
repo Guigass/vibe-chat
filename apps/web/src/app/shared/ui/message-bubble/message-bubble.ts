@@ -23,6 +23,7 @@ import {
   MINE_ACTION_MENU_POSITIONS,
   THEIRS_ACTION_MENU_POSITIONS,
   buildMessageMenuItems,
+  clampOpenMessageMenu,
   emitMessageMenuAction,
 } from './message-menu';
 import {
@@ -268,6 +269,12 @@ export class MessageBubble {
     if (!message.movedToAccessible || !channelId || !messageId) return;
     this.channels.selectChannel(channelId);
     void this.messages.jumpToSequence(channelId, message.movedToSequence ?? 0, messageId);
+  }
+
+  onActionsMenuOpened(): void {
+    this.menuOpen.set(true);
+    clampOpenMessageMenu();
+    requestAnimationFrame(() => clampOpenMessageMenu());
   }
 
   onMenuAction(id: MessageMenuActionId): void {

@@ -13,6 +13,46 @@ export const MINE_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
   { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetX: 0, offsetY: -4 },
 ];
 
+/** Keep the open actions popover inside the viewport after extra items (B-114). */
+export function clampOpenMessageMenu(): void {
+  const menus = document.querySelectorAll<HTMLElement>('.cdk-overlay-container .vc-msg-menu');
+  const menu = menus[menus.length - 1];
+  const pane = menu?.closest('.cdk-overlay-pane');
+  if (!menu || !(pane instanceof HTMLElement)) return;
+
+  const margin = 8;
+  const maxHeight = Math.max(96, window.innerHeight - margin * 2);
+  if (menu.getBoundingClientRect().height > maxHeight) {
+    menu.style.maxHeight = `${maxHeight}px`;
+    menu.style.overflowY = 'auto';
+  }
+
+  const rect = menu.getBoundingClientRect();
+  let shiftX = 0;
+  let shiftY = 0;
+  if (rect.bottom > window.innerHeight - margin) {
+    shiftY -= rect.bottom - (window.innerHeight - margin);
+  }
+  if (rect.top + shiftY < margin) {
+    shiftY += margin - (rect.top + shiftY);
+  }
+  const fittedHeight = window.innerHeight - margin - (rect.top + shiftY);
+  if (rect.height > fittedHeight) {
+    menu.style.maxHeight = `${Math.max(96, fittedHeight)}px`;
+    menu.style.overflowY = 'auto';
+  }
+  if (rect.right > window.innerWidth - margin) {
+    shiftX -= rect.right - (window.innerWidth - margin);
+  }
+  if (rect.left + shiftX < margin) {
+    shiftX += margin - (rect.left + shiftX);
+  }
+  if (shiftX !== 0 || shiftY !== 0) {
+    const current = pane.style.transform.trim();
+    pane.style.transform = `${current} translate(${shiftX}px, ${shiftY}px)`.trim();
+  }
+}
+
 export const THEIRS_ACTION_MENU_POSITIONS: ConnectedPosition[] = [
   { originX: 'end', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetX: 0, offsetY: 4 },
   { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetX: 0, offsetY: -4 },

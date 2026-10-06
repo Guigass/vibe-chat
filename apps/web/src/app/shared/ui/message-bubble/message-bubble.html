@@ -17,7 +17,7 @@
       [attr.data-message-id]="message().id"
       [cdkContextMenuTriggerFor]="actionsMenu"
       [cdkContextMenuDisabled]="!showActions()"
-      (cdkContextMenuOpened)="menuOpen.set(true)"
+      (cdkContextMenuOpened)="onActionsMenuOpened()"
       (cdkContextMenuClosed)="menuOpen.set(false)"
       (touchstart)="onTouchStart($event)"
       (touchend)="onTouchEnd()"
@@ -135,7 +135,7 @@
               aria-haspopup="menu"
               [cdkMenuTriggerFor]="actionsMenu"
               [cdkMenuPosition]="actionMenuPositions()"
-              (cdkMenuOpened)="menuOpen.set(true)"
+              (cdkMenuOpened)="onActionsMenuOpened()"
               (cdkMenuClosed)="menuOpen.set(false)"
             >
               <span class="vc-msg__more-dots" aria-hidden="true"></span>
