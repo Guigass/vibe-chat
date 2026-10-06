@@ -23,7 +23,8 @@ import { FollowedThreadsStore } from '../core/services/followed-threads.store';
 import { PushNotificationService } from '../core/services/push-notification.service';
 import { NotificationPreferencesStore } from '../core/services/notification-preferences.store';
 import { UserStatusStore } from '../core/services/user-status.store';
-import { UserStatusEditor } from '../features/chat/user-status/user-status-editor';
+import { ShellDialogs } from './shell-dialogs';
+import { MemberProfileStore } from '../core/services/member-profile.store';
 import { VisualPreferenceService } from '../core/services/visual-preference.service';
 import { ChannelList } from '../features/chat/channel-list/channel-list';
 import { Composer } from '../features/chat/composer/composer';
@@ -82,7 +83,6 @@ import { defaultSidebarOpen, readNavCompact, SHELL_NARROW_MEDIA_QUERY, writeNavC
 import { LocaleService } from '../core/i18n/locale.service';
 import { ui } from '../core/i18n/strings';
 import { pluralCount } from '../core/i18n/format';
-
 @Component({
   selector: 'vc-shell-page',
   standalone: true,
@@ -111,7 +111,7 @@ import { pluralCount } from '../core/i18n/format';
     Button,
     IconButton,
     Input,
-    UserStatusEditor,
+    ShellDialogs,
     VcTooltip,
     CommandPalette,
   ],
@@ -131,6 +131,7 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly push = inject(PushNotificationService);
   readonly notificationPrefs = inject(NotificationPreferencesStore);
   readonly userStatus = inject(UserStatusStore);
+  private readonly profiles = inject(MemberProfileStore);
   private readonly api = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly attachments = inject(AttachmentQueueService);
@@ -171,7 +172,6 @@ export class ShellPage implements OnInit, OnDestroy {
     if (!query) return members;
     return members.filter((member) => member.displayName.toLowerCase().includes(query));
   });
-
   toggleDmPanel(panel: 'add' | 'rename' | 'leave'): void {
     if (this.dmPanel() === panel) {
       this.closeDmPanel();
@@ -189,7 +189,6 @@ export class ShellPage implements OnInit, OnDestroy {
       setTimeout(() => document.getElementById(focusId)?.focus(), 0);
     }
   }
-
   toggleInvitePanel(): void {
     if (this.inviteOpen()) {
       this.closeInvitePanel();
@@ -201,14 +200,12 @@ export class ShellPage implements OnInit, OnDestroy {
     this.inviteEmail.set('');
     this.inviteDays.set('7');
   }
-
   closeInvitePanel(): void {
     this.inviteOpen.set(false);
     this.inviteUrl.set(null);
     this.inviteError.set(null);
     this.inviteBusy.set(false);
   }
-
   inviteAbsoluteUrl(): string {
     const path = this.inviteUrl();
     if (!path) return '';
@@ -743,6 +740,9 @@ export class ShellPage implements OnInit, OnDestroy {
   private hasFileDrag(event: DragEvent): boolean {
     return !!event.dataTransfer?.types.includes('Files');
   }
+
+  openOwnProfile(): void { this.profiles.open(this.auth.profile()?.id); }
+  openPeerProfile(): void { const id = this.peerUserId(); if (id) this.profiles.open(id); }
 
   openStatusEditor(): void {
     this.confirmingReport.set(false);

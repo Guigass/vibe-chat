@@ -28,7 +28,8 @@
         <div class="vc-msg__avatar-slot">
           @if (showAvatar()) {
             <vc-avatar
-              [name]="message().authorName"
+              [name]="authorLabel()"
+              [authPath]="authorAvatarPath()"
               [size]="avatarSize()"
               [statusEmoji]="statusEmoji()"
               [statusLabel]="statusLabel()"
@@ -41,7 +42,7 @@
         <div class="vc-msg__body">
           @if (showMeta()) {
             <header class="vc-msg__meta">
-              <strong>{{ message().authorName }}</strong>
+              <strong>{{ authorLabel() }}</strong>
               @if (message().authorIsBot) {
                 <span class="vc-msg__bot">{{ ui.bubbleBot }}</span>
               }

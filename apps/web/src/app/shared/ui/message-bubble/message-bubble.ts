@@ -123,6 +123,16 @@ export class MessageBubble {
   readonly linkPreviewImageUrl = signal<string | null>(null);
   readonly emojiOptions = REACTION_EMOJI_OPTIONS;
   readonly own = computed(() => idsEqual(this.message().authorUserId, this.auth.profile()?.id));
+  readonly authorLabel = computed(() => {
+    const id = this.message().authorUserId;
+    const members = this.channels.members?.() ?? [];
+    return members.find((member) => idsEqual(member.userId, id))?.displayName || this.message().authorName;
+  });
+  readonly authorAvatarPath = computed(() => {
+    const id = this.message().authorUserId;
+    const members = this.channels.members?.() ?? [];
+    return members.find((member) => idsEqual(member.userId, id))?.avatarUrl ?? null;
+  });
   readonly actionMenuPositions = computed(() =>
     this.own() ? MINE_ACTION_MENU_POSITIONS : THEIRS_ACTION_MENU_POSITIONS,
   );

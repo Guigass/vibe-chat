@@ -4,6 +4,7 @@ import { MessageBubble } from './message-bubble';
 import { ApiService } from '../../../core/api/api.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { AvatarCache } from '../../../core/services/avatar-cache.service';
 import { MessageStore } from '../../../core/services/message.store';
 import { ThemeService } from '../../../core/services/theme.service';
 import { LocaleService } from '../../../core/i18n/locale.service';
@@ -73,7 +74,12 @@ describe('MessageBubble (B-163)', () => {
             activeWorkspace: () => ({ id: 'w1' }),
             isDemo: () => true,
             openDirectMessage,
+            members: () => [],
           },
+        },
+        {
+          provide: AvatarCache,
+          useValue: { resolve: () => Promise.resolve(null) },
         },
         {
           provide: MessageStore,

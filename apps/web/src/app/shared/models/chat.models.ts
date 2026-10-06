@@ -87,6 +87,7 @@ export interface WorkspaceMember {
   displayName: string;
   email: string;
   role: string;
+  avatarUrl?: string | null;
 }
 
 /** B-166. A contact group organizes people. It does not grant channel or DM access. */

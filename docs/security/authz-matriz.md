@@ -32,6 +32,11 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/me` | membership | — | ✓ | ✓ | ✓ | Perfil do caller |
 | PUT | `/me` | exempt | caller-only | ✓ | ✓ | ✓ | Só o próprio `locale`; exceção explícita, sem mudar authZ; `InvalidLocale` → 400 |
 | PUT | `/users/{userId:guid}/appearance` | exempt | caller-only | ✓ | ✓ | ✓ | Wallpaper/accent do próprio usuário (B-185); outro `userId` ou cross-tenant → 403; id fora do catálogo → 400 |
+| PUT | `/me/profile` | exempt | caller-only | ✓ | ✓ | ✓ | B-167; só o próprio; sem membership de workspace → 403; admin não edita alheio |
+| POST | `/me/profile/avatar` | exempt | caller-only | ✓ | ✓ | ✓ | B-167; imagem allowlist + tamanho; key namespaced por tenant; `DisableAntiforgery` (auth por header, não cookie) |
+| DELETE | `/me/profile/avatar` | exempt | caller-only | ✓ | ✓ | ✓ | B-167; volta às iniciais |
+| GET | `/workspaces/{workspaceId:guid}/members/{userId:guid}/profile` | membership | — | ✓ | ✓ | ✓ | B-167; mesmo workspace; outro workspace/guest → 403; alvo fora do workspace → 404 |
+| GET | `/workspaces/{workspaceId:guid}/members/{userId:guid}/profile/avatar` | membership | — | ✓ | ✓ | ✓ | B-167; bytes só com membership; key fora do prefixo do tenant → 404 |
 | GET | `/workspaces` | membership | — | ✓ | ✓ | ✓ | Lista só workspaces do caller |
 | GET | `/workspaces/{workspaceId:guid}/channels` | membership | — | ✓ | ✓ | ✓ | Roster de canais |
 | GET | `/workspaces/{workspaceId:guid}/channels/unread` | membership | — | ✓ | ✓ | ✓ | Contagens do caller |

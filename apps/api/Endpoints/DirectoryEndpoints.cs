@@ -133,10 +133,22 @@ internal static class DirectoryEndpoints
                 where m.WorkspaceId == workspace.Id
                 join u in db.UserProfiles on m.UserId equals u.Id
                 orderby u.DisplayName
-                select new WorkspaceMemberResponse(u.Id.Value, u.DisplayName, u.Email, m.Role.ToString())
+                select new { UserId = u.Id.Value, u.DisplayName, u.Email, Role = m.Role.ToString() }
             ).ToArrayAsync(ct);
+            var cards = await db.MemberPublicProfiles.AsNoTracking()
+                .Where(x => x.AvatarObjectKey != null)
+                .Select(x => new { x.UserId, x.UpdatedAt })
+                .ToListAsync(ct);
+            var avatarAt = cards.ToDictionary(x => x.UserId.Value, x => x.UpdatedAt);
 
-            return Results.Ok(members);
+            return Results.Ok(members.Select(row => new WorkspaceMemberResponse(
+                row.UserId,
+                row.DisplayName,
+                row.Email,
+                row.Role,
+                avatarAt.TryGetValue(row.UserId, out var updated)
+                    ? MemberProfileRules.AvatarPath(workspace.Id.Value, row.UserId, updated)
+                    : null)).ToArray());
         });
     }
 

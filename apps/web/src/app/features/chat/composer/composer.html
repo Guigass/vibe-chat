@@ -37,6 +37,7 @@
               [items]="mentionItems()"
               [activeIndex]="mentionActiveIndex()"
               (select)="applyMention($event)"
+              (openProfile)="openMentionProfile($event)"
             />
             <vc-slash-autocomplete
               [open]="slashOpen()"

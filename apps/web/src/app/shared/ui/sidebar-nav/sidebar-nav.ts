@@ -9,21 +9,20 @@ import {
   WorkspaceMember,
 } from '../../models/chat.models';
 import { ChannelItem } from '../channel-item/channel-item';
+import { Avatar } from '../avatar/avatar';
 import { Button } from '../button/button';
 import { Input } from '../input/input';
 import { VcTooltip } from '../tooltip/tooltip';
 import { displaySpaceName } from '../../../core/i18n/display';
 import { fillTemplate, ui } from '../../../core/i18n/strings';
-
 function matchesFilter(text: string, query: string): boolean {
   if (!query) return true;
   return text.toLowerCase().includes(query);
 }
-
 @Component({
   selector: 'vc-sidebar-nav',
   standalone: true,
-  imports: [ChannelItem, Button, Input, VcTooltip],
+  imports: [ChannelItem, Button, Input, VcTooltip, Avatar],
   template: `
     <nav
       class="vc-sidebar-nav vc-anim-sidebar"
@@ -40,11 +39,9 @@ function matchesFilter(text: string, query: string): boolean {
           />
         </div>
       }
-
       @if (hasFilter() && isEmpty()) {
         <p class="vc-sidebar-nav__empty" role="status">{{ fillTemplate(ui.navFilterEmpty, { query: filterQuery().trim() }) }}</p>
       }
-
       @if (filteredGroups().length) {
         <section class="vc-sidebar-nav__block" [attr.aria-label]="ui.navChannels">
           @for (group of filteredGroups(); track group.space?.id ?? 'ungrouped') {
@@ -71,7 +68,6 @@ function matchesFilter(text: string, query: string): boolean {
               </ul>
             </div>
           }
-
           @if (canCreate() && !hasFilter() && !compact()) {
             <div class="vc-sidebar-nav__create">
               @if (!createOpen()) {
@@ -127,7 +123,6 @@ function matchesFilter(text: string, query: string): boolean {
           }
         </section>
       }
-
       @if (filteredDirects().length) {
         <section class="vc-sidebar-nav__block" [attr.aria-label]="ui.navRecent">
           @if (!compact()) {
@@ -153,7 +148,6 @@ function matchesFilter(text: string, query: string): boolean {
           </ul>
         </section>
       }
-
       @if (!compact() && filteredContactSections().length) {
         <section class="vc-sidebar-nav__block" [attr.aria-label]="ui.navMembers" data-testid="contact-sections">
           <p class="vc-sidebar-nav__label">{{ ui.navMembers }}</p>
@@ -272,6 +266,7 @@ function matchesFilter(text: string, query: string): boolean {
                         [attr.aria-label]="memberLabel(member)"
                         (click)="onMemberClick(member.userId)"
                       >
+                        <vc-avatar [name]="member.displayName" [authPath]="member.avatarUrl" [size]="22" (click)="onProfileClick($event, member.userId)" />
                         <span
                           class="vc-presence"
                           [attr.data-status]="presenceOf(member.userId)"
@@ -361,6 +356,7 @@ function matchesFilter(text: string, query: string): boolean {
                       {{ memberInitial(member) }}
                     </span>
                   } @else {
+                    <vc-avatar [name]="member.displayName" [authPath]="member.avatarUrl" [size]="22" (click)="onProfileClick($event, member.userId)" />
                     <span
                       class="vc-presence"
                       [attr.data-status]="presenceOf(member.userId)"
@@ -619,6 +615,7 @@ export class SidebarNav {
   readonly compact = input(false);
   readonly select = output<string>();
   readonly openDm = output<string>();
+  readonly openProfile = output<string>();
   readonly openGroup = output<string[]>();
   readonly channelMuteAction = output<{ channelId: string; action: ChannelMuteAction }>();
   readonly createChannel = output<{
@@ -631,7 +628,6 @@ export class SidebarNav {
   readonly renamePersonalGroup = output<{ groupId: string; name: string }>();
   readonly deletePersonalGroup = output<string>();
   readonly savePersonalMembers = output<{ groupId: string; userIds: string[] }>();
-
   readonly filterQuery = signal('');
   readonly filterOpen = signal(false);
   readonly createOpen = signal(false);
@@ -653,9 +649,7 @@ export class SidebarNav {
   readonly selectedMembers = computed(() =>
     this.members().filter((m) => this.selectedIds().includes(m.userId)),
   );
-
   readonly hasFilter = computed(() => this.filterQuery().trim().length > 0);
-
   readonly filteredGroups = computed(() => {
     const q = this.filterQuery().trim().toLowerCase();
     return this.groups()
@@ -815,6 +809,12 @@ export class SidebarNav {
       return;
     }
     this.openDm.emit(userId);
+  }
+
+  onProfileClick(event: Event, userId: string): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.openProfile.emit(userId);
   }
 
   togglePick(userId: string): void {

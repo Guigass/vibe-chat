@@ -118,6 +118,7 @@ export class ComposerMentions {
           userId: member.userId,
           displayName: member.displayName,
           email: member.email,
+          avatarUrl: member.avatarUrl ?? null,
           subtitle: this.mentionSubtitle(member.userId),
         })),
       );
@@ -134,6 +135,7 @@ export class ComposerMentions {
               userId: member.userId,
               displayName: member.displayName,
               email: member.email,
+              avatarUrl: this.channels.members().find((row) => row.userId === member.userId)?.avatarUrl ?? null,
               subtitle: this.mentionSubtitle(member.userId),
             })),
           );

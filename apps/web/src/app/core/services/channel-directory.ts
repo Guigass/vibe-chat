@@ -39,6 +39,17 @@ export interface ChannelDirectoryDeps {
   upsertChannel: (channel: Channel) => void;
 }
 
+export async function reloadWorkspaceMembers(deps: ChannelDirectoryDeps): Promise<void> {
+  const workspace = deps.activeWorkspace();
+  if (!workspace || deps.isDemo() || workspace.role === 'Guest') return;
+  const [members, sections] = await Promise.all([
+    deps.api.getMembers(workspace.id),
+    deps.api.getGroupedContacts(workspace.id).catch(() => []),
+  ]);
+  deps.setMembers(members);
+  deps.setContactSections(withoutSelfContacts(sections, deps.profileId()));
+}
+
 export async function selectWorkspaceDirectory(
   deps: ChannelDirectoryDeps,
   workspaceId: string,

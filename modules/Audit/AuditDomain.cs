@@ -63,6 +63,8 @@ public static class AuditActions
     public const string IntegrationPluginDisable = "integration.plugin.disable";
     public const string IntegrationPluginUninstall = "integration.plugin.uninstall";
     public const string IntegrationPluginRotate = "integration.plugin.rotate";
+    public const string ProfileUpdate = "profile.update";
+    public const string ProfileAvatar = "profile.avatar";
     public const string UserStatusClear = "user_status.clear";
     public const string UserStatusReport = "user_status.report";
     public const string ScheduleCreate = "schedule.create";

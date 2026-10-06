@@ -17,14 +17,12 @@ import {
   UserStatusBody,
   UserStatusStateName,
 } from '../../shared/status/user-status';
-
 interface WorkspaceDto {
   id: string;
   name: string;
   slug: string;
   role?: string;
 }
-
 interface SpaceDto {
   id: string;
   workspaceId: string;
@@ -64,6 +62,7 @@ interface MemberDto {
   displayName: string;
   email: string;
   role: string;
+  avatarUrl?: string | null;
 }
 
 interface UserStatusResponseDto {
@@ -177,6 +176,7 @@ export class DirectoryApiService extends HttpApiClient {
       displayName: m.displayName,
       email: m.email,
       role: m.role,
+      avatarUrl: m.avatarUrl ?? null,
     }));
   }
 

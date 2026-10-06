@@ -74,6 +74,20 @@ o cliente traduz pelo código (não usa `Accept-Language` no servidor).
 | `PUT /api/v1/me` | Body `{ locale }` — só um locale suportado; outro valor → **400** `InvalidLocale`. Atualiza só o caller. Não altera wallpaper/accent |
 | `PUT /api/v1/users/{userId}/appearance` | Body `{ chatWallpaperId, accentColorId }`. Só o caller (`userId` diferente → **403**, inclusive admin). Sem tenant do caller → **403**. `null` ou vazio restaura o padrão. Id fora do catálogo → **400** `InvalidWallpaper` ou `InvalidAccent` e nada é gravado. Linha em `identity.visual_preferences` (RLS por tenant) |
 
+### Ficha pública do membro (B-167)
+
+`DisplayName` continua em `identity.user_profiles` (identidade global, sem `tenant_id` — o login acontece antes do tenant). Cargo, sobre, destaque e avatar ficam em `identity.member_profiles`, uma linha por `(TenantId, UserId)`, com `FORCE ROW LEVEL SECURITY`. Não é status temporário (B-116) nem preferência visual (B-185).
+
+| Método | Contrato |
+|--------|----------|
+| `PUT /api/v1/me/profile` | Body `{ displayName, jobTitle?, about?, highlightMessage? }`. Só o caller com membership de workspace; sem membership → **403**. `displayName` obrigatório (1–80). Opcionais vazios limpam o campo. Limites: cargo 80, sobre 500, destaque 160. Controle ou excesso → **400** (`DisplayNameRequired`, `DisplayNameTooLong`, `DisplayNameInvalid`, `JobTitleTooLong`, `AboutTooLong`, `HighlightTooLong`, `ProfileTextInvalid`). `Idempotency-Key` opcional; mesma chave e outro corpo → **409** `IdempotencyConflict`. Audit `profile.update` sem o texto |
+| `POST /api/v1/me/profile/avatar` | `multipart` campo `file`. PNG, JPEG, WEBP ou GIF, até 2 MiB, magic bytes conferem o `Content-Type`. Senão **400** (`AvatarEmpty`, `AvatarTooLarge`, `AvatarTypeNotAllowed`). Key MinIO `{tenant}/profiles/{user}/…`. Audit `profile.avatar` com `stage=set` |
+| `DELETE /api/v1/me/profile/avatar` | Remove a foto do caller e volta às iniciais. Audit `stage=clear` |
+| `GET /api/v1/workspaces/{workspaceId}/members/{userId}/profile` | Membership no workspace. Alvo fora do workspace → **404**. Outro workspace, guest ou sem membership → **403**. Corpo `{ userId, displayName, email, jobTitle, about, highlightMessage, avatarUrl? }`. E-mail já visível na lista de membros |
+| `GET /api/v1/workspaces/{workspaceId}/members/{userId}/profile/avatar` | Mesma authZ. Bytes da imagem ou **404**. A lista `GET .../members` inclui `avatarUrl` quando há foto |
+
+Sem hub dedicado: o cliente relê membros. Admin não edita perfil alheio nesta fatia.
+
 Logs do servidor permanecem em inglês e não interpolam texto traduzido.
 `GET /api/v1/workspaces/{id}/commands.description` é locale-sensitive (mesmo shape; valor no idioma do caller).
 Campo `message` em erros, quando existir, fica em inglês fixo — o cliente traduz por `error`.
