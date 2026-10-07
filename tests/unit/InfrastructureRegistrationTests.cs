@@ -45,6 +45,7 @@ public sealed class InfrastructureRegistrationTests
             "Singleton:IHostedService:RedisSignalRBridge",
             "Singleton:OutboxProcessor:OutboxProcessor",
             "Singleton:IHostedService:OutboxDispatcher",
+            "Scoped:WorkspaceImportService:WorkspaceImportService",
             "Singleton:RuntimeSecretProtector:RuntimeSecretProtector",
             "Singleton:IRuntimeSettingsCacheInvalidator:RuntimeSettingsCacheInvalidator",
             "Scoped:ProcessSettingsResolver:ProcessSettingsResolver",
