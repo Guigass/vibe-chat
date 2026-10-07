@@ -417,7 +417,7 @@ internal sealed class ImportPublisher(
             return new MessageId(existing);
         }
 
-            var sequence = await NextSequenceAsync(tenantId, conversationId, cancellationToken);
+        var sequence = await NextSequenceAsync(tenantId, conversationId, cancellationToken);
         var id = new MessageId(Guid.NewGuid());
         db.Messages.Add(new Message
         {
