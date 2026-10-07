@@ -180,6 +180,13 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/workspaces/{workspaceId:guid}/imports/{importId:guid}/resume` | permission | `workspace.import` | ✗ | ✗ | ✓ | |
 | POST | `/workspaces/{workspaceId:guid}/imports/{importId:guid}/publish` | permission | `workspace.import` | ✗ | ✗ | ✓ | Atômico na transação do request |
 | POST | `/workspaces/{workspaceId:guid}/imports/{importId:guid}/rollback` | permission | `workspace.import` | ✗ | ✗ | ✓ | Publicado exige `confirm` |
+| GET | `/workspaces/{workspaceId:guid}/diagnostics` | permission | `support.read` | ✗ | ✓ | ✓ | B-154; feature off é `Skipped`; admin vê evidência mascarada |
+| POST | `/workspaces/{workspaceId:guid}/diagnostics/probes/{kind}` | permission | `support.repair` | ✗ | ✗ | ✓ | Probe sintético; storage é apagado na mesma chamada |
+| POST | `/workspaces/{workspaceId:guid}/diagnostics/bundles` | permission | `support.bundle` | ✗ | ✗ | ✓ | Flag off → 404 `SupportBundleDisabled`; exige Idempotency-Key |
+| GET | `/workspaces/{workspaceId:guid}/diagnostics/bundles/{bundleId:guid}` | permission | `support.bundle` | ✗ | ✗ | ✓ | TTL 15 min e 3 downloads; depois 410 |
+| POST | `/workspaces/{workspaceId:guid}/diagnostics/repairs` | permission | `support.repair` | ✗ | ✗ | ✓ | Allowlist; `target` → 400; dry-run não escreve projeção |
+| POST | `/workspaces/{workspaceId:guid}/diagnostics/repairs/{repairId:guid}/apply` | permission | `support.repair` | ✗ | ✗ | ✓ | Só `search.reindex` escreve `search_vector` |
+| POST | `/workspaces/{workspaceId:guid}/diagnostics/repairs/{repairId:guid}/cancel` | permission | `support.repair` | ✗ | ✗ | ✓ | Só a partir de `running` |
 | POST | `/integrations/v1/channels/{channelId:guid}/messages` | exempt | integration token | — | — | — | B-109; `AllowAnonymous` + hash; fora do escopo → 403 |
 | POST | `/integrations/v1/dms` | exempt | integration token | — | — | — | Exige `allowDms`; peer do mesmo workspace |
 | POST | `/admin/settings/credentials/vapid/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-187 |

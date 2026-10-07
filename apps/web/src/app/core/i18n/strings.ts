@@ -668,6 +668,26 @@ export const ui = {
   adminNavPlugins: $localize`:@@admin.navPlugins:Plugins`,
   adminNavOnboarding: $localize`:@@admin.navOnboarding:Onboarding`,
   adminNavImport: $localize`:@@admin.navImport:Importação`,
+  adminNavDiagnostics: $localize`:@@admin.navDiagnostics:Diagnóstico`,
+  adminDiagnosticsLead: $localize`:@@admin.diagnosticsLead:Checagens deste workspace. Recurso desligado por configuração não é incidente.`,
+  adminDiagnosticsReady: $localize`:@@admin.diagnosticsReady:Pronto`,
+  adminDiagnosticsDegraded: $localize`:@@admin.diagnosticsDegraded:Degradado`,
+  adminDiagnosticsAction: $localize`:@@admin.diagnosticsAction:Ação necessária`,
+  adminDiagnosticsRefresh: $localize`:@@admin.diagnosticsRefresh:Atualizar`,
+  adminDiagnosticsProbeEmail: $localize`:@@admin.diagnosticsProbeEmail:Testar e-mail`,
+  adminDiagnosticsProbePush: $localize`:@@admin.diagnosticsProbePush:Testar push`,
+  adminDiagnosticsProbeStorage: $localize`:@@admin.diagnosticsProbeStorage:Testar storage`,
+  adminDiagnosticsBundle: $localize`:@@admin.diagnosticsBundle:Gerar support bundle`,
+  adminDiagnosticsExpires: $localize`:@@admin.diagnosticsExpires:Expira %time%`,
+  adminDiagnosticsDryRun: $localize`:@@admin.diagnosticsDryRun:Simular reindex`,
+  adminDiagnosticsApply: $localize`:@@admin.diagnosticsApply:Aplicar reindex`,
+  adminDiagnosticsCancel: $localize`:@@admin.diagnosticsCancel:Cancelar reparo`,
+  adminDiagnosticsConfirm: $localize`:@@admin.diagnosticsConfirm:Confirmo a escrita da projeção de busca`,
+  adminDiagnosticsFeatureOff: $localize`:@@admin.diagnosticsFeatureOff:Desligado por configuração`,
+  adminDiagnosticsPass: $localize`:@@admin.diagnosticsPass:Ok`,
+  adminDiagnosticsWarn: $localize`:@@admin.diagnosticsWarn:Atenção`,
+  adminDiagnosticsFail: $localize`:@@admin.diagnosticsFail:Falha`,
+  adminDiagnosticsSkipped: $localize`:@@admin.diagnosticsSkipped:Ignorado`,
   adminImportLead: $localize`:@@admin.importLead:Traga pessoas, canais e histórico para uma área de preparação. Nada entra no chat antes de publicar.`,
   adminImportAdapter: $localize`:@@admin.importAdapter:Origem`,
   adminImportFile: $localize`:@@admin.importFile:Arquivo JSON`,
@@ -733,6 +753,9 @@ export const ui = {
   errorImportDisabled: $localize`:@@error.importDisabled:A importação está desligada nesta instância.`,
   errorImportRejected: $localize`:@@error.importRejected:O arquivo de importação foi recusado.`,
   errorImportConflict: $localize`:@@error.importConflict:Esta importação não pode avançar nesse estado.`,
+  errorSupportBundleDisabled: $localize`:@@error.supportBundleDisabled:O support bundle está desligado nesta instância.`,
+  errorSupportRejected: $localize`:@@error.supportRejected:O pedido de diagnóstico foi recusado.`,
+  errorRepairConflict: $localize`:@@error.repairConflict:Este reparo não pode continuar nesse estado.`,
   errorTemplateNotFound: $localize`:@@error.templateNotFound:Template não encontrado.`,
   adminNoAccessTitle: $localize`:@@admin.noAccessTitle:Sem acesso`,
   adminNavAria: $localize`:@@admin.navAria:Navegação administrativa`,
@@ -1136,6 +1159,18 @@ export function translateErrorCode(code: string | undefined): string {
     case 'ImportConflict':
     case 'ImportConfirmRequired':
       return ui.errorImportConflict;
+    case 'SupportBundleDisabled':
+      return ui.errorSupportBundleDisabled;
+    case 'SupportIdempotencyConflict':
+      return ui.errorIdempotencyConflict;
+    case 'RepairActionNotAllowed':
+    case 'ProbeUnknown':
+    case 'SupportBundleNotFound':
+    case 'SupportBundleExpired':
+      return ui.errorSupportRejected;
+    case 'RepairConfirmRequired':
+    case 'RepairState':
+      return ui.errorRepairConflict;
     case 'TemplateNotFound':
       return ui.errorTemplateNotFound;
     default:

@@ -1,0 +1,63 @@
+<article class="admin-panel">
+  <p class="admin-panel__lead">{{ ui.adminDiagnosticsLead }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty">{{ ui.adminLoadingConsole }}</p>
+  } @else if (report(); as current) {
+    <p role="status">{{ verdictLabel(current.verdict) }}</p>
+    <div class="admin-onboarding__actions">
+      <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy()" (click)="refresh()">{{ ui.adminDiagnosticsRefresh }}</button>
+      @if (canRepair()) {
+        <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy()" (click)="probeEmail()">{{ ui.adminDiagnosticsProbeEmail }}</button>
+        <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy()" (click)="probePush()">{{ ui.adminDiagnosticsProbePush }}</button>
+        <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy()" (click)="probeStorage()">{{ ui.adminDiagnosticsProbeStorage }}</button>
+        <button type="button" class="admin-btn" [disabled]="busy()" (click)="bundleCreate()">{{ ui.adminDiagnosticsBundle }}</button>
+      }
+    </div>
+
+    @if (error()) {
+      <p class="admin-error" role="alert">{{ error() }}</p>
+    }
+
+    @if (probe(); as currentProbe) {
+      <p role="status">{{ currentProbe.code }}: {{ statusLabel(currentProbe.status) }}</p>
+      @if (currentProbe.summary === 'feature.off') {
+        <p>{{ ui.adminDiagnosticsFeatureOff }}</p>
+      }
+    }
+
+    @if (bundle(); as currentBundle) {
+      <p role="status">{{ currentBundle.status }} · {{ currentBundle.checksum }}</p>
+      <p>{{ expires(currentBundle) }}</p>
+    }
+
+    <ul>
+      @for (check of current.checks; track check.code) {
+        <li>
+          <span>{{ check.code }}</span>
+          <span>{{ statusLabel(check.status) }}</span>
+          @if (check.summary === 'feature.off') {
+            <span>{{ ui.adminDiagnosticsFeatureOff }}</span>
+          }
+        </li>
+      }
+    </ul>
+
+    @if (canRepair()) {
+      <form (submit)="$event.preventDefault()">
+        <label>
+          <input type="checkbox" [checked]="confirm()" (change)="confirm.set($any($event.target).checked)" />
+          {{ ui.adminDiagnosticsConfirm }}
+        </label>
+        <div class="admin-onboarding__actions">
+          <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy()" (click)="dryRun()">{{ ui.adminDiagnosticsDryRun }}</button>
+          <button type="button" class="admin-btn" [disabled]="busy()" (click)="apply()">{{ ui.adminDiagnosticsApply }}</button>
+          <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy() || repair()?.status !== 'running'" (click)="cancel()">{{ ui.adminDiagnosticsCancel }}</button>
+        </div>
+      </form>
+      @if (repair(); as currentRepair) {
+        <p role="status">{{ currentRepair.status }} · {{ currentRepair.written }}</p>
+      }
+    }
+  }
+</article>

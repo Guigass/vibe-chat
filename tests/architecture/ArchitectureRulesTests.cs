@@ -108,7 +108,9 @@ public sealed class ArchitectureRulesTests
             "identity.member_profiles",
             "import.jobs",
             "import.id_map",
-            "import.historical_principals"
+            "import.historical_principals",
+            "support.bundles",
+            "support.repair_jobs"
         ];
 
         foreach (var table in tenantTables)

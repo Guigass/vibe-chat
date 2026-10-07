@@ -184,6 +184,13 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/imports/{importId:guid}/resume", string.Join(",", new[] { Permissions.Workspace.Import }), false, ""),
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/imports/{importId:guid}/publish", string.Join(",", new[] { Permissions.Workspace.Import }), false, ""),
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/imports/{importId:guid}/rollback", string.Join(",", new[] { Permissions.Workspace.Import }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/diagnostics", string.Join(",", new[] { Permissions.Support.Read }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/diagnostics/probes/{kind}", string.Join(",", new[] { Permissions.Support.Repair }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/diagnostics/bundles", string.Join(",", new[] { Permissions.Support.Bundle }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/diagnostics/bundles/{bundleId:guid}", string.Join(",", new[] { Permissions.Support.Bundle }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/diagnostics/repairs", string.Join(",", new[] { Permissions.Support.Repair }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/diagnostics/repairs/{repairId:guid}/apply", string.Join(",", new[] { Permissions.Support.Repair }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/diagnostics/repairs/{repairId:guid}/cancel", string.Join(",", new[] { Permissions.Support.Repair }), false, ""),
             new("POST", "/api/v1/dev/seed", "", true, "Development seed; AllowAnonymous lab-only"),
         ];
 

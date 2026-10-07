@@ -19,13 +19,15 @@ describe('admin-permissions (B-106)', () => {
       'onboarding',
       'plugins',
       'import',
+      'diagnostics',
     ]);
     expect(hasWorkspaceAdmin('Admin')).toBe(true);
   });
 
   it('Auditor sees dashboard areas but not settings or plugins', () => {
     const items = visibleNavItems('Auditor');
-    expect(items.map((i) => i.id)).toEqual(['overview', 'members', 'conversations', 'audit']);
+    expect(items.map((i) => i.id)).toEqual(['overview', 'members', 'conversations', 'audit', 'diagnostics']);
+    expect(canAccessArea('Auditor', 'diagnostics')).toBe(true);
     expect(canAccessArea('Auditor', 'settings')).toBe(false);
     expect(canAccessArea('Auditor', 'onboarding')).toBe(false);
     expect(firstAllowedPath('Auditor')).toBe('overview');
