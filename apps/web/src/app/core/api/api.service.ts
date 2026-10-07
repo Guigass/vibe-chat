@@ -7,6 +7,7 @@ import { AdminApiService } from './admin-api.service';
 import { NotificationsApiService } from './notifications-api.service';
 import { SearchApiService } from './search-api.service';
 import { AiApiService } from './ai-api.service';
+import { ImportApiService } from './import-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -21,6 +22,7 @@ export class ApiService {
   private readonly notifications = inject(NotificationsApiService);
   private readonly search = inject(SearchApiService);
   private readonly ai = inject(AiApiService);
+  private readonly imports = inject(ImportApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -162,4 +164,12 @@ export class ApiService {
   readonly searchMessages: SearchApiService['searchMessages'] = this.search.searchMessages.bind(this.search);
   readonly summarizeChannel: AiApiService['summarizeChannel'] = this.ai.summarizeChannel.bind(this.ai);
   readonly suggestChannelReply: AiApiService['suggestChannelReply'] = this.ai.suggestChannelReply.bind(this.ai);
+  readonly createImport: ImportApiService['createImport'] = this.imports.createImport.bind(this.imports);
+  readonly getImport: ImportApiService['getImport'] = this.imports.getImport.bind(this.imports);
+  readonly planImport: ImportApiService['planImport'] = this.imports.planImport.bind(this.imports);
+  readonly executeImport: ImportApiService['executeImport'] = this.imports.executeImport.bind(this.imports);
+  readonly pauseImport: ImportApiService['pauseImport'] = this.imports.pauseImport.bind(this.imports);
+  readonly resumeImport: ImportApiService['resumeImport'] = this.imports.resumeImport.bind(this.imports);
+  readonly publishImport: ImportApiService['publishImport'] = this.imports.publishImport.bind(this.imports);
+  readonly rollbackImport: ImportApiService['rollbackImport'] = this.imports.rollbackImport.bind(this.imports);
 }

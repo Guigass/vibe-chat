@@ -116,6 +116,21 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Audit | `workspace.export` em `audit.audit_events` |
 | Membro/Auditor | 403 |
 
+### Importação assistida (B-153 / ADR-030)
+
+| Item | Controle |
+|------|----------|
+| Flag | `Features:Import:Enabled` off default; rotas → 404 `ImportDisabled` |
+| AuthZ | `workspace.import` (mesmo conjunto de `workspace.admin`); Member/Auditor/Moderator → 403 |
+| Tenant | `tenantId` do arquivo é ignorado; o job usa o tenant do workspace do ator |
+| Papel | Fora de Member/Moderator/Auditor/Admin → 422 `ImportRoleForbidden`, sem gravar |
+| Staging | `plan` não cria canal nem mensagem; `execute` só escreve `import.*` |
+| Conteúdo | Autor externo sem membership; anexo hostil em quarentena, sem objeto MinIO |
+| Fan-out | Publicação não emite `MessageCreated` (sem push, webhook ou fetch de URL do histórico) |
+| Relatório | Contagens e códigos; sem body, e-mail, payload ou segredo |
+| RLS | `import.jobs`, `import.id_map`, `import.historical_principals` com FORCE + WITH CHECK |
+| Rollback | Pós-publicação exige `confirm`; só apaga o que este job criou |
+
 ### Templates de workspace (B-115)
 
 | Item | Controle |
@@ -330,7 +345,7 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | Live media | Gravação sem consentimento, abuso e exaustão de SFU/TURN | D-19; consentimento visível, quotas, moderação e SLO |
 | E2EE | Recuperação de conta, moderação e compliance incompatíveis | D-26; modelo formal antes de qualquer implementação persistente |
 | Canvas colaborativo | AuthZ por bloco, conflito, histórico e export incompletos | D-17; modelo de permissão e retenção antes de CRDT/OT |
-| Migração/import | Archive hostil, duplicação, papel falso e cross-tenant | B-153; staging, dry-run, adapters versionados, scan e quotas |
+| Migração/import | Archive hostil, duplicação, papel falso e cross-tenant | B-153; staging, dry-run, adapters versionados, quarentena local e quotas |
 | Backup de chat / destinos | Credencial de destino vazada; exfiltração; import hostil; confusão com dump de infra | B-172; flag off default, secrets mascarados, dry-run, audit, destinos OSS |
 | Diagnóstico/support | Bundle com secret/PII ou repair perigoso | B-154; schema allowlisted, scan, TTL, capability e dry-run |
 

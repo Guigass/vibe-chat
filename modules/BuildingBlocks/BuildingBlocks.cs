@@ -146,7 +146,7 @@ public static class RolePermissionCatalog
 
     private static readonly HashSet<string> AdminPermissions =
     [
-        Permissions.Workspace.Read, Permissions.Workspace.Manage, Permissions.Workspace.Admin,
+        Permissions.Workspace.Read, Permissions.Workspace.Manage, Permissions.Workspace.Admin, Permissions.Workspace.Import,
         Permissions.Channel.Read, Permissions.Channel.Create, Permissions.Channel.Manage, Permissions.Channel.MentionAll,
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.EditAny, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny, Permissions.Message.Pin, Permissions.Message.HistoryRead, Permissions.Message.Move,
         Permissions.Files.Upload, Permissions.Files.Download,

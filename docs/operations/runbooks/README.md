@@ -21,6 +21,7 @@ Use estes runbooks em incidente ou mudança. Detalhes de rotina ficam nos guias 
 | [tls-proxy.md](./tls-proxy.md) | TLS / nginx profile `proxy` (W5-2) |
 | [web-push-vapid.md](./web-push-vapid.md) | Gerar/rotacionar VAPID (B-095) |
 | [upgrade.md](./upgrade.md) | Upgrade de versão (apps + migrate + verificação) |
+| [importacao.md](./importacao.md) | Importação assistida: flag, falha e rollback (B-153) |
 
 ## Princípios
 

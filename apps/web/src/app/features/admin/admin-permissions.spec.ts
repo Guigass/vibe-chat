@@ -18,6 +18,7 @@ describe('admin-permissions (B-106)', () => {
       'settings',
       'onboarding',
       'plugins',
+      'import',
     ]);
     expect(hasWorkspaceAdmin('Admin')).toBe(true);
   });

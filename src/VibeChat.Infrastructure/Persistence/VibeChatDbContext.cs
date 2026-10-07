@@ -49,6 +49,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<ChannelInvite> ChannelInvites => Set<ChannelInvite>();
     public DbSet<WorkspaceTemplateRecord> WorkspaceTemplateRecords => Set<WorkspaceTemplateRecord>();
     public DbSet<WorkspaceOnboarding> WorkspaceOnboardings => Set<WorkspaceOnboarding>();
+    public DbSet<ImportJobRecord> ImportJobs => Set<ImportJobRecord>();
+    public DbSet<ImportIdMapRecord> ImportIdMaps => Set<ImportIdMapRecord>();
+    public DbSet<ImportHistoricalPrincipalRecord> ImportHistoricalPrincipals => Set<ImportHistoricalPrincipalRecord>();
     public DbSet<TemplateApplication> TemplateApplications => Set<TemplateApplication>();
     public DbSet<Channel> Channels => Set<Channel>();
     public DbSet<ChannelMember> ChannelMembers => Set<ChannelMember>();
@@ -161,6 +164,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     {
         ConfigureShared(modelBuilder);
         SearchSql.Configure(modelBuilder);
+        ImportModelConfiguration.Configure(modelBuilder, tenantContext);
 
         modelBuilder.Entity<UserProfile>(entity =>
         {

@@ -184,6 +184,7 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Directory:Invites:Enabled", "true");
         builder.UseSetting("Integrations:Bots:Enabled", "true");
         builder.UseSetting("Messaging:History:Enabled", "true");
+        builder.UseSetting("Features:Import:Enabled", "true");
         builder.UseSetting("Directory:Invites:MaxExpiryDays", "30");
         builder.UseSetting("Database:BootstrapOnStartup", "true");
         builder.UseSetting("Ai:Enabled", "true");

@@ -22,7 +22,7 @@ organiza. Estados:
 | Anúncios e canais somente leitura | Done | B-112 / W11 |
 | Agendar mensagem e lembrete | Done | B-113 / W11 |
 | Histórico de edição/movimentação | Planned | B-114 / W11 |
-| Migração/importação assistida | Planned | B-153 / W11 |
+| Migração/importação assistida | Done | B-153 / W11 |
 | Inbox unificada e prioridade | Planned | B-117 / W11 |
 | Tópicos/fórum como modo de canal | Planned | B-118 / W11 |
 | Voz/vídeo/screen share | Planned | B-147/B-148 / W17 |

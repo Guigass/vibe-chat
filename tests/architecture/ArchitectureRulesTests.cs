@@ -105,7 +105,10 @@ public sealed class ArchitectureRulesTests
             "files.settings",
             "building_blocks.rate_limit_settings",
             "identity.user_statuses",
-            "identity.member_profiles"
+            "identity.member_profiles",
+            "import.jobs",
+            "import.id_map",
+            "import.historical_principals"
         ];
 
         foreach (var table in tenantTables)

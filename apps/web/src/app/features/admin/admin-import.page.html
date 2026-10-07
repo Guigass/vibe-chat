@@ -1,0 +1,50 @@
+<article class="admin-panel">
+  <p class="admin-panel__lead">{{ ui.adminImportLead }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty">{{ ui.adminLoadingConsole }}</p>
+  } @else {
+    <form (submit)="$event.preventDefault()">
+      <label>
+        {{ ui.adminImportAdapter }}
+        <select [value]="adapter()" (change)="adapter.set($any($event.target).value)">
+          <option value="vibechat">vibechat</option>
+          <option value="slack">slack</option>
+          <option value="mattermost">mattermost</option>
+          <option value="discord">discord</option>
+        </select>
+      </label>
+      <label>
+        {{ ui.adminImportFile }}
+        <input type="file" accept="application/json,.json" (change)="onFile($event)" />
+      </label>
+      <div class="admin-onboarding__actions">
+        <button type="button" class="admin-btn" [disabled]="busy()" (click)="validate()">{{ ui.adminImportValidate }}</button>
+        <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy() || !job()" (click)="plan()">{{ ui.adminImportPlan }}</button>
+        <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy() || !job()" (click)="execute()">{{ ui.adminImportExecute }}</button>
+        <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy() || !job()" (click)="pause()">{{ ui.adminImportPause }}</button>
+        <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy() || !job()" (click)="resume()">{{ ui.adminImportResume }}</button>
+        <button type="button" class="admin-btn" [disabled]="busy() || !job()" (click)="publish()">{{ ui.adminImportPublish }}</button>
+      </div>
+    </form>
+
+    @if (error()) {
+      <p class="admin-error" role="alert">{{ error() }}</p>
+    }
+
+    @if (job(); as current) {
+      <p role="status">{{ ui.adminImportStatus }}: {{ current.status }}</p>
+      <p>{{ counts(current) }}</p>
+      @if (current.report.warnings.length) {
+        <p>{{ ui.adminImportWarnings }}: {{ current.report.warnings.join(', ') }}</p>
+      }
+      <label>
+        <input type="checkbox" [checked]="confirm()" (change)="confirm.set($any($event.target).checked)" />
+        {{ ui.adminImportConfirm }}
+      </label>
+      <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy() || (current.status === 'published' && !confirm())" (click)="rollback()">
+        {{ ui.adminImportRollback }}
+      </button>
+    }
+  }
+</article>

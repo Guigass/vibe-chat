@@ -174,6 +174,16 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("GET", "/api/v1/admin/workspaces/{workspaceId:guid}/templates/{templateId}/export", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
             new("GET", "/api/v1/admin/workspaces/{workspaceId:guid}/onboarding", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
             new("PUT", "/api/v1/admin/workspaces/{workspaceId:guid}/onboarding", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/imports", string.Join(",", new[] { Permissions.Workspace.Import }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/imports", string.Join(",", new[] { Permissions.Workspace.Import }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/imports/{importId:guid}", string.Join(",", new[] { Permissions.Workspace.Import }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/imports/{importId:guid}/report", string.Join(",", new[] { Permissions.Workspace.Import }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/imports/{importId:guid}/plan", string.Join(",", new[] { Permissions.Workspace.Import }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/imports/{importId:guid}/execute", string.Join(",", new[] { Permissions.Workspace.Import }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/imports/{importId:guid}/pause", string.Join(",", new[] { Permissions.Workspace.Import }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/imports/{importId:guid}/resume", string.Join(",", new[] { Permissions.Workspace.Import }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/imports/{importId:guid}/publish", string.Join(",", new[] { Permissions.Workspace.Import }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/imports/{importId:guid}/rollback", string.Join(",", new[] { Permissions.Workspace.Import }), false, ""),
             new("POST", "/api/v1/dev/seed", "", true, "Development seed; AllowAnonymous lab-only"),
         ];
 

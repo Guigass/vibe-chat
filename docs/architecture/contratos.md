@@ -885,6 +885,23 @@ Preview e `dryRun: true` não gravam. Retry do mesmo template reutiliza space/ca
 
 Tabelas `directory.workspace_templates`, `directory.workspace_onboarding`, `directory.template_applications`. RLS FORCE. O wizard em `/admin/onboarding` pode ser pulado e retomado; não bloqueia o chat.
 
+### Importação assistida (B-153 / ADR-030)
+
+Formato canônico `vibechat.import.v1`. Adapters `vibechat`, `slack`, `mattermost` e `discord` só traduzem o arquivo; não chamam a origem. Flag `Features:Import:Enabled` default false → 404 `ImportDisabled`. Exige `workspace.import` e `Idempotency-Key` na criação. `tenantId` no arquivo é ignorado.
+
+| Método | Caminho | Efeito |
+|--------|---------|--------|
+| POST | `/api/v1/workspaces/{workspaceId}/imports` | Valida e grava o job. Não cria canal nem mensagem |
+| POST | `.../imports/{importId}/plan` | Dry-run. Conflito de tipo de canal bloqueia a execução |
+| POST | `.../imports/{importId}/execute` | Staging em `import.id_map`. Repetir não duplica |
+| POST | `.../imports/{importId}/pause` / `resume` | Pausa antes de publicar |
+| POST | `.../imports/{importId}/publish` | Cria spaces, canais, mensagens, threads e anexos limpos na transação do request |
+| POST | `.../imports/{importId}/rollback` | Antes de publicar, apaga staging. Depois, exige `{ "confirm": true }` |
+| GET | `.../imports` e `.../imports/{importId}` | Resumo. Sem JSON canônico |
+| GET | `.../imports/{importId}/report` | Contagens e avisos. Sem body, e-mail ou payload |
+
+Papel fora de Member/Moderator/Auditor/Admin → 422 `ImportRoleForbidden`. Autor sem `mappedUserId` vira perfil histórico sem membership. Anexo hostil fica em quarentena e não vai ao MinIO. Publicação não emite `MessageCreated`. Tabelas `import.jobs`, `import.id_map`, `import.historical_principals` com RLS FORCE. Wizard em `/admin/import`.
+
 ### Auditoria de conversa (B-067)
 
 Distinta do feed `audit_events` (B-042). Viewer compliance: admin/Auditor com `admin.dashboard` lê histórico completo **dentro do tenant**, inclusive DMs onde não é membro e corpos soft-deleted (ADR-018). Membro comum → 403. Canal/thread de outro tenant → 403. Histórico normal (`GET /channels/.../messages`) continua redigindo body deletado e exigindo membership.

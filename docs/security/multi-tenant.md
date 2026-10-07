@@ -93,6 +93,7 @@ em `SEC-RLS-RUNTIME` (`RlsSession` + `03-rls.sql` + roles Compose); ver
 | T12 | Membro/Auditor chama `GET /admin/workspaces/{id}/export` | 403; só `workspace.admin` (B-046) |
 | T13 | Admin exporta workspace de outro tenant | 403 (B-046) |
 | T14 | Membro/Auditor altera `retention.*` em `/admin/settings` | 403; só `workspace.admin` (B-047) |
+| T22 | Membro importa histórico ou job de outro tenant aparece na listagem | 403 / 404; `tenantId` do arquivo é ignorado (B-153) |
 | T15 | Purge com `MessageRetention:Enabled=false` | Nenhuma mensagem hard-deletada (B-047) |
 | T16 | Catálogo RLS (`infra/compose/postgres/03-rls.sql`) inclui `messaging.message_retention_settings` | Policy `tenant_isolation_message_retention_settings` em `"TenantId"` (GAP pós B-047) |
 | T17 | Catálogo RLS cobre todas as tabelas de negócio com `TenantId` (ex.: `conversation_sequences`, `outbox_messages`, `ai.settings`, `email_settings`) | ENABLE + policy por tabela; arch test `Rls_catalog_covers_all_tenant_scoped_business_tables` (GAP-rls-catalog) |

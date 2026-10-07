@@ -974,6 +974,26 @@
     "error.AvatarTooLarge": "The photo is too large.",
     "error.AvatarTypeNotAllowed": "Use PNG, JPEG, WEBP, or GIF.",
     "error.AvatarEmpty": "Choose an image.",
-    "error.IdempotencyConflict": "This attempt was already used with different data."
+    "error.IdempotencyConflict": "This attempt was already used with different data.",
+    "admin.navImport": "Import",
+    "admin.importLead": "Bring people, channels and history into a staging area. Nothing enters chat before you publish.",
+    "admin.importAdapter": "Source",
+    "admin.importFile": "JSON file",
+    "admin.importValidate": "Validate",
+    "admin.importPlan": "Dry run",
+    "admin.importExecute": "Stage",
+    "admin.importPause": "Pause",
+    "admin.importResume": "Resume",
+    "admin.importPublish": "Publish",
+    "admin.importRollback": "Roll back",
+    "admin.importConfirm": "I confirm removal of what was already published",
+    "admin.importEmpty": "No file selected.",
+    "admin.importDisabled": "Import is off on this instance.",
+    "admin.importCounts": "People %principals%, channels %channels%, messages %messages%, quarantine %quarantined%, ignored %ignored%.",
+    "admin.importWarnings": "Warnings",
+    "admin.importStatus": "Status",
+    "error.importDisabled": "Import is off on this instance.",
+    "error.importRejected": "The import file was rejected.",
+    "error.importConflict": "This import cannot move forward in its current state."
   }
 }
