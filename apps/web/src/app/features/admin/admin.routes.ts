@@ -58,6 +58,12 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     loadComponent: () => import('./admin-import.page').then((m) => m.AdminImportPage),
   },
   {
+    path: 'diagnostics',
+    canActivate: [adminAreaGuard('diagnostics')],
+    loadComponent: () =>
+      import('./admin-diagnostics.page').then((m) => m.AdminDiagnosticsPage),
+  },
+  {
     path: '**',
     redirectTo: 'overview',
   },

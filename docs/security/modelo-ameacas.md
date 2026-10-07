@@ -131,6 +131,20 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | RLS | `import.jobs`, `import.id_map`, `import.historical_principals` com FORCE + WITH CHECK |
 | Rollback | Pós-publicação exige `confirm`; só apaga o que este job criou |
 
+### Diagnóstico e support bundle (B-154)
+
+| Item | Controle |
+|------|----------|
+| Flag | `Features:SupportBundle:Enabled` off default; criar bundle → 404 `SupportBundleDisabled`. Preflight permanece |
+| AuthZ | `support.read` para Admin/Auditor; `support.bundle` e `support.repair` só para admin de workspace. Member → 403 |
+| Audience | `PlatformOwner` vê endpoint; admin de workspace recebe evidência mascarada |
+| Conteúdo | Manifesto allowlisted. Scrub de body, e-mail, token, connection string e senha. Checksum `sha256` |
+| TTL | 15 minutos e no máximo 3 downloads; depois 410 `SupportBundleExpired` |
+| Probe | E-mail e push sintéticos, sem rede. Storage grava e apaga objeto `diagnostics/probe-*` |
+| Repair | Allowlist `search.reindex` e `membership.reconcile`. `target` arbitrário → 400. Dry-run não escreve `search_vector` |
+| Tenant | Tabelas `support.bundles` e `support.repair_jobs` com FORCE RLS. Bundle de outro tenant → 404 |
+| Audit | `support.bundle.create`, `support.probe`, `support.repair*` sem body nem secret |
+
 ### Templates de workspace (B-115)
 
 | Item | Controle |
@@ -347,7 +361,6 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | Canvas colaborativo | AuthZ por bloco, conflito, histórico e export incompletos | D-17; modelo de permissão e retenção antes de CRDT/OT |
 | Migração/import | Archive hostil, duplicação, papel falso e cross-tenant | B-153; staging, dry-run, adapters versionados, quarentena local e quotas |
 | Backup de chat / destinos | Credencial de destino vazada; exfiltração; import hostil; confusão com dump de infra | B-172; flag off default, secrets mascarados, dry-run, audit, destinos OSS |
-| Diagnóstico/support | Bundle com secret/PII ou repair perigoso | B-154; schema allowlisted, scan, TTL, capability e dry-run |
 
 Ver também: [`multi-tenant.md`](multi-tenant.md) e
 [`ciclo-vida-dados.md`](ciclo-vida-dados.md),

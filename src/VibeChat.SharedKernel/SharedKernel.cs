@@ -184,6 +184,13 @@ public static class Permissions
         public const string Import = "workspace.import";
     }
 
+    public static class Support
+    {
+        public const string Read = "support.read";
+        public const string Bundle = "support.bundle";
+        public const string Repair = "support.repair";
+    }
+
     public static class Channel
     {
         public const string Read = "channel.read";

@@ -82,14 +82,14 @@ não tentativa posterior de apagar secrets de um dump amplo.
 
 ## Aceite
 
-- [ ] Instalação incompleta aponta check e runbook corretos.
-- [ ] Feature off é `Skipped/Pass`, não falso erro.
-- [ ] Testes de e-mail/storage usam dados sintéticos e limpam artefatos.
-- [ ] Bundle passa secret/PII scan.
-- [ ] Admin de A não vê diagnóstico/bundle de B.
-- [ ] Reindex dry-run não escreve.
-- [ ] Repair não aceita alvo arbitrário.
-- [ ] Bundle expira e download posterior falha.
+- [x] Instalação incompleta aponta check e runbook corretos.
+- [x] Feature off é `Skipped/Pass`, não falso erro.
+- [x] Testes de e-mail/storage usam dados sintéticos e limpam artefatos.
+- [x] Bundle passa secret/PII scan.
+- [x] Admin de A não vê diagnóstico/bundle de B.
+- [x] Reindex dry-run não escreve.
+- [x] Repair não aceita alvo arbitrário.
+- [x] Bundle expira e download posterior falha.
 
 ## Testes
 

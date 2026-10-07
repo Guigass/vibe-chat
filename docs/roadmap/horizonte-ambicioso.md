@@ -51,7 +51,7 @@ completamente novas.
 | B-167 | B/D | Perfil público do membro (cargo, sobre, destaque, avatar) | B-021 | [B-167](../product/specs/B-167-perfil-publico-membro.md) | **Done** — ficha no workspace, avatar MinIO, RLS em `identity.member_profiles` |
 | B-185 | B/D | Personalização visual do usuário (wallpapers e cores) | B-049 | [B-185](../product/specs/B-185-personalizacao-visual-usuario.md) | Done |
 | B-153 | B/C/D/E/G | Migração/importação assistida de usuários, estrutura e histórico | B-089, B-115, B-046 | [B-153](../product/specs/B-153-migracao-importacao.md) | **Done** — dry-run, staging, publish/rollback, adapters vibechat/slack/mattermost/discord; ADR-030 |
-| B-154 | A/B/D/E/G | Diagnóstico administrativo e support bundle sanitizado | B-105, B-106, B-115 | [B-154](../product/specs/B-154-diagnostico-support-bundle.md) | Planned |
+| B-154 | A/B/D/E/G | Diagnóstico administrativo e support bundle sanitizado | B-105, B-106, B-115 | [B-154](../product/specs/B-154-diagnostico-support-bundle.md) | **Done** — preflight mascarado, probes sintéticos, bundle com TTL/checksum e repair allowlisted |
 | B-116 | B/D | Status personalizado, disponibilidade e agenda resumida | B-097 | [B-116](../product/specs/B-116-status-disponibilidade.md) | **Done** — status por usuário/tenant, disponibilidade derivada, calendário off |
 | B-117 | C/D | Inbox unificada com menções, threads, DMs e prioridade | B-094, B-102 | [B-117](../product/specs/B-117-inbox-unificada.md) | Planned |
 | B-118 | B/C/D | Modo de canal por tópicos/fórum | B-089, B-102 | [B-118](../product/specs/B-118-canais-topicos-forum.md) | Planned |

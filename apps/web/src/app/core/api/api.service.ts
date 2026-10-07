@@ -8,6 +8,7 @@ import { NotificationsApiService } from './notifications-api.service';
 import { SearchApiService } from './search-api.service';
 import { AiApiService } from './ai-api.service';
 import { ImportApiService } from './import-api.service';
+import { DiagnosticsApiService } from './diagnostics-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -23,6 +24,7 @@ export class ApiService {
   private readonly search = inject(SearchApiService);
   private readonly ai = inject(AiApiService);
   private readonly imports = inject(ImportApiService);
+  private readonly diagnostics = inject(DiagnosticsApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -172,4 +174,10 @@ export class ApiService {
   readonly resumeImport: ImportApiService['resumeImport'] = this.imports.resumeImport.bind(this.imports);
   readonly publishImport: ImportApiService['publishImport'] = this.imports.publishImport.bind(this.imports);
   readonly rollbackImport: ImportApiService['rollbackImport'] = this.imports.rollbackImport.bind(this.imports);
+  readonly getDiagnostics: DiagnosticsApiService['getDiagnostics'] = this.diagnostics.getDiagnostics.bind(this.diagnostics);
+  readonly probeDiagnostic: DiagnosticsApiService['probeDiagnostic'] = this.diagnostics.probeDiagnostic.bind(this.diagnostics);
+  readonly createSupportBundle: DiagnosticsApiService['createSupportBundle'] = this.diagnostics.createSupportBundle.bind(this.diagnostics);
+  readonly createRepair: DiagnosticsApiService['createRepair'] = this.diagnostics.createRepair.bind(this.diagnostics);
+  readonly applyRepair: DiagnosticsApiService['applyRepair'] = this.diagnostics.applyRepair.bind(this.diagnostics);
+  readonly cancelRepair: DiagnosticsApiService['cancelRepair'] = this.diagnostics.cancelRepair.bind(this.diagnostics);
 }
