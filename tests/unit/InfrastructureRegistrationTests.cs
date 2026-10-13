@@ -46,6 +46,7 @@ public sealed class InfrastructureRegistrationTests
             "Singleton:OutboxProcessor:OutboxProcessor",
             "Singleton:IHostedService:OutboxDispatcher",
             "Scoped:WorkspaceImportService:WorkspaceImportService",
+            "Scoped:SupportDiagnosticsService:SupportDiagnosticsService",
             "Singleton:RuntimeSecretProtector:RuntimeSecretProtector",
             "Singleton:IRuntimeSettingsCacheInvalidator:RuntimeSettingsCacheInvalidator",
             "Scoped:ProcessSettingsResolver:ProcessSettingsResolver",
