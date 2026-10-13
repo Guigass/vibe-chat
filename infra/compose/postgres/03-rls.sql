@@ -127,6 +127,10 @@ ALTER TABLE IF EXISTS import.id_map ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS import.id_map FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS import.historical_principals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS import.historical_principals FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS support.bundles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS support.bundles FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS support.repair_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS support.repair_jobs FORCE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
 -- Policies: USING + WITH CHECK (writes require tenant context)
@@ -588,6 +592,16 @@ CREATE POLICY tenant_isolation_import_historical_principals ON import.historical
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+DROP POLICY IF EXISTS tenant_isolation_support_bundles ON support.bundles;
+CREATE POLICY tenant_isolation_support_bundles ON support.bundles
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_support_repair_jobs ON support.repair_jobs;
+CREATE POLICY tenant_isolation_support_repair_jobs ON support.repair_jobs
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 -- ---------------------------------------------------------------------------
 -- Grants for runtime / backup (migrator owns objects via migration connection)
 -- ---------------------------------------------------------------------------
@@ -608,7 +622,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'administration', 'import', 'app', 'public'
+      'identity', 'administration', 'import', 'support', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, app_role);
@@ -629,7 +643,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'administration', 'import', 'app', 'public'
+      'identity', 'administration', 'import', 'support', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, backup_role);

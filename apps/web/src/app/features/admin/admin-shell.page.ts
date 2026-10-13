@@ -40,6 +40,7 @@ export class AdminShellPage implements OnInit {
       onboarding: areaTitle('onboarding'),
       plugins: areaTitle('plugins'),
       import: areaTitle('import'),
+      diagnostics: areaTitle('diagnostics'),
     };
     this.activeTitle.set(titles[area] ?? ui.admin);
   }

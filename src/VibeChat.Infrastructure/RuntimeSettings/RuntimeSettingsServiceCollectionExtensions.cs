@@ -15,7 +15,9 @@ internal static class RuntimeSettingsServiceCollectionExtensions
     {
         services.Configure<AvailabilityCalendarOptions>(configuration.GetSection(AvailabilityCalendarOptions.SectionName));
         services.Configure<ImportOptions>(configuration.GetSection(ImportOptions.SectionName));
+        services.Configure<SupportBundleOptions>(configuration.GetSection(SupportBundleOptions.SectionName));
         services.AddScoped<WorkspaceImportService>();
+        services.AddScoped<SupportDiagnosticsService>();
         services.Configure<GroupDmOptions>(configuration.GetSection(GroupDmOptions.SectionName));
         services.Configure<InviteOptions>(configuration.GetSection(InviteOptions.SectionName));
         services.Configure<BotIntegrationOptions>(configuration.GetSection(BotIntegrationOptions.SectionName));

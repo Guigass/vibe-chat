@@ -902,6 +902,22 @@ Formato canônico `vibechat.import.v1`. Adapters `vibechat`, `slack`, `mattermos
 
 Papel fora de Member/Moderator/Auditor/Admin → 422 `ImportRoleForbidden`. Autor sem `mappedUserId` vira perfil histórico sem membership. Anexo hostil fica em quarentena e não vai ao MinIO. Publicação não emite `MessageCreated`. Tabelas `import.jobs`, `import.id_map`, `import.historical_principals` com RLS FORCE. Wizard em `/admin/import`.
 
+### Diagnóstico e support bundle (B-154)
+
+Contrato `vibechat.support-bundle.v1` (`SupportBundleComposer`). Flag `Features:SupportBundle:Enabled` default false: preflight, probe e repair seguem; criar bundle → 404 `SupportBundleDisabled`. Development e TestHost ligam a flag.
+
+| Método | Rota | Permissão |
+|--------|------|-----------|
+| GET | `/api/v1/workspaces/{workspaceId}/diagnostics` | `support.read` (Admin e Auditor) |
+| POST | `.../diagnostics/probes/{kind}` | `support.repair`; `kind` = `email`, `push` ou `storage` |
+| POST | `.../diagnostics/bundles` | `support.bundle` + `Idempotency-Key` |
+| GET | `.../diagnostics/bundles/{bundleId}` | `support.bundle`; manifesto JSON; TTL 15 min e no máximo 3 downloads |
+| POST | `.../diagnostics/repairs` | `support.repair` + `Idempotency-Key` |
+| POST | `.../repairs/{repairId}/apply` | `support.repair` |
+| POST | `.../repairs/{repairId}/cancel` | `support.repair` |
+
+`PlatformOwner` vê evidência de endpoint. Admin de workspace vê o mesmo status com evidência mascarada. Member → 403. Feature desligada é `Skipped` / `feature.off`, não `Fail`. Probe de e-mail e push não envia para a rede; storage grava um objeto sintético e apaga. Repair allowlist: `search.reindex` e `membership.reconcile`. `target` ou ação fora da lista → 400 `RepairActionNotAllowed`. Dry-run não altera `search_vector`. Apply de reindex só reescreve a projeção. Bundle não inclui body, e-mail, token nem connection string; checksum `sha256` e scrub allowlist. Tabelas `support.bundles` e `support.repair_jobs` com RLS FORCE. Página `/admin/diagnostics`. Geração termina no request porque o manifesto é limitado e não faz fan-out; o evento `support.bundle.created` sai pelo outbox.
+
 ### Auditoria de conversa (B-067)
 
 Distinta do feed `audit_events` (B-042). Viewer compliance: admin/Auditor com `admin.dashboard` lê histórico completo **dentro do tenant**, inclusive DMs onde não é membro e corpos soft-deleted (ADR-018). Membro comum → 403. Canal/thread de outro tenant → 403. Histórico normal (`GET /channels/.../messages`) continua redigindo body deletado e exigindo membership.

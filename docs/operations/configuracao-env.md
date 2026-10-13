@@ -182,6 +182,7 @@ do Keycloak como mecanismo de reset.
 | `Messaging` | `History:Enabled` | Kill switch R3 (B-114 / ADR-029); default off; lab/Development e TestHost ligam. Off: history/move → 404 e a edição não grava versão |
 | `Features` | `AvailabilityCalendar:Enabled` | B-116; default false; off devolve 404 sem agenda. Status personalizado não depende desta flag |
 | `Features` | `Import:Enabled` | B-153 / ADR-030; default false; off devolve 404 `ImportDisabled`. Development e TestHost ligam |
+| `Features` | `SupportBundle:Enabled` | B-154; default false; off devolve 404 `SupportBundleDisabled` só na criação do bundle. Preflight permanece. Development e TestHost ligam |
 
 ### Só via admin UI (não entram no `.env` mínimo)
 

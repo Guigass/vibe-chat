@@ -484,7 +484,7 @@ public static class DatabaseBootstrap
                  JOIN pg_namespace n ON n.oid = c.relnamespace
                  WHERE n.nspname = ANY (ARRAY[
                    'tenancy','directory','conversations','messaging','files',
-                   'building_blocks','audit','ai','notifications','integrations','identity','import','app'
+                   'building_blocks','audit','ai','notifications','integrations','identity','import','support','app'
                  ])
                    AND c.relkind IN ('r','p','S','v','m')
                    AND c.relowner = (SELECT oid FROM pg_roles WHERE rolname = current_user)
@@ -501,7 +501,7 @@ public static class DatabaseBootstrap
                  FROM pg_namespace n
                  WHERE n.nspname = ANY (ARRAY[
                    'tenancy','directory','conversations','messaging','files',
-                   'building_blocks','audit','ai','notifications','integrations','identity','import','app'
+                   'building_blocks','audit','ai','notifications','integrations','identity','import','support','app'
                  ])
                    AND n.nspowner = (SELECT oid FROM pg_roles WHERE rolname = current_user)
                LOOP

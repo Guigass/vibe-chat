@@ -68,7 +68,7 @@ organiza. Estados:
 | Export de audit para SIEM | Planned | B-132 / W14 |
 | Policy packs e admin delegado | Planned | B-133/B-134 / W14 |
 | E2EE | Planned | B-064 / W16 (deps B-169) |
-| Diagnóstico e support bundle sanitizado | Planned | B-154 / W11 |
+| Diagnóstico e support bundle sanitizado | Atual | B-154 / W11 |
 
 ## Plataforma e ecossistema
 

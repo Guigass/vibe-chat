@@ -132,8 +132,8 @@ Convite futuro:
 - validar export externo em dry-run;
 - mapear pessoas, papéis e canais antes de importar;
 - acompanhar staging/checkpoints e publicar explicitamente;
-- executar preflight de OIDC, e-mail, push, storage e Worker;
-- gerar support bundle sanitizado e temporário.
+- executar preflight de OIDC, e-mail, push, storage e Worker em `/admin/diagnostics`;
+- gerar support bundle sanitizado e temporário quando `Features:SupportBundle:Enabled` está ligado.
 
 Importação não cria senha nem membership elevada por inferência. Bundle de
 suporte não contém mensagens, anexos, tokens ou secrets.

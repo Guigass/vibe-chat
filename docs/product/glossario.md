@@ -115,7 +115,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Bridge** | Integração que replica eventos/identidades entre VibeChat e outra rede; implica cópia de dados fora do domínio local. |
 | **Federação** | Comunicação server-to-server entre instâncias independentes, com identidade e dados distribuídos. Não confundir com multi-tenancy local. |
 | **Import batch** | Execução versionada e idempotente que transforma export externo em recursos canônicos após dry-run/staging; não é bridge contínua. |
-| **Support bundle** | Pacote diagnóstico allowlisted, sanitizado, temporário e auditado; nunca dump amplo de logs/dados. |
+| **Support bundle** | Pacote `vibechat.support-bundle.v1` allowlisted, sanitizado, com checksum, TTL de 15 minutos e no máximo 3 downloads (B-154). Flag `Features:SupportBundle:Enabled` default off. Exige `support.bundle`. Não inclui body, token nem secret. |
 
 ## IA (opcional)
 
