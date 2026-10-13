@@ -29,12 +29,8 @@ import { VisualPreferenceService } from '../core/services/visual-preference.serv
 import { ChannelList } from '../features/chat/channel-list/channel-list';
 import { Composer } from '../features/chat/composer/composer';
 import { Timeline } from '../features/chat/timeline/timeline';
-import { ChannelMembersPanel } from '../features/chat/channel-members-panel/channel-members-panel';
-import { PinsPanel } from '../features/chat/pins-panel/pins-panel';
-import { SavedPanel } from '../features/chat/saved-panel/saved-panel';
-import { FollowedThreadsPanel } from '../features/chat/followed-threads-panel/followed-threads-panel';
-import { ThreadPanel } from '../features/chat/thread-panel/thread-panel';
-import { NotificationPreferencesPanel } from '../features/chat/notification-preferences-panel/notification-preferences-panel';
+import { ShellContext } from './shell-context';
+import { InboxStore } from '../core/services/inbox.store';
 import { SuggestReplyButton } from '../features/ai/suggest-reply-button';
 import { SummarizeButton } from '../features/ai/summarize-button';
 import {
@@ -93,12 +89,7 @@ import { pluralCount } from '../core/i18n/format';
     ChannelList,
     Timeline,
     Composer,
-    ThreadPanel,
-    ChannelMembersPanel,
-    PinsPanel,
-    SavedPanel,
-    FollowedThreadsPanel,
-    NotificationPreferencesPanel,
+    ShellContext,
     SummarizeButton,
     SuggestReplyButton,
     ConnectionBanner,
@@ -130,6 +121,7 @@ export class ShellPage implements OnInit, OnDestroy {
   readonly hub = inject(ChatHubService);
   readonly push = inject(PushNotificationService);
   readonly notificationPrefs = inject(NotificationPreferencesStore);
+  readonly inbox = inject(InboxStore);
   readonly userStatus = inject(UserStatusStore);
   private readonly profiles = inject(MemberProfileStore);
   private readonly api = inject(ApiService);
@@ -266,6 +258,7 @@ export class ShellPage implements OnInit, OnDestroy {
     this.threads.close();
     this.pins.closePanel();
     this.saved.closePanel();
+    this.inbox.closePanel();
     this.followedThreads.closePanel();
     this.notificationPrefs.closePanel();
     this.membersOpen.set(true);
@@ -431,6 +424,7 @@ export class ShellPage implements OnInit, OnDestroy {
         this.threads.close();
         this.pins.closePanel();
         this.saved.closePanel();
+    this.inbox.closePanel();
         // Narrow overlay: free the timeline after a channel/DM pick.
         if (this.narrowViewport()) {
           this.sidebarOpen.set(false);
@@ -535,6 +529,7 @@ export class ShellPage implements OnInit, OnDestroy {
       }
       if (this.saved.panelOpen()) {
         this.saved.closePanel();
+    this.inbox.closePanel();
         return;
       }
       if (this.pins.panelOpen()) {
@@ -647,6 +642,7 @@ export class ShellPage implements OnInit, OnDestroy {
   async onWorkspaceChange(event: Event): Promise<void> {
     const value = (event.target as HTMLSelectElement).value;
     await this.channels.selectWorkspace(value);
+    this.inbox.schedule();
     const active = this.channels.activeChannel();
     if (active) {
       await this.messages.loadChannel(active.id);
@@ -672,6 +668,7 @@ export class ShellPage implements OnInit, OnDestroy {
     this.threads.close();
     this.pins.closePanel();
     this.saved.closePanel();
+    this.inbox.closePanel();
     this.followedThreads.closePanel();
     this.notificationPrefs.togglePanel();
   }
@@ -679,6 +676,7 @@ export class ShellPage implements OnInit, OnDestroy {
   openPinsPanel(): void {
     this.notificationPrefs.closePanel();
     this.saved.closePanel();
+    this.inbox.closePanel();
     this.followedThreads.closePanel();
     this.pins.openPanel();
   }
@@ -687,6 +685,7 @@ export class ShellPage implements OnInit, OnDestroy {
     this.notificationPrefs.closePanel();
     this.pins.closePanel();
     this.followedThreads.closePanel();
+    this.inbox.closePanel();
     this.saved.openPanel();
   }
 
@@ -694,6 +693,7 @@ export class ShellPage implements OnInit, OnDestroy {
     this.notificationPrefs.closePanel();
     this.pins.closePanel();
     this.saved.closePanel();
+    this.inbox.closePanel();
     this.followedThreads.openPanel();
   }
 

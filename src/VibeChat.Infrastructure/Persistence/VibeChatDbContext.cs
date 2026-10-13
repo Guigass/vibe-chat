@@ -90,6 +90,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<TenantLinkPreviewSettings> TenantLinkPreviewSettings => Set<TenantLinkPreviewSettings>();
     public DbSet<PinnedMessage> PinnedMessages => Set<PinnedMessage>();
     public DbSet<SavedMessage> SavedMessages => Set<SavedMessage>();
+    public DbSet<InboxSnooze> InboxSnoozes => Set<InboxSnooze>();
     public DbSet<ScheduledMessage> ScheduledMessages => Set<ScheduledMessage>();
     public DbSet<Reminder> Reminders => Set<Reminder>();
     public DbSet<ThreadSubscription> ThreadSubscriptions => Set<ThreadSubscription>();
@@ -492,6 +493,19 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Note).HasMaxLength(SavedMessagePolicies.MaxNoteLength);
             entity.HasIndex(x => new { x.TenantId, x.UserId, x.MessageId }).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.UserId, x.CompletedAt, x.CreatedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<InboxSnooze>(entity =>
+        {
+            entity.ToTable("inbox_snoozes", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.ItemKey).HasMaxLength(InboxPolicies.MaxItemKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.UserId, x.ItemKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.UserId, x.WorkspaceId, x.SnoozeUntil });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

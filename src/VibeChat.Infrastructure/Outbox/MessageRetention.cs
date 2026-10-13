@@ -134,6 +134,25 @@ public sealed class MessageRetentionPurgeProcessor(
                 db.SavedMessages.RemoveRange(saved);
             }
 
+            if (messageIdGuids.Count > 0)
+            {
+                var snoozeKeys = new List<string>(messageIdGuids.Count * 3);
+                foreach (var id in messageIdGuids)
+                {
+                    snoozeKeys.Add(InboxPolicies.ItemKey(InboxItemKind.Mention, id));
+                    snoozeKeys.Add(InboxPolicies.ItemKey(InboxItemKind.Announcement, id));
+                    snoozeKeys.Add(InboxPolicies.ItemKey(InboxItemKind.Saved, id));
+                }
+
+                var snoozes = await db.InboxSnoozes.IgnoreQueryFilters()
+                    .Where(x => x.TenantId == policy.TenantId && snoozeKeys.Contains(x.ItemKey))
+                    .ToListAsync(cancellationToken);
+                if (snoozes.Count > 0)
+                {
+                    db.InboxSnoozes.RemoveRange(snoozes);
+                }
+            }
+
             var reminderCandidates = await db.Reminders.IgnoreQueryFilters()
                 .Where(x => x.TenantId == policy.TenantId && x.MessageId != null)
                 .ToListAsync(cancellationToken);

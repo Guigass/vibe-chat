@@ -4,7 +4,7 @@
   [class.shell--sidebar-collapsed]="!sidebarOpen()"
   [class.shell--narrow]="narrowViewport()"
   [class.shell--nav-compact]="navCompact() && !narrowViewport()"
-  [class.shell--context-open]="membersOpen() || pins.panelOpen() || saved.panelOpen() || followedThreads.panelOpen() || notificationPrefs.panelOpen()"
+  [class.shell--context-open]="membersOpen() || pins.panelOpen() || saved.panelOpen() || followedThreads.panelOpen() || notificationPrefs.panelOpen() || inbox.panelOpen()"
   [class.shell--thread-open]="threads.open()"
 >
   @if (narrowViewport() && sidebarOpen()) {
@@ -562,39 +562,12 @@
     </main>
   </div>
 
-  @if (threads.open()) {
-    <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.thread">
-      <vc-thread-panel />
-    </aside>
-  } @else if (membersOpen()) {
-    <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.channelMembers">
-      <vc-channel-members-panel
-        (close)="closeMembersPanel()"
-        (changed)="onMembersChanged()"
-        (left)="onLeftChannel()"
-      />
-    </aside>
-  } @else if (saved.panelOpen()) {
-    <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.savedMessages">
-      <vc-saved-panel />
-    </aside>
-  } @else if (followedThreads.panelOpen()) {
-    <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.channelFollowedThreads">
-      <vc-followed-threads-panel />
-    </aside>
-  } @else if (pins.panelOpen()) {
-    <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.pinnedMessages">
-      <vc-pins-panel
-        (close)="pins.closePanel()"
-        (jump)="pins.jumpToPin($event)"
-        (unpin)="onUnpinFromPanel($event.messageId)"
-      />
-    </aside>
-  } @else if (notificationPrefs.panelOpen()) {
-    <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.settings">
-      <vc-notification-preferences-panel />
-    </aside>
-  }
+  <vc-shell-context
+    [membersOpen]="membersOpen()"
+    (membersClose)="closeMembersPanel()"
+    (membersChanged)="onMembersChanged()"
+    (membersLeft)="onLeftChannel()"
+  />
 </div>
 <vc-command-palette />
 <vc-shell-dialogs [statusOpen]="statusEditorOpen()" (statusClosed)="statusEditorOpen.set(false)" />
