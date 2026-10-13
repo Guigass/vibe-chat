@@ -153,6 +153,9 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
             connect: vi.fn().mockResolvedValue(undefined),
             onPresenceChanged: () => () => undefined,
             onMessage: () => () => undefined,
+            onReadCursorChanged: () => () => undefined,
+            onAnnouncementAcknowledged: () => () => undefined,
+            onReconnected: () => () => undefined,
           },
         },
         {
