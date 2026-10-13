@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../auth/auth.service';
 import { AdminApiService } from './admin-api.service';
 import { AiApiService } from './ai-api.service';
+import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
 import { DirectoryApiService } from './directory-api.service';
@@ -31,6 +32,7 @@ function createApi(auth: AuthStub): ApiService {
       SearchApiService,
       AiApiService,
       ImportApiService,
+      DiagnosticsApiService,
       { provide: AuthService, useValue: auth },
     ],
   });
@@ -74,6 +76,7 @@ describe('ApiService facade', () => {
       SearchApiService,
       AiApiService,
       ImportApiService,
+      DiagnosticsApiService,
     ];
     const names = domains.flatMap((domain) => publicMethods(domain));
     expect(names.length).toBeGreaterThan(100);
