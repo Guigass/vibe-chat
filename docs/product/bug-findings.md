@@ -27,6 +27,8 @@ Regras do registro:
 
 | ID      | Área              | Achado                                                                | Severidade | Status                                       |
 | ------- | ----------------- | --------------------------------------------------------------------- | ---------- | -------------------------------------------- |
+| BUG-027 | Shell / painéis laterais | Abrir Settings e depois My profile empilha painéis; overlay não some e só reload limpa | Média      | Aberto                                       |
+| BUG-026 | Header / busca    | Painel de busca fica aberto com resultado antigo ao trocar de conversa na sidebar | Baixa      | Aberto                                       |
 | BUG-025 | Sidebar / filtro  | Cada mudança no filtro da rail loga TypeError em `setActiveChannel`  | Baixa      | Aberto                                       |
 | BUG-024 | Composer / slash  | Comandos `/` não acompanham o idioma da UI                            | Média      | Aberto                                       |
 | BUG-023 | Busca / relevância | Resultados rígidos; FTS não acha prefixo, acento, pessoa ou anexo     | Média      | **Done** — B-188 |
@@ -46,6 +48,76 @@ Regras do registro:
 | BUG-018 | Timeline / scroll | Scroll não fica colado no fim ao enviar/receber (às vezes)           | Média      | Done                                         |
 
 ## Detalhamento
+
+### BUG-027 — Painéis Settings + My profile empilham e travam overlay até reload
+
+- Status: **Aberto**
+- Severidade: **Média**. O perfil ainda abre e fecha, mas a UI fica presa com
+  overlay escuro e painéis empilhados até Reload — atrapalha o fluxo. Não é
+  **Alta**: a tela ainda cumpre a tarefa (abrir e fechar o perfil); só o
+  shell fica sujo.
+- Observado em: 2026-10-13, ~19:25–19:28 America/Sao_Paulo; lab Compose
+  (`apps` / `http://localhost:4200`), Alice em sessão já logada (DevAuth),
+  `main` em `bc2229a` (após squash #189 B-117 inbox e #188 B-154). Inbox,
+  Saved, Followed, DMs, `#geral`, busca e settings responderam; uma mensagem
+  de teste em `#geral`: "passe alice 13/10". Passos do defeito: (1)
+  engrenagem Settings; (2) clicar My profile na sidebar; (3) Close panel —
+  o perfil fecha, mas Settings, o overlay e o drawer de agendados podem
+  ficar. O Close de Settings deixa de ser clicável. Aparecem dois Close
+  panel. Só Reload limpa.
+- Hipótese: o drawer de perfil (`MemberProfileStore` /
+  `vc-member-profile-drawer`, backdrop próprio e `cdkTrapFocus`) e o painel
+  de Settings (`NotificationPreferencesStore`, aberto por
+  `togglePreferences`) são independentes — `openOwnProfile` não fecha
+  Settings, e Settings não fecha o perfil. Não há exclusão mútua. O overlay
+  não some ao fechar só o painel de cima; o drawer de agendados
+  (`ScheduleStore`) também fica de fora desse fechamento.
+- Arquivos: `apps/web/src/app/layout/shell.page.ts` (`togglePreferences`,
+  `openOwnProfile`), `apps/web/src/app/layout/shell-context.ts`,
+  `apps/web/src/app/layout/shell-dialogs.ts`,
+  `apps/web/src/app/features/chat/member-profile/member-profile-drawer.ts`,
+  `apps/web/src/app/core/services/notification-preferences.store.ts`,
+  `apps/web/src/app/core/services/schedule.store.ts`.
+- Resultado esperado: um painel de contexto por vez — abrir My profile fecha
+  Settings e o inverso. Fechar remove o overlay. Sem precisar de Reload.
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: no lab, abrir um painel fecha o outro; Close tira
+  o overlay e não deixa segundo Close panel; sem Reload; finding `Done`.
+
+### BUG-026 — Busca do header: painel permanece aberto ao trocar de conversa
+
+- Status: **Aberto**
+- Severidade: **Baixa**. A busca funciona e Escape fecha o painel quando o
+  foco está na conversa; o popover só atrapalha visualmente ao navegar. Não
+  é **Média**: a troca de conversa e a leitura seguem, sem reload. Não é
+  **Alta**: buscar, trocar de canal e ler continuam.
+- Observado em: 2026-10-13, ~19:25–19:28 America/Sao_Paulo; lab Compose
+  (`apps` / `http://localhost:4200`), Alice em sessão já logada (DevAuth),
+  `main` em `bc2229a` (após squash #189 B-117 inbox e #188 B-154). Com a
+  busca "bem" e o resultado de `#geral` aberto, clicar @Bob (ou @Demo) na
+  sidebar deixa o popover sobre a DM, ainda com
+  "1 RESULT · #GERAL · Bem-vindo ao VibeChat Demo". Escape fecha quando o
+  foco está na conversa. Distinto de **BUG-022** (desalinhamento na 1ª
+  abertura; selecionar opção fecha a barra): aqui o sintoma na navegação é
+  o inverso — o popover **não** fecha ao clicar outra conversa.
+- Hipótese: `searchOpen` / `searchFocused` não reagem a `activeChannelId`
+  nem à navegação da sidebar. O effect de troca de canal fecha DM, membros,
+  threads, pins, saved e inbox, mas não a busca. Com query que já pode
+  rodar, o effect de busca força `searchOpen.set(true)` e não depende do
+  foco. O blur do input (`(blurred)` → `searchFocused.set(false)`) não
+  dispara ao clicar um item da rail.
+- Arquivos: `apps/web/src/app/layout/shell.page.ts` (`searchOpen`,
+  `searchFocused`, effect de `activeChannelId`),
+  `apps/web/src/app/layout/shell.page.html` (`(blurred)`, painel de busca).
+- Resultado esperado: trocar de canal ou DM com a busca aberta fecha o
+  painel (ou limpa os resultados da conversa anterior). Abrir e fechar a
+  busca, inclusive Escape, continua. Distinto de **BUG-022**.
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: no lab, com o painel aberto, clicar outra conversa
+  na sidebar fecha o painel ou descarta o resultado anterior; regressão de
+  abrir/fechar a busca; finding `Done`.
 
 ### BUG-025 — Filtro da sidebar loga TypeError em setActiveChannel
 
