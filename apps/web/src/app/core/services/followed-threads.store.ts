@@ -1,4 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { pokeInbox } from './inbox-refresh';
 import { ApiService } from '../api/api.service';
 import { ChannelStore } from './channel.store';
 import { ThreadStore } from './thread.store';
@@ -147,6 +148,7 @@ export class FollowedThreadsStore {
     }
     try {
       await this.api.markThreadRead(threadId, lastReadSequence);
+      pokeInbox();
       this.itemsSignal.update((items) =>
         items.map((i) => (i.threadId === threadId ? { ...i, unreadCount: 0 } : i)),
       );

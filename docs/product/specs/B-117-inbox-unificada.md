@@ -40,11 +40,11 @@ mostrar título/preview.
 
 ## Aceite
 
-- [ ] Tipos aparecem uma vez e na ordem definida.
-- [ ] Ler na inbox atualiza origem e vice-versa.
-- [ ] ACL revogada remove item.
-- [ ] Paginação não duplica/perde item em update concorrente.
-- [ ] Snooze é privado e expira.
+- [x] Tipos aparecem uma vez e na ordem definida.
+- [x] Ler na inbox atualiza origem e vice-versa.
+- [x] ACL revogada remove item.
+- [x] Paginação não duplica/perde item em update concorrente.
+- [x] Snooze é privado e expira.
 
 ## Testes
 

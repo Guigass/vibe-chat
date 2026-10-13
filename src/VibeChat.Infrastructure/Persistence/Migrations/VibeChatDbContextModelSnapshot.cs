@@ -1471,6 +1471,42 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("idempotency", "messaging");
                 });
 
+            modelBuilder.Entity("VibeChat.Messaging.InboxSnooze", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ItemKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTimeOffset>("SnoozeUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "UserId", "ItemKey")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "UserId", "WorkspaceId", "SnoozeUntil");
+
+                    b.ToTable("inbox_snoozes", "messaging");
+                });
+
             modelBuilder.Entity("VibeChat.Messaging.LinkPreview", b =>
                 {
                     b.Property<Guid>("Id")

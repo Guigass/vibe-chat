@@ -193,6 +193,16 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Soft-delete | Body permanece na linha (ADR-018) para o snapshot futuro de B-169; este item não copia body para o audit |
 | Rollback | Sem linha na tabela = default atual; sem kill switch que ignore a checagem |
 
+### B-117 — Inbox unificada
+
+| Item | Controle |
+|------|----------|
+| Leitura | A inbox não grava read state. Marcar lido/não lido escreve o cursor do canal ou da assinatura da thread |
+| Snooze | Linha pessoal em `messaging.inbox_snoozes`, unique por usuário e `itemKey`. Outro usuário não a vê. Janela máxima de 30 dias |
+| ACL | Cada item revalida membership. Canal revogado omite a linha, o nome e a prévia |
+| Isolamento | FORCE RLS em `inbox_snoozes`. Workspace de outro tenant → 403 |
+| Prévia | Corpo truncado só quando o caller ainda pode ler a origem |
+
 ### B-112 — Anúncios e confirmação de leitura
 
 | Item | Controle |

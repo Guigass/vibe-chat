@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../api/api.service';
+import { pokeInbox } from './inbox-refresh';
 import { ChannelStore } from './channel.store';
 import { MessageStore } from './message.store';
 import { ui } from '../i18n/strings';
@@ -123,6 +124,7 @@ export class SavedStore {
       this.savedIdsSignal.update((current) => new Set(current).add(messageId));
       this.messages.setSaved(messageId, true);
       await this.loadForWorkspace(workspaceId);
+      pokeInbox();
       return true;
     } catch {
       return false;
@@ -142,6 +144,7 @@ export class SavedStore {
       this.messages.setSaved(messageId, false);
       this.itemsSignal.update((items) => items.filter((i) => i.messageId !== messageId));
       await this.loadForWorkspace(workspaceId);
+      pokeInbox();
       return true;
     } catch {
       return false;
@@ -154,6 +157,7 @@ export class SavedStore {
     const completed = !item.completedAt;
     try {
       await this.api.patchSavedMessage(workspaceId, item.messageId, { completed });
+      pokeInbox();
       await this.loadForWorkspace(workspaceId);
       if (this.panelOpenSignal()) {
         await this.reload();

@@ -33,7 +33,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Idempotency Key** | Chave fornecida pelo cliente (ou gerada) para evitar duplicar envios em retries. |
 | **Outbox** | Tabela/padrão transacional: evento de domínio gravado na mesma transação da mensagem; um worker publica/entrega depois. |
 | **Inbox / Delivery** | Estado técnico de entrega por destinatário/conexão (delivered, read — conforme fase). |
-| **Inbox unificada** | Visão de produto que reúne DMs, menções, threads seguidas, anúncios e itens prioritários sem criar uma segunda fonte de read state (candidata B-117). |
+| **Inbox unificada** | Fila de atenção com menções, DMs não lidas, threads seguidas, anúncios pendentes e itens salvos. A leitura continua no cursor canônico; o snooze é estado pessoal (B-117). |
 | **Read cursor** | Posição de leitura persistente por (`tenant`, `user`, `channel`) em `messaging.read_cursors` (`lastReadSeq`). Fonte da verdade das **não lidas** (badge, divisor, push); sobrevive a F5 e multi-dispositivo (B-094). Não confundir com estado só em memória no client. |
 | **Unread / Não lidas** | Contagem derivada de `maxSeq - lastReadSeq` (e menções). Badge na sidebar hidrata do servidor; só zera de forma definitiva ao avançar o cursor. |
 | **Reaction** | Reação emoji (ou similar) a uma mensagem. |

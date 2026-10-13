@@ -314,6 +314,8 @@ CREATE POLICY tenant_isolation_channel_invites ON directory.channel_invites
 
 ALTER TABLE IF EXISTS messaging.saved_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.saved_messages FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.inbox_snoozes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.inbox_snoozes FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.thread_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.thread_subscriptions FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.polls ENABLE ROW LEVEL SECURITY;
@@ -329,6 +331,11 @@ ALTER TABLE IF EXISTS messaging.announcement_acknowledgements FORCE ROW LEVEL SE
 
 DROP POLICY IF EXISTS tenant_isolation_saved_messages ON messaging.saved_messages;
 CREATE POLICY tenant_isolation_saved_messages ON messaging.saved_messages
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_inbox_snoozes ON messaging.inbox_snoozes;
+CREATE POLICY tenant_isolation_inbox_snoozes ON messaging.inbox_snoozes
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

@@ -86,6 +86,11 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/channels/{channelId:guid}/messages/{messageId:guid}/acknowledgements` | condicional | `announcement.publish` ou `workspace.admin` | ✗ | ✗ | ✓ | B-112; lista limitada; outro canal/tenant → 404/403 |
 | POST | `/channels/{channelId:guid}/messages/{messageId:guid}/acknowledgements/close` | permission | `announcement.publish` | ✗ | ✗ | ✓ | B-112; idempotente; audit `announcement.closed` |
 | GET | `/workspaces/{workspaceId:guid}/announcements/pending` | permission | `message.read` | ✓ | ✓ | ✓ | B-112; inbox de confirmação pendente do caller |
+| GET | `/workspaces/{workspaceId:guid}/inbox` | permission | `message.read` | ✓ | ✓ | ✓ | B-117; consulta reconstruível; outro tenant → 403; ACL revogada omite o item |
+| POST | `/workspaces/{workspaceId:guid}/inbox/read` | permission | `message.read` | ✓ | ✓ | ✓ | B-117; avança o cursor canônico do canal ou da thread; anúncio/salvo → 400 |
+| POST | `/workspaces/{workspaceId:guid}/inbox/unread` | permission | `message.read` | ✓ | ✓ | ✓ | B-117; retrocede o cursor canônico (`allowRetrograde`) |
+| PUT | `/workspaces/{workspaceId:guid}/inbox/snooze` | permission | `message.read` | ✓ | ✓ | ✓ | B-117; snooze pessoal; item invisível → 404 sem preview |
+| DELETE | `/workspaces/{workspaceId:guid}/inbox/snooze` | permission | `message.read` | ✓ | ✓ | ✓ | B-117; `itemKey` na query; idempotente |
 | POST | `/workspaces/{workspaceId:guid}/messages/{messageId:guid}/forward` | permission | `message.send` | ✓ | ✗ | ✓ | |
 | POST | `/channels/{channelId:guid}/messages/{messageId:guid}/threads` | permission | `message.send` | ✓ | ✗ | ✓ | Get-or-create + reply |
 | GET | `/threads/{threadId:guid}` | membership | — | ✓ | ✓ | ✓ | |

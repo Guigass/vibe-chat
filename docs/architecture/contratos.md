@@ -372,6 +372,25 @@ Modo de canal `Announcement` (`ChannelType`). Não converte canal existente. Con
 
 `AnnouncementDto` no history: `requiresAcknowledgement`, `acknowledgeBy`, `closedAt`, `acknowledgedByMe`, `acknowledgementCount`, `canAcknowledge`, `canViewReport`. A contagem é agregada; nomes só no relatório.
 
+### Inbox unificada (B-117)
+
+Consulta reconstruível. Não há segunda fonte de leitura: menção e DM usam
+`messaging.read_cursors`; thread seguida usa `thread_subscriptions.LastReadSeq`.
+O único estado novo é o snooze pessoal.
+
+| Item | Regra |
+|------|--------|
+| Ordem | `announcement` (1), `mention` (2), `dm` (3), `thread` (4), `saved` (5). Dentro do tipo: `sortAt` decrescente e `itemKey` ascendente. DM usa `channel.CreatedAt` (estável); os demais usam o instante imutável da origem |
+| Dedup | Anúncio, menção e salvo do mesmo `messageId` aparecem uma vez, no tipo de maior prioridade. DM e thread não colapsam |
+| `GET /api/v1/workspaces/{workspaceId}/inbox` | `message.read`. Query `type` (`announcement\|mention\|dm\|thread\|saved`), `state` (`open` default, `snoozed`, `all`), `cursor`, `limit` (máx. 50). Outro tenant ou workspace inacessível → **403**. Filtro inválido → **400** `InvalidInboxFilter`. Cursor inválido → **400** `InvalidCursor` |
+| Item | `{ itemKey, kind, priority, reason, channelId, channelName, messageId?, threadId?, sequence?, bodyPreview, messageRemoved, sortAt, snoozedUntil?, navigation }`. `reason`: `pending_ack`, `mention`, `unread_dm`, `followed_thread`, `saved`. Sem membership o item some por completo |
+| Contagens | `counts.{announcement,mention,direct,thread,saved,total}` do estado pedido, antes do filtro de tipo |
+| Ler | `POST .../inbox/read` body `{ itemKey }` avança o cursor canônico até a sequência do item (DM: última sequência do canal; thread: `LastReadSeq` da assinatura). Repetir após sumir → **404** `InboxItemNotFound`. Anúncio e salvo → **400** `InboxReadNotApplicable`. Publica `ReadCursorChanged` no canal |
+| Não lido | `POST .../inbox/unread` retrocede o mesmo cursor para `sequence - 1` |
+| Snooze | `PUT .../inbox/snooze` body `{ itemKey, until }`. `until` futuro e no máximo 30 dias; senão **400** `InvalidSnoozeUntil`. Upsert por `(TenantId, UserId, ItemKey)`. Item invisível → **404** sem título nem preview. `DELETE .../inbox/snooze?itemKey=` é idempotente (**204**) |
+| Tabela | `messaging.inbox_snoozes` (`Id`, `TenantId`, `WorkspaceId`, `UserId`, `ItemKey`, `SnoozeUntil`, `CreatedAt`); unique `(TenantId, UserId, ItemKey)`; FORCE RLS. Expirado volta a `open` sem job |
+| Realtime | O cliente recarrega em `MessageCreated`, `ReadCursorChanged`, `announcement.acknowledged` e reconnect. A projeção não tem tabela de leitura |
+
 ### Menções (B-082)
 
 | Artefato | Contrato |
