@@ -472,7 +472,11 @@ public sealed class SupportDiagnosticsService(
         if (action == RepairActions.SearchReindex)
         {
             return await db.Messages.CountAsync(
-                message => message.DeletedAt == null && db.Channels.Any(channel => channel.Id == message.ConversationId && channel.WorkspaceId == workspace.Id),
+                message => message.DeletedAt == null && (
+                    db.Channels.Any(channel => channel.Id == message.ConversationId && channel.WorkspaceId == workspace.Id)
+                    || db.ChannelTopics.Any(topic =>
+                        topic.ConversationId == message.ConversationId
+                        && db.Channels.Any(channel => channel.Id == topic.ChannelId && channel.WorkspaceId == workspace.Id))),
                 cancellationToken);
         }
 
@@ -486,6 +490,13 @@ public sealed class SupportDiagnosticsService(
 
     private async Task<int> ReindexAsync(Workspace workspace, CancellationToken cancellationToken)
     {
+        // A topic conversation id is the topic id, not the channel id. A channel-only
+        // match skips those messages. The outbox indexer updates search_vector at the
+        // same time and deadlocks this bulk write on the GIN index, so lock first.
+        await db.Database.ExecuteSqlRawAsync(
+            "LOCK TABLE messaging.messages IN SHARE ROW EXCLUSIVE MODE",
+            cancellationToken);
+
         var config = SearchPolicies.TextConfig;
         var sql =
             $$"""
@@ -493,11 +504,23 @@ public sealed class SupportDiagnosticsService(
             SET search_vector = to_tsvector('{{config}}'::regconfig, coalesce(m."Body", ''))
             WHERE m."TenantId" = {0}
               AND m."DeletedAt" IS NULL
-              AND EXISTS (
-                SELECT 1 FROM conversations.channels AS c
-                WHERE c."Id" = m."ConversationId"
-                  AND c."WorkspaceId" = {1}
-                  AND c."TenantId" = {0}
+              AND (
+                EXISTS (
+                  SELECT 1 FROM conversations.channels AS c
+                  WHERE c."Id" = m."ConversationId"
+                    AND c."WorkspaceId" = {1}
+                    AND c."TenantId" = {0}
+                )
+                OR EXISTS (
+                  SELECT 1
+                  FROM conversations.channel_topics AS t
+                  JOIN conversations.channels AS c
+                    ON c."Id" = t."ChannelId"
+                   AND c."TenantId" = t."TenantId"
+                  WHERE t."ConversationId" = m."ConversationId"
+                    AND t."TenantId" = {0}
+                    AND c."WorkspaceId" = {1}
+                )
               )
             """;
         return await db.Database.ExecuteSqlRawAsync(

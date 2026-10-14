@@ -11,6 +11,7 @@ import { NotificationPreferencesStore } from './notification-preferences.store';
 import { PinStore } from './pin.store';
 import { SavedStore } from './saved.store';
 import { ThreadStore } from './thread.store';
+import { TopicStore } from './topic.store';
 
 describe('InboxStore', () => {
   let api: { list: ReturnType<typeof vi.fn> };
@@ -38,6 +39,7 @@ describe('InboxStore', () => {
         },
         { provide: MessageStore, useValue: { jumpToSequence: vi.fn() } },
         { provide: ThreadStore, useValue: { close: vi.fn(), openById: vi.fn() } },
+        { provide: TopicStore, useValue: { requestOpen: vi.fn() } },
         { provide: SavedStore, useValue: { closePanel: vi.fn() } },
         { provide: PinStore, useValue: { closePanel: vi.fn() } },
         { provide: FollowedThreadsStore, useValue: { closePanel: vi.fn() } },
