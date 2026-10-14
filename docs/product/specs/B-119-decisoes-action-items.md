@@ -44,11 +44,11 @@ herda o channel, salvo coleção explicitamente mais restrita.
 
 ## Aceite
 
-- [ ] Item aponta à origem e abre corretamente.
-- [ ] Owner recebe inbox/notificação conforme preferência.
-- [ ] Revogação de ACL remove acesso.
-- [ ] Edit/delete/retention não vazam body copiado.
-- [ ] Histórico é auditável.
+- [x] Item aponta à origem e abre corretamente.
+- [x] Owner recebe inbox/notificação conforme preferência.
+- [x] Revogação de ACL remove acesso.
+- [x] Edit/delete/retention não vazam body copiado.
+- [x] Histórico é auditável.
 
 ## Testes
 

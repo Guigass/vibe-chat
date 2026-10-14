@@ -1708,6 +1708,8 @@ internal static class MessagingEndpoints
 
             message.DeletedAt = clock.UtcNow;
             message.DeletedBy = profile.Id;
+            await VibeChat.Infrastructure.Messaging.CommitmentRedaction.MarkSourceAsync(
+                db, channel.TenantId, message.Id, ct);
 
             var pin = await db.PinnedMessages.FirstOrDefaultAsync(
                 x => x.ChannelId == channel.Id && x.MessageId == message.Id,

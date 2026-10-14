@@ -372,6 +372,22 @@ Modo de canal `Announcement` (`ChannelType`). Não converte canal existente. Con
 
 `AnnouncementDto` no history: `requiresAcknowledgement`, `acknowledgeBy`, `closedAt`, `acknowledgedByMe`, `acknowledgementCount`, `canAcknowledge`, `canViewReport`. A contagem é agregada; nomes só no relatório.
 
+### Decisões e action items (B-119)
+
+Entidade curada em `messaging.commitments`. O body da mensagem **não** é copiado: a proveniência guarda `sourceMessageId`, `sourceVersion` (seq), hash SHA-256 de um excerpt de até 140 caracteres, método `convert`, ator e snapshot de authZ. Comentários continuam na conversa/thread de origem. Histórico de mudança fica em `messaging.commitment_changes` (ação, ator, instante) e no audit `commitment.*`.
+
+| Item | Regra |
+|------|--------|
+| Tabela | `messaging.commitments` (`TenantId`, `WorkspaceId`, `ChannelId`, `Kind` `decision\|action_item`, `Title` 1–120, `Description?` ≤500, `OwnerUserId?`, `DueAt?`, `State` `open\|closed`, `SourceMessageId`, `SourceThreadId?`, `SourceVersion`, `ExcerptHash`, `Visibility` `channel\|restricted`, `IdempotencyKey`, `SourceRedacted`); unique `(TenantId, CreatedBy, IdempotencyKey)`; FORCE RLS |
+| Histórico | `messaging.commitment_changes`; sem body |
+| `POST /api/v1/workspaces/{workspaceId}/commitments` | Body `{ idempotencyKey, messageId, kind, title, description?, ownerUserId?, dueAt?, visibility? }`; `message.read` da origem; assignee precisa ler o canal agora senão **400** `AssigneeNotMember`; replay da mesma chave devolve o item original; mensagem de sistema → **400** `NotConvertible` |
+| `GET …/commitments` | Query `channelId`, `ownerId`, `kind`, `state` (`open` default, `closed`, `all`), `cursor`, `limit` (máx. 50). Sem leitura atual do canal, ou visibilidade `restricted` para quem não é criador/owner → o item some (**404** no GET por id) |
+| `PATCH` / `POST …/close` / `POST …/reopen` | Criador, owner atual, ou `workspace.admin` só quando `visibility=channel`. Restrito não abre para admin. Close/reopen gravam audit |
+| `GET …/history` | `{ items: [{ action, actorUserId, actorName, at }] }` |
+| Eventos | Outbox `decision.created\|updated\|closed\|reopened` e `action_item.*`. Payload sem título nem body. `restricted` vai ao grupo do criador/owner; `channel` ao grupo do canal |
+| Inbox | Kind `commitment` (prioridade 7, reason `assigned`) para o owner de item `open`, se o nível efetivo notifica menção e o DND não está ativo. `HidePreview` omite o título. Perder o canal remove o item |
+| Delete/purge | Soft-delete e purge da origem setam `SourceRedacted`. A resposta não devolve body |
+
 ### Inbox unificada (B-117)
 
 Consulta reconstruível. Não há segunda fonte de leitura: menção e DM usam
@@ -380,9 +396,9 @@ O único estado novo é o snooze pessoal.
 
 | Item | Regra |
 |------|--------|
-| Ordem | `announcement` (1), `mention` (2), `dm` (3), `thread` (4), `saved` (5). Dentro do tipo: `sortAt` decrescente e `itemKey` ascendente. DM usa `channel.CreatedAt` (estável); os demais usam o instante imutável da origem |
+| Ordem | `announcement` (1), `mention` (2), `dm` (3), `thread` (4), `saved` (5), `topic` (6), `commitment` (7). Dentro do tipo: `sortAt` decrescente e `itemKey` ascendente. DM usa `channel.CreatedAt` (estável); os demais usam o instante imutável da origem |
 | Dedup | Anúncio, menção e salvo do mesmo `messageId` aparecem uma vez, no tipo de maior prioridade. DM e thread não colapsam |
-| `GET /api/v1/workspaces/{workspaceId}/inbox` | `message.read`. Query `type` (`announcement\|mention\|dm\|thread\|saved`), `state` (`open` default, `snoozed`, `all`), `cursor`, `limit` (máx. 50). Outro tenant ou workspace inacessível → **403**. Filtro inválido → **400** `InvalidInboxFilter`. Cursor inválido → **400** `InvalidCursor` |
+| `GET /api/v1/workspaces/{workspaceId}/inbox` | `message.read`. Query `type` (`announcement\|mention\|dm\|thread\|saved\|topic\|commitment`), `state` (`open` default, `snoozed`, `all`), `cursor`, `limit` (máx. 50). Outro tenant ou workspace inacessível → **403**. Filtro inválido → **400** `InvalidInboxFilter`. Cursor inválido → **400** `InvalidCursor` |
 | Item | `{ itemKey, kind, priority, reason, channelId, channelName, messageId?, threadId?, sequence?, bodyPreview, messageRemoved, sortAt, snoozedUntil?, navigation }`. `reason`: `pending_ack`, `mention`, `unread_dm`, `followed_thread`, `saved`. Sem membership o item some por completo |
 | Contagens | `counts.{announcement,mention,direct,thread,saved,total}` do estado pedido, antes do filtro de tipo |
 | Ler | `POST .../inbox/read` body `{ itemKey }` avança o cursor canônico até a sequência do item (DM: última sequência do canal; thread: `LastReadSeq` da assinatura). Repetir após sumir → **404** `InboxItemNotFound`. Anúncio e salvo → **400** `InboxReadNotApplicable`. Publica `ReadCursorChanged` no canal |

@@ -90,6 +90,8 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<TenantLinkPreviewSettings> TenantLinkPreviewSettings => Set<TenantLinkPreviewSettings>();
     public DbSet<PinnedMessage> PinnedMessages => Set<PinnedMessage>();
     public DbSet<SavedMessage> SavedMessages => Set<SavedMessage>();
+    public DbSet<Commitment> Commitments => Set<Commitment>();
+    public DbSet<CommitmentChange> CommitmentChanges => Set<CommitmentChange>();
     public DbSet<InboxSnooze> InboxSnoozes => Set<InboxSnooze>();
     public DbSet<ScheduledMessage> ScheduledMessages => Set<ScheduledMessage>();
     public DbSet<Reminder> Reminders => Set<Reminder>();
@@ -528,6 +530,45 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Note).HasMaxLength(SavedMessagePolicies.MaxNoteLength);
             entity.HasIndex(x => new { x.TenantId, x.UserId, x.MessageId }).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.UserId, x.CompletedAt, x.CreatedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<Commitment>(entity =>
+        {
+            entity.ToTable("commitments", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.SourceMessageId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.OwnerUserId).HasConversion(
+                v => v.HasValue ? v.Value.Value : (Guid?)null,
+                v => v.HasValue ? new UserId(v.Value) : null);
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.ClosedBy).HasConversion(
+                v => v.HasValue ? v.Value.Value : (Guid?)null,
+                v => v.HasValue ? new UserId(v.Value) : null);
+            entity.Property(x => x.Title).HasMaxLength(CommitmentPolicies.MaxTitleLength);
+            entity.Property(x => x.Description).HasMaxLength(CommitmentPolicies.MaxDescriptionLength);
+            entity.Property(x => x.ExcerptHash).HasMaxLength(64);
+            entity.Property(x => x.Method).HasMaxLength(32);
+            entity.Property(x => x.AuthzSnapshot).HasMaxLength(CommitmentPolicies.MaxAuthzSnapshotLength);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(CommitmentPolicies.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.CreatedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.State, x.CreatedAt });
+            entity.HasIndex(x => new { x.TenantId, x.OwnerUserId, x.State });
+            entity.HasIndex(x => new { x.TenantId, x.SourceMessageId });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<CommitmentChange>(entity =>
+        {
+            entity.ToTable("commitment_changes", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.ActorUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Action).HasMaxLength(32);
+            entity.HasIndex(x => new { x.TenantId, x.CommitmentId, x.At });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

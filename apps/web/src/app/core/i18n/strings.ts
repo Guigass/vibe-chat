@@ -357,6 +357,46 @@ export const ui = {
   menuUnsave: $localize`:@@menu.unsave:Remover dos salvos`,
   menuSave: $localize`:@@menu.save:Salvar`,
   menuRemind: $localize`:@@menu.remind:Lembrar deste item`,
+  menuDecide: $localize`:@@menu.decide:Decisão`,
+  menuAct: $localize`:@@menu.act:Ação`,
+  commitmentNav: $localize`:@@commitment.nav:Decisões`,
+  commitmentNavHint: $localize`:@@commitment.navHint:Origem na conversa`,
+  commitmentPanel: $localize`:@@commitment.panel:Decisões e ações`,
+  commitmentEmpty: $localize`:@@commitment.empty:Nada neste filtro.`,
+  commitmentLoadError: $localize`:@@commitment.loadError:Não foi possível carregar.`,
+  commitmentSaveError: $localize`:@@commitment.saveError:Não foi possível salvar.`,
+  commitmentAssigneeError: $localize`:@@commitment.assigneeError:Essa pessoa não lê o canal.`,
+  commitmentTitleLabel: $localize`:@@commitment.titleLabel:Título`,
+  commitmentDescriptionLabel: $localize`:@@commitment.descriptionLabel:Descrição`,
+  commitmentOwnerLabel: $localize`:@@commitment.ownerLabel:Responsável`,
+  commitmentNoOwner: $localize`:@@commitment.noOwner:Sem responsável`,
+  commitmentDueLabel: $localize`:@@commitment.dueLabel:Prazo`,
+  commitmentVisibilityLabel: $localize`:@@commitment.visibilityLabel:Quem vê`,
+  commitmentVisibilityChannel: $localize`:@@commitment.visibilityChannel:Quem lê o canal`,
+  commitmentVisibilityRestricted: $localize`:@@commitment.visibilityRestricted:Só você e o responsável`,
+  commitmentCreate: $localize`:@@commitment.create:Criar`,
+  commitmentDialogDecision: $localize`:@@commitment.dialogDecision:Nova decisão`,
+  commitmentDialogAction: $localize`:@@commitment.dialogAction:Nova ação`,
+  commitmentCloseItem: $localize`:@@commitment.closeItem:Encerrar`,
+  commitmentReopenItem: $localize`:@@commitment.reopenItem:Reabrir`,
+  commitmentOpenOrigin: $localize`:@@commitment.openOrigin:Abrir origem`,
+  commitmentSourceRemoved: $localize`:@@commitment.sourceRemoved:Origem removida`,
+  commitmentHistory: $localize`:@@commitment.history:Histórico`,
+  commitmentCommentsHint: $localize`:@@commitment.commentsHint:Comentários ficam na conversa de origem.`,
+  commitmentFilterAll: $localize`:@@commitment.filterAll:Todas`,
+  commitmentFilterDecisions: $localize`:@@commitment.filterDecisions:Decisões`,
+  commitmentFilterActions: $localize`:@@commitment.filterActions:Ações`,
+  commitmentFilterOpen: $localize`:@@commitment.filterOpen:Abertas`,
+  commitmentFilterClosed: $localize`:@@commitment.filterClosed:Encerradas`,
+  commitmentFilterChannel: $localize`:@@commitment.filterChannel:Este canal`,
+  commitmentFilterWorkspace: $localize`:@@commitment.filterWorkspace:Workspace`,
+  commitmentFilterMine: $localize`:@@commitment.filterMine:Minhas`,
+  commitmentInboxReason: $localize`:@@commitment.inboxReason:Atribuída a você`,
+  commitmentActionCreated: $localize`:@@commitment.actionCreated:Criada`,
+  commitmentActionUpdated: $localize`:@@commitment.actionUpdated:Atualizada`,
+  commitmentActionClosed: $localize`:@@commitment.actionClosed:Encerrada`,
+  commitmentActionReopened: $localize`:@@commitment.actionReopened:Reaberta`,
+  inboxKindCommitment: $localize`:@@inbox.kindCommitment:Decisão ou ação`,
   composerSchedule: $localize`:@@composer.schedule:Agendar`,
   composerSendNow: $localize`:@@composer.sendNow:Enviar agora`,
   composerScheduleAt: $localize`:@@composer.scheduleAt:Data e hora`,
@@ -1222,6 +1262,17 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.errorRepairConflict;
     case 'TemplateNotFound':
       return ui.errorTemplateNotFound;
+    case 'AssigneeNotMember':
+      return ui.commitmentAssigneeError;
+    case 'InvalidTitle':
+    case 'InvalidDescription':
+    case 'InvalidCommitmentKind':
+    case 'InvalidDueAt':
+    case 'InvalidVisibility':
+    case 'InvalidIdempotencyKey':
+    case 'NotConvertible':
+    case 'InvalidCommitmentFilter':
+      return ui.commitmentSaveError;
     default:
       return code ?? '';
   }

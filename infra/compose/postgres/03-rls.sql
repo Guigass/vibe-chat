@@ -332,6 +332,20 @@ ALTER TABLE IF EXISTS messaging.announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.announcements FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.announcement_acknowledgements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.announcement_acknowledgements FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.commitments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.commitments FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.commitment_changes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.commitment_changes FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_commitments ON messaging.commitments;
+CREATE POLICY tenant_isolation_commitments ON messaging.commitments
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_commitment_changes ON messaging.commitment_changes;
+CREATE POLICY tenant_isolation_commitment_changes ON messaging.commitment_changes
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
 
 DROP POLICY IF EXISTS tenant_isolation_saved_messages ON messaging.saved_messages;
 CREATE POLICY tenant_isolation_saved_messages ON messaging.saved_messages

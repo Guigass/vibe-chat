@@ -11,9 +11,9 @@ export interface InboxNavigation {
 
 export interface InboxItem {
   itemKey: string;
-  kind: 'announcement' | 'mention' | 'dm' | 'thread' | 'saved' | 'topic';
+  kind: 'announcement' | 'mention' | 'dm' | 'thread' | 'saved' | 'topic' | 'commitment';
   priority: number;
-  reason: 'pending_ack' | 'mention' | 'unread_dm' | 'followed_thread' | 'saved' | 'followed_topic';
+  reason: 'pending_ack' | 'mention' | 'unread_dm' | 'followed_thread' | 'saved' | 'followed_topic' | 'assigned';
   channelId: string;
   channelName: string;
   messageId?: string | null;

@@ -29,6 +29,7 @@ import { IconButton } from '../../../shared/ui';
           <option value="thread">{{ ui.inboxKindThread }}</option>
           <option value="topic">{{ ui.inboxKindTopic }}</option>
           <option value="saved">{{ ui.inboxKindSaved }}</option>
+          <option value="commitment">{{ ui.inboxKindCommitment }}</option>
         </select>
         <select [value]="inbox.stateFilter()" (change)="onState($event)" [attr.aria-label]="ui.inboxStateOpen">
           <option value="open">{{ ui.inboxStateOpen }}</option>
@@ -180,6 +181,8 @@ export class InboxPanel {
         return ui.inboxReasonFollowedThread;
       case 'followed_topic':
         return ui.inboxReasonFollowedTopic;
+      case 'assigned':
+        return ui.commitmentInboxReason;
       default:
         return ui.inboxReasonSaved;
     }

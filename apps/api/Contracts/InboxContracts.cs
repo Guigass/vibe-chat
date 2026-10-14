@@ -17,7 +17,7 @@ public sealed record InboxItemResponse(
     InboxNavigationResponse Navigation,
     Guid? TopicId = null);
 
-public sealed record InboxCountsResponse(int Announcement, int Mention, int Direct, int Thread, int Saved, int Topic, int Total);
+public sealed record InboxCountsResponse(int Announcement, int Mention, int Direct, int Thread, int Saved, int Topic, int Commitment, int Total);
 
 public sealed record InboxPageResponse(InboxItemResponse[] Items, string? NextCursor, InboxCountsResponse Counts);
 
