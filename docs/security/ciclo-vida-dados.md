@@ -53,7 +53,7 @@ entram em fila de purge com grace period e evidência, não permanecem para semp
 | Link preview | Herda mensagem | Delete/rebuild | Conforme conteúdo persistido | Opcional |
 | Áudio/gravação | Policy explícita e consentimento | Remove bytes/derivados | Sim | Sim |
 | Transcrição | Herda mídia ou policy mais restrita | Purge independente coordenado | Sim | Sim |
-| Página/versão | Policy knowledge | Soft-delete/purge | Sim | Sim |
+| Página/versão | Retenção do tenant após soft-delete (B-120) | Purge remove página e versões juntas | Sim | Sim |
 | Decision/ActionItem | Policy do recurso + provenance | Redige origem; purge conforme regra | Sim | Sim |
 | Chunk/embedding | Herda todas as fontes | Delete obrigatório/reindex | Preserva só quando fonte held | Não como fonte |
 | Índice de busca | Rebuildable | Remove/reindex | Não é cópia de custódia | Não |

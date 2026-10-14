@@ -92,6 +92,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<SavedMessage> SavedMessages => Set<SavedMessage>();
     public DbSet<Commitment> Commitments => Set<Commitment>();
     public DbSet<CommitmentChange> CommitmentChanges => Set<CommitmentChange>();
+    public DbSet<KnowledgeCollection> KnowledgeCollections => Set<KnowledgeCollection>();
+    public DbSet<KnowledgePage> KnowledgePages => Set<KnowledgePage>();
+    public DbSet<KnowledgePageVersion> KnowledgePageVersions => Set<KnowledgePageVersion>();
     public DbSet<InboxSnooze> InboxSnoozes => Set<InboxSnooze>();
     public DbSet<ScheduledMessage> ScheduledMessages => Set<ScheduledMessage>();
     public DbSet<Reminder> Reminders => Set<Reminder>();
@@ -569,6 +572,57 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.ActorUserId).HasConversion(v => v.Value, v => new UserId(v));
             entity.Property(x => x.Action).HasMaxLength(32);
             entity.HasIndex(x => new { x.TenantId, x.CommitmentId, x.At });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<KnowledgeCollection>(entity =>
+        {
+            entity.ToTable("collections", "knowledge");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Title).HasMaxLength(KnowledgePolicies.MaxTitleLength);
+            entity.Property(x => x.Slug).HasMaxLength(KnowledgePolicies.MaxSlugLength);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(KnowledgePolicies.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.CreatedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.ScopeKind, x.ScopeId, x.Slug })
+                .IsUnique()
+                .HasFilter("\"DeletedAt\" IS NULL");
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<KnowledgePage>(entity =>
+        {
+            entity.ToTable("pages", "knowledge");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.UpdatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Title).HasMaxLength(KnowledgePolicies.MaxTitleLength);
+            entity.Property(x => x.Slug).HasMaxLength(KnowledgePolicies.MaxSlugLength);
+            entity.Property(x => x.Body).HasMaxLength(KnowledgePolicies.MaxBodyLength);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(KnowledgePolicies.MaxIdempotencyKeyLength);
+            entity.Property(x => x.Version).IsConcurrencyToken();
+            entity.HasIndex(x => new { x.TenantId, x.CreatedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.CollectionId, x.Slug })
+                .IsUnique()
+                .HasFilter("\"DeletedAt\" IS NULL");
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.DeletedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<KnowledgePageVersion>(entity =>
+        {
+            entity.ToTable("page_versions", "knowledge");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.ActorUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Title).HasMaxLength(KnowledgePolicies.MaxTitleLength);
+            entity.Property(x => x.Body).HasMaxLength(KnowledgePolicies.MaxBodyLength);
+            entity.Property(x => x.Action).HasMaxLength(32);
+            entity.HasIndex(x => new { x.TenantId, x.PageId, x.Version }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

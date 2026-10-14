@@ -2,10 +2,12 @@ import { Component, inject, input } from '@angular/core';
 import { ui } from '../../../core/i18n/strings';
 import { FollowedThreadsStore } from '../../../core/services/followed-threads.store';
 import { CommitmentStore } from '../../../core/services/commitment.store';
+import { KnowledgeStore } from '../../../core/services/knowledge.store';
 import { InboxStore } from '../../../core/services/inbox.store';
 import { NotificationPreferencesStore } from '../../../core/services/notification-preferences.store';
 import { PinStore } from '../../../core/services/pin.store';
 import { SavedStore } from '../../../core/services/saved.store';
+import { ThreadStore } from '../../../core/services/thread.store';
 import { Badge, VcTooltip } from '../../../shared/ui';
 
 @Component({
@@ -136,6 +138,32 @@ import { Badge, VcTooltip } from '../../../shared/ui';
           </span>
         }
       </button>
+
+      <button
+        type="button"
+        class="channel-list__saved"
+        [class.channel-list__saved--compact]="navCompact()"
+        [class.channel-list__saved--active]="knowledge.panelOpen()"
+        data-testid="knowledge-nav"
+        [attr.aria-label]="navCompact() ? ui.knowledgeNav : null"
+        [vcTooltip]="navCompact() ? ui.knowledgeNav : null"
+        [tooltipDisabled]="!navCompact()"
+        position="right"
+        (click)="openKnowledge()"
+      >
+        <span class="channel-list__saved-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 4.5h9.5L19 8v11.5H6z" />
+            <path d="M15 4.5V8h4M8.5 12h7M8.5 15.5h7" />
+          </svg>
+        </span>
+        @if (!navCompact()) {
+          <span class="channel-list__saved-copy">
+            <span class="channel-list__saved-label">{{ ui.knowledgeNav }}</span>
+            <span class="channel-list__saved-hint">{{ ui.knowledgeNavHint }}</span>
+          </span>
+        }
+      </button>
     </div>
   `,
   styles: `
@@ -204,6 +232,8 @@ export class NavShortcuts {
   readonly saved = inject(SavedStore);
   readonly followedThreads = inject(FollowedThreadsStore);
   readonly commitments = inject(CommitmentStore);
+  readonly knowledge = inject(KnowledgeStore);
+  private readonly threads = inject(ThreadStore);
   private readonly pins = inject(PinStore);
   private readonly notificationPrefs = inject(NotificationPreferencesStore);
 
@@ -212,6 +242,7 @@ export class NavShortcuts {
     this.saved.closePanel();
     this.followedThreads.closePanel();
     this.commitments.closePanel();
+    this.knowledge.closePanel();
     this.notificationPrefs.closePanel();
     this.inbox.openPanel();
   }
@@ -220,6 +251,7 @@ export class NavShortcuts {
     this.pins.closePanel();
     this.followedThreads.closePanel();
     this.commitments.closePanel();
+    this.knowledge.closePanel();
     this.inbox.closePanel();
     this.saved.openPanel();
   }
@@ -228,6 +260,7 @@ export class NavShortcuts {
     this.pins.closePanel();
     this.saved.closePanel();
     this.commitments.closePanel();
+    this.knowledge.closePanel();
     this.inbox.closePanel();
     this.followedThreads.openPanel();
   }
@@ -236,8 +269,20 @@ export class NavShortcuts {
     this.pins.closePanel();
     this.saved.closePanel();
     this.followedThreads.closePanel();
+    this.knowledge.closePanel();
     this.inbox.closePanel();
     this.notificationPrefs.closePanel();
     this.commitments.openPanel();
+  }
+
+  openKnowledge(): void {
+    this.threads.close();
+    this.pins.closePanel();
+    this.saved.closePanel();
+    this.followedThreads.closePanel();
+    this.commitments.closePanel();
+    this.inbox.closePanel();
+    this.notificationPrefs.closePanel();
+    this.knowledge.openPanel();
   }
 }

@@ -154,7 +154,8 @@ public static class RolePermissionCatalog
         Permissions.Search.Messages,
         Permissions.Admin.Dashboard, Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe,
         Permissions.Announcement.Publish, Permissions.Announcement.Acknowledge,
-        Permissions.Conversation.TopicCreate, Permissions.Conversation.TopicManage
+        Permissions.Conversation.TopicCreate, Permissions.Conversation.TopicManage,
+        Permissions.Knowledge.View, Permissions.Knowledge.Edit, Permissions.Knowledge.Manage
     ];
 
     private static readonly HashSet<string> ModeratorPermissions =
@@ -165,14 +166,16 @@ public static class RolePermissionCatalog
         Permissions.Search.Messages,
         Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe,
         Permissions.Announcement.Publish, Permissions.Announcement.Acknowledge,
-        Permissions.Conversation.TopicCreate, Permissions.Conversation.TopicManage
+        Permissions.Conversation.TopicCreate, Permissions.Conversation.TopicManage,
+        Permissions.Knowledge.View, Permissions.Knowledge.Edit, Permissions.Knowledge.Manage
     ];
 
     private static readonly HashSet<string> AuditorPermissions =
     [
         Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Message.Read, Permissions.Message.HistoryRead, Permissions.Files.Download,
         Permissions.Search.Messages, Permissions.Admin.Dashboard, Permissions.Support.Read,
-        Permissions.Announcement.Acknowledge
+        Permissions.Announcement.Acknowledge,
+        Permissions.Knowledge.View
     ];
 
     private static readonly HashSet<string> MemberPermissions =
@@ -183,7 +186,8 @@ public static class RolePermissionCatalog
         Permissions.Search.Messages,
         Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe,
         Permissions.Announcement.Acknowledge,
-        Permissions.Conversation.TopicCreate
+        Permissions.Conversation.TopicCreate,
+        Permissions.Knowledge.View, Permissions.Knowledge.Edit
     ];
 
     private static readonly HashSet<string> GuestPermissions =

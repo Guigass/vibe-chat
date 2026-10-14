@@ -388,6 +388,25 @@ Entidade curada em `messaging.commitments`. O body da mensagem **não** é copia
 | Inbox | Kind `commitment` (prioridade 7, reason `assigned`) para o owner de item `open`, se o nível efetivo notifica menção e o DND não está ativo. `HidePreview` omite o título. Perder o canal remove o item |
 | Delete/purge | Soft-delete e purge da origem setam `SourceRedacted`. A resposta não devolve body |
 
+### Base de conhecimento (B-120)
+
+Páginas server-authoritative em `knowledge.pages`. Coleções em `knowledge.collections` com escopo `workspace`, `space` ou `channel`. Histórico append-only em `knowledge.page_versions`. Flag `Knowledge:Pages:Enabled` (**off** por default; 404 `KnowledgeDisabled` sem gravar). ADR-032.
+
+| Item | Regra |
+|------|--------|
+| Tabelas | `knowledge.collections`, `knowledge.pages`, `knowledge.page_versions`. `TenantId` + FORCE RLS. Unique parcial de slug ignora soft-delete. `pages.Version` é concurrency token |
+| Permissões | `knowledge.view` lê, busca e exporta a página visível. `knowledge.edit` cria coleção/página e atualiza. `knowledge.manage` apaga, restaura e exporta o workspace. Auditor só view. Member view+edit. Guest e bot sem `knowledge.*` |
+| ACL | Canal: membership atual. Workspace/space: membership do workspace. Manage não atravessa canal privado |
+| `POST …/knowledge/collections` | `{ idempotencyKey, title, scope, scopeId?, parentId? }`. Árvore de um nível. Teto 100 coleções vivas por workspace |
+| `POST …/knowledge/pages` | `{ idempotencyKey, collectionId, title, body }`. Body ≤ 16000, sem HTML nem `javascript:`/`data:`/`vbscript:`. Senão **400** `UnsafeKnowledgeBody`. Teto 200 páginas vivas por coleção |
+| `PATCH …/pages/{pageId}` | `{ version, title, body }`. Versão diferente → **409** `KnowledgeVersionConflict` com `currentVersion` e sem gravar |
+| `POST …/restore` | `{ expectedVersion, sourceVersion }` cria versão nova com o conteúdo antigo. `knowledge.manage` |
+| `GET …/search?q=` | Mínimo 2 caracteres. Só páginas de coleções visíveis. Sem título de página inacessível |
+| Referências | Tokens `[[message:uuid]]`, `[[decision:uuid]]`, `[[task:uuid]]`, `[[attachment:uuid]]`. `task` resolve action item até B-123. Inacessível ou apagado → `{ state: redacted }` sem label |
+| Export | `GET …/pages/{id}/export` devolve página e versões para quem vê. `GET …/knowledge/export` exige manage e o mesmo filtro de ACL |
+| Retenção | Soft-delete entra no purge do tenant: página e versões saem juntas |
+| Evento | Outbox `knowledge.page.changed` (`tenantId`, `workspaceId`, `pageId`, `collectionId`, `version`, `action`, `channelId?`). Sem título nem body. SignalR só no escopo canal |
+
 ### Inbox unificada (B-117)
 
 Consulta reconstruível. Não há segunda fonte de leitura: menção e DM usam

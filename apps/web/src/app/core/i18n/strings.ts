@@ -359,6 +359,31 @@ export const ui = {
   menuRemind: $localize`:@@menu.remind:Lembrar deste item`,
   menuDecide: $localize`:@@menu.decide:Decisão`,
   menuAct: $localize`:@@menu.act:Ação`,
+  knowledgeNav: $localize`:@@knowledge.nav:Conhecimento`,
+  knowledgeNavHint: $localize`:@@knowledge.navHint:Páginas do workspace`,
+  knowledgePanel: $localize`:@@knowledge.panel:Base de conhecimento`,
+  knowledgeEmpty: $localize`:@@knowledge.empty:Nenhuma página ainda.`,
+  knowledgeLoadError: $localize`:@@knowledge.loadError:Não foi possível carregar.`,
+  knowledgeSaveError: $localize`:@@knowledge.saveError:Não foi possível salvar.`,
+  knowledgeConflict: $localize`:@@knowledge.conflict:Alguém atualizou esta página. Recarregue antes de salvar.`,
+  knowledgeReload: $localize`:@@knowledge.reload:Recarregar`,
+  knowledgeTitleLabel: $localize`:@@knowledge.titleLabel:Título`,
+  knowledgeBodyLabel: $localize`:@@knowledge.bodyLabel:Conteúdo`,
+  knowledgePreview: $localize`:@@knowledge.preview:Prévia`,
+  knowledgeCreatePage: $localize`:@@knowledge.createPage:Nova página`,
+  knowledgeCreateCollection: $localize`:@@knowledge.createCollection:Nova coleção`,
+  knowledgeCollectionTitle: $localize`:@@knowledge.collectionTitle:Nome da coleção`,
+  knowledgeSearch: $localize`:@@knowledge.search:Buscar páginas`,
+  knowledgeRedacted: $localize`:@@knowledge.redacted:Referência indisponível`,
+  knowledgeRestore: $localize`:@@knowledge.restore:Restaurar esta versão`,
+  knowledgeHistory: $localize`:@@knowledge.history:Histórico`,
+  knowledgeDelete: $localize`:@@knowledge.delete:Apagar página`,
+  knowledgeDisabled: $localize`:@@knowledge.disabled:Conhecimento indisponível.`,
+  knowledgeDraft: $localize`:@@knowledge.draft:Rascunho local`,
+  knowledgeScopeWorkspace: $localize`:@@knowledge.scopeWorkspace:Workspace`,
+  knowledgeScopeChannel: $localize`:@@knowledge.scopeChannel:Canal atual`,
+  knowledgeSave: $localize`:@@knowledge.save:Salvar`,
+  knowledgeClose: $localize`:@@knowledge.close:Fechar`,
   commitmentNav: $localize`:@@commitment.nav:Decisões`,
   commitmentNavHint: $localize`:@@commitment.navHint:Origem na conversa`,
   commitmentPanel: $localize`:@@commitment.panel:Decisões e ações`,
@@ -1264,6 +1289,16 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.errorTemplateNotFound;
     case 'AssigneeNotMember':
       return ui.commitmentAssigneeError;
+    case 'KnowledgeVersionConflict':
+      return ui.knowledgeConflict;
+    case 'KnowledgeDisabled':
+      return ui.knowledgeDisabled;
+    case 'UnsafeKnowledgeBody':
+    case 'InvalidKnowledgeScope':
+    case 'InvalidKnowledgeParent':
+    case 'InvalidKnowledgeQuery':
+    case 'KnowledgeQuotaExceeded':
+      return ui.knowledgeSaveError;
     case 'InvalidTitle':
     case 'InvalidDescription':
     case 'InvalidCommitmentKind':

@@ -38,7 +38,7 @@ organiza. Estados:
 | Decisões e action items vinculados | Done | B-119 / W12 |
 | Digests e catch-up programado | Planned | B-122 / W12 |
 | Busca semântica/RAG autorizada | Planned | B-121 / W12 |
-| Base de conhecimento leve | Planned | B-120 / W12 |
+| Base de conhecimento leve | Done | B-120 / W12; ADR-032 |
 | Canvas/edição colaborativa CRDT | Planned | B-152 / W17 |
 
 ## Automação e trabalho

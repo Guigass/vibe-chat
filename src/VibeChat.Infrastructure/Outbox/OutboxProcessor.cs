@@ -155,6 +155,15 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     continue;
                 }
 
+                if (KnowledgePolicies.IsKnowledgeEvent(outbox.Type))
+                {
+                    await VibeChat.Infrastructure.Messaging.KnowledgeEventFanout.DispatchAsync(
+                        publisher, outbox, cancellationToken);
+                    outbox.ProcessedAt = now;
+                    outbox.Error = null;
+                    continue;
+                }
+
                 var payloadNode = JsonNode.Parse(outbox.Payload)
                     ?? throw new InvalidOperationException("Invalid outbox payload JSON");
                 var root = payloadNode.AsObject();

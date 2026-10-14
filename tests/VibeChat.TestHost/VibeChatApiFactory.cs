@@ -181,6 +181,7 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Seed:Enabled", "true");
         builder.UseSetting("Directory:GroupDm:Enabled", "true");
         builder.UseSetting("Conversations:Topics:Enabled", "true");
+        builder.UseSetting("Knowledge:Pages:Enabled", "true");
         builder.UseSetting("Directory:GroupDm:MaxParticipants", "9");
         builder.UseSetting("Directory:Invites:Enabled", "true");
         builder.UseSetting("Integrations:Bots:Enabled", "true");
