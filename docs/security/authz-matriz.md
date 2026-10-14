@@ -101,6 +101,18 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | PUT | `/threads/{threadId:guid}/subscription/read-cursor` | permission | `message.read` | ✓ | ✓ | ✓ | B-102; sem assinatura → 404 |
 | GET | `/workspaces/{workspaceId:guid}/threads/following` | permission | `message.read` | ✓ | ✓ | ✓ | B-102; membership perdida esconde a linha |
 | POST | `/threads/{threadId:guid}/messages/{messageId:guid}/share-to-channel` | permission | `message.send` | ✓ | ✗ | ✓ | B-102; reusa forward writer (B-085) |
+| GET | `/channels/{channelId:guid}/topics` | membership | — | ✓ | ✓ | ✓ | B-118; canal `Topics`; sem acesso → 403; flag off → 404 |
+| POST | `/channels/{channelId:guid}/topics` | permission | `conversation.topic.create` | ✓ | ✗ | ✓ | B-118; guest do canal também cria |
+| GET | `/topics/{topicId:guid}` | membership | — | ✓ | ✓ | ✓ | B-118; outro tenant → 404 sem título |
+| PUT | `/topics/{topicId:guid}` | permission | `conversation.topic.create` | ✓* | ✗ | ✓ | *autor ou `conversation.topic.manage` |
+| POST | `/topics/{topicId:guid}/close` | permission | `conversation.topic.manage` | ✗ | ✗ | ✓ | B-118 |
+| POST | `/topics/{topicId:guid}/reopen` | permission | `conversation.topic.manage` | ✗ | ✗ | ✓ | B-118 |
+| POST | `/topics/{topicId:guid}/move` | permission | `conversation.topic.manage` | ✗ | ✗ | ✓ | Destino no mesmo workspace e layout `Topics` |
+| POST | `/topics/{topicId:guid}/subscription` | permission | `message.read` | ✓ | ✓ | ✓ | B-118 follow |
+| DELETE | `/topics/{topicId:guid}/subscription` | permission | `message.read` | ✓ | ✓ | ✓ | B-118 unfollow |
+| PUT | `/topics/{topicId:guid}/read-cursor` | permission | `message.read` | ✓ | ✓ | ✓ | Cursor da conversa do tópico |
+| GET | `/topics/{topicId:guid}/messages` | membership | — | ✓ | ✓ | ✓ | B-118 |
+| POST | `/topics/{topicId:guid}/messages` | permission | `message.send` | ✓ | ✗ | ✓ | Fechado sem manage → 403 `TopicClosed` |
 | POST | `/channels/{channelId:guid}/attachments` | permission | `file.upload` + `message.send` | ✓ | ✗ | ✓ | |
 | POST | `/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete` | permission | `file.upload` | ✓ | ✗ | ✓ | |
 | GET | `/channels/{channelId:guid}/attachments/{attachmentId:guid}/download` | permission | `file.download` + `message.read` | ✓ | ✓ | ✓ | |

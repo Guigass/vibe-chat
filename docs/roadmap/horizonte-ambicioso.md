@@ -54,7 +54,7 @@ completamente novas.
 | B-154 | A/B/D/E/G | Diagnóstico administrativo e support bundle sanitizado | B-105, B-106, B-115 | [B-154](../product/specs/B-154-diagnostico-support-bundle.md) | **Done** — preflight mascarado, probes sintéticos, bundle com TTL/checksum e repair allowlisted |
 | B-116 | B/D | Status personalizado, disponibilidade e agenda resumida | B-097 | [B-116](../product/specs/B-116-status-disponibilidade.md) | **Done** — status por usuário/tenant, disponibilidade derivada, calendário off |
 | B-117 | C/D | Inbox unificada com menções, threads, DMs e prioridade | B-094, B-102 | [B-117](../product/specs/B-117-inbox-unificada.md) | **Done** — consulta reconstruível, snooze pessoal, cursor canônico |
-| B-118 | B/C/D | Modo de canal por tópicos/fórum | B-089, B-102 | [B-118](../product/specs/B-118-canais-topicos-forum.md) | Planned |
+| B-118 | B/C/D | Modo de canal por tópicos/fórum | B-089, B-102 | [B-118](../product/specs/B-118-canais-topicos-forum.md) | **Done** — layout explícito, conversa própria, follow/inbox, flag off; ADR-031 |
 
 ### Critérios de saída
 

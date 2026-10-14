@@ -127,6 +127,42 @@ internal static class InboxEndpoints
         }
 
         var now = clock.UtcNow;
+        if (kind == InboxItemKind.Topic)
+        {
+            if (item.TopicId is null || item.Sequence is null)
+            {
+                return Results.NotFound(new { error = "InboxItemNotFound" });
+            }
+
+            var parent = await RequestAuth.ResolveChannelAsync(new ChannelId(item.ChannelId), gate.UserId, db, tenant, ct);
+            if (parent is null)
+            {
+                return Results.NotFound(new { error = "InboxItemNotFound" });
+            }
+
+            var conversationId = new ChannelId(item.TopicId.Value);
+            var target = markUnread ? Math.Max(0, item.Sequence.Value - 1) : item.Sequence.Value;
+            var topicCursor = await db.ReadCursors.FirstOrDefaultAsync(
+                row => row.ChannelId == conversationId && row.UserId == gate.UserId, ct);
+            if (topicCursor is null)
+            {
+                topicCursor = new ReadCursor
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = parent.TenantId,
+                    ChannelId = conversationId,
+                    UserId = gate.UserId,
+                };
+                db.ReadCursors.Add(topicCursor);
+            }
+
+            topicCursor.LastReadSequence = markUnread ? target : Math.Max(topicCursor.LastReadSequence, target);
+            topicCursor.UpdatedAt = now;
+            await db.SaveChangesAsync(ct);
+            return Results.Ok(new InboxReadResponse(
+                item.ItemKey, InboxPolicies.Token(kind), item.ChannelId, item.TopicId, topicCursor.LastReadSequence));
+        }
+
         if (kind == InboxItemKind.Thread)
         {
             if (item.ThreadId is null || item.Sequence is null)
@@ -323,12 +359,13 @@ internal static class InboxEndpoints
             item.MessageRemoved,
             item.SortAt,
             item.SnoozedUntil,
-            new InboxNavigationResponse(item.ChannelId, item.MessageId, item.ThreadId, item.Sequence))).ToArray();
+            new InboxNavigationResponse(item.ChannelId, item.MessageId, item.ThreadId, item.Sequence, item.TopicId),
+            item.TopicId)).ToArray();
         var counts = page.Counts;
         return new InboxPageResponse(
             items,
             page.NextCursor,
-            new InboxCountsResponse(counts.Announcement, counts.Mention, counts.Direct, counts.Thread, counts.Saved, counts.Total));
+            new InboxCountsResponse(counts.Announcement, counts.Mention, counts.Direct, counts.Thread, counts.Saved, counts.Topic, counts.Total));
     }
 
     private readonly record struct WorkspaceGate(

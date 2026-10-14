@@ -197,7 +197,7 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 
 | Faixa | Tema | Estado |
 |-------|------|--------|
-| B-112…B-118, B-166, B-185 | Organização, onboarding, contatos, personalização visual, inbox e tópicos | Planned — W11 (B-117, B-153, B-154 e B-167 Done) |
+| B-112…B-118, B-166, B-185 | Organização, onboarding, contatos, personalização visual, inbox e tópicos | Planned — W11 (B-117, B-118, B-153, B-154 e B-167 Done). B-118 Done: modo `Topics` |
 | B-117 | Inbox unificada | **Done** (W11) — menções, DMs, threads, anúncios e salvos; snooze pessoal; cursor canônico; [spec](../product/specs/B-117-inbox-unificada.md) |
 | B-153 | Importação assistida | **Done** (W11) — dry-run, staging, publish/rollback; [spec](../product/specs/B-153-migracao-importacao.md) |
 | B-154 | Diagnóstico e support bundle | **Done** (W11) — preflight, probes sintéticos, bundle sanitizado e repair allowlisted; [spec](../product/specs/B-154-diagnostico-support-bundle.md) |

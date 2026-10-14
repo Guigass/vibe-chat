@@ -115,7 +115,7 @@ Abstração técnica de ordenação e entrega:
 1. **TenantContext obrigatório** em todo handler de negócio
 2. **Autorização por membership** antes de mutar conversation
 3. **Edições/exclusões** geram novos eventos; soft-delete preferido na fase 1
-4. **Topics** são metadados de organização, não agregados de mensagens
+4. **Topics** (B-118) são metadados de organização (`channel_topics`), não agregados de mensagens. O `Id` do tópico é a conversa (`seq`, mensagens, read cursor). Thread continua ancorada numa mensagem. Canal `Stream` não muda de semântica.
 5. **AI** não possui aggregate próprio de chat; opera sobre projeções autorizadas
 6. **Estado, outbox, audit e projeções** seguem contratos distintos em
    [`estado-eventos-auditoria-projecoes.md`](estado-eventos-auditoria-projecoes.md)

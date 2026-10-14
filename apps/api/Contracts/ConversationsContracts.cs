@@ -10,7 +10,9 @@ public sealed record ChannelResponse(
     int? ParticipantCount = null,
     string[]? ParticipantNames = null,
     Guid[]? ParticipantUserIds = null,
-    bool HasGuests = false);
+    bool HasGuests = false,
+    string Layout = "Stream");
+public sealed record CreateChannelRequest(string Name, string Type, Guid? SpaceId = null, string? Layout = null);
 public sealed record ChannelMemberResponse(
     Guid UserId,
     string DisplayName,
@@ -29,7 +31,6 @@ public sealed record AddChannelMemberRequest(Guid UserId);
 public sealed record UpdateChannelTopicRequest(string Topic);
 public sealed record OpenDirectMessageRequest(Guid UserId);
 public sealed record CreateSpaceRequest(string Name, int? Order = null);
-public sealed record CreateChannelRequest(string Name, string Type, Guid? SpaceId = null);
 public sealed record ThreadResponse(
     Guid Id,
     Guid ChannelId,

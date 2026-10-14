@@ -95,8 +95,12 @@ public sealed class PostgresSearchQuery(VibeChatDbContext dbContext) : ISearchQu
             from thread in dbContext.MessageThreads.AsNoTracking()
                 .Where(t => message.ThreadId != null && t.Id == message.ThreadId.Value)
                 .DefaultIfEmpty()
+            let topicChannelId = dbContext.ChannelTopics.AsNoTracking()
+                .Where(t => message.ThreadId == null && t.ConversationId == message.ConversationId)
+                .Select(t => (ChannelId?)t.ChannelId)
+                .FirstOrDefault()
             join channel in dbContext.Channels.AsNoTracking()
-                on (thread != null ? thread.ChannelId : message.ConversationId) equals channel.Id
+                on (thread != null ? thread.ChannelId : topicChannelId ?? message.ConversationId) equals channel.Id
             where message.TenantId == query.TenantId
                 && channel.TenantId == query.TenantId
                 && channel.WorkspaceId == query.WorkspaceId
@@ -392,8 +396,12 @@ public sealed class PostgresSearchQuery(VibeChatDbContext dbContext) : ISearchQu
             from thread in dbContext.MessageThreads.AsNoTracking()
                 .Where(t => message.ThreadId != null && t.Id == message.ThreadId.Value)
                 .DefaultIfEmpty()
+            let topicChannelId = dbContext.ChannelTopics.AsNoTracking()
+                .Where(t => message.ThreadId == null && t.ConversationId == message.ConversationId)
+                .Select(t => (ChannelId?)t.ChannelId)
+                .FirstOrDefault()
             join channel in dbContext.Channels.AsNoTracking()
-                on (thread != null ? thread.ChannelId : message.ConversationId) equals channel.Id
+                on (thread != null ? thread.ChannelId : topicChannelId ?? message.ConversationId) equals channel.Id
             where attachment.TenantId == query.TenantId
                 && attachment.Status == AttachmentStatus.Ready
                 && attachment.MessageId != null

@@ -24,7 +24,7 @@ organiza. Estados:
 | Histórico de edição/movimentação | Planned | B-114 / W11 |
 | Migração/importação assistida | Done | B-153 / W11 |
 | Inbox unificada e prioridade | Done | B-117 / W11 |
-| Tópicos/fórum como modo de canal | Planned | B-118 / W11 |
+| Tópicos/fórum como modo de canal | Done | B-118 / W11 / ADR-031 |
 | Voz/vídeo/screen share | Planned | B-147/B-148 / W17 |
 
 ## Conhecimento e foco

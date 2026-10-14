@@ -68,7 +68,8 @@ internal static class ConversationsEndpoints
                     group.Count == 0 ? null : group.Count,
                     group.Names is { Length: > 0 } ? group.Names : null,
                     group.UserIds is { Length: > 0 } ? group.UserIds : null,
-                    guestChannelIds.Contains(x.Id));
+                    guestChannelIds.Contains(x.Id),
+                    x.Layout.ToString());
             }).ToArray();
             return Results.Ok(response);
         });
@@ -229,7 +230,25 @@ internal static class ConversationsEndpoints
                 spaceId = space.Id;
             }
 
+            if (!TopicPolicies.TryParseLayout(request.Layout, out var layout))
+            {
+                return Results.BadRequest(new { error = "InvalidChannelLayout" });
+            }
+
+            if (layout == ChannelLayout.Topics)
+            {
+                var topics = http.RequestServices.GetRequiredService<Microsoft.Extensions.Options.IOptions<TopicChannelOptions>>().Value;
+                if (!topics.Enabled)
+                {
+                    return Results.NotFound(new { error = "TopicsDisabled" });
+                }
+            }
+
             var channelType = Enum.TryParse<ChannelType>(request.Type, true, out var type) ? type : ChannelType.Public;
+            if (layout == ChannelLayout.Topics && channelType is not (ChannelType.Public or ChannelType.Private))
+            {
+                return Results.BadRequest(new { error = "InvalidTopicChannel" });
+            }
             if (channelType == ChannelType.Announcement
                 && !await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Announcement.Publish, ct))
             {
@@ -244,6 +263,7 @@ internal static class ConversationsEndpoints
                 SpaceId = spaceId,
                 Name = name,
                 Type = channelType,
+                Layout = layout,
                 CreatedAt = clock.UtcNow,
                 CreatedBy = profile.Id
             };
@@ -275,7 +295,7 @@ internal static class ConversationsEndpoints
             await db.SaveChangesAsync(ct);
             return Results.Created(
                 $"/api/v1/channels/{channel.Id.Value}",
-                new ChannelResponse(channel.Id.Value, channel.WorkspaceId.Value, channel.Name, channel.Type.ToString(), null, null, channel.SpaceId, channel.Topic));
+                new ChannelResponse(channel.Id.Value, channel.WorkspaceId.Value, channel.Name, channel.Type.ToString(), null, null, channel.SpaceId, channel.Topic, Layout: channel.Layout.ToString()));
         }).RequirePermission(Permissions.Channel.Create);
 
         v1.MapPut("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/topic", async (
@@ -321,7 +341,8 @@ internal static class ConversationsEndpoints
                 channel.Name,
                 channel.Type.ToString(),
                 SpaceId: channel.SpaceId,
-                Topic: channel.Topic));
+                Topic: channel.Topic,
+                Layout: channel.Layout.ToString()));
         }).RequirePermission(Permissions.Channel.Create);
     }
 

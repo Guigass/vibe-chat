@@ -153,7 +153,8 @@ public static class RolePermissionCatalog
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
         Permissions.Admin.Dashboard, Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe,
-        Permissions.Announcement.Publish, Permissions.Announcement.Acknowledge
+        Permissions.Announcement.Publish, Permissions.Announcement.Acknowledge,
+        Permissions.Conversation.TopicCreate, Permissions.Conversation.TopicManage
     ];
 
     private static readonly HashSet<string> ModeratorPermissions =
@@ -163,7 +164,8 @@ public static class RolePermissionCatalog
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
         Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe,
-        Permissions.Announcement.Publish, Permissions.Announcement.Acknowledge
+        Permissions.Announcement.Publish, Permissions.Announcement.Acknowledge,
+        Permissions.Conversation.TopicCreate, Permissions.Conversation.TopicManage
     ];
 
     private static readonly HashSet<string> AuditorPermissions =
@@ -180,7 +182,8 @@ public static class RolePermissionCatalog
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
         Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe,
-        Permissions.Announcement.Acknowledge
+        Permissions.Announcement.Acknowledge,
+        Permissions.Conversation.TopicCreate
     ];
 
     private static readonly HashSet<string> GuestPermissions =
@@ -188,7 +191,8 @@ public static class RolePermissionCatalog
         Permissions.Channel.Read,
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React,
         Permissions.Files.Upload, Permissions.Files.Download,
-        Permissions.Announcement.Acknowledge
+        Permissions.Announcement.Acknowledge,
+        Permissions.Conversation.TopicCreate
     ];
 
     private static readonly HashSet<string> BotPermissions =
@@ -197,7 +201,8 @@ public static class RolePermissionCatalog
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.Pin,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
-        Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe
+        Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe,
+        Permissions.Conversation.TopicCreate
     ];
 }
 

@@ -15,6 +15,7 @@ public enum InboxItemKind
     Direct = 3,
     Thread = 4,
     Saved = 5,
+    Topic = 6,
 }
 
 public enum InboxStateFilter
@@ -49,7 +50,8 @@ public sealed record InboxCandidate(
     string BodyPreview,
     bool MessageRemoved,
     DateTimeOffset SortAt,
-    DateTimeOffset? SnoozedUntil)
+    DateTimeOffset? SnoozedUntil,
+    Guid? TopicId = null)
 {
     public string ItemKey => InboxPolicies.ItemKey(Kind, SourceId);
 
@@ -76,6 +78,7 @@ public static class InboxPolicies
         InboxItemKind.Direct => "dm",
         InboxItemKind.Thread => "thread",
         InboxItemKind.Saved => "saved",
+        InboxItemKind.Topic => "topic",
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 
@@ -86,6 +89,7 @@ public static class InboxPolicies
         InboxItemKind.Direct => "unread_dm",
         InboxItemKind.Thread => "followed_thread",
         InboxItemKind.Saved => "saved",
+        InboxItemKind.Topic => "followed_topic",
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 
@@ -108,6 +112,9 @@ public static class InboxPolicies
                 return true;
             case "saved":
                 kind = InboxItemKind.Saved;
+                return true;
+            case "topic":
+                kind = InboxItemKind.Topic;
                 return true;
             default:
                 kind = default;
@@ -169,7 +176,7 @@ public static class InboxPolicies
         until > now && until <= now.AddDays(MaxSnoozeDays);
 
     public static bool UsesReadCursor(InboxItemKind kind) =>
-        kind is InboxItemKind.Mention or InboxItemKind.Direct or InboxItemKind.Thread;
+        kind is InboxItemKind.Mention or InboxItemKind.Direct or InboxItemKind.Thread or InboxItemKind.Topic;
 
     public static string Preview(string? body)
     {
@@ -197,7 +204,7 @@ public static class InboxPolicies
         var bestByMessage = new Dictionary<Guid, InboxCandidate>();
         foreach (var item in items)
         {
-            if (item.Kind is InboxItemKind.Direct or InboxItemKind.Thread || item.MessageId is null)
+            if (item.Kind is InboxItemKind.Direct or InboxItemKind.Thread or InboxItemKind.Topic || item.MessageId is null)
             {
                 passthrough.Add(item);
                 continue;

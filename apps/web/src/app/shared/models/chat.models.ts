@@ -50,6 +50,7 @@ export interface Channel {
   participantNames?: string[];
   participantUserIds?: string[];
   hasGuests?: boolean;
+  layout?: 'Stream' | 'Topics';
 }
 
 /** B-109 admin bot. `token` is present only on create/rotate. */

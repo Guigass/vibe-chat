@@ -6,17 +6,19 @@ export interface InboxNavigation {
   messageId?: string | null;
   threadId?: string | null;
   sequence?: number | null;
+  topicId?: string | null;
 }
 
 export interface InboxItem {
   itemKey: string;
-  kind: 'announcement' | 'mention' | 'dm' | 'thread' | 'saved';
+  kind: 'announcement' | 'mention' | 'dm' | 'thread' | 'saved' | 'topic';
   priority: number;
-  reason: 'pending_ack' | 'mention' | 'unread_dm' | 'followed_thread' | 'saved';
+  reason: 'pending_ack' | 'mention' | 'unread_dm' | 'followed_thread' | 'saved' | 'followed_topic';
   channelId: string;
   channelName: string;
   messageId?: string | null;
   threadId?: string | null;
+  topicId?: string | null;
   sequence?: number | null;
   bodyPreview: string;
   messageRemoved: boolean;

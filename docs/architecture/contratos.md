@@ -417,6 +417,24 @@ O único estado novo é o snooze pessoal.
 
 Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out SignalR continua no grupo do **canal pai**, com `threadId` / `conversationId` / `parentMessageId` (âncora da thread) no payload.
 
+### Tópicos de canal (B-118 / ADR-031)
+
+Modo explícito. `ChannelResponse.layout` é `Stream` (default) ou `Topics`. Criar com `layout: "Topics"` exige `Conversations:Topics:Enabled`; senão **404** `TopicsDisabled`. Canal `Stream` não muda. Postar na raiz de um canal `Topics` → **400** `TopicRequired`.
+
+| Endpoint | Notas |
+|----------|-------|
+| `GET /api/v1/channels/{channelId}/topics` | `filter=recent\|open\|closed\|unread`, `tag`, `cursor`, `limit`. Membership do canal. `{ items, nextCursor, canManage }` |
+| `POST /api/v1/channels/{channelId}/topics` | `{ title, idempotencyKey, tags? }`. `conversation.topic.create`. Cria a conversa do tópico e segue o autor. **201** |
+| `GET /api/v1/topics/{topicId}` | Metadado. Sem acesso ao canal pai → **403**. Outro tenant → **404** |
+| `PUT /api/v1/topics/{topicId}` | `{ title, idempotencyKey }`. Autor ou `conversation.topic.manage`. Slug estável |
+| `POST /api/v1/topics/{topicId}/close` e `/reopen` | `{ idempotencyKey }`. `conversation.topic.manage` |
+| `POST /api/v1/topics/{topicId}/move` | `{ channelId, idempotencyKey }`. Destino no mesmo workspace, layout `Topics`, manage nos dois. ACL passa a ser a do destino |
+| `POST` / `DELETE /api/v1/topics/{topicId}/subscription` | Seguir. Não lidas usam o read cursor da conversa do tópico |
+| `PUT /api/v1/topics/{topicId}/read-cursor` | Mesmo corpo do cursor de canal, no id do tópico |
+| `GET` / `POST /api/v1/topics/{topicId}/messages` | Seq independente. Post exige `message.send`. Fechado sem manage → **403** `TopicClosed` |
+
+Inbox: kind `topic` (prioridade depois de `saved`). `topicId` na navegação. Eventos de outbox `topic.created`, `topic.renamed`, `topic.closed`, `topic.reopened`, `topic.moved`, `topic.followed`.
+
 ### Directory — spaces, channels, members & DMs
 
 | Endpoint | Notas |
@@ -448,7 +466,7 @@ Replies usam `ConversationId = ThreadId` (seq separado do canal). Fan-out Signal
 | `DELETE /api/v1/channels/{channelId}/participants/me` | Sai da GroupDm; `LeftAt`/`LeftSeq`; 403 no history e no hub dali em diante |
 | `PATCH /api/v1/channels/{channelId}` | Body `{ name? }`; renomeia Title da GroupDm (só participante) |
 
-`ChannelResponse` inclui `spaceId?`, `topic?`, `hasGuests?` e, para DMs, `peerUserId` / `peerDisplayName`. GroupDm inclui `participantCount?`, `participantNames?`, `participantUserIds?`; `name` é o Title ou os nomes dos outros participantes. Channels `Private`/`Direct`/`Group`/`GroupDm` só aparecem na listagem para membros do canal. Guest (B-040) vê **somente** o canal do convite. Spaces agrupam channels na UI; DMs (1:1 e grupo) ficam fora de spaces. History de GroupDm filtra `seq > JoinedSeq`.
+`ChannelResponse` inclui `spaceId?`, `topic?`, `hasGuests?`, `layout` (`Stream` \| `Topics`) e, para DMs, `peerUserId` / `peerDisplayName`. GroupDm inclui `participantCount?`, `participantNames?`, `participantUserIds?`; `name` é o Title ou os nomes dos outros participantes. Channels `Private`/`Direct`/`Group`/`GroupDm` só aparecem na listagem para membros do canal. Guest (B-040) vê **somente** o canal do convite. Spaces agrupam channels na UI; DMs (1:1 e grupo) ficam fora de spaces. History de GroupDm filtra `seq > JoinedSeq`.
 
 | Endpoint | Notas |
 |----------|-------|

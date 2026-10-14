@@ -35,6 +35,8 @@ public sealed class Channel : AggregateRoot
     /// <summary>Normalized sorted participant set for GroupDm get-or-create.</summary>
     public string? ParticipantSetKey { get; set; }
     public ChannelType Type { get; set; }
+    /// <summary>Stream (default) or explicit forum mode (B-118). Never inferred.</summary>
+    public ChannelLayout Layout { get; set; } = ChannelLayout.Stream;
     public DateTimeOffset CreatedAt { get; set; }
     public UserId CreatedBy { get; set; }
 }

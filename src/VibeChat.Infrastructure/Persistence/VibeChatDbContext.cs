@@ -94,6 +94,8 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<ScheduledMessage> ScheduledMessages => Set<ScheduledMessage>();
     public DbSet<Reminder> Reminders => Set<Reminder>();
     public DbSet<ThreadSubscription> ThreadSubscriptions => Set<ThreadSubscription>();
+    public DbSet<ChannelTopic> ChannelTopics => Set<ChannelTopic>();
+    public DbSet<TopicSubscription> TopicSubscriptions => Set<TopicSubscription>();
     public DbSet<Poll> Polls => Set<Poll>();
     public DbSet<PollOption> PollOptions => Set<PollOption>();
     public DbSet<PollVote> PollVotes => Set<PollVote>();
@@ -362,6 +364,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
             entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
             entity.Property(x => x.Type).HasConversion<string>().HasMaxLength(32);
+            entity.Property(x => x.Layout).HasConversion<string>().HasMaxLength(16).HasDefaultValue(ChannelLayout.Stream);
             entity.Property(x => x.Name).HasMaxLength(120);
             entity.Property(x => x.Topic).HasMaxLength(250);
             entity.Property(x => x.Title).HasMaxLength(80);
@@ -371,6 +374,38 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
                 .IsUnique()
                 .HasFilter("\"ParticipantSetKey\" IS NOT NULL");
             entity.HasIndex(x => x.SpaceId);
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ChannelTopic>(entity =>
+        {
+            entity.ToTable("channel_topics", "conversations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.ConversationId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.ClosedBy).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new UserId(v.Value) : null);
+            entity.Property(x => x.MovedFromChannelId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new ChannelId(v.Value) : null);
+            entity.Property(x => x.Title).HasMaxLength(TopicPolicies.MaxTitleLength);
+            entity.Property(x => x.Slug).HasMaxLength(TopicPolicies.MaxSlugLength);
+            entity.Property(x => x.Tags).HasMaxLength(320);
+            entity.Property(x => x.ParticipantIds).HasMaxLength(400);
+            entity.Property(x => x.State).HasConversion<string>().HasMaxLength(16);
+            entity.HasIndex(x => new { x.TenantId, x.ChannelId, x.Slug }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.ChannelId, x.LastActivityAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<TopicSubscription>(entity =>
+        {
+            entity.ToTable("topic_subscriptions", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.HasIndex(x => new { x.TenantId, x.UserId, x.TopicId }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

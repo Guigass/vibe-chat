@@ -84,6 +84,11 @@ public static class AuditActions
     public const string ImportExecute = "import.execute";
     public const string ImportPublish = "import.publish";
     public const string ImportRollback = "import.rollback";
+    public const string TopicCreate = "topic.create";
+    public const string TopicRename = "topic.rename";
+    public const string TopicClose = "topic.close";
+    public const string TopicReopen = "topic.reopen";
+    public const string TopicMove = "topic.move";
 }
 
 public interface IAuditWriter

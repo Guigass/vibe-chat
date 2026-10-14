@@ -27,6 +27,7 @@ import { IconButton } from '../../../shared/ui';
           <option value="mention">{{ ui.inboxKindMention }}</option>
           <option value="dm">{{ ui.inboxKindDm }}</option>
           <option value="thread">{{ ui.inboxKindThread }}</option>
+          <option value="topic">{{ ui.inboxKindTopic }}</option>
           <option value="saved">{{ ui.inboxKindSaved }}</option>
         </select>
         <select [value]="inbox.stateFilter()" (change)="onState($event)" [attr.aria-label]="ui.inboxStateOpen">
@@ -177,13 +178,15 @@ export class InboxPanel {
         return ui.inboxReasonUnreadDm;
       case 'followed_thread':
         return ui.inboxReasonFollowedThread;
+      case 'followed_topic':
+        return ui.inboxReasonFollowedTopic;
       default:
         return ui.inboxReasonSaved;
     }
   }
 
   canRead(item: InboxItem): boolean {
-    return item.kind === 'mention' || item.kind === 'dm' || item.kind === 'thread';
+    return item.kind === 'mention' || item.kind === 'dm' || item.kind === 'thread' || item.kind === 'topic';
   }
 
   onType(event: Event): void {

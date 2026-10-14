@@ -133,7 +133,8 @@ export async function openUserSession(
 }
 
 export async function selectChannelGeral(page: Page): Promise<void> {
-  const channel = page.getByText(/^#?\s*geral$/i).first();
+  // The space label is also "Geral". The channel control is the name inside the item.
+  const channel = page.locator('.vc-channel__name', { hasText: /^geral$/i }).first();
   if (await channel.isVisible().catch(() => false)) {
     await channel.click().catch(() => undefined);
   }

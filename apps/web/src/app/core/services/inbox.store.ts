@@ -10,6 +10,7 @@ import { NotificationPreferencesStore } from './notification-preferences.store';
 import { PinStore } from './pin.store';
 import { SavedStore } from './saved.store';
 import { ThreadStore } from './thread.store';
+import { TopicStore } from './topic.store';
 
 @Injectable({ providedIn: 'root' })
 export class InboxStore {
@@ -17,6 +18,7 @@ export class InboxStore {
   private readonly channels = inject(ChannelStore);
   private readonly messages = inject(MessageStore);
   private readonly threads = inject(ThreadStore);
+  private readonly topics = inject(TopicStore);
   private readonly saved = inject(SavedStore);
   private readonly pins = inject(PinStore);
   private readonly followed = inject(FollowedThreadsStore);
@@ -122,6 +124,14 @@ export class InboxStore {
     if (item.kind === 'thread' && item.threadId) {
       await this.channels.selectChannel(channelId);
       await this.threads.openById(item.threadId);
+      this.closePanel();
+      return;
+    }
+
+    const topicId = item.topicId ?? item.navigation?.topicId;
+    if (item.kind === 'topic' && topicId) {
+      this.topics.requestOpen(topicId);
+      await this.channels.selectChannel(channelId);
       this.closePanel();
       return;
     }

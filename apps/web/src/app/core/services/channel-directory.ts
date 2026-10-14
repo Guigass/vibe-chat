@@ -50,6 +50,21 @@ export async function reloadWorkspaceMembers(deps: ChannelDirectoryDeps): Promis
   deps.setContactSections(withoutSelfContacts(sections, deps.profileId()));
 }
 
+/**
+ * A topics channel that sorts first must not replace the stream home.
+ * With only stream channels, the first row stays the landing channel.
+ */
+export function landingChannel(channels: readonly Channel[]): Channel | undefined {
+  const first = channels[0];
+  if (!first || first.layout !== 'Topics') {
+    return first;
+  }
+
+  return (
+    channels.find((channel) => channel.layout !== 'Topics' && !channel.isDirect && !channel.isGroupDm) ?? first
+  );
+}
+
 export async function selectWorkspaceDirectory(
   deps: ChannelDirectoryDeps,
   workspaceId: string,
@@ -81,8 +96,8 @@ export async function selectWorkspaceDirectory(
       deps.setPresence(presence);
       deps.joinAllChannels();
     }
-    const first = deps.channels()[0];
-    if (first) deps.selectChannel(first.id);
+    const home = landingChannel(deps.channels());
+    if (home) deps.selectChannel(home.id);
     else deps.setActiveChannel(null);
   } catch (err) {
     deps.setError(err instanceof Error ? err.message : ui.errorLoadChannels);
@@ -129,14 +144,16 @@ export async function createChannelDirectory(
     spaceId = space?.id ?? null;
   }
 
+  const forum = (input.type ?? '').toLowerCase() === 'topics';
   if (deps.isDemo() || deps.isOfflineDemo()) {
     const channel: Channel = {
       id: `ch-${crypto.randomUUID()}`,
       workspaceId: workspace.id,
       name: trimmed,
       unreadCount: 0,
-      type: (input.type ?? 'public').toLowerCase(),
-      isPrivate: (input.type ?? 'public').toLowerCase() === 'private',
+      type: forum ? 'public' : (input.type ?? 'public').toLowerCase(),
+      isPrivate: !forum && (input.type ?? 'public').toLowerCase() === 'private',
+      layout: forum ? 'Topics' : 'Stream',
       spaceId,
     };
     deps.updateChannels((list) => [...list, channel]);
@@ -146,8 +163,9 @@ export async function createChannelDirectory(
 
   const channel = await deps.api.createChannel(workspace.id, {
     name: trimmed,
-    type: input.type ?? 'Public',
+    type: forum ? 'Public' : (input.type ?? 'Public'),
     spaceId,
+    layout: forum ? 'Topics' : null,
   });
   deps.updateChannels((list) => [...list, channel]);
   deps.joinChannel(channel.id);

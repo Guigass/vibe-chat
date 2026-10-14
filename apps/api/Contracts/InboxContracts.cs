@@ -1,4 +1,4 @@
-public sealed record InboxNavigationResponse(Guid ChannelId, Guid? MessageId, Guid? ThreadId, long? Sequence);
+public sealed record InboxNavigationResponse(Guid ChannelId, Guid? MessageId, Guid? ThreadId, long? Sequence, Guid? TopicId = null);
 
 public sealed record InboxItemResponse(
     string ItemKey,
@@ -14,9 +14,10 @@ public sealed record InboxItemResponse(
     bool MessageRemoved,
     DateTimeOffset SortAt,
     DateTimeOffset? SnoozedUntil,
-    InboxNavigationResponse Navigation);
+    InboxNavigationResponse Navigation,
+    Guid? TopicId = null);
 
-public sealed record InboxCountsResponse(int Announcement, int Mention, int Direct, int Thread, int Saved, int Total);
+public sealed record InboxCountsResponse(int Announcement, int Mention, int Direct, int Thread, int Saved, int Topic, int Total);
 
 public sealed record InboxPageResponse(InboxItemResponse[] Items, string? NextCursor, InboxCountsResponse Counts);
 

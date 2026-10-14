@@ -557,8 +557,12 @@
       @if (fileDragActive()) {
         <div class="shell__drop-overlay" aria-hidden="true">{{ ui.dropToAttach }}</div>
       }
-      <vc-timeline />
-      <vc-composer />
+      @if (channels.activeChannel()?.layout === 'Topics') {
+        <vc-topic-board />
+      } @else {
+        <vc-timeline />
+        <vc-composer />
+      }
     </main>
   </div>
 

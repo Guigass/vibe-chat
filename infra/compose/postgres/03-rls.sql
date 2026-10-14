@@ -65,6 +65,8 @@ ALTER TABLE IF EXISTS conversations.channels ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS conversations.channels FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS conversations.channel_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS conversations.channel_members FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.channel_topics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.channel_topics FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.messages FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.threads ENABLE ROW LEVEL SECURITY;
@@ -318,6 +320,8 @@ ALTER TABLE IF EXISTS messaging.inbox_snoozes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.inbox_snoozes FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.thread_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.thread_subscriptions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.topic_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.topic_subscriptions FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.polls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.polls FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.poll_options ENABLE ROW LEVEL SECURITY;
@@ -341,6 +345,16 @@ CREATE POLICY tenant_isolation_inbox_snoozes ON messaging.inbox_snoozes
 
 DROP POLICY IF EXISTS tenant_isolation_thread_subscriptions ON messaging.thread_subscriptions;
 CREATE POLICY tenant_isolation_thread_subscriptions ON messaging.thread_subscriptions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_channel_topics ON conversations.channel_topics;
+CREATE POLICY tenant_isolation_channel_topics ON conversations.channel_topics
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_topic_subscriptions ON messaging.topic_subscriptions;
+CREATE POLICY tenant_isolation_topic_subscriptions ON messaging.topic_subscriptions
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
