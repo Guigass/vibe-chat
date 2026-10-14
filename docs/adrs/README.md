@@ -37,6 +37,7 @@ original.
 | [029](ADR-029-historico-edicao-movimentacao.md) | Histórico de edição e movimentação | Accepted |
 | [030](ADR-030-importacao-assistida.md) | Importação assistida de workspace | Accepted |
 | [031](ADR-031-canais-por-topicos.md) | Tópico reutiliza Conversation; thread permanece | Accepted |
+| [032](ADR-032-base-conhecimento.md) | Páginas de conhecimento server-authoritative | Accepted |
 
 ## Quando criar um ADR
 

@@ -2,6 +2,7 @@ import { Component, effect, inject, input, output } from '@angular/core';
 import { ui } from '../core/i18n/strings';
 import { ChannelStore } from '../core/services/channel.store';
 import { CommitmentStore } from '../core/services/commitment.store';
+import { KnowledgeStore } from '../core/services/knowledge.store';
 import { FollowedThreadsStore } from '../core/services/followed-threads.store';
 import { InboxStore } from '../core/services/inbox.store';
 import { NotificationPreferencesStore } from '../core/services/notification-preferences.store';
@@ -10,6 +11,7 @@ import { SavedStore } from '../core/services/saved.store';
 import { ThreadStore } from '../core/services/thread.store';
 import { ChannelMembersPanel } from '../features/chat/channel-members-panel/channel-members-panel';
 import { CommitmentPanel } from '../features/chat/commitment-panel/commitment-panel';
+import { KnowledgePanel } from '../features/chat/knowledge-panel/knowledge-panel';
 import { FollowedThreadsPanel } from '../features/chat/followed-threads-panel/followed-threads-panel';
 import { InboxPanel } from '../features/chat/inbox-panel/inbox-panel';
 import { NotificationPreferencesPanel } from '../features/chat/notification-preferences-panel/notification-preferences-panel';
@@ -29,6 +31,7 @@ import { ThreadPanel } from '../features/chat/thread-panel/thread-panel';
     PinsPanel,
     NotificationPreferencesPanel,
     CommitmentPanel,
+    KnowledgePanel,
   ],
   template: `
     @if (threads.open()) {
@@ -67,6 +70,10 @@ import { ThreadPanel } from '../features/chat/thread-panel/thread-panel';
       <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.commitmentPanel">
         <vc-commitment-panel />
       </aside>
+    } @else if (knowledge.panelOpen()) {
+      <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.knowledgePanel">
+        <vc-knowledge-panel />
+      </aside>
     } @else if (prefs.panelOpen()) {
       <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.settings">
         <vc-notification-preferences-panel />
@@ -87,12 +94,24 @@ export class ShellContext {
   readonly pins = inject(PinStore);
   readonly prefs = inject(NotificationPreferencesStore);
   readonly commitments = inject(CommitmentStore);
+  readonly knowledge = inject(KnowledgeStore);
   private readonly channels = inject(ChannelStore);
 
   constructor() {
     effect(() => {
       if (this.inbox.panelOpen() && this.membersOpen()) {
         this.membersClose.emit();
+      }
+      const otherOpen = this.threads.open()
+        || this.membersOpen()
+        || this.inbox.panelOpen()
+        || this.saved.panelOpen()
+        || this.followed.panelOpen()
+        || this.pins.panelOpen()
+        || this.commitments.panelOpen()
+        || this.prefs.panelOpen();
+      if (otherOpen && this.knowledge.panelOpen()) {
+        this.knowledge.closePanel();
       }
     });
   }

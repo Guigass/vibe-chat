@@ -78,7 +78,7 @@ por acidente.
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
 | B-119 | B/C/D | Decisões e action items vinculados à mensagem de origem | B-092, B-093 | [B-119](../product/specs/B-119-decisoes-action-items.md) | **Done** — referência curada, inbox do owner, ACL revalidada; sem cópia do body |
-| B-120 | B/C/D | Base de conhecimento leve, coleções e páginas curadas | B-119, D-17 | [B-120](../product/specs/B-120-base-conhecimento.md) | Planned |
+| B-120 | B/C/D | Base de conhecimento leve, coleções e páginas curadas | B-119, D-17 | [B-120](../product/specs/B-120-base-conhecimento.md) | **Done** — páginas server-authoritative, versão otimista, ACL e retenção; flag off; ADR-032 |
 | B-121 | B/C/D/E | Busca semântica/RAG com ACL, citações e opt-in | B-098, D-22 | [B-121](../product/specs/B-121-rag-busca-semantica.md) | Planned |
 | B-122 | C/D | Digests programados e catch-up por canal/time | B-117 | [B-122](../product/specs/B-122-digests-catch-up.md) | Planned |
 | B-123 | C/D | Tarefas pessoais/de time derivadas de mensagens | B-119 | [B-123](../product/specs/B-123-tarefas-mensagens.md) | Planned |

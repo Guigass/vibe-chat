@@ -347,6 +347,28 @@ CREATE POLICY tenant_isolation_commitment_changes ON messaging.commitment_change
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS knowledge.collections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS knowledge.collections FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS knowledge.pages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS knowledge.pages FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS knowledge.page_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS knowledge.page_versions FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_knowledge_collections ON knowledge.collections;
+CREATE POLICY tenant_isolation_knowledge_collections ON knowledge.collections
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_knowledge_pages ON knowledge.pages;
+CREATE POLICY tenant_isolation_knowledge_pages ON knowledge.pages
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_knowledge_page_versions ON knowledge.page_versions;
+CREATE POLICY tenant_isolation_knowledge_page_versions ON knowledge.page_versions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 DROP POLICY IF EXISTS tenant_isolation_saved_messages ON messaging.saved_messages;
 CREATE POLICY tenant_isolation_saved_messages ON messaging.saved_messages
     USING ("TenantId" = app.current_tenant_id())
@@ -657,7 +679,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'administration', 'import', 'support', 'app', 'public'
+      'identity', 'administration', 'import', 'support', 'knowledge', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, app_role);
@@ -678,7 +700,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'administration', 'import', 'support', 'app', 'public'
+      'identity', 'administration', 'import', 'support', 'knowledge', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, backup_role);

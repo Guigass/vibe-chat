@@ -247,6 +247,13 @@ public static class Permissions
         public const string TopicCreate = "conversation.topic.create";
         public const string TopicManage = "conversation.topic.manage";
     }
+
+    public static class Knowledge
+    {
+        public const string View = "knowledge.view";
+        public const string Edit = "knowledge.edit";
+        public const string Manage = "knowledge.manage";
+    }
 }
 
 public enum Role

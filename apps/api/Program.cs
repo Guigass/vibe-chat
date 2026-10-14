@@ -221,6 +221,7 @@ v1.MapSearch();
 v1.MapUnreadCount();
 v1.MapInbox();
 v1.MapCommitments();
+v1.MapKnowledge();
 v1.MapNotifications();
 v1.MapAdministration();
 v1.MapAI();

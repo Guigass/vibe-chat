@@ -93,6 +93,13 @@ public static class AuditActions
     public const string CommitmentUpdate = "commitment.update";
     public const string CommitmentClose = "commitment.close";
     public const string CommitmentReopen = "commitment.reopen";
+    public const string KnowledgeCollectionCreate = "knowledge.collection.create";
+    public const string KnowledgeCollectionDelete = "knowledge.collection.delete";
+    public const string KnowledgePageCreate = "knowledge.page.create";
+    public const string KnowledgePageUpdate = "knowledge.page.update";
+    public const string KnowledgePageDelete = "knowledge.page.delete";
+    public const string KnowledgePageRestore = "knowledge.page.restore";
+    public const string KnowledgeExport = "knowledge.export";
 }
 
 public interface IAuditWriter

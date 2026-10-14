@@ -98,7 +98,7 @@ ordem, métodos HTTP e metadata de autorização existentes antes da decomposiç
 | Identity | Users, external identity mappings, principals, devices e sessions |
 | Directory | Workspaces, spaces, memberships e papéis |
 | Conversations | Channels, DMs, threads e conversations |
-| Messaging | Messages, reactions, `seq`, idempotência e eventos |
+| Messaging | Messages, reactions, `seq`, idempotência, eventos e páginas de conhecimento (B-120) |
 | Files | Attachments e políticas de arquivo |
 | Search | Contratos e modelos da busca FTS |
 | Realtime | Hub, presence, typing e publicação |

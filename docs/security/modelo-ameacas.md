@@ -381,6 +381,10 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | Migração/import | Archive hostil, duplicação, papel falso e cross-tenant | B-153; staging, dry-run, adapters versionados, quarentena local e quotas |
 | Backup de chat / destinos | Credencial de destino vazada; exfiltração; import hostil; confusão com dump de infra | B-172; flag off default, secrets mascarados, dry-run, audit, destinos OSS |
 
+## Base de conhecimento (B-120)
+
+Superfície implementada, R3. A ameaça principal é página ou versão sobreviver fora da ACL, HTML no Markdown virar XSS, ou uma referência revogada continuar mostrando título. O controle é: flag off por default; RLS `FORCE` em `knowledge.collections`, `knowledge.pages` e `knowledge.page_versions`; busca e export filtram a coleção na leitura; canal privado exige membership atual; body rejeita tag HTML e schemes `javascript:`/`data:`/`vbscript:`; referência inacessível volta `redacted` sem label; outbox sem título nem body; conflito de versão não grava.
+
 ## Decisões e action items (B-119)
 
 Superfície implementada, R2. A ameaça principal é uma segunda cópia do body sobreviver a delete/purge ou a ACL revogada. O controle é: persistir só campos curados + hash de excerpt; revalidar leitura do canal em toda lista; visibilidade `restricted` limitada a criador e owner; RLS `FORCE` em `messaging.commitments` e `messaging.commitment_changes`; eventos de outbox sem título nem body.

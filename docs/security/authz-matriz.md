@@ -98,6 +98,19 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/workspaces/{workspaceId:guid}/commitments/{commitmentId:guid}/close` | permission | `message.read` | ✓ | ✓ | ✓ | B-119; audit `commitment.close` |
 | POST | `/workspaces/{workspaceId:guid}/commitments/{commitmentId:guid}/reopen` | permission | `message.read` | ✓ | ✓ | ✓ | B-119; audit `commitment.reopen` |
 | GET | `/workspaces/{workspaceId:guid}/commitments/{commitmentId:guid}/history` | permission | `message.read` | ✓ | ✓ | ✓ | B-119; histórico sem body |
+| GET | `/workspaces/{workspaceId:guid}/knowledge/collections` | permission | `knowledge.view` | ✓ | ✓ | ✓ | B-120; canal privado some sem membership |
+| POST | `/workspaces/{workspaceId:guid}/knowledge/collections` | permission | `knowledge.edit` | ✓ | ✗ | ✓ | B-120; flag off → 404 |
+| DELETE | `/workspaces/{workspaceId:guid}/knowledge/collections/{collectionId:guid}` | permission | `knowledge.manage` | ✗ | ✗ | ✓ | B-120 |
+| GET | `/workspaces/{workspaceId:guid}/knowledge/pages` | permission | `knowledge.view` | ✓ | ✓ | ✓ | B-120 |
+| POST | `/workspaces/{workspaceId:guid}/knowledge/pages` | permission | `knowledge.edit` | ✓ | ✗ | ✓ | B-120 |
+| GET | `/workspaces/{workspaceId:guid}/knowledge/pages/{pageId:guid}` | permission | `knowledge.view` | ✓ | ✓ | ✓ | Fora da ACL → 404 sem body |
+| PATCH | `/workspaces/{workspaceId:guid}/knowledge/pages/{pageId:guid}` | permission | `knowledge.edit` | ✓ | ✗ | ✓ | Versão divergente → 409 |
+| DELETE | `/workspaces/{workspaceId:guid}/knowledge/pages/{pageId:guid}` | permission | `knowledge.manage` | ✗ | ✗ | ✓ | B-120 |
+| POST | `/workspaces/{workspaceId:guid}/knowledge/pages/{pageId:guid}/restore` | permission | `knowledge.manage` | ✗ | ✗ | ✓ | B-120 |
+| GET | `/workspaces/{workspaceId:guid}/knowledge/pages/{pageId:guid}/history` | permission | `knowledge.view` | ✓ | ✓ | ✓ | B-120 |
+| GET | `/workspaces/{workspaceId:guid}/knowledge/pages/{pageId:guid}/export` | permission | `knowledge.view` | ✓ | ✓ | ✓ | Inclui versões |
+| GET | `/workspaces/{workspaceId:guid}/knowledge/search` | permission | `knowledge.view` | ✓ | ✓ | ✓ | Não amplia ACL |
+| GET | `/workspaces/{workspaceId:guid}/knowledge/export` | permission | `knowledge.manage` | ✗ | ✗ | ✓ | Mesmo filtro de ACL |
 | POST | `/workspaces/{workspaceId:guid}/messages/{messageId:guid}/forward` | permission | `message.send` | ✓ | ✗ | ✓ | |
 | POST | `/channels/{channelId:guid}/messages/{messageId:guid}/threads` | permission | `message.send` | ✓ | ✗ | ✓ | Get-or-create + reply |
 | GET | `/threads/{threadId:guid}` | membership | — | ✓ | ✓ | ✓ | |

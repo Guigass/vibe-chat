@@ -47,6 +47,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Announcement / Anúncio** | Canal `Announcement` (B-112): só quem tem `announcement.publish` escreve; os demais leem. A mensagem continua `Message` + `seq`. Confirmação opcional até um prazo é leitura explícita, não assinatura legal. |
 | **Decision / Decisão** | Compromisso curado ligado a uma mensagem (`messaging.commitments`, kind `decision`). Guarda título, hash de excerpt e referência; não copia o body (B-119). |
 | **Action item** | Ação estruturada derivada de uma conversa e ligada à mensagem de origem (`kind=action_item`, B-119). Pode evoluir para tarefa (B-123), mas preserva evidência sem copiar o body. |
+| **Página de conhecimento** | Texto curado em Markdown restrito, dentro de uma coleção com escopo de workspace, space ou canal (`knowledge.pages`, B-120). Versionamento otimista e histórico append-only. Não copia o body da mensagem: a referência `[[…]]` é resolvida na leitura. |
 | **Digest / Catch-up** | Resumo periódico de atividade autorizada, com links para conversas de origem. |
 
 ## Tempo real e presença

@@ -95,6 +95,8 @@ public sealed class MessageRetentionPurgeProcessor(
                 MessageRetentionSettings.MinRetentionDays,
                 MessageRetentionSettings.MaxRetentionDays);
             var cutoff = now.AddDays(-days);
+            purgedTotal += await VibeChat.Infrastructure.Messaging.KnowledgeRetention.PurgeDeletedAsync(
+                db, policy.TenantId, cutoff, batchSize, now, cancellationToken);
 
             var candidates = await db.Messages.IgnoreQueryFilters()
                 .Where(x => x.TenantId == policy.TenantId

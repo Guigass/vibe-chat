@@ -40,11 +40,11 @@ redigida. Export respeita escopo/admin.
 
 ## Aceite
 
-- [ ] Conflito não sobrescreve silenciosamente.
-- [ ] Histórico restaura versão.
-- [ ] Busca respeita ACL.
-- [ ] Referência revogada é redigida.
-- [ ] Export/retention cobrem page e versões.
+- [x] Conflito não sobrescreve silenciosamente.
+- [x] Histórico restaura versão.
+- [x] Busca respeita ACL.
+- [x] Referência revogada é redigida.
+- [x] Export/retention cobrem page e versões.
 
 ## Testes
 
