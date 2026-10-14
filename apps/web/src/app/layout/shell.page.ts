@@ -27,8 +27,8 @@ import { ShellDialogs } from './shell-dialogs';
 import { MemberProfileStore } from '../core/services/member-profile.store';
 import { VisualPreferenceService } from '../core/services/visual-preference.service';
 import { ChannelList } from '../features/chat/channel-list/channel-list';
-import { Composer } from '../features/chat/composer/composer';
-import { Timeline } from '../features/chat/timeline/timeline';
+import { Composer } from '../features/chat/composer/composer'; import { Timeline } from '../features/chat/timeline/timeline';
+import { TopicBoard } from '../features/chat/topic-board/topic-board';
 import { ShellContext } from './shell-context';
 import { InboxStore } from '../core/services/inbox.store';
 import { SuggestReplyButton } from '../features/ai/suggest-reply-button';
@@ -87,8 +87,7 @@ import { pluralCount } from '../core/i18n/format';
     RouterLink,
     RouterLinkActive,
     ChannelList,
-    Timeline,
-    Composer,
+    Timeline, Composer, TopicBoard,
     ShellContext,
     SummarizeButton,
     SuggestReplyButton,
@@ -704,14 +703,14 @@ export class ShellPage implements OnInit, OnDestroy {
   }
 
   onFileDragEnter(event: DragEvent): void {
-    if (!this.hasFileDrag(event)) return;
+    if (!this.hasFileDrag(event) || this.channels.activeChannel()?.layout === 'Topics') return;
     event.preventDefault();
     this.fileDragDepth += 1;
     this.fileDragActive.set(true);
   }
 
   onFileDragOver(event: DragEvent): void {
-    if (!this.hasFileDrag(event)) return;
+    if (!this.hasFileDrag(event) || this.channels.activeChannel()?.layout === 'Topics') return;
     event.preventDefault();
     if (event.dataTransfer) {
       event.dataTransfer.dropEffect = 'copy';
@@ -719,7 +718,7 @@ export class ShellPage implements OnInit, OnDestroy {
   }
 
   onFileDragLeave(event: DragEvent): void {
-    if (!this.hasFileDrag(event)) return;
+    if (!this.hasFileDrag(event) || this.channels.activeChannel()?.layout === 'Topics') return;
     this.fileDragDepth = Math.max(0, this.fileDragDepth - 1);
     if (this.fileDragDepth === 0) {
       this.fileDragActive.set(false);
@@ -727,7 +726,7 @@ export class ShellPage implements OnInit, OnDestroy {
   }
 
   onFileDrop(event: DragEvent): void {
-    if (!this.hasFileDrag(event)) return;
+    if (!this.hasFileDrag(event) || this.channels.activeChannel()?.layout === 'Topics') return;
     event.preventDefault();
     this.fileDragDepth = 0;
     this.fileDragActive.set(false);

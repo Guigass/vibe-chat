@@ -14,6 +14,7 @@ public sealed class InboxPolicyTests
         InboxPolicies.Priority(InboxItemKind.Mention).Should().BeLessThan(InboxPolicies.Priority(InboxItemKind.Direct));
         InboxPolicies.Priority(InboxItemKind.Direct).Should().BeLessThan(InboxPolicies.Priority(InboxItemKind.Thread));
         InboxPolicies.Priority(InboxItemKind.Thread).Should().BeLessThan(InboxPolicies.Priority(InboxItemKind.Saved));
+        InboxPolicies.Priority(InboxItemKind.Saved).Should().BeLessThan(InboxPolicies.Priority(InboxItemKind.Topic));
     }
 
     [Fact]

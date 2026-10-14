@@ -645,7 +645,8 @@ public sealed record SendMessageCommand(
     IReadOnlyList<Guid>? AttachmentIds = null,
     bool AuthorIsBot = false,
     bool RequiresAcknowledgement = false,
-    DateTimeOffset? AcknowledgeBy = null);
+    DateTimeOffset? AcknowledgeBy = null,
+    Guid? TopicId = null);
 
 public sealed record MessageSendResult(MessageId MessageId, long Sequence, DateTimeOffset CreatedAt, bool Idempotent);
 

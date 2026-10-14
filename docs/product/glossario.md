@@ -21,6 +21,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Channel** | Canal de mensagens (público, privado ou DM). Unidade principal de conversa. Em privado, quem entra é `channel_members` (roster e add/remove em B-186); guest externo é B-040. |
 | **DM (Direct Message)** | Canal especial 1:1 (`Direct`) ou grupo pequeno (`GroupDm`, 3–9 participantes), sem Space obrigatório. Quem entra depois não lê o histórico anterior (`JoinedSeq`). |
 | **Thread** | Subconversa ancorada em uma mensagem pai dentro de um channel. |
+| **Tópico** | Conversa nomeada de um canal em modo `Topics` (B-118). Metadado com título, slug local, estado e tags; as mensagens reutilizam a conversa do tópico. Não substitui a thread. |
 | **Topic** | Assunto/etiqueta opcional associado a um channel ou thread (organização semântica; não substitui channel). |
 | **Conversation** | Abstração técnica que unifica channel ou thread para fins de sequência, outbox e entrega. Possui `conversation_id`. |
 

@@ -40,11 +40,11 @@ previews nunca vazam canal privado.
 
 ## Aceite
 
-- [ ] Dois tópicos têm `seq` independente.
-- [ ] Follow/unread integra com inbox.
-- [ ] Closed bloqueia post sem permissão.
-- [ ] ACL e search respeitam channel.
-- [ ] Canal normal permanece inalterado.
+- [x] Dois tópicos têm `seq` independente.
+- [x] Follow/unread integra com inbox.
+- [x] Closed bloqueia post sem permissão.
+- [x] ACL e search respeitam channel.
+- [x] Canal normal permanece inalterado.
 
 ## Testes
 

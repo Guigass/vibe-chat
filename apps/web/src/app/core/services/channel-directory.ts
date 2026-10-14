@@ -129,14 +129,16 @@ export async function createChannelDirectory(
     spaceId = space?.id ?? null;
   }
 
+  const forum = (input.type ?? '').toLowerCase() === 'topics';
   if (deps.isDemo() || deps.isOfflineDemo()) {
     const channel: Channel = {
       id: `ch-${crypto.randomUUID()}`,
       workspaceId: workspace.id,
       name: trimmed,
       unreadCount: 0,
-      type: (input.type ?? 'public').toLowerCase(),
-      isPrivate: (input.type ?? 'public').toLowerCase() === 'private',
+      type: forum ? 'public' : (input.type ?? 'public').toLowerCase(),
+      isPrivate: !forum && (input.type ?? 'public').toLowerCase() === 'private',
+      layout: forum ? 'Topics' : 'Stream',
       spaceId,
     };
     deps.updateChannels((list) => [...list, channel]);
@@ -146,8 +148,9 @@ export async function createChannelDirectory(
 
   const channel = await deps.api.createChannel(workspace.id, {
     name: trimmed,
-    type: input.type ?? 'Public',
+    type: forum ? 'Public' : (input.type ?? 'Public'),
     spaceId,
+    layout: forum ? 'Topics' : null,
   });
   deps.updateChannels((list) => [...list, channel]);
   deps.joinChannel(channel.id);

@@ -241,6 +241,12 @@ public static class Permissions
         public const string Publish = "announcement.publish";
         public const string Acknowledge = "announcement.acknowledge";
     }
+
+    public static class Conversation
+    {
+        public const string TopicCreate = "conversation.topic.create";
+        public const string TopicManage = "conversation.topic.manage";
+    }
 }
 
 public enum Role

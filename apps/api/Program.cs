@@ -211,6 +211,7 @@ v1.MapPolls();
 v1.MapAnnouncements();
 v1.MapMessages();
 v1.MapThreads();
+v1.MapChannelTopics();
 v1.MapFiles();
 v1.MapMessageActions();
 v1.MapMessageHistory();

@@ -346,6 +346,15 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 - Web Push do lembrete/falha respeita preferência, DND e ocultar prévia.
 - Retry do worker reusa a idempotency key do envio; cancelamento compete com o claim na linha `Pending`.
 
+### B-118 / ADR-031 — Canais por tópicos
+
+- O tópico herda a ACL do canal pai. Listar, ler, seguir e postar exigem o mesmo acesso que o canal. Canal privado sem membership → 403, sem título, tags ou preview.
+- RLS `FORCE` em `conversations.channel_topics` e `messaging.topic_subscriptions`. Tenant vem da sessão. Tópico de outro tenant não aparece (404), mesmo com o id.
+- Mover o tópico troca a ACL para o canal de destino. Quem saiu do canal de origem deixa de ler as mensagens, que continuam na conversa do tópico.
+- `conversation.topic.manage` é distinta de `message.send`. Tópico fechado recusa post de quem só tem create/send.
+- Busca resolve o canal pelo tópico (como pela thread) e reaplica a ACL do canal. Flag `Conversations:Topics:Enabled` off por default; desligada, não há gravação.
+- Audit e outbox levam ids e estado, sem título.
+
 ## O que está fora (por ora)
 
 - E2EE client-side (mensagens são legíveis ao servidor por design self-host)

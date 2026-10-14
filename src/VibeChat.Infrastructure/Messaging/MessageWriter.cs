@@ -58,6 +58,27 @@ public sealed class MessageWriter(
         var conversationId = command.ChannelId;
         Guid? threadId = command.ThreadId;
         Guid? threadParentMessageId = null;
+        ChannelTopic? topic = null;
+
+        if (command.TopicId is Guid topicId)
+        {
+            if (threadId is not null)
+            {
+                VibeChatMetrics.TopicsRejected.Add(1);
+                throw new InvalidOperationException("TopicRequired");
+            }
+
+            topic = await dbContext.ChannelTopics
+                .FirstOrDefaultAsync(x => x.Id == topicId && x.TenantId == command.TenantId, cancellationToken);
+            if (topic is null)
+            {
+                VibeChatMetrics.TopicsRejected.Add(1);
+                throw new InvalidOperationException("TopicNotFound");
+            }
+
+            parentChannelId = topic.ChannelId;
+            conversationId = new ChannelId(topic.Id);
+        }
 
         if (threadId is Guid resolvedThreadId)
         {
@@ -92,6 +113,28 @@ public sealed class MessageWriter(
         {
             VibeChatMetrics.MessagesRejected.Add(1);
             throw new UnauthorizedAccessException("User cannot send messages to this channel.");
+        }
+
+        if (topic is null && threadId is null && parentChannel.Layout == ChannelLayout.Topics)
+        {
+            VibeChatMetrics.TopicsRejected.Add(1);
+            throw new InvalidOperationException("TopicRequired");
+        }
+
+        if (topic is not null)
+        {
+            if (parentChannel.Layout != ChannelLayout.Topics || topic.ChannelId != parentChannel.Id)
+            {
+                VibeChatMetrics.TopicsRejected.Add(1);
+                throw new InvalidOperationException("InvalidTopicChannel");
+            }
+
+            if (topic.State == TopicState.Closed
+                && !await permissions.HasPermissionAsync(command.TenantId, command.UserId, Permissions.Conversation.TopicManage, cancellationToken))
+            {
+                VibeChatMetrics.TopicsRejected.Add(1);
+                throw new UnauthorizedAccessException("TopicClosed");
+            }
         }
 
         var announcementChannel = parentChannel.Type == ChannelType.Announcement;
@@ -222,6 +265,13 @@ public sealed class MessageWriter(
         };
 
         dbContext.Messages.Add(message);
+        if (topic is not null)
+        {
+            topic.LastActivityAt = now;
+            topic.ParticipantIds = TopicPolicies.RememberParticipant(topic.ParticipantIds, command.UserId.Value);
+            await AdvanceTopicReadCursorAsync(command.TenantId, conversationId, command.UserId, sequence, now, cancellationToken);
+        }
+
         foreach (var attachment in attachments)
         {
             attachment.MessageId = message.Id;
@@ -857,6 +907,37 @@ public sealed class MessageWriter(
         if (bumpLastReadSeqTo is long seq && seq > existing.LastReadSeq)
         {
             existing.LastReadSeq = seq;
+        }
+    }
+
+    private async Task AdvanceTopicReadCursorAsync(
+        TenantId tenantId,
+        ChannelId conversationId,
+        UserId userId,
+        long sequence,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var cursor = await dbContext.ReadCursors
+            .FirstOrDefaultAsync(x => x.ChannelId == conversationId && x.UserId == userId, cancellationToken);
+        if (cursor is null)
+        {
+            dbContext.ReadCursors.Add(new ReadCursor
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                ChannelId = conversationId,
+                UserId = userId,
+                LastReadSequence = sequence,
+                UpdatedAt = now
+            });
+            return;
+        }
+
+        if (sequence > cursor.LastReadSequence)
+        {
+            cursor.LastReadSequence = sequence;
+            cursor.UpdatedAt = now;
         }
     }
 

@@ -43,6 +43,7 @@ interface ChannelDto {
   participantNames?: string[] | null;
   participantUserIds?: string[] | null;
   hasGuests?: boolean;
+  layout?: string | null;
 }
 
 interface SlashCommandDto {
@@ -127,15 +128,11 @@ export class DirectoryApiService extends HttpApiClient {
 
   async createChannel(
     workspaceId: string,
-    input: { name: string; type: string; spaceId?: string | null },
+    input: { name: string; type: string; spaceId?: string | null; layout?: string | null },
   ): Promise<Channel> {
     const dto = await this.request<ChannelDto>(`/api/v1/workspaces/${workspaceId}/channels`, {
       method: 'POST',
-      body: JSON.stringify({
-        name: input.name,
-        type: input.type,
-        spaceId: input.spaceId ?? null,
-      }),
+      body: JSON.stringify({ name: input.name, type: input.type, spaceId: input.spaceId ?? null, layout: input.layout ?? null }),
     });
     return this.mapChannel(dto);
   }
@@ -497,6 +494,7 @@ export class DirectoryApiService extends HttpApiClient {
       participantNames: c.participantNames ?? undefined,
       participantUserIds: c.participantUserIds ?? undefined,
       hasGuests: !!c.hasGuests,
+      layout: c.layout === 'Topics' ? 'Topics' : 'Stream',
     };
   }
 

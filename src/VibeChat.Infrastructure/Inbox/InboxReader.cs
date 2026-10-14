@@ -5,9 +5,9 @@ using VibeChat.SharedKernel;
 
 namespace VibeChat.Infrastructure;
 
-public sealed record InboxCounts(int Announcement, int Mention, int Direct, int Thread, int Saved)
+public sealed record InboxCounts(int Announcement, int Mention, int Direct, int Thread, int Saved, int Topic)
 {
-    public int Total => Announcement + Mention + Direct + Thread + Saved;
+    public int Total => Announcement + Mention + Direct + Thread + Saved + Topic;
 
     public static InboxCounts From(IEnumerable<InboxCandidate> items)
     {
@@ -16,6 +16,7 @@ public sealed record InboxCounts(int Announcement, int Mention, int Direct, int 
         var direct = 0;
         var thread = 0;
         var saved = 0;
+        var topic = 0;
         foreach (var item in items)
         {
             switch (item.Kind)
@@ -35,10 +36,13 @@ public sealed record InboxCounts(int Announcement, int Mention, int Direct, int 
                 case InboxItemKind.Saved:
                     saved++;
                     break;
+                case InboxItemKind.Topic:
+                    topic++;
+                    break;
             }
         }
 
-        return new InboxCounts(announcement, mention, direct, thread, saved);
+        return new InboxCounts(announcement, mention, direct, thread, saved, topic);
     }
 }
 
@@ -87,6 +91,7 @@ public static class InboxReader
         items.AddRange(await DirectsAsync(db, channels, userId, cancellationToken));
         items.AddRange(await ThreadsAsync(db, byId, workspaceId, userId, cancellationToken));
         items.AddRange(await SavedAsync(db, byId, workspaceId, userId, cancellationToken));
+        items.AddRange(await TopicsAsync(db, byId, workspaceId, userId, cancellationToken));
 
         var deduped = InboxPolicies.Dedup(items);
         return deduped.Select(item => WithSnooze(item, snoozeUntil, now)).ToList();
@@ -402,6 +407,68 @@ public static class InboxReader
                 bodyPreview: string.Empty,
                 messageRemoved: false,
                 row.CreatedAt));
+        }
+
+        return items;
+    }
+
+    private static async Task<List<InboxCandidate>> TopicsAsync(
+        VibeChatDbContext db,
+        IReadOnlyDictionary<ChannelId, ChannelAccess> channels,
+        WorkspaceId workspaceId,
+        UserId userId,
+        CancellationToken cancellationToken)
+    {
+        var follows = await (
+            from follow in db.TopicSubscriptions.AsNoTracking()
+            join topic in db.ChannelTopics.AsNoTracking() on follow.TopicId equals topic.Id
+            join channel in db.Channels.AsNoTracking() on topic.ChannelId equals channel.Id
+            where follow.UserId == userId && channel.WorkspaceId == workspaceId
+            select new
+            {
+                topic.Id,
+                topic.ChannelId,
+                topic.Title,
+                topic.LastActivityAt,
+            }).Take(InboxPolicies.MaxItemsPerKind).ToListAsync(cancellationToken);
+
+        var visible = follows.Where(row => channels.ContainsKey(row.ChannelId)).ToList();
+        if (visible.Count == 0)
+        {
+            return [];
+        }
+
+        var conversationIds = visible.Select(row => new ChannelId(row.Id)).ToArray();
+        var sequences = await db.ConversationSequences.AsNoTracking()
+            .Where(row => conversationIds.Contains(row.ConversationId))
+            .ToDictionaryAsync(row => row.ConversationId.Value, row => row.LastSequence, cancellationToken);
+        var cursors = await db.ReadCursors.AsNoTracking()
+            .Where(row => row.UserId == userId && conversationIds.Contains(row.ChannelId))
+            .ToDictionaryAsync(row => row.ChannelId.Value, row => row.LastReadSequence, cancellationToken);
+
+        var items = new List<InboxCandidate>();
+        foreach (var row in visible)
+        {
+            var current = sequences.TryGetValue(row.Id, out var sequence) ? sequence : 0L;
+            var read = cursors.TryGetValue(row.Id, out var cursor) ? cursor : 0L;
+            if (current <= read || !channels.TryGetValue(row.ChannelId, out var channel))
+            {
+                continue;
+            }
+
+            items.Add(new InboxCandidate(
+                InboxItemKind.Topic,
+                row.Id,
+                channel.Id.Value,
+                channel.DisplayName,
+                MessageId: null,
+                ThreadId: null,
+                current,
+                InboxPolicies.Preview(row.Title),
+                MessageRemoved: false,
+                row.LastActivityAt,
+                SnoozedUntil: null,
+                TopicId: row.Id));
         }
 
         return items;

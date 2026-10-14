@@ -103,8 +103,7 @@ function matchesFilter(text: string, query: string): boolean {
                   <label class="vc-sidebar-nav__select">
                     <span>{{ ui.navType }}</span>
                     <select [value]="channelType()" (change)="onTypeChange($event)">
-                      <option value="Public">{{ ui.navPublic }}</option>
-                      <option value="Private">{{ ui.navPrivate }}</option>
+                      <option value="Public">{{ ui.navPublic }}</option><option value="Private">{{ ui.navPrivate }}</option><option value="Topics">{{ ui.navTopics }}</option>
                       @if (canPublishAnnouncement()) {
                         <option value="Announcement">{{ ui.navAnnouncement }}</option>
                       }

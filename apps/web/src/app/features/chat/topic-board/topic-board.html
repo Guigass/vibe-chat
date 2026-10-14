@@ -1,0 +1,102 @@
+<section class="topic-board" data-testid="topic-board">
+  @if (error()) {
+    <p class="topic-board__status" role="alert">{{ error() }}</p>
+  }
+
+  @if (active(); as topic) {
+    <header class="topic-board__destination">
+      <button type="button" (click)="back()">{{ ui.topicsBack }}</button>
+      <p data-testid="topic-destination">{{ destination(topic) }}</p>
+      <button type="button" (click)="toggleFollow(topic)">{{ topic.following ? ui.topicsUnfollow : ui.topicsFollow }}</button>
+      @if (canManage()) {
+        <button type="button" data-testid="topic-close" (click)="toggleClosed(topic)">
+          {{ topic.state === 'Closed' ? ui.topicsReopen : ui.topicsClose }}
+        </button>
+      }
+    </header>
+
+    <ol class="topic-board__messages">
+      @for (message of messages(); track message.id) {
+        <li [class.topic-board__mine]="mine(message)">
+          <span>{{ message.authorName }}</span>
+          <p>{{ message.body }}</p>
+        </li>
+      }
+    </ol>
+
+    @if (topic.canPost) {
+      <form class="topic-board__composer" (submit)="$event.preventDefault(); send()">
+        <label>
+          <span class="vc-sr-only">{{ destination(topic) }}</span>
+          <textarea
+            data-testid="topic-composer"
+            rows="2"
+            [ngModel]="draftBody()"
+            (ngModelChange)="draftBody.set($event)"
+            name="body"
+            [attr.placeholder]="ui.topicsMessagePh"
+          ></textarea>
+        </label>
+        <button type="submit" data-testid="topic-send">{{ ui.topicsSend }}</button>
+      </form>
+    } @else {
+      <p class="topic-board__status" data-testid="topic-closed">{{ ui.topicsClosed }}</p>
+    }
+  } @else {
+    <header class="topic-board__bar">
+      <h2>{{ ui.topicsTitle }}</h2>
+      <label>
+        <span class="vc-sr-only">{{ ui.topicsTitle }}</span>
+        <select [ngModel]="filter()" (ngModelChange)="setFilter($event)" name="filter">
+          <option value="recent">{{ ui.topicsFilterAll }}</option>
+          <option value="open">{{ ui.topicsFilterOpen }}</option>
+          <option value="closed">{{ ui.topicsFilterClosed }}</option>
+          <option value="unread">{{ ui.topicsFilterUnread }}</option>
+        </select>
+      </label>
+    </header>
+
+    <form class="topic-board__create" (submit)="$event.preventDefault(); create()">
+      <input
+        data-testid="topic-title"
+        [ngModel]="draftTitle()"
+        (ngModelChange)="draftTitle.set($event)"
+        name="title"
+        [attr.placeholder]="ui.topicsTitlePh"
+        [attr.aria-label]="ui.topicsTitlePh"
+      />
+      <input
+        [ngModel]="draftTags()"
+        (ngModelChange)="draftTags.set($event)"
+        name="tags"
+        [attr.placeholder]="ui.topicsTagsPh"
+        [attr.aria-label]="ui.topicsTagsPh"
+      />
+      <button type="submit" data-testid="topic-create">{{ ui.topicsCreate }}</button>
+    </form>
+
+    @if (loading() && !items().length) {
+      <p class="topic-board__status">{{ ui.loading }}</p>
+    } @else if (!items().length) {
+      <p class="topic-board__status">{{ ui.topicsEmpty }}</p>
+      <p class="topic-board__hint">{{ ui.topicsEmptyHint }}</p>
+    } @else {
+      <ul
+        class="topic-board__list"
+        role="listbox"
+        tabindex="0"
+        [attr.aria-label]="ui.topicsTitle"
+        (keydown)="onListKey($event)"
+      >
+        @for (topic of items(); track topic.id; let index = $index) {
+          <li role="option" [attr.aria-selected]="index === activeIndex()">
+            <button type="button" [attr.data-testid]="'topic-row'" (click)="open(topic)">
+              <strong>{{ topic.title }}</strong>
+              <span>{{ topic.participantNames.join(', ') }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>
