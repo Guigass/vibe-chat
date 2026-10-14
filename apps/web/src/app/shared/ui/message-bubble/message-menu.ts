@@ -66,6 +66,7 @@ export interface MessageMenuFlags {
   showThread: boolean;
   showPin: boolean;
   showSave: boolean;
+  showCommit?: boolean;
   showRemind: boolean;
   showMarkUnread: boolean;
   hasLinkPreview: boolean;
@@ -91,6 +92,7 @@ export function buildMessageMenuItems(
     showPin: flags.showPin,
     isPinned: !!message.isPinned,
     showSave: flags.showSave,
+    showCommit: flags.showCommit,
     isSaved: !!message.isSaved,
     showRemind: flags.showRemind,
     showMarkUnread: flags.showMarkUnread,

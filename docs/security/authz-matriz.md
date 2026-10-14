@@ -91,6 +91,13 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/workspaces/{workspaceId:guid}/inbox/unread` | permission | `message.read` | ✓ | ✓ | ✓ | B-117; retrocede o cursor canônico (`allowRetrograde`) |
 | PUT | `/workspaces/{workspaceId:guid}/inbox/snooze` | permission | `message.read` | ✓ | ✓ | ✓ | B-117; snooze pessoal; item invisível → 404 sem preview |
 | DELETE | `/workspaces/{workspaceId:guid}/inbox/snooze` | permission | `message.read` | ✓ | ✓ | ✓ | B-117; `itemKey` na query; idempotente |
+| POST | `/workspaces/{workspaceId:guid}/commitments` | permission | `message.read` | ✓ | ✓ | ✓ | B-119; converte mensagem legível; idempotente; sem cópia do body |
+| GET | `/workspaces/{workspaceId:guid}/commitments` | permission | `message.read` | ✓ | ✓ | ✓ | B-119; lista por workspace/canal/pessoa; ACL atual |
+| GET | `/workspaces/{workspaceId:guid}/commitments/{commitmentId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-119; invisível → 404 |
+| PATCH | `/workspaces/{workspaceId:guid}/commitments/{commitmentId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-119; criador, owner ou admin no modo canal |
+| POST | `/workspaces/{workspaceId:guid}/commitments/{commitmentId:guid}/close` | permission | `message.read` | ✓ | ✓ | ✓ | B-119; audit `commitment.close` |
+| POST | `/workspaces/{workspaceId:guid}/commitments/{commitmentId:guid}/reopen` | permission | `message.read` | ✓ | ✓ | ✓ | B-119; audit `commitment.reopen` |
+| GET | `/workspaces/{workspaceId:guid}/commitments/{commitmentId:guid}/history` | permission | `message.read` | ✓ | ✓ | ✓ | B-119; histórico sem body |
 | POST | `/workspaces/{workspaceId:guid}/messages/{messageId:guid}/forward` | permission | `message.send` | ✓ | ✗ | ✓ | |
 | POST | `/channels/{channelId:guid}/messages/{messageId:guid}/threads` | permission | `message.send` | ✓ | ✗ | ✓ | Get-or-create + reply |
 | GET | `/threads/{threadId:guid}` | membership | — | ✓ | ✓ | ✓ | |

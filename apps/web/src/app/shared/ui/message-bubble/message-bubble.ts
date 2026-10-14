@@ -9,6 +9,7 @@ import { MarkdownBody } from '../../markdown/markdown-body';
 import { ApiService } from '../../../core/api/api.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ChannelStore } from '../../../core/services/channel.store';
+import { CommitmentStore } from '../../../core/services/commitment.store';
 import { MessageStore } from '../../../core/services/message.store';
 import { idsEqual } from '../../../core/services/message-sync';
 import { ThemeService } from '../../../core/services/theme.service';
@@ -81,6 +82,7 @@ export class MessageBubble {
   private readonly auth = inject(AuthService);
   private readonly channels = inject(ChannelStore);
   private readonly messages = inject(MessageStore);
+  private readonly commitments = inject(CommitmentStore);
   private readonly theme = inject(ThemeService);
   private readonly locales = inject(LocaleService);
   private readonly contextMenu = viewChild(CdkContextMenuTrigger);
@@ -166,6 +168,7 @@ export class MessageBubble {
       showThread: this.showThreadAction(),
       showPin: this.showPinAction(),
       showSave: this.showSaveAction(),
+      showCommit: this.showSaveAction(),
       showRemind: this.showRemindAction(),
       showMarkUnread: this.showMarkUnreadAction(),
       hasLinkPreview: !!this.visibleLinkPreview(),
@@ -289,6 +292,10 @@ export class MessageBubble {
 
   onMenuAction(id: MessageMenuActionId): void {
     if (this.menuItems().find((item) => item.id === id)?.disabled) return;
+    if (id === 'decide' || id === 'act') {
+      this.commitments.begin(this.message(), id === 'decide' ? 'decision' : 'action_item');
+      return;
+    }
     emitMessageMenuAction(id, this);
   }
 

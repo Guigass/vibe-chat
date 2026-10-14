@@ -1,13 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using VibeChat.Conversations;
 using VibeChat.Messaging;
+using VibeChat.Notifications;
 using VibeChat.SharedKernel;
 
 namespace VibeChat.Infrastructure;
 
-public sealed record InboxCounts(int Announcement, int Mention, int Direct, int Thread, int Saved, int Topic)
+public sealed record InboxCounts(int Announcement, int Mention, int Direct, int Thread, int Saved, int Topic, int Commitment)
 {
-    public int Total => Announcement + Mention + Direct + Thread + Saved + Topic;
+    public int Total => Announcement + Mention + Direct + Thread + Saved + Topic + Commitment;
 
     public static InboxCounts From(IEnumerable<InboxCandidate> items)
     {
@@ -17,6 +18,7 @@ public sealed record InboxCounts(int Announcement, int Mention, int Direct, int 
         var thread = 0;
         var saved = 0;
         var topic = 0;
+        var commitment = 0;
         foreach (var item in items)
         {
             switch (item.Kind)
@@ -39,10 +41,13 @@ public sealed record InboxCounts(int Announcement, int Mention, int Direct, int 
                 case InboxItemKind.Topic:
                     topic++;
                     break;
+                case InboxItemKind.Commitment:
+                    commitment++;
+                    break;
             }
         }
 
-        return new InboxCounts(announcement, mention, direct, thread, saved, topic);
+        return new InboxCounts(announcement, mention, direct, thread, saved, topic, commitment);
     }
 }
 
@@ -92,6 +97,7 @@ public static class InboxReader
         items.AddRange(await ThreadsAsync(db, byId, workspaceId, userId, cancellationToken));
         items.AddRange(await SavedAsync(db, byId, workspaceId, userId, cancellationToken));
         items.AddRange(await TopicsAsync(db, byId, workspaceId, userId, cancellationToken));
+        items.AddRange(await CommitmentsAsync(db, byId, workspaceId, userId, now, cancellationToken));
 
         var deduped = InboxPolicies.Dedup(items);
         return deduped.Select(item => WithSnooze(item, snoozeUntil, now)).ToList();
@@ -589,6 +595,80 @@ public static class InboxReader
             messageRemoved,
             sortAt,
             SnoozedUntil: null);
+
+    private static async Task<List<InboxCandidate>> CommitmentsAsync(
+        VibeChatDbContext db,
+        IReadOnlyDictionary<ChannelId, ChannelAccess> channels,
+        WorkspaceId workspaceId,
+        UserId userId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var rows = await db.Commitments.AsNoTracking()
+            .Where(row => row.WorkspaceId == workspaceId
+                && row.OwnerUserId == userId
+                && row.State == CommitmentState.Open)
+            .OrderByDescending(row => row.UpdatedAt)
+            .Take(InboxPolicies.MaxItemsPerKind)
+            .ToListAsync(cancellationToken);
+        if (rows.Count == 0)
+        {
+            return [];
+        }
+
+        var preference = await db.NotificationPreferences.AsNoTracking()
+            .FirstOrDefaultAsync(row => row.UserId == userId, cancellationToken);
+        var globalLevel = preference?.Level ?? NotificationLevel.MentionsAndDms;
+        var hidePreview = preference?.HidePreview == true;
+        var dnd = preference is not null && PushDispatchPolicies.IsWithinDnd(
+            preference.DndEnabled,
+            preference.DndStart,
+            preference.DndEnd,
+            preference.DndDays,
+            preference.TimeZone,
+            now);
+        var channelIds = rows.Select(row => row.ChannelId).Distinct().ToArray();
+        var overrides = await db.ChannelNotificationPreferences.AsNoTracking()
+            .Where(row => row.UserId == userId && channelIds.Contains(row.ChannelId))
+            .ToListAsync(cancellationToken);
+
+        var items = new List<InboxCandidate>();
+        foreach (var row in rows)
+        {
+            if (!channels.TryGetValue(row.ChannelId, out var channel))
+            {
+                continue;
+            }
+
+            if (!CommitmentPolicies.CanSee(row, userId, canReadChannel: true))
+            {
+                continue;
+            }
+
+            var channelOverride = overrides.FirstOrDefault(item => item.ChannelId == row.ChannelId);
+            (NotificationLevel Level, DateTimeOffset? MutedUntil)? activeOverride = channelOverride?.Level is NotificationLevel level
+                ? (level, channelOverride.MutedUntil)
+                : null;
+            var effective = PushDispatchPolicies.ResolveEffectiveLevel(globalLevel, activeOverride, now);
+            if (dnd || !PushDispatchPolicies.ShouldNotifyForLevel(effective, isDirect: false, isMentioned: true, isAuthor: false))
+            {
+                continue;
+            }
+
+            items.Add(Candidate(
+                InboxItemKind.Commitment,
+                row.Id,
+                channel,
+                row.SourceMessageId.Value,
+                row.SourceThreadId,
+                row.SourceVersion,
+                hidePreview || row.SourceRedacted ? string.Empty : InboxPolicies.Preview(row.Title),
+                row.SourceRedacted,
+                row.UpdatedAt));
+        }
+
+        return items;
+    }
 
     private sealed class ChannelAccess
     {

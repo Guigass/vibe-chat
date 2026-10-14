@@ -89,6 +89,10 @@ public static class AuditActions
     public const string TopicClose = "topic.close";
     public const string TopicReopen = "topic.reopen";
     public const string TopicMove = "topic.move";
+    public const string CommitmentCreate = "commitment.create";
+    public const string CommitmentUpdate = "commitment.update";
+    public const string CommitmentClose = "commitment.close";
+    public const string CommitmentReopen = "commitment.reopen";
 }
 
 public interface IAuditWriter

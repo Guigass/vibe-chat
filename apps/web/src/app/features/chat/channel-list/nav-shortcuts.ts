@@ -1,6 +1,7 @@
 import { Component, inject, input } from '@angular/core';
 import { ui } from '../../../core/i18n/strings';
 import { FollowedThreadsStore } from '../../../core/services/followed-threads.store';
+import { CommitmentStore } from '../../../core/services/commitment.store';
 import { InboxStore } from '../../../core/services/inbox.store';
 import { NotificationPreferencesStore } from '../../../core/services/notification-preferences.store';
 import { PinStore } from '../../../core/services/pin.store';
@@ -109,6 +110,32 @@ import { Badge, VcTooltip } from '../../../shared/ui';
           }
         }
       </button>
+
+      <button
+        type="button"
+        class="channel-list__saved"
+        [class.channel-list__saved--compact]="navCompact()"
+        [class.channel-list__saved--active]="commitments.panelOpen()"
+        data-testid="commitments-nav"
+        [attr.aria-label]="navCompact() ? ui.commitmentNav : null"
+        [vcTooltip]="navCompact() ? ui.commitmentNav : null"
+        [tooltipDisabled]="!navCompact()"
+        position="right"
+        (click)="openCommitments()"
+      >
+        <span class="channel-list__saved-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 6h12M8 12h12M8 18h8" />
+            <path d="m4 6 1.2 1.2L7.5 5M4 12l1.2 1.2L7.5 11" />
+          </svg>
+        </span>
+        @if (!navCompact()) {
+          <span class="channel-list__saved-copy">
+            <span class="channel-list__saved-label">{{ ui.commitmentNav }}</span>
+            <span class="channel-list__saved-hint">{{ ui.commitmentNavHint }}</span>
+          </span>
+        }
+      </button>
     </div>
   `,
   styles: `
@@ -176,6 +203,7 @@ export class NavShortcuts {
   readonly inbox = inject(InboxStore);
   readonly saved = inject(SavedStore);
   readonly followedThreads = inject(FollowedThreadsStore);
+  readonly commitments = inject(CommitmentStore);
   private readonly pins = inject(PinStore);
   private readonly notificationPrefs = inject(NotificationPreferencesStore);
 
@@ -183,6 +211,7 @@ export class NavShortcuts {
     this.pins.closePanel();
     this.saved.closePanel();
     this.followedThreads.closePanel();
+    this.commitments.closePanel();
     this.notificationPrefs.closePanel();
     this.inbox.openPanel();
   }
@@ -190,6 +219,7 @@ export class NavShortcuts {
   openSaved(): void {
     this.pins.closePanel();
     this.followedThreads.closePanel();
+    this.commitments.closePanel();
     this.inbox.closePanel();
     this.saved.openPanel();
   }
@@ -197,7 +227,17 @@ export class NavShortcuts {
   openFollowedThreads(): void {
     this.pins.closePanel();
     this.saved.closePanel();
+    this.commitments.closePanel();
     this.inbox.closePanel();
     this.followedThreads.openPanel();
+  }
+
+  openCommitments(): void {
+    this.pins.closePanel();
+    this.saved.closePanel();
+    this.followedThreads.closePanel();
+    this.inbox.closePanel();
+    this.notificationPrefs.closePanel();
+    this.commitments.openPanel();
   }
 }

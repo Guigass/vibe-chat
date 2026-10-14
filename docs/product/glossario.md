@@ -45,7 +45,8 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Busca com filtros** | FTS PostgreSQL em mensagens visíveis ao membership (`GET /search/messages`). Filtros `de:`/`em:`/`antes:`/`tem:` só restringem; nunca ampliam ACL (B-098). Matching versátil (prefixo, acento, websearch, canal/pessoa/anexo) entregue em **B-188**. Distinta da busca semântica (B-121 / ADR-016). Atalho: `Ctrl/Cmd+Shift+F`. |
 | **Paleta de comandos** | Overlay de navegação (`Ctrl/Cmd+K`) sobre canais com membership, pessoas visíveis, ações locais e comandos de `GET /commands` (B-087 / B-099). Não substitui a busca de mensagens. |
 | **Announcement / Anúncio** | Canal `Announcement` (B-112): só quem tem `announcement.publish` escreve; os demais leem. A mensagem continua `Message` + `seq`. Confirmação opcional até um prazo é leitura explícita, não assinatura legal. |
-| **Action item** | Ação estruturada derivada de uma conversa e ligada à mensagem de origem; pode evoluir para tarefa, mas preserva evidência. |
+| **Decision / Decisão** | Compromisso curado ligado a uma mensagem (`messaging.commitments`, kind `decision`). Guarda título, hash de excerpt e referência; não copia o body (B-119). |
+| **Action item** | Ação estruturada derivada de uma conversa e ligada à mensagem de origem (`kind=action_item`, B-119). Pode evoluir para tarefa (B-123), mas preserva evidência sem copiar o body. |
 | **Digest / Catch-up** | Resumo periódico de atividade autorizada, com links para conversas de origem. |
 
 ## Tempo real e presença

@@ -134,6 +134,9 @@ public sealed class MessageRetentionPurgeProcessor(
                 db.SavedMessages.RemoveRange(saved);
             }
 
+            await VibeChat.Infrastructure.Messaging.CommitmentRedaction.MarkSourcesAsync(
+                db, policy.TenantId, messageIds, cancellationToken);
+
             if (messageIdGuids.Count > 0)
             {
                 var snoozeKeys = new List<string>(messageIdGuids.Count * 3);
