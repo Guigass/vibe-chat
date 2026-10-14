@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpApiClient } from './http-api.client';
 import {
   SearchMessagesResult,
+  SemanticQueryResult,
 } from '../../shared/models/chat.models';
 
 @Injectable({ providedIn: 'root' })
@@ -55,5 +56,19 @@ export class SearchApiService extends HttpApiClient {
       params.set('limit', String(input.limit));
     }
     return this.request<SearchMessagesResult>(`/api/v1/search/messages?${params.toString()}`);
+  }
+
+  semanticQuery(workspaceId: string, q: string): Promise<SemanticQueryResult> {
+    return this.request<SemanticQueryResult>(`/api/v1/workspaces/${workspaceId}/semantic/query`, {
+      method: 'POST',
+      body: JSON.stringify({ q }),
+    });
+  }
+
+  reportSemantic(workspaceId: string, citationIds: string[]): Promise<{ reported: boolean }> {
+    return this.request(`/api/v1/workspaces/${workspaceId}/semantic/report`, {
+      method: 'POST',
+      body: JSON.stringify({ citationIds }),
+    });
   }
 }

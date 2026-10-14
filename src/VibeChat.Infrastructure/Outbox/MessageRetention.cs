@@ -112,6 +112,12 @@ public sealed class MessageRetentionPurgeProcessor(
 
             var messageIds = candidates.Select(x => x.Id).ToList();
             var messageIdGuids = candidates.Select(x => x.Id.Value).ToHashSet();
+            await SemanticRetention.RemoveSourcesAsync(
+                db,
+                policy.TenantId,
+                SemanticSourceKind.Message,
+                messageIdGuids,
+                cancellationToken);
             var reactions = await db.Reactions.IgnoreQueryFilters()
                 .Where(x => x.TenantId == policy.TenantId && messageIds.Contains(x.MessageId))
                 .ToListAsync(cancellationToken);

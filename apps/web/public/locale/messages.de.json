@@ -1131,6 +1131,15 @@
     "knowledge.scopeWorkspace": "Workspace",
     "knowledge.scopeChannel": "Aktueller Kanal",
     "knowledge.save": "Speichern",
-    "knowledge.close": "Schließen"
+    "knowledge.close": "Schließen",
+    "shell.searchKeyword": "Text",
+    "shell.searchSemantic": "KI",
+    "shell.searchSemanticLabel": "KI-Suche",
+    "shell.searchSemanticEmpty": "Keine Belege in Quellen, die Sie sehen können.",
+    "shell.searchSemanticAnswer": "Antwort mit Quellen",
+    "shell.searchSemanticReport": "Antwort melden",
+    "shell.searchSemanticReported": "Antwort gemeldet",
+    "shell.searchSemanticDisabled": "Die KI-Suche ist in diesem Workspace aus.",
+    "shell.searchSemanticLimited": "Das Limit der KI-Suche ist erreicht."
   }
 }

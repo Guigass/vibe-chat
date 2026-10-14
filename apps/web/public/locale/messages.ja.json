@@ -1131,6 +1131,15 @@
     "knowledge.scopeWorkspace": "ワークスペース",
     "knowledge.scopeChannel": "現在のチャンネル",
     "knowledge.save": "保存",
-    "knowledge.close": "閉じる"
+    "knowledge.close": "閉じる",
+    "shell.searchKeyword": "テキスト",
+    "shell.searchSemantic": "AI",
+    "shell.searchSemanticLabel": "AI検索",
+    "shell.searchSemanticEmpty": "閲覧できる情報源に根拠がありません。",
+    "shell.searchSemanticAnswer": "引用つきの回答",
+    "shell.searchSemanticReport": "回答を報告",
+    "shell.searchSemanticReported": "回答を報告しました",
+    "shell.searchSemanticDisabled": "このワークスペースではAI検索がオフです。",
+    "shell.searchSemanticLimited": "AI検索の上限に達しました。"
   }
 }

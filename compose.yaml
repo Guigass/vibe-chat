@@ -16,6 +16,7 @@ name: vibechat
 volumes:
   postgres_data:
   redis_data:
+  qdrant_data:
   keycloak_data:
   minio_data:
   prometheus_data:
@@ -271,6 +272,21 @@ services:
       timeout: 5s
       retries: 6
       start_period: 15s
+
+  # Optional vector index (B-121 / ADR-019). No host port — compose network only.
+  # Leave QdrantUrl empty to answer from the postgres chunk projection.
+  qdrant:
+    profiles: ["ai"]
+    image: ${QDRANT_IMAGE:-qdrant/qdrant:v1.13.4}
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/6333'"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
 
   # ---------------------------------------------------------------------------
   # App services (profile: apps) — official self-host/demo path (B-074).

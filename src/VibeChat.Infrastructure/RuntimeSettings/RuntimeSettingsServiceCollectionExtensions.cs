@@ -6,6 +6,7 @@ using VibeChat.Directory;
 using VibeChat.Identity;
 using VibeChat.Integrations;
 using VibeChat.Messaging;
+using VibeChat.Search;
 
 namespace VibeChat.Infrastructure;
 
@@ -21,6 +22,7 @@ internal static class RuntimeSettingsServiceCollectionExtensions
         services.Configure<GroupDmOptions>(configuration.GetSection(GroupDmOptions.SectionName));
         services.Configure<TopicChannelOptions>(configuration.GetSection(TopicChannelOptions.SectionName));
         services.Configure<KnowledgePageOptions>(configuration.GetSection(KnowledgePageOptions.SectionName));
+        services.Configure<SemanticSearchOptions>(configuration.GetSection(SemanticSearchOptions.SectionName));
         services.Configure<InviteOptions>(configuration.GetSection(InviteOptions.SectionName));
         services.Configure<BotIntegrationOptions>(configuration.GetSection(BotIntegrationOptions.SectionName));
         services.Configure<MessageRetentionOptions>(configuration.GetSection(MessageRetentionOptions.SectionName));

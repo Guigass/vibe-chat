@@ -182,6 +182,9 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Directory:GroupDm:Enabled", "true");
         builder.UseSetting("Conversations:Topics:Enabled", "true");
         builder.UseSetting("Knowledge:Pages:Enabled", "true");
+        builder.UseSetting("SemanticSearch:Enabled", "true");
+        builder.UseSetting("SemanticSearch:QdrantUrl", "");
+        builder.UseSetting("SemanticSearch:MonthlyTokenBudget", "100000");
         builder.UseSetting("Directory:GroupDm:MaxParticipants", "9");
         builder.UseSetting("Directory:Invites:Enabled", "true");
         builder.UseSetting("Integrations:Bots:Enabled", "true");

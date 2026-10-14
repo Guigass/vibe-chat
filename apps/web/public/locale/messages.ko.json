@@ -1131,6 +1131,15 @@
     "knowledge.scopeWorkspace": "워크스페이스",
     "knowledge.scopeChannel": "현재 채널",
     "knowledge.save": "저장",
-    "knowledge.close": "닫기"
+    "knowledge.close": "닫기",
+    "shell.searchKeyword": "텍스트",
+    "shell.searchSemantic": "AI",
+    "shell.searchSemanticLabel": "AI 검색",
+    "shell.searchSemanticEmpty": "볼 수 있는 출처에 근거가 없습니다.",
+    "shell.searchSemanticAnswer": "인용이 있는 답변",
+    "shell.searchSemanticReport": "답변 신고",
+    "shell.searchSemanticReported": "답변을 신고했습니다",
+    "shell.searchSemanticDisabled": "이 워크스페이스에서 AI 검색이 꺼져 있습니다.",
+    "shell.searchSemanticLimited": "AI 검색 한도에 도달했습니다."
   }
 }

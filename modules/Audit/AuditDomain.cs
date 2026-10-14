@@ -100,6 +100,10 @@ public static class AuditActions
     public const string KnowledgePageDelete = "knowledge.page.delete";
     public const string KnowledgePageRestore = "knowledge.page.restore";
     public const string KnowledgeExport = "knowledge.export";
+    public const string SemanticQuery = "semantic.query";
+    public const string SemanticReport = "semantic.report";
+    public const string SemanticSettingsChange = "semantic.settings";
+    public const string SemanticRebuild = "semantic.rebuild";
 }
 
 public interface IAuditWriter

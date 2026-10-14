@@ -164,6 +164,8 @@ export class ApiService {
   readonly muteChannelNotifications: NotificationsApiService['muteChannelNotifications'] = this.notifications.muteChannelNotifications.bind(this.notifications);
   readonly clearChannelNotificationOverride: NotificationsApiService['clearChannelNotificationOverride'] = this.notifications.clearChannelNotificationOverride.bind(this.notifications);
   readonly searchMessages: SearchApiService['searchMessages'] = this.search.searchMessages.bind(this.search);
+  readonly semanticQuery: SearchApiService['semanticQuery'] = this.search.semanticQuery.bind(this.search);
+  readonly reportSemantic: SearchApiService['reportSemantic'] = this.search.reportSemantic.bind(this.search);
   readonly summarizeChannel: AiApiService['summarizeChannel'] = this.ai.summarizeChannel.bind(this.ai);
   readonly suggestChannelReply: AiApiService['suggestChannelReply'] = this.ai.suggestChannelReply.bind(this.ai);
   readonly createImport: ImportApiService['createImport'] = this.imports.createImport.bind(this.imports);

@@ -152,7 +152,7 @@ public static class RolePermissionCatalog
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.EditAny, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny, Permissions.Message.Pin, Permissions.Message.HistoryRead, Permissions.Message.Move,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
-        Permissions.Admin.Dashboard, Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe,
+        Permissions.Admin.Dashboard, Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe, Permissions.Ai.Search,
         Permissions.Announcement.Publish, Permissions.Announcement.Acknowledge,
         Permissions.Conversation.TopicCreate, Permissions.Conversation.TopicManage,
         Permissions.Knowledge.View, Permissions.Knowledge.Edit, Permissions.Knowledge.Manage
@@ -164,7 +164,7 @@ public static class RolePermissionCatalog
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.EditAny, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny, Permissions.Message.Pin, Permissions.Message.HistoryRead, Permissions.Message.Move,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
-        Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe,
+        Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe, Permissions.Ai.Search,
         Permissions.Announcement.Publish, Permissions.Announcement.Acknowledge,
         Permissions.Conversation.TopicCreate, Permissions.Conversation.TopicManage,
         Permissions.Knowledge.View, Permissions.Knowledge.Edit, Permissions.Knowledge.Manage
@@ -173,7 +173,7 @@ public static class RolePermissionCatalog
     private static readonly HashSet<string> AuditorPermissions =
     [
         Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Message.Read, Permissions.Message.HistoryRead, Permissions.Files.Download,
-        Permissions.Search.Messages, Permissions.Admin.Dashboard, Permissions.Support.Read,
+        Permissions.Search.Messages, Permissions.Ai.Search, Permissions.Admin.Dashboard, Permissions.Support.Read,
         Permissions.Announcement.Acknowledge,
         Permissions.Knowledge.View
     ];
@@ -184,7 +184,7 @@ public static class RolePermissionCatalog
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.DeleteOwn, Permissions.Message.Pin, Permissions.Message.HistoryRead,
         Permissions.Files.Upload, Permissions.Files.Download,
         Permissions.Search.Messages,
-        Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe,
+        Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe, Permissions.Ai.Search,
         Permissions.Announcement.Acknowledge,
         Permissions.Conversation.TopicCreate,
         Permissions.Knowledge.View, Permissions.Knowledge.Edit

@@ -55,6 +55,15 @@ export const ui = {
   searchScope: $localize`:@@shell.searchScope:Escopo da busca`,
   searchThisChannel: $localize`:@@shell.searchThisChannel:Este canal`,
   searchSort: $localize`:@@shell.searchSort:Ordenação`,
+  searchKeyword: $localize`:@@shell.searchKeyword:Texto`,
+  searchSemantic: $localize`:@@shell.searchSemantic:IA`,
+  searchSemanticLabel: $localize`:@@shell.searchSemanticLabel:Busca com IA`,
+  searchSemanticEmpty: $localize`:@@shell.searchSemanticEmpty:Sem evidência nas fontes que você pode ver.`,
+  searchSemanticAnswer: $localize`:@@shell.searchSemanticAnswer:Resposta com citações`,
+  searchSemanticReport: $localize`:@@shell.searchSemanticReport:Reportar resposta`,
+  searchSemanticReported: $localize`:@@shell.searchSemanticReported:Resposta reportada`,
+  searchSemanticDisabled: $localize`:@@shell.searchSemanticDisabled:Busca com IA está desligada neste workspace.`,
+  searchSemanticLimited: $localize`:@@shell.searchSemanticLimited:O limite de busca com IA foi atingido.`,
   searchRelevance: $localize`:@@shell.searchRelevance:Relevância`,
   searchDate: $localize`:@@shell.searchDate:Data`,
   searchRecent: $localize`:@@shell.searchRecent:Buscas recentes`,
@@ -1293,6 +1302,11 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.knowledgeConflict;
     case 'KnowledgeDisabled':
       return ui.knowledgeDisabled;
+    case 'SemanticSearchDisabled':
+      return ui.searchSemanticDisabled;
+    case 'SemanticBudgetExceeded':
+    case 'SemanticRateLimited':
+      return ui.searchSemanticLimited;
     case 'UnsafeKnowledgeBody':
     case 'InvalidKnowledgeScope':
     case 'InvalidKnowledgeParent':

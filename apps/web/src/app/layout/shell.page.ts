@@ -51,6 +51,7 @@ import {
 } from '../shared/search/search-query';
 import { readRecentSearches, writeRecentSearch } from '../shared/search/search-recent';
 import { CommandPalette } from '../features/chat/command-palette/command-palette';
+import { SemanticSearchPanel } from './semantic-search-panel';
 import { CommandPaletteService } from '../core/services/command-palette.service';
 import {
   cycleChannel,
@@ -103,7 +104,7 @@ import { pluralCount } from '../core/i18n/format';
     Input,
     ShellDialogs,
     VcTooltip,
-    CommandPalette,
+    CommandPalette, SemanticSearchPanel,
   ],
   providers: [provideVcTooltipDefaults(), ...provideVcTooltipGroup()],
   templateUrl: './shell.page.html',
