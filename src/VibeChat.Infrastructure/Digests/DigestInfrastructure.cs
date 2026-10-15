@@ -912,7 +912,7 @@ internal static class DigestServiceCollectionExtensions
     {
         services.Configure<DigestOptions>(configuration.GetSection(DigestOptions.SectionName));
         services.AddScoped<DigestGenerator>();
-        services.AddScoped<DigestDispatchProcessor>();
+        services.AddSingleton<DigestDispatchProcessor>();
         return services;
     }
 }

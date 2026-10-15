@@ -77,6 +77,8 @@ public sealed class InfrastructureRegistrationTests
             "Scoped:WebPushSender:WebPushSender",
             "Scoped:IPushSender:factory",
             "Scoped:PushDispatcher:PushDispatcher",
+            "Scoped:DigestGenerator:DigestGenerator",
+            "Singleton:DigestDispatchProcessor:DigestDispatchProcessor",
             "Scoped:IOutboundWebhookDispatcher:OutboundWebhookDispatcher");
 
         worker.Should().Equal(signalR.Select(entry => entry
