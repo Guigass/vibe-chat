@@ -27,6 +27,8 @@ Regras do registro:
 
 | ID      | Área              | Achado                                                                | Severidade | Status                                       |
 | ------- | ----------------- | --------------------------------------------------------------------- | ---------- | -------------------------------------------- |
+| BUG-029 | Header / busca    | Hífen no meio da palavra vira exclusão; `Bem-vindo` não acha a mensagem | Baixa      | Aberto                                       |
+| BUG-028 | Shell / perfil    | Painel My profile corta o formulário; Save profile fica fora do mouse | Média      | Aberto                                       |
 | BUG-027 | Shell / painéis laterais | Abrir Settings e depois My profile empilha painéis; overlay não some e só reload limpa | Média      | Aberto                                       |
 | BUG-026 | Header / busca    | Painel de busca fica aberto com resultado antigo ao trocar de conversa na sidebar | Baixa      | Aberto                                       |
 | BUG-025 | Sidebar / filtro  | Cada mudança no filtro da rail loga TypeError em `setActiveChannel`  | Baixa      | Aberto                                       |
@@ -48,6 +50,90 @@ Regras do registro:
 | BUG-018 | Timeline / scroll | Scroll não fica colado no fim ao enviar/receber (às vezes)           | Média      | Done                                         |
 
 ## Detalhamento
+
+### BUG-029 — Busca trata hífen no meio da palavra como exclusão
+
+- Status: **Aberto**
+- Severidade: **Baixa**. A busca ainda acha a mensagem pelo começo da palavra
+  (`Bem`). O hífen no meio vira exclusão e a consulta inteira volta vazia.
+  Contorno: buscar parte da palavra. Não é **Média**: achar a mensagem
+  continua possível sem o hífen. Não é **Alta**: buscar, ler e trocar de
+  conversa seguem.
+- Observado em: 2026-10-15, ~19:00–19:10 America/Sao_Paulo; lab Compose
+  (`apps` / `http://localhost:4200`), build local em `bc2229a` (atrás de
+  `main` em `d85da4d`), Alice já logada (DevAuth), em `#geral`. Passos: no
+  campo de busca do header, digitar `Bem-vindo`. Esperado: a mensagem
+  existente `Bem-vindo ao VibeChat Demo.`, de Demo. Observado: `Nothing
+  found`. A consulta `Bem` acha a mensagem, e o destaque sai `Bem -vindo`.
+  A dica da busca diz `-word to exclude` (catálogo `shell.searchEmpty`:
+  `-palavra para excluir`), então o hífen dentro da palavra parece ser lido
+  como exclusão. Distinto de **BUG-023** / B-188 (relevância: prefixo,
+  acento, pessoa, anexo — já **Done**), de **BUG-022** e de **BUG-026**
+  (comportamento do painel do header: alinhamento, fechar ao selecionar,
+  painel que permanece ao trocar de conversa).
+- Hipótese: `messaging.prefix_tsquery` chama `websearch_to_tsquery`, e o
+  Postgres converte `-` no operador `!`. O token `Bem-vindo` vira termo
+  positivo `Bem` e negação de `vindo`; a mensagem contém os dois e não
+  entra. `Bem` sozinho casa, e o headline marca só esse trecho
+  (`Bem -vindo`). `parseSearchQuery` no header não parte esse hífen — o
+  corte está na tsquery. A dica descreve `-palavra` como operador, não o
+  hífen interno.
+- Arquivos: `src/VibeChat.Infrastructure/Persistence/Migrations/20261002180000_VersatileMessageSearch.cs`
+  (`prefix_tsquery`, `versatile_tsquery`),
+  `src/VibeChat.Infrastructure/SearchInfrastructure.cs`,
+  `apps/web/src/app/core/i18n/strings.ts` (`shell.searchEmpty`).
+- Resultado esperado: `Bem-vindo` acha `Bem-vindo ao VibeChat Demo.`. O
+  hífen no meio da palavra não exclui o trecho seguinte. `-palavra` com o
+  operador explícito continua excluindo.
+- Risk class: R1.
+- Owner automático: Backend (C).
+- Critério de resolução: no lab, `Bem-vindo` em `#geral` devolve a mensagem
+  de Demo; `Bem` continua achando; `-palavra` ainda exclui; finding `Done`.
+  Distinto de **BUG-023** / B-188, **BUG-022** e **BUG-026**.
+
+### BUG-028 — Painel My profile corta o formulário e esconde Save profile
+
+- Status: **Aberto**
+- Severidade: **Média**. O painel abre e fecha, e Close panel tira o
+  overlay. Salvar o perfil na tela não ficou ao alcance do mouse (caminho
+  de teclado não verificado). Não é **Alta**: a tela ainda abre e fecha o
+  perfil; o que falha é alcançar Save profile com o mouse, sem travar o
+  shell até reload.
+- Observado em: 2026-10-15, ~19:00–19:10 America/Sao_Paulo; lab Compose
+  (`apps` / `http://localhost:4200`), build local em `bc2229a` (atrás de
+  `main` em `d85da4d`; nenhum commit nesse intervalo alterou o painel de
+  perfil), Alice já logada (DevAuth). Passos: (1) recarregar
+  `http://localhost:4200/app` sem abrir Settings; (2) clicar My profile no
+  canto inferior esquerdo. Esperado: o formulário cabe no painel, com Name,
+  Role, About, Highlight, Change photo e Save profile visíveis e
+  alcançáveis. Observado: o fundo cinza cobre o app; o conteúdo corta
+  depois de Change photo; um Save profile parcial fica sob o recorte; a
+  roda do mouse não rola o painel; uma faixa branca atravessa o chat por
+  volta do meio da tela. Close panel fecha o painel e o overlay some.
+  Distinto de **BUG-027** (Settings e depois My profile empilham, e o
+  overlay só sai com reload): aqui o caso é um reload limpo, sem Settings,
+  e o overlay some ao fechar. Distinto de **BUG-007** (tokens do modo
+  escuro).
+- Hipótese: o drawer (`vc-member-profile-drawer`, `.profile-drawer`) é
+  `position: fixed` com `overflow: auto` e o host é `display: contents`. O
+  formulário (nome, cargo, sobre, destaque, foto, salvar) passa da fatia
+  visível. No lab o recorte para depois de Change photo, Save profile fica
+  parcial e a roda não desloca o conteúdo. A faixa branca no meio do chat
+  aparece com o painel aberto e some junto com o overlay. Não há segundo
+  painel aberto — distinto do empilhamento de **BUG-027**.
+- Arquivos: `apps/web/src/app/features/chat/member-profile/member-profile-drawer.ts`,
+  `apps/web/src/app/layout/shell.page.ts` (`openOwnProfile`),
+  `apps/web/src/app/layout/shell-dialogs.ts`.
+- Resultado esperado: abrir My profile num reload limpo mostra Name, Role,
+  About, Highlight, Change photo e Save profile alcançáveis no painel (ou
+  o painel rola até o salvar). Close panel tira o overlay e a faixa branca.
+  Sem reload.
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: no lab, após reload, My profile mostra e deixa
+  clicar Save profile com o mouse; a roda rola se o conteúdo passar da
+  altura; Close panel limpa overlay e faixa; sem Settings aberto; finding
+  `Done`. Distinto de **BUG-027** e de **BUG-007**.
 
 ### BUG-027 — Painéis Settings + My profile empilham e travam overlay até reload
 
