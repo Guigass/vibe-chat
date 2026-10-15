@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { ApiService } from '../core/api/api.service';
 import { ui } from '../core/i18n/strings';
 import { ChannelStore } from '../core/services/channel.store';
@@ -11,7 +11,7 @@ import { Button, Input } from '../shared/ui';
   standalone: true,
   imports: [Button, Input],
   template: `
-    @if (!channels.isGuest()) {
+    @if (!channels.isGuest() && available()) {
       <div class="semantic">
         <vc-button variant="subtle" data-testid="search-semantic" (click)="toggle()">
           {{ ui.searchSemanticLabel }}
@@ -94,6 +94,7 @@ export class SemanticSearchPanel {
   protected readonly channels = inject(ChannelStore);
   private readonly api = inject(ApiService);
   private readonly messages = inject(MessageStore);
+  protected readonly available = signal(false);
   protected readonly open = signal(false);
   protected readonly query = signal('');
   protected readonly loading = signal(false);
@@ -102,6 +103,31 @@ export class SemanticSearchPanel {
   protected readonly answer = signal<string | null>(null);
   protected readonly citations = signal<SemanticCitation[]>([]);
   protected readonly reported = signal(false);
+
+  constructor() {
+    effect(() => {
+      const workspaceId = this.channels.activeWorkspace()?.id ?? null;
+      this.available.set(false);
+      this.open.set(false);
+      if (!workspaceId || this.channels.isGuest()) {
+        return;
+      }
+      void this.loadAvailability(workspaceId);
+    });
+  }
+
+  private async loadAvailability(workspaceId: string): Promise<void> {
+    try {
+      const settings = await this.api.semanticSettings(workspaceId);
+      if (this.channels.activeWorkspace()?.id === workspaceId) {
+        this.available.set(settings.enabled);
+      }
+    } catch {
+      if (this.channels.activeWorkspace()?.id === workspaceId) {
+        this.available.set(false);
+      }
+    }
+  }
 
   protected toggle(): void {
     this.open.update((value) => !value);

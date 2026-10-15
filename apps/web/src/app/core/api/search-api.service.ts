@@ -58,6 +58,10 @@ export class SearchApiService extends HttpApiClient {
     return this.request<SearchMessagesResult>(`/api/v1/search/messages?${params.toString()}`);
   }
 
+  semanticSettings(workspaceId: string): Promise<{ enabled: boolean }> {
+    return this.request<{ enabled: boolean }>(`/api/v1/workspaces/${workspaceId}/semantic/settings`);
+  }
+
   semanticQuery(workspaceId: string, q: string): Promise<SemanticQueryResult> {
     return this.request<SemanticQueryResult>(`/api/v1/workspaces/${workspaceId}/semantic/query`, {
       method: 'POST',
