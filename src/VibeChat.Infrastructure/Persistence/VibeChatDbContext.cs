@@ -70,6 +70,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<AiUsageRecord> AiUsageRecords => Set<AiUsageRecord>();
     public DbSet<AiSettings> AiSettings => Set<AiSettings>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+    public DbSet<DigestSchedule> DigestSchedules => Set<DigestSchedule>();
+    public DbSet<DigestRun> DigestRuns => Set<DigestRun>();
+    public DbSet<DigestItem> DigestItems => Set<DigestItem>();
     public DbSet<ChannelNotificationPreference> ChannelNotificationPreferences => Set<ChannelNotificationPreference>();
     public DbSet<TenantEmailSettings> TenantEmailSettings => Set<TenantEmailSettings>();
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
@@ -888,6 +891,47 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Level).HasConversion<string>().HasMaxLength(32);
             entity.Property(x => x.TimeZone).HasMaxLength(64);
             entity.Property(x => x.PriorityContactUserIds).HasColumnType("uuid[]");
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<DigestSchedule>(entity =>
+        {
+            entity.ToTable("digest_schedules", "notifications");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Cadence).HasMaxLength(16);
+            entity.Property(x => x.TimeZone).HasMaxLength(64);
+            entity.Property(x => x.Delivery).HasMaxLength(16);
+            entity.Property(x => x.ChannelIds).HasColumnType("uuid[]");
+            entity.HasIndex(x => new { x.TenantId, x.UserId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<DigestRun>(entity =>
+        {
+            entity.ToTable("digest_runs", "notifications");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.PeriodKey).HasMaxLength(80);
+            entity.Property(x => x.Cadence).HasMaxLength(16);
+            entity.Property(x => x.Status).HasMaxLength(16);
+            entity.Property(x => x.AiStatus).HasMaxLength(16);
+            entity.Property(x => x.Summary).HasMaxLength(500);
+            entity.Property(x => x.Delivery).HasMaxLength(16);
+            entity.HasIndex(x => new { x.TenantId, x.UserId, x.WorkspaceId, x.PeriodKey }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<DigestItem>(entity =>
+        {
+            entity.ToTable("digest_items", "notifications");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.Kind).HasMaxLength(24);
+            entity.HasIndex(x => new { x.RunId, x.Kind, x.SourceId }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

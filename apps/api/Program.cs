@@ -223,6 +223,7 @@ v1.MapInbox();
 v1.MapCommitments();
 v1.MapKnowledge();
 v1.MapNotifications();
+v1.MapDigests();
 v1.MapAdministration();
 v1.MapAI();
 v1.MapIntegrationBots();

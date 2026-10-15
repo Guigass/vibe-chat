@@ -233,6 +233,7 @@ internal static class NotificationsEndpoints
             pref.TimeZone = request.TimeZone;
             pref.DigestEnabled = request.DigestEnabled;
             pref.PriorityContactUserIds = priorityContacts;
+            await DigestScheduleSync.MirrorEnabledAsync(db, pref, clock.UtcNow, ct);
             await db.SaveChangesAsync(ct);
 
             var overrides = await db.ChannelNotificationPreferences.AsNoTracking()

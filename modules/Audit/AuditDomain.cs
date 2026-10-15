@@ -104,6 +104,7 @@ public static class AuditActions
     public const string SemanticReport = "semantic.report";
     public const string SemanticSettingsChange = "semantic.settings";
     public const string SemanticRebuild = "semantic.rebuild";
+    public const string DigestGenerated = "digest.generated";
 }
 
 public interface IAuditWriter

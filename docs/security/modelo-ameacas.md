@@ -369,6 +369,7 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | Superfície | Ameaça dominante | Controle mínimo decidido |
 |------------|------------------|----------------------|
 | RAG/embeddings | Conteúdo revogado continuar recuperável; ACL desatualizada | B-121 entregue — ver seção abaixo |
+| Digest/catch-up | Resumo com body ou fonte revogada | B-122 entregue — ver seção abaixo |
 | Workflows | Loop, replay, privilégio transitivo e ação sem owner | Idempotência, depth/rate limits, identidade e capability por ação |
 | Conectores/bridges | SSRF, secret leak, impersonation e cópia fora do tenant | D-21; egress policy, scopes, HMAC/OAuth, consentimento e audit |
 | Registry de plugins | Supply-chain compromise e pacote revogado continuar ativo | D-18; assinatura, provenance, revisão, revogação e kill switch |
@@ -384,6 +385,16 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 ## Busca semântica (B-121)
 
 Superfície implementada, R3. A ameaça principal é um embedding ou trecho sobreviver à exclusão, à revogação de membership ou atravessar tenant. O controle é: `SemanticSearch:Enabled` off por default e opt-in por workspace; RLS `FORCE` em `search.semantic_chunks`, `search.semantic_settings` e `search.semantic_usage`; a query filtra `tenant_id` + `workspace_id` e revalida a ACL atual da mensagem ou da página antes de citar; o hash do chunk tem de existir no texto atual; delete/purge limpa o texto da projeção; desligar o workspace apaga a projeção; a resposta só repete trechos citados; audit de uso não grava a pergunta; Qdrant (profile `ai`) guarda vetor e ids, nunca o texto, e a falha dele cai na projeção Postgres sem tocar o FTS. Conteúdo de canal privado ou DM só volta para membro atual.
+
+## Digests e catch-up (B-122)
+
+Superfície implementada, R3. A ameaça principal é o resumo virar cópia do body
+(e-mail, push, audit ou provider de IA) ou uma fonte revogada continuar
+aparecendo. O controle é: flag off por default; RLS `FORCE` nas três tabelas;
+snapshot só de ids; leitura revalida membership e omite mensagem apagada;
+entrega externa só com contagens; IA só com B-121 ligado e prompt de contagens;
+falha da IA não apaga a lista; `app.job_role=digest` só reivindica a agenda;
+outro usuário recebe 404 e outro tenant 403. O cursor de leitura não anda.
 
 ## Base de conhecimento (B-120)
 

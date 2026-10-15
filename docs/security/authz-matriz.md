@@ -178,6 +178,11 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | PUT | `/notifications/preferences/channels/{channelId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | Canal de outro tenant → 403 |
 | DELETE | `/notifications/preferences/channels/{channelId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | Canal de outro tenant → 403; preserva linha se `FollowAllThreads` |
 | PUT | `/notifications/preferences/channels/{channelId:guid}/follow-all-threads` | permission | `message.read` | ✓ | ✓ | ✓ | B-102; canal de outro tenant → 403 |
+| GET | `/notifications/digests/settings` | permission | `message.read` | ✓ | ✓ | ✓ | B-122; off → 404 |
+| PUT | `/notifications/digests/settings` | permission | `message.read` | ✓ | ✓ | ✓ | B-122; só o actor |
+| POST | `/workspaces/{workspaceId:guid}/digests/catch-up` | permission | `message.read` | ✓ | ✓ | ✓ | B-122; idempotente; não marca lido |
+| GET | `/workspaces/{workspaceId:guid}/digests/latest` | permission | `message.read` | ✓ | ✓ | ✓ | B-122; só runs do actor |
+| GET | `/workspaces/{workspaceId:guid}/digests/{digestId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-122; outro usuário → 404; outro tenant → 403 |
 | GET | `/admin/dashboard` | permission | `admin.dashboard` | ✗ | ✓ | ✓ | Gap B-175 fechado |
 | GET | `/admin/audit-events` | permission | `admin.dashboard` | ✗ | ✓ | ✓ | |
 | GET | `/admin/conversations` | permission | `admin.dashboard` | ✗ | ✓ | ✓ | |

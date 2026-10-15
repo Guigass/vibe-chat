@@ -31,7 +31,7 @@ public sealed class NotificationPreference
     /// <summary>IANA time zone id; DND is always computed live against it, never a fixed offset.</summary>
     public string? TimeZone { get; set; }
 
-    /// <summary>Stored but not yet sent (B-097 follow-up) — see spec note.</summary>
+    /// <summary>B-122 schedule switch. The worker reads <c>notifications.digest_schedules</c>.</summary>
     public bool DigestEnabled { get; set; }
 
     /// <summary>DM authors who bypass DND.</summary>

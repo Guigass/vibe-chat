@@ -8,6 +8,7 @@ builder.Services.AddVibeChatInfrastructure(builder.Configuration, useSignalRPubl
 builder.Services.AddHostedService<MessageRetentionPurgeDispatcher>();
 builder.Services.AddHostedService<PollCloseDispatcher>();
 builder.Services.AddHostedService<ScheduleDispatchDispatcher>();
+builder.Services.AddHostedService<DigestDispatchDispatcher>();
 
 var host = builder.Build();
 

@@ -1064,9 +1064,8 @@ que o autor da DM esteja em `PriorityContactUserIds`. `HidePreview` troca o corp
 notificação por vazio por destinatário (o payload passa a variar por assinatura, não
 mais um único payload por mensagem).
 
-`DigestEnabled` é persistido e exposto na UI, mas o envio do resumo por e-mail do
-que foi perdido durante o DND **não** está implementado nesta entrega — ver nota em
-[B-097](../product/specs/B-097-preferencias-notificacao-dnd.md).
+`DigestEnabled` continua o interruptor da agenda. O envio do resumo é B-122
+(ADR-033): snapshot de ids, não o corpo das pushes suprimidas no DND.
 
 | Endpoint | AuthZ | Notas |
 |----------|-------|-------|
@@ -1074,6 +1073,23 @@ que foi perdido durante o DND **não** está implementado nesta entrega — ver 
 | `PUT /api/v1/notifications/preferences` | `message.read` | Upsert; valida `TimeZone` quando `DndEnabled=true`; `PriorityContactUserIds` filtrado a membros do tenant |
 | `PUT /api/v1/notifications/preferences/channels/{channelId}` | `message.read` | `{ level, duration? }`; canal de outro tenant → 403 |
 | `DELETE /api/v1/notifications/preferences/channels/{channelId}` | `message.read` | Remove override (volta ao padrão); canal de outro tenant → 403 |
+
+### Digests e catch-up (B-122)
+
+Flag `Notifications:Digests:Enabled` default **false**. Off → 404
+`DigestDisabled`. Tabelas `notifications.digest_schedules`, `digest_runs`,
+`digest_items` com RLS `FORCE`. Itens guardam ids; a leitura revalida membership
+e omite mensagem apagada ou canal revogado. Não atualiza `read_cursors`.
+Entrega externa é só contagem. `digest.generated` (audit + outbox) não leva body.
+IA só com `SemanticSearch:Enabled` e opt-in do workspace; falha mantém a lista.
+
+| Endpoint | AuthZ | Notas |
+|----------|-------|-------|
+| `GET /api/v1/notifications/digests/settings` | `message.read` | Agenda do actor. 404 se a flag está off |
+| `PUT /api/v1/notifications/digests/settings` | `message.read` | `{ enabled, cadence, localTime, weekday, timeZone, delivery, includeAi, channelIds }`. 400 `InvalidDigestSettings` |
+| `POST /api/v1/workspaces/{workspaceId}/digests/catch-up` | `message.read` | Header `Idempotency-Key`. Mesma chave devolve o mesmo run e não reenvia |
+| `GET /api/v1/workspaces/{workspaceId}/digests/latest` | `message.read` | Último run do actor naquele workspace |
+| `GET /api/v1/workspaces/{workspaceId}/digests/{digestId}` | `message.read` | 404 se for de outro usuário. Outro tenant → 403 |
 
 Estritamente por `(tenant, user)` — ninguém, nem admin, lê ou escreve a preferência
 de outro usuário (sem trilha de auditoria para preferência pessoal, por desenho).

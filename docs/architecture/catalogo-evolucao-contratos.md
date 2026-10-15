@@ -75,6 +75,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Integrations:Bots:Enabled` | instance | false | B-109 | create/list/rotate/revoke/send → 404; mensagens já gravadas permanecem |
 | `Messaging:History:Enabled` | instance | false | B-114 | history/move → 404; edição não grava versão; versões já gravadas permanecem |
 | `SemanticSearch:Enabled` | instance + workspace | false | B-121 | FTS continua; opt-in do workspace apaga a projeção ao desligar |
+| `Notifications:Digests:Enabled` | instance | false | B-122 | settings/catch-up → 404 `DigestDisabled`; worker não varre; mensagens e inbox seguem |
 
 ## Registro inicial de flags futuras
 
