@@ -159,6 +159,23 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                 {
                     await VibeChat.Infrastructure.Messaging.KnowledgeEventFanout.DispatchAsync(
                         publisher, outbox, cancellationToken);
+                    try
+                    {
+                        var knowledgeRoot = JsonNode.Parse(outbox.Payload)?.AsObject();
+                        if (knowledgeRoot?["pageId"] is JsonNode pageNode)
+                        {
+                            var semantic = scope.ServiceProvider.GetRequiredService<ISemanticIndex>();
+                            await semantic.SyncPageAsync(outbox.TenantId, pageNode.GetValue<Guid>(), cancellationToken);
+                        }
+                    }
+                    catch (Exception semanticEx)
+                    {
+                        logger.LogWarning(
+                            semanticEx,
+                            "Semantic page index failed for outbox {OutboxMessageId}",
+                            outbox.Id);
+                    }
+
                     outbox.ProcessedAt = now;
                     outbox.Error = null;
                     continue;
@@ -205,6 +222,19 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                         logger.LogWarning(
                             indexEx,
                             "Search reindex failed for outbox {OutboxMessageId}; realtime already published",
+                            outbox.Id);
+                    }
+
+                    try
+                    {
+                        var semantic = scope.ServiceProvider.GetRequiredService<ISemanticIndex>();
+                        await semantic.SyncMessageAsync(tenantId, new MessageId(messageIdNode.GetValue<Guid>()), cancellationToken);
+                    }
+                    catch (Exception semanticEx)
+                    {
+                        logger.LogWarning(
+                            semanticEx,
+                            "Semantic index failed for outbox {OutboxMessageId}; FTS and realtime already published",
                             outbox.Id);
                     }
                 }

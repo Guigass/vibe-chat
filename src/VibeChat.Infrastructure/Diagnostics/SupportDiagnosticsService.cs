@@ -414,6 +414,7 @@ public sealed class SupportDiagnosticsService(
     private Dictionary<string, bool> Flags() => new(StringComparer.Ordinal)
     {
         ["ai"] = configuration.GetValue("Ai:Enabled", false),
+        ["semanticSearch"] = configuration.GetValue("SemanticSearch:Enabled", false),
         ["email"] = configuration.GetValue("Email:Enabled", false),
         ["history"] = configuration.GetValue("Messaging:History:Enabled", false),
         ["import"] = configuration.GetValue("Features:Import:Enabled", false),

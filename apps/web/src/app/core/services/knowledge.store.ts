@@ -103,10 +103,8 @@ export class KnowledgeStore {
     this.errorSignal.set(null);
     try {
       const page = await this.api.getPage(workspaceId, id);
-      this.pageSignal.set(page);
-      this.historySignal.set(await this.api.history(workspaceId, id));
       const draft = this.readDraft(id);
-      if (draft && draft.version === page.version) {
+      if (draft && draft.version === page.version && draft.title.trim().length > 0) {
         this.titleSignal.set(draft.title);
         this.bodySignal.set(draft.body);
         this.draftLocalSignal.set(true);
@@ -116,6 +114,11 @@ export class KnowledgeStore {
         this.bodySignal.set(page.body);
         this.draftLocalSignal.set(false);
       }
+      // Show the editor only after title/body are set. Otherwise the empty
+      // inputs emit `input`, persist a blank draft, and the next save sends
+      // an empty title (InvalidTitle) instead of the loaded page.
+      this.pageSignal.set(page);
+      this.historySignal.set(await this.api.history(workspaceId, id));
     } catch (error) {
       this.errorSignal.set(this.message(error, ui.knowledgeLoadError));
     }

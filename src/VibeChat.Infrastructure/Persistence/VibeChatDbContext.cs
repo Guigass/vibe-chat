@@ -95,6 +95,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<KnowledgeCollection> KnowledgeCollections => Set<KnowledgeCollection>();
     public DbSet<KnowledgePage> KnowledgePages => Set<KnowledgePage>();
     public DbSet<KnowledgePageVersion> KnowledgePageVersions => Set<KnowledgePageVersion>();
+    public DbSet<SemanticChunk> SemanticChunks => Set<SemanticChunk>();
+    public DbSet<SemanticSettings> SemanticSettings => Set<SemanticSettings>();
+    public DbSet<SemanticUsage> SemanticUsage => Set<SemanticUsage>();
     public DbSet<InboxSnooze> InboxSnoozes => Set<InboxSnooze>();
     public DbSet<ScheduledMessage> ScheduledMessages => Set<ScheduledMessage>();
     public DbSet<Reminder> Reminders => Set<Reminder>();
@@ -623,6 +626,42 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Body).HasMaxLength(KnowledgePolicies.MaxBodyLength);
             entity.Property(x => x.Action).HasMaxLength(32);
             entity.HasIndex(x => new { x.TenantId, x.PageId, x.Version }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<SemanticChunk>(entity =>
+        {
+            entity.ToTable("semantic_chunks", "search");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Text).HasMaxLength(SemanticPolicies.ChunkLength);
+            entity.Property(x => x.ContentHash).HasMaxLength(64);
+            entity.Property(x => x.Embedding).HasMaxLength(400);
+            entity.HasIndex(x => new { x.TenantId, x.SourceKind, x.SourceId, x.ChunkIndex }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.DeletedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<SemanticSettings>(entity =>
+        {
+            entity.ToTable("semantic_settings", "search");
+            entity.HasKey(x => x.WorkspaceId);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.HasIndex(x => x.TenantId);
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<SemanticUsage>(entity =>
+        {
+            entity.ToTable("semantic_usage", "search");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Outcome).HasMaxLength(32);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.UserId, x.CreatedAt });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

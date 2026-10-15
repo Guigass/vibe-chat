@@ -368,7 +368,7 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 
 | Superfície | Ameaça dominante | Controle mínimo decidido |
 |------------|------------------|----------------------|
-| RAG/embeddings | Conteúdo revogado continuar recuperável; ACL desatualizada | D-22; delete propagation, ACL no retrieval, audit e opt-in |
+| RAG/embeddings | Conteúdo revogado continuar recuperável; ACL desatualizada | B-121 entregue — ver seção abaixo |
 | Workflows | Loop, replay, privilégio transitivo e ação sem owner | Idempotência, depth/rate limits, identidade e capability por ação |
 | Conectores/bridges | SSRF, secret leak, impersonation e cópia fora do tenant | D-21; egress policy, scopes, HMAC/OAuth, consentimento e audit |
 | Registry de plugins | Supply-chain compromise e pacote revogado continuar ativo | D-18; assinatura, provenance, revisão, revogação e kill switch |
@@ -380,6 +380,10 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | Canvas colaborativo | AuthZ por bloco, conflito, histórico e export incompletos | D-17; modelo de permissão e retenção antes de CRDT/OT |
 | Migração/import | Archive hostil, duplicação, papel falso e cross-tenant | B-153; staging, dry-run, adapters versionados, quarentena local e quotas |
 | Backup de chat / destinos | Credencial de destino vazada; exfiltração; import hostil; confusão com dump de infra | B-172; flag off default, secrets mascarados, dry-run, audit, destinos OSS |
+
+## Busca semântica (B-121)
+
+Superfície implementada, R3. A ameaça principal é um embedding ou trecho sobreviver à exclusão, à revogação de membership ou atravessar tenant. O controle é: `SemanticSearch:Enabled` off por default e opt-in por workspace; RLS `FORCE` em `search.semantic_chunks`, `search.semantic_settings` e `search.semantic_usage`; a query filtra `tenant_id` + `workspace_id` e revalida a ACL atual da mensagem ou da página antes de citar; o hash do chunk tem de existir no texto atual; delete/purge limpa o texto da projeção; desligar o workspace apaga a projeção; a resposta só repete trechos citados; audit de uso não grava a pergunta; Qdrant (profile `ai`) guarda vetor e ids, nunca o texto, e a falha dele cai na projeção Postgres sem tocar o FTS. Conteúdo de canal privado ou DM só volta para membro atual.
 
 ## Base de conhecimento (B-120)
 

@@ -369,6 +369,28 @@ CREATE POLICY tenant_isolation_knowledge_page_versions ON knowledge.page_version
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS search.semantic_chunks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS search.semantic_chunks FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS search.semantic_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS search.semantic_settings FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS search.semantic_usage ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS search.semantic_usage FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_semantic_chunks ON search.semantic_chunks;
+CREATE POLICY tenant_isolation_semantic_chunks ON search.semantic_chunks
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_semantic_settings ON search.semantic_settings;
+CREATE POLICY tenant_isolation_semantic_settings ON search.semantic_settings
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_semantic_usage ON search.semantic_usage;
+CREATE POLICY tenant_isolation_semantic_usage ON search.semantic_usage
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 DROP POLICY IF EXISTS tenant_isolation_saved_messages ON messaging.saved_messages;
 CREATE POLICY tenant_isolation_saved_messages ON messaging.saved_messages
     USING ("TenantId" = app.current_tenant_id())
@@ -679,7 +701,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'administration', 'import', 'support', 'knowledge', 'app', 'public'
+      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, app_role);
@@ -700,7 +722,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'administration', 'import', 'support', 'knowledge', 'app', 'public'
+      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, backup_role);

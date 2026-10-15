@@ -1131,6 +1131,15 @@
     "knowledge.scopeWorkspace": "Пространство",
     "knowledge.scopeChannel": "Текущий канал",
     "knowledge.save": "Сохранить",
-    "knowledge.close": "Закрыть"
+    "knowledge.close": "Закрыть",
+    "shell.searchKeyword": "Текст",
+    "shell.searchSemantic": "ИИ",
+    "shell.searchSemanticLabel": "Поиск с ИИ",
+    "shell.searchSemanticEmpty": "Нет подтверждений в доступных вам источниках.",
+    "shell.searchSemanticAnswer": "Ответ с цитатами",
+    "shell.searchSemanticReport": "Пожаловаться на ответ",
+    "shell.searchSemanticReported": "Жалоба отправлена",
+    "shell.searchSemanticDisabled": "Поиск с ИИ выключен в этом пространстве.",
+    "shell.searchSemanticLimited": "Достигнут лимит поиска с ИИ."
   }
 }

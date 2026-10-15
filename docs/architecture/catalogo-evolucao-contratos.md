@@ -74,12 +74,12 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Directory:Invites:Enabled` | instance | false | B-040 | create/list/revoke/accept → 404; guests já aceitos permanecem até revogar |
 | `Integrations:Bots:Enabled` | instance | false | B-109 | create/list/rotate/revoke/send → 404; mensagens já gravadas permanecem |
 | `Messaging:History:Enabled` | instance | false | B-114 | history/move → 404; edição não grava versão; versões já gravadas permanecem |
+| `SemanticSearch:Enabled` | instance + workspace | false | B-121 | FTS continua; opt-in do workspace apaga a projeção ao desligar |
 
 ## Registro inicial de flags futuras
 
 | Flag lógica | Escopo | Default | B-ID | Comportamento off |
 |--------------|--------|---------|------|-------------------|
-| `Features:SemanticSearch:Enabled` | workspace | false | B-121 | FTS continua |
 | `Features:Automation:Enabled` | tenant | false | B-125 | triggers não executam |
 | `Features:Plugins:Enabled` | tenant | false | B-066 | integrações locais existentes preservadas |
 | `Features:Registry:Enabled` | instance | false | B-137 | catálogo local apenas |

@@ -1131,6 +1131,15 @@
     "knowledge.scopeWorkspace": "Workspace",
     "knowledge.scopeChannel": "Current channel",
     "knowledge.save": "Save",
-    "knowledge.close": "Close"
+    "knowledge.close": "Close",
+    "shell.searchKeyword": "Text",
+    "shell.searchSemantic": "AI",
+    "shell.searchSemanticLabel": "AI search",
+    "shell.searchSemanticEmpty": "No evidence in sources you can see.",
+    "shell.searchSemanticAnswer": "Answer with citations",
+    "shell.searchSemanticReport": "Report answer",
+    "shell.searchSemanticReported": "Answer reported",
+    "shell.searchSemanticDisabled": "AI search is off in this workspace.",
+    "shell.searchSemanticLimited": "The AI search limit was reached."
   }
 }

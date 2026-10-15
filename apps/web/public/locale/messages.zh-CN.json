@@ -1131,6 +1131,15 @@
     "knowledge.scopeWorkspace": "工作区",
     "knowledge.scopeChannel": "当前频道",
     "knowledge.save": "保存",
-    "knowledge.close": "关闭"
+    "knowledge.close": "关闭",
+    "shell.searchKeyword": "文本",
+    "shell.searchSemantic": "AI",
+    "shell.searchSemanticLabel": "AI 搜索",
+    "shell.searchSemanticEmpty": "在你能查看的来源中没有依据。",
+    "shell.searchSemanticAnswer": "带引用的回答",
+    "shell.searchSemanticReport": "举报回答",
+    "shell.searchSemanticReported": "已举报回答",
+    "shell.searchSemanticDisabled": "此工作区已关闭 AI 搜索。",
+    "shell.searchSemanticLimited": "已达到 AI 搜索限额。"
   }
 }

@@ -87,6 +87,18 @@ Teste negativo cross-tenant deve provar tanto o filtro quanto a revalidação.
   revalidação são invariantes de segurança.
 - **−** Mudança de embedding exige versionamento e reindexação controlada.
 
+## Implementação B-121
+
+A projeção governada fica em `search.semantic_chunks` (texto, hash, embedding
+`hash-v1`, ACL de roteamento). A query ordena por cosseno nessa projeção quando
+`SemanticSearch:QdrantUrl` está vazio. Com URL definida, a busca parte do Qdrant
+(payload só com ids de tenant/workspace/chunk) e recarrega o trecho no Postgres
+depois da revalidação. Falha do Qdrant volta para a mesma projeção, sem alterar
+o FTS. O profile Compose `ai` sobe o Qdrant sem porta publicada.
+
+O embedding padrão é local e determinístico (`hash-v1`). Não envia conteúdo a
+provider externo. Troca de perfil exige reindex (`POST .../semantic/rebuild`).
+
 ## Implementação e rollback
 
 B-121 estabelece a base de retrieval/RAG; B-157 adiciona fontes por bot e a

@@ -42,11 +42,11 @@ Conteúdo de DM/private só para membros atuais.
 
 ## Aceite
 
-- [ ] Resultado nunca contém fonte inacessível.
-- [ ] Delete/revoke deixa de recuperar conteúdo dentro do SLO definido.
-- [ ] Toda afirmação workspace-grounded tem citação.
-- [ ] Kill switch remove funcionalidade sem quebrar busca FTS.
-- [ ] Budget e audit funcionam.
+- [x] Resultado nunca contém fonte inacessível.
+- [x] Delete/revoke deixa de recuperar conteúdo dentro do SLO definido (próxima drenagem do outbox; ACL na leitura é síncrona).
+- [x] Toda afirmação workspace-grounded tem citação.
+- [x] Kill switch remove funcionalidade sem quebrar busca FTS.
+- [x] Budget e audit funcionam.
 
 ## Testes
 

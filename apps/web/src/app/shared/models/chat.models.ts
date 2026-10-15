@@ -410,6 +410,24 @@ export interface SearchAttachmentHit {
   rank: number;
 }
 
+export interface SemanticCitation {
+  chunkId: string;
+  sourceKind: 'message' | 'page';
+  sourceId: string;
+  channelId?: string | null;
+  sequence?: number | null;
+  excerpt: string;
+  score: number;
+}
+
+export interface SemanticQueryResult {
+  evidence: 'cited' | 'none';
+  answer: string | null;
+  confidence: number;
+  tokensCharged: number;
+  citations: SemanticCitation[];
+}
+
 export interface SearchMessagesResult {
   query: string;
   limit: number;

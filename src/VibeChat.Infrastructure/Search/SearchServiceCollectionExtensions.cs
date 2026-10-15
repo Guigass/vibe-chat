@@ -9,6 +9,10 @@ internal static class SearchServiceCollectionExtensions
     {
         services.AddScoped<ISearchIndexer, PostgresSearchIndexer>();
         services.AddScoped<ISearchQuery, PostgresSearchQuery>();
+        services.AddSingleton<QdrantSemanticIndex>();
+        services.AddScoped<SemanticSearchService>();
+        services.AddScoped<ISemanticIndex>(sp => sp.GetRequiredService<SemanticSearchService>());
+        services.AddScoped<ISemanticQuery>(sp => sp.GetRequiredService<SemanticSearchService>());
         return services;
     }
 }

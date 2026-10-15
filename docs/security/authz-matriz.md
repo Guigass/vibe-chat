@@ -163,6 +163,11 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/channels/{channelId:guid}/messages/{messageId:guid}/link-preview/image` | membership | — | ✓ | ✓ | ✓ | Proxy de imagem já SSRF-guarded |
 | PUT | `/channels/{channelId:guid}/read-cursor` | permission | `message.read` | ✓ | ✓ | ✓ | |
 | GET | `/search/messages` | permission | `search.messages` + `message.read` | ✓ | ✓ | ✓ | Filtros B-098 só restringem; hits de canal/pessoa/anexo usam a mesma membership; `authorId`/`channelId` invisível → 403 |
+| GET | `/workspaces/{workspaceId:guid}/semantic/settings` | permission | `ai.search` | ✓ | ✓ | ✓ | B-121; off → 404 sem projeção |
+| PUT | `/workspaces/{workspaceId:guid}/semantic/settings` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Desligar apaga chunks do workspace |
+| POST | `/workspaces/{workspaceId:guid}/semantic/query` | permission | `ai.search` + `search.messages` | ✓ | ✓ | ✓ | Citação só após revalidar ACL; sem evidência é resposta válida |
+| POST | `/workspaces/{workspaceId:guid}/semantic/report` | permission | `ai.search` + `search.messages` | ✓ | ✓ | ✓ | Audit sem pergunta nem trecho |
+| POST | `/workspaces/{workspaceId:guid}/semantic/rebuild` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Reconstrói projeção; não amplia ACL |
 | GET | `/channels/{channelId:guid}/unread-count` | membership | — | ✓ | ✓ | ✓ | Contagem do caller |
 | GET | `/notifications/push/public-key` | permission | `message.read` | ✓ | ✓ | ✓ | `{ enabled, publicKey? }`; off sem erro |
 | GET | `/notifications/push/subscriptions` | permission | `message.read` | ✓ | ✓ | ✓ | Só o actor |

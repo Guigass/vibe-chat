@@ -1131,6 +1131,15 @@
     "knowledge.scopeWorkspace": "Espace de travail",
     "knowledge.scopeChannel": "Canal actuel",
     "knowledge.save": "Enregistrer",
-    "knowledge.close": "Fermer"
+    "knowledge.close": "Fermer",
+    "shell.searchKeyword": "Texte",
+    "shell.searchSemantic": "IA",
+    "shell.searchSemanticLabel": "Recherche IA",
+    "shell.searchSemanticEmpty": "Aucune preuve dans les sources que vous pouvez voir.",
+    "shell.searchSemanticAnswer": "Réponse avec citations",
+    "shell.searchSemanticReport": "Signaler la réponse",
+    "shell.searchSemanticReported": "Réponse signalée",
+    "shell.searchSemanticDisabled": "La recherche IA est désactivée dans cet espace.",
+    "shell.searchSemanticLimited": "La limite de recherche IA est atteinte."
   }
 }

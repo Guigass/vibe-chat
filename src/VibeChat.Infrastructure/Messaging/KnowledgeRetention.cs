@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using VibeChat.Audit;
 using VibeChat.Messaging;
+using VibeChat.Search;
 using VibeChat.SharedKernel;
 
 namespace VibeChat.Infrastructure.Messaging;
@@ -26,6 +27,7 @@ public static class KnowledgeRetention
         }
 
         var pageIds = pages.Select(row => row.Id).ToList();
+        await VibeChat.Infrastructure.SemanticRetention.RemoveSourcesAsync(db, tenantId, SemanticSourceKind.Page, pageIds, cancellationToken);
         var versions = await db.KnowledgePageVersions.IgnoreQueryFilters()
             .Where(row => row.TenantId == tenantId && pageIds.Contains(row.PageId))
             .ToListAsync(cancellationToken);
