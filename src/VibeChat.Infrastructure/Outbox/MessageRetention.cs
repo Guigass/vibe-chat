@@ -144,6 +144,8 @@ public sealed class MessageRetentionPurgeProcessor(
 
             await VibeChat.Infrastructure.Messaging.CommitmentRedaction.MarkSourcesAsync(
                 db, policy.TenantId, messageIds, cancellationToken);
+            await VibeChat.Infrastructure.Messaging.TaskRedaction.MarkSourcesAsync(
+                db, policy.TenantId, messageIds, cancellationToken);
 
             if (messageIdGuids.Count > 0)
             {

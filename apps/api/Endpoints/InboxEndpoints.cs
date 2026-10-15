@@ -365,7 +365,7 @@ internal static class InboxEndpoints
         return new InboxPageResponse(
             items,
             page.NextCursor,
-            new InboxCountsResponse(counts.Announcement, counts.Mention, counts.Direct, counts.Thread, counts.Saved, counts.Topic, counts.Commitment, counts.Total));
+            new InboxCountsResponse(counts.Announcement, counts.Mention, counts.Direct, counts.Thread, counts.Saved, counts.Topic, counts.Commitment, counts.Tasks, counts.Total));
     }
 
     private readonly record struct WorkspaceGate(

@@ -508,6 +508,20 @@ internal static class ChannelMembershipEndpoints
             .MaxAsync(ct) ?? 0;
         membership.LeftAt = clock.UtcNow;
         membership.LeftSeq = leaveSeq;
+        var taskIds = await db.MessageTasks.AsNoTracking()
+            .Where(row => row.ChannelId == membership.ChannelId)
+            .Select(row => row.Id)
+            .ToListAsync(ct);
+        if (taskIds.Count > 0)
+        {
+            var assigned = await db.MessageTaskAssignees
+                .Where(row => row.UserId == membership.UserId && taskIds.Contains(row.TaskId))
+                .ToListAsync(ct);
+            if (assigned.Count > 0)
+            {
+                db.MessageTaskAssignees.RemoveRange(assigned);
+            }
+        }
     }
 
     private static async Task EvictAsync(

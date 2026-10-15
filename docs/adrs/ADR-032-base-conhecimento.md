@@ -25,7 +25,7 @@ server-authoritative antes de qualquer CRDT. B-152 fica para coedição.
    append-only; restore cria uma versão nova com o conteúdo antigo.
 5. O body é Markdown restrito: sem tag HTML e sem scheme `javascript:`,
    `data:` ou `vbscript:`. Referências `[[message|decision|task|attachment:uuid]]`
-   são resolvidas na leitura. `task` aponta para action item (B-119) até B-123.
+   são resolvidas na leitura. `task` aponta para `messaging.tasks` (B-123).
    Alvo inacessível, apagado ou de outro kind volta `redacted`, sem título.
 6. Flag `Knowledge:Pages:Enabled`, **off** em `appsettings.json`. Desligada, os
    endpoints respondem `KnowledgeDisabled` (404) e não gravam. Development e o

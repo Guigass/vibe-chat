@@ -95,6 +95,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<SavedMessage> SavedMessages => Set<SavedMessage>();
     public DbSet<Commitment> Commitments => Set<Commitment>();
     public DbSet<CommitmentChange> CommitmentChanges => Set<CommitmentChange>();
+    public DbSet<MessageTask> MessageTasks => Set<MessageTask>();
+    public DbSet<MessageTaskAssignee> MessageTaskAssignees => Set<MessageTaskAssignee>();
+    public DbSet<MessageTaskChecklistItem> MessageTaskChecklistItems => Set<MessageTaskChecklistItem>();
     public DbSet<KnowledgeCollection> KnowledgeCollections => Set<KnowledgeCollection>();
     public DbSet<KnowledgePage> KnowledgePages => Set<KnowledgePage>();
     public DbSet<KnowledgePageVersion> KnowledgePageVersions => Set<KnowledgePageVersion>();
@@ -578,6 +581,53 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.ActorUserId).HasConversion(v => v.Value, v => new UserId(v));
             entity.Property(x => x.Action).HasMaxLength(32);
             entity.HasIndex(x => new { x.TenantId, x.CommitmentId, x.At });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<MessageTask>(entity =>
+        {
+            entity.ToTable("tasks", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.SourceMessageId).HasConversion(v => v.Value, v => new MessageId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.CompletedBy).HasConversion(
+                v => v.HasValue ? v.Value.Value : (Guid?)null,
+                v => v.HasValue ? new UserId(v.Value) : null);
+            entity.Property(x => x.Title).HasMaxLength(TaskPolicies.MaxTitleLength);
+            entity.Property(x => x.Description).HasMaxLength(TaskPolicies.MaxDescriptionLength);
+            entity.Property(x => x.ExcerptHash).HasMaxLength(64);
+            entity.Property(x => x.Method).HasMaxLength(32);
+            entity.Property(x => x.AuthzSnapshot).HasMaxLength(TaskPolicies.MaxAuthzSnapshotLength);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(TaskPolicies.MaxIdempotencyKeyLength);
+            entity.Property(x => x.Version).IsConcurrencyToken();
+            entity.HasIndex(x => new { x.TenantId, x.CreatedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.State, x.CreatedAt });
+            entity.HasIndex(x => new { x.TenantId, x.SourceMessageId });
+            entity.HasIndex(x => new { x.DueAt, x.OverdueNotifiedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<MessageTaskAssignee>(entity =>
+        {
+            entity.ToTable("task_assignees", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.HasIndex(x => new { x.TenantId, x.TaskId, x.UserId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.UserId });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<MessageTaskChecklistItem>(entity =>
+        {
+            entity.ToTable("task_checklist_items", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.Text).HasMaxLength(TaskPolicies.MaxChecklistTextLength);
+            entity.HasIndex(x => new { x.TenantId, x.TaskId, x.Position });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

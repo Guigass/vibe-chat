@@ -40,11 +40,11 @@ membership desatribui ou transfere segundo regra documentada.
 
 ## Aceite
 
-- [ ] Task mantém origem.
-- [ ] Concurrency não perde atualização.
-- [ ] Reminder/inbox respeitam preferências.
-- [ ] Ex-membro não conserva acesso.
-- [ ] Eventos são idempotentes.
+- [x] Task mantém origem.
+- [x] Concurrency não perde atualização.
+- [x] Reminder/inbox respeitam preferências.
+- [x] Ex-membro não conserva acesso.
+- [x] Eventos são idempotentes.
 
 ## Testes
 

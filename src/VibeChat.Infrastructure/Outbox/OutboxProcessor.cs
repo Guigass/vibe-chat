@@ -155,6 +155,15 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     continue;
                 }
 
+                if (TaskPolicies.IsTaskEvent(outbox.Type))
+                {
+                    await VibeChat.Infrastructure.Messaging.TaskEventFanout.DispatchAsync(
+                        scope.ServiceProvider, publisher, outbox, cancellationToken);
+                    outbox.ProcessedAt = now;
+                    outbox.Error = null;
+                    continue;
+                }
+
                 if (outbox.Type == DigestEventTypes.Generated)
                 {
                     await DigestNoticeFanout.DispatchAsync(scope.ServiceProvider, outbox, cancellationToken);

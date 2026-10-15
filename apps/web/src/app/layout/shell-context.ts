@@ -2,6 +2,7 @@ import { Component, effect, inject, input, output } from '@angular/core';
 import { ui } from '../core/i18n/strings';
 import { ChannelStore } from '../core/services/channel.store';
 import { CommitmentStore } from '../core/services/commitment.store';
+import { TaskStore } from '../core/services/task.store';
 import { KnowledgeStore } from '../core/services/knowledge.store';
 import { FollowedThreadsStore } from '../core/services/followed-threads.store';
 import { InboxStore } from '../core/services/inbox.store';
@@ -11,6 +12,7 @@ import { SavedStore } from '../core/services/saved.store';
 import { ThreadStore } from '../core/services/thread.store';
 import { ChannelMembersPanel } from '../features/chat/channel-members-panel/channel-members-panel';
 import { CommitmentPanel } from '../features/chat/commitment-panel/commitment-panel';
+import { TaskPanel } from '../features/chat/task-panel/task-panel';
 import { KnowledgePanel } from '../features/chat/knowledge-panel/knowledge-panel';
 import { FollowedThreadsPanel } from '../features/chat/followed-threads-panel/followed-threads-panel';
 import { InboxPanel } from '../features/chat/inbox-panel/inbox-panel';
@@ -31,6 +33,7 @@ import { ThreadPanel } from '../features/chat/thread-panel/thread-panel';
     PinsPanel,
     NotificationPreferencesPanel,
     CommitmentPanel,
+    TaskPanel,
     KnowledgePanel,
   ],
   template: `
@@ -70,6 +73,10 @@ import { ThreadPanel } from '../features/chat/thread-panel/thread-panel';
       <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.commitmentPanel">
         <vc-commitment-panel />
       </aside>
+    } @else if (tasks.panelOpen()) {
+      <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.taskPanel">
+        <vc-task-panel />
+      </aside>
     } @else if (knowledge.panelOpen()) {
       <aside class="shell__context vc-anim-sidebar" [attr.aria-label]="ui.knowledgePanel">
         <vc-knowledge-panel />
@@ -94,6 +101,7 @@ export class ShellContext {
   readonly pins = inject(PinStore);
   readonly prefs = inject(NotificationPreferencesStore);
   readonly commitments = inject(CommitmentStore);
+  readonly tasks = inject(TaskStore);
   readonly knowledge = inject(KnowledgeStore);
   private readonly channels = inject(ChannelStore);
 
@@ -109,6 +117,7 @@ export class ShellContext {
         || this.followed.panelOpen()
         || this.pins.panelOpen()
         || this.commitments.panelOpen()
+        || this.tasks.panelOpen()
         || this.prefs.panelOpen();
       if (otherOpen && this.knowledge.panelOpen()) {
         this.knowledge.closePanel();

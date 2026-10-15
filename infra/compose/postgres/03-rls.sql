@@ -4,7 +4,7 @@
 -- Session GUCs (SET LOCAL / set_config is_local preferred inside transactions):
 --   app.tenant_id  — required for tenant-scoped reads/writes (fail closed when unset)
 --   app.user_id    — bootstrap membership discovery before tenant is known
---   app.job_role   — 'outbox' | 'retention' | 'polls' | 'schedule' | 'digest' for worker cross-tenant claim paths only
+--   app.job_role   — 'outbox' | 'retention' | 'polls' | 'schedule' | 'digest' | 'tasks' for worker cross-tenant claim paths only
 --   app.invite_token_hash — B-040 accept lookup only; reveals the single matching invite row
 --   app.integration_token_hash — B-109 token lookup only; reveals the single matching bot token row
 --
@@ -344,6 +344,31 @@ CREATE POLICY tenant_isolation_commitments ON messaging.commitments
 
 DROP POLICY IF EXISTS tenant_isolation_commitment_changes ON messaging.commitment_changes;
 CREATE POLICY tenant_isolation_commitment_changes ON messaging.commitment_changes
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+ALTER TABLE IF EXISTS messaging.tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.tasks FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.task_assignees ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.task_assignees FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.task_checklist_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.task_checklist_items FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_tasks ON messaging.tasks;
+CREATE POLICY tenant_isolation_tasks ON messaging.tasks
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR app.current_job_role() = 'tasks'
+    )
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_task_assignees ON messaging.task_assignees;
+CREATE POLICY tenant_isolation_task_assignees ON messaging.task_assignees
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_task_checklist_items ON messaging.task_checklist_items;
+CREATE POLICY tenant_isolation_task_checklist_items ON messaging.task_checklist_items
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

@@ -17,6 +17,7 @@ public enum InboxItemKind
     Saved = 5,
     Topic = 6,
     Commitment = 7,
+    Task = 8,
 }
 
 public enum InboxStateFilter
@@ -81,6 +82,7 @@ public static class InboxPolicies
         InboxItemKind.Saved => "saved",
         InboxItemKind.Topic => "topic",
         InboxItemKind.Commitment => "commitment",
+        InboxItemKind.Task => "task",
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 
@@ -93,6 +95,7 @@ public static class InboxPolicies
         InboxItemKind.Saved => "saved",
         InboxItemKind.Topic => "followed_topic",
         InboxItemKind.Commitment => "assigned",
+        InboxItemKind.Task => "assigned",
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 
@@ -121,6 +124,9 @@ public static class InboxPolicies
                 return true;
             case "commitment":
                 kind = InboxItemKind.Commitment;
+                return true;
+            case "task":
+                kind = InboxItemKind.Task;
                 return true;
             default:
                 kind = default;
@@ -210,7 +216,7 @@ public static class InboxPolicies
         var bestByMessage = new Dictionary<Guid, InboxCandidate>();
         foreach (var item in items)
         {
-            if (item.Kind is InboxItemKind.Direct or InboxItemKind.Thread or InboxItemKind.Topic or InboxItemKind.Commitment
+            if (item.Kind is InboxItemKind.Direct or InboxItemKind.Thread or InboxItemKind.Topic or InboxItemKind.Commitment or InboxItemKind.Task
                 || item.MessageId is null)
             {
                 passthrough.Add(item);

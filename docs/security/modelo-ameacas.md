@@ -400,6 +400,10 @@ outro usuário recebe 404 e outro tenant 403. O cursor de leitura não anda.
 
 Superfície implementada, R3. A ameaça principal é página ou versão sobreviver fora da ACL, HTML no Markdown virar XSS, ou uma referência revogada continuar mostrando título. O controle é: flag off por default; RLS `FORCE` em `knowledge.collections`, `knowledge.pages` e `knowledge.page_versions`; busca e export filtram a coleção na leitura; canal privado exige membership atual; body rejeita tag HTML e schemes `javascript:`/`data:`/`vbscript:`; referência inacessível volta `redacted` sem label; outbox sem título nem body; conflito de versão não grava.
 
+## Tarefas derivadas de mensagens (B-123)
+
+Superfície implementada, R2. A ameaça principal é copiar o body, manter um ex-membro atribuído ou perder uma atualização concorrente. O controle é: só campos curados + hash de excerpt; leitura revalida o canal; `restricted` fica no criador e nos assignees; saída do canal privado desatribui; RLS `FORCE` em `messaging.tasks`, `messaging.task_assignees` e `messaging.task_checklist_items`; `Version` recusa escrita obsoleta; outbox sem título nem body; `task.overdue` uma vez via `app.job_role=tasks`.
+
 ## Decisões e action items (B-119)
 
 Superfície implementada, R2. A ameaça principal é uma segunda cópia do body sobreviver a delete/purge ou a ACL revogada. O controle é: persistir só campos curados + hash de excerpt; revalidar leitura do canal em toda lista; visibilidade `restricted` limitada a criador e owner; RLS `FORCE` em `messaging.commitments` e `messaging.commitment_changes`; eventos de outbox sem título nem body.

@@ -47,7 +47,7 @@ organiza. Estados:
 |------------|--------|---------------|
 | Webhook outbound mínimo | Atual | B-108 |
 | Bot/token e plugins locais | Committed | B-109/B-110 |
-| Tarefas derivadas de mensagens | Planned | B-123 / W12 |
+| Tarefas derivadas de mensagens | Done | B-123 / W12 |
 | Formulários e aprovações | Planned | B-124 / W12 |
 | Automation builder | Planned | B-125 / W13 |
 | Incident rooms e playbooks | Planned | B-126 / W13 |

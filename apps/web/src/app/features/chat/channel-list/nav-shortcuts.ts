@@ -2,6 +2,7 @@ import { Component, inject, input } from '@angular/core';
 import { ui } from '../../../core/i18n/strings';
 import { FollowedThreadsStore } from '../../../core/services/followed-threads.store';
 import { CommitmentStore } from '../../../core/services/commitment.store';
+import { TaskStore } from '../../../core/services/task.store';
 import { KnowledgeStore } from '../../../core/services/knowledge.store';
 import { InboxStore } from '../../../core/services/inbox.store';
 import { NotificationPreferencesStore } from '../../../core/services/notification-preferences.store';
@@ -143,6 +144,32 @@ import { Badge, VcTooltip } from '../../../shared/ui';
         type="button"
         class="channel-list__saved"
         [class.channel-list__saved--compact]="navCompact()"
+        [class.channel-list__saved--active]="tasks.panelOpen()"
+        data-testid="tasks-nav"
+        [attr.aria-label]="navCompact() ? ui.taskNav : null"
+        [vcTooltip]="navCompact() ? ui.taskNav : null"
+        [tooltipDisabled]="!navCompact()"
+        position="right"
+        (click)="openTasks()"
+      >
+        <span class="channel-list__saved-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 11l3 3L22 4" />
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+          </svg>
+        </span>
+        @if (!navCompact()) {
+          <span class="channel-list__saved-copy">
+            <span class="channel-list__saved-label">{{ ui.taskNav }}</span>
+            <span class="channel-list__saved-hint">{{ ui.taskNavHint }}</span>
+          </span>
+        }
+      </button>
+
+      <button
+        type="button"
+        class="channel-list__saved"
+        [class.channel-list__saved--compact]="navCompact()"
         [class.channel-list__saved--active]="knowledge.panelOpen()"
         data-testid="knowledge-nav"
         [attr.aria-label]="navCompact() ? ui.knowledgeNav : null"
@@ -232,6 +259,7 @@ export class NavShortcuts {
   readonly saved = inject(SavedStore);
   readonly followedThreads = inject(FollowedThreadsStore);
   readonly commitments = inject(CommitmentStore);
+  readonly tasks = inject(TaskStore);
   readonly knowledge = inject(KnowledgeStore);
   private readonly threads = inject(ThreadStore);
   private readonly pins = inject(PinStore);
@@ -242,6 +270,7 @@ export class NavShortcuts {
     this.saved.closePanel();
     this.followedThreads.closePanel();
     this.commitments.closePanel();
+    this.tasks.closePanel();
     this.knowledge.closePanel();
     this.notificationPrefs.closePanel();
     this.inbox.openPanel();
@@ -251,6 +280,7 @@ export class NavShortcuts {
     this.pins.closePanel();
     this.followedThreads.closePanel();
     this.commitments.closePanel();
+    this.tasks.closePanel();
     this.knowledge.closePanel();
     this.inbox.closePanel();
     this.saved.openPanel();
@@ -260,6 +290,7 @@ export class NavShortcuts {
     this.pins.closePanel();
     this.saved.closePanel();
     this.commitments.closePanel();
+    this.tasks.closePanel();
     this.knowledge.closePanel();
     this.inbox.closePanel();
     this.followedThreads.openPanel();
@@ -269,10 +300,22 @@ export class NavShortcuts {
     this.pins.closePanel();
     this.saved.closePanel();
     this.followedThreads.closePanel();
+    this.tasks.closePanel();
     this.knowledge.closePanel();
     this.inbox.closePanel();
     this.notificationPrefs.closePanel();
     this.commitments.openPanel();
+  }
+
+  openTasks(): void {
+    this.pins.closePanel();
+    this.saved.closePanel();
+    this.followedThreads.closePanel();
+    this.commitments.closePanel();
+    this.knowledge.closePanel();
+    this.inbox.closePanel();
+    this.notificationPrefs.closePanel();
+    this.tasks.openPanel();
   }
 
   openKnowledge(): void {
@@ -281,6 +324,7 @@ export class NavShortcuts {
     this.saved.closePanel();
     this.followedThreads.closePanel();
     this.commitments.closePanel();
+    this.tasks.closePanel();
     this.inbox.closePanel();
     this.notificationPrefs.closePanel();
     this.knowledge.openPanel();

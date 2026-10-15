@@ -388,6 +388,23 @@ Entidade curada em `messaging.commitments`. O body da mensagem **não** é copia
 | Inbox | Kind `commitment` (prioridade 7, reason `assigned`) para o owner de item `open`, se o nível efetivo notifica menção e o DND não está ativo. `HidePreview` omite o título. Perder o canal remove o item |
 | Delete/purge | Soft-delete e purge da origem setam `SourceRedacted`. A resposta não devolve body |
 
+### Tarefas derivadas de mensagens (B-123)
+
+Entidade curada em `messaging.tasks`. O body da mensagem **não** é copiado. Checklist ordenado em `messaging.task_checklist_items`. Responsáveis em `messaging.task_assignees`. Comentários continuam na thread de origem.
+
+| Item | Regra |
+|------|--------|
+| Tabelas | `messaging.tasks`, `messaging.task_assignees`, `messaging.task_checklist_items`. `TenantId` + FORCE RLS. Unique `(TenantId, CreatedBy, IdempotencyKey)` e `(TenantId, TaskId, UserId)`. `Version` é concurrency token. O worker lê tarefas vencidas com `app.job_role=tasks` |
+| `POST /api/v1/workspaces/{workspaceId}/tasks` | `{ idempotencyKey, messageId, title, description?, priority?, assigneeUserIds?, dueAt?, visibility?, checklist? }`. `message.read` da origem. Assignee sem leitura do canal → **400** `AssigneeNotMember`. Replay da chave devolve a tarefa original. Mensagem de sistema → **400** `NotConvertible`. Checklist máx. 20, texto 1–200, ordem do array |
+| `GET …/tasks` | Query `view` (`workspace` default, `channel`, `mine`), `channelId` obrigatório em `channel`, `state` (`active` default, `open`, `in_progress`, `completed`, `all`), `cursor`, `limit` (máx. 50). Sem leitura atual do canal, ou `restricted` para quem não é criador/assignee → o item some (**404** no GET por id). `mine` = assignee |
+| `PATCH` | `{ version, … }`. Versão diferente → **409** `TaskVersionConflict` com `currentVersion` e sem gravar. Criador, assignee, ou `workspace.admin` só quando `visibility=channel` |
+| `POST …/complete` / `POST …/reopen` | `{ version }`. Repetir o estado atual não emite outro evento |
+| Estados | `open`, `in_progress`, `completed`. Prioridade `low\|normal\|high\|urgent`. Atraso é derivado (`dueAt` no passado e estado ≠ `completed`); a UI mostra o texto, não só cor |
+| Membership | Quem perde a leitura do canal privado é **desatribuído** (não há transferência automática). A tarefa permanece para quem ainda lê a origem |
+| Inbox | Kind `task` (prioridade 8, reason `assigned`) para cada assignee de tarefa não concluída, com o mesmo filtro de menção/DND/`HidePreview` do action item |
+| Eventos | Outbox `task.created`, `task.updated`, `task.completed`, `task.overdue`. Payload sem título nem body. `task.overdue` sai uma vez (`OverdueNotifiedAt`). `restricted` vai ao criador e aos assignees; `channel` ao grupo do canal |
+| Delete/purge | Soft-delete e purge da origem setam `SourceRedacted`. `[[task:uuid]]` inacessível ou redigido volta `redacted` sem título |
+
 ### Base de conhecimento (B-120)
 
 Páginas server-authoritative em `knowledge.pages`. Coleções em `knowledge.collections` com escopo `workspace`, `space` ou `channel`. Histórico append-only em `knowledge.page_versions`. Flag `Knowledge:Pages:Enabled` (**off** por default; 404 `KnowledgeDisabled` sem gravar). ADR-032.
@@ -402,7 +419,7 @@ Páginas server-authoritative em `knowledge.pages`. Coleções em `knowledge.col
 | `PATCH …/pages/{pageId}` | `{ version, title, body }`. Versão diferente → **409** `KnowledgeVersionConflict` com `currentVersion` e sem gravar |
 | `POST …/restore` | `{ expectedVersion, sourceVersion }` cria versão nova com o conteúdo antigo. `knowledge.manage` |
 | `GET …/search?q=` | Mínimo 2 caracteres. Só páginas de coleções visíveis. Sem título de página inacessível |
-| Referências | Tokens `[[message:uuid]]`, `[[decision:uuid]]`, `[[task:uuid]]`, `[[attachment:uuid]]`. `task` resolve action item até B-123. Inacessível ou apagado → `{ state: redacted }` sem label |
+| Referências | Tokens `[[message:uuid]]`, `[[decision:uuid]]`, `[[task:uuid]]`, `[[attachment:uuid]]`. `task` resolve `messaging.tasks` (B-123). Inacessível ou apagado → `{ state: redacted }` sem label |
 | Export | `GET …/pages/{id}/export` devolve página e versões para quem vê. `GET …/knowledge/export` exige manage e o mesmo filtro de ACL |
 | Retenção | Soft-delete entra no purge do tenant: página e versões saem juntas |
 | Evento | Outbox `knowledge.page.changed` (`tenantId`, `workspaceId`, `pageId`, `collectionId`, `version`, `action`, `channelId?`). Sem título nem body. SignalR só no escopo canal |
@@ -415,9 +432,9 @@ O único estado novo é o snooze pessoal.
 
 | Item | Regra |
 |------|--------|
-| Ordem | `announcement` (1), `mention` (2), `dm` (3), `thread` (4), `saved` (5), `topic` (6), `commitment` (7). Dentro do tipo: `sortAt` decrescente e `itemKey` ascendente. DM usa `channel.CreatedAt` (estável); os demais usam o instante imutável da origem |
+| Ordem | `announcement` (1), `mention` (2), `dm` (3), `thread` (4), `saved` (5), `topic` (6), `commitment` (7), `task` (8). Dentro do tipo: `sortAt` decrescente e `itemKey` ascendente. DM usa `channel.CreatedAt` (estável); os demais usam o instante imutável da origem |
 | Dedup | Anúncio, menção e salvo do mesmo `messageId` aparecem uma vez, no tipo de maior prioridade. DM e thread não colapsam |
-| `GET /api/v1/workspaces/{workspaceId}/inbox` | `message.read`. Query `type` (`announcement\|mention\|dm\|thread\|saved\|topic\|commitment`), `state` (`open` default, `snoozed`, `all`), `cursor`, `limit` (máx. 50). Outro tenant ou workspace inacessível → **403**. Filtro inválido → **400** `InvalidInboxFilter`. Cursor inválido → **400** `InvalidCursor` |
+| `GET /api/v1/workspaces/{workspaceId}/inbox` | `message.read`. Query `type` (`announcement\|mention\|dm\|thread\|saved\|topic\|commitment\|task`), `state` (`open` default, `snoozed`, `all`), `cursor`, `limit` (máx. 50). Outro tenant ou workspace inacessível → **403**. Filtro inválido → **400** `InvalidInboxFilter`. Cursor inválido → **400** `InvalidCursor` |
 | Item | `{ itemKey, kind, priority, reason, channelId, channelName, messageId?, threadId?, sequence?, bodyPreview, messageRemoved, sortAt, snoozedUntil?, navigation }`. `reason`: `pending_ack`, `mention`, `unread_dm`, `followed_thread`, `saved`. Sem membership o item some por completo |
 | Contagens | `counts.{announcement,mention,direct,thread,saved,total}` do estado pedido, antes do filtro de tipo |
 | Ler | `POST .../inbox/read` body `{ itemKey }` avança o cursor canônico até a sequência do item (DM: última sequência do canal; thread: `LastReadSeq` da assinatura). Repetir após sumir → **404** `InboxItemNotFound`. Anúncio e salvo → **400** `InboxReadNotApplicable`. Publica `ReadCursorChanged` no canal |
