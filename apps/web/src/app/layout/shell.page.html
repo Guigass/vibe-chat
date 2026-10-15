@@ -107,6 +107,7 @@
             [tooltipDisabled]="!(navCompact() && !narrowViewport())"
           >{{ ui.admin }}</a>
         }
+        <a routerLink="/app/catch-up" data-testid="catch-up-open">{{ ui.catchUp }}</a>
         <button type="button" data-testid="own-profile-open" (click)="openOwnProfile()">{{ ui.profileMine }}</button>
         <button
           type="button"

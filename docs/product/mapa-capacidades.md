@@ -36,7 +36,7 @@ organiza. Estados:
 | Painéis de contexto (sidebar direita) | Done | B-171 / W9-9 |
 | Barra de navegação (sidebar esquerda) | **Done** | B-184 / W9-11 |
 | Decisões e action items vinculados | Done | B-119 / W12 |
-| Digests e catch-up programado | Planned | B-122 / W12 |
+| Digests e catch-up programado | Done | B-122 / W12 |
 | Busca semântica/RAG autorizada | Planned | B-121 / W12 |
 | Base de conhecimento leve | Done | B-120 / W12; ADR-032 |
 | Canvas/edição colaborativa CRDT | Planned | B-152 / W17 |

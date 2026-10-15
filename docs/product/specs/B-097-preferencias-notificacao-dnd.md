@@ -77,11 +77,8 @@ para o próprio ator — então "ler preferência de outro usuário" é estrutur
 impossível em vez de checado em runtime; `tests/security` cobre o mesmo risco
 provando que a escrita de um usuário nunca aparece na leitura de outro.
 
-`DigestEnabled` é persistido (coluna + toggle na UI de preferências), mas o envio
-do resumo por e-mail do que foi perdido durante o DND **não** foi implementado
-nesta entrega — exigiria fila de mensagens suprimidas + worker periódico + template
-de e-mail, sem critério de aceite nem teste definidos aqui. Fica como item futuro
-quando houver demanda.
+`DigestEnabled` é o interruptor da agenda. O resumo em si é B-122: lista
+determinística de ids, sem reenviar o corpo das notificações suprimidas no DND.
 
 ## Testes
 

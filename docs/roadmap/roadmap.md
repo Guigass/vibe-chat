@@ -309,7 +309,7 @@ sem dependência entre si podem ir em paralelo por trilhas diferentes.
 |----|--------|--------|------|------|--------|
 | W10-1 | B/C/D | Web Push (B-095) | W8-4, W9-7, D-13 | [B-095](../product/specs/B-095-web-push.md) | **Done** |
 | W10-2 | C/D | Enquetes (B-096) | W8-9 | [B-096](../product/specs/B-096-enquetes.md) | **Done** |
-| W10-3 | B/D | Preferências de notificação e DND (B-097) | W10-1 | [B-097](../product/specs/B-097-preferencias-notificacao-dnd.md) | **Done** — nível/canal/DND/prioridade/ocultar prévia; envio de resumo por e-mail (`DigestEnabled`) fica para item futuro |
+| W10-3 | B/D | Preferências de notificação e DND (B-097) | W10-1 | [B-097](../product/specs/B-097-preferencias-notificacao-dnd.md) | **Done** — nível/canal/DND/prioridade/ocultar prévia; `DigestEnabled` liga a agenda entregue em B-122 |
 | W10-4 | C/D | Busca com filtros (B-098) | W9-2 | [B-098](../product/specs/B-098-busca-com-filtros.md) | **Done** |
 | W10-5 | D | Paleta de comandos e atalhos (B-099) | W8-9, W10-4, W9-10 | [B-099](../product/specs/B-099-paleta-de-comandos.md) | **Done** |
 | W10-6 | D/G | Internacionalização (B-100) | D-14 | [B-100](../product/specs/B-100-i18n.md) | **Done** |
@@ -353,7 +353,7 @@ O roadmap executável posterior está em
 **Wave 19 — Organização e decomposição do código** está **Done**
 (W19-1…W19-6, `B-178`…`B-183`). O gate de linhas (B-183) vive em
 `tests/architecture/SourceLineLimitTests.cs` e roda em `task test:architecture`.
-Na ordem de scan, o próximo item `Planned` é W12 / B-121 (B-120 Done).
+Na ordem de scan, o próximo item `Planned` é W12 / B-123 (B-122 Done).
 
 Waves 11–17 estão `Planned`, possuem specs e são elegíveis para o Build somente
 depois da conclusão das Waves 7–10 e de suas dependências (Wave 19 não bloqueia

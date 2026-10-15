@@ -30,6 +30,11 @@ export const routes: Routes = [
       import('./features/invites/accept-invite.page').then((m) => m.AcceptInvitePage),
   },
   {
+    path: 'app/catch-up',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/chat/catch-up/catch-up.page').then((m) => m.CatchUpPage),
+  },
+  {
     path: 'app',
     canActivate: [authGuard],
     loadComponent: () => import('./layout/shell.page').then((m) => m.ShellPage),

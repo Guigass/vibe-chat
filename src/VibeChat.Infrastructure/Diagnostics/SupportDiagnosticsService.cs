@@ -415,6 +415,7 @@ public sealed class SupportDiagnosticsService(
     {
         ["ai"] = configuration.GetValue("Ai:Enabled", false),
         ["semanticSearch"] = configuration.GetValue("SemanticSearch:Enabled", false),
+        ["digests"] = configuration.GetValue("Notifications:Digests:Enabled", false),
         ["email"] = configuration.GetValue("Email:Enabled", false),
         ["history"] = configuration.GetValue("Messaging:History:Enabled", false),
         ["import"] = configuration.GetValue("Features:Import:Enabled", false),

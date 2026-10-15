@@ -26,6 +26,7 @@ public static class DependencyInjection
         services.AddAiProvidersInfrastructure();
         services.AddEmailInfrastructure();
         services.AddPushInfrastructure();
+        services.AddDigestInfrastructure(configuration);
         services.AddIntegrationsInfrastructure();
         services.AddInfrastructureHealthChecks();
         return services;
