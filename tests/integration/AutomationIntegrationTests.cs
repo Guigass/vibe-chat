@@ -31,6 +31,7 @@ public sealed class AutomationIntegrationTests(VibeChatApiFactory factory)
         published.IdentityUserId.Should().NotBeNull();
         published.WebhookToken.Should().BeNull();
         published.Capabilities.Should().Contain(Permissions.Message.Send);
+        await DrainBacklogAsync();
         await PostOk<AutomationDto>(demo, $"{Path(created.Id)}/enable");
 
         using var alice = Client("alice");
@@ -91,6 +92,7 @@ public sealed class AutomationIntegrationTests(VibeChatApiFactory factory)
         var marker = $"eco-{Guid.NewGuid():N}"[..16];
         var created = await CreateAsync(demo, "Eco", PostMessage(marker));
         await PostOk<AutomationDto>(demo, $"{Path(created.Id)}/publish");
+        await DrainBacklogAsync();
         await PostOk<AutomationDto>(demo, $"{Path(created.Id)}/enable");
 
         await using (var db = factory.CreateMigratorDbContext())
@@ -158,6 +160,22 @@ public sealed class AutomationIntegrationTests(VibeChatApiFactory factory)
         });
         off.StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await off.Content.ReadAsStringAsync()).Should().Contain("AutomationDisabled");
+    }
+
+    private async Task DrainBacklogAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var outbox = scope.ServiceProvider.GetRequiredService<OutboxProcessor>();
+        // Shared fixture: older rows fill the outbox page of 20 and hide the
+        // message sent after enable. Drain them while this automation is still off.
+        for (var i = 0; i < 25; i++)
+        {
+            var taken = await outbox.ProcessBatchAsync(CancellationToken.None);
+            if (taken < 20)
+            {
+                return;
+            }
+        }
     }
 
     private async Task DrainAsync()
