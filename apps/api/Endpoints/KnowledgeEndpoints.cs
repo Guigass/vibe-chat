@@ -1027,26 +1027,26 @@ internal static class KnowledgeEndpoints
 
                 return new KnowledgeReferenceResponse(token.Kind, token.TargetId, KnowledgePolicies.RefVisible, null, messageChannel.Id.Value);
             case KnowledgePolicies.RefTask:
-            {
-                var taskItem = await db.MessageTasks.AsNoTracking().FirstOrDefaultAsync(
-                    row => row.Id == token.TargetId && row.TenantId == tenantId, ct);
-                if (taskItem is null || taskItem.SourceRedacted)
                 {
-                    return Redacted(token);
-                }
+                    var taskItem = await db.MessageTasks.AsNoTracking().FirstOrDefaultAsync(
+                        row => row.Id == token.TargetId && row.TenantId == tenantId, ct);
+                    if (taskItem is null || taskItem.SourceRedacted)
+                    {
+                        return Redacted(token);
+                    }
 
-                var taskChannel = await db.Channels.AsNoTracking().FirstOrDefaultAsync(row => row.Id == taskItem.ChannelId, ct);
-                var taskCanRead = taskChannel is not null && await CanReadChannelAsync(db, taskChannel, viewer, ct);
-                var taskAssignee = await db.MessageTaskAssignees.AsNoTracking()
-                    .AnyAsync(row => row.TaskId == taskItem.Id && row.UserId == viewer, ct);
-                if (!TaskPolicies.CanSee(taskItem, viewer, taskCanRead, taskAssignee))
-                {
-                    return Redacted(token);
-                }
+                    var taskChannel = await db.Channels.AsNoTracking().FirstOrDefaultAsync(row => row.Id == taskItem.ChannelId, ct);
+                    var taskCanRead = taskChannel is not null && await CanReadChannelAsync(db, taskChannel, viewer, ct);
+                    var taskAssignee = await db.MessageTaskAssignees.AsNoTracking()
+                        .AnyAsync(row => row.TaskId == taskItem.Id && row.UserId == viewer, ct);
+                    if (!TaskPolicies.CanSee(taskItem, viewer, taskCanRead, taskAssignee))
+                    {
+                        return Redacted(token);
+                    }
 
-                return new KnowledgeReferenceResponse(
-                    token.Kind, token.TargetId, KnowledgePolicies.RefVisible, taskItem.Title, taskItem.ChannelId.Value);
-            }
+                    return new KnowledgeReferenceResponse(
+                        token.Kind, token.TargetId, KnowledgePolicies.RefVisible, taskItem.Title, taskItem.ChannelId.Value);
+                }
             case KnowledgePolicies.RefDecision:
                 var wanted = CommitmentKind.Decision;
                 var commitment = await db.Commitments.AsNoTracking().FirstOrDefaultAsync(

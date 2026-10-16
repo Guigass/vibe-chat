@@ -895,8 +895,9 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         header.ChannelName.Should().Be("Bob");
         header.ChannelName.Should().NotContain("dm:");
 
+        var forwardedSequence = forwarded.Messages[0].Sequence;
         var history = await alice.GetFromJsonAsync<ChannelMessagesResponseDto>(
-            $"/api/v1/channels/{DemoChannelId}/messages?after=0&limit=100",
+            $"/api/v1/channels/{DemoChannelId}/messages?after={forwardedSequence - 1}&limit=10",
             JsonOptions);
         history!.Messages.Should().Contain(m =>
             m.ForwardedFromMessageId == sourceId
