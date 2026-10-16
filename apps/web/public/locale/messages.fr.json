@@ -1271,6 +1271,22 @@
     "form.typeChoice": "Choix",
     "form.typeDate": "Date",
     "form.typeUser": "Personne",
-    "form.typeAttachment": "Fichier"
+    "form.typeAttachment": "Fichier",
+    "admin.navAutomations": "Automatisations",
+    "admin.automationsLead": "Règles déclaratives de cet espace. Désactivée, l'automatisation ne lance pas de nouvelles exécutions.",
+    "admin.automationsEmpty": "Aucune automatisation pour le moment.",
+    "admin.automationsName": "Nom",
+    "admin.automationsMessage": "Texte du message",
+    "admin.automationsChannels": "Canaux",
+    "admin.automationsCreate": "Créer un brouillon",
+    "admin.automationsPublish": "Publier",
+    "admin.automationsEnable": "Activer",
+    "admin.automationsDisable": "Désactiver",
+    "admin.automationsDryRun": "Tester sans effet",
+    "admin.automationsRuns": "Historique",
+    "admin.automationsLoadError": "Impossible de charger les automatisations.",
+    "admin.automationsSaveError": "Impossible d'enregistrer.",
+    "admin.automationsIdentity": "Identité",
+    "admin.automationsCapabilities": "Permissions"
   }
 }

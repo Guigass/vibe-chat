@@ -28,7 +28,7 @@ public static class DependencyInjection
         services.AddEmailInfrastructure();
         services.AddPushInfrastructure();
         services.AddDigestInfrastructure(configuration);
-        services.AddIntegrationsInfrastructure();
+        services.AddIntegrationsInfrastructure(configuration);
         services.AddInfrastructureHealthChecks();
         return services;
     }

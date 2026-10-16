@@ -49,6 +49,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Action item** | Ação estruturada derivada de uma conversa e ligada à mensagem de origem (`kind=action_item`, B-119). Não copia o body. |
 | **Task / Tarefa** | Trabalho pessoal ou de time derivado de uma mensagem (`messaging.tasks`, B-123). Guarda responsáveis, prazo, prioridade, checklist ordenado e versão. A origem permanece a mensagem; o body não é copiado. `[[task:uuid]]` resolve esta entidade. |
 | **Form / Formulário** | Coleta estruturada (`messaging.forms`, B-124). O schema publicado fica imutável em `form_versions`. A resposta não muda quando o formulário é republicado. A decisão registra o actor autenticado. Campo oculto não entra na resposta. |
+| **Automation / Automação** | Regra declarativa trigger → condições → ações (`automation.definitions`, B-125). A versão publicada não muda. A execução usa identidade própria e só as capabilities concedidas. Segredo não entra no log do run. |
 | **Página de conhecimento** | Texto curado em Markdown restrito, dentro de uma coleção com escopo de workspace, space ou canal (`knowledge.pages`, B-120). Versionamento otimista e histórico append-only. Não copia o body da mensagem: a referência `[[…]]` é resolvida na leitura. |
 | **Digest / Catch-up** | Resumo pessoal diário/semanal ou sob demanda (B-122). Guarda ids, não o body. A leitura revalida a ACL e não move o cursor. IA só com a busca semântica ligada. |
 

@@ -77,12 +77,13 @@ R3 nasce `false`. Flag não substitui authZ.
 | `SemanticSearch:Enabled` | instance + workspace | false | B-121 | FTS continua; opt-in do workspace apaga a projeção ao desligar |
 | `Notifications:Digests:Enabled` | instance | false | B-122 | settings/catch-up → 404 `DigestDisabled`; worker não varre; mensagens e inbox seguem |
 | `Forms:Enabled` | instance | false | B-124 | formulários → 404 `FormDisabled`; chat, mensagens e tarefas seguem |
+| `Automation:Enabled` | instance | false | B-125 | automação → 404 `AutomationDisabled`; triggers não executam; chat segue |
 
 ## Registro inicial de flags futuras
 
 | Flag lógica | Escopo | Default | B-ID | Comportamento off |
 |--------------|--------|---------|------|-------------------|
-| `Features:Automation:Enabled` | tenant | false | B-125 | triggers não executam |
+| `Features:Automation:Enabled` | instance (binding `Automation:Enabled`) | false | B-125 | entregue; ver linha ativa |
 | `Features:Plugins:Enabled` | tenant | false | B-066 | integrações locais existentes preservadas |
 | `Features:Registry:Enabled` | instance | false | B-137 | catálogo local apenas |
 | `Features:Bridges:Enabled` | tenant | false | B-138 | sem tráfego externo |

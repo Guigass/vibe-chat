@@ -98,7 +98,7 @@ da conversa.
 
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
-| B-125 | B/C/D | Automation builder com triggers, condições e ações | B-108, B-110, B-124 | [B-125](../product/specs/B-125-automation-builder.md) | Planned |
+| B-125 | B/C/D | Automation builder com triggers, condições e ações | B-108, B-110, B-124 | [B-125](../product/specs/B-125-automation-builder.md) | **Done** — definição versionada, dry-run, histórico, replay, profundidade, circuito e flag off; ADR-035 |
 | B-126 | B/C/D/E | Incident rooms, timeline e playbooks operacionais | B-112, B-119, B-125 | [B-126](../product/specs/B-126-incident-rooms-playbooks.md) | Planned |
 | B-127 | B/C/D/E | Conectores bidirecionais GitHub/GitLab/Jira/calendário | B-108, B-125 | [B-127](../product/specs/B-127-conectores-bidirecionais.md) | Planned |
 | B-164 | A/B/D/E | SSO corporativo via OIDC/SAML (Keycloak brokering; rótulo customizável) | B-002, ADR-007 | [B-164](../product/specs/B-164-sso-oidc-saml.md) | Planned |

@@ -126,6 +126,46 @@ public sealed class OutboundWebhookDispatcher(
         return new WebhookPingResult(ok, ok ? 200 : 502, ok ? null : "WebhookDeliveryFailed", httpStatus, error);
     }
 
+    public async Task<WebhookPingResult> DeliverAllowlistedAsync(
+        TenantId tenantId,
+        Guid endpointId,
+        string eventName,
+        string payloadJson,
+        CancellationToken cancellationToken)
+    {
+        var endpoints = await webhookResolver.ListAsync(tenantId, cancellationToken);
+        var endpoint = endpoints.FirstOrDefault(x => x.Id == endpointId && x.Enabled);
+        if (endpoint is null
+            || !SecretMasking.IsConfigured(endpoint.Url)
+            || !SecretMasking.IsConfigured(endpoint.SigningSecret)
+            || !WebhookDelivery.IsValidHttpsUrl(endpoint.Url))
+        {
+            return new WebhookPingResult(false, 404, "ConnectorNotAllowed", null, null);
+        }
+
+        var safePayload = AutomationPolicies.Redact(payloadJson);
+        var (httpStatus, error) = await DeliverOneAsync(
+            tenantId,
+            endpoint,
+            eventName,
+            Guid.NewGuid(),
+            safePayload,
+            persistImmediately: true,
+            cancellationToken);
+        if (httpStatus is null && error is not null && error.Contains("Cancel", StringComparison.Ordinal))
+        {
+            return new WebhookPingResult(false, 504, "Timeout", httpStatus, "Timeout");
+        }
+
+        if (httpStatus is null or >= 500)
+        {
+            return new WebhookPingResult(false, 503, "ConnectorUnavailable", httpStatus, "ConnectorUnavailable");
+        }
+
+        var ok = httpStatus is >= 200 and < 300;
+        return new WebhookPingResult(ok, ok ? 200 : 502, ok ? null : "ConnectorNotAllowed", httpStatus, ok ? null : "ConnectorNotAllowed");
+    }
+
     private async Task<(int? HttpStatus, string? Error)> DeliverOneAsync(
         TenantId tenantId,
         EffectiveWebhookEndpoint endpoint,

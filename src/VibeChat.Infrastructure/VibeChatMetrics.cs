@@ -46,6 +46,9 @@ public static class VibeChatMetrics
     public static readonly Counter<long> FormsPublished = Meter.CreateCounter<long>("vibechat.forms.published");
     public static readonly Counter<long> FormsSubmitted = Meter.CreateCounter<long>("vibechat.forms.submitted");
     public static readonly Counter<long> FormsDecided = Meter.CreateCounter<long>("vibechat.forms.decided");
+    public static readonly Counter<long> AutomationsPublished = Meter.CreateCounter<long>("vibechat.automations.published");
+    public static readonly Counter<long> AutomationRuns = Meter.CreateCounter<long>("vibechat.automations.runs");
+    public static readonly Counter<long> AutomationStopped = Meter.CreateCounter<long>("vibechat.automations.stopped");
     public static readonly UpDownCounter<long> RealtimeConnections = Meter.CreateUpDownCounter<long>("vibechat.realtime.connections");
     private static long _realtimeConnectionsGauge;
     public static long RealtimeConnectionsGauge => Interlocked.Read(ref _realtimeConnectionsGauge);

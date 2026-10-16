@@ -263,6 +263,13 @@ public static class Permissions
         public const string Submit = "form.submit";
         public const string Review = "form.review";
     }
+
+    public static class Automation
+    {
+        public const string Manage = "automation.manage";
+        public const string Notify = "automation.notify";
+        public const string Connector = "automation.connector";
+    }
 }
 
 public enum Role

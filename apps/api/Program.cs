@@ -116,6 +116,8 @@ builder.Services.AddScoped<ICurrentUser>(sp =>
 builder.Services.AddVibeChatInfrastructure(builder.Configuration);
 builder.Services.Configure<VibeChat.Messaging.FormOptions>(
     builder.Configuration.GetSection(VibeChat.Messaging.FormOptions.SectionName));
+builder.Services.Configure<VibeChat.Integrations.AutomationOptions>(
+    builder.Configuration.GetSection(VibeChat.Integrations.AutomationOptions.SectionName));
 
 // BUG-006: keep-alive 15s + client timeout 90s tolerates brief idle/background
 // without premature disconnect; client serverTimeout aligns to 90s.
@@ -225,6 +227,7 @@ v1.MapInbox();
 v1.MapCommitments();
 v1.MapTasks();
 v1.MapForms();
+v1.MapAutomations();
 v1.MapKnowledge();
 v1.MapNotifications();
 v1.MapDigests();

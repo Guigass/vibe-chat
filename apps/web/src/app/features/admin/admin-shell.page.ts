@@ -39,6 +39,7 @@ export class AdminShellPage implements OnInit {
       settings: areaTitle('settings'),
       onboarding: areaTitle('onboarding'),
       plugins: areaTitle('plugins'),
+      automations: areaTitle('automations'),
       import: areaTitle('import'),
       diagnostics: areaTitle('diagnostics'),
     };

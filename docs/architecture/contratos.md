@@ -423,6 +423,22 @@ Coleta estruturada em `messaging.forms`. Schema publicado imutável em `messagin
 | Export / retenção | `GET …/export` só no escopo (autor, criador ou revisor da versão). Audit `form.exported` sem respostas. Retenção zera `AnswersJson` e marca `answersPurged` |
 | Eventos | Outbox `form.published`, `form.submitted`, `form.approved`, `form.rejected`. Payload sem título e sem respostas |
 
+### Automation builder (B-125)
+
+Definição declarativa em `automation.definitions`. Versão publicada imutável em `automation.versions` (`automation.definition.v1`). Execução em `automation.runs` e `automation.steps`. Flag `Automation:Enabled` (**off** por default; 404 `AutomationDisabled` sem gravar). ADR-035.
+
+| Item | Regra |
+|------|--------|
+| Tabelas | `definitions`, `versions`, `runs`, `steps`. `TenantId` + FORCE RLS. Unique `(TenantId, CreatedBy, IdempotencyKey)`, `(TenantId, AutomationId, Version)`, `(TenantId, IdempotencyKey)` em run e step |
+| Permissões | `automation.manage` cria, publica, liga, desliga, testa e lê o histórico. Só Owner/Admin. `automation.notify` e `automation.connector` são capabilities da definição, não da API |
+| Definição | Triggers `message\|form\|task\|schedule\|webhook`. Ações `post_message\|create_task\|update_task\|notify\|call_connector`. Propriedade desconhecida → **400** `InvalidDefinition`. Valor de segredo → **400** `SecretValueNotAllowed` |
+| `POST …/publish` | Congela o JSON e a interseção de capabilities. Identidade `automation:{id}` com `Role.Bot`. Token de webhook só na resposta e só como hash no banco |
+| `POST …/enable` / `disable` | Desligar impede runs novos. Ligar zera o circuito |
+| `POST …/dry-run` | Plano sem efeito externo |
+| `POST …/trigger` e `POST …/hooks` | Idempotentes por evento. Hook anônimo com `X-Automation-Token`. Token inválido → **404** |
+| Efeitos | Retry usa a mesma chave e não duplica mensagem, tarefa ou notificação. Loop na profundidade 3 grava `automation.loop_stopped`. Conector inexistente → `ConnectorNotAllowed` sem rede |
+| Eventos | Outbox `automation.created`, `automation.published`, `automation.enabled`, `automation.disabled`, `automation.notified`, `automation.loop_stopped`, `automation.circuit_open`, `automation.rate_limited`. Payload sem body e sem segredo |
+
 ### Base de conhecimento (B-120)
 
 Páginas server-authoritative em `knowledge.pages`. Coleções em `knowledge.collections` com escopo `workspace`, `space` ou `channel`. Histórico append-only em `knowledge.page_versions`. Flag `Knowledge:Pages:Enabled` (**off** por default; 404 `KnowledgeDisabled` sem gravar). ADR-032.

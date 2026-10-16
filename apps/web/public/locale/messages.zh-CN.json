@@ -1271,6 +1271,22 @@
     "form.typeChoice": "选择",
     "form.typeDate": "日期",
     "form.typeUser": "人员",
-    "form.typeAttachment": "文件"
+    "form.typeAttachment": "文件",
+    "admin.navAutomations": "自动化",
+    "admin.automationsLead": "此工作区的声明式规则。关闭时，自动化不会开始新的运行。",
+    "admin.automationsEmpty": "还没有自动化。",
+    "admin.automationsName": "名称",
+    "admin.automationsMessage": "消息文本",
+    "admin.automationsChannels": "频道",
+    "admin.automationsCreate": "创建草稿",
+    "admin.automationsPublish": "发布",
+    "admin.automationsEnable": "启用",
+    "admin.automationsDisable": "停用",
+    "admin.automationsDryRun": "无效果测试",
+    "admin.automationsRuns": "历史",
+    "admin.automationsLoadError": "无法加载自动化。",
+    "admin.automationsSaveError": "无法保存。",
+    "admin.automationsIdentity": "身份",
+    "admin.automationsCapabilities": "权限"
   }
 }

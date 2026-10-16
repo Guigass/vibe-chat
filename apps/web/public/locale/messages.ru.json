@@ -1271,6 +1271,22 @@
     "form.typeChoice": "Выбор",
     "form.typeDate": "Дата",
     "form.typeUser": "Человек",
-    "form.typeAttachment": "Файл"
+    "form.typeAttachment": "Файл",
+    "admin.navAutomations": "Автоматизации",
+    "admin.automationsLead": "Декларативные правила этого пространства. Пока выключено, автоматизация не начинает новые запуски.",
+    "admin.automationsEmpty": "Автоматизаций пока нет.",
+    "admin.automationsName": "Имя",
+    "admin.automationsMessage": "Текст сообщения",
+    "admin.automationsChannels": "Каналы",
+    "admin.automationsCreate": "Создать черновик",
+    "admin.automationsPublish": "Опубликовать",
+    "admin.automationsEnable": "Включить",
+    "admin.automationsDisable": "Выключить",
+    "admin.automationsDryRun": "Проверить без эффекта",
+    "admin.automationsRuns": "История",
+    "admin.automationsLoadError": "Не удалось загрузить автоматизации.",
+    "admin.automationsSaveError": "Не удалось сохранить.",
+    "admin.automationsIdentity": "Идентичность",
+    "admin.automationsCapabilities": "Разрешения"
   }
 }

@@ -1,0 +1,72 @@
+<article class="admin-panel">
+  <p class="admin-panel__lead">{{ ui.adminAutomationsLead }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty">{{ ui.adminLoadingSettings }}</p>
+  } @else if (loadError()) {
+    <p class="admin-empty">{{ ui.adminAutomationsLoadError }}</p>
+  } @else {
+    <form class="admin-filters" (submit)="$event.preventDefault(); create()">
+      <label class="admin-filters__field">
+        <span>{{ ui.adminAutomationsName }}</span>
+        <input [value]="name()" (input)="name.set($any($event.target).value)" />
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.adminAutomationsMessage }}</span>
+        <input [value]="body()" (input)="body.set($any($event.target).value)" />
+      </label>
+      <div class="admin-filters__field">
+        <span>{{ ui.adminAutomationsChannels }}</span>
+        @for (channel of channels(); track channel.id) {
+          <label>
+            <input
+              type="checkbox"
+              [checked]="selectedChannelIds().includes(channel.id)"
+              (change)="toggleChannel(channel.id, $any($event.target).checked)"
+            />
+            {{ channel.name }}
+          </label>
+        }
+      </div>
+      <button type="submit" class="admin-btn" [disabled]="busy()">{{ ui.adminAutomationsCreate }}</button>
+    </form>
+
+    @if (saveError()) {
+      <p class="admin-empty">{{ ui.adminAutomationsSaveError }}</p>
+    }
+
+    @if (items().length === 0) {
+      <p class="admin-empty">{{ ui.adminAutomationsEmpty }}</p>
+    } @else {
+      <ul>
+        @for (item of items(); track item.id) {
+          <li>
+            <strong>{{ item.name }}</strong>
+            <span>{{ item.status }}</span>
+            <p>{{ ui.adminAutomationsIdentity }}: {{ item.identityName }}</p>
+            <p>{{ ui.adminAutomationsCapabilities }}: {{ item.capabilities.join(', ') }}</p>
+            <button type="button" class="admin-btn" [disabled]="busy()" (click)="publish(item)">{{ ui.adminAutomationsPublish }}</button>
+            <button type="button" class="admin-btn" [disabled]="busy()" (click)="setEnabled(item, true)">{{ ui.adminAutomationsEnable }}</button>
+            <button type="button" class="admin-btn" [disabled]="busy()" (click)="setEnabled(item, false)">{{ ui.adminAutomationsDisable }}</button>
+            <button type="button" class="admin-btn" [disabled]="busy()" (click)="dryRun(item)">{{ ui.adminAutomationsDryRun }}</button>
+            <button type="button" class="admin-btn" [disabled]="busy()" (click)="showRuns(item)">{{ ui.adminAutomationsRuns }}</button>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (selectedId() && runs().length > 0) {
+      <ul>
+        @for (run of runs(); track run.id) {
+          <li>
+            <span>{{ run.mode }}</span>
+            <span>{{ run.status }}</span>
+            @for (step of run.steps; track step.index) {
+              <span>{{ step.action }} {{ step.status }} {{ step.errorCode }}</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  }
+</article>
