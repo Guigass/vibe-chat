@@ -255,6 +255,14 @@ public static class Permissions
         public const string Edit = "knowledge.edit";
         public const string Manage = "knowledge.manage";
     }
+
+    public static class Forms
+    {
+        public const string Create = "form.create";
+        public const string Publish = "form.publish";
+        public const string Submit = "form.submit";
+        public const string Review = "form.review";
+    }
 }
 
 public enum Role

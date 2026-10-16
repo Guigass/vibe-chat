@@ -104,6 +104,17 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | PATCH | `/workspaces/{workspaceId:guid}/tasks/{taskId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-123; versão otimista; criador, assignee ou admin no modo canal |
 | POST | `/workspaces/{workspaceId:guid}/tasks/{taskId:guid}/complete` | permission | `message.read` | ✓ | ✓ | ✓ | B-123; repetir não emite outro evento |
 | POST | `/workspaces/{workspaceId:guid}/tasks/{taskId:guid}/reopen` | permission | `message.read` | ✓ | ✓ | ✓ | B-123; audit `task.reopen` |
+| POST | `/workspaces/{workspaceId:guid}/forms` | permission | `form.create` | ✓ | ✗ | ✓ | B-124; flag off → 404 `FormDisabled`; rascunho idempotente |
+| GET | `/workspaces/{workspaceId:guid}/forms` | permission | `form.submit` | ✓ | ✗ | ✓ | B-124; rascunho só do autor; canal sem leitura → 403 |
+| GET | `/workspaces/{workspaceId:guid}/forms/{formId:guid}` | permission | `form.submit` | ✓ | ✗ | ✓ | B-124; rascunho alheio → 404 |
+| PATCH | `/workspaces/{workspaceId:guid}/forms/{formId:guid}` | permission | `form.create` | ✓ | ✗ | ✓ | B-124; só o autor; não altera versão publicada |
+| POST | `/workspaces/{workspaceId:guid}/forms/{formId:guid}/publish` | permission | `form.publish` | ✓ | ✗ | ✓ | B-124; congela `form.schema.v1`; só o autor |
+| POST | `/workspaces/{workspaceId:guid}/forms/{formId:guid}/archive` | permission | `form.publish` | ✓ | ✗ | ✓ | B-124; arquivado não recebe resposta |
+| POST | `/workspaces/{workspaceId:guid}/forms/{formId:guid}/submissions` | permission | `form.submit` | ✓ | ✗ | ✓ | B-124; idempotente; campo oculto → 400 `HiddenField` |
+| GET | `/workspaces/{workspaceId:guid}/forms/{formId:guid}/submissions` | permission | `form.submit` | ✓ | ✗ | ✓ | B-124; autor, criador ou revisor da versão |
+| GET | `/workspaces/{workspaceId:guid}/forms/{formId:guid}/submissions/{submissionId:guid}` | permission | `form.submit` | ✓ | ✗ | ✓ | B-124; fora do escopo → 404 |
+| POST | `/workspaces/{workspaceId:guid}/forms/{formId:guid}/submissions/{submissionId:guid}/decisions` | permission | `form.review` | ✓ | ✓ | ✓ | B-124; actor é o autenticado; `actorUserId` alheio → 400 |
+| GET | `/workspaces/{workspaceId:guid}/forms/{formId:guid}/export` | permission | `form.review` | ✓ | ✓ | ✓ | B-124; audit sem respostas; retenção zera answers |
 | GET | `/workspaces/{workspaceId:guid}/knowledge/collections` | permission | `knowledge.view` | ✓ | ✓ | ✓ | B-120; canal privado some sem membership |
 | POST | `/workspaces/{workspaceId:guid}/knowledge/collections` | permission | `knowledge.edit` | ✓ | ✗ | ✓ | B-120; flag off → 404 |
 | DELETE | `/workspaces/{workspaceId:guid}/knowledge/collections/{collectionId:guid}` | permission | `knowledge.manage` | ✗ | ✗ | ✓ | B-120 |

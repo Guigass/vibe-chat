@@ -372,6 +372,35 @@ CREATE POLICY tenant_isolation_task_checklist_items ON messaging.task_checklist_
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS messaging.forms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.forms FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.form_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.form_versions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.form_submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.form_submissions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.form_decisions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.form_decisions FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_forms ON messaging.forms;
+CREATE POLICY tenant_isolation_forms ON messaging.forms
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_form_versions ON messaging.form_versions;
+CREATE POLICY tenant_isolation_form_versions ON messaging.form_versions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_form_submissions ON messaging.form_submissions;
+CREATE POLICY tenant_isolation_form_submissions ON messaging.form_submissions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_form_decisions ON messaging.form_decisions;
+CREATE POLICY tenant_isolation_form_decisions ON messaging.form_decisions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 ALTER TABLE IF EXISTS knowledge.collections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS knowledge.collections FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS knowledge.pages ENABLE ROW LEVEL SECURITY;

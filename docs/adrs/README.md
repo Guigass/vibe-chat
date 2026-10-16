@@ -39,6 +39,7 @@ original.
 | [031](ADR-031-canais-por-topicos.md) | Tópico reutiliza Conversation; thread permanece | Accepted |
 | [032](ADR-032-base-conhecimento.md) | Páginas de conhecimento server-authoritative | Accepted |
 | [033](ADR-033-digests-catch-up.md) | Digest e catch-up pessoal sem cópia do body | Accepted |
+| [034](ADR-034-formularios-aprovacoes.md) | Formulário versionado, aprovação e resultado sem script | Accepted |
 
 ## Quando criar um ADR
 
