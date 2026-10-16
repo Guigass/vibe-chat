@@ -41,11 +41,11 @@ anexos seguem Files/ACL.
 
 ## Aceite
 
-- [ ] Schema publicado não muda submissions antigas.
-- [ ] Retry não duplica submission/approval.
-- [ ] Usuário não aprova como outro actor.
-- [ ] Export e retention cobrem respostas.
-- [ ] Campo oculto não é aceito por mass assignment.
+- [x] Schema publicado não muda submissions antigas.
+- [x] Retry não duplica submission/approval.
+- [x] Usuário não aprova como outro actor.
+- [x] Export e retention cobrem respostas.
+- [x] Campo oculto não é aceito por mass assignment.
 
 ## Testes
 

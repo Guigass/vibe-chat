@@ -155,7 +155,8 @@ public static class RolePermissionCatalog
         Permissions.Admin.Dashboard, Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe, Permissions.Ai.Search,
         Permissions.Announcement.Publish, Permissions.Announcement.Acknowledge,
         Permissions.Conversation.TopicCreate, Permissions.Conversation.TopicManage,
-        Permissions.Knowledge.View, Permissions.Knowledge.Edit, Permissions.Knowledge.Manage
+        Permissions.Knowledge.View, Permissions.Knowledge.Edit, Permissions.Knowledge.Manage,
+        Permissions.Forms.Create, Permissions.Forms.Publish, Permissions.Forms.Submit, Permissions.Forms.Review
     ];
 
     private static readonly HashSet<string> ModeratorPermissions =
@@ -167,7 +168,8 @@ public static class RolePermissionCatalog
         Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe, Permissions.Ai.Search,
         Permissions.Announcement.Publish, Permissions.Announcement.Acknowledge,
         Permissions.Conversation.TopicCreate, Permissions.Conversation.TopicManage,
-        Permissions.Knowledge.View, Permissions.Knowledge.Edit, Permissions.Knowledge.Manage
+        Permissions.Knowledge.View, Permissions.Knowledge.Edit, Permissions.Knowledge.Manage,
+        Permissions.Forms.Create, Permissions.Forms.Publish, Permissions.Forms.Submit, Permissions.Forms.Review
     ];
 
     private static readonly HashSet<string> AuditorPermissions =
@@ -175,7 +177,8 @@ public static class RolePermissionCatalog
         Permissions.Workspace.Read, Permissions.Channel.Read, Permissions.Message.Read, Permissions.Message.HistoryRead, Permissions.Files.Download,
         Permissions.Search.Messages, Permissions.Ai.Search, Permissions.Admin.Dashboard, Permissions.Support.Read,
         Permissions.Announcement.Acknowledge,
-        Permissions.Knowledge.View
+        Permissions.Knowledge.View,
+        Permissions.Forms.Review
     ];
 
     private static readonly HashSet<string> MemberPermissions =
@@ -187,7 +190,8 @@ public static class RolePermissionCatalog
         Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe, Permissions.Ai.Search,
         Permissions.Announcement.Acknowledge,
         Permissions.Conversation.TopicCreate,
-        Permissions.Knowledge.View, Permissions.Knowledge.Edit
+        Permissions.Knowledge.View, Permissions.Knowledge.Edit,
+        Permissions.Forms.Create, Permissions.Forms.Publish, Permissions.Forms.Submit, Permissions.Forms.Review
     ];
 
     private static readonly HashSet<string> GuestPermissions =

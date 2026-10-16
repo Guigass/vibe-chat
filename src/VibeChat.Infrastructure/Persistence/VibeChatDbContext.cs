@@ -98,6 +98,10 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<MessageTask> MessageTasks => Set<MessageTask>();
     public DbSet<MessageTaskAssignee> MessageTaskAssignees => Set<MessageTaskAssignee>();
     public DbSet<MessageTaskChecklistItem> MessageTaskChecklistItems => Set<MessageTaskChecklistItem>();
+    public DbSet<FormDefinition> FormDefinitions => Set<FormDefinition>();
+    public DbSet<FormSchemaVersion> FormSchemaVersions => Set<FormSchemaVersion>();
+    public DbSet<FormSubmission> FormSubmissions => Set<FormSubmission>();
+    public DbSet<FormDecision> FormDecisions => Set<FormDecision>();
     public DbSet<KnowledgeCollection> KnowledgeCollections => Set<KnowledgeCollection>();
     public DbSet<KnowledgePage> KnowledgePages => Set<KnowledgePage>();
     public DbSet<KnowledgePageVersion> KnowledgePageVersions => Set<KnowledgePageVersion>();
@@ -628,6 +632,62 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.Property(x => x.Text).HasMaxLength(TaskPolicies.MaxChecklistTextLength);
             entity.HasIndex(x => new { x.TenantId, x.TaskId, x.Position });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<FormDefinition>(entity =>
+        {
+            entity.ToTable("forms", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Title).HasMaxLength(FormPolicies.MaxTitleLength);
+            entity.Property(x => x.DraftSchemaJson).HasColumnType("jsonb");
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(FormPolicies.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.CreatedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.ChannelId, x.Status, x.UpdatedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<FormSchemaVersion>(entity =>
+        {
+            entity.ToTable("form_versions", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.PublishedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.SchemaJson).HasColumnType("jsonb");
+            entity.HasIndex(x => new { x.TenantId, x.FormId, x.Version }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<FormSubmission>(entity =>
+        {
+            entity.ToTable("form_submissions", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.SubmittedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.AnswersJson).HasColumnType("jsonb");
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(FormPolicies.MaxIdempotencyKeyLength);
+            entity.Property(x => x.TitleSnapshot).HasMaxLength(FormPolicies.MaxTitleLength);
+            entity.HasIndex(x => new { x.TenantId, x.SubmittedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.FormId, x.SubmittedAt });
+            entity.HasIndex(x => new { x.TenantId, x.RetainUntil, x.AnswersPurged });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<FormDecision>(entity =>
+        {
+            entity.ToTable("form_decisions", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.ActorUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Decision).HasMaxLength(16);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(FormPolicies.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.ActorUserId, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.SubmissionId, x.ActorUserId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.SubmissionId, x.Version });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

@@ -400,6 +400,10 @@ outro usuário recebe 404 e outro tenant 403. O cursor de leitura não anda.
 
 Superfície implementada, R3. A ameaça principal é página ou versão sobreviver fora da ACL, HTML no Markdown virar XSS, ou uma referência revogada continuar mostrando título. O controle é: flag off por default; RLS `FORCE` em `knowledge.collections`, `knowledge.pages` e `knowledge.page_versions`; busca e export filtram a coleção na leitura; canal privado exige membership atual; body rejeita tag HTML e schemes `javascript:`/`data:`/`vbscript:`; referência inacessível volta `redacted` sem label; outbox sem título nem body; conflito de versão não grava.
 
+## Formulários e aprovações (B-124)
+
+Superfície implementada, R3. A ameaça principal é mass assignment de campo oculto, aprovar como outro actor, ou a resposta sobreviver à retenção e ao tenant. O controle é: flag off por default; RLS `FORCE` em `messaging.forms`, `form_versions`, `form_submissions` e `form_decisions`; schema allowlisted `form.schema.v1`; campo oculto ou desconhecido devolve 400 e não grava; `actorUserId` alheio devolve `ActorNotAllowed`; revisor fora da versão recebe 403; outro tenant recebe 403; outbox e audit sem respostas; retenção zera o JSON e mantém a decisão; o resultado automático não copia respostas. ADR-034.
+
 ## Tarefas derivadas de mensagens (B-123)
 
 Superfície implementada, R2. A ameaça principal é copiar o body, manter um ex-membro atribuído ou perder uma atualização concorrente. O controle é: só campos curados + hash de excerpt; leitura revalida o canal; `restricted` fica no criador e nos assignees; saída do canal privado desatribui; RLS `FORCE` em `messaging.tasks`, `messaging.task_assignees` e `messaging.task_checklist_items`; `Version` recusa escrita obsoleta; outbox sem título nem body; `task.overdue` uma vez via `app.job_role=tasks`.

@@ -405,6 +405,24 @@ Entidade curada em `messaging.tasks`. O body da mensagem **não** é copiado. Ch
 | Eventos | Outbox `task.created`, `task.updated`, `task.completed`, `task.overdue`. Payload sem título nem body. `task.overdue` sai uma vez (`OverdueNotifiedAt`). `restricted` vai ao criador e aos assignees; `channel` ao grupo do canal |
 | Delete/purge | Soft-delete e purge da origem setam `SourceRedacted`. `[[task:uuid]]` inacessível ou redigido volta `redacted` sem título |
 
+### Formulários e aprovações (B-124)
+
+Coleta estruturada em `messaging.forms`. Schema publicado imutável em `messaging.form_versions` (`form.schema.v1`). Resposta em `form_submissions`. Decisão append-only em `form_decisions`. Flag `Forms:Enabled` (**off** por default; 404 `FormDisabled` sem gravar). ADR-034.
+
+| Item | Regra |
+|------|--------|
+| Tabelas | `forms`, `form_versions`, `form_submissions`, `form_decisions`. `TenantId` + FORCE RLS. Unique `(TenantId, CreatedBy, IdempotencyKey)`, `(TenantId, FormId, Version)`, `(TenantId, SubmittedBy, IdempotencyKey)`, `(TenantId, ActorUserId, IdempotencyKey)` e `(TenantId, SubmissionId, ActorUserId)` |
+| Permissões | `form.create` cria e edita o próprio rascunho. `form.publish` publica e arquiva o próprio. `form.submit` lista, lê e envia. `form.review` decide e exporta. Member tem as quatro. Auditor só `form.review`. Guest e bot sem `form.*` |
+| Schema | Campos `text\|number\|choice\|date\|user\|attachment`. Aprovação `single` ou `n_of_m`. Resultado `none\|message\|task`. Propriedade desconhecida → **400** `InvalidFormSchema`. Campo oculto e obrigatório ao mesmo tempo é inválido |
+| `POST …/forms` | `{ idempotencyKey, channelId, title, schema }`. Replay da chave devolve o mesmo rascunho. Revisor sem leitura do canal → **400** `ReviewerNotMember`. Teto 30 vivos por canal |
+| `PATCH` | Atualiza título e rascunho. Não altera versão já publicada |
+| `POST …/publish` | Grava nova `form_versions` só se o JSON canônico mudou. Submission antiga permanece na versão em que foi enviada |
+| `POST …/submissions` | `{ idempotencyKey, answers }`. Só formulário publicado. Campo oculto → **400** `HiddenField`. Chave desconhecida → **400** `UnknownField`. Replay não duplica |
+| `POST …/decisions` | `{ idempotencyKey, decision, actorUserId? }`. Actor gravado é o autenticado. `actorUserId` de outra pessoa → **400** `ActorNotAllowed` sem gravar. Quem não está na lista da versão → **403**. Segunda decisão do mesmo actor → **409** `AlreadyDecided` |
+| Resultado | No quórum, no máximo uma mensagem (body = título congelado, sem respostas) e, se `task`, uma tarefa apontando para ela. Chave `form-msg:` / `form-task:` + id. Profundidade 1 |
+| Export / retenção | `GET …/export` só no escopo (autor, criador ou revisor da versão). Audit `form.exported` sem respostas. Retenção zera `AnswersJson` e marca `answersPurged` |
+| Eventos | Outbox `form.published`, `form.submitted`, `form.approved`, `form.rejected`. Payload sem título e sem respostas |
+
 ### Base de conhecimento (B-120)
 
 Páginas server-authoritative em `knowledge.pages`. Coleções em `knowledge.collections` com escopo `workspace`, `space` ou `channel`. Histórico append-only em `knowledge.page_versions`. Flag `Knowledge:Pages:Enabled` (**off** por default; 404 `KnowledgeDisabled` sem gravar). ADR-032.

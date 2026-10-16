@@ -473,6 +473,54 @@ export const ui = {
   taskStateOpen: $localize`:@@task.stateOpen:Aberta`,
   taskStateInProgress: $localize`:@@task.stateInProgress:Em andamento`,
   taskStateCompleted: $localize`:@@task.stateCompleted:Concluída`,
+  formNav: $localize`:@@form.nav:Formulários`,
+  formNavHint: $localize`:@@form.navHint:Pedidos estruturados`,
+  formPanel: $localize`:@@form.panel:Formulários`,
+  formEmpty: $localize`:@@form.empty:Nenhum formulário neste canal.`,
+  formLoadError: $localize`:@@form.loadError:Não foi possível carregar.`,
+  formSaveError: $localize`:@@form.saveError:Não foi possível salvar.`,
+  formDisabled: $localize`:@@form.disabled:Formulários estão desligados.`,
+  formTitleLabel: $localize`:@@form.titleLabel:Título`,
+  formCreate: $localize`:@@form.create:Novo formulário`,
+  formPublish: $localize`:@@form.publish:Publicar`,
+  formSaveDraft: $localize`:@@form.saveDraft:Salvar rascunho`,
+  formArchive: $localize`:@@form.archive:Arquivar`,
+  formPreview: $localize`:@@form.preview:Prévia`,
+  formSubmit: $localize`:@@form.submit:Enviar`,
+  formApprove: $localize`:@@form.approve:Aprovar`,
+  formReject: $localize`:@@form.reject:Recusar`,
+  formPending: $localize`:@@form.pending:Pendente`,
+  formApproved: $localize`:@@form.approved:Aprovado`,
+  formRejected: $localize`:@@form.rejected:Recusado`,
+  formFieldKey: $localize`:@@form.fieldKey:Chave`,
+  formFieldLabel: $localize`:@@form.fieldLabel:Rótulo`,
+  formFieldType: $localize`:@@form.fieldType:Tipo`,
+  formFieldHidden: $localize`:@@form.fieldHidden:Campo oculto`,
+  formAddField: $localize`:@@form.addField:Adicionar campo`,
+  formRemoveField: $localize`:@@form.removeField:Remover`,
+  formReviewers: $localize`:@@form.reviewers:Revisores`,
+  formApprovalMode: $localize`:@@form.approvalMode:Aprovação`,
+  formModeSingle: $localize`:@@form.modeSingle:Um revisor`,
+  formModeQuorum: $localize`:@@form.modeQuorum:Vários revisores`,
+  formRequiredApprovals: $localize`:@@form.requiredApprovals:Aprovações necessárias`,
+  formOnApproved: $localize`:@@form.onApproved:Quando aprovado`,
+  formOnNone: $localize`:@@form.onNone:Nada`,
+  formOnMessage: $localize`:@@form.onMessage:Publicar mensagem`,
+  formOnTask: $localize`:@@form.onTask:Criar tarefa`,
+  formVisibilityHint: $localize`:@@form.visibilityHint:Quem revisa e quem enviou veem as respostas. Um campo oculto não é aceito.`,
+  formDecisions: $localize`:@@form.decisions:Decisões`,
+  formDraft: $localize`:@@form.draft:Rascunho`,
+  formPublished: $localize`:@@form.published:Publicado`,
+  formArchived: $localize`:@@form.archived:Arquivado`,
+  formAnswersPurged: $localize`:@@form.answersPurged:Respostas removidas pela retenção.`,
+  formBack: $localize`:@@form.back:Voltar`,
+  formOptionsLabel: $localize`:@@form.optionsLabel:Opções`,
+  formTypeText: $localize`:@@form.typeText:Texto`,
+  formTypeNumber: $localize`:@@form.typeNumber:Número`,
+  formTypeChoice: $localize`:@@form.typeChoice:Escolha`,
+  formTypeDate: $localize`:@@form.typeDate:Data`,
+  formTypeUser: $localize`:@@form.typeUser:Pessoa`,
+  formTypeAttachment: $localize`:@@form.typeAttachment:Arquivo`,
   inboxKindCommitment: $localize`:@@inbox.kindCommitment:Decisão ou ação`,
   inboxKindTask: $localize`:@@inbox.kindTask:Tarefas`,
   composerSchedule: $localize`:@@composer.schedule:Agendar`,
@@ -1383,6 +1431,21 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.commitmentAssigneeError;
     case 'TaskVersionConflict':
       return ui.taskConflict;
+    case 'FormDisabled':
+      return ui.formDisabled;
+    case 'InvalidFormSchema':
+    case 'HiddenField':
+    case 'UnknownField':
+    case 'InvalidAnswer':
+    case 'ActorNotAllowed':
+    case 'FormNotPublished':
+    case 'FormArchived':
+    case 'FormClosed':
+    case 'AlreadyDecided':
+    case 'ReviewerNotMember':
+    case 'FormLimitReached':
+    case 'InvalidDecision':
+      return ui.formSaveError;
     case 'InvalidPriority':
     case 'InvalidTaskState':
     case 'InvalidTaskFilter':
