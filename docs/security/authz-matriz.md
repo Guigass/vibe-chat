@@ -115,6 +115,19 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/workspaces/{workspaceId:guid}/forms/{formId:guid}/submissions/{submissionId:guid}` | permission | `form.submit` | ✓ | ✗ | ✓ | B-124; fora do escopo → 404 |
 | POST | `/workspaces/{workspaceId:guid}/forms/{formId:guid}/submissions/{submissionId:guid}/decisions` | permission | `form.review` | ✓ | ✓ | ✓ | B-124; actor é o autenticado; `actorUserId` alheio → 400 |
 | GET | `/workspaces/{workspaceId:guid}/forms/{formId:guid}/export` | permission | `form.review` | ✓ | ✓ | ✓ | B-124; audit sem respostas; retenção zera answers |
+| POST | `/workspaces/{workspaceId:guid}/automations` | permission | `automation.manage` | ✗ | ✗ | ✓ | B-125; flag off → 404 `AutomationDisabled`; só admin |
+| GET | `/workspaces/{workspaceId:guid}/automations` | permission | `automation.manage` | ✗ | ✗ | ✓ | B-125; lista sem token de webhook |
+| GET | `/workspaces/{workspaceId:guid}/automations/{automationId:guid}` | permission | `automation.manage` | ✗ | ✗ | ✓ | B-125; outro workspace → 404 |
+| PATCH | `/workspaces/{workspaceId:guid}/automations/{automationId:guid}` | permission | `automation.manage` | ✗ | ✗ | ✓ | B-125; rascunho; não altera versão publicada |
+| POST | `/workspaces/{workspaceId:guid}/automations/{automationId:guid}/publish` | permission | `automation.manage` | ✗ | ✗ | ✓ | B-125; congela `automation.definition.v1`; token só uma vez |
+| POST | `/workspaces/{workspaceId:guid}/automations/{automationId:guid}/enable` | permission | `automation.manage` | ✗ | ✗ | ✓ | B-125; limpa circuito |
+| POST | `/workspaces/{workspaceId:guid}/automations/{automationId:guid}/disable` | permission | `automation.manage` | ✗ | ✗ | ✓ | B-125; impede novos runs |
+| POST | `/workspaces/{workspaceId:guid}/automations/{automationId:guid}/dry-run` | permission | `automation.manage` | ✗ | ✗ | ✓ | B-125; sem efeito externo |
+| POST | `/workspaces/{workspaceId:guid}/automations/{automationId:guid}/trigger` | permission | `automation.manage` | ✗ | ✗ | ✓ | B-125; idempotente por evento |
+| GET | `/workspaces/{workspaceId:guid}/automations/{automationId:guid}/runs` | permission | `automation.manage` | ✗ | ✗ | ✓ | B-125; log sem segredo |
+| GET | `/workspaces/{workspaceId:guid}/automations/{automationId:guid}/runs/{runId:guid}` | permission | `automation.manage` | ✗ | ✗ | ✓ | B-125; erro por step |
+| POST | `/workspaces/{workspaceId:guid}/automations/{automationId:guid}/runs/{runId:guid}/replay` | permission | `automation.manage` | ✗ | ✗ | ✓ | B-125; replay explícito |
+| POST | `/workspaces/{workspaceId:guid}/automations/{automationId:guid}/hooks` | exempt | — | ✗ | ✗ | ✗ | B-125; token `vc_auto_` só como hash; flag off ou token inválido → 404 |
 | GET | `/workspaces/{workspaceId:guid}/knowledge/collections` | permission | `knowledge.view` | ✓ | ✓ | ✓ | B-120; canal privado some sem membership |
 | POST | `/workspaces/{workspaceId:guid}/knowledge/collections` | permission | `knowledge.edit` | ✓ | ✗ | ✓ | B-120; flag off → 404 |
 | DELETE | `/workspaces/{workspaceId:guid}/knowledge/collections/{collectionId:guid}` | permission | `knowledge.manage` | ✗ | ✗ | ✓ | B-120 |

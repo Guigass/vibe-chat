@@ -400,6 +400,10 @@ outro usuário recebe 404 e outro tenant 403. O cursor de leitura não anda.
 
 Superfície implementada, R3. A ameaça principal é página ou versão sobreviver fora da ACL, HTML no Markdown virar XSS, ou uma referência revogada continuar mostrando título. O controle é: flag off por default; RLS `FORCE` em `knowledge.collections`, `knowledge.pages` e `knowledge.page_versions`; busca e export filtram a coleção na leitura; canal privado exige membership atual; body rejeita tag HTML e schemes `javascript:`/`data:`/`vbscript:`; referência inacessível volta `redacted` sem label; outbox sem título nem body; conflito de versão não grava.
 
+## Automation builder (B-125)
+
+Superfície implementada, R3. A ameaça principal é confused deputy (a automação agir com mais poder que o publicador), loop sem limite ou segredo no log do run. O controle é: flag off por default; RLS `FORCE` em `automation.definitions`, `versions`, `runs` e `steps`; definição allowlisted `automation.definition.v1`; capability revalidada na execução contra o papel atual de quem publicou; identidade técnica `Role.Bot` com escopo de canal; profundidade máxima 3 auditada em `automation.loop_stopped`; conector só para webhook HTTPS já cadastrado; token de webhook só como hash; run log sem body e com redação de `vc_auto_`/`vc_int_`. Member recebe 403. Outro tenant recebe 403. ADR-035.
+
 ## Formulários e aprovações (B-124)
 
 Superfície implementada, R3. A ameaça principal é mass assignment de campo oculto, aprovar como outro actor, ou a resposta sobreviver à retenção e ao tenant. O controle é: flag off por default; RLS `FORCE` em `messaging.forms`, `form_versions`, `form_submissions` e `form_decisions`; schema allowlisted `form.schema.v1`; campo oculto ou desconhecido devolve 400 e não grava; `actorUserId` alheio devolve `ActorNotAllowed`; revisor fora da versão recebe 403; outro tenant recebe 403; outbox e audit sem respostas; retenção zera o JSON e mantém a decisão; o resultado automático não copia respostas. ADR-034.

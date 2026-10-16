@@ -102,6 +102,10 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<FormSchemaVersion> FormSchemaVersions => Set<FormSchemaVersion>();
     public DbSet<FormSubmission> FormSubmissions => Set<FormSubmission>();
     public DbSet<FormDecision> FormDecisions => Set<FormDecision>();
+    public DbSet<AutomationDefinition> AutomationDefinitions => Set<AutomationDefinition>();
+    public DbSet<AutomationVersion> AutomationVersions => Set<AutomationVersion>();
+    public DbSet<AutomationRun> AutomationRuns => Set<AutomationRun>();
+    public DbSet<AutomationStep> AutomationSteps => Set<AutomationStep>();
     public DbSet<KnowledgeCollection> KnowledgeCollections => Set<KnowledgeCollection>();
     public DbSet<KnowledgePage> KnowledgePages => Set<KnowledgePage>();
     public DbSet<KnowledgePageVersion> KnowledgePageVersions => Set<KnowledgePageVersion>();
@@ -688,6 +692,68 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.HasIndex(x => new { x.TenantId, x.ActorUserId, x.IdempotencyKey }).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.SubmissionId, x.ActorUserId }).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.SubmissionId, x.Version });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<AutomationDefinition>(entity =>
+        {
+            entity.ToTable("definitions", "automation");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.IdentityUserId).HasConversion(
+                v => v.HasValue ? v.Value.Value : (Guid?)null,
+                v => v.HasValue ? new UserId(v.Value) : null);
+            entity.Property(x => x.Name).HasMaxLength(AutomationPolicies.MaxNameLength);
+            entity.Property(x => x.DraftJson).HasColumnType("jsonb");
+            entity.Property(x => x.TriggerType).HasMaxLength(32);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(AutomationPolicies.MaxIdempotencyKeyLength);
+            entity.Property(x => x.WebhookTokenHash).HasMaxLength(64);
+            entity.HasIndex(x => new { x.TenantId, x.CreatedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.Enabled, x.UpdatedAt });
+            entity.HasIndex(x => new { x.TriggerType, x.NextRunAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<AutomationVersion>(entity =>
+        {
+            entity.ToTable("versions", "automation");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.PublishedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.DefinitionJson).HasColumnType("jsonb");
+            entity.Property(x => x.CapabilitiesJson).HasColumnType("jsonb");
+            entity.HasIndex(x => new { x.TenantId, x.AutomationId, x.Version }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<AutomationRun>(entity =>
+        {
+            entity.ToTable("runs", "automation");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.EventId).HasMaxLength(80);
+            entity.Property(x => x.EventJson).HasColumnType("jsonb");
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(64);
+            entity.Property(x => x.ErrorCode).HasMaxLength(40);
+            entity.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.AutomationId, x.CreatedAt });
+            entity.HasIndex(x => new { x.Status, x.CreatedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<AutomationStep>(entity =>
+        {
+            entity.ToTable("steps", "automation");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.ActionType).HasMaxLength(32);
+            entity.Property(x => x.ErrorCode).HasMaxLength(40);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(64);
+            entity.Property(x => x.LogJson).HasColumnType("jsonb");
+            entity.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.RunId, x.ActionIndex });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

@@ -4,7 +4,7 @@
 -- Session GUCs (SET LOCAL / set_config is_local preferred inside transactions):
 --   app.tenant_id  — required for tenant-scoped reads/writes (fail closed when unset)
 --   app.user_id    — bootstrap membership discovery before tenant is known
---   app.job_role   — 'outbox' | 'retention' | 'polls' | 'schedule' | 'digest' | 'tasks' for worker cross-tenant claim paths only
+--   app.job_role   — 'outbox' | 'retention' | 'polls' | 'schedule' | 'digest' | 'tasks' | 'automation' for worker cross-tenant claim paths only
 --   app.invite_token_hash — B-040 accept lookup only; reveals the single matching invite row
 --   app.integration_token_hash — B-109 token lookup only; reveals the single matching bot token row
 --
@@ -401,6 +401,49 @@ CREATE POLICY tenant_isolation_form_decisions ON messaging.form_decisions
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+CREATE SCHEMA IF NOT EXISTS automation;
+
+ALTER TABLE IF EXISTS automation.definitions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS automation.definitions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS automation.versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS automation.versions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS automation.runs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS automation.runs FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS automation.steps ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS automation.steps FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_automation_definitions ON automation.definitions;
+CREATE POLICY tenant_isolation_automation_definitions ON automation.definitions
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR app.current_job_role() = 'automation'
+    )
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_automation_versions ON automation.versions;
+CREATE POLICY tenant_isolation_automation_versions ON automation.versions
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR app.current_job_role() = 'automation'
+    )
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_automation_runs ON automation.runs;
+CREATE POLICY tenant_isolation_automation_runs ON automation.runs
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR app.current_job_role() = 'automation'
+    )
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_automation_steps ON automation.steps;
+CREATE POLICY tenant_isolation_automation_steps ON automation.steps
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR app.current_job_role() = 'automation'
+    )
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 ALTER TABLE IF EXISTS knowledge.collections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS knowledge.collections FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS knowledge.pages ENABLE ROW LEVEL SECURITY;
@@ -783,7 +826,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'app', 'public'
+      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'automation', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, app_role);
@@ -804,7 +847,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'app', 'public'
+      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'automation', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, backup_role);

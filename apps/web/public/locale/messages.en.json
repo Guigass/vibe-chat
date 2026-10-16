@@ -1271,6 +1271,22 @@
     "form.typeChoice": "Choice",
     "form.typeDate": "Date",
     "form.typeUser": "Person",
-    "form.typeAttachment": "File"
+    "form.typeAttachment": "File",
+    "admin.navAutomations": "Automations",
+    "admin.automationsLead": "Declarative rules for this workspace. While off, the automation does not start new runs.",
+    "admin.automationsEmpty": "No automations yet.",
+    "admin.automationsName": "Name",
+    "admin.automationsMessage": "Message text",
+    "admin.automationsChannels": "Channels",
+    "admin.automationsCreate": "Create draft",
+    "admin.automationsPublish": "Publish",
+    "admin.automationsEnable": "Enable",
+    "admin.automationsDisable": "Disable",
+    "admin.automationsDryRun": "Test without effect",
+    "admin.automationsRuns": "History",
+    "admin.automationsLoadError": "Could not load automations.",
+    "admin.automationsSaveError": "Could not save.",
+    "admin.automationsIdentity": "Identity",
+    "admin.automationsCapabilities": "Permissions"
   }
 }

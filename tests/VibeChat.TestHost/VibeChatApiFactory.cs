@@ -183,6 +183,7 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Conversations:Topics:Enabled", "true");
         builder.UseSetting("Knowledge:Pages:Enabled", "true");
         builder.UseSetting("Forms:Enabled", "true");
+        builder.UseSetting("Automation:Enabled", "true");
         builder.UseSetting("SemanticSearch:Enabled", "true");
         builder.UseSetting("SemanticSearch:QdrantUrl", "");
         builder.UseSetting("SemanticSearch:MonthlyTokenBudget", "100000");

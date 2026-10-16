@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../auth/auth.service';
 import { AdminApiService } from './admin-api.service';
 import { AiApiService } from './ai-api.service';
+import { AutomationApiService } from './automation-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
@@ -33,6 +34,7 @@ function createApi(auth: AuthStub): ApiService {
       AiApiService,
       ImportApiService,
       DiagnosticsApiService,
+      AutomationApiService,
       { provide: AuthService, useValue: auth },
     ],
   });

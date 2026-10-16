@@ -53,6 +53,12 @@ export const ADMIN_CHILD_ROUTES: Routes = [
       import('./admin-plugins.page').then((m) => m.AdminPluginsPage),
   },
   {
+    path: 'automations',
+    canActivate: [adminAreaGuard('automations')],
+    loadComponent: () =>
+      import('./admin-automations.page').then((m) => m.AdminAutomationsPage),
+  },
+  {
     path: 'import',
     canActivate: [adminAreaGuard('import')],
     loadComponent: () => import('./admin-import.page').then((m) => m.AdminImportPage),

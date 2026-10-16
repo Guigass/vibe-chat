@@ -4,9 +4,9 @@ Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
 - **Data de corte:** 2026-10-16
-- **Fase:** W12 / B-124 Done (formulários e aprovações). B-123 permanece Done. Wave 19 permanece Done (W19-6 / B-183). Wave 10 permanece Done (W10-15 / B-186, W10-16 / B-188).
+- **Fase:** W13 / B-125 Done (automation builder). B-124 permanece Done. Wave 19 permanece Done (W19-6 / B-183). Wave 10 permanece Done (W10-15 / B-186, W10-16 / B-188).
 - **Safety lane obrigatória:** OPS-E2E-B100 Resolved (Playwright `locale: pt-BR` + isolamento i18n E2E + foco paleta + select Settings); OPS-E2E-B099 Resolved (#154); OPS-E2E-B098 Resolved (#148); OPS-E2E-B097 Resolved (#145+#149); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); BUG-020 Done (B-186 / W10-15); BUG-021 Aberto (Média — convidado para DM em grupo não atualiza o front até F5); BUG-022 Aberto (Média — busca do header desalinhada na 1ª abertura e fecha ao selecionar opção); BUG-023 Done (Média, B-188 / W10-16 — busca versátil); BUG-024 Aberto (Média — comandos slash não acompanham o idioma da UI); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
-- **Próximo item elegível:** W13 / B-125 (automation builder), primeira linha `Planned` da Wave 13; deps B-108, B-110 e B-124 estão Done
+- **Próximo item elegível:** W13 / B-126 (incident rooms e playbooks), próxima linha `Planned` da Wave 13; deps B-112, B-119 e B-125 estão Done
 - **Override humano concluído:** W19-1 / B-178 — decomposição da API em maps por fronteira; `Program.cs` com 220 linhas; build e 241 testes verdes. A fila W10 permanece na ordem acima.
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
@@ -79,7 +79,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W13 / B-125 | B-124 Done (formulários e aprovações); primeira linha `Planned` da Wave 13 |
+| 1 | W13 / B-126 | B-125 Done (automation builder); próxima linha `Planned` da Wave 13 |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
@@ -127,7 +127,7 @@ canal/pessoa/anexo no FTS; fecha BUG-023).
 
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W19. Wave 19
 (organização do código, B-178…B-183) está Done, inclusive o gate de linhas
-B-183. O Build segue em W13; B-124 está Done e a primeira linha `Planned` da Wave 13 é B-125.
+B-183. O Build segue em W13; B-125 está Done e a próxima linha `Planned` da Wave 13 é B-126.
 
 ## Baseline de planejamento
 

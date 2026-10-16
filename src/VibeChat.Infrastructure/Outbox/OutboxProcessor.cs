@@ -81,6 +81,19 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                 tenant.SetTenant(outbox.TenantId);
                 await RlsSession.EnsureAppliedAsync(dbContext, tenant, cancellationToken);
 
+                try
+                {
+                    var automations = scope.ServiceProvider.GetRequiredService<AutomationService>();
+                    await automations.ObserveOutboxAsync(outbox.Type, outbox.Payload, cancellationToken);
+                }
+                catch (Exception automationEx)
+                {
+                    logger.LogWarning(
+                        automationEx,
+                        "Automation trigger skipped for outbox {OutboxMessageId}",
+                        outbox.Id);
+                }
+
                 if (outbox.Type is nameof(MemberRoleChangedEmailEvent) or nameof(MemberInvitedEmailEvent))
                 {
                     var to = "";

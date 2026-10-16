@@ -10,6 +10,7 @@ export type AdminAreaId =
   | 'settings'
   | 'onboarding'
   | 'plugins'
+  | 'automations'
   | 'import'
   | 'diagnostics';
 
@@ -30,6 +31,7 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   { id: 'settings', label: ui.adminNavSettings, path: 'settings' },
   { id: 'onboarding', label: ui.adminNavOnboarding, path: 'onboarding' },
   { id: 'plugins', label: ui.adminNavPlugins, path: 'plugins' },
+  { id: 'automations', label: ui.adminNavAutomations, path: 'automations' },
   { id: 'import', label: ui.adminNavImport, path: 'import' },
   { id: 'diagnostics', label: ui.adminNavDiagnostics, path: 'diagnostics' },
 ] as const;
@@ -57,6 +59,7 @@ export function canAccessArea(role: string | undefined | null, area: AdminAreaId
     case 'settings':
     case 'onboarding':
     case 'plugins':
+    case 'automations':
     case 'import':
       return hasWorkspaceAdmin(role);
     default:

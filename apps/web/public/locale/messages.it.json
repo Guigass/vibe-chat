@@ -1271,6 +1271,22 @@
     "form.typeChoice": "Scelta",
     "form.typeDate": "Data",
     "form.typeUser": "Persona",
-    "form.typeAttachment": "File"
+    "form.typeAttachment": "File",
+    "admin.navAutomations": "Automazioni",
+    "admin.automationsLead": "Regole dichiarative di questo spazio. Se disattivata, l'automazione non avvia nuove esecuzioni.",
+    "admin.automationsEmpty": "Nessuna automazione ancora.",
+    "admin.automationsName": "Nome",
+    "admin.automationsMessage": "Testo del messaggio",
+    "admin.automationsChannels": "Canali",
+    "admin.automationsCreate": "Crea bozza",
+    "admin.automationsPublish": "Pubblica",
+    "admin.automationsEnable": "Attiva",
+    "admin.automationsDisable": "Disattiva",
+    "admin.automationsDryRun": "Prova senza effetto",
+    "admin.automationsRuns": "Cronologia",
+    "admin.automationsLoadError": "Impossibile caricare le automazioni.",
+    "admin.automationsSaveError": "Impossibile salvare.",
+    "admin.automationsIdentity": "Identità",
+    "admin.automationsCapabilities": "Permessi"
   }
 }

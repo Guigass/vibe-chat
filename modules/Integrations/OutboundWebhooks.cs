@@ -141,6 +141,17 @@ public interface IOutboundWebhookDispatcher
         TenantId tenantId,
         Guid endpointId,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Delivers a redacted payload to one existing endpoint in the tenant.
+    /// Missing, disabled or invalid endpoints fail closed and do not call the network.
+    /// </summary>
+    Task<WebhookPingResult> DeliverAllowlistedAsync(
+        TenantId tenantId,
+        Guid endpointId,
+        string eventName,
+        string payloadJson,
+        CancellationToken cancellationToken);
 }
 
 public sealed record WebhookPingResult(bool Ok, int StatusCode, string? Error, int? HttpStatus, string? LastError);

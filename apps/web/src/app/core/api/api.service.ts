@@ -9,6 +9,7 @@ import { SearchApiService } from './search-api.service';
 import { AiApiService } from './ai-api.service';
 import { ImportApiService } from './import-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
+import { AutomationApiService } from './automation-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -25,6 +26,7 @@ export class ApiService {
   private readonly ai = inject(AiApiService);
   private readonly imports = inject(ImportApiService);
   private readonly diagnostics = inject(DiagnosticsApiService);
+  private readonly automations = inject(AutomationApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -183,4 +185,10 @@ export class ApiService {
   readonly createRepair: DiagnosticsApiService['createRepair'] = this.diagnostics.createRepair.bind(this.diagnostics);
   readonly applyRepair: DiagnosticsApiService['applyRepair'] = this.diagnostics.applyRepair.bind(this.diagnostics);
   readonly cancelRepair: DiagnosticsApiService['cancelRepair'] = this.diagnostics.cancelRepair.bind(this.diagnostics);
+  readonly listAutomations: AutomationApiService['list'] = this.automations.list.bind(this.automations);
+  readonly createAutomation: AutomationApiService['create'] = this.automations.create.bind(this.automations);
+  readonly publishAutomation: AutomationApiService['publish'] = this.automations.publish.bind(this.automations);
+  readonly setAutomationEnabled: AutomationApiService['setEnabled'] = this.automations.setEnabled.bind(this.automations);
+  readonly dryRunAutomation: AutomationApiService['dryRun'] = this.automations.dryRun.bind(this.automations);
+  readonly listAutomationRuns: AutomationApiService['runs'] = this.automations.runs.bind(this.automations);
 }

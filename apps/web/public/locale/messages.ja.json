@@ -1271,6 +1271,22 @@
     "form.typeChoice": "選択",
     "form.typeDate": "日付",
     "form.typeUser": "人",
-    "form.typeAttachment": "ファイル"
+    "form.typeAttachment": "ファイル",
+    "admin.navAutomations": "自動化",
+    "admin.automationsLead": "このワークスペースの宣言的なルールです。オフの間、自動化は新しい実行を始めません。",
+    "admin.automationsEmpty": "自動化はまだありません。",
+    "admin.automationsName": "名前",
+    "admin.automationsMessage": "メッセージ本文",
+    "admin.automationsChannels": "チャンネル",
+    "admin.automationsCreate": "下書きを作成",
+    "admin.automationsPublish": "公開",
+    "admin.automationsEnable": "有効にする",
+    "admin.automationsDisable": "無効にする",
+    "admin.automationsDryRun": "効果なしで試す",
+    "admin.automationsRuns": "履歴",
+    "admin.automationsLoadError": "自動化を読み込めませんでした。",
+    "admin.automationsSaveError": "保存できませんでした。",
+    "admin.automationsIdentity": "ID",
+    "admin.automationsCapabilities": "権限"
   }
 }

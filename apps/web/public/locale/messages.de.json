@@ -1271,6 +1271,22 @@
     "form.typeChoice": "Auswahl",
     "form.typeDate": "Datum",
     "form.typeUser": "Person",
-    "form.typeAttachment": "Datei"
+    "form.typeAttachment": "Datei",
+    "admin.navAutomations": "Automatisierungen",
+    "admin.automationsLead": "Deklarative Regeln für diesen Workspace. Ausgeschaltet startet die Automatisierung keine neuen Läufe.",
+    "admin.automationsEmpty": "Noch keine Automatisierungen.",
+    "admin.automationsName": "Name",
+    "admin.automationsMessage": "Nachrichtentext",
+    "admin.automationsChannels": "Kanäle",
+    "admin.automationsCreate": "Entwurf erstellen",
+    "admin.automationsPublish": "Veröffentlichen",
+    "admin.automationsEnable": "Aktivieren",
+    "admin.automationsDisable": "Deaktivieren",
+    "admin.automationsDryRun": "Ohne Wirkung testen",
+    "admin.automationsRuns": "Verlauf",
+    "admin.automationsLoadError": "Automatisierungen konnten nicht geladen werden.",
+    "admin.automationsSaveError": "Speichern fehlgeschlagen.",
+    "admin.automationsIdentity": "Identität",
+    "admin.automationsCapabilities": "Berechtigungen"
   }
 }
