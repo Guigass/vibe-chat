@@ -10,6 +10,7 @@ import { ApiService } from '../../../core/api/api.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { CommitmentStore } from '../../../core/services/commitment.store';
+import { TaskStore } from '../../../core/services/task.store';
 import { MessageStore } from '../../../core/services/message.store';
 import { idsEqual } from '../../../core/services/message-sync';
 import { ThemeService } from '../../../core/services/theme.service';
@@ -83,6 +84,7 @@ export class MessageBubble {
   private readonly channels = inject(ChannelStore);
   private readonly messages = inject(MessageStore);
   private readonly commitments = inject(CommitmentStore);
+  private readonly tasks = inject(TaskStore);
   private readonly theme = inject(ThemeService);
   private readonly locales = inject(LocaleService);
   private readonly contextMenu = viewChild(CdkContextMenuTrigger);
@@ -294,6 +296,10 @@ export class MessageBubble {
     if (this.menuItems().find((item) => item.id === id)?.disabled) return;
     if (id === 'decide' || id === 'act') {
       this.commitments.begin(this.message(), id === 'decide' ? 'decision' : 'action_item');
+      return;
+    }
+    if (id === 'task') {
+      this.tasks.begin(this.message());
       return;
     }
     emitMessageMenuAction(id, this);

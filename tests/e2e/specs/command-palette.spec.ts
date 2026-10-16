@@ -44,8 +44,9 @@ test.describe(`command palette (${AUTH_MODE})`, () => {
       await query.click();
       await expect(query).toBeFocused();
       await query.fill(hop.query);
-      await expect(palette.getByRole('option').first()).toBeVisible();
-      await query.press('Enter');
+      const option = palette.getByRole('option', { name: hop.heading }).first();
+      await expect(option).toBeVisible();
+      await option.click();
       await expect(palette).toHaveCount(0);
       await expect(alice.page.getByRole('heading', { name: hop.heading })).toBeVisible();
     }

@@ -93,6 +93,10 @@ public static class AuditActions
     public const string CommitmentUpdate = "commitment.update";
     public const string CommitmentClose = "commitment.close";
     public const string CommitmentReopen = "commitment.reopen";
+    public const string TaskCreate = "task.create";
+    public const string TaskUpdate = "task.update";
+    public const string TaskComplete = "task.complete";
+    public const string TaskReopen = "task.reopen";
     public const string KnowledgeCollectionCreate = "knowledge.collection.create";
     public const string KnowledgeCollectionDelete = "knowledge.collection.delete";
     public const string KnowledgePageCreate = "knowledge.page.create";

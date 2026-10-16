@@ -81,7 +81,7 @@ por acidente.
 | B-120 | B/C/D | Base de conhecimento leve, coleções e páginas curadas | B-119, D-17 | [B-120](../product/specs/B-120-base-conhecimento.md) | **Done** — páginas server-authoritative, versão otimista, ACL e retenção; flag off; ADR-032 |
 | B-121 | B/C/D/E | Busca semântica/RAG com ACL, citações e opt-in | B-098, D-22 | [B-121](../product/specs/B-121-rag-busca-semantica.md) | **Done** — projeção Postgres + Qdrant opcional, ACL na leitura, flag off |
 | B-122 | C/D | Digests programados e catch-up por canal/time | B-117 | [B-122](../product/specs/B-122-digests-catch-up.md) | **Done** — agenda pessoal, snapshot de ids, IA opcional, flag off; ADR-033 |
-| B-123 | C/D | Tarefas pessoais/de time derivadas de mensagens | B-119 | [B-123](../product/specs/B-123-tarefas-mensagens.md) | Planned |
+| B-123 | C/D | Tarefas pessoais/de time derivadas de mensagens | B-119 | [B-123](../product/specs/B-123-tarefas-mensagens.md) | **Done** — origem, checklist, versão otimista, inbox e `task.overdue` idempotente |
 | B-124 | B/C/D | Formulários, aprovações e coleta estruturada | B-123 | [B-124](../product/specs/B-124-formularios-aprovacoes.md) | Planned |
 
 ### Critérios de saída

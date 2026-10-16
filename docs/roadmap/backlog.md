@@ -202,7 +202,7 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-153 | Importação assistida | **Done** (W11) — dry-run, staging, publish/rollback; [spec](../product/specs/B-153-migracao-importacao.md) |
 | B-154 | Diagnóstico e support bundle | **Done** (W11) — preflight, probes sintéticos, bundle sanitizado e repair allowlisted; [spec](../product/specs/B-154-diagnostico-support-bundle.md) |
 | B-167 | Perfil público do membro | **Done** (W11) — cargo, sobre, destaque e avatar no workspace; [spec](../product/specs/B-167-perfil-publico-membro.md) |
-| B-119…B-124 | Conhecimento, decisões, RAG, tarefas e formulários | Planned — W12 (B-119 Done; B-120 Done; B-121 Done; B-122 Done: digest/catch-up sem cópia do body) |
+| B-119…B-124 | Conhecimento, decisões, RAG, tarefas e formulários | Planned — W12 (B-119 Done; B-120 Done; B-121 Done; B-122 Done: digest/catch-up sem cópia do body; B-123 Done: tarefas com origem, checklist e concorrência) |
 | B-125…B-128, B-131, B-139, B-164 | Automações, incidentes, conectores, SSO e contratos | Planned — W13 |
 | B-129/B-130/B-132…B-134/B-146/B-169 | Segurança enterprise, SIEM, policies, auditoria de conteúdo (`contentAuditEnabled` + snapshot de body em `message.delete`) e capacidade | Planned — W14 |
 | B-135…B-138, B-140/B-141, B-063/B-066/B-111 | Plataforma, registry, bridges, branding e clients | Planned — W15 |

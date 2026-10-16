@@ -58,6 +58,7 @@ export type MessageMenuActionId =
   | 'unsave'
   | 'decide'
   | 'act'
+  | 'task'
   | 'remind'
   | 'mark-unread';
 
@@ -122,6 +123,7 @@ export function menuActionsForMessage(options: {
   if (options.showCommit) {
     items.push({ id: 'decide', label: ui.menuDecide });
     items.push({ id: 'act', label: ui.menuAct });
+    items.push({ id: 'task', label: ui.menuTask });
   }
   if (options.showRemind) {
     items.push({ id: 'remind', label: ui.menuRemind });

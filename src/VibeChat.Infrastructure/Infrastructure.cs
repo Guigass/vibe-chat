@@ -12,6 +12,7 @@ public static class DependencyInjection
         services.AddPollsInfrastructure();
         services.AddAnnouncementsInfrastructure();
         services.AddPollCloseInfrastructure();
+        services.AddSingleton<VibeChat.Infrastructure.Messaging.TaskOverdueProcessor>();
         services.AddSchedulingInfrastructure();
         services.AddSearchInfrastructure();
         services.AddRateLimitingInfrastructure();

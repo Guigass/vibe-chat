@@ -368,6 +368,7 @@ export const ui = {
   menuRemind: $localize`:@@menu.remind:Lembrar deste item`,
   menuDecide: $localize`:@@menu.decide:Decisão`,
   menuAct: $localize`:@@menu.act:Ação`,
+  menuTask: $localize`:@@menu.task:Tarefa`,
   knowledgeNav: $localize`:@@knowledge.nav:Conhecimento`,
   knowledgeNavHint: $localize`:@@knowledge.navHint:Páginas do workspace`,
   knowledgePanel: $localize`:@@knowledge.panel:Base de conhecimento`,
@@ -430,7 +431,50 @@ export const ui = {
   commitmentActionUpdated: $localize`:@@commitment.actionUpdated:Atualizada`,
   commitmentActionClosed: $localize`:@@commitment.actionClosed:Encerrada`,
   commitmentActionReopened: $localize`:@@commitment.actionReopened:Reaberta`,
+  taskNav: $localize`:@@task.nav:Tarefas`,
+  taskNavHint: $localize`:@@task.navHint:Origem na conversa`,
+  taskPanel: $localize`:@@task.panel:Tarefas`,
+  taskEmpty: $localize`:@@task.empty:Nenhuma tarefa neste filtro.`,
+  taskLoadError: $localize`:@@task.loadError:Não foi possível carregar.`,
+  taskSaveError: $localize`:@@task.saveError:Não foi possível salvar.`,
+  taskAssigneeError: $localize`:@@task.assigneeError:Essa pessoa não lê o canal.`,
+  taskConflict: $localize`:@@task.conflict:Alguém atualizou esta tarefa. Recarregue.`,
+  taskTitleLabel: $localize`:@@task.titleLabel:Título`,
+  taskDescriptionLabel: $localize`:@@task.descriptionLabel:Descrição`,
+  taskAssigneesLabel: $localize`:@@task.assigneesLabel:Responsáveis`,
+  taskDueLabel: $localize`:@@task.dueLabel:Prazo`,
+  taskPriorityLabel: $localize`:@@task.priorityLabel:Prioridade`,
+  taskPriorityLow: $localize`:@@task.priorityLow:Baixa`,
+  taskPriorityNormal: $localize`:@@task.priorityNormal:Normal`,
+  taskPriorityHigh: $localize`:@@task.priorityHigh:Alta`,
+  taskPriorityUrgent: $localize`:@@task.priorityUrgent:Urgente`,
+  taskVisibilityLabel: $localize`:@@task.visibilityLabel:Quem vê`,
+  taskVisibilityChannel: $localize`:@@task.visibilityChannel:Quem lê o canal`,
+  taskVisibilityRestricted: $localize`:@@task.visibilityRestricted:Só você e os responsáveis`,
+  taskCreate: $localize`:@@task.create:Criar`,
+  taskDialogTitle: $localize`:@@task.dialogTitle:Nova tarefa`,
+  taskNew: $localize`:@@task.new:Nova tarefa`,
+  taskComplete: $localize`:@@task.complete:Concluir`,
+  taskReopen: $localize`:@@task.reopen:Reabrir`,
+  taskOpenOrigin: $localize`:@@task.openOrigin:Abrir origem`,
+  taskSourceRemoved: $localize`:@@task.sourceRemoved:Origem removida`,
+  taskCommentsHint: $localize`:@@task.commentsHint:Comentários ficam na conversa de origem.`,
+  taskFilterActive: $localize`:@@task.filterActive:Em aberto`,
+  taskFilterCompleted: $localize`:@@task.filterCompleted:Concluídas`,
+  taskFilterAll: $localize`:@@task.filterAll:Todas`,
+  taskFilterChannel: $localize`:@@task.filterChannel:Este canal`,
+  taskFilterWorkspace: $localize`:@@task.filterWorkspace:Workspace`,
+  taskFilterMine: $localize`:@@task.filterMine:Minhas`,
+  taskOverdue: $localize`:@@task.overdue:Atrasada`,
+  taskChecklistLabel: $localize`:@@task.checklistLabel:Checklist`,
+  taskChecklistHint: $localize`:@@task.checklistHint:Um item por linha.`,
+  taskOriginLabel: $localize`:@@task.originLabel:Mensagem de origem`,
+  taskOriginEmpty: $localize`:@@task.originEmpty:Escolha uma mensagem deste canal.`,
+  taskStateOpen: $localize`:@@task.stateOpen:Aberta`,
+  taskStateInProgress: $localize`:@@task.stateInProgress:Em andamento`,
+  taskStateCompleted: $localize`:@@task.stateCompleted:Concluída`,
   inboxKindCommitment: $localize`:@@inbox.kindCommitment:Decisão ou ação`,
+  inboxKindTask: $localize`:@@inbox.kindTask:Tarefas`,
   composerSchedule: $localize`:@@composer.schedule:Agendar`,
   composerSendNow: $localize`:@@composer.sendNow:Enviar agora`,
   composerScheduleAt: $localize`:@@composer.scheduleAt:Data e hora`,
@@ -1337,6 +1381,14 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.errorTemplateNotFound;
     case 'AssigneeNotMember':
       return ui.commitmentAssigneeError;
+    case 'TaskVersionConflict':
+      return ui.taskConflict;
+    case 'InvalidPriority':
+    case 'InvalidTaskState':
+    case 'InvalidTaskFilter':
+    case 'InvalidChecklistItem':
+    case 'TooManyAssignees':
+      return ui.taskSaveError;
     case 'KnowledgeVersionConflict':
       return ui.knowledgeConflict;
     case 'KnowledgeDisabled':

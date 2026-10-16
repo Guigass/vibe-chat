@@ -138,18 +138,18 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      set -e;
-      i=0;
-      until aws --endpoint-url http://minio:9000 s3 mb s3://$${MINIO_BUCKET:-vibechat} 2>/dev/null \
-         || aws --endpoint-url http://minio:9000 s3api head-bucket --bucket $${MINIO_BUCKET:-vibechat}; do
-        i=$$((i+1));
-        if [ $$i -ge 30 ]; then echo 'MinIO not ready' >&2; exit 1; fi;
-        sleep 2;
-      done;
-      echo 'MinIO bucket ready: $${MINIO_BUCKET:-vibechat}';
-      "
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        i=0
+        until aws --endpoint-url http://minio:9000 s3 mb "s3://$${MINIO_BUCKET:-vibechat}" >/dev/null 2>&1 || aws --endpoint-url http://minio:9000 s3api head-bucket --bucket "$${MINIO_BUCKET:-vibechat}" >/dev/null 2>&1; do
+          i=$$((i + 1))
+          if [ "$$i" -ge 30 ]; then echo 'MinIO not ready' >&2; exit 1; fi
+          sleep 2
+        done
+        echo "MinIO bucket ready: $${MINIO_BUCKET:-vibechat}"
     environment:
       AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
       AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin_dev_password_change_me}

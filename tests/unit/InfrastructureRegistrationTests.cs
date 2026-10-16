@@ -26,6 +26,7 @@ public sealed class InfrastructureRegistrationTests
             "Scoped:IPollWriter:PollWriter",
             "Scoped:IAnnouncementWriter:AnnouncementWriter",
             "Singleton:PollCloseProcessor:PollCloseProcessor",
+            "Singleton:TaskOverdueProcessor:TaskOverdueProcessor",
             "Singleton:ScheduleDispatchProcessor:ScheduleDispatchProcessor",
             "Scoped:ISearchIndexer:PostgresSearchIndexer",
             "Scoped:ISearchQuery:PostgresSearchQuery",

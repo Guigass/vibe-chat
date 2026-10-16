@@ -98,6 +98,12 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/workspaces/{workspaceId:guid}/commitments/{commitmentId:guid}/close` | permission | `message.read` | ✓ | ✓ | ✓ | B-119; audit `commitment.close` |
 | POST | `/workspaces/{workspaceId:guid}/commitments/{commitmentId:guid}/reopen` | permission | `message.read` | ✓ | ✓ | ✓ | B-119; audit `commitment.reopen` |
 | GET | `/workspaces/{workspaceId:guid}/commitments/{commitmentId:guid}/history` | permission | `message.read` | ✓ | ✓ | ✓ | B-119; histórico sem body |
+| POST | `/workspaces/{workspaceId:guid}/tasks` | permission | `message.read` | ✓ | ✓ | ✓ | B-123; origem legível; idempotente; sem cópia do body |
+| GET | `/workspaces/{workspaceId:guid}/tasks` | permission | `message.read` | ✓ | ✓ | ✓ | B-123; views workspace/canal/minhas; ACL atual |
+| GET | `/workspaces/{workspaceId:guid}/tasks/{taskId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-123; invisível → 404 |
+| PATCH | `/workspaces/{workspaceId:guid}/tasks/{taskId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-123; versão otimista; criador, assignee ou admin no modo canal |
+| POST | `/workspaces/{workspaceId:guid}/tasks/{taskId:guid}/complete` | permission | `message.read` | ✓ | ✓ | ✓ | B-123; repetir não emite outro evento |
+| POST | `/workspaces/{workspaceId:guid}/tasks/{taskId:guid}/reopen` | permission | `message.read` | ✓ | ✓ | ✓ | B-123; audit `task.reopen` |
 | GET | `/workspaces/{workspaceId:guid}/knowledge/collections` | permission | `knowledge.view` | ✓ | ✓ | ✓ | B-120; canal privado some sem membership |
 | POST | `/workspaces/{workspaceId:guid}/knowledge/collections` | permission | `knowledge.edit` | ✓ | ✗ | ✓ | B-120; flag off → 404 |
 | DELETE | `/workspaces/{workspaceId:guid}/knowledge/collections/{collectionId:guid}` | permission | `knowledge.manage` | ✗ | ✗ | ✓ | B-120 |

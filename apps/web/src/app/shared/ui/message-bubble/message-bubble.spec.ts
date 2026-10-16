@@ -6,6 +6,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { AvatarCache } from '../../../core/services/avatar-cache.service';
 import { CommitmentStore } from '../../../core/services/commitment.store';
+import { TaskStore } from '../../../core/services/task.store';
 import { MessageStore } from '../../../core/services/message.store';
 import { ThemeService } from '../../../core/services/theme.service';
 import { LocaleService } from '../../../core/i18n/locale.service';
@@ -84,6 +85,10 @@ describe('MessageBubble (B-163)', () => {
         },
         {
           provide: CommitmentStore,
+          useValue: { begin: vi.fn() },
+        },
+        {
+          provide: TaskStore,
           useValue: { begin: vi.fn() },
         },
         {

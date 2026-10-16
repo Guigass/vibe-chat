@@ -30,6 +30,7 @@ import { IconButton } from '../../../shared/ui';
           <option value="topic">{{ ui.inboxKindTopic }}</option>
           <option value="saved">{{ ui.inboxKindSaved }}</option>
           <option value="commitment">{{ ui.inboxKindCommitment }}</option>
+          <option value="task">{{ ui.inboxKindTask }}</option>
         </select>
         <select [value]="inbox.stateFilter()" (change)="onState($event)" [attr.aria-label]="ui.inboxStateOpen">
           <option value="open">{{ ui.inboxStateOpen }}</option>
