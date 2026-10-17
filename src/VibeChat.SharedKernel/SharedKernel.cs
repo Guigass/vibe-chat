@@ -270,6 +270,12 @@ public static class Permissions
         public const string Notify = "automation.notify";
         public const string Connector = "automation.connector";
     }
+
+    public static class Incident
+    {
+        public const string Manage = "incident.manage";
+        public const string Export = "incident.export";
+    }
 }
 
 public enum Role

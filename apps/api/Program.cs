@@ -116,6 +116,8 @@ builder.Services.AddScoped<ICurrentUser>(sp =>
 builder.Services.AddVibeChatInfrastructure(builder.Configuration);
 builder.Services.Configure<VibeChat.Messaging.FormOptions>(
     builder.Configuration.GetSection(VibeChat.Messaging.FormOptions.SectionName));
+builder.Services.Configure<VibeChat.Messaging.IncidentOptions>(
+    builder.Configuration.GetSection(VibeChat.Messaging.IncidentOptions.SectionName));
 builder.Services.Configure<VibeChat.Integrations.AutomationOptions>(
     builder.Configuration.GetSection(VibeChat.Integrations.AutomationOptions.SectionName));
 
@@ -228,6 +230,7 @@ v1.MapCommitments();
 v1.MapTasks();
 v1.MapForms();
 v1.MapAutomations();
+v1.MapIncidents();
 v1.MapKnowledge();
 v1.MapNotifications();
 v1.MapDigests();

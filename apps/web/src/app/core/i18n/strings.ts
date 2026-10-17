@@ -521,6 +521,37 @@ export const ui = {
   formTypeDate: $localize`:@@form.typeDate:Data`,
   formTypeUser: $localize`:@@form.typeUser:Pessoa`,
   formTypeAttachment: $localize`:@@form.typeAttachment:Arquivo`,
+  incidentDeclare: $localize`:@@incident.declare:Declarar incidente`,
+  incidentTitleLabel: $localize`:@@incident.titleLabel:Título`,
+  incidentSeverity: $localize`:@@incident.severity:Severidade`,
+  incidentCreate: $localize`:@@incident.create:Abrir sala`,
+  incidentBanner: $localize`:@@incident.banner:Incidente`,
+  incidentStatusDeclared: $localize`:@@incident.statusDeclared:Declarado`,
+  incidentStatusMitigating: $localize`:@@incident.statusMitigating:Mitigando`,
+  incidentStatusResolved: $localize`:@@incident.statusResolved:Resolvido`,
+  incidentMitigate: $localize`:@@incident.mitigate:Mitigar`,
+  incidentResolve: $localize`:@@incident.resolve:Resolver`,
+  incidentResolveConfirm: $localize`:@@incident.resolveConfirm:Confirmar encerramento`,
+  incidentCommand: $localize`:@@incident.command:Comando`,
+  incidentSteps: $localize`:@@incident.steps:Playbook`,
+  incidentTimeline: $localize`:@@incident.timeline:Linha do tempo`,
+  incidentEmptyTimeline: $localize`:@@incident.emptyTimeline:Nenhuma evidência ainda.`,
+  incidentUpdate: $localize`:@@incident.update:Publicar atualização`,
+  incidentUpdateLabel: $localize`:@@incident.updateLabel:Atualização`,
+  incidentExport: $localize`:@@incident.export:Exportar postmortem`,
+  incidentDisabled: $localize`:@@incident.disabled:Incidentes estão desligados.`,
+  incidentSaveError: $localize`:@@incident.saveError:Não foi possível salvar.`,
+  incidentLoadError: $localize`:@@incident.loadError:Não foi possível carregar.`,
+  incidentStepAcknowledge: $localize`:@@incident.stepAcknowledge:Reconhecer`,
+  incidentStepMitigate: $localize`:@@incident.stepMitigate:Mitigar`,
+  incidentStepCommunicate: $localize`:@@incident.stepCommunicate:Comunicar`,
+  incidentStepPostmortem: $localize`:@@incident.stepPostmortem:Postmortem`,
+  incidentSev1: $localize`:@@incident.sev1:SEV-1`,
+  incidentSev2: $localize`:@@incident.sev2:SEV-2`,
+  incidentSev3: $localize`:@@incident.sev3:SEV-3`,
+  incidentSev4: $localize`:@@incident.sev4:SEV-4`,
+  incidentRunStep: $localize`:@@incident.runStep:Executar passo`,
+  incidentAutomationFailed: $localize`:@@incident.automationFailed:A automação vinculada não rodou.`,
   inboxKindCommitment: $localize`:@@inbox.kindCommitment:Decisão ou ação`,
   inboxKindTask: $localize`:@@inbox.kindTask:Tarefas`,
   composerSchedule: $localize`:@@composer.schedule:Agendar`,
@@ -1449,6 +1480,23 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.taskConflict;
     case 'FormDisabled':
       return ui.formDisabled;
+    case 'IncidentDisabled':
+      return ui.incidentDisabled;
+    case 'InvalidIncidentTransition':
+    case 'UnknownIncidentTemplate':
+    case 'ResponderNotMember':
+    case 'IncidentLimitReached':
+    case 'EvidenceNotFound':
+    case 'InvalidEvidence':
+    case 'AutomationFailed':
+    case 'IncidentNotResolved':
+    case 'IncidentClosed':
+    case 'TooManyResponders':
+    case 'InvalidSeverity':
+    case 'InvalidCorrelation':
+    case 'InvalidNote':
+    case 'IncidentTimelineLimit':
+      return ui.incidentSaveError;
     case 'InvalidFormSchema':
     case 'HiddenField':
     case 'UnknownField':

@@ -439,6 +439,22 @@ Definição declarativa em `automation.definitions`. Versão publicada imutável
 | Efeitos | Retry usa a mesma chave e não duplica mensagem, tarefa ou notificação. Loop na profundidade 3 grava `automation.loop_stopped`. Conector inexistente → `ConnectorNotAllowed` sem rede |
 | Eventos | Outbox `automation.created`, `automation.published`, `automation.enabled`, `automation.disabled`, `automation.notified`, `automation.loop_stopped`, `automation.circuit_open`, `automation.rate_limited`. Payload sem body e sem segredo |
 
+### Incident rooms (B-126)
+
+Sala privada em `incident.rooms`. Passos em `incident.steps`. Pessoas em `incident.responders`. Timeline em `incident.timeline` (só `kind` + `sourceId`). Flag `Incidents:Enabled` (**off** por default; 404 `IncidentDisabled` sem gravar). ADR-036.
+
+| Item | Regra |
+|------|--------|
+| Tabelas | `rooms`, `responders`, `steps`, `timeline`. `TenantId` + FORCE RLS. Unique `(TenantId, CreatedBy, IdempotencyKey)`, `(TenantId, ChannelId)`, `(TenantId, IncidentId, UserId)`, `(TenantId, IncidentId, StepIndex)`, `(TenantId, IncidentId, IdempotencyKey)` |
+| Permissões | `incident.manage` cria a sala. Só Owner/Admin. `incident.export` lê o postmortem. Só Owner/Admin e só se também for membro. Commander e responder não ganham `workspace.admin` |
+| Template | `default` (`incident.playbook.v1`): `acknowledge`, `mitigate`, `communicate`, `postmortem`. Outro template → **400** `UnknownIncidentTemplate` |
+| `POST …/incidents` | `{ idempotencyKey, templateKey, title, severity, responderIds?, correlationId?, automationId? }`. Cria canal `Private` e a sala. Replay da chave devolve a mesma sala. Quem não é membro do workspace → **400** `ResponderNotMember`. Teto 30 salas não resolvidas |
+| Estados | `declared → mitigating → resolved`. Outro salto → **409** `InvalidIncidentTransition`. `resolved` grava o snapshot e recusa evidência nova (`IncidentClosed`) |
+| Timeline | `message`, `decision` e `task` precisam existir no canal da sala. `audit` precisa ser deste incidente. Fora isso → **400** `EvidenceNotFound` sem body. Atualização grava a nota só no audit |
+| Automação | `POST …/steps/{id}/run` não chama o runner de B-125. Automação ausente, desligada ou não publicada → passo `failed` / `AutomationFailed` e evento `incident.automation_failed`. A sala não muda de estado |
+| Leitura | Quem não está em `responders` recebe **404** `IncidentNotFound` sem título nem severidade. Outro tenant → **403** |
+| Eventos | Outbox `incident.declared`, `incident.transitioned`, `incident.resolved`, `incident.automation_failed`. Payload sem título e sem nota |
+
 ### Base de conhecimento (B-120)
 
 Páginas server-authoritative em `knowledge.pages`. Coleções em `knowledge.collections` com escopo `workspace`, `space` ou `channel`. Histórico append-only em `knowledge.page_versions`. Flag `Knowledge:Pages:Enabled` (**off** por default; 404 `KnowledgeDisabled` sem gravar). ADR-032.

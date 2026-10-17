@@ -78,6 +78,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Notifications:Digests:Enabled` | instance | false | B-122 | settings/catch-up → 404 `DigestDisabled`; worker não varre; mensagens e inbox seguem |
 | `Forms:Enabled` | instance | false | B-124 | formulários → 404 `FormDisabled`; chat, mensagens e tarefas seguem |
 | `Automation:Enabled` | instance | false | B-125 | automação → 404 `AutomationDisabled`; triggers não executam; chat segue |
+| `Incidents:Enabled` | instance | false | B-126 | incidentes → 404 `IncidentDisabled`; chat segue |
 
 ## Registro inicial de flags futuras
 

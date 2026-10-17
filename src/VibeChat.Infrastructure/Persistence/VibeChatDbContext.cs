@@ -106,6 +106,10 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<AutomationVersion> AutomationVersions => Set<AutomationVersion>();
     public DbSet<AutomationRun> AutomationRuns => Set<AutomationRun>();
     public DbSet<AutomationStep> AutomationSteps => Set<AutomationStep>();
+    public DbSet<IncidentRoom> IncidentRooms => Set<IncidentRoom>();
+    public DbSet<IncidentResponder> IncidentResponders => Set<IncidentResponder>();
+    public DbSet<IncidentPlaybookStep> IncidentSteps => Set<IncidentPlaybookStep>();
+    public DbSet<IncidentTimelineEntry> IncidentTimeline => Set<IncidentTimelineEntry>();
     public DbSet<KnowledgeCollection> KnowledgeCollections => Set<KnowledgeCollection>();
     public DbSet<KnowledgePage> KnowledgePages => Set<KnowledgePage>();
     public DbSet<KnowledgePageVersion> KnowledgePageVersions => Set<KnowledgePageVersion>();
@@ -754,6 +758,65 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.LogJson).HasColumnType("jsonb");
             entity.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.RunId, x.ActionIndex });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<IncidentRoom>(entity =>
+        {
+            entity.ToTable("rooms", "incident");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.CommanderUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.TemplateKey).HasMaxLength(16);
+            entity.Property(x => x.Title).HasMaxLength(IncidentPolicies.MaxTitleLength);
+            entity.Property(x => x.Severity).HasMaxLength(8);
+            entity.Property(x => x.Status).HasMaxLength(16);
+            entity.Property(x => x.CorrelationId).HasMaxLength(IncidentPolicies.MaxCorrelationLength);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(IncidentPolicies.MaxIdempotencyKeyLength);
+            entity.Property(x => x.PostmortemJson).HasColumnType("jsonb");
+            entity.HasIndex(x => new { x.TenantId, x.CreatedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.ChannelId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.Status });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<IncidentResponder>(entity =>
+        {
+            entity.ToTable("responders", "incident");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Role).HasMaxLength(16);
+            entity.HasIndex(x => new { x.TenantId, x.IncidentId, x.UserId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<IncidentPlaybookStep>(entity =>
+        {
+            entity.ToTable("steps", "incident");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.OwnerUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Code).HasMaxLength(32);
+            entity.Property(x => x.Status).HasMaxLength(16);
+            entity.Property(x => x.EvidenceKind).HasMaxLength(16);
+            entity.Property(x => x.ErrorCode).HasMaxLength(40);
+            entity.HasIndex(x => new { x.TenantId, x.IncidentId, x.StepIndex }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<IncidentTimelineEntry>(entity =>
+        {
+            entity.ToTable("timeline", "incident");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.Kind).HasMaxLength(16);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(IncidentPolicies.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.IncidentId, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.IncidentId, x.Kind, x.SourceId });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

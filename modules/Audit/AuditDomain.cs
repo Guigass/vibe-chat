@@ -109,6 +109,12 @@ public static class AuditActions
     public const string SemanticSettingsChange = "semantic.settings";
     public const string SemanticRebuild = "semantic.rebuild";
     public const string DigestGenerated = "digest.generated";
+    public const string IncidentDeclared = "incident.declared";
+    public const string IncidentTransitioned = "incident.transitioned";
+    public const string IncidentResolved = "incident.resolved";
+    public const string IncidentUpdated = "incident.updated";
+    public const string IncidentAutomationFailed = "incident.automation_failed";
+    public const string IncidentExported = "incident.exported";
 }
 
 public interface IAuditWriter
