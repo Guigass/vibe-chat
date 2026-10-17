@@ -10,7 +10,7 @@ import { ChannelStore } from '../../../core/services/channel.store';
     @if (incident(); as room) {
       <section class="incident" [attr.data-severity]="room.severity" data-testid="incident-banner" [attr.aria-label]="ui.incidentBanner">
         <div class="incident__row">
-          <p>
+          <p class="incident__meta">
             <strong>{{ room.title }}</strong>
             <span data-testid="incident-severity">{{ severityLabel(room.severity) }}</span>
             <span data-testid="incident-status">{{ statusLabel(room.status) }}</span>
@@ -36,7 +36,7 @@ import { ChannelStore } from '../../../core/services/channel.store';
             <h2>{{ ui.incidentSteps }}</h2>
             <ul>
               @for (step of room.steps; track step.id) {
-                <li>
+                <li class="incident__step">
                   <span>{{ stepLabel(step.code) }}</span>
                   <span>{{ step.status }}</span>
                   @if (room.status !== 'resolved') {
@@ -125,11 +125,15 @@ import { ChannelStore } from '../../../core/services/channel.store';
       background: var(--vc-surface);
     }
 
-    .incident__row, .incident__actions, form {
+    .incident__row, .incident__actions, .incident__meta, .incident__step, form {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 0.5rem;
+    }
+
+    .incident__meta, .incident__step {
+      margin: 0;
     }
 
     .incident__row {
