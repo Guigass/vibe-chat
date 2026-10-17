@@ -28,11 +28,13 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-REALTIME | CI / E2E | `realtime-events.spec.ts` + `reply-citing.spec.ts` — helper E2E desatualizado após toolbar compacta (bdaf0d8); #123 corrigiu `reactionAriaLabel` | Critical | **Resolved** — #124 alinhou `clickMessageToolbarButton`; CI verde em `bdef969` |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — #145 cache/pin + #149 `releaseBottom()` cancela âncora bottom no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146 (B-098): 15 specs falham em `auth.ts:118` — timeout 20s aguardando `heading` `/geral/i`; h1 `#geral` existe mas está hidden (largura 0) | Critical | **Resolved** — título do canal com `min-width: 6.5rem`; busca encolhe (`flex: 0 1`) em vez de espremer o h1 |
+| OPS-INT-B125 | CI / integração | `main` RED pós-#199 (B-125): `AutomationIntegrationTests.Retry_does_not_duplicate_disable_blocks_and_logs_omit_secrets` espera 1 run live e encontra 2 | Critical | **Resolved** — asserção por `eventId`; o eco depth-1 do post do bot não conta como retry duplicado |
 
 ## Resolvidos
 
 | ID | Categoria | Evidência | Severidade | Status | Resolução |
 |----|-----------|-----------|------------|--------|----------|
+| OPS-INT-B125 | CI / integração | `main` RED pós-#199: retry de automação conta o eco depth-1 como segundo run live | Critical | Resolved | Asserção por `eventId` + drain explícito do eco antes do disable |
 | SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 + #73 — roles/FORCE + SET LOCAL na txn + validação de role app |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142: timeline-anchor (distância ~2780) + history-scroll (scrollTop ~3200) | Critical | Resolved | #145 lista com cache; #149 `releaseBottom()` no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146: 15 specs — `heading` `#geral` hidden (caixa 0×n) | Critical | Resolved | Título `min-width: 6.5rem`; `.shell__search` com `flex: 0 1` + `min-width: 10rem` |
@@ -40,6 +42,37 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-B100 | CI / E2E | `main` RED pós-#156 (B-100 i18n): Chrome `en-US` + poluição de perfil Alice + paleta/settings i18n | Critical | Resolved | [#158](https://github.com/Guigass/vibe-chat/pull/158) — pin Playwright `locale: pt-BR`; reset de perfil; locators bilíngues; `cdkFocusInitial`; option ativa no `vc-locale-control` |
 
 ## Formato de detalhe
+
+### OPS-INT-B125
+
+- Status: **Resolved** — o teste de retry deixa de contar todo run live da
+  automação. O evento de origem continua com exatamente um run; o trigger
+  depois do disable continua sem run.
+- Observado em: CI `Build & test` de `main` em `e905ff7` (run
+  [38983431779](https://github.com/Guigass/vibe-chat/actions/runs/38983431779)),
+  `AutomationIntegrationTests.Retry_does_not_duplicate_disable_blocks_and_logs_omit_secrets`
+  linha 85. Esperado 1 run `Live`, encontrado 2. Unit, architecture e security
+  passaram; E2E foi skipped.
+- Base/head SHA: `e905ff7b559d698a97a2a158bafe4b928f8b0f71` (#199, B-125).
+- Reprodução: suíte de integração com o `OutboxDispatcher` do host de teste.
+  O post do bot gera `MessageCreatedEvent`; o dispatcher (750 ms) enfileira o
+  eco depth-1 enquanto a automação ainda está ligada. Um drain explícito nesse
+  intervalo produz o segundo run (`Depth = 1`, `CausationRunId` do run original).
+  Isolado e rápido, o disable ganha a corrida e o teste passa.
+- Resultado esperado: retry do mesmo `eventId` não duplica run, step nem
+  mensagem; disable rejeita evento novo com `AutomationDisabled`; o eco do
+  loop (B-125) não entra nessa contagem.
+- Resultado atual: asserções filtradas por `eventId`; o teste drena o eco
+  antes do disable para não depender do tick.
+- Impacto: `main` vermelho e auto-merge parado. Sem vazamento de secret nem
+  falha de idempotência do evento de origem.
+- Risk class: R1 (teste de integração; sem mudança de schema, contrato ou authZ).
+- Owner automático: Build.
+- Critério de resolução:
+  1. o teste passa com o eco depth-1 já drenado;
+  2. o evento bloqueado não gera run;
+  3. finding marcado Resolved.
+- Rollback: reverter o teste; o comportamento de loop/depth permanece o de B-125.
 
 ### SEC-RLS-RUNTIME
 

@@ -47,7 +47,10 @@ public sealed class AutomationIntegrationTests(VibeChatApiFactory factory)
         await DrainAsync();
 
         await using var db = factory.CreateMigratorDbContext();
-        var runs = await db.AutomationRuns.IgnoreQueryFilters().Where(row => row.AutomationId == created.Id).ToListAsync();
+        var originEventId = messageId.ToString("D");
+        var runs = await db.AutomationRuns.IgnoreQueryFilters()
+            .Where(row => row.AutomationId == created.Id && row.EventId == originEventId)
+            .ToListAsync();
         runs.Should().ContainSingle();
         runs[0].EventJson.Should().NotContain(secretBody);
         runs[0].Status.Should().Be(AutomationRunStatus.Succeeded);
@@ -60,7 +63,7 @@ public sealed class AutomationIntegrationTests(VibeChatApiFactory factory)
 
         var again = await demo.PostAsJsonAsync($"{Path(created.Id)}/trigger", new
         {
-            eventId = messageId.ToString("D"),
+            eventId = originEventId,
             type = "message",
             eventName = "created",
             channelId = ChannelId,
@@ -69,11 +72,20 @@ public sealed class AutomationIntegrationTests(VibeChatApiFactory factory)
         });
         again.StatusCode.Should().Be(HttpStatusCode.OK, await again.Content.ReadAsStringAsync());
         (await db.Messages.IgnoreQueryFilters().CountAsync(row => row.Body == marker)).Should().Be(1);
+        (await db.AutomationRuns.IgnoreQueryFilters().CountAsync(row =>
+            row.AutomationId == created.Id && row.EventId == originEventId && row.Mode == AutomationRunMode.Live)).Should().Be(1);
+        (await db.AutomationSteps.IgnoreQueryFilters().CountAsync(row => row.RunId == runs[0].Id)).Should().Be(1);
+
+        // The bot post is itself a message trigger. The hosted outbox dispatcher
+        // can enqueue that depth-1 echo before disable; drain it here so the
+        // live-run count does not depend on the 750 ms tick (CI run 38983431779).
+        await DrainAsync();
 
         await PostOk<AutomationDto>(demo, $"{Path(created.Id)}/disable");
+        var blockedEventId = $"off-{Guid.NewGuid():N}"[..20];
         var blocked = await demo.PostAsJsonAsync($"{Path(created.Id)}/trigger", new
         {
-            eventId = $"off-{Guid.NewGuid():N}"[..20],
+            eventId = blockedEventId,
             type = "message",
             eventName = "created",
             channelId = ChannelId,
@@ -82,7 +94,10 @@ public sealed class AutomationIntegrationTests(VibeChatApiFactory factory)
         });
         blocked.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await blocked.Content.ReadAsStringAsync()).Should().Contain("AutomationDisabled");
-        (await db.AutomationRuns.IgnoreQueryFilters().CountAsync(row => row.AutomationId == created.Id && row.Mode == AutomationRunMode.Live)).Should().Be(1);
+        (await db.AutomationRuns.IgnoreQueryFilters().CountAsync(row =>
+            row.AutomationId == created.Id && row.EventId == originEventId && row.Mode == AutomationRunMode.Live)).Should().Be(1);
+        (await db.AutomationRuns.IgnoreQueryFilters().CountAsync(row =>
+            row.AutomationId == created.Id && row.EventId == blockedEventId)).Should().Be(0);
     }
 
     [Fact]
