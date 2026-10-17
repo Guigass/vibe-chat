@@ -40,11 +40,11 @@ Room privado por default; roles incident-specific nunca concedem
 
 ## Aceite
 
-- [ ] Template cria room e playbook idempotentemente.
-- [ ] Transição inválida é rejeitada.
-- [ ] Timeline referencia evidência.
-- [ ] Outsider não vê título/severidade.
-- [ ] Encerramento gera snapshot/postmortem.
+- [x] Template cria room e playbook idempotentemente.
+- [x] Transição inválida é rejeitada.
+- [x] Timeline referencia evidência.
+- [x] Outsider não vê título/severidade.
+- [x] Encerramento gera snapshot/postmortem.
 
 ## Testes
 

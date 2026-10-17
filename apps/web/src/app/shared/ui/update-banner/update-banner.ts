@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { IncidentBanner } from '../../../features/chat/incident-banner/incident-banner';
 import { AppUpdateService } from '../../../core/services/app-update.service';
 import { Button } from '../button/button';
 import { ui } from '../../../core/i18n/strings';
@@ -6,8 +7,9 @@ import { ui } from '../../../core/i18n/strings';
 @Component({
   selector: 'vc-update-banner',
   standalone: true,
-  imports: [Button],
+  imports: [Button, IncidentBanner],
   template: `
+    <vc-incident-banner />
     @if (updates.updateAvailable()) {
       <div class="vc-update" role="status">
         <span class="vc-update__text">{{ ui.bannerUpdate }}</span>

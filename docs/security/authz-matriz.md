@@ -128,6 +128,14 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/workspaces/{workspaceId:guid}/automations/{automationId:guid}/runs/{runId:guid}` | permission | `automation.manage` | ✗ | ✗ | ✓ | B-125; erro por step |
 | POST | `/workspaces/{workspaceId:guid}/automations/{automationId:guid}/runs/{runId:guid}/replay` | permission | `automation.manage` | ✗ | ✗ | ✓ | B-125; replay explícito |
 | POST | `/workspaces/{workspaceId:guid}/automations/{automationId:guid}/hooks` | exempt | — | ✗ | ✗ | ✗ | B-125; token `vc_auto_` só como hash; flag off ou token inválido → 404 |
+| POST | `/workspaces/{workspaceId:guid}/incidents` | permission | `incident.manage` | ✗ | ✗ | ✓ | B-126; flag off → 404 `IncidentDisabled`; sala privada; retry idempotente |
+| GET | `/workspaces/{workspaceId:guid}/incidents/current` | permission | `message.read` | ✓ | ✓ | ✓ | B-126; sem membership da sala devolve `incident: null` sem título |
+| GET | `/workspaces/{workspaceId:guid}/incidents/{incidentId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-126; outsider → 404 `IncidentNotFound` sem título nem severidade |
+| POST | `/workspaces/{workspaceId:guid}/incidents/{incidentId:guid}/transitions` | permission | `message.read` | ✓ | ✓ | ✓ | B-126; só membro; salto inválido → 409 |
+| POST | `/workspaces/{workspaceId:guid}/incidents/{incidentId:guid}/evidence` | permission | `message.read` | ✓ | ✓ | ✓ | B-126; só membro; evidência fora da sala → 400 sem body |
+| POST | `/workspaces/{workspaceId:guid}/incidents/{incidentId:guid}/updates` | permission | `message.read` | ✓ | ✓ | ✓ | B-126; só membro; nota fica no audit, não na timeline |
+| POST | `/workspaces/{workspaceId:guid}/incidents/{incidentId:guid}/steps/{stepId:guid}/run` | permission | `message.read` | ✓ | ✓ | ✓ | B-126; só membro; automação indisponível falha o passo |
+| GET | `/workspaces/{workspaceId:guid}/incidents/{incidentId:guid}/postmortem` | permission | `incident.export` | ✗ | ✗ | ✓ | B-126; também exige membership; senão 404 sem título |
 | GET | `/workspaces/{workspaceId:guid}/knowledge/collections` | permission | `knowledge.view` | ✓ | ✓ | ✓ | B-120; canal privado some sem membership |
 | POST | `/workspaces/{workspaceId:guid}/knowledge/collections` | permission | `knowledge.edit` | ✓ | ✗ | ✓ | B-120; flag off → 404 |
 | DELETE | `/workspaces/{workspaceId:guid}/knowledge/collections/{collectionId:guid}` | permission | `knowledge.manage` | ✗ | ✗ | ✓ | B-120 |

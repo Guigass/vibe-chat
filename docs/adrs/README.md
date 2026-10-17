@@ -40,6 +40,8 @@ original.
 | [032](ADR-032-base-conhecimento.md) | Páginas de conhecimento server-authoritative | Accepted |
 | [033](ADR-033-digests-catch-up.md) | Digest e catch-up pessoal sem cópia do body | Accepted |
 | [034](ADR-034-formularios-aprovacoes.md) | Formulário versionado, aprovação e resultado sem script | Accepted |
+| [035](ADR-035-automation-builder.md) | Automation builder declarativo, identidade e flag off | Accepted |
+| [036](ADR-036-incident-rooms.md) | Sala de incidente privada, playbook e postmortem por referência | Accepted |
 
 ## Quando criar um ADR
 

@@ -444,6 +444,37 @@ CREATE POLICY tenant_isolation_automation_steps ON automation.steps
     )
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+CREATE SCHEMA IF NOT EXISTS incident;
+
+ALTER TABLE IF EXISTS incident.rooms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS incident.rooms FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS incident.responders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS incident.responders FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS incident.steps ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS incident.steps FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS incident.timeline ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS incident.timeline FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_incident_rooms ON incident.rooms;
+CREATE POLICY tenant_isolation_incident_rooms ON incident.rooms
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_incident_responders ON incident.responders;
+CREATE POLICY tenant_isolation_incident_responders ON incident.responders
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_incident_steps ON incident.steps;
+CREATE POLICY tenant_isolation_incident_steps ON incident.steps
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_incident_timeline ON incident.timeline;
+CREATE POLICY tenant_isolation_incident_timeline ON incident.timeline
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 ALTER TABLE IF EXISTS knowledge.collections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS knowledge.collections FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS knowledge.pages ENABLE ROW LEVEL SECURITY;
@@ -826,7 +857,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'automation', 'app', 'public'
+      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'automation', 'incident', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, app_role);
@@ -847,7 +878,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'automation', 'app', 'public'
+      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'automation', 'incident', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, backup_role);
