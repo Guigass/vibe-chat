@@ -52,6 +52,9 @@ public static class VibeChatMetrics
     public static readonly Counter<long> IncidentsDeclared = Meter.CreateCounter<long>("vibechat.incidents.declared");
     public static readonly Counter<long> IncidentsResolved = Meter.CreateCounter<long>("vibechat.incidents.resolved");
     public static readonly Counter<long> IncidentAutomationFailed = Meter.CreateCounter<long>("vibechat.incidents.automation_failed");
+    public static readonly Counter<long> ConnectorInbound = Meter.CreateCounter<long>("vibechat.connectors.inbound");
+    public static readonly Counter<long> ConnectorOutboundFailed = Meter.CreateCounter<long>("vibechat.connectors.outbound_failed");
+    public static readonly Counter<long> ConnectorRevoked = Meter.CreateCounter<long>("vibechat.connectors.revoked");
     public static readonly UpDownCounter<long> RealtimeConnections = Meter.CreateUpDownCounter<long>("vibechat.realtime.connections");
     private static long _realtimeConnectionsGauge;
     public static long RealtimeConnectionsGauge => Interlocked.Read(ref _realtimeConnectionsGauge);

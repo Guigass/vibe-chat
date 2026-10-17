@@ -81,6 +81,9 @@ public sealed class InfrastructureRegistrationTests
             "Scoped:DigestGenerator:DigestGenerator",
             "Singleton:DigestDispatchProcessor:DigestDispatchProcessor",
             "Scoped:AutomationService:AutomationService",
+            "Scoped:ConnectorService:ConnectorService",
+            "Singleton:IConnectorAddressLookup:DnsConnectorAddressLookup",
+            "Singleton:IConnectorTransport:HttpConnectorTransport",
             "Scoped:IOutboundWebhookDispatcher:OutboundWebhookDispatcher");
 
         worker.Should().Equal(signalR.Select(entry => entry

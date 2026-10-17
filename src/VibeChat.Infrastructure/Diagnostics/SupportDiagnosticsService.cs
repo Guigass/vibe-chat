@@ -419,6 +419,7 @@ public sealed class SupportDiagnosticsService(
         ["forms"] = configuration.GetValue("Forms:Enabled", false),
         ["automation"] = configuration.GetValue("Automation:Enabled", false),
         ["incidents"] = configuration.GetValue("Incidents:Enabled", false),
+        ["connectors"] = configuration.GetValue("Connectors:Enabled", false),
         ["email"] = configuration.GetValue("Email:Enabled", false),
         ["history"] = configuration.GetValue("Messaging:History:Enabled", false),
         ["import"] = configuration.GetValue("Features:Import:Enabled", false),

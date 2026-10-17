@@ -41,11 +41,11 @@ opaco/assinatura, nunca por payload.
 
 ## Aceite
 
-- [ ] Evento repetido não duplica efeito.
-- [ ] Revogar encerra chamadas.
-- [ ] URL privada/metadata é bloqueada.
-- [ ] Scopes mínimos são exibidos.
-- [ ] Falha externa não bloqueia outbox geral.
+- [x] Evento repetido não duplica efeito.
+- [x] Revogar encerra chamadas.
+- [x] URL privada/metadata é bloqueada.
+- [x] Scopes mínimos são exibidos.
+- [x] Falha externa não bloqueia outbox geral.
 
 ## Testes
 

@@ -110,6 +110,10 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<IncidentResponder> IncidentResponders => Set<IncidentResponder>();
     public DbSet<IncidentPlaybookStep> IncidentSteps => Set<IncidentPlaybookStep>();
     public DbSet<IncidentTimelineEntry> IncidentTimeline => Set<IncidentTimelineEntry>();
+    public DbSet<ConnectorInstallation> ConnectorInstallations => Set<ConnectorInstallation>();
+    public DbSet<ConnectorEffect> ConnectorEffects => Set<ConnectorEffect>();
+    public DbSet<ConnectorDelivery> ConnectorDeliveries => Set<ConnectorDelivery>();
+    public DbSet<ConnectorCheckpoint> ConnectorCheckpoints => Set<ConnectorCheckpoint>();
     public DbSet<KnowledgeCollection> KnowledgeCollections => Set<KnowledgeCollection>();
     public DbSet<KnowledgePage> KnowledgePages => Set<KnowledgePage>();
     public DbSet<KnowledgePageVersion> KnowledgePageVersions => Set<KnowledgePageVersion>();
@@ -817,6 +821,69 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.IdempotencyKey).HasMaxLength(IncidentPolicies.MaxIdempotencyKeyLength);
             entity.HasIndex(x => new { x.TenantId, x.IncidentId, x.IdempotencyKey }).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.IncidentId, x.Kind, x.SourceId });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ConnectorInstallation>(entity =>
+        {
+            entity.ToTable("installations", "connectors");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.IdentityUserId).HasConversion(
+                v => v.HasValue ? v.Value.Value : (Guid?)null,
+                v => v.HasValue ? new UserId(v.Value) : null);
+            entity.Property(x => x.Provider).HasMaxLength(16);
+            entity.Property(x => x.OpaqueKey).HasMaxLength(64);
+            entity.Property(x => x.Status).HasMaxLength(16);
+            entity.Property(x => x.DestinationKind).HasMaxLength(16);
+            entity.Property(x => x.Scopes).HasColumnType("text[]").IsRequired();
+            entity.Property(x => x.AllowlistHosts).HasColumnType("text[]").IsRequired();
+            entity.Property(x => x.BaseUrl).HasMaxLength(200);
+            entity.Property(x => x.ClientId).HasMaxLength(80);
+            entity.Property(x => x.OauthStateHash).HasMaxLength(64);
+            entity.Property(x => x.Circuit).HasMaxLength(16);
+            entity.Property(x => x.LastErrorCode).HasMaxLength(40);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(ConnectorPolicies.MaxIdempotencyKeyLength);
+            MapEncryptedSecret(entity.OwnsOne(x => x.AccessToken), "AccessToken");
+            MapEncryptedSecret(entity.OwnsOne(x => x.RefreshToken), "RefreshToken");
+            MapEncryptedSecret(entity.OwnsOne(x => x.OauthVerifier), "OauthVerifier");
+            entity.HasIndex(x => x.OpaqueKey).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.CreatedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.Status });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ConnectorEffect>(entity =>
+        {
+            entity.ToTable("effects", "connectors");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.ExternalEventId).HasMaxLength(ConnectorPolicies.MaxExternalIdLength);
+            entity.Property(x => x.DestinationKind).HasMaxLength(16);
+            entity.HasIndex(x => new { x.InstallationId, x.ExternalEventId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ConnectorDelivery>(entity =>
+        {
+            entity.ToTable("deliveries", "connectors");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.Direction).HasMaxLength(16);
+            entity.Property(x => x.Status).HasMaxLength(16);
+            entity.Property(x => x.ErrorCode).HasMaxLength(40);
+            entity.HasIndex(x => new { x.TenantId, x.InstallationId, x.CreatedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ConnectorCheckpoint>(entity =>
+        {
+            entity.ToTable("checkpoints", "connectors");
+            entity.HasKey(x => x.InstallationId);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.Cursor).HasMaxLength(80);
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

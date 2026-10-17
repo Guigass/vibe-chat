@@ -115,6 +115,9 @@ public static class AuditActions
     public const string IncidentUpdated = "incident.updated";
     public const string IncidentAutomationFailed = "incident.automation_failed";
     public const string IncidentExported = "incident.exported";
+    public const string ConnectorInstalled = "connector.installed";
+    public const string ConnectorRotated = "connector.rotated";
+    public const string ConnectorRevoked = "connector.revoked";
 }
 
 public interface IAuditWriter

@@ -231,6 +231,7 @@ v1.MapTasks();
 v1.MapForms();
 v1.MapAutomations();
 v1.MapIncidents();
+v1.MapConnectors();
 v1.MapKnowledge();
 v1.MapNotifications();
 v1.MapDigests();

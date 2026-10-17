@@ -205,7 +205,8 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-119…B-124 | Conhecimento, decisões, RAG, tarefas e formulários | Planned — W12 (B-119 Done; B-120 Done; B-121 Done; B-122 Done: digest/catch-up sem cópia do body; B-123 Done: tarefas com origem, checklist e concorrência; B-124 Done: formulários e aprovações) |
 | B-125 | Automation builder | **Done** (W13) — triggers, condições, ações allowlisted, identidade e flag off; [spec](../product/specs/B-125-automation-builder.md) |
 | B-126 | Incident rooms e playbooks | **Done** (W13) — sala privada, transições, timeline por referência, postmortem e flag off; [spec](../product/specs/B-126-incident-rooms-playbooks.md) |
-| B-127, B-128, B-131, B-139, B-164 | Conectores, SSO e contratos | Planned — W13 |
+| B-127 | Conectores bidirecionais | **Done** (W13) — catálogo, dedupe, revoke, egress e flag off; [spec](../product/specs/B-127-conectores-bidirecionais.md) |
+| B-128, B-131, B-139, B-164 | SSO, malware e contratos | Planned — W13 |
 | B-129/B-130/B-132…B-134/B-146/B-169 | Segurança enterprise, SIEM, policies, auditoria de conteúdo (`contentAuditEnabled` + snapshot de body em `message.delete`) e capacidade | Planned — W14 |
 | B-135…B-138, B-140/B-141, B-063/B-066/B-111 | Plataforma, registry, bridges, branding e clients | Planned — W15 |
 | B-170, B-143…B-145, B-172 + B-064/B-065 | Performance/escalabilidade, offline, HA, storage, backup de chat (destinos), federação e E2EE | Planned — W16 |

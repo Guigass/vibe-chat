@@ -455,6 +455,26 @@ Sala privada em `incident.rooms`. Passos em `incident.steps`. Pessoas em `incide
 | Leitura | Quem não está em `responders` recebe **404** `IncidentNotFound` sem título nem severidade. Outro tenant → **403** |
 | Eventos | Outbox `incident.declared`, `incident.transitioned`, `incident.resolved`, `incident.automation_failed`. Payload sem título e sem nota |
 
+### Conectores bidirecionais (B-127)
+
+Instalação por workspace em `connectors.installations`. Efeito idempotente em
+`connectors.effects`. Tentativa externa em `connectors.deliveries` (sem body).
+Cursor em `connectors.checkpoints`. Flag `Connectors:Enabled` (**off** por
+default; 404 `ConnectorDisabled` sem gravar). ADR-037.
+
+| Item | Regra |
+|------|--------|
+| Tabelas | `installations`, `effects`, `deliveries`, `checkpoints`. `TenantId` + FORCE RLS. Unique `(TenantId, CreatedBy, IdempotencyKey)`, `OpaqueKey`, `(InstallationId, ExternalEventId)` |
+| Permissão | `connector.manage` lista, cria, rotaciona, revoga, reconecta e dispara entrega. Só Owner/Admin |
+| Catálogo | `github` (`issues:read`, `issues:write`), `gitlab` (`read_api`, `write_repository`), `calendar` (`calendar:read`, `calendar:write`). Outro provedor → **400** `UnknownConnector`. Escopos diferentes do mínimo → **400** `ScopeMismatch` |
+| `POST …/connectors` | `{ idempotencyKey, provider, destinationKind, destinationId, scopes, token?, clientId?, baseUrl? }`. Destino `channel`, `task` ou `incident` no mesmo workspace. Replay da chave devolve a mesma instalação. Calendário exige URL HTTPS pública; host privado ou rebinding → **400** `EgressBlocked` ou `DnsRebinding`. GitHub/GitLab recusam `baseUrl` |
+| Segredo | Envelope AES-GCM. Resposta só `secretMask`. Token curto ou com URL → **400** `InvalidToken` |
+| OAuth | PKCE público. `POST …/oauth/start` devolve `authorizeUrl` e os escopos mínimos. `POST …/oauth/callback` troca o code no host do catálogo e não devolve o access token |
+| Inbound | `POST /api/v1/connectors/inbound/{opaqueKey}` anônimo. Assinatura `X-VibeChat-Connector-Signature` ou `X-Hub-Signature-256`; GitLab também aceita `X-Gitlab-Token`. Tenant do JSON é ignorado. Repetido → mesmo `effectId`. Revogado → **410** `ConnectorRevoked` sem efeito e sem rede |
+| Efeito | Canal: uma mensagem do bot `connector:{id}` com resumo curto. Tarefa: um item de checklist. Incidente: uma linha `connector` na timeline, só `sourceId`. Incidente `resolved` → `IncidentClosed` |
+| Outbound | `POST …/deliveries` e `POST …/reconnect`. Circuito abre na 3ª falha por 60s. Backoff não chama a rede. Redirect para fora da allowlist ou para IP privado não é seguido. Falha não grava outbox de mensagem |
+| Revogar | Limpa envelopes. Chamadas seguintes não saem |
+
 ### Base de conhecimento (B-120)
 
 Páginas server-authoritative em `knowledge.pages`. Coleções em `knowledge.collections` com escopo `workspace`, `space` ou `channel`. Histórico append-only em `knowledge.page_versions`. Flag `Knowledge:Pages:Enabled` (**off** por default; 404 `KnowledgeDisabled` sem gravar). ADR-032.

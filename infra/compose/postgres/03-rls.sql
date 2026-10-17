@@ -4,7 +4,7 @@
 -- Session GUCs (SET LOCAL / set_config is_local preferred inside transactions):
 --   app.tenant_id  — required for tenant-scoped reads/writes (fail closed when unset)
 --   app.user_id    — bootstrap membership discovery before tenant is known
---   app.job_role   — 'outbox' | 'retention' | 'polls' | 'schedule' | 'digest' | 'tasks' | 'automation' for worker cross-tenant claim paths only
+--   app.job_role   — 'outbox' | 'retention' | 'polls' | 'schedule' | 'digest' | 'tasks' | 'automation' | 'connector' for worker cross-tenant claim paths only
 --   app.invite_token_hash — B-040 accept lookup only; reveals the single matching invite row
 --   app.integration_token_hash — B-109 token lookup only; reveals the single matching bot token row
 --
@@ -475,6 +475,38 @@ CREATE POLICY tenant_isolation_incident_timeline ON incident.timeline
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS connectors.installations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS connectors.installations FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS connectors.effects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS connectors.effects FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS connectors.deliveries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS connectors.deliveries FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS connectors.checkpoints ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS connectors.checkpoints FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_connector_installations ON connectors.installations;
+CREATE POLICY tenant_isolation_connector_installations ON connectors.installations
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR app.current_job_role() = 'connector'
+    )
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_connector_effects ON connectors.effects;
+CREATE POLICY tenant_isolation_connector_effects ON connectors.effects
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_connector_deliveries ON connectors.deliveries;
+CREATE POLICY tenant_isolation_connector_deliveries ON connectors.deliveries
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_connector_checkpoints ON connectors.checkpoints;
+CREATE POLICY tenant_isolation_connector_checkpoints ON connectors.checkpoints
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 ALTER TABLE IF EXISTS knowledge.collections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS knowledge.collections FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS knowledge.pages ENABLE ROW LEVEL SECURITY;
@@ -857,7 +889,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'automation', 'incident', 'app', 'public'
+      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'automation', 'incident', 'connectors', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, app_role);
@@ -878,7 +910,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'automation', 'incident', 'app', 'public'
+      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'automation', 'incident', 'connectors', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, backup_role);
