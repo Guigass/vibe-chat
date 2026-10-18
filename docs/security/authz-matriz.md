@@ -136,6 +136,16 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/workspaces/{workspaceId:guid}/incidents/{incidentId:guid}/updates` | permission | `message.read` | ✓ | ✓ | ✓ | B-126; só membro; nota fica no audit, não na timeline |
 | POST | `/workspaces/{workspaceId:guid}/incidents/{incidentId:guid}/steps/{stepId:guid}/run` | permission | `message.read` | ✓ | ✓ | ✓ | B-126; só membro; automação indisponível falha o passo |
 | GET | `/workspaces/{workspaceId:guid}/incidents/{incidentId:guid}/postmortem` | permission | `incident.export` | ✗ | ✗ | ✓ | B-126; também exige membership; senão 404 sem título |
+| GET | `/workspaces/{workspaceId:guid}/connectors/catalog` | permission | `connector.manage` | ✗ | ✗ | ✓ | B-127; escopos mínimos; flag off → 404 `ConnectorDisabled` |
+| POST | `/workspaces/{workspaceId:guid}/connectors` | permission | `connector.manage` | ✗ | ✗ | ✓ | B-127; segredo só no envelope; resposta só máscara |
+| GET | `/workspaces/{workspaceId:guid}/connectors` | permission | `connector.manage` | ✗ | ✗ | ✓ | B-127; sem token |
+| POST | `/workspaces/{workspaceId:guid}/connectors/{installationId:guid}/rotate` | permission | `connector.manage` | ✗ | ✗ | ✓ | B-127; token novo não volta na resposta |
+| POST | `/workspaces/{workspaceId:guid}/connectors/{installationId:guid}/revoke` | permission | `connector.manage` | ✗ | ✗ | ✓ | B-127; encerra chamadas |
+| POST | `/workspaces/{workspaceId:guid}/connectors/{installationId:guid}/reconnect` | permission | `connector.manage` | ✗ | ✗ | ✓ | B-127; não fura circuito aberto |
+| POST | `/workspaces/{workspaceId:guid}/connectors/{installationId:guid}/oauth/start` | permission | `connector.manage` | ✗ | ✗ | ✓ | B-127; PKCE; URL com escopos mínimos |
+| POST | `/workspaces/{workspaceId:guid}/connectors/{installationId:guid}/oauth/callback` | permission | `connector.manage` | ✗ | ✗ | ✓ | B-127; não devolve access token |
+| POST | `/workspaces/{workspaceId:guid}/connectors/{installationId:guid}/deliveries` | permission | `connector.manage` | ✗ | ✗ | ✓ | B-127; falha externa não entra na outbox de mensagens |
+| POST | `/connectors/inbound/{opaqueKey}` | exempt | — | ✗ | ✗ | ✗ | B-127; assinatura; tenant da instalação, não do JSON; revogado → 410 |
 | GET | `/workspaces/{workspaceId:guid}/knowledge/collections` | permission | `knowledge.view` | ✓ | ✓ | ✓ | B-120; canal privado some sem membership |
 | POST | `/workspaces/{workspaceId:guid}/knowledge/collections` | permission | `knowledge.edit` | ✓ | ✗ | ✓ | B-120; flag off → 404 |
 | DELETE | `/workspaces/{workspaceId:guid}/knowledge/collections/{collectionId:guid}` | permission | `knowledge.manage` | ✗ | ✗ | ✓ | B-120 |

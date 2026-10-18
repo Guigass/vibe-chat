@@ -1,0 +1,94 @@
+<article class="admin-panel">
+  <p class="admin-panel__lead">{{ ui.adminConnectorsLead }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty">{{ ui.adminLoadingSettings }}</p>
+  } @else if (disabled()) {
+    <p class="admin-empty">{{ ui.adminConnectorsDisabled }}</p>
+  } @else if (loadError()) {
+    <p class="admin-empty">{{ ui.adminConnectorsLoadError }}</p>
+  } @else {
+    <form class="admin-filters" (submit)="$event.preventDefault(); create()">
+      <label class="admin-filters__field">
+        <span>{{ ui.adminConnectorsProvider }}</span>
+        <select [value]="provider()" (change)="provider.set($any($event.target).value)">
+          @for (item of catalog(); track item.id) {
+            <option [value]="item.id">{{ item.id }}</option>
+          }
+        </select>
+      </label>
+      <p data-testid="connector-scopes">
+        {{ ui.adminConnectorsScopes }}:
+        @for (scope of scopesFor(provider()); track scope) {
+          <span>{{ scope }}</span>
+        }
+      </p>
+      <label class="admin-filters__field">
+        <span>{{ ui.adminConnectorsDestination }}</span>
+        <select [value]="destinationKind()" (change)="destinationKind.set($any($event.target).value)">
+          <option value="channel">{{ ui.connectorDestChannel }}</option>
+          <option value="task">{{ ui.connectorDestTask }}</option>
+          <option value="incident">{{ ui.connectorDestIncident }}</option>
+        </select>
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.adminConnectorsDestinationId }}</span>
+        <input [value]="destinationId()" (input)="destinationId.set($any($event.target).value)" />
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.adminConnectorsToken }}</span>
+        <input type="password" autocomplete="off" [value]="token()" (input)="token.set($any($event.target).value)" />
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.adminConnectorsClientId }}</span>
+        <input [value]="clientId()" (input)="clientId.set($any($event.target).value)" />
+      </label>
+      @if (provider() === 'calendar') {
+        <label class="admin-filters__field">
+          <span>{{ ui.adminConnectorsBaseUrl }}</span>
+          <input [value]="baseUrl()" (input)="baseUrl.set($any($event.target).value)" />
+        </label>
+      }
+      <button type="submit" class="admin-btn" [disabled]="busy()">{{ ui.adminConnectorsCreate }}</button>
+    </form>
+
+    @if (saveError()) {
+      <p class="admin-empty">{{ ui.adminConnectorsSaveError }}</p>
+    }
+    @if (recovery()) {
+      <p class="admin-empty" data-testid="connector-recovery">{{ ui.adminConnectorsRecovery }}</p>
+    }
+
+    @if (items().length === 0) {
+      <p class="admin-empty">{{ ui.adminConnectorsEmpty }}</p>
+    } @else {
+      <ul>
+        @for (item of items(); track item.id) {
+          <li>
+            <span>{{ item.provider }}</span>
+            <span>{{ ui.adminConnectorsStatus }}: {{ item.status }}</span>
+            <span data-testid="connector-installation-scopes">
+              {{ ui.adminConnectorsScopes }}:
+              @for (scope of item.scopes; track scope) {
+                <span>{{ scope }}</span>
+              }
+            </span>
+            <span>{{ ui.adminConnectorsSecret }}: {{ item.secretMask }}</span>
+            @if (item.lastErrorCode) {
+              <span>{{ ui.adminConnectorsRecovery }}</span>
+            }
+            <label class="admin-filters__field">
+              <span>{{ ui.adminConnectorsToken }}</span>
+              <input type="password" autocomplete="off" [value]="rotateToken()" (input)="rotateToken.set($any($event.target).value)" />
+            </label>
+            <button type="button" class="admin-btn" [disabled]="busy()" (click)="rotate(item)">{{ ui.adminConnectorsRotate }}</button>
+            <button type="button" class="admin-btn" [disabled]="busy()" (click)="reconnect(item)">{{ ui.adminConnectorsReconnect }}</button>
+            <button type="button" class="admin-btn" [disabled]="busy()" (click)="revoke(item)">
+              {{ confirmingId() === item.id ? ui.adminConnectorsConfirmRevoke : ui.adminConnectorsRevoke }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  }
+</article>

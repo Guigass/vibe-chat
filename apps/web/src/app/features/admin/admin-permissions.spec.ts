@@ -19,6 +19,7 @@ describe('admin-permissions (B-106)', () => {
       'onboarding',
       'plugins',
       'automations',
+      'connectors',
       'import',
       'diagnostics',
     ]);

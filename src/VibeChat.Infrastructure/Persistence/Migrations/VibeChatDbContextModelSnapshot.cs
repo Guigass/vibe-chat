@@ -1478,6 +1478,215 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("versions", "automation");
                 });
 
+            modelBuilder.Entity("VibeChat.Integrations.ConnectorCheckpoint", b =>
+                {
+                    b.Property<Guid>("InstallationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Cursor")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("InstallationId");
+
+                    b.ToTable("checkpoints", "connectors");
+                });
+
+            modelBuilder.Entity("VibeChat.Integrations.ConnectorDelivery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Attempt")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<Guid>("InstallationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "InstallationId", "CreatedAt");
+
+                    b.ToTable("deliveries", "connectors");
+                });
+
+            modelBuilder.Entity("VibeChat.Integrations.ConnectorEffect", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DestinationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DestinationKind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid>("EffectRef")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ExternalEventId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<Guid>("InstallationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstallationId", "ExternalEventId")
+                        .IsUnique();
+
+                    b.ToTable("effects", "connectors");
+                });
+
+            modelBuilder.Entity("VibeChat.Integrations.ConnectorInstallation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.PrimitiveCollection<string[]>("AllowlistHosts")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<string>("BaseUrl")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Circuit")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("ClientId")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<int>("ConsecutiveFailures")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DestinationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DestinationKind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<Guid?>("IdentityUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LastErrorCode")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTimeOffset?>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OauthStateHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("OpaqueKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("OpenUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.PrimitiveCollection<string[]>("Scopes")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<int>("SecretVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OpaqueKey")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "CreatedBy", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "WorkspaceId", "Status");
+
+                    b.ToTable("installations", "connectors");
+                });
+
             modelBuilder.Entity("VibeChat.Integrations.InstalledPlugin", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4175,6 +4384,144 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("GroupId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("VibeChat.Integrations.ConnectorInstallation", b =>
+                {
+                    b.OwnsOne("VibeChat.SharedKernel.EncryptedSecretEnvelope", "AccessToken", b1 =>
+                        {
+                            b1.Property<Guid>("ConnectorInstallationId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<byte[]>("Ciphertext")
+                                .HasColumnType("bytea")
+                                .HasColumnName("AccessTokenCiphertext");
+
+                            b1.Property<short?>("FormatVersion")
+                                .HasColumnType("smallint")
+                                .HasColumnName("AccessTokenFormatVersion");
+
+                            b1.Property<int?>("KeyVersion")
+                                .HasColumnType("integer")
+                                .HasColumnName("AccessTokenKeyVersion");
+
+                            b1.Property<string>("MaskSuffix")
+                                .HasMaxLength(8)
+                                .HasColumnType("character varying(8)")
+                                .HasColumnName("AccessTokenMaskSuffix");
+
+                            b1.Property<byte[]>("Nonce")
+                                .HasColumnType("bytea")
+                                .HasColumnName("AccessTokenNonce");
+
+                            b1.Property<DateTimeOffset?>("RotatedAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("AccessTokenRotatedAt");
+
+                            b1.Property<byte[]>("Tag")
+                                .HasColumnType("bytea")
+                                .HasColumnName("AccessTokenTag");
+
+                            b1.HasKey("ConnectorInstallationId");
+
+                            b1.ToTable("installations", "connectors");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ConnectorInstallationId");
+                        });
+
+                    b.OwnsOne("VibeChat.SharedKernel.EncryptedSecretEnvelope", "OauthVerifier", b1 =>
+                        {
+                            b1.Property<Guid>("ConnectorInstallationId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<byte[]>("Ciphertext")
+                                .HasColumnType("bytea")
+                                .HasColumnName("OauthVerifierCiphertext");
+
+                            b1.Property<short?>("FormatVersion")
+                                .HasColumnType("smallint")
+                                .HasColumnName("OauthVerifierFormatVersion");
+
+                            b1.Property<int?>("KeyVersion")
+                                .HasColumnType("integer")
+                                .HasColumnName("OauthVerifierKeyVersion");
+
+                            b1.Property<string>("MaskSuffix")
+                                .HasMaxLength(8)
+                                .HasColumnType("character varying(8)")
+                                .HasColumnName("OauthVerifierMaskSuffix");
+
+                            b1.Property<byte[]>("Nonce")
+                                .HasColumnType("bytea")
+                                .HasColumnName("OauthVerifierNonce");
+
+                            b1.Property<DateTimeOffset?>("RotatedAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("OauthVerifierRotatedAt");
+
+                            b1.Property<byte[]>("Tag")
+                                .HasColumnType("bytea")
+                                .HasColumnName("OauthVerifierTag");
+
+                            b1.HasKey("ConnectorInstallationId");
+
+                            b1.ToTable("installations", "connectors");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ConnectorInstallationId");
+                        });
+
+                    b.OwnsOne("VibeChat.SharedKernel.EncryptedSecretEnvelope", "RefreshToken", b1 =>
+                        {
+                            b1.Property<Guid>("ConnectorInstallationId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<byte[]>("Ciphertext")
+                                .HasColumnType("bytea")
+                                .HasColumnName("RefreshTokenCiphertext");
+
+                            b1.Property<short?>("FormatVersion")
+                                .HasColumnType("smallint")
+                                .HasColumnName("RefreshTokenFormatVersion");
+
+                            b1.Property<int?>("KeyVersion")
+                                .HasColumnType("integer")
+                                .HasColumnName("RefreshTokenKeyVersion");
+
+                            b1.Property<string>("MaskSuffix")
+                                .HasMaxLength(8)
+                                .HasColumnType("character varying(8)")
+                                .HasColumnName("RefreshTokenMaskSuffix");
+
+                            b1.Property<byte[]>("Nonce")
+                                .HasColumnType("bytea")
+                                .HasColumnName("RefreshTokenNonce");
+
+                            b1.Property<DateTimeOffset?>("RotatedAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("RefreshTokenRotatedAt");
+
+                            b1.Property<byte[]>("Tag")
+                                .HasColumnType("bytea")
+                                .HasColumnName("RefreshTokenTag");
+
+                            b1.HasKey("ConnectorInstallationId");
+
+                            b1.ToTable("installations", "connectors");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ConnectorInstallationId");
+                        });
+
+                    b.Navigation("AccessToken")
+                        .IsRequired();
+
+                    b.Navigation("OauthVerifier")
+                        .IsRequired();
+
+                    b.Navigation("RefreshToken")
                         .IsRequired();
                 });
 

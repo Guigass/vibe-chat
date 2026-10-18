@@ -404,6 +404,19 @@ Superfície implementada, R3. A ameaça principal é página ou versão sobreviv
 
 Superfície implementada, R3. A ameaça principal é confused deputy (a automação agir com mais poder que o publicador), loop sem limite ou segredo no log do run. O controle é: flag off por default; RLS `FORCE` em `automation.definitions`, `versions`, `runs` e `steps`; definição allowlisted `automation.definition.v1`; capability revalidada na execução contra o papel atual de quem publicou; identidade técnica `Role.Bot` com escopo de canal; profundidade máxima 3 auditada em `automation.loop_stopped`; conector só para webhook HTTPS já cadastrado; token de webhook só como hash; run log sem body e com redação de `vc_auto_`/`vc_int_`. Member recebe 403. Outro tenant recebe 403. ADR-035.
 
+## Conectores bidirecionais (B-127)
+
+Superfície implementada, R3. A ameaça principal é SSRF (URL privada ou metadata),
+exfiltração do token, evento repetido duplicando efeito, ou falha do fornecedor
+travando a outbox de mensagens. O controle é: flag off por default; RLS `FORCE`
+em `connectors.installations`, `effects`, `deliveries` e `checkpoints`; inbound
+resolve o tenant pela chave opaca e pela assinatura, nunca pelo JSON; escopos
+mínimos vêm do catálogo; segredo só no envelope AES-GCM e a resposta só tem
+máscara; egress exige HTTPS, allowlist do provedor e duas resoluções sem IP
+privado, loopback, link-local ou metadata; revogação limpa o envelope e não
+chama a rede; falha externa grava `deliveries` e não a outbox geral. Member
+recebe 403. Outro tenant recebe 403. ADR-037.
+
 ## Incident rooms (B-126)
 
 Superfície implementada, R3. A ameaça principal é a sala vazar título ou severidade para quem não responde, o papel de responder virar admin do workspace, ou a timeline copiar o body. O controle é: flag off por default; RLS `FORCE` em `incident.rooms`, `responders`, `steps` e `timeline`; canal privado; 404 `IncidentNotFound` sem título nem severidade para quem não está em `responders`; `incident.manage` e `incident.export` só em Owner/Admin e não alteram o papel do membro; evidência fora do canal da sala devolve `EvidenceNotFound` sem body; postmortem cita ids e não a nota; automação ausente falha o passo e não o chat. Outro tenant recebe 403. ADR-036.

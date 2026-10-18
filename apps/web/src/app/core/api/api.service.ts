@@ -10,6 +10,7 @@ import { AiApiService } from './ai-api.service';
 import { ImportApiService } from './import-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { AutomationApiService } from './automation-api.service';
+import { ConnectorApiService } from './connector-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -27,6 +28,7 @@ export class ApiService {
   private readonly imports = inject(ImportApiService);
   private readonly diagnostics = inject(DiagnosticsApiService);
   private readonly automations = inject(AutomationApiService);
+  private readonly connectors = inject(ConnectorApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -191,4 +193,10 @@ export class ApiService {
   readonly setAutomationEnabled: AutomationApiService['setEnabled'] = this.automations.setEnabled.bind(this.automations);
   readonly dryRunAutomation: AutomationApiService['dryRun'] = this.automations.dryRun.bind(this.automations);
   readonly listAutomationRuns: AutomationApiService['runs'] = this.automations.runs.bind(this.automations);
+  readonly listConnectorCatalog: ConnectorApiService['catalog'] = this.connectors.catalog.bind(this.connectors);
+  readonly listConnectors: ConnectorApiService['list'] = this.connectors.list.bind(this.connectors);
+  readonly createConnector: ConnectorApiService['create'] = this.connectors.create.bind(this.connectors);
+  readonly rotateConnector: ConnectorApiService['rotate'] = this.connectors.rotate.bind(this.connectors);
+  readonly revokeConnector: ConnectorApiService['revoke'] = this.connectors.revoke.bind(this.connectors);
+  readonly reconnectConnector: ConnectorApiService['reconnect'] = this.connectors.reconnect.bind(this.connectors);
 }

@@ -79,6 +79,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Forms:Enabled` | instance | false | B-124 | formulários → 404 `FormDisabled`; chat, mensagens e tarefas seguem |
 | `Automation:Enabled` | instance | false | B-125 | automação → 404 `AutomationDisabled`; triggers não executam; chat segue |
 | `Incidents:Enabled` | instance | false | B-126 | incidentes → 404 `IncidentDisabled`; chat segue |
+| `Connectors:Enabled` | instance | false | B-127 | conectores → 404 `ConnectorDisabled`; chat e outbox de mensagens seguem |
 
 ## Registro inicial de flags futuras
 

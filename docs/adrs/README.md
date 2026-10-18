@@ -42,6 +42,7 @@ original.
 | [034](ADR-034-formularios-aprovacoes.md) | Formulário versionado, aprovação e resultado sem script | Accepted |
 | [035](ADR-035-automation-builder.md) | Automation builder declarativo, identidade e flag off | Accepted |
 | [036](ADR-036-incident-rooms.md) | Sala de incidente privada, playbook e postmortem por referência | Accepted |
+| [037](ADR-037-conectores-bidirecionais.md) | Conector bidirecional com egress, dedupe e flag off | Accepted |
 
 ## Quando criar um ADR
 

@@ -276,6 +276,11 @@ public static class Permissions
         public const string Manage = "incident.manage";
         public const string Export = "incident.export";
     }
+
+    public static class Connector
+    {
+        public const string Manage = "connector.manage";
+    }
 }
 
 public enum Role
