@@ -19,8 +19,6 @@ Gates:
 
 Nota: `GET /health` (fora de `/api/v1`) é anônimo e **não** está nesta matriz;
 não confundir com `GET /api/v1/admin/health-summary`.
-`GET /api/v1/auth/sso-providers` (B-164) também é anônimo: flag off → 404
-`SsoDisabled`; a resposta não traz segredo nem membership.
 
 Paths abaixo usam os templates literais de `apps/api/Endpoints/*.cs` e
 `apps/api/GroupDmEndpoints.cs` (incluem `:guid`). Os gates offline percorrem
@@ -31,6 +29,7 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 
 | Método | Path | Gate | Permissão(ões) | M | A | Ad | Notas |
 |--------|------|------|----------------|---|---|----|-------|
+| GET | `/auth/sso-providers` | exempt | AllowAnonymous | — | — | — | B-164; primeira rota de `/api/v1`; sem sessão; flag off → 404 `SsoDisabled`; sem segredo |
 | GET | `/me` | membership | — | ✓ | ✓ | ✓ | Perfil do caller |
 | PUT | `/me` | exempt | caller-only | ✓ | ✓ | ✓ | Só o próprio `locale`; exceção explícita, sem mudar authZ; `InvalidLocale` → 400 |
 | PUT | `/users/{userId:guid}/appearance` | exempt | caller-only | ✓ | ✓ | ✓ | Wallpaper/accent do próprio usuário (B-185); outro `userId` ou cross-tenant → 403; id fora do catálogo → 400 |

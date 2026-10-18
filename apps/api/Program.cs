@@ -238,9 +238,9 @@ app.Use(async (context, next) =>
 });
 
 // B-174: group filter enforces RequirePermissionAttribute metadata (fail-closed).
-app.MapSso();
 var v1 = app.MapGroup("/api/v1").RequireAuthorization().AddEndpointFilter<RequirePermissionFilter>();
 
+v1.MapSso();
 v1.MapIdentity();
 v1.MapMemberProfiles();
 v1.MapWorkspaces();

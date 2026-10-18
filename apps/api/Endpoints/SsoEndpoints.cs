@@ -5,9 +5,9 @@ namespace VibeChat.Api.Endpoints;
 
 internal static class SsoEndpoints
 {
-    public static void MapSso(this WebApplication app)
+    internal static void MapSso(this RouteGroupBuilder v1)
     {
-        app.MapGet("/api/v1/auth/sso-providers", async (
+        v1.MapGet("/auth/sso-providers", async (
             IOptionsMonitor<SsoOptions> options,
             KeycloakSsoDirectory directory,
             CancellationToken ct) =>
@@ -27,6 +27,7 @@ internal static class SsoEndpoints
                     domains = item.Domains
                 })
             });
-        }).AllowAnonymous();
+        }).AllowAnonymous()
+            .AllowPermissionGateExempt("anonymous SSO directory (B-164)");
     }
 }

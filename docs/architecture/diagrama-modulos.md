@@ -72,6 +72,8 @@ Messaging, Realtime e BuildingBlocks. A lista exata é verificável nos
 
 `apps/api/Program.cs` mantém bootstrap, DI, middleware, o grupo autenticado
 `/api/v1` com `RequirePermissionFilter`, chamadas `Map*`, SignalR e health checks.
+`MapSso` é o primeiro `Map*` do grupo: `GET /auth/sso-providers` fica na
+posição 0, anônimo, com a isenção `anonymous SSO directory (B-164)`.
 Os handlers ficam em `apps/api/Endpoints/*Endpoints.cs`, por fronteira:
 Identity, Directory, Conversations, Messaging, Files, Realtime, Search,
 Notifications, Administration e AI. O seed exclusivo de Development tem map

@@ -23,6 +23,7 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
         // Do not derive expectations from the maps under test.
         EndpointContract[] expected =
         [
+            new("GET", "/api/v1/auth/sso-providers", "", true, "anonymous SSO directory (B-164)"),
             new("GET", "/api/v1/me", "", false, ""),
             new("PUT", "/api/v1/me", "", false, "caller-only profile locale update"),
             new("PUT", "/api/v1/users/{userId:guid}/appearance", "", false, "caller-only visual preference (B-185)"),
