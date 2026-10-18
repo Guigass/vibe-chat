@@ -4,6 +4,7 @@ import { AuthService } from '../auth/auth.service';
 import { AdminApiService } from './admin-api.service';
 import { AiApiService } from './ai-api.service';
 import { AutomationApiService } from './automation-api.service';
+import { ConnectorApiService } from './connector-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
@@ -35,6 +36,7 @@ function createApi(auth: AuthStub): ApiService {
       ImportApiService,
       DiagnosticsApiService,
       AutomationApiService,
+      ConnectorApiService,
       { provide: AuthService, useValue: auth },
     ],
   });
