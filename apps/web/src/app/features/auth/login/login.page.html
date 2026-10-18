@@ -13,6 +13,33 @@
     <p class="login-hero__lead">
       {{ ui.loginLead }}
     </p>
+    @if (providers().length) {
+      <div class="login-hero__sso" [attr.aria-label]="ui.loginSsoGroup">
+        <label class="login-hero__domain">
+          <span>{{ ui.loginSsoDomain }}</span>
+          <input
+            type="email"
+            autocomplete="username"
+            [attr.aria-describedby]="'sso-domain-hint'"
+            [attr.placeholder]="ui.loginSsoDomain"
+            (input)="onDomainInput($event)"
+          />
+        </label>
+        <p id="sso-domain-hint" class="login-hero__domain-hint">{{ ui.loginSsoDomainHint }}</p>
+        <div class="login-hero__sso-actions">
+          @for (provider of providers(); track provider.alias) {
+            <vc-button
+              [variant]="matchedAlias() === provider.alias ? 'primary' : 'ghost'"
+              [loading]="loading"
+              (click)="loginWith(provider.alias)"
+            >{{ provider.label }}</vc-button>
+          }
+        </div>
+      </div>
+    }
+    @if (ssoUnavailable()) {
+      <p class="login-hero__error" role="status">{{ ui.loginSsoUnavailable }}</p>
+    }
     <div class="login-hero__cta">
       <vc-button variant="primary" [loading]="loading" (click)="login()">{{ ui.loginCta }}</vc-button>
     </div>

@@ -22,6 +22,13 @@ internal static class RequestAuth
         IClock clock,
         CancellationToken ct)
     {
+        var linked = await SsoProfileLinker.TryLinkAsync(
+            principal, db, clock, SsoLinkAmbient.Current, ct);
+        if (linked is not null)
+        {
+            return linked;
+        }
+
         var subject = principal.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? principal.FindFirstValue("sub")
             ?? throw new UnauthorizedAccessException("Missing subject.");

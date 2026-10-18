@@ -1088,6 +1088,8 @@ Distinta do feed `audit_events` (B-042). Viewer compliance: admin/Auditor com `a
 
 Provisionamento (B-068): no primeiro login OIDC, `EnsureProfile` vincula stub `pending:{email}` ao `sub` real — a membership já provisionada pelo admin passa a valer sem self-signup.
 
+SSO corporativo (B-164 / ADR-038): flag `Identity:Sso:Enabled` default false. Ligada, claims `broker_issuer` + `broker_subject` gravam `identity.external_identities` (`issuer`, `subject`, `user_id`, `reason`, `provider_alias`). E-mail não vincula perfil que não seja `pending:`. Par já ligado a outro `sub` → 409 `IdentityLinkConflict`. Primeiro login sem convite cria perfil sem membership. `GET /api/v1/auth/sso-providers` é anônimo; flag off → 404 `SsoDisabled`; cada item traz `alias`, `displayName` e `domains` (sem segredo). O cliente manda `kc_idp_hint` com o alias. JWT com `iss` diferente do Authority do Keycloak é recusado.
+
 ## Notifications / Email (B-043)
 
 ```csharp

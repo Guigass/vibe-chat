@@ -38,6 +38,7 @@ namespace VibeChat.Infrastructure;
 public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> options, ITenantContext tenantContext) : DbContext(options)
 {
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+    public DbSet<ExternalIdentity> ExternalIdentities => Set<ExternalIdentity>();
     public DbSet<MemberPublicProfile> MemberPublicProfiles => Set<MemberPublicProfile>();
     public DbSet<UserStatus> UserStatuses => Set<UserStatus>();
     public DbSet<UserVisualPreference> UserVisualPreferences => Set<UserVisualPreference>();
@@ -212,6 +213,20 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Locale).HasMaxLength(16);
             entity.HasIndex(x => x.Subject).IsUnique();
             entity.HasIndex(x => x.Email);
+        });
+
+        modelBuilder.Entity<ExternalIdentity>(entity =>
+        {
+            entity.ToTable("external_identities", "identity");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Issuer).HasMaxLength(SsoBrokerClaimsReader.MaxIssuerLength);
+            entity.Property(x => x.Subject).HasMaxLength(SsoBrokerClaimsReader.MaxSubjectLength);
+            entity.Property(x => x.ProviderAlias).HasMaxLength(64);
+            entity.Property(x => x.Reason).HasMaxLength(32);
+            entity.HasIndex(x => new { x.Issuer, x.Subject }).IsUnique();
+            entity.HasIndex(x => x.UserId);
         });
 
         modelBuilder.Entity<MemberPublicProfile>(entity =>

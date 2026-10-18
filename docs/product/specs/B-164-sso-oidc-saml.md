@@ -64,18 +64,18 @@ PlatformOwner. RLS e authZ do VibeChat permanecem a fonte de autorização.
 
 ## Aceite
 
-- [ ] Fluxo broker OIDC (IdP externo → Keycloak → app) funciona em lab.
-- [ ] Fluxo broker SAML 2.0 funciona em lab com o mesmo contrato app↔Keycloak.
-- [ ] App valida só JWT Keycloak; tokens do IdP externo são rejeitados.
-- [ ] Mapping `(issuer, subject)` é estável e auditável; e-mail sozinho não
+- [x] Fluxo broker OIDC (IdP externo → Keycloak → app) funciona em lab.
+- [x] Fluxo broker SAML 2.0 funciona em lab com o mesmo contrato app↔Keycloak.
+- [x] App valida só JWT Keycloak; tokens do IdP externo são rejeitados.
+- [x] Mapping `(issuer, subject)` é estável e auditável; e-mail sozinho não
       cria User privilegiado.
-- [ ] Primeiro login sem convite/`pending`/política explícita não concede
+- [x] Primeiro login sem convite/`pending`/política explícita não concede
       membership.
-- [ ] Linking não eleva papel nem cruza tenant.
-- [ ] Runbook + exemplos de realm/IdP documentados; secrets só em env.
-- [ ] Rótulo do botão/lista SSO reflete o `displayName` configurado (ex.:
+- [x] Linking não eleva papel nem cruza tenant.
+- [x] Runbook + exemplos de realm/IdP documentados; secrets só em env.
+- [x] Rótulo do botão/lista SSO reflete o `displayName` configurado (ex.:
       “Logar com HUB”); sem vendor hardcoded; fallback só se vazio.
-- [ ] Logout/SLO e revogação de sessão documentados e alinhados a B-128.
+- [x] Logout/SLO e revogação de sessão documentados e alinhados a B-128.
 
 ## Testes
 

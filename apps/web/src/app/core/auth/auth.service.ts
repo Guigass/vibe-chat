@@ -133,14 +133,20 @@ export class AuthService {
     }
   }
 
-  async login(): Promise<void> {
+  async login(idpAlias?: string): Promise<void> {
     this.errorSignal.set(null);
     localStorage.removeItem(DEV_KEY);
     localStorage.removeItem(DEMO_KEY);
     this.devProfile.set(null);
     this.devUserSignal.set(null);
     this.offlineDemo.set(false);
-    await this.userManager.signinRedirect();
+    if (idpAlias && !/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(idpAlias)) {
+      this.errorSignal.set(ui.loginSsoError);
+      return;
+    }
+    await this.userManager.signinRedirect(
+      idpAlias ? { extraQueryParams: { kc_idp_hint: idpAlias } } : undefined,
+    );
   }
 
   enterDevUser(name: DevUserName): void {

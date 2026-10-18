@@ -19,6 +19,8 @@ Gates:
 
 Nota: `GET /health` (fora de `/api/v1`) é anônimo e **não** está nesta matriz;
 não confundir com `GET /api/v1/admin/health-summary`.
+`GET /api/v1/auth/sso-providers` (B-164) também é anônimo: flag off → 404
+`SsoDisabled`; a resposta não traz segredo nem membership.
 
 Paths abaixo usam os templates literais de `apps/api/Endpoints/*.cs` e
 `apps/api/GroupDmEndpoints.cs` (incluem `:guid`). Os gates offline percorrem

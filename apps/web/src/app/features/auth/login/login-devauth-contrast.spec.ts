@@ -24,6 +24,14 @@ function stubMatchMedia(): void {
 describe('LoginPage DevAuth contrast (UX-001)', () => {
   beforeEach(async () => {
     stubMatchMedia();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: async () => ({ code: 'SsoDisabled' }),
+      }),
+    );
     await TestBed.configureTestingModule({
       imports: [LoginPage],
       providers: [

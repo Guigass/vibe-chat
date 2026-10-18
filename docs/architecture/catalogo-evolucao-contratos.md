@@ -80,6 +80,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Automation:Enabled` | instance | false | B-125 | automação → 404 `AutomationDisabled`; triggers não executam; chat segue |
 | `Incidents:Enabled` | instance | false | B-126 | incidentes → 404 `IncidentDisabled`; chat segue |
 | `Connectors:Enabled` | instance | false | B-127 | conectores → 404 `ConnectorDisabled`; chat e outbox de mensagens seguem |
+| `Identity:Sso:Enabled` | instance | false | B-164 | lista SSO → 404 `SsoDisabled`; claims de broker ignorados; login Keycloak segue |
 
 ## Registro inicial de flags futuras
 

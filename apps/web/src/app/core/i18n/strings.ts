@@ -8,6 +8,12 @@ export const ui = {
   loginDevGroup: $localize`:@@login.devGroup:Usuários de desenvolvimento`,
   loginDevTitle: $localize`:@@login.devTitle:Desenvolvimento (DevAuth)`,
   loginOffline: $localize`:@@login.offline:Explorar UI offline`,
+  loginSsoGroup: $localize`:@@login.ssoGroup:Acesso da empresa`,
+  loginSsoFallback: $localize`:@@login.ssoFallback:Entrar com SSO`,
+  loginSsoDomain: $localize`:@@login.ssoDomain:E-mail do trabalho`,
+  loginSsoDomainHint: $localize`:@@login.ssoDomainHint:O domínio escolhe o acesso da empresa quando há uma única correspondência.`,
+  loginSsoUnavailable: $localize`:@@login.ssoUnavailable:A lista de acessos da empresa não carregou. Ainda dá para entrar com Keycloak.`,
+  loginSsoError: $localize`:@@login.ssoError:Não foi possível vincular esta conta. Peça um convite ao administrador.`,
   closeSidebar: $localize`:@@shell.closeSidebar:Fechar barra lateral`,
   expandMenu: $localize`:@@shell.expandMenu:Expandir menu`,
   collapseMenu: $localize`:@@shell.collapseMenu:Encolher menu`,
@@ -1040,6 +1046,7 @@ export const ui = {
   errorImportRejected: $localize`:@@error.importRejected:O arquivo de importação foi recusado.`,
   errorImportConflict: $localize`:@@error.importConflict:Esta importação não pode avançar nesse estado.`,
   errorSupportBundleDisabled: $localize`:@@error.supportBundleDisabled:O support bundle está desligado nesta instância.`,
+  errorIdentityLinkConflict: $localize`:@@error.identityLinkConflict:Não foi possível vincular esta conta. Peça um convite ao administrador.`,
   errorSupportRejected: $localize`:@@error.supportRejected:O pedido de diagnóstico foi recusado.`,
   errorRepairConflict: $localize`:@@error.repairConflict:Este reparo não pode continuar nesse estado.`,
   errorTemplateNotFound: $localize`:@@error.templateNotFound:Template não encontrado.`,
@@ -1486,6 +1493,8 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.errorImportConflict;
     case 'SupportBundleDisabled':
       return ui.errorSupportBundleDisabled;
+    case 'IdentityLinkConflict':
+      return ui.errorIdentityLinkConflict;
     case 'SupportIdempotencyConflict':
       return ui.errorIdempotencyConflict;
     case 'RepairActionNotAllowed':

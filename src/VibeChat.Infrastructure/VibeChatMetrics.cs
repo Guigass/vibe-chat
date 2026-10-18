@@ -55,6 +55,8 @@ public static class VibeChatMetrics
     public static readonly Counter<long> ConnectorInbound = Meter.CreateCounter<long>("vibechat.connectors.inbound");
     public static readonly Counter<long> ConnectorOutboundFailed = Meter.CreateCounter<long>("vibechat.connectors.outbound_failed");
     public static readonly Counter<long> ConnectorRevoked = Meter.CreateCounter<long>("vibechat.connectors.revoked");
+    public static readonly Counter<long> SsoLinkCreated = Meter.CreateCounter<long>("vibechat.sso.link_created");
+    public static readonly Counter<long> SsoLinkDenied = Meter.CreateCounter<long>("vibechat.sso.link_denied");
     public static readonly UpDownCounter<long> RealtimeConnections = Meter.CreateUpDownCounter<long>("vibechat.realtime.connections");
     private static long _realtimeConnectionsGauge;
     public static long RealtimeConnectionsGauge => Interlocked.Read(ref _realtimeConnectionsGauge);

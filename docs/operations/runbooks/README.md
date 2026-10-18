@@ -25,6 +25,7 @@ Use estes runbooks em incidente ou mudança. Detalhes de rotina ficam nos guias 
 | [diagnostico.md](./diagnostico.md) | Preflight, probe sintético e support bundle (B-154) |
 | [digests.md](./digests.md) | Digest/catch-up: flag, DND, falha de IA e rollback (B-122) |
 | [formularios.md](./formularios.md) | Formulários: flag, retenção das respostas e rollback (B-124) |
+| [sso-broker.md](./sso-broker.md) | SSO OIDC/SAML no Keycloak: rótulo, vínculo e rollback (B-164) |
 
 ## Princípios
 
