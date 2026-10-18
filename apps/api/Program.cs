@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.HttpOverrides;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Microsoft.Extensions.Options;
 using VibeChat.Api;
 using VibeChat.Api.Authentication;
 using VibeChat.Api.Endpoints;
+using VibeChat.Identity;
 using VibeChat.BuildingBlocks;
 using VibeChat.Infrastructure;
 using VibeChat.SharedKernel;
@@ -100,6 +102,16 @@ auth.AddJwtBearer(options =>
             }
 
             return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            var issuer = context.Principal?.FindFirst("iss")?.Value;
+            if (issuer is not null && !KeycloakIssuerPolicy.Matches(issuer, context.Options.Authority))
+            {
+                context.Fail("UntrustedIssuer");
+            }
+
+            return Task.CompletedTask;
         }
     };
 });
@@ -113,6 +125,15 @@ builder.Services.AddScoped<ICurrentUser>(sp =>
     return new CurrentUser(accessor.HttpContext?.User ?? new ClaimsPrincipal());
 });
 
+builder.Services.Configure<SsoOptions>(builder.Configuration.GetSection(SsoOptions.SectionName));
+builder.Services.AddHttpClient(KeycloakSsoDirectory.HttpClientName, client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(4);
+}).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+{
+    AllowAutoRedirect = false
+});
+builder.Services.AddSingleton<KeycloakSsoDirectory>();
 builder.Services.AddVibeChatInfrastructure(builder.Configuration);
 builder.Services.Configure<VibeChat.Messaging.FormOptions>(
     builder.Configuration.GetSection(VibeChat.Messaging.FormOptions.SectionName));
@@ -177,30 +198,49 @@ app.UseAuthorization();
 // SEC-RLS-RUNTIME: EnsureApplied opens a txn + SET LOCAL; commit/rollback at end of HTTP request.
 app.Use(async (context, next) =>
 {
-    try
+    var sso = context.RequestServices.GetRequiredService<IOptionsMonitor<SsoOptions>>().CurrentValue;
+    using (SsoLinkAmbient.Push(new SsoLinkSettings(sso.Enabled)))
     {
-        await next();
-        var db = context.RequestServices.GetService<VibeChatDbContext>();
-        if (db is not null)
+        try
         {
-            await RlsSession.CommitAsync(db, context.RequestAborted);
+            await next();
+            var db = context.RequestServices.GetService<VibeChatDbContext>();
+            if (db is not null)
+            {
+                await RlsSession.CommitAsync(db, context.RequestAborted);
+            }
         }
-    }
-    catch
-    {
-        var db = context.RequestServices.GetService<VibeChatDbContext>();
-        if (db is not null)
+        catch (SsoLinkConflictException)
         {
-            await RlsSession.RollbackAsync(db, CancellationToken.None);
-        }
+            var db = context.RequestServices.GetService<VibeChatDbContext>();
+            if (db is not null)
+            {
+                await RlsSession.RollbackAsync(db, CancellationToken.None);
+            }
 
-        throw;
+            if (!context.Response.HasStarted)
+            {
+                context.Response.StatusCode = StatusCodes.Status409Conflict;
+                await context.Response.WriteAsJsonAsync(new { code = "IdentityLinkConflict" });
+            }
+        }
+        catch
+        {
+            var db = context.RequestServices.GetService<VibeChatDbContext>();
+            if (db is not null)
+            {
+                await RlsSession.RollbackAsync(db, CancellationToken.None);
+            }
+
+            throw;
+        }
     }
 });
 
 // B-174: group filter enforces RequirePermissionAttribute metadata (fail-closed).
 var v1 = app.MapGroup("/api/v1").RequireAuthorization().AddEndpointFilter<RequirePermissionFilter>();
 
+v1.MapSso();
 v1.MapIdentity();
 v1.MapMemberProfiles();
 v1.MapWorkspaces();

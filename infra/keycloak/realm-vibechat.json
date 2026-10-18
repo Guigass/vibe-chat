@@ -203,7 +203,8 @@
         "acr",
         "profile",
         "roles",
-        "email"
+        "email",
+        "vibechat-broker"
       ],
       "optionalClientScopes": [
         "address",
@@ -253,6 +254,23 @@
         "offline_access",
         "microprofile-jwt"
       ]
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222204",
+      "clientId": "vibechat-sso-directory",
+      "name": "VibeChat SSO directory",
+      "description": "Service account that lists identity providers for the login screen. Dev secret only.",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "sso_directory_dev_change_me",
+      "fullScopeAllowed": false,
+      "defaultClientScopes": ["roles"]
     },
     {
       "id": "22222222-2222-2222-2222-222222222203",
@@ -476,6 +494,59 @@
       ]
     },
     {
+      "name": "vibechat-broker",
+      "description": "Maps Keycloak broker session notes into access-token claims (B-164).",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "broker-alias",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usersessionmodel-note-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.session.note": "identity_provider",
+            "claim.name": "broker_alias",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "broker-subject",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usersessionmodel-note-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.session.note": "identity_provider_identity",
+            "claim.name": "broker_subject",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "broker-issuer",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "broker_issuer",
+            "claim.name": "broker_issuer",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
       "name": "acr",
       "description": "OpenID Connect scope for acr claim",
       "protocol": "openid-connect",
@@ -561,6 +632,71 @@
       "attributes": {
         "include.in.token.scope": "true",
         "display.on.consent.screen": "true"
+      }
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "hub-oidc",
+      "displayName": "Logar com HUB",
+      "providerId": "oidc",
+      "enabled": false,
+      "trustEmail": false,
+      "storeToken": false,
+      "linkOnly": false,
+      "hideOnLogin": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "issuer": "https://idp.example.invalid/realms/hub",
+        "authorizationUrl": "https://idp.example.invalid/protocol/openid-connect/auth",
+        "tokenUrl": "https://idp.example.invalid/protocol/openid-connect/token",
+        "clientId": "vibechat-broker",
+        "clientSecret": "change_me",
+        "defaultScope": "openid email profile",
+        "syncMode": "IMPORT",
+        "domains": "hub.example"
+      }
+    },
+    {
+      "alias": "hub-saml",
+      "displayName": "Logar com HUB",
+      "providerId": "saml",
+      "enabled": false,
+      "trustEmail": false,
+      "storeToken": false,
+      "linkOnly": false,
+      "hideOnLogin": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "entityId": "https://idp.example.invalid/saml",
+        "singleSignOnServiceUrl": "https://idp.example.invalid/saml/sso",
+        "signingCertificate": "CHANGE_ME",
+        "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+        "principalType": "SUBJECT",
+        "syncMode": "IMPORT",
+        "domains": "saml.example"
+      }
+    }
+  ],
+  "identityProviderMappers": [
+    {
+      "name": "hub-oidc-issuer",
+      "identityProviderAlias": "hub-oidc",
+      "identityProviderMapper": "hardcoded-attribute-idp-mapper",
+      "config": {
+        "attribute": "broker_issuer",
+        "attribute.value": "https://idp.example.invalid/realms/hub",
+        "syncMode": "INHERIT"
+      }
+    },
+    {
+      "name": "hub-saml-issuer",
+      "identityProviderAlias": "hub-saml",
+      "identityProviderMapper": "hardcoded-attribute-idp-mapper",
+      "config": {
+        "attribute": "broker_issuer",
+        "attribute.value": "https://idp.example.invalid/saml",
+        "syncMode": "INHERIT"
       }
     }
   ],

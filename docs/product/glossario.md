@@ -82,7 +82,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Session** | Sessão autenticada e revogável associada a principal e, quando disponível, device. Token não substitui revalidação de membership. |
 | **Cadastro / Provisionamento** | Fluxo em duas camadas: (1) **autenticação** no IdP (Keycloak/OIDC cria a identidade); (2) **autorização** no VibeChat via Membership + Diretivas. Login sozinho **não** concede acesso a workspace — falta membership. Admin convida por e-mail (`POST .../members`) e atribui papel; perfil stub `pending:{email}` é vinculado no primeiro SSO. Seed/demo permanece para DX. Sem self-signup aberto na fase 1 (B-068). |
 | **Diretiva** | Regra de autorização derivada do papel (`Role` + `RolePermissionCatalog` / policies de workspace). Ex.: quem pode `channel.create`, `workspace.admin`, `admin.dashboard`, `ai.summarize`, `ai.suggest_reply`. Gerenciada na UI admin junto ao cadastro. Não confundir com “prompt” de IA. |
-| **OIDC / SSO** | OpenID Connect; fluxo padrão via Keycloak. |
+| **OIDC / SSO** | OpenID Connect; fluxo padrão via Keycloak. SSO corporativo (B-164) é brokering OIDC/SAML no Keycloak: o app continua só com o JWT do Keycloak, e o rótulo do botão é o `displayName` do IdP. |
 | **Service Account** | Identidade de máquina para workers/integrações. |
 | **Guest** | Membership de escopo reduzido a **um canal**, criada por convite de admin com link de uso único e validade (default 7 dias). Guest envia mensagem, anexo e reação no canal do convite; não lista outros canais, não usa busca global, não vê o diretório do workspace e não lê configuração. Revogação pelo admin encerra sessão e membership. Convite e aceite geram audit. Entregue em W10-10 / B-040 (ADR-024). |
 

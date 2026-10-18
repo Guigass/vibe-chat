@@ -317,6 +317,12 @@ services:
       Authentication__MetadataAddress: http://keycloak:8080${KEYCLOAK_HTTP_RELATIVE_PATH:-}/realms/${KEYCLOAK_REALM:-vibechat}/.well-known/openid-configuration
       Authentication__Audience: ${OIDC_API_AUDIENCE:-vibechat-api}
       Authentication__RequireHttpsMetadata: "false"
+      Identity__Sso__Enabled: ${IDENTITY_SSO_ENABLED:-false}
+      Identity__Sso__KeycloakBaseUrl: http://keycloak:8080${KEYCLOAK_HTTP_RELATIVE_PATH:-}
+      Identity__Sso__Realm: ${KEYCLOAK_REALM:-vibechat}
+      Identity__Sso__DirectoryClientId: vibechat-sso-directory
+      Identity__Sso__DirectoryClientSecret: ${SSO_DIRECTORY_CLIENT_SECRET:-sso_directory_dev_change_me}
+      Identity__Sso__TimeoutSeconds: "3"
       Minio__Endpoint: minio:9000
       Minio__PublicEndpoint: ${MINIO_ENDPOINT:-http://localhost:9000}
       Minio__AccessKey: ${MINIO_ROOT_USER:-minioadmin}
