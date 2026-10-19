@@ -288,6 +288,14 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/diagnostics/repairs/{repairId:guid}/apply", string.Join(",", new[] { Permissions.Support.Repair }), false, ""),
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/diagnostics/repairs/{repairId:guid}/cancel", string.Join(",", new[] { Permissions.Support.Repair }), false, ""),
             new("POST", "/api/v1/dev/seed", "", true, "Development seed; AllowAnonymous lab-only"),
+            new("GET", "/api/v1/admin/workspaces/{workspaceId:guid}/scim", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/scim/tokens", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/scim/tokens/{tokenId:guid}/rotate", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("DELETE", "/api/v1/admin/workspaces/{workspaceId:guid}/scim/tokens/{tokenId:guid}", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/scim/mappings/dry-run", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/scim/mappings", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("DELETE", "/api/v1/admin/workspaces/{workspaceId:guid}/scim/mappings/{mappingId:guid}", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/scim/provisioning/users", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(
