@@ -81,7 +81,7 @@ organiza. Estados:
 | SDK e kit de teste de plugins | Planned | B-136 / W15 |
 | Registry assinado e governado | Planned | B-137 / W15 |
 | Bridge framework | Planned | B-138 / W15 |
-| Schema registry de eventos | Planned | B-139 / W13 |
+| Schema registry de eventos | Atual (flag off) | B-139 / W13 Done; portal em B-135 |
 | White-label governado | Planned | B-140 / W15 |
 
 ## Clientes e operação em escala

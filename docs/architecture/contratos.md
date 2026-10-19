@@ -1001,6 +1001,19 @@ Regras:
   - `X-VibeChat-Signature: sha256=<hmac-hex>` (HMAC-SHA256 do body com o secret)
 - URL: `https` (ou `http://localhost` / `127.0.0.1` em lab); timeout ~5s; sem redirect
 - RLS + query filter por `TenantId`. AAD do envelope continua o id do tenant (compatível com B-048)
+- B-139 / ADR-041: com `Integrations:EventSchemas:Enabled=true`, a entrega valida o body no `PublicEventCatalog`. Sem `schemaVersion` no JSON, a versão é 1. Tipo ou versão desconhecidos não fazem POST; `LastError` recebe `UnknownEventType`, `UnknownSchemaVersion` ou `SchemaMismatch`; a outbox segue. Headers adicionais: `X-VibeChat-Event-Type`, `X-VibeChat-Schema-Version`. Flag off não altera body nem headers. Catálogo e exemplos: [`eventos-publicos.md`](eventos-publicos.md)
+
+### Eventos públicos (B-139 / ADR-041)
+
+Flag `Integrations:EventSchemas:Enabled` default **false**.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| GET | `/api/v1/admin/event-schemas` | `workspace.admin`; flag off → 404 `EventSchemasDisabled` |
+| GET | `/api/v1/admin/event-schemas/{eventType}/versions/{schemaVersion}` | `workspace.admin`; desconhecido → 404 `UnknownEventType` ou `UnknownSchemaVersion` |
+| POST | `/api/v1/admin/event-schemas/check` | `workspace.admin`; body `{ eventType, schemaVersion, document }`; 422 `SchemaMismatch`; 400 `SchemaDocumentTooLarge` (16 KiB). Não persiste o documento |
+
+O catálogo não contém dado de tenant. `messaging.message.created` v1 (wire `MessageCreated`, deprecated até 2027-04-19) e v2 (envelope) coexistem. O wire default continua v1. Métrica `vibechat.events.schema.rejected` com `reason` e `event_type` apenas.
 
 ### Bots de integração (B-109 / ADR-027)
 

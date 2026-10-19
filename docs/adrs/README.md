@@ -46,6 +46,7 @@ original.
 | [038](ADR-038-sso-broker.md) | SSO corporativo via brokering Keycloak | Accepted |
 | [039](ADR-039-scim-provisioning.md) | SCIM 2.0 como adapter de provisioning | Accepted |
 | [040](ADR-040-malware-scan.md) | Verificação de malware e quarentena de anexos | Accepted |
+| [041](ADR-041-eventos-versionados.md) | Registry de eventos públicos no repositório | Accepted |
 
 ## Quando criar um ADR
 

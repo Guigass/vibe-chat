@@ -280,6 +280,7 @@ v1.MapAdministration();
 v1.MapAI();
 v1.MapIntegrationBots();
 v1.MapIntegrationPlugins();
+v1.MapEventSchemas();
 v1.MapWorkspaceTemplates();
 v1.MapImports();
 v1.MapDiagnostics();

@@ -1,0 +1,356 @@
+{
+  "versions": [
+    {
+      "eventType": "messaging.message.created",
+      "schemaVersion": 1,
+      "wireName": "MessageCreated",
+      "status": "deprecated",
+      "deprecatedUntil": "2027-04-19",
+      "changelog": "Wire payload already delivered to webhook consumers. Deprecated in favor of the v2 envelope; both stay valid through 2027-04-18.",
+      "schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "tenantId",
+          "channelId",
+          "messageId",
+          "sequence",
+          "authorId",
+          "createdAt"
+        ],
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "messageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence": {
+            "type": "integer"
+          },
+          "authorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "example": {
+        "tenantId": "00000000-0000-0000-0000-000000000001",
+        "channelId": "00000000-0000-0000-0000-000000000002",
+        "messageId": "00000000-0000-0000-0000-000000000003",
+        "sequence": 1,
+        "authorId": "00000000-0000-0000-0000-000000000004",
+        "createdAt": "2026-10-19T12:00:00Z"
+      }
+    },
+    {
+      "eventType": "messaging.message.created",
+      "schemaVersion": 2,
+      "wireName": "MessageCreated",
+      "status": "active",
+      "deprecatedUntil": null,
+      "changelog": "Common envelope. payload is a v1 document. Coexists with v1 until the deprecation date.",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "eventId",
+          "eventType",
+          "occurredAt",
+          "tenantId",
+          "aggregateId",
+          "correlationId",
+          "schemaVersion",
+          "payload"
+        ],
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "messaging.message.created"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tenantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "aggregateId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 2
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "tenantId",
+              "channelId",
+              "messageId",
+              "sequence",
+              "authorId",
+              "createdAt"
+            ],
+            "properties": {
+              "tenantId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "channelId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "messageId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "sequence": {
+                "type": "integer"
+              },
+              "authorId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "example": {
+        "eventId": "00000000-0000-0000-0000-000000000005",
+        "eventType": "messaging.message.created",
+        "occurredAt": "2026-10-19T12:00:00Z",
+        "tenantId": "00000000-0000-0000-0000-000000000001",
+        "aggregateId": "00000000-0000-0000-0000-000000000003",
+        "correlationId": "00000000-0000-0000-0000-000000000006",
+        "schemaVersion": 2,
+        "payload": {
+          "tenantId": "00000000-0000-0000-0000-000000000001",
+          "channelId": "00000000-0000-0000-0000-000000000002",
+          "messageId": "00000000-0000-0000-0000-000000000003",
+          "sequence": 1,
+          "authorId": "00000000-0000-0000-0000-000000000004",
+          "createdAt": "2026-10-19T12:00:00Z"
+        }
+      }
+    },
+    {
+      "eventType": "messaging.message.edited",
+      "schemaVersion": 1,
+      "wireName": "MessageEdited",
+      "status": "active",
+      "deprecatedUntil": null,
+      "changelog": "Initial public schema for the current webhook body. Additional properties remain allowed.",
+      "schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "tenantId",
+          "channelId",
+          "messageId",
+          "sequence",
+          "editedAt"
+        ],
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "messageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence": {
+            "type": "integer"
+          },
+          "editedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "example": {
+        "tenantId": "00000000-0000-0000-0000-000000000001",
+        "channelId": "00000000-0000-0000-0000-000000000002",
+        "messageId": "00000000-0000-0000-0000-000000000003",
+        "sequence": 2,
+        "editedAt": "2026-10-19T12:00:00Z"
+      }
+    },
+    {
+      "eventType": "messaging.message.deleted",
+      "schemaVersion": 1,
+      "wireName": "MessageDeleted",
+      "status": "active",
+      "deprecatedUntil": null,
+      "changelog": "Initial public schema for the current webhook body. Additional properties remain allowed.",
+      "schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "tenantId",
+          "channelId",
+          "messageId",
+          "sequence",
+          "deletedAt"
+        ],
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "messageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence": {
+            "type": "integer"
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "example": {
+        "tenantId": "00000000-0000-0000-0000-000000000001",
+        "channelId": "00000000-0000-0000-0000-000000000002",
+        "messageId": "00000000-0000-0000-0000-000000000003",
+        "sequence": 3,
+        "deletedAt": "2026-10-19T12:00:00Z"
+      }
+    },
+    {
+      "eventType": "messaging.message.reaction_changed",
+      "schemaVersion": 1,
+      "wireName": "ReactionChanged",
+      "status": "active",
+      "deprecatedUntil": null,
+      "changelog": "Initial public schema for the current webhook body. Additional properties remain allowed.",
+      "schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "tenantId",
+          "channelId",
+          "messageId",
+          "userId",
+          "emoji",
+          "added"
+        ],
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "messageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "emoji": {
+            "type": "string"
+          },
+          "added": {
+            "type": "boolean"
+          }
+        }
+      },
+      "example": {
+        "tenantId": "00000000-0000-0000-0000-000000000001",
+        "channelId": "00000000-0000-0000-0000-000000000002",
+        "messageId": "00000000-0000-0000-0000-000000000003",
+        "userId": "00000000-0000-0000-0000-000000000004",
+        "emoji": "thumbsup",
+        "added": true
+      }
+    },
+    {
+      "eventType": "integrations.webhook.test",
+      "schemaVersion": 1,
+      "wireName": "WebhookTest",
+      "status": "active",
+      "deprecatedUntil": null,
+      "changelog": "Initial public schema for the current webhook body. Additional properties remain allowed.",
+      "schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "type",
+          "tenantId",
+          "endpointId",
+          "sentAt"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "WebhookTest"
+            ]
+          },
+          "tenantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "endpointId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "example": {
+        "type": "WebhookTest",
+        "tenantId": "00000000-0000-0000-0000-000000000001",
+        "endpointId": "00000000-0000-0000-0000-000000000007",
+        "sentAt": "2026-10-19T12:00:00Z"
+      }
+    }
+  ]
+}

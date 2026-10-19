@@ -9,7 +9,7 @@ Convenções futuras de contratos/flags:
 
 ## Contratos e dados
 
-- API sob `/api/v1` até política de versionamento de B-139 entrar.
+- API permanece em `/api/v1`. B-139 versiona eventos públicos (`eventType` + `schemaVersion`), não o prefixo HTTP.
 - IDs opacos; tempo em UTC; paginação por cursor estável.
 - Toda entidade de negócio tem `TenantId` e, quando aplicável, `WorkspaceId`.
 - Mutation aceita idempotency key quando retry pode duplicar efeito.
