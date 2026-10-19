@@ -5,6 +5,11 @@ import { ScheduleItem } from '../../shared/models/chat.models';
 import { ChannelStore } from './channel.store';
 import { ChatHubService } from './chat-hub.service';
 
+/** The API keeps cancelled rows. The panel only lists work that is still open. */
+export function visibleScheduleItems(items: readonly ScheduleItem[]): ScheduleItem[] {
+  return items.filter((item) => item.status !== 'Cancelled');
+}
+
 export interface RemindTarget {
   messageId: string;
   channelId: string;
@@ -75,7 +80,7 @@ export class ScheduleStore {
     this.error.set(null);
     try {
       const page = await this.api.getSchedule(workspaceId, { limit: 50 });
-      this.items.set(page.items);
+      this.items.set(visibleScheduleItems(page.items));
     } catch {
       this.error.set(ui.scheduleLoadError);
     } finally {
@@ -167,6 +172,7 @@ export class ScheduleStore {
       } else {
         await this.api.cancelReminder(workspaceId, item.id);
       }
+      this.items.update((list) => list.filter((row) => row.id !== item.id));
       await this.refresh();
       return true;
     } catch (error) {

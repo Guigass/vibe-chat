@@ -58,6 +58,8 @@ public static class VibeChatMetrics
     public static readonly Counter<long> SsoLinkCreated = Meter.CreateCounter<long>("vibechat.sso.link_created");
     public static readonly Counter<long> SsoLinkDenied = Meter.CreateCounter<long>("vibechat.sso.link_denied");
     public static readonly Counter<long> ScimProvisioned = Meter.CreateCounter<long>("vibechat.scim.provisioned");
+    public static readonly Counter<long> AttachmentScans = Meter.CreateCounter<long>("vibechat.files.scan");
+    public static readonly UpDownCounter<long> AttachmentScanQueue = Meter.CreateUpDownCounter<long>("vibechat.files.scan.queue");
     public static readonly UpDownCounter<long> RealtimeConnections = Meter.CreateUpDownCounter<long>("vibechat.realtime.connections");
     private static long _realtimeConnectionsGauge;
     public static long RealtimeConnectionsGauge => Interlocked.Read(ref _realtimeConnectionsGauge);

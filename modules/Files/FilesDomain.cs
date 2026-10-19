@@ -51,6 +51,14 @@ public sealed class Attachment
     public ThumbnailStatus? ThumbnailStatus { get; set; }
     /// <summary>PDF page count when known (B-090).</summary>
     public int? PageCount { get; set; }
+    /// <summary>Malware gate (B-131). Null on rows created before the column.</summary>
+    public AttachmentScanStatus? ScanStatus { get; set; }
+    public string? ScanEngine { get; set; }
+    public string? ScanSignatureVersion { get; set; }
+    public string? ScanReason { get; set; }
+    public int ScanAttempts { get; set; }
+    public DateTimeOffset? ScanRequestedAt { get; set; }
+    public DateTimeOffset? ScannedAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? ReadyAt { get; set; }
 }

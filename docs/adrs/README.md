@@ -45,6 +45,7 @@ original.
 | [037](ADR-037-conectores-bidirecionais.md) | Conector bidirecional com egress, dedupe e flag off | Accepted |
 | [038](ADR-038-sso-broker.md) | SSO corporativo via brokering Keycloak | Accepted |
 | [039](ADR-039-scim-provisioning.md) | SCIM 2.0 como adapter de provisioning | Accepted |
+| [040](ADR-040-malware-scan.md) | Verificação de malware e quarentena de anexos | Accepted |
 
 ## Quando criar um ADR
 

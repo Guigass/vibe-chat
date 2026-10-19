@@ -128,6 +128,35 @@ export function toggleLocalReaction(
   });
 }
 
+export function applyScanToMessages(
+  list: readonly ChatMessage[],
+  event: {
+    attachmentId: string;
+    channelId: string;
+    status: string;
+    scanStatus: string | null;
+    scanReason?: string | null;
+  },
+): ChatMessage[] {
+  return list.map((m) => {
+    if (!idsEqual(m.channelId, event.channelId) || !m.attachments?.length) {
+      return m;
+    }
+    let changed = false;
+    const attachments = m.attachments.map((a) => {
+      if (!idsEqual(a.id, event.attachmentId)) return a;
+      changed = true;
+      return {
+        ...a,
+        status: event.status,
+        scanStatus: event.scanStatus,
+        scanReason: event.scanReason ?? null,
+      };
+    });
+    return changed ? { ...m, attachments } : m;
+  });
+}
+
 export function applyThumbnailToMessages(
   list: readonly ChatMessage[],
   event: {

@@ -12,6 +12,7 @@ import {
   applyThreadEdit,
   applyThreadLinkPreview,
   applyThreadReactions,
+  applyThreadScan,
   applyThreadThumbnail,
   clearThreadLinkPreview,
   demoThread,
@@ -52,6 +53,7 @@ export class ThreadStore {
     this.hub.onMessageDeleted((patch) => this.applyDelete(patch.id));
     this.hub.onReactionChanged((event) => this.applyReactions(event.messageId, event.reactions));
     this.hub.onAttachmentThumbnailReady((event) => this.applyThumbnailReady(event));
+    this.hub.onAttachmentScanCompleted((event) => this.applyScanCompleted(event));
     this.hub.onLinkPreviewReady((event) => this.applyLinkPreviewReady(event));
   }
 
@@ -299,6 +301,16 @@ export class ThreadStore {
     reactions: Array<{ emoji: string; count: number; me: boolean }>,
   ): void {
     applyThreadReactions(this.patchState(), messageId, reactions);
+  }
+
+  private applyScanCompleted(event: {
+    attachmentId: string;
+    channelId: string;
+    status: string;
+    scanStatus: string | null;
+    scanReason?: string | null;
+  }): void {
+    applyThreadScan(this.patchState(), event);
   }
 
   private applyThumbnailReady(event: {

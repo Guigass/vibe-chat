@@ -1372,6 +1372,20 @@
     "admin.scimNoConflicts": "Keine Konflikte.",
     "admin.scimNoGroups": "Noch keine Gruppe bereitgestellt.",
     "admin.scimForbiddenRole": "Diese Rolle kann nicht per Zuordnung vergeben werden.",
-    "admin.scimCopy": "Kopieren"
+    "admin.scimCopy": "Kopieren",
+    "attach.scanVerifying": "Datei wird geprüft",
+    "attach.scanUnavailable": "Datei nicht verfügbar",
+    "attach.scanBlocked": "Datei blockiert",
+    "attach.scanRetry": "Erneut versuchen",
+    "admin.navQuarantine": "Quarantäne",
+    "admin.quarantineLead": "Vom Scanner zurückgehaltene Dateien. Freigabe oder Löschen braucht eine Begründung und wird protokolliert.",
+    "admin.quarantineDisabled": "Die Malware-Prüfung ist in dieser Installation aus.",
+    "admin.quarantineEmpty": "Keine Dateien in Quarantäne.",
+    "admin.quarantineLoadError": "Quarantäne konnte nicht geladen werden.",
+    "admin.quarantineRelease": "Freigeben",
+    "admin.quarantineDelete": "Löschen",
+    "admin.quarantineJustification": "Begründung",
+    "admin.quarantineColumnFile": "Datei",
+    "admin.quarantineColumnState": "Status"
   }
 }

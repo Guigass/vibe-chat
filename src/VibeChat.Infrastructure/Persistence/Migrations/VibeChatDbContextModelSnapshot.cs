@@ -1016,6 +1016,33 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(1);
 
+                    b.Property<int>("ScanAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("ScanEngine")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("ScanReason")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("ScanRequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ScanSignatureVersion")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("ScanStatus")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTimeOffset?>("ScannedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<long>("SizeBytes")
                         .HasColumnType("bigint");
 
@@ -1054,6 +1081,8 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.HasIndex("StorageKey");
 
                     b.HasIndex("TenantId", "ChannelId", "MessageId");
+
+                    b.HasIndex("TenantId", "ScanStatus");
 
                     b.ToTable("attachments", "files");
                 });

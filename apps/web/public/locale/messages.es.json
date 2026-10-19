@@ -1372,6 +1372,20 @@
     "admin.scimNoConflicts": "Ningún conflicto.",
     "admin.scimNoGroups": "Todavía no hay grupos aprovisionados.",
     "admin.scimForbiddenRole": "Ese rol no puede concederse por asignación.",
-    "admin.scimCopy": "Copiar"
+    "admin.scimCopy": "Copiar",
+    "attach.scanVerifying": "Verificando archivo",
+    "attach.scanUnavailable": "Archivo no disponible",
+    "attach.scanBlocked": "Archivo bloqueado",
+    "attach.scanRetry": "Reintentar",
+    "admin.navQuarantine": "Cuarentena",
+    "admin.quarantineLead": "Archivos retenidos por el verificador. Liberar o borrar exige una justificación y queda en la auditoría.",
+    "admin.quarantineDisabled": "La verificación de malware está apagada en esta instalación.",
+    "admin.quarantineEmpty": "Ningún archivo en cuarentena.",
+    "admin.quarantineLoadError": "No fue posible cargar la cuarentena.",
+    "admin.quarantineRelease": "Liberar",
+    "admin.quarantineDelete": "Borrar",
+    "admin.quarantineJustification": "Justificación",
+    "admin.quarantineColumnFile": "Archivo",
+    "admin.quarantineColumnState": "Estado"
   }
 }

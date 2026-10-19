@@ -2,15 +2,24 @@
                 <ul class="vc-msg__attachments">
                   @for (attachment of message().attachments; track attachment.id) {
                     <li>
-                      <vc-attachment-preview
-                        [attachment]="attachment"
-                        [previewUrl]="previewUrls()[attachment.id] ?? null"
-                        [downloadUrl]="downloadUrls()[attachment.id] ?? null"
-                        [showTranscribe]="attachment.kind === 'Audio' && transcribeEnabled()"
-                        (imageOpen)="openLightbox($event)"
-                        (fileOpen)="download(attachment)"
-                        (transcribe)="transcribe(attachment)"
-                      />
+                      @if (hold(shown(attachment)); as state) {
+                        <p class="vc-msg__scan" role="status">{{ scanLabel(state) }}</p>
+                      } @else {
+                        <vc-attachment-preview
+                          [attachment]="shown(attachment)"
+                          [previewUrl]="previewUrls()[attachment.id] ?? null"
+                          [downloadUrl]="downloadUrls()[attachment.id] ?? null"
+                          [showTranscribe]="attachment.kind === 'Audio' && transcribeEnabled()"
+                          (imageOpen)="openLightbox($event)"
+                          (fileOpen)="download(shown(attachment))"
+                          (transcribe)="transcribe(attachment)"
+                        />
+                      }
+                      @if (canRetry(shown(attachment))) {
+                        <button type="button" class="vc-msg__scan-retry" (click)="retry(attachment)" [disabled]="retrying()">
+                          {{ ui.attachScanRetry }}
+                        </button>
+                      }
                     </li>
                   }
                 </ul>

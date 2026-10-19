@@ -18,5 +18,7 @@ internal static class FilesEndpointHelpers
             attachment.ThumbnailStatus?.ToString(),
             attachment.Width,
             attachment.Height,
-            attachment.PageCount);
+            attachment.PageCount,
+            attachment.ScanStatus?.ToString(),
+            attachment.ScanReason);
 }

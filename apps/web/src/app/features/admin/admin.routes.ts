@@ -81,6 +81,11 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     loadComponent: () => import('./admin-scim.page').then((m) => m.AdminScimPage),
   },
   {
+    path: 'quarantine',
+    canActivate: [adminAreaGuard('quarantine')],
+    loadComponent: () => import('./admin-quarantine.page').then((m) => m.AdminQuarantinePage),
+  },
+  {
     path: '**',
     redirectTo: 'overview',
   },

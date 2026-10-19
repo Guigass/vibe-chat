@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using VibeChat.Administration;
 using VibeChat.Conversations;
 using VibeChat.Directory;
+using VibeChat.Files;
 using VibeChat.Identity;
 using VibeChat.Integrations;
 using VibeChat.Messaging;
@@ -28,6 +29,7 @@ internal static class RuntimeSettingsServiceCollectionExtensions
         services.Configure<MessageRetentionOptions>(configuration.GetSection(MessageRetentionOptions.SectionName));
         services.Configure<RuntimeSettingsOptions>(configuration.GetSection(RuntimeSettingsOptions.SectionName));
         services.Configure<MessageHistoryOptions>(configuration.GetSection(MessageHistoryOptions.SectionName));
+        services.Configure<MalwareScanOptions>(configuration.GetSection(MalwareScanOptions.SectionName));
         services.AddMemoryCache();
         services.AddSingleton<RuntimeSecretProtector>();
         services.AddSingleton<IRuntimeSettingsCacheInvalidator, RuntimeSettingsCacheInvalidator>();

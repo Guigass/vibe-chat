@@ -1372,6 +1372,20 @@
     "admin.scimNoConflicts": "충돌 없음.",
     "admin.scimNoGroups": "아직 프로비저닝된 그룹이 없습니다.",
     "admin.scimForbiddenRole": "매핑으로는 이 역할을 부여할 수 없습니다.",
-    "admin.scimCopy": "복사"
+    "admin.scimCopy": "복사",
+    "attach.scanVerifying": "파일 확인 중",
+    "attach.scanUnavailable": "파일을 사용할 수 없음",
+    "attach.scanBlocked": "파일이 차단됨",
+    "attach.scanRetry": "다시 시도",
+    "admin.navQuarantine": "격리",
+    "admin.quarantineLead": "검사기가 보류한 파일입니다. 해제나 삭제에는 사유가 필요하며 감사에 남습니다.",
+    "admin.quarantineDisabled": "이 설치에서는 악성코드 검사가 꺼져 있습니다.",
+    "admin.quarantineEmpty": "격리된 파일이 없습니다.",
+    "admin.quarantineLoadError": "격리 목록을 불러오지 못했습니다.",
+    "admin.quarantineRelease": "해제",
+    "admin.quarantineDelete": "삭제",
+    "admin.quarantineJustification": "사유",
+    "admin.quarantineColumnFile": "파일",
+    "admin.quarantineColumnState": "상태"
   }
 }

@@ -1372,6 +1372,20 @@
     "admin.scimNoConflicts": "競合はありません。",
     "admin.scimNoGroups": "まだプロビジョニングされたグループはありません。",
     "admin.scimForbiddenRole": "このロールは対応付けでは付与できません。",
-    "admin.scimCopy": "コピー"
+    "admin.scimCopy": "コピー",
+    "attach.scanVerifying": "ファイルを確認しています",
+    "attach.scanUnavailable": "ファイルを利用できません",
+    "attach.scanBlocked": "ファイルはブロックされました",
+    "attach.scanRetry": "再試行",
+    "admin.navQuarantine": "隔離",
+    "admin.quarantineLead": "スキャナーが保留したファイルです。解放または削除には理由が必要で、監査に残ります。",
+    "admin.quarantineDisabled": "この環境ではマルウェア検査がオフです。",
+    "admin.quarantineEmpty": "隔離中のファイルはありません。",
+    "admin.quarantineLoadError": "隔離リストを読み込めませんでした。",
+    "admin.quarantineRelease": "解放",
+    "admin.quarantineDelete": "削除",
+    "admin.quarantineJustification": "理由",
+    "admin.quarantineColumnFile": "ファイル",
+    "admin.quarantineColumnState": "状態"
   }
 }

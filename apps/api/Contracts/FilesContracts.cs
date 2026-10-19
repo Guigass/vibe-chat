@@ -19,7 +19,21 @@ public sealed record AttachmentResponse(
     string? ThumbnailStatus = null,
     int? Width = null,
     int? Height = null,
-    int? PageCount = null);
+    int? PageCount = null,
+    string? ScanStatus = null,
+    string? ScanReason = null);
+
+public sealed record QuarantineItemResponse(
+    Guid Id,
+    Guid ChannelId,
+    string FileName,
+    string ContentType,
+    long SizeBytes,
+    string ScanStatus,
+    string? ScanReason,
+    DateTimeOffset? ScannedAt);
+
+public sealed record QuarantineDecisionRequest(string? Justification);
 public sealed record AttachmentUploadResponse(
     Guid AttachmentId,
     string UploadUrl,

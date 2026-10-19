@@ -1372,6 +1372,20 @@
     "admin.scimNoConflicts": "No conflicts.",
     "admin.scimNoGroups": "No group has been provisioned yet.",
     "admin.scimForbiddenRole": "This role cannot be granted by a mapping.",
-    "admin.scimCopy": "Copy"
+    "admin.scimCopy": "Copy",
+    "attach.scanVerifying": "Verifying file",
+    "attach.scanUnavailable": "File unavailable",
+    "attach.scanBlocked": "File blocked",
+    "attach.scanRetry": "Try again",
+    "admin.navQuarantine": "Quarantine",
+    "admin.quarantineLead": "Files held by the scanner. Release or delete requires a justification and is audited.",
+    "admin.quarantineDisabled": "Malware scanning is off on this installation.",
+    "admin.quarantineEmpty": "No quarantined files.",
+    "admin.quarantineLoadError": "Could not load quarantine.",
+    "admin.quarantineRelease": "Release",
+    "admin.quarantineDelete": "Delete",
+    "admin.quarantineJustification": "Justification",
+    "admin.quarantineColumnFile": "File",
+    "admin.quarantineColumnState": "State"
   }
 }

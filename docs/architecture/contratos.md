@@ -158,7 +158,7 @@ Matriz endpoint × gate: [`docs/security/authz-matriz.md`](../security/authz-mat
 | ForwardedFromChannelId | Guid? | Canal de origem do encaminhamento |
 | ForwardedFrom | `{ messageId, channelId, channelName, authorName, createdAt, isDirect }`? | Cabeçalho resolvido (permanece se a origem for apagada depois); em DM, `channelName` é o display name do peer (nunca o slug `dm:guid:guid`) e `isDirect = true` |
 | ReplyCount | int | Contagem de replies (timeline do canal) |
-| Attachments | AttachmentDto[] | Metadados prontos (sem URL): `id`, `fileName`, `contentType`, `sizeBytes`, `status`, `kind`, `durationMs?`, `waveform?`, `thumbnailStatus?` (`Pending`\|`Ready`\|`Failed`), `width?`, `height?`, `pageCount?` (B-090) |
+| Attachments | AttachmentDto[] | Metadados prontos (sem URL): `id`, `fileName`, `contentType`, `sizeBytes`, `status`, `kind`, `durationMs?`, `waveform?`, `thumbnailStatus?` (`Pending`\|`Ready`\|`Failed`), `width?`, `height?`, `pageCount?` (B-090), `scanStatus?` (`NotRequired`\|`PendingScan`\|`Clean`\|`Quarantined`\|`ScanFailed`), `scanReason?` (B-131) |
 | Reactions | ReactionSummaryDto[] | `{ emoji, count, me }` agregado |
 
 `ReplyToMessageId` de outro canal → 400 `ReplyToDifferentChannel`. Inexistente → 400 `ReplyToNotFound`. Soft-delete da original: `replyTo.deleted = true`, preview vazio (UI: “Mensagem removida”).
@@ -706,9 +706,18 @@ Clientes derivam `me` a partir de `userIds` (o campo `me` só existe nas respost
 
 Usado por Presence/Realtime/Search para invalidar caches e grupos.
 
+### `attachment.scan.requested` / `attachment.scan.completed` (B-131)
+
+Com `Files:MalwareScan:Enabled` (default off), o `complete` grava `PendingScan`
+e enfileira `attachment.scan.requested`. O worker publica
+`AttachmentScanCompleted` (`status`, `scanStatus`, `scanReason` — sem storage
+key) e, se `Clean`, o outbox `files.attachment.ready`. Flag off usa o adapter
+nulo e não enfileira scan.
+
 ### `files.attachment.ready`
 
-Metadados prontos / vírus scan ok (quando existir). No `complete`, anexos
+Metadados prontos / vírus scan ok (quando a flag de scan está ligada, só depois
+de `Clean` ou release). No caminho sem scan, o `complete` segue direto. Anexos
 `image/*` e `application/pdf` entram com `thumbnailStatus=Pending`; o worker
 gera a miniatura no processamento deste outbox (nunca no hot path do envio).
 
@@ -771,6 +780,7 @@ Nomes de eventos hub (cliente):
 | `MessageDeleted` | Soft delete |
 | `ReactionChanged` | Toggle de reação (payload com resumo agregado) |
 | `AttachmentThumbnailReady` | Miniatura de anexo pronta/falha (B-090) |
+| `AttachmentScanCompleted` | Scan de anexo terminou (B-131): `status`, `scanStatus`, `scanReason` |
 | `LinkPreviewReady` | Cartão Open Graph pronto (B-091) |
 | `Typing` | Typing (TTL curto Redis); hub publica com `Clients.OthersInGroup` (B-071) — autor não recebe o próprio evento |
 | `PresenceChanged` | Presence `online`/`away`/`offline` (hub group `t:{tenantId}`) |
@@ -811,7 +821,8 @@ public interface IObjectStorage
 
 Campos de miniatura (B-090) em `files.attachments`: `ThumbnailKey`, `Width`,
 `Height`, `ThumbnailStatus` (`Pending`\|`Ready`\|`Failed`|null), `PageCount`
-(PDF). Miniatura WebP lado maior 640 px em
+(PDF). Scan (B-131): `ScanStatus`, `ScanEngine`, `ScanSignatureVersion`,
+`ScanReason`, `ScanAttempts`, `ScanRequestedAt`, `ScannedAt`. Miniatura WebP lado maior 640 px em
 `tenants/{tenantId}/channels/{channelId}/{attachmentId}/thumb.webp`. Forward
 clona os campos de thumbnail junto com `StorageKey`.
 
@@ -820,8 +831,12 @@ clona os campos de thumbnail junto com `StorageKey`.
 | Endpoint | Notas |
 |----------|-------|
 | `POST /api/v1/channels/{channelId}/attachments` | Body `{ fileName, contentType, sizeBytes, kind?, durationMs?, waveform?, width?, height? }` → URL pré-assinada PUT; exige membership + `file.upload`; `kind=Audio` exige `durationMs` e aceita `waveform` (0–100, ≤100 pts); `kind=Video` exige `durationMs`, aceita `width`/`height` |
-| `POST /api/v1/channels/{channelId}/attachments/{id}/complete` | Confirma objeto no MinIO; status `Ready`; image/PDF → `ThumbnailStatus=Pending` + outbox `files.attachment.ready` |
-| `GET /api/v1/channels/{channelId}/attachments/{id}/download` | URL pré-assinada GET do original; exige membership + `file.download` |
+| `POST /api/v1/channels/{channelId}/attachments/{id}/complete` | Confirma objeto no MinIO. Flag de scan off: `Ready` + `scanStatus=NotRequired` e, para image/PDF, `ThumbnailStatus=Pending` + outbox `files.attachment.ready`. Flag on: `PendingScan` + outbox `attachment.scan.requested` (B-131) |
+| `GET /api/v1/channels/{channelId}/attachments/{id}/download` | URL pré-assinada GET do original; exige membership + `file.download`. `PendingScan`, `Quarantined` e `ScanFailed` (fail-closed) respondem 404 |
+| `POST /api/v1/channels/{channelId}/attachments/{id}/rescan` | Reenfileira `ScanFailed`. `PendingScan` repete o estado. Flag off → 404 `MalwareScanDisabled` |
+| `GET /api/v1/workspaces/{workspaceId}/quarantine` | Lista do tenant; `file.quarantine.manage`; sem storage key |
+| `POST /api/v1/workspaces/{workspaceId}/quarantine/{id}/release` | `Clean` + audit; justificativa 3–500 |
+| `POST /api/v1/workspaces/{workspaceId}/quarantine/{id}/delete` | Apaga o objeto se não houver outra referência; audit |
 | `GET /api/v1/channels/{channelId}/attachments/{id}/thumbnail` | URL pré-assinada GET da miniatura WebP; mesma authZ do download; `404` se não `Ready`; cross-tenant → 403 |
 | `POST /api/v1/workspaces/{workspaceId}/channels/{channelId}/messages/{messageId}/attachments/{attachmentId}/transcribe` | membership + `ai.transcribe`; `{ text, language, provider }` efêmero (não persiste); `503 AiDisabled` se IA off |
 

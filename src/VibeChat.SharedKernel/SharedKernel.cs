@@ -217,6 +217,7 @@ public static class Permissions
     {
         public const string Upload = "file.upload";
         public const string Download = "file.download";
+        public const string QuarantineManage = "file.quarantine.manage";
     }
 
     public static class Search

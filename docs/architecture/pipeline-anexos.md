@@ -28,9 +28,10 @@ stateDiagram-v2
   Quarantined --> Purged
 ```
 
-Antes de B-131, `PendingScan → Clean` pode ser realizado pelo adapter nulo
-explicitamente configurado. Nunca tratar ausência acidental de scanner como
-resultado Clean em perfil que exige scanning.
+Com B-131, `PendingScan → Clean` pelo adapter nulo só existe quando
+`Files:MalwareScan:Enabled=false` (registro explícito de `NullMalwareScanner`).
+Flag ligada sem scanner, timeout esgotado ou daemon ClamAV ausente terminam em
+`ScanFailed` e não baixam no default (`FailClosed=true`).
 
 ## Invariantes
 

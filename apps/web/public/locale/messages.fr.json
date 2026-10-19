@@ -1372,6 +1372,20 @@
     "admin.scimNoConflicts": "Aucun conflit.",
     "admin.scimNoGroups": "Aucun groupe n'a encore été provisionné.",
     "admin.scimForbiddenRole": "Ce rôle ne peut pas être accordé par une correspondance.",
-    "admin.scimCopy": "Copier"
+    "admin.scimCopy": "Copier",
+    "attach.scanVerifying": "Vérification du fichier",
+    "attach.scanUnavailable": "Fichier indisponible",
+    "attach.scanBlocked": "Fichier bloqué",
+    "attach.scanRetry": "Réessayer",
+    "admin.navQuarantine": "Quarantaine",
+    "admin.quarantineLead": "Fichiers retenus par le vérificateur. Libérer ou supprimer exige une justification et reste dans l'audit.",
+    "admin.quarantineDisabled": "La vérification des logiciels malveillants est désactivée sur cette installation.",
+    "admin.quarantineEmpty": "Aucun fichier en quarantaine.",
+    "admin.quarantineLoadError": "Impossible de charger la quarantaine.",
+    "admin.quarantineRelease": "Libérer",
+    "admin.quarantineDelete": "Supprimer",
+    "admin.quarantineJustification": "Justification",
+    "admin.quarantineColumnFile": "Fichier",
+    "admin.quarantineColumnState": "État"
   }
 }

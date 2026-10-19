@@ -60,6 +60,8 @@ export interface MessageCreatedPayload {
     fileName: string;
     contentType: string;
     sizeBytes: number;
+    status?: string;
+    scanStatus?: string | null;
   }>;
   poll?: unknown;
   announcement?: unknown;
@@ -137,6 +139,22 @@ export interface PinChangedEvent {
   channelId: string;
   pinned: boolean;
   byUserId: string;
+}
+
+export interface AttachmentScanCompletedEvent {
+  attachmentId: string;
+  channelId: string;
+  status: string;
+  scanStatus: string | null;
+  scanReason?: string | null;
+}
+
+export interface AttachmentScanCompletedPayload {
+  attachmentId?: string;
+  channelId?: string;
+  status?: string;
+  scanStatus?: string | null;
+  scanReason?: string | null;
 }
 
 export interface AttachmentThumbnailReadyEvent {

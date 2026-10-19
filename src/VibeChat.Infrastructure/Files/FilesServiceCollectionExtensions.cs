@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Minio;
 using VibeChat.Files;
 using VibeChat.Messaging;
@@ -24,6 +25,22 @@ internal static class FilesServiceCollectionExtensions
             return new MinioPresignClient(client);
         });
         services.AddScoped<IObjectStorage, MinioObjectStorage>();
+        services.AddScoped<IMalwareScanner>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<MalwareScanOptions>>().Value;
+            var timeout = TimeSpan.FromSeconds(Math.Clamp(options.TimeoutSeconds, 1, 30));
+            if (!options.Enabled)
+            {
+                return new NullMalwareScanner();
+            }
+
+            if (string.Equals(options.Engine, "clamav", StringComparison.OrdinalIgnoreCase))
+            {
+                return new ClamAvMalwareScanner(options.ClamAvEndpoint, timeout);
+            }
+
+            return new PolicyMalwareScanner(timeout);
+        });
         services.AddScoped<AttachmentThumbnailGenerator>();
         services.AddScoped<LinkPreviewSettingsResolver>();
         services.AddScoped<LinkPreviewFetcher>();

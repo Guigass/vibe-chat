@@ -30,6 +30,9 @@ public static class AuditActions
     public const string MessagePin = "message.pin";
     public const string MessageUnpin = "message.unpin";
     public const string AttachmentUpload = "attachment.upload";
+    public const string AttachmentScan = "attachment.scan";
+    public const string AttachmentQuarantineRelease = "attachment.quarantine.release";
+    public const string AttachmentQuarantineDelete = "attachment.quarantine.delete";
     public const string MemberRoleChange = "member.role.change";
     public const string MemberInvite = "member.invite";
     public const string ContactGroupCreate = "contact_group.create";

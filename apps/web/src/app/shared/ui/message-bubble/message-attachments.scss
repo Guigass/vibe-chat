@@ -22,3 +22,20 @@
   line-height: 1.45;
   word-break: break-word;
 }
+
+.vc-msg__scan {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--vc-ink-muted);
+}
+
+.vc-msg__scan-retry {
+  margin-top: 0.25rem;
+  border: 0;
+  background: transparent;
+  color: var(--vc-brand);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0;
+}

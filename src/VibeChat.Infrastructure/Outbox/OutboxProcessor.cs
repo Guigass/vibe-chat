@@ -159,6 +159,28 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     continue;
                 }
 
+                if (outbox.Type == AttachmentScanRunner.RequestedEvent)
+                {
+                    var completed = await AttachmentScanRunner.TryCompleteAsync(
+                        scope.ServiceProvider,
+                        dbContext,
+                        publisher,
+                        outbox,
+                        cancellationToken);
+                    if (completed)
+                    {
+                        outbox.ProcessedAt = now;
+                        outbox.Error = null;
+                    }
+                    else
+                    {
+                        outbox.Attempts++;
+                        outbox.Error = "ScanRetry";
+                    }
+
+                    continue;
+                }
+
                 if (CommitmentPolicies.IsCommitmentEvent(outbox.Type))
                 {
                     await VibeChat.Infrastructure.Messaging.CommitmentEventFanout.DispatchAsync(

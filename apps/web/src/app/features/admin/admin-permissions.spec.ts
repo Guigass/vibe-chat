@@ -23,6 +23,7 @@ describe('admin-permissions (B-106)', () => {
       'import',
       'diagnostics',
       'scim',
+      'quarantine',
     ]);
     expect(hasWorkspaceAdmin('Admin')).toBe(true);
   });
