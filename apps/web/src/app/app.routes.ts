@@ -40,6 +40,12 @@ export const routes: Routes = [
     loadComponent: () => import('./layout/shell.page').then((m) => m.ShellPage),
   },
   {
+    path: 'compliance',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/compliance/compliance.page').then((m) => m.CompliancePage),
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, adminRouteGuard],
     loadComponent: () =>

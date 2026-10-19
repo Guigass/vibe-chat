@@ -139,6 +139,11 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<PollVote> PollVotes => Set<PollVote>();
     public DbSet<Announcement> Announcements => Set<Announcement>();
     public DbSet<AnnouncementAcknowledgement> AnnouncementAcknowledgements => Set<AnnouncementAcknowledgement>();
+    public DbSet<ComplianceGrant> ComplianceGrants => Set<ComplianceGrant>();
+    public DbSet<LegalHold> LegalHolds => Set<LegalHold>();
+    public DbSet<DiscoveryCase> DiscoveryCases => Set<DiscoveryCase>();
+    public DbSet<DiscoveryExportRecord> DiscoveryExports => Set<DiscoveryExportRecord>();
+    public DbSet<CustodyEvent> CustodyEvents => Set<CustodyEvent>();
 
     public override int SaveChanges()
     {
@@ -1508,6 +1513,95 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.ToTable("link_preview_settings", "messaging");
             entity.HasKey(x => x.TenantId);
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ComplianceGrant>(entity =>
+        {
+            entity.ToTable("grants", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.GrantedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Capability).HasMaxLength(32);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(LegalHoldLimits.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.UserId, x.Capability }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.GrantedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<LegalHold>(entity =>
+        {
+            entity.ToTable("legal_holds", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.RequestedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.ApprovedBy).HasConversion(
+                v => v.HasValue ? v.Value.Value : (Guid?)null,
+                v => v.HasValue ? new UserId(v.Value) : null);
+            entity.Property(x => x.ReleaseRequestedBy).HasConversion(
+                v => v.HasValue ? v.Value.Value : (Guid?)null,
+                v => v.HasValue ? new UserId(v.Value) : null);
+            entity.Property(x => x.ReleaseApprovedBy).HasConversion(
+                v => v.HasValue ? v.Value.Value : (Guid?)null,
+                v => v.HasValue ? new UserId(v.Value) : null);
+            entity.Property(x => x.ScopeKind).HasMaxLength(32);
+            entity.Property(x => x.Status).HasMaxLength(32);
+            entity.Property(x => x.Reason).HasMaxLength(LegalHoldLimits.MaxReasonLength);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(LegalHoldLimits.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.Status });
+            entity.HasIndex(x => new { x.TenantId, x.RequestedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<DiscoveryCase>(entity =>
+        {
+            entity.ToTable("discovery_cases", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Title).HasMaxLength(LegalHoldLimits.MaxTitleLength);
+            entity.Property(x => x.Reason).HasMaxLength(LegalHoldLimits.MaxReasonLength);
+            entity.Property(x => x.Status).HasMaxLength(16);
+            entity.Property(x => x.QueryJson).HasColumnType("jsonb");
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(LegalHoldLimits.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.CreatedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.CreatedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<DiscoveryExportRecord>(entity =>
+        {
+            entity.ToTable("discovery_exports", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Status).HasMaxLength(16);
+            entity.Property(x => x.ManifestJson).HasColumnType("text");
+            entity.Property(x => x.Checksum).HasMaxLength(64);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(LegalHoldLimits.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.CreatedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.CaseId, x.CreatedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<CustodyEvent>(entity =>
+        {
+            entity.ToTable("custody_events", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ActorUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Action).HasMaxLength(64);
+            entity.Property(x => x.Reason).HasMaxLength(LegalHoldLimits.MaxReasonLength);
+            entity.Property(x => x.PayloadHash).HasMaxLength(64);
+            entity.Property(x => x.PreviousHash).HasMaxLength(64);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(LegalHoldLimits.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.ActorUserId, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.OccurredAt });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
     }

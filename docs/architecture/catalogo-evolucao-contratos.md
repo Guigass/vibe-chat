@@ -104,6 +104,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Features:ChatBackup:Enabled` | instance | false | B-172 | export pontual B-046 + scripts B-031 |
 | `Features:SupportBundle:Enabled` | instance | false | B-154 | health/runbooks permanecem |
 | `Features:AvailabilityCalendar:Enabled` | instance | false | B-116 | `GET /me/availability/calendar` → 404; status e disponibilidade seguem ativos |
+| `Features:LegalHold:Enabled` | instance | false | B-129 | API de compliance → 404 `LegalHoldDisabled`; hold já ativo continua bloqueando o purge |
 
 Nomes de binding podem mudar no ADR, mas semântica/default não muda
 silenciosamente.

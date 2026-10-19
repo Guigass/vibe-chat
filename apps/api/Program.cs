@@ -286,6 +286,7 @@ v1.MapImports();
 v1.MapDiagnostics();
 v1.MapDevelopment(app);
 v1.MapScimAdmin();
+v1.MapCompliance();
 
 app.MapScim();
 app.MapHub<ChatHub>("/hubs/chat").RequireAuthorization();

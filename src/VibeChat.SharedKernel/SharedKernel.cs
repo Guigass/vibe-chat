@@ -282,6 +282,12 @@ public static class Permissions
     {
         public const string Manage = "connector.manage";
     }
+
+    public static class Compliance
+    {
+        public const string Hold = "compliance.hold";
+        public const string Discovery = "compliance.discovery";
+    }
 }
 
 public enum Role

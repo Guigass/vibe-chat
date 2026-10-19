@@ -115,6 +115,18 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Histórico normal | Continua redigindo body deletado + ACL de canal |
 | Dashboard/health/version | `GET /admin/dashboard`, `/admin/health-summary`, `/admin/version` também exigem `admin.dashboard` (B-175); membership sozinha → 403 |
 
+### Legal hold e eDiscovery (B-129 / ADR-042)
+
+| Item | Controle |
+|------|----------|
+| AuthZ | `compliance.hold` e `compliance.discovery` não estão em `workspace.admin`. O admin só nomeia outra pessoa |
+| Segregação | Quem pede o hold ou a remoção não aprova. Auto-nomeação → 409 `ComplianceSelfGrant` |
+| Escopo | Purge só preserva o escopo do hold ativo e não expirado. Fora dele a retenção segue |
+| Export | `vibechat.ediscovery.export.v1`, SHA-256 do manifesto, sem snapshot parcial acima de 200 itens |
+| Audit | `compliance.custody_events` é append-only. Ação também vai para `audit.audit_events`, sem body |
+| Cross-tenant | RLS FORCE em `compliance.*`. Outro tenant não lê hold nem export |
+| Flag | `Features:LegalHold:Enabled` off → 404 `LegalHoldDisabled`. Hold já ativo continua no purge |
+
 ### Export de workspace (B-046)
 
 | Item | Controle |
@@ -187,7 +199,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Tombstone | Corpo `<system:moved>` sem id de destino. Quem não é membro não recebe id, seq nem body do destino |
 | Seq | Origem conserva o seq; destino recebe identidade e seq novos |
 | Export / purge | Versões entram no ZIP; soft-delete as preserva; purge de retenção remove versões e moves |
-| Hold | B-129 ainda não suspende o purge; as linhas existem para esse hold |
+| Hold | Hold ativo (B-129) suspende o purge do escopo; versão e move da mensagem preservada permanecem |
 
 ### B-107 / ADR-025 — Política de edição e exclusão
 

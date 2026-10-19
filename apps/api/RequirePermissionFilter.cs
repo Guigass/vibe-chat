@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using VibeChat.Administration;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
 using VibeChat.Infrastructure;
@@ -130,13 +131,47 @@ internal sealed class RequirePermissionFilter : IEndpointFilter
 
         foreach (var permission in permissions)
         {
-            if (!await checker.HasPermissionAsync(tenantId.Value, userId, permission, http.RequestAborted))
+            if (await checker.HasPermissionAsync(tenantId.Value, userId, permission, http.RequestAborted))
             {
-                return Results.Forbid();
+                continue;
             }
+
+            if (await HasComplianceGrantAsync(db, tenantId.Value, userId, permission, route, http.RequestAborted))
+            {
+                continue;
+            }
+
+            return Results.Forbid();
         }
 
         return await next(context);
+    }
+
+    private static async Task<bool> HasComplianceGrantAsync(
+        VibeChatDbContext db,
+        TenantId tenantId,
+        UserId userId,
+        string permission,
+        RouteValueDictionary route,
+        CancellationToken cancellationToken)
+    {
+        var capability = permission switch
+        {
+            Permissions.Compliance.Hold => ComplianceCapabilities.Hold,
+            Permissions.Compliance.Discovery => ComplianceCapabilities.Discovery,
+            _ => null
+        };
+        if (capability is null || !TryGetGuid(route, "workspaceId", out var workspaceId))
+        {
+            return false;
+        }
+
+        return await db.ComplianceGrants.AsNoTracking().AnyAsync(
+            x => x.TenantId == tenantId
+                && x.WorkspaceId == new WorkspaceId(workspaceId)
+                && x.UserId == userId
+                && x.Capability == capability,
+            cancellationToken);
     }
 
     private static bool TryGetGuid(RouteValueDictionary route, string key, out Guid value)
