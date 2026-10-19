@@ -415,7 +415,20 @@ Authority do Keycloak; `identity.external_identities` guarda o par sem
 rebind responde 409 `IdentityLinkConflict` e não altera `workspace_members`;
 claims de papel do broker não são lidas; a lista de IdPs não devolve segredo;
 falha do diretório não derruba o login. SLO externo é best-effort.
-Deprovisionamento de sessão continua em B-128. ADR-038.
+Deprovisionamento de sessão está em B-128 / ADR-039. ADR-038.
+
+## SCIM 2.0 (B-128)
+
+Superfície implementada, R3. A ameaça principal é um token de tenant enumerar
+outro tenant, o mapeamento elevar a `PlatformOwner`/`Admin`, o e-mail adotar
+um admin, ou o segredo voltar na listagem. O controle é: flag
+`Identity:Scim:Enabled` off por default; RLS `FORCE` nas tabelas `identity.scim_*`
+e `identity.access_revocations`; o bearer só existe como hash e a leitura antes
+do tenant usa `app.scim_token_hash`; `externalId` é único por tenant; e-mail não
+escolhe perfil que não seja `pending:`; papéis mapeáveis são Member, Moderator,
+Auditor e Guest; conflito de papel não rebaixa; desativar remove membership e
+grava revogação local sem apagar mensagem; adapter Keycloak off não bloqueia o
+comando. Member recebe 403. Outro tenant recebe lista vazia / 404. ADR-039.
 
 ## Conectores bidirecionais (B-127)
 

@@ -212,6 +212,39 @@ public static class RlsSession
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// B-128: SET LOCAL the SCIM token hash so RLS can reveal the single
+    /// matching <c>identity.scim_tokens</c> row before tenant is known.
+    /// </summary>
+    public static async Task SetScimTokenHashAsync(
+        VibeChatDbContext dbContext,
+        string tokenHash,
+        CancellationToken cancellationToken)
+    {
+        var connection = dbContext.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+        {
+            await dbContext.Database.OpenConnectionAsync(cancellationToken);
+        }
+
+        if (dbContext.Database.CurrentTransaction is null)
+        {
+            await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        }
+
+        var transaction = dbContext.Database.CurrentTransaction?.GetDbTransaction()
+            ?? throw new InvalidOperationException("RLS requires an open database transaction for SET LOCAL.");
+
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = "SELECT set_config('app.scim_token_hash', @hash, true)";
+        var hash = command.CreateParameter();
+        hash.ParameterName = "hash";
+        hash.Value = tokenHash;
+        command.Parameters.Add(hash);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     public static async Task CommitAsync(VibeChatDbContext dbContext, CancellationToken cancellationToken = default)
     {
         if (dbContext.Database.CurrentTransaction is { } tx)

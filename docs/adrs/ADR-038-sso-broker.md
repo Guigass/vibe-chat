@@ -39,7 +39,7 @@ SAML. O pacote R3 exige flag off, ADR, threat model e rollback no mesmo PR.
    Keycloak não pode vincular conta existente por e-mail automaticamente.
 7. Logout do app continua o end-session OIDC do Keycloak. SLO até o IdP
    externo é best-effort e depende do IdP. Revogação de sessão por
-   deprovisionamento continua em B-128.
+   deprovisionamento está em B-128 / ADR-039.
 
 ## Alternativas
 

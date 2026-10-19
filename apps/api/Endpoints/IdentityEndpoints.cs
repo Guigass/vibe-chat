@@ -17,6 +17,11 @@ internal static class IdentityEndpoints
         {
             var profile = await EnsureProfileAsync(http.User, db, clock, ct);
             await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+            if (await RequestAuth.IsFullyRevokedAsync(db, profile.Id, ct))
+            {
+                return Results.Json(new { code = "SessionRevoked" }, statusCode: StatusCodes.Status401Unauthorized);
+            }
+
             var roles = await db.WorkspaceMembers.IgnoreQueryFilters().Where(x => x.UserId == profile.Id).Select(x => x.Role).Distinct().ToArrayAsync(ct);
             if (roles.Length == 0
                 && await db.ChannelMembers.IgnoreQueryFilters().AnyAsync(x => x.UserId == profile.Id && x.LeftAt == null, ct))
@@ -53,6 +58,11 @@ internal static class IdentityEndpoints
         {
             var profile = await EnsureProfileAsync(http.User, db, clock, ct);
             await BeginRlsUserAsync(db, tenant, profile.Id, ct);
+            if (await RequestAuth.IsFullyRevokedAsync(db, profile.Id, ct))
+            {
+                return Results.Json(new { code = "SessionRevoked" }, statusCode: StatusCodes.Status401Unauthorized);
+            }
+
             var locale = (request.Locale ?? string.Empty).Trim();
             if (!UserLocales.IsSupported(locale))
             {

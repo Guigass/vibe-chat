@@ -252,6 +252,14 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | PUT | `/admin/workspaces/{workspaceId:guid}/bots/{botId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Sem token no body |
 | POST | `/admin/workspaces/{workspaceId:guid}/bots/{botId:guid}/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Token só na resposta |
 | POST | `/admin/workspaces/{workspaceId:guid}/bots/{botId:guid}/revoke` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Invalida na hora |
+| GET | `/admin/workspaces/{workspaceId:guid}/scim` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-128; flag off → 404 `ScimDisabled`; sem secret |
+| POST | `/admin/workspaces/{workspaceId:guid}/scim/tokens` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Segredo só na criação |
+| POST | `/admin/workspaces/{workspaceId:guid}/scim/tokens/{tokenId:guid}/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Segredo só na resposta |
+| DELETE | `/admin/workspaces/{workspaceId:guid}/scim/tokens/{tokenId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Invalida na hora |
+| POST | `/admin/workspaces/{workspaceId:guid}/scim/mappings/dry-run` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Não grava membership |
+| POST | `/admin/workspaces/{workspaceId:guid}/scim/mappings` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Papel allowlisted |
+| DELETE | `/admin/workspaces/{workspaceId:guid}/scim/mappings/{mappingId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Remove grant do mapeamento |
+| POST | `/admin/workspaces/{workspaceId:guid}/scim/provisioning/users` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Mesmo comando do SCIM |
 | GET | `/admin/workspaces/{workspaceId:guid}/plugins` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-110; flag off → 404; sem secret |
 | POST | `/admin/workspaces/{workspaceId:guid}/plugins` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Built-in ou manifesto; token só na criação |
 | PATCH | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | `enabled`; outro workspace → 404 |

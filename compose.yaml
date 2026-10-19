@@ -317,6 +317,8 @@ services:
       Authentication__MetadataAddress: http://keycloak:8080${KEYCLOAK_HTTP_RELATIVE_PATH:-}/realms/${KEYCLOAK_REALM:-vibechat}/.well-known/openid-configuration
       Authentication__Audience: ${OIDC_API_AUDIENCE:-vibechat-api}
       Authentication__RequireHttpsMetadata: "false"
+      Identity__Scim__Enabled: ${IDENTITY_SCIM_ENABLED:-false}
+      Identity__Scim__KeycloakAdapter: ${IDENTITY_SCIM_KEYCLOAK_ADAPTER:-false}
       Identity__Sso__Enabled: ${IDENTITY_SSO_ENABLED:-false}
       Identity__Sso__KeycloakBaseUrl: http://keycloak:8080${KEYCLOAK_HTTP_RELATIVE_PATH:-}
       Identity__Sso__Realm: ${KEYCLOAK_REALM:-vibechat}

@@ -1,0 +1,120 @@
+<article class="admin-panel">
+  <p class="admin-panel__lead">{{ ui.adminScimLead }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty">{{ ui.adminLoadingSettings }}</p>
+  } @else if (disabled()) {
+    <p class="admin-empty">{{ ui.adminScimDisabled }}</p>
+  } @else if (loadError()) {
+    <p class="admin-empty">{{ ui.adminScimLoadError }}</p>
+  } @else {
+    <form class="admin-filters" (submit)="$event.preventDefault(); createToken()">
+      <label class="admin-filters__field">
+        <span>{{ ui.adminScimTokenName }}</span>
+        <input
+          [value]="tokenName()"
+          (input)="tokenName.set($any($event.target).value)"
+          [attr.aria-label]="ui.adminScimTokenName"
+        />
+      </label>
+      <button type="submit" class="admin-btn" [disabled]="busy() || !tokenName().trim()">
+        {{ ui.adminScimCreateToken }}
+      </button>
+    </form>
+
+    @if (forbidden()) {
+      <p class="admin-empty">{{ ui.adminScimForbiddenRole }}</p>
+    }
+    @if (saveError()) {
+      <p class="admin-empty">{{ ui.adminScimSaveError }}</p>
+    }
+    @if (secret(); as value) {
+      <p class="admin-feedback">{{ ui.adminBotTokenOnce }}</p>
+      <p class="admin-panel__lead">
+        <code>{{ value }}</code>
+        <button type="button" class="admin-btn" (click)="copySecret()">{{ ui.adminScimCopy }}</button>
+      </p>
+    }
+
+    @if (tokens().length === 0) {
+      <p class="admin-empty">{{ ui.adminScimEmpty }}</p>
+    } @else {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.adminScimTokenName }}</th>
+              <th>{{ ui.adminScimLastUsed }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (token of tokens(); track token.id) {
+              <tr>
+                <td>{{ token.name }} · {{ token.last4 }}</td>
+                <td>{{ lastUsed(token.lastUsedAt) }}</td>
+                <td>
+                  <button type="button" class="admin-btn" [disabled]="busy()" (click)="rotate(token.id)">
+                    {{ ui.adminScimRotate }}
+                  </button>
+                  @if (confirmRevokeId() === token.id) {
+                    <button type="button" class="admin-btn" [disabled]="busy()" (click)="revoke(token.id)">
+                      {{ ui.adminScimRevokeConfirm }}
+                    </button>
+                  } @else {
+                    <button type="button" class="admin-btn" [disabled]="busy()" (click)="askRevoke(token.id)">
+                      {{ ui.adminScimRevoke }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <h2 class="admin-panel__lead">{{ ui.adminScimMappings }}</h2>
+    @if (groups().length === 0) {
+      <p class="admin-empty">{{ ui.adminScimNoGroups }}</p>
+    } @else {
+      <form class="admin-filters" (submit)="$event.preventDefault(); dryRun()">
+        <label class="admin-filters__field">
+          <span>{{ ui.adminScimGroup }}</span>
+          <select
+            [value]="groupId()"
+            (change)="groupId.set($any($event.target).value)"
+            [attr.aria-label]="ui.adminScimGroup"
+          >
+            @for (group of groups(); track group.id) {
+              <option [value]="group.id">{{ group.displayName }}</option>
+            }
+          </select>
+        </label>
+        <label class="admin-filters__field">
+          <span>{{ ui.adminRole }}</span>
+          <select [value]="role()" (change)="role.set($any($event.target).value)" [attr.aria-label]="ui.adminRole">
+            @for (item of roles; track item) {
+              <option [value]="item">{{ roleLabel(item) }}</option>
+            }
+          </select>
+        </label>
+        <button type="submit" class="admin-btn" [disabled]="busy()">{{ ui.adminScimDryRun }}</button>
+        <button type="button" class="admin-btn" [disabled]="busy()" (click)="applyMapping()">
+          {{ ui.adminScimApplyMapping }}
+        </button>
+      </form>
+
+      @if (preview(); as result) {
+        <p class="admin-feedback">
+          {{ ui.adminScimAdds }}: {{ result.adds.length }}.
+          @if (result.conflicts.length === 0) {
+            {{ ui.adminScimNoConflicts }}
+          } @else {
+            {{ ui.adminScimConflicts }}: {{ result.conflicts.length }}.
+          }
+        </p>
+      }
+    }
+  }
+</article>

@@ -5,6 +5,7 @@ using VibeChat.Administration;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
+using VibeChat.Identity;
 using VibeChat.Messaging;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
@@ -27,6 +28,8 @@ internal static class PersistenceServiceCollectionExtensions
         services.AddScoped<IAuditWriter, EfAuditWriter>();
         services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
         services.AddScoped<IConversationSequenceStore, ConversationSequenceStore>();
+        services.AddScoped<IExternalSessionRevoker, NoopExternalSessionRevoker>();
+        services.AddScoped<IProvisioningPort, ScimProvisioningService>();
         return services;
     }
 

@@ -86,6 +86,20 @@ internal static class RequestAuth
         return profile;
     }
 
+    public static async Task<bool> IsFullyRevokedAsync(
+        VibeChatDbContext db,
+        UserId userId,
+        CancellationToken ct)
+    {
+        var revoked = await db.AccessRevocations.IgnoreQueryFilters().AnyAsync(x => x.UserId == userId, ct);
+        if (!revoked)
+        {
+            return false;
+        }
+
+        return !await db.WorkspaceMembers.IgnoreQueryFilters().AnyAsync(x => x.UserId == userId, ct);
+    }
+
     public static async Task BeginRlsUserAsync(
         VibeChatDbContext db,
         ITenantContext tenant,
@@ -108,6 +122,14 @@ internal static class RequestAuth
         var workspace = await db.Workspaces.IgnoreQueryFilters()
             .FirstOrDefaultAsync(x => x.Id == workspaceId, ct);
         if (workspace is null)
+        {
+            return null;
+        }
+
+        var revoked = await db.AccessRevocations.IgnoreQueryFilters().AnyAsync(
+            x => x.TenantId == workspace.TenantId && x.UserId == userId,
+            ct);
+        if (revoked)
         {
             return null;
         }

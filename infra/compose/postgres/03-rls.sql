@@ -7,6 +7,7 @@
 --   app.job_role   — 'outbox' | 'retention' | 'polls' | 'schedule' | 'digest' | 'tasks' | 'automation' | 'connector' for worker cross-tenant claim paths only
 --   app.invite_token_hash — B-040 accept lookup only; reveals the single matching invite row
 --   app.integration_token_hash — B-109 token lookup only; reveals the single matching bot token row
+--   app.scim_token_hash — B-128 token lookup only; reveals the single matching SCIM token row
 --
 -- Column names match EF defaults ("TenantId").
 
@@ -50,6 +51,14 @@ LANGUAGE sql
 STABLE
 AS $$
   SELECT NULLIF(current_setting('app.integration_token_hash', true), '');
+$$;
+
+CREATE OR REPLACE FUNCTION app.current_scim_token_hash()
+RETURNS text
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT NULLIF(current_setting('app.scim_token_hash', true), '');
 $$;
 
 -- ---------------------------------------------------------------------------
@@ -869,6 +878,68 @@ CREATE POLICY tenant_isolation_support_repair_jobs ON support.repair_jobs
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS identity.scim_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.scim_tokens FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.scim_principals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.scim_principals FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.scim_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.scim_groups FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.scim_group_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.scim_group_members FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.scim_group_mappings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.scim_group_mappings FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.scim_membership_grants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.scim_membership_grants FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.access_revocations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.access_revocations FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_scim_tokens ON identity.scim_tokens;
+CREATE POLICY tenant_isolation_scim_tokens ON identity.scim_tokens
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR (
+            app.current_scim_token_hash() IS NOT NULL
+            AND "TokenHash" = app.current_scim_token_hash()
+        )
+    )
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_scim_principals ON identity.scim_principals;
+CREATE POLICY tenant_isolation_scim_principals ON identity.scim_principals
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_scim_groups ON identity.scim_groups;
+CREATE POLICY tenant_isolation_scim_groups ON identity.scim_groups
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_scim_group_members ON identity.scim_group_members;
+CREATE POLICY tenant_isolation_scim_group_members ON identity.scim_group_members
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_scim_group_mappings ON identity.scim_group_mappings;
+CREATE POLICY tenant_isolation_scim_group_mappings ON identity.scim_group_mappings
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_scim_membership_grants ON identity.scim_membership_grants;
+CREATE POLICY tenant_isolation_scim_membership_grants ON identity.scim_membership_grants
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_access_revocations ON identity.access_revocations;
+CREATE POLICY tenant_isolation_access_revocations ON identity.access_revocations
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR (
+            app.current_tenant_id() IS NULL
+            AND "UserId" = app.current_user_id()
+        )
+    )
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 -- ---------------------------------------------------------------------------
 -- Grants for runtime / backup (migrator owns objects via migration connection)
 -- ---------------------------------------------------------------------------
@@ -904,6 +975,7 @@ BEGIN
     EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_job_role() TO %I', app_role);
     EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_invite_token_hash() TO %I', app_role);
     EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_integration_token_hash() TO %I', app_role);
+    EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_scim_token_hash() TO %I', app_role);
   END IF;
 
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = backup_role) THEN
