@@ -83,6 +83,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Identity:Sso:Enabled` | instance | false | B-164 | lista SSO → 404 `SsoDisabled`; claims de broker ignorados; login Keycloak segue |
 | `Identity:Scim:Enabled` | instance | false | B-128 | `/scim/v2` e admin SCIM → 404 `ScimDisabled`; chat e login seguem |
 | `Identity:Scim:KeycloakAdapter` | instance | false | B-128 | revogação local segue; falha do IdP não desfaz o deprovision |
+| `Integrations:EventSchemas:Enabled` | instance | false | B-139 | webhook segue com o body atual; `/admin/event-schemas` → 404 `EventSchemasDisabled` |
 
 ## Registro inicial de flags futuras
 

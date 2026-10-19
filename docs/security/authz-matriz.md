@@ -269,6 +269,9 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | PATCH | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | `enabled`; outro workspace → 404 |
 | DELETE | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Revoga o token na mesma transação |
 | POST | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Token só na resposta |
+| GET | `/admin/event-schemas` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; flag off → 404 `EventSchemasDisabled`; sem dado de tenant |
+| GET | `/admin/event-schemas/{eventType}/versions/{schemaVersion:int}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; versão desconhecida → 404 `UnknownSchemaVersion` |
+| POST | `/admin/event-schemas/check` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; não persiste o documento; teto 16 KiB |
 | GET | `/admin/workspaces/{workspaceId:guid}/templates` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-115; built-ins + custom do workspace |
 | POST | `/admin/workspaces/{workspaceId:guid}/templates/validate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Rejeita campo/versão desconhecidos |
 | POST | `/admin/workspaces/{workspaceId:guid}/templates/preview` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Dry-run; não persiste |

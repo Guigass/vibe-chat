@@ -71,6 +71,8 @@ public static class WebhookDelivery
     public const string EventHeader = "X-VibeChat-Event";
     public const string SignatureHeader = "X-VibeChat-Signature";
     public const string DeliveryIdHeader = "X-VibeChat-Delivery-Id";
+    public const string SchemaVersionHeader = "X-VibeChat-Schema-Version";
+    public const string EventTypeHeader = "X-VibeChat-Event-Type";
     public const string SignaturePrefix = "sha256=";
 
     public static string ComputeSignature(string secret, string body)

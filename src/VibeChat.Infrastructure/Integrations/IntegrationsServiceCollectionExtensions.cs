@@ -8,6 +8,7 @@ internal static class IntegrationsServiceCollectionExtensions
 {
     internal static IServiceCollection AddIntegrationsInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<EventSchemaOptions>(configuration.GetSection(EventSchemaOptions.SectionName));
         services.Configure<AutomationOptions>(configuration.GetSection(AutomationOptions.SectionName));
         services.Configure<ConnectorOptions>(configuration.GetSection(ConnectorOptions.SectionName));
         services.AddScoped<AutomationService>();

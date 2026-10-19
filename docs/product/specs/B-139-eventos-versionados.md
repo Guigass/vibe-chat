@@ -39,11 +39,11 @@ responsabilidade do canal de entrega.
 
 ## Aceite
 
-- [ ] CI detecta breaking change.
-- [ ] Duas versões coexistem na janela.
-- [ ] Exemplo valida contra schema.
-- [ ] Consumer desconhecido falha observavelmente.
-- [ ] Docs são geradas da fonte canônica.
+- [x] CI detecta breaking change.
+- [x] Duas versões coexistem na janela.
+- [x] Exemplo valida contra schema.
+- [x] Consumer desconhecido falha observavelmente.
+- [x] Docs são geradas da fonte canônica.
 
 ## Testes
 

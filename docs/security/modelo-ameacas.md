@@ -66,6 +66,11 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 17. **Group DM** — vazamento de histórico ao adicionar participante; peer de outro tenant/workspace; hub após sair (B-101 / ADR-023)
 18. **Membros de canal privado** — add de usuário de outro workspace/tenant; membro removido continua lendo histórico ou no hub (B-186)
 19. **Grupo de contatos** — departamento criado por membro; leitura de grupo pessoal alheio; tratar o grupo como ACL de canal/DM (B-166)
+20. **Schema de eventos** — documento de check grande, payload de webhook em log,
+    ou versão desconhecida seguindo para URL externa (B-139 / ADR-041).
+    `Integrations:EventSchemas:Enabled` nasce off. Ligada, tipo/versão
+    desconhecidos não fazem POST; o catálogo é sintético e só `workspace.admin`
+    lê; o check para em 16 KiB e não grava o documento.
 
 ## Controles mínimos obrigatórios (fase 1)
 

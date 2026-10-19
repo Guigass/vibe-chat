@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -41,6 +42,7 @@ public sealed class OutboundWebhookDispatcher(
     WebhookEndpointResolver webhookResolver,
     IHttpClientFactory httpClientFactory,
     IClock clock,
+    IOptions<EventSchemaOptions> schemaOptions,
     ILogger<OutboundWebhookDispatcher> logger) : IOutboundWebhookDispatcher
 {
     public const string HttpClientName = "OutboundWebhooks";
@@ -185,6 +187,11 @@ public sealed class OutboundWebhookDispatcher(
             {
                 error = "WebhookIncomplete";
             }
+            else if (schemaOptions.Value.Enabled
+                && !TryAcceptSchema(eventName, payloadJson, deliveryId, tenantId, out var decision))
+            {
+                error = decision.Reason;
+            }
             else
             {
                 var client = httpClientFactory.CreateClient(HttpClientName);
@@ -197,6 +204,14 @@ public sealed class OutboundWebhookDispatcher(
                 request.Headers.TryAddWithoutValidation(
                     WebhookDelivery.SignatureHeader,
                     WebhookDelivery.ComputeSignature(endpoint.SigningSecret!.Trim(), payloadJson));
+                if (schemaOptions.Value.Enabled)
+                {
+                    var accepted = PublicEventCatalog.Accept(eventName, payloadJson);
+                    request.Headers.TryAddWithoutValidation(WebhookDelivery.EventTypeHeader, accepted.EventType);
+                    request.Headers.TryAddWithoutValidation(
+                        WebhookDelivery.SchemaVersionHeader,
+                        accepted.SchemaVersion.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                }
 
                 using var response = await client.SendAsync(request, cancellationToken);
                 httpStatus = (int)response.StatusCode;
@@ -246,5 +261,31 @@ public sealed class OutboundWebhookDispatcher(
         }
 
         return (httpStatus, error);
+    }
+
+    private bool TryAcceptSchema(
+        string eventName,
+        string payloadJson,
+        Guid deliveryId,
+        TenantId tenantId,
+        out EventSchemaDecision decision)
+    {
+        decision = PublicEventCatalog.Accept(eventName, payloadJson);
+        if (decision.Accepted)
+        {
+            return true;
+        }
+
+        VibeChatMetrics.EventSchemaRejected.Add(
+            1,
+            new KeyValuePair<string, object?>("reason", decision.Reason),
+            new KeyValuePair<string, object?>("event_type", decision.EventType));
+        logger.LogWarning(
+            "Public event {EventName} rejected as {Reason} for delivery {DeliveryId} tenant {TenantId}",
+            eventName,
+            decision.Reason,
+            deliveryId,
+            tenantId.Value);
+        return false;
     }
 }
