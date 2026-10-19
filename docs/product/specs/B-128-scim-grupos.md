@@ -47,13 +47,13 @@ os endpoints.
 
 ## Aceite
 
-- [ ] Create/update/deactivate idempotentes.
-- [ ] Token de tenant A não enumera B.
-- [ ] Deactivate revoga sessão/acesso rapidamente.
-- [ ] Mapping não cria papel proibido.
-- [ ] Secret só aparece na criação.
-- [ ] Adapter Keycloak desligado não impede SCIM por outro provider.
-- [ ] Evento interno e SCIM usam o mesmo comando de provisioning.
+- [x] Create/update/deactivate idempotentes.
+- [x] Token de tenant A não enumera B.
+- [x] Deactivate revoga sessão/acesso rapidamente.
+- [x] Mapping não cria papel proibido.
+- [x] Secret só aparece na criação.
+- [x] Adapter Keycloak desligado não impede SCIM por outro provider.
+- [x] Evento interno e SCIM usam o mesmo comando de provisioning.
 
 ## Testes
 

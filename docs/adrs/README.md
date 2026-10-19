@@ -43,6 +43,8 @@ original.
 | [035](ADR-035-automation-builder.md) | Automation builder declarativo, identidade e flag off | Accepted |
 | [036](ADR-036-incident-rooms.md) | Sala de incidente privada, playbook e postmortem por referência | Accepted |
 | [037](ADR-037-conectores-bidirecionais.md) | Conector bidirecional com egress, dedupe e flag off | Accepted |
+| [038](ADR-038-sso-broker.md) | SSO corporativo via brokering Keycloak | Accepted |
+| [039](ADR-039-scim-provisioning.md) | SCIM 2.0 como adapter de provisioning | Accepted |
 
 ## Quando criar um ADR
 

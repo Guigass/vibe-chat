@@ -22,6 +22,8 @@ public sealed class InfrastructureRegistrationTests
             "Scoped:IAuditWriter:EfAuditWriter",
             "Scoped:IIdempotencyStore:EfIdempotencyStore",
             "Scoped:IConversationSequenceStore:ConversationSequenceStore",
+            "Scoped:IExternalSessionRevoker:NoopExternalSessionRevoker",
+            "Scoped:IProvisioningPort:ScimProvisioningService",
             "Scoped:IMessageWriter:MessageWriter",
             "Scoped:IPollWriter:PollWriter",
             "Scoped:IAnnouncementWriter:AnnouncementWriter",

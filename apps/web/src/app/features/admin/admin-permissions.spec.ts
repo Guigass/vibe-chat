@@ -22,6 +22,7 @@ describe('admin-permissions (B-106)', () => {
       'connectors',
       'import',
       'diagnostics',
+      'scim',
     ]);
     expect(hasWorkspaceAdmin('Admin')).toBe(true);
   });

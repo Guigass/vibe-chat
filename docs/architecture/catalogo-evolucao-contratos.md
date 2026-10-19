@@ -81,6 +81,8 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Incidents:Enabled` | instance | false | B-126 | incidentes → 404 `IncidentDisabled`; chat segue |
 | `Connectors:Enabled` | instance | false | B-127 | conectores → 404 `ConnectorDisabled`; chat e outbox de mensagens seguem |
 | `Identity:Sso:Enabled` | instance | false | B-164 | lista SSO → 404 `SsoDisabled`; claims de broker ignorados; login Keycloak segue |
+| `Identity:Scim:Enabled` | instance | false | B-128 | `/scim/v2` e admin SCIM → 404 `ScimDisabled`; chat e login seguem |
+| `Identity:Scim:KeycloakAdapter` | instance | false | B-128 | revogação local segue; falha do IdP não desfaz o deprovision |
 
 ## Registro inicial de flags futuras
 

@@ -39,6 +39,13 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
 {
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<ExternalIdentity> ExternalIdentities => Set<ExternalIdentity>();
+    public DbSet<ScimToken> ScimTokens => Set<ScimToken>();
+    public DbSet<ScimPrincipal> ScimPrincipals => Set<ScimPrincipal>();
+    public DbSet<ScimGroup> ScimGroups => Set<ScimGroup>();
+    public DbSet<ScimGroupMember> ScimGroupMembers => Set<ScimGroupMember>();
+    public DbSet<ScimGroupMapping> ScimGroupMappings => Set<ScimGroupMapping>();
+    public DbSet<ScimMembershipGrant> ScimMembershipGrants => Set<ScimMembershipGrant>();
+    public DbSet<AccessRevocation> AccessRevocations => Set<AccessRevocation>();
     public DbSet<MemberPublicProfile> MemberPublicProfiles => Set<MemberPublicProfile>();
     public DbSet<UserStatus> UserStatuses => Set<UserStatus>();
     public DbSet<UserVisualPreference> UserVisualPreferences => Set<UserVisualPreference>();
@@ -202,6 +209,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
         SearchSql.Configure(modelBuilder);
         ImportModelConfiguration.Configure(modelBuilder, tenantContext);
         SupportDiagnosticsConfiguration.Configure(modelBuilder, tenantContext);
+        ScimModelConfiguration.Configure(modelBuilder, tenantContext);
 
         modelBuilder.Entity<UserProfile>(entity =>
         {

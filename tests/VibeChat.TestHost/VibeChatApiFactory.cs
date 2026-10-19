@@ -194,6 +194,8 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Directory:GroupDm:MaxParticipants", "9");
         builder.UseSetting("Directory:Invites:Enabled", "true");
         builder.UseSetting("Integrations:Bots:Enabled", "true");
+        builder.UseSetting("Identity:Scim:Enabled", "true");
+        builder.UseSetting("Identity:Scim:KeycloakAdapter", "false");
         builder.UseSetting("Messaging:History:Enabled", "true");
         builder.UseSetting("Features:Import:Enabled", "true");
         builder.UseSetting("Features:SupportBundle:Enabled", "true");

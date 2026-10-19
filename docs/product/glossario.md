@@ -11,6 +11,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Membership** | Vínculo usuário ↔ workspace (ou space/channel), com papéis e permissões. |
 | **Role / Permissão** | Papel de **workspace** em `workspace_members.role` (ex.: Owner, Admin, Member, Guest, Auditor) + capabilities do `RolePermissionCatalog` (`workspace.admin`, `admin.dashboard`, etc.). Fonte de verdade da authZ de produto (B-176). Claims JWT / realm roles do Keycloak **não** concedem papel de workspace. Distinto de **roles de banco** (`vibechat_app` / migrator — RLS) e de **realm roles** do IdP (identidade/SSO opcional). |
 | **Contact group / Grupo de contatos** | Agrupamento da **lista de pessoas** do workspace para navegação (B-166). Kind `department` (departamento compartilhado, ex.: Vendas, Estoque, TI; admin) ou `personal` (só o dono). **Não** é Space, **não** concede acesso a canal/DM e **não** substitui membership de autorização nem grupos SCIM (B-128). |
+| **SCIM** | Adapter de provisionamento 2.0 por tenant (B-128). Token hasheado, usuários e grupos com `externalId` único, mapeamento allowlisted para membership. Não escreve no Keycloak e não apaga conteúdo ao desativar. |
 
 ## Estrutura de conversa
 

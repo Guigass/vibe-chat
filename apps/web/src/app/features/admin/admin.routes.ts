@@ -76,6 +76,11 @@ export const ADMIN_CHILD_ROUTES: Routes = [
       import('./admin-diagnostics.page').then((m) => m.AdminDiagnosticsPage),
   },
   {
+    path: 'scim',
+    canActivate: [adminAreaGuard('scim')],
+    loadComponent: () => import('./admin-scim.page').then((m) => m.AdminScimPage),
+  },
+  {
     path: '**',
     redirectTo: 'overview',
   },

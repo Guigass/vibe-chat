@@ -118,6 +118,13 @@ public static class AuditActions
     public const string ConnectorInstalled = "connector.installed";
     public const string ConnectorRotated = "connector.rotated";
     public const string ConnectorRevoked = "connector.revoked";
+    public const string ScimTokenCreate = "scim.token.create";
+    public const string ScimTokenRotate = "scim.token.rotate";
+    public const string ScimTokenRevoke = "scim.token.revoke";
+    public const string ScimUserProvision = "scim.user.provision";
+    public const string ScimUserDeprovision = "scim.user.deprovision";
+    public const string ScimGroupProvision = "scim.group.provision";
+    public const string ScimMappingApply = "scim.mapping.apply";
 }
 
 public interface IAuditWriter

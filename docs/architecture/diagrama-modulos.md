@@ -74,6 +74,8 @@ Messaging, Realtime e BuildingBlocks. A lista exata é verificável nos
 `/api/v1` com `RequirePermissionFilter`, chamadas `Map*`, SignalR e health checks.
 `MapSso` é o primeiro `Map*` do grupo: `GET /auth/sso-providers` fica na
 posição 0, anônimo, com a isenção `anonymous SSO directory (B-164)`.
+`/scim/v2` (B-128) fica fora de `/api/v1` e autentica pelo bearer hasheado;
+o admin SCIM permanece no grupo com `workspace.admin`.
 Os handlers ficam em `apps/api/Endpoints/*Endpoints.cs`, por fronteira:
 Identity, Directory, Conversations, Messaging, Files, Realtime, Search,
 Notifications, Administration e AI. O seed exclusivo de Development tem map

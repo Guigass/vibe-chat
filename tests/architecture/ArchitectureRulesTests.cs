@@ -138,6 +138,13 @@ public sealed class ArchitectureRulesTests
             "files.settings",
             "building_blocks.rate_limit_settings",
             "identity.user_statuses",
+            "identity.scim_tokens",
+            "identity.scim_principals",
+            "identity.scim_groups",
+            "identity.scim_group_members",
+            "identity.scim_group_mappings",
+            "identity.scim_membership_grants",
+            "identity.access_revocations",
             "identity.member_profiles",
             "import.jobs",
             "import.id_map",
@@ -161,6 +168,8 @@ public sealed class ArchitectureRulesTests
             because: "RLS policies must read app.tenant_id via fail-closed helper");
         sql.Should().Contain("app.current_invite_token_hash()",
             because: "B-040 accept lookup must use a fail-closed invite hash GUC, not BYPASSRLS");
+        sql.Should().Contain("app.current_scim_token_hash()",
+            because: "B-128 token lookup must use a fail-closed hash GUC, not BYPASSRLS");
     }
 
     private static string FindRepoFile(string relativePath)

@@ -126,6 +126,7 @@ builder.Services.AddScoped<ICurrentUser>(sp =>
 });
 
 builder.Services.Configure<SsoOptions>(builder.Configuration.GetSection(SsoOptions.SectionName));
+builder.Services.Configure<ScimOptions>(builder.Configuration.GetSection(ScimOptions.SectionName));
 builder.Services.AddHttpClient(KeycloakSsoDirectory.HttpClientName, client =>
 {
     client.Timeout = TimeSpan.FromSeconds(4);
@@ -283,7 +284,9 @@ v1.MapWorkspaceTemplates();
 v1.MapImports();
 v1.MapDiagnostics();
 v1.MapDevelopment(app);
+v1.MapScimAdmin();
 
+app.MapScim();
 app.MapHub<ChatHub>("/hubs/chat").RequireAuthorization();
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
