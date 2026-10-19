@@ -2,6 +2,7 @@ import { WritableSignal } from '@angular/core';
 import { ApiService } from '../../../core/api/api.service';
 import { fillTemplate, ui } from '../../../core/i18n/strings';
 import {
+  attachmentScanHold,
   classifyAttachmentPreview,
   isGifContentType,
 } from '../../attachments/attachment-preview';
@@ -50,6 +51,7 @@ export function lightboxImagesOf(
   previewUrls: Record<string, string>,
 ): LightboxImage[] {
   return (message.attachments ?? [])
+    .filter((attachment) => !attachmentScanHold(attachment))
     .filter((attachment) => classifyAttachmentPreview(attachment.contentType, attachment.kind) === 'image')
     .map((attachment) => ({
       id: attachment.id,
@@ -72,6 +74,7 @@ export function syncAttachmentUrls(
   const attachments = message.attachments ?? [];
   const channelId = message.channelId;
   for (const attachment of attachments) {
+    if (attachmentScanHold(attachment)) continue;
     const kind = classifyAttachmentPreview(attachment.contentType, attachment.kind);
     if (kind === 'image' || kind === 'pdf') {
       const status = attachment.thumbnailStatus;
@@ -111,7 +114,7 @@ export async function downloadMessageAttachment(
   attachment: MessageAttachment,
   downloadUrls: WritableSignal<Record<string, string>>,
 ): Promise<void> {
-  if (!channelId) return;
+  if (!channelId || attachmentScanHold(attachment)) return;
   try {
     const result = await api.getAttachmentDownload(channelId, attachment.id);
     downloadUrls.update((current) => ({ ...current, [attachment.id]: result.downloadUrl }));

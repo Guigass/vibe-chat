@@ -8,8 +8,9 @@ B-153 / W11 pede migrar pessoas, estrutura e histórico com dry-run, staging,
 publicação explícita e rollback, sem atravessar tenants nem importar conteúdo
 malicioso. A spec é R3. Não há seção própria em
 `docs/architecture/pacotes-decisao-r3.md`; vale a regra comum (flag off, ADR,
-threat model, rollback). Não há decisão D-* nova. B-131 (malware) ainda não
-existe: a quarentena deste item é local (MIME, tamanho, checksum, zip bomb).
+threat model, rollback). Não há decisão D-* nova. O scan de anexos do chat é
+B-131 (ADR-040). A quarentena deste item de importação continua local (MIME,
+tamanho, checksum, zip bomb).
 
 ## Decisão
 

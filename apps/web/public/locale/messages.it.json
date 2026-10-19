@@ -1372,6 +1372,20 @@
     "admin.scimNoConflicts": "Nessun conflitto.",
     "admin.scimNoGroups": "Nessun gruppo è stato ancora provisionato.",
     "admin.scimForbiddenRole": "Questo ruolo non può essere concesso da una mappatura.",
-    "admin.scimCopy": "Copia"
+    "admin.scimCopy": "Copia",
+    "attach.scanVerifying": "Verifica del file",
+    "attach.scanUnavailable": "File non disponibile",
+    "attach.scanBlocked": "File bloccato",
+    "attach.scanRetry": "Riprova",
+    "admin.navQuarantine": "Quarantena",
+    "admin.quarantineLead": "File trattenuti dal verificatore. Rilasciare o eliminare richiede una giustificazione e resta nell'audit.",
+    "admin.quarantineDisabled": "La verifica malware è spenta in questa installazione.",
+    "admin.quarantineEmpty": "Nessun file in quarantena.",
+    "admin.quarantineLoadError": "Impossibile caricare la quarantena.",
+    "admin.quarantineRelease": "Rilascia",
+    "admin.quarantineDelete": "Elimina",
+    "admin.quarantineJustification": "Giustificazione",
+    "admin.quarantineColumnFile": "File",
+    "admin.quarantineColumnState": "Stato"
   }
 }

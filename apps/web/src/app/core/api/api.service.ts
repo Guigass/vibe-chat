@@ -120,6 +120,7 @@ export class ApiService {
   readonly getPendingAnnouncements: MessagingApiService['getPendingAnnouncements'] = this.messaging.getPendingAnnouncements.bind(this.messaging);
   readonly initiateAttachmentUpload: FilesApiService['initiateAttachmentUpload'] = this.files.initiateAttachmentUpload.bind(this.files);
   readonly completeAttachmentUpload: FilesApiService['completeAttachmentUpload'] = this.files.completeAttachmentUpload.bind(this.files);
+  readonly rescanAttachment: FilesApiService['rescanAttachment'] = this.files.rescanAttachment.bind(this.files);
   readonly transcribeAttachment: FilesApiService['transcribeAttachment'] = this.files.transcribeAttachment.bind(this.files);
   readonly getAttachmentDownload: FilesApiService['getAttachmentDownload'] = this.files.getAttachmentDownload.bind(this.files);
   readonly getAttachmentThumbnail: FilesApiService['getAttachmentThumbnail'] = this.files.getAttachmentThumbnail.bind(this.files);

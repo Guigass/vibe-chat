@@ -521,7 +521,11 @@ internal static class MessagingEndpointHelpers
 
         var wanted = messageIds.Select(x => x.Value).ToHashSet();
         var rows = await db.Attachments.AsNoTracking()
-            .Where(x => x.ChannelId == channelId && x.MessageId != null && x.Status == AttachmentStatus.Ready)
+            .Where(x => x.ChannelId == channelId && x.MessageId != null && x.Status != AttachmentStatus.Failed
+                && (x.Status == AttachmentStatus.Ready
+                    || x.ScanStatus == AttachmentScanStatus.PendingScan
+                    || x.ScanStatus == AttachmentScanStatus.Quarantined
+                    || x.ScanStatus == AttachmentScanStatus.ScanFailed))
             .OrderBy(x => x.CreatedAt)
             .ToListAsync(ct);
 

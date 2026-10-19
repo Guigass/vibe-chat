@@ -40,7 +40,11 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 
 1. **HTTP API** — IDOR, mass assignment, injection
 2. **SignalR hub** — join em grupos sem authZ; message spoofing
-3. **Uploads MinIO** — MIME spoofing, zip bombs, URLs pré-assinadas vazadas
+3. **Uploads MinIO** — MIME spoofing, zip bombs, URLs pré-assinadas vazadas.
+   Com `Files:MalwareScan:Enabled` (B-131 / ADR-040, off por default) o download
+   espera `Clean`; EICAR, MIME divergente e ZIP hostil vão para quarentena do
+   tenant. Release exige `file.quarantine.manage` e audit. Scanner ausente não
+   marca `Clean`.
 4. **Keycloak** — realm misconfig, clients públicos mal configurados;
    Identity Brokering OIDC/SAML (ACS/redirect, audience, certificado,
    account linking) — B-164

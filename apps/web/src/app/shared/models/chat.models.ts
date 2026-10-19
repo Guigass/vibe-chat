@@ -148,6 +148,9 @@ export interface MessageAttachment {
   waveform?: number[];
   /** B-090 — Pending | Ready | Failed */
   thumbnailStatus?: string | null;
+  /** B-131 — NotRequired | PendingScan | Clean | Quarantined | ScanFailed */
+  scanStatus?: string | null;
+  scanReason?: string | null;
   width?: number | null;
   height?: number | null;
   pageCount?: number | null;

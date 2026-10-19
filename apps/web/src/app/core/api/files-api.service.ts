@@ -77,6 +77,14 @@ export class FilesApiService extends HttpApiClient {
     });
   }
 
+  async rescanAttachment(channelId: string, attachmentId: string): Promise<MessageAttachment> {
+    const dto = await this.request<AttachmentDto>(
+      `/api/v1/channels/${channelId}/attachments/${attachmentId}/rescan`,
+      { method: 'POST', body: '{}' },
+    );
+    return mapAttachment(dto);
+  }
+
   async getAttachmentDownload(
     channelId: string,
     attachmentId: string,

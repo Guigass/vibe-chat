@@ -186,6 +186,10 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete` | permission | `file.upload` | ✓ | ✗ | ✓ | |
 | GET | `/channels/{channelId:guid}/attachments/{attachmentId:guid}/download` | permission | `file.download` + `message.read` | ✓ | ✓ | ✓ | |
 | GET | `/channels/{channelId:guid}/attachments/{attachmentId:guid}/thumbnail` | permission | `file.download` + `message.read` | ✓ | ✓ | ✓ | |
+| POST | `/channels/{channelId:guid}/attachments/{attachmentId:guid}/rescan` | permission | `file.upload` | ✓ | ✗ | ✓ | B-131; autor ou `file.quarantine.manage`; flag off → 404 |
+| GET | `/workspaces/{workspaceId:guid}/quarantine` | permission | `file.quarantine.manage` | ✗ | ✗ | ✓ | B-131; flag off → 404; outro tenant → 404 |
+| POST | `/workspaces/{workspaceId:guid}/quarantine/{attachmentId:guid}/release` | permission | `file.quarantine.manage` | ✗ | ✗ | ✓ | B-131; justificativa obrigatória |
+| POST | `/workspaces/{workspaceId:guid}/quarantine/{attachmentId:guid}/delete` | permission | `file.quarantine.manage` | ✗ | ✗ | ✓ | B-131; apaga o objeto se não houver outra referência |
 | GET | `/channels/{channelId:guid}/messaging-policy` | permission | `message.read` | ✓ | ✓ | ✓ | B-107; campos não secretos; guest do canal |
 | PUT | `/channels/{channelId:guid}/messages/{messageId:guid}` | condicional | `message.edit.own` / `message.edit.any` | ✓* | ✗ | ✓* | *autor na política, ou override `message.edit.any` (default off); exempt B-023 / B-107 |
 | GET | `/channels/{channelId:guid}/messages/{messageId:guid}/history` | permission | `message.read` + `message.history.read` | ✓ | ✗ | ✓ | B-114; flag off → 404; política oculta → 403 `HistoryHidden` (admin break-glass auditado) |

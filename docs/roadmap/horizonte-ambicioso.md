@@ -103,7 +103,7 @@ da conversa.
 | B-127 | B/C/D/E | Conectores bidirecionais GitHub/GitLab/Jira/calendário | B-108, B-125 | [B-127](../product/specs/B-127-conectores-bidirecionais.md) | **Done** — catálogo github/gitlab/calendar, dedupe, revoke, egress e flag off; ADR-037 |
 | B-164 | A/B/D/E | SSO corporativo via OIDC/SAML (Keycloak brokering; rótulo customizável) | B-002, ADR-007 | [B-164](../product/specs/B-164-sso-oidc-saml.md) | **Done** — brokering no Keycloak, vínculo `(issuer, subject)` sem elevar papel, rótulo `displayName`, flag off; ADR-038 |
 | B-128 | B/D/E | SCIM 2.0, grupos e deprovisioning | B-041, B-106, B-164, D-23 | [B-128](../product/specs/B-128-scim-grupos.md) | **Done** — porta única, token só como hash, mapeamento allowlisted, deprovision local, flag off; ADR-039 |
-| B-131 | C/E/A | Malware scanning, quarentena e política de download | B-090 | [B-131](../product/specs/B-131-malware-quarentena.md) | Planned |
+| B-131 | C/E/A | Malware scanning, quarentena e política de download | B-090 | [B-131](../product/specs/B-131-malware-quarentena.md) | **Done** — flag off, adapter nulo explícito, policy/clamav, quarentena admin; ADR-040 |
 | B-139 | B/C/E/G | Versionamento formal de eventos e schema registry | B-108, B-109 | [B-139](../product/specs/B-139-eventos-versionados.md) | Planned |
 
 ### Critérios de saída

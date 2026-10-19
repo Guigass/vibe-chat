@@ -1372,6 +1372,20 @@
     "admin.scimNoConflicts": "没有冲突。",
     "admin.scimNoGroups": "还没有预配的组。",
     "admin.scimForbiddenRole": "映射不能授予该角色。",
-    "admin.scimCopy": "复制"
+    "admin.scimCopy": "复制",
+    "attach.scanVerifying": "正在检查文件",
+    "attach.scanUnavailable": "文件不可用",
+    "attach.scanBlocked": "文件已阻止",
+    "attach.scanRetry": "重试",
+    "admin.navQuarantine": "隔离",
+    "admin.quarantineLead": "扫描器扣留的文件。释放或删除需要理由，并记入审计。",
+    "admin.quarantineDisabled": "此安装已关闭恶意软件检查。",
+    "admin.quarantineEmpty": "没有隔离文件。",
+    "admin.quarantineLoadError": "无法加载隔离列表。",
+    "admin.quarantineRelease": "释放",
+    "admin.quarantineDelete": "删除",
+    "admin.quarantineJustification": "理由",
+    "admin.quarantineColumnFile": "文件",
+    "admin.quarantineColumnState": "状态"
   }
 }

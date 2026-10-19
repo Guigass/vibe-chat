@@ -6,6 +6,8 @@ import { coerceHubPayload, isAvailability, isStatusState, mapMessageCreated } fr
 import { withoutSelfTyping } from './typing-filter';
 import {
   AnnouncementAcknowledgedEvent,
+  AttachmentScanCompletedEvent,
+  AttachmentScanCompletedPayload,
   AttachmentThumbnailReadyEvent,
   AttachmentThumbnailReadyPayload,
   LinkPreviewReadyEvent,
@@ -42,6 +44,7 @@ export interface ChatHubHandlerSets {
   presenceHandlers: Set<(event: PresenceChangedEvent) => void>;
   userStatusHandlers: Set<(event: HubUserStatusEvent) => void>;
   thumbnailReadyHandlers: Set<(event: AttachmentThumbnailReadyEvent) => void>;
+  scanCompletedHandlers: Set<(event: AttachmentScanCompletedEvent) => void>;
   linkPreviewReadyHandlers: Set<(event: LinkPreviewReadyEvent) => void>;
   readCursorHandlers: Set<(event: ReadCursorChangedEvent) => void>;
 }
@@ -187,6 +190,21 @@ export function bindChatHubHandlers(connection: HubConnection, deps: ChatHubHand
       byUserId: String(payload.byUserId ?? ''),
     };
     for (const handler of deps.pinHandlers) {
+      handler(event);
+    }
+  });
+
+  connection.on('AttachmentScanCompleted', (raw: AttachmentScanCompletedPayload | string) => {
+    const payload = coerceHubPayload<AttachmentScanCompletedPayload>(raw);
+    if (!payload?.attachmentId || !payload.channelId) return;
+    const event: AttachmentScanCompletedEvent = {
+      attachmentId: String(payload.attachmentId),
+      channelId: String(payload.channelId),
+      status: payload.status ?? 'PendingUpload',
+      scanStatus: payload.scanStatus ?? null,
+      scanReason: payload.scanReason ?? null,
+    };
+    for (const handler of deps.scanCompletedHandlers) {
       handler(event);
     }
   });

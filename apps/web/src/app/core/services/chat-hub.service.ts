@@ -16,6 +16,7 @@ import { HubRetrySession } from './chat-hub-session';
 import { ui } from '../i18n/strings';
 import {
   AnnouncementAcknowledgedEvent,
+  AttachmentScanCompletedEvent,
   AttachmentThumbnailReadyEvent,
   ConnectionStatus,
   HubUserStatusEvent,
@@ -79,6 +80,7 @@ export class ChatHubService {
   private readonly userStatusHandlers = new Set<(event: HubUserStatusEvent) => void>();
   private readonly reconnectedHandlers = new Set<() => void | Promise<void>>();
   private readonly thumbnailReadyHandlers = new Set<(event: AttachmentThumbnailReadyEvent) => void>();
+  private readonly scanCompletedHandlers = new Set<(event: AttachmentScanCompletedEvent) => void>();
   private readonly linkPreviewReadyHandlers = new Set<(event: LinkPreviewReadyEvent) => void>();
   private readonly readCursorHandlers = new Set<(event: ReadCursorChangedEvent) => void>();
 
@@ -185,6 +187,7 @@ export class ChatHubService {
       presenceHandlers: this.presenceHandlers,
       userStatusHandlers: this.userStatusHandlers,
       thumbnailReadyHandlers: this.thumbnailReadyHandlers,
+      scanCompletedHandlers: this.scanCompletedHandlers,
       linkPreviewReadyHandlers: this.linkPreviewReadyHandlers,
       readCursorHandlers: this.readCursorHandlers,
     });
@@ -310,6 +313,10 @@ export class ChatHubService {
 
   onAttachmentThumbnailReady(handler: (event: AttachmentThumbnailReadyEvent) => void): () => void {
     return this.listen(this.thumbnailReadyHandlers, handler);
+  }
+
+  onAttachmentScanCompleted(handler: (event: AttachmentScanCompletedEvent) => void): () => void {
+    return this.listen(this.scanCompletedHandlers, handler);
   }
 
   onLinkPreviewReady(handler: (event: LinkPreviewReadyEvent) => void): () => void {

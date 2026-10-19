@@ -45,6 +45,7 @@ describe('MessageStore edit mode (B-173)', () => {
             onMessageDeleted: () => () => undefined,
             onReactionChanged: () => () => undefined,
             onAttachmentThumbnailReady: () => () => undefined,
+            onAttachmentScanCompleted: () => () => undefined,
             onLinkPreviewReady: () => () => undefined,
             onPollChanged: () => () => undefined,
             onAnnouncementAcknowledged: () => () => undefined,

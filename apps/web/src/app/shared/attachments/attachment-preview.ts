@@ -163,3 +163,19 @@ export function menuActionsForMessage(options: {
   }
   return items;
 }
+
+export type AttachmentScanHold = 'verifying' | 'blocked' | 'unavailable';
+
+/** Pending and quarantined objects never download. ScanFailed downloads only when the server marked the row Ready (fail-open). */
+export function attachmentScanHold(attachment: {
+  scanStatus?: string | null;
+  status?: string | null;
+}): AttachmentScanHold | null {
+  const scan = (attachment.scanStatus ?? '').toLowerCase();
+  if (scan === 'pendingscan') return 'verifying';
+  if (scan === 'quarantined') return 'blocked';
+  if (scan === 'scanfailed' && (attachment.status ?? '').toLowerCase() !== 'ready') {
+    return 'unavailable';
+  }
+  return null;
+}

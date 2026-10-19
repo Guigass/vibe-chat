@@ -17,6 +17,7 @@ import {
   applyMessageEdit,
   applyMessageReactions,
   applyRemotePollToMessages,
+  applyScanToMessages,
   applyThumbnailToMessages,
   clearLinkPreview,
   normalizeChannelMessage,
@@ -66,6 +67,7 @@ export class MessageRuntime {
     hub.onMessageDeleted((patch) => this.applyDelete(patch));
     hub.onReactionChanged((event) => this.applyReactions(event.messageId, event.reactions));
     hub.onAttachmentThumbnailReady((event) => this.applyThumbnailReady(event));
+    hub.onAttachmentScanCompleted((event) => this.applyScanCompleted(event));
     hub.onLinkPreviewReady((event) => this.applyLinkPreviewReady(event));
     hub.onPollChanged((event) => this.applyRemotePoll(event.messageId, event.poll));
     hub.onAnnouncementAcknowledged((event) => this.applyAnnouncementEvent(event));
@@ -204,6 +206,16 @@ export class MessageRuntime {
     reactions: Array<{ emoji: string; count: number; me: boolean }>,
   ): void {
     this.host.messages.update((list) => applyMessageReactions(list, messageId, reactions));
+  }
+
+  private applyScanCompleted(event: {
+    attachmentId: string;
+    channelId: string;
+    status: string;
+    scanStatus: string | null;
+    scanReason?: string | null;
+  }): void {
+    this.host.messages.update((list) => applyScanToMessages(list, event));
   }
 
   private applyThumbnailReady(event: {

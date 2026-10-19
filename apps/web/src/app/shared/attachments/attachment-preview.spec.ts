@@ -1,11 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import {
   attachmentFamilyIcon,
+  attachmentScanHold,
   classifyAttachmentPreview,
   formatAttachmentSize,
   isGifContentType,
   menuActionsForMessage,
 } from './attachment-preview';
+
+describe('attachmentScanHold', () => {
+  it('hides pending, quarantined and failed scans', () => {
+    expect(attachmentScanHold({ scanStatus: 'PendingScan' })).toBe('verifying');
+    expect(attachmentScanHold({ scanStatus: 'Quarantined' })).toBe('blocked');
+    expect(attachmentScanHold({ scanStatus: 'ScanFailed', status: 'PendingUpload' })).toBe('unavailable');
+    expect(attachmentScanHold({ scanStatus: 'ScanFailed', status: 'Ready' })).toBeNull();
+    expect(attachmentScanHold({ scanStatus: 'Clean', status: 'Ready' })).toBeNull();
+    expect(attachmentScanHold({ scanStatus: null, status: 'Ready' })).toBeNull();
+  });
+});
 
 describe('classifyAttachmentPreview', () => {
   it('classifies images by content type', () => {

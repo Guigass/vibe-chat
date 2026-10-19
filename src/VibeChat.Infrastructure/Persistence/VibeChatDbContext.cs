@@ -540,8 +540,14 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Height);
             entity.Property(x => x.ThumbnailStatus).HasConversion<string>().HasMaxLength(16);
             entity.Property(x => x.PageCount);
+            entity.Property(x => x.ScanStatus).HasConversion<string>().HasMaxLength(16);
+            entity.Property(x => x.ScanEngine).HasMaxLength(32);
+            entity.Property(x => x.ScanSignatureVersion).HasMaxLength(32);
+            entity.Property(x => x.ScanReason).HasMaxLength(64);
+            entity.Property(x => x.ScanAttempts).HasDefaultValue(0);
             entity.HasIndex(x => x.StorageKey);
             entity.HasIndex(x => new { x.TenantId, x.ChannelId, x.MessageId });
+            entity.HasIndex(x => new { x.TenantId, x.ScanStatus });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

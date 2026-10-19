@@ -1,0 +1,52 @@
+<article class="admin-panel">
+  <p class="admin-panel__lead">{{ ui.adminQuarantineLead }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty">{{ ui.adminLoadingSettings }}</p>
+  } @else if (disabled()) {
+    <p class="admin-empty">{{ ui.adminQuarantineDisabled }}</p>
+  } @else if (loadError()) {
+    <p class="admin-empty">{{ ui.adminQuarantineLoadError }}</p>
+  } @else {
+    <label class="admin-filters__field">
+      <span>{{ ui.adminQuarantineJustification }}</span>
+      <input
+        [value]="justification()"
+        (input)="justification.set($any($event.target).value)"
+        [attr.aria-label]="ui.adminQuarantineJustification"
+      />
+    </label>
+
+    @if (items().length === 0) {
+      <p class="admin-empty">{{ ui.adminQuarantineEmpty }}</p>
+    } @else {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.adminQuarantineColumnFile }}</th>
+              <th>{{ ui.adminQuarantineColumnState }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.id) {
+              <tr>
+                <td>{{ item.fileName }}</td>
+                <td>{{ item.scanReason || item.scanStatus }}</td>
+                <td>
+                  <button type="button" class="admin-btn" [disabled]="busy() || justification().trim().length < 3" (click)="release(item)">
+                    {{ ui.adminQuarantineRelease }}
+                  </button>
+                  <button type="button" class="admin-btn" [disabled]="busy() || justification().trim().length < 3" (click)="remove(item)">
+                    {{ ui.adminQuarantineDelete }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</article>

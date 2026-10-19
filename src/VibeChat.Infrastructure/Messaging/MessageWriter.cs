@@ -238,8 +238,11 @@ public sealed class MessageWriter(
                     && x.TenantId == command.TenantId
                     && x.ChannelId == parentChannelId
                     && x.UploadedBy == command.UserId
-                    && x.Status == AttachmentStatus.Ready
                     && x.MessageId == null)
+                .Where(x => x.Status == AttachmentStatus.Ready
+                    || x.ScanStatus == AttachmentScanStatus.PendingScan
+                    || x.ScanStatus == AttachmentScanStatus.Quarantined
+                    || x.ScanStatus == AttachmentScanStatus.ScanFailed)
                 .ToArrayAsync(cancellationToken);
 
             if (attachments.Length != attachmentIds.Length)
@@ -355,7 +358,9 @@ public sealed class MessageWriter(
                     sizeBytes = x.SizeBytes,
                     kind = x.Kind.ToString(),
                     durationMs = x.DurationMs,
-                    waveform = x.Waveform
+                    waveform = x.Waveform,
+                    status = x.Status.ToString(),
+                    scanStatus = x.ScanStatus == null ? null : x.ScanStatus.ToString()
                 })
             })
         });
@@ -676,7 +681,9 @@ public sealed class MessageWriter(
                         sizeBytes = x.SizeBytes,
                         kind = x.Kind.ToString(),
                         durationMs = x.DurationMs,
-                        waveform = x.Waveform
+                        waveform = x.Waveform,
+                        status = x.Status.ToString(),
+                        scanStatus = x.ScanStatus == null ? null : x.ScanStatus.ToString()
                     })
                 })
             });

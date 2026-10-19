@@ -150,7 +150,7 @@ public static class RolePermissionCatalog
         Permissions.Support.Read, Permissions.Support.Bundle, Permissions.Support.Repair,
         Permissions.Channel.Read, Permissions.Channel.Create, Permissions.Channel.Manage, Permissions.Channel.MentionAll,
         Permissions.Message.Read, Permissions.Message.Send, Permissions.Message.React, Permissions.Message.EditOwn, Permissions.Message.EditAny, Permissions.Message.DeleteOwn, Permissions.Message.DeleteAny, Permissions.Message.Pin, Permissions.Message.HistoryRead, Permissions.Message.Move,
-        Permissions.Files.Upload, Permissions.Files.Download,
+        Permissions.Files.Upload, Permissions.Files.Download, Permissions.Files.QuarantineManage,
         Permissions.Search.Messages,
         Permissions.Admin.Dashboard, Permissions.Ai.Summarize, Permissions.Ai.SuggestReply, Permissions.Ai.Transcribe, Permissions.Ai.Search,
         Permissions.Announcement.Publish, Permissions.Announcement.Acknowledge,

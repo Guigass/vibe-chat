@@ -13,6 +13,8 @@ export interface AttachmentDto {
   width?: number | null;
   height?: number | null;
   pageCount?: number | null;
+  scanStatus?: string | null;
+  scanReason?: string | null;
 }
 
 export function mapAttachment(a: AttachmentDto): MessageAttachment {
@@ -29,6 +31,8 @@ export function mapAttachment(a: AttachmentDto): MessageAttachment {
     width: a.width ?? null,
     height: a.height ?? null,
     pageCount: a.pageCount ?? null,
+    scanStatus: a.scanStatus ?? null,
+    scanReason: a.scanReason ?? null,
   };
 }
 

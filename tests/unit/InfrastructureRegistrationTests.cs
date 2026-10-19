@@ -68,6 +68,7 @@ public sealed class InfrastructureRegistrationTests
             "Singleton:IMinioClient:factory",
             "Singleton:MinioPresignClient:factory",
             "Scoped:IObjectStorage:MinioObjectStorage",
+            "Scoped:IMalwareScanner:factory",
             "Scoped:AttachmentThumbnailGenerator:AttachmentThumbnailGenerator",
             "Scoped:LinkPreviewSettingsResolver:LinkPreviewSettingsResolver",
             "Scoped:LinkPreviewFetcher:LinkPreviewFetcher",

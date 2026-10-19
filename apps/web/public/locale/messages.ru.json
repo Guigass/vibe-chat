@@ -1372,6 +1372,20 @@
     "admin.scimNoConflicts": "Конфликтов нет.",
     "admin.scimNoGroups": "Группы ещё не предоставлены.",
     "admin.scimForbiddenRole": "Эту роль нельзя выдать сопоставлением.",
-    "admin.scimCopy": "Копировать"
+    "admin.scimCopy": "Копировать",
+    "attach.scanVerifying": "Проверка файла",
+    "attach.scanUnavailable": "Файл недоступен",
+    "attach.scanBlocked": "Файл заблокирован",
+    "attach.scanRetry": "Повторить",
+    "admin.navQuarantine": "Карантин",
+    "admin.quarantineLead": "Файлы, удержанные проверкой. Освобождение или удаление требует обоснования и попадает в аудит.",
+    "admin.quarantineDisabled": "Проверка вредоносных файлов выключена в этой установке.",
+    "admin.quarantineEmpty": "Нет файлов в карантине.",
+    "admin.quarantineLoadError": "Не удалось загрузить карантин.",
+    "admin.quarantineRelease": "Освободить",
+    "admin.quarantineDelete": "Удалить",
+    "admin.quarantineJustification": "Обоснование",
+    "admin.quarantineColumnFile": "Файл",
+    "admin.quarantineColumnState": "Состояние"
   }
 }

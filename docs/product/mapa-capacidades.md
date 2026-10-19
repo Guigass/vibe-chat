@@ -64,7 +64,7 @@ organiza. Estados:
 | Legal hold e eDiscovery | Planned | B-129 / W14 |
 | Modo auditoria de conteúdo (gate E2EE) | Planned | B-169 / W14 |
 | Classificação e DLP | Planned | B-130 / W14 |
-| Malware scanning/quarentena | Planned | B-131 / W13 |
+| Malware scanning/quarentena | Done | B-131 / W13 |
 | Export de audit para SIEM | Planned | B-132 / W14 |
 | Policy packs e admin delegado | Planned | B-133/B-134 / W14 |
 | E2EE | Planned | B-064 / W16 (deps B-169) |

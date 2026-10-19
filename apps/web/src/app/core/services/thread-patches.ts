@@ -130,6 +130,45 @@ export function applyThreadReactions(
   }
 }
 
+export function applyThreadScan(
+  state: ThreadPatchState,
+  event: {
+    attachmentId: string;
+    channelId: string;
+    status: string;
+    scanStatus: string | null;
+    scanReason?: string | null;
+  },
+): void {
+  const patchAttachments = (list: ChatMessage[]): ChatMessage[] =>
+    list.map((m) => {
+      if (!idsEqual(m.channelId, event.channelId) || !m.attachments?.length) {
+        return m;
+      }
+      let changed = false;
+      const attachments = m.attachments.map((a) => {
+        if (!idsEqual(a.id, event.attachmentId)) return a;
+        changed = true;
+        return {
+          ...a,
+          status: event.status,
+          scanStatus: event.scanStatus,
+          scanReason: event.scanReason ?? null,
+        };
+      });
+      return changed ? { ...m, attachments } : m;
+    });
+
+  state.messages.update(patchAttachments);
+  const active = state.active();
+  if (active?.parentMessage) {
+    const [parent] = patchAttachments([active.parentMessage]);
+    if (parent !== active.parentMessage) {
+      state.active.set({ ...active, parentMessage: parent });
+    }
+  }
+}
+
 export function applyThreadThumbnail(
   state: ThreadPatchState,
   event: {
