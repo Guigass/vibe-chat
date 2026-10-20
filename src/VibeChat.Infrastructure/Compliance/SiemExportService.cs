@@ -29,6 +29,9 @@ public sealed record SiemCommandResult(int Status, string? Error, object? Body)
 public static class SiemTestDoubles
 {
     public static Func<ConnectorHttpRequest, ConnectorHttpResult>? Send { get; set; }
+
+    /// <summary>When true, the outbox worker does not drain. Tests drive drain themselves.</summary>
+    public static bool PauseBackgroundDrain { get; set; }
 }
 
 public sealed class SiemExportService(
@@ -412,7 +415,7 @@ public sealed class SiemExportService(
         bool advanceCheckpoint,
         CancellationToken cancellationToken)
     {
-        var existing = await db.SiemDeliveries
+        var existing = await db.SiemDeliveries.AsNoTracking()
             .FirstOrDefaultAsync(x => x.DestinationId == row.Id && x.EventId == auditEvent.Id, cancellationToken);
         if (existing?.Status == SiemDeliveryStatuses.Delivered)
         {
@@ -428,7 +431,7 @@ public sealed class SiemExportService(
         var categories = ReadCategories(row.CategoriesJson);
         if (!SiemRules.Allows(categories, row.MinSeverity, category, severity))
         {
-            await UpsertAsync(existing, row, auditEvent.Id, SiemDeliveryStatuses.Skipped, null, cancellationToken);
+            await UpsertAsync(row, auditEvent.Id, SiemDeliveryStatuses.Skipped, null, cancellationToken);
             if (advanceCheckpoint)
             {
                 Advance(row, auditEvent);
@@ -459,18 +462,18 @@ public sealed class SiemExportService(
         if (secret is null)
         {
             ApplyCircuit(row, SiemRules.Record(0, row.FailureCount, now), "SecretUnavailable");
-            await UpsertAsync(existing, row, auditEvent.Id, SiemDeliveryStatuses.Failed, "SecretUnavailable", cancellationToken);
+            await UpsertAsync(row, auditEvent.Id, SiemDeliveryStatuses.Failed, "SecretUnavailable", cancellationToken);
             return false;
         }
 
         var sent = await TransmitAsync(row, auditEvent.Id, envelope, now, cancellationToken);
         if (!sent)
         {
-            await UpsertAsync(existing, row, auditEvent.Id, SiemDeliveryStatuses.Failed, row.LastError, cancellationToken);
+            await UpsertAsync(row, auditEvent.Id, SiemDeliveryStatuses.Failed, row.LastError, cancellationToken);
             return false;
         }
 
-        await UpsertAsync(existing, row, auditEvent.Id, SiemDeliveryStatuses.Delivered, null, cancellationToken);
+        await UpsertAsync(row, auditEvent.Id, SiemDeliveryStatuses.Delivered, null, cancellationToken);
         if (advanceCheckpoint)
         {
             Advance(row, auditEvent);
@@ -574,7 +577,6 @@ public sealed class SiemExportService(
     }
 
     private async Task UpsertAsync(
-        SiemDelivery? existing,
         SiemDestination row,
         Guid eventId,
         string status,
@@ -582,30 +584,31 @@ public sealed class SiemExportService(
         CancellationToken cancellationToken)
     {
         var now = clock.UtcNow;
-        if (existing is null)
-        {
-            existing = new SiemDelivery
-            {
-                Id = Guid.NewGuid(),
-                TenantId = row.TenantId,
-                WorkspaceId = row.WorkspaceId,
-                DestinationId = row.Id,
-                EventId = eventId,
-                CreatedAt = now
-            };
-            db.SiemDeliveries.Add(existing);
-        }
-
-        existing.Status = status;
-        existing.Attempts += status is SiemDeliveryStatuses.Delivered or SiemDeliveryStatuses.Failed ? 1 : 0;
-        existing.ErrorCode = error;
-        if (status == SiemDeliveryStatuses.Delivered)
-        {
-            existing.DeliveredAt = now;
-            existing.ErrorCode = null;
-        }
-
-        await db.SaveChangesAsync(cancellationToken);
+        var attemptDelta = status is SiemDeliveryStatuses.Delivered or SiemDeliveryStatuses.Failed ? 1 : 0;
+        var storedError = status == SiemDeliveryStatuses.Delivered
+            ? null
+            : error is { Length: > 64 } ? error[..64] : error;
+        DateTimeOffset? deliveredAt = status == SiemDeliveryStatuses.Delivered ? now : null;
+        var delivered = SiemDeliveryStatuses.Delivered;
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO compliance.siem_deliveries
+                ("Id", "TenantId", "WorkspaceId", "DestinationId", "EventId", "Status", "Attempts", "ErrorCode", "CreatedAt", "DeliveredAt")
+            VALUES
+                ({Guid.NewGuid()}, {row.TenantId.Value}, {row.WorkspaceId.Value}, {row.Id}, {eventId}, {status}, {attemptDelta}, {storedError}, {now}, {deliveredAt})
+            ON CONFLICT ("DestinationId", "EventId") DO UPDATE
+            SET "Attempts" = compliance.siem_deliveries."Attempts" + EXCLUDED."Attempts",
+                "Status" = CASE
+                    WHEN compliance.siem_deliveries."Status" = {delivered} THEN compliance.siem_deliveries."Status"
+                    ELSE EXCLUDED."Status"
+                END,
+                "ErrorCode" = CASE
+                    WHEN compliance.siem_deliveries."Status" = {delivered} OR EXCLUDED."Status" = {delivered} THEN NULL
+                    ELSE EXCLUDED."ErrorCode"
+                END,
+                "DeliveredAt" = COALESCE(compliance.siem_deliveries."DeliveredAt", EXCLUDED."DeliveredAt")
+            """,
+            cancellationToken);
     }
 
     private static void Advance(SiemDestination row, AuditEvent auditEvent)

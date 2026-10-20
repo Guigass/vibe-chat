@@ -16,10 +16,23 @@ using VibeChat.TestHost;
 namespace VibeChat.IntegrationTests;
 
 [Collection(IntegrationCollection.Name)]
-public sealed class SiemIntegrationTests(VibeChatApiFactory factory)
+public sealed class SiemIntegrationTests(VibeChatApiFactory factory) : IAsyncLifetime
 {
     private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true };
     private static readonly Guid WorkspaceId = SeedData.DemoWorkspaceId.Value;
+
+    public Task InitializeAsync()
+    {
+        SiemTestDoubles.PauseBackgroundDrain = true;
+        return Task.CompletedTask;
+    }
+
+    public Task DisposeAsync()
+    {
+        SiemTestDoubles.PauseBackgroundDrain = false;
+        SiemSandbox.Shared.Reset();
+        return Task.CompletedTask;
+    }
 
     [Fact]
     public async Task Retry_reuses_event_id_and_backfill_stops_at_the_limit_without_a_body()
@@ -91,6 +104,60 @@ public sealed class SiemIntegrationTests(VibeChatApiFactory factory)
             var exported = SiemSandbox.Shared.Calls.Where(call => call.Body.Contains($"zzprobe.{marker}", StringComparison.Ordinal)).ToArray();
             exported.Should().HaveCount(2);
             exported.Should().OnlyContain(call => !call.Body.Contains(secretBody, StringComparison.Ordinal));
+        }
+        finally
+        {
+            if (destinationId is Guid id)
+            {
+                await SendAsync(alice, HttpMethod.Post, $"{Destinations()}/{id}/revoke", new { });
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Concurrent_drains_keep_one_delivery_row_for_the_event()
+    {
+        SiemSandbox.Shared.Reset();
+        using var alice = Client("alice");
+        await GrantAsync();
+        var marker = $"zzrace-{Guid.NewGuid():N}";
+        var secretBody = $"body-{marker}";
+        Guid? destinationId = null;
+        try
+        {
+            var created = await SendAsync(alice, HttpMethod.Post, Destinations(), new
+            {
+                name = "race",
+                url = $"https://siem.example.test/{marker}",
+                transport = SiemTransports.WebhookJson,
+                categories = new[] { "zzrace" },
+                minSeverity = "info",
+                minimize = false
+            });
+            created.StatusCode.Should().Be(HttpStatusCode.Created);
+            destinationId = (await created.Content.ReadFromJsonAsync<DestinationDto>(Json))!.Id;
+            var liveId = Guid.NewGuid();
+            await InsertAuditAsync(liveId, $"zzrace.{marker}", DateTimeOffset.UtcNow.AddMinutes(2), secretBody);
+
+            await Task.WhenAll(DrainAsync(), DrainAsync());
+
+            await using var scope = factory.Services.CreateAsyncScope();
+            var tenant = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+            tenant.SetTenant(SeedData.DemoTenantId);
+            var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+            await RlsSession.EnsureAppliedAsync(db, tenant, CancellationToken.None);
+            var deliveries = await db.SiemDeliveries.Where(x => x.EventId == liveId).ToListAsync();
+            deliveries.Should().ContainSingle();
+            deliveries[0].Status.Should().Be(SiemDeliveryStatuses.Delivered);
+            deliveries[0].Attempts.Should().BeGreaterThan(0);
+            var calls = SiemSandbox.Shared.Calls.Where(call => call.EventId == liveId.ToString("D")).ToArray();
+            calls.Should().NotBeEmpty();
+            calls.Select(call => call.Body).Distinct().Should().ContainSingle();
+            calls.Should().OnlyContain(call => !call.Body.Contains(secretBody, StringComparison.Ordinal));
+            var sent = calls.Length;
+            await DrainAsync();
+            SiemSandbox.Shared.Calls.Count(call => call.EventId == liveId.ToString("D")).Should().Be(sent);
+            await RlsSession.CommitAsync(db, CancellationToken.None);
         }
         finally
         {
