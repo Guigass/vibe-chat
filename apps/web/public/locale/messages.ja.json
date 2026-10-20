@@ -1451,6 +1451,26 @@
     "error.DlpQuarantined": "データポリシーがこの操作を隔離しました。",
     "error.DlpDowngradeBlocked": "継承されたレベルより分類を下げることはできません。",
     "dlp.channel": "チャンネル",
-    "dlp.assign": "ラベルを適用"
+    "dlp.assign": "ラベルを適用",
+    "compliance.grantSiem": "監査をエクスポートできる",
+    "siem.title": "監査の SIEM エクスポート",
+    "siem.disabled": "この環境では SIEM エクスポートはオフです。",
+    "siem.destination": "宛先",
+    "siem.url": "HTTPS URL",
+    "siem.transport": "形式",
+    "siem.webhook": "JSON Webhook",
+    "siem.cef": "Syslog CEF",
+    "siem.create": "宛先を保存",
+    "siem.test": "テストイベントを送る",
+    "siem.rotate": "シークレットをローテーション",
+    "siem.revoke": "宛先を失効",
+    "siem.backfill": "制限付きバックフィル",
+    "siem.lag": "遅延",
+    "siem.circuit": "サーキット",
+    "siem.secretOnce": "今すぐシークレットをコピーしてください。再表示されません。",
+    "siem.saved": "宛先を保存しました。",
+    "siem.empty": "宛先はまだありません。",
+    "siem.health": "最後の成功",
+    "siem.error": "SIEM の宛先を更新できませんでした。"
   }
 }

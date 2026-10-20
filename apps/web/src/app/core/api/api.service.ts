@@ -13,6 +13,7 @@ import { AutomationApiService } from './automation-api.service';
 import { ConnectorApiService } from './connector-api.service';
 import { ComplianceApiService } from './compliance-api.service';
 import { DlpApiService } from './dlp-api.service';
+import { SiemApiService } from './siem-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -33,6 +34,7 @@ export class ApiService {
   private readonly connectors = inject(ConnectorApiService);
   private readonly compliance = inject(ComplianceApiService);
   private readonly dlp = inject(DlpApiService);
+  private readonly siem = inject(SiemApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -218,4 +220,10 @@ export class ApiService {
   readonly exportDiscoveryCase: ComplianceApiService['exportCase'] = this.compliance.exportCase.bind(this.compliance);
   readonly getDiscoveryExport: ComplianceApiService['getExport'] = this.compliance.getExport.bind(this.compliance);
   readonly dlpLabel: DlpApiService['label'] = this.dlp.label.bind(this.dlp);
+  readonly listSiemDestinations: SiemApiService['list'] = this.siem.list.bind(this.siem);
+  readonly createSiemDestination: SiemApiService['create'] = this.siem.create.bind(this.siem);
+  readonly rotateSiemDestination: SiemApiService['rotate'] = this.siem.rotate.bind(this.siem);
+  readonly revokeSiemDestination: SiemApiService['revoke'] = this.siem.revoke.bind(this.siem);
+  readonly testSiemDestination: SiemApiService['test'] = this.siem.test.bind(this.siem);
+  readonly backfillSiemDestination: SiemApiService['backfill'] = this.siem.backfill.bind(this.siem);
 }

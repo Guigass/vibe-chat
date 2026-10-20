@@ -18,6 +18,7 @@ public static class PublicEventCatalog
     public const string MessageDeleted = "messaging.message.deleted";
     public const string ReactionChanged = "messaging.message.reaction_changed";
     public const string WebhookTest = "integrations.webhook.test";
+    public const string AuditRecorded = "audit.event.recorded";
 
     private static readonly JsonSerializerOptions CanonicalJson = new()
     {
@@ -344,7 +345,30 @@ public static class PublicEventCatalog
                 ("tenantId", StringSchema("uuid")),
                 ("endpointId", StringSchema("uuid")),
                 ("sentAt", StringSchema("date-time")),
-                WebhookTestExample())
+                WebhookTestExample()),
+            Version(
+                AuditRecorded,
+                1,
+                AuditRecorded,
+                PublicEventStatus.Active,
+                null,
+                "Minimized audit envelope for SIEM. Message body is not a property.",
+                ObjectSchema(
+                    false,
+                    ["eventType", "schemaVersion", "eventId", "occurredAt", "category", "severity", "action", "synthetic"],
+                    ("eventType", EnumSchema(AuditRecorded)),
+                    ("schemaVersion", IntegerSchema(1)),
+                    ("eventId", StringSchema("uuid")),
+                    ("occurredAt", StringSchema("date-time")),
+                    ("category", StringSchema()),
+                    ("severity", SeveritySchema()),
+                    ("action", StringSchema()),
+                    ("synthetic", BoolSchema()),
+                    ("entityType", StringSchema()),
+                    ("entityId", StringSchema()),
+                    ("actorId", StringSchema("uuid")),
+                    ("metadata", new JsonObject { ["type"] = "object" })),
+                AuditExample())
         ];
     }
 
@@ -473,6 +497,24 @@ public static class PublicEventCatalog
     }
 
     private static JsonObject BoolSchema() => new() { ["type"] = "boolean" };
+
+    private static JsonObject SeveritySchema() => new()
+    {
+        ["type"] = "string",
+        ["enum"] = new JsonArray("info", "low", "medium", "high", "critical")
+    };
+
+    private static JsonObject AuditExample() => new()
+    {
+        ["eventType"] = AuditRecorded,
+        ["schemaVersion"] = 1,
+        ["eventId"] = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        ["occurredAt"] = "2026-10-20T12:00:00.0000000+00:00",
+        ["category"] = "siem",
+        ["severity"] = "info",
+        ["action"] = "siem.test",
+        ["synthetic"] = true
+    };
 
     private static JsonObject EnumSchema(string value) => new()
     {

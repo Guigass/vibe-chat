@@ -1451,6 +1451,26 @@
     "error.DlpQuarantined": "La politica sui dati ha messo in quarantena questa azione.",
     "error.DlpDowngradeBlocked": "Non si può abbassare la classificazione sotto il livello ereditato.",
     "dlp.channel": "Canale",
-    "dlp.assign": "Applica etichetta"
+    "dlp.assign": "Applica etichetta",
+    "compliance.grantSiem": "Può esportare l'audit",
+    "siem.title": "Export audit verso SIEM",
+    "siem.disabled": "L'export SIEM è spento in questa installazione.",
+    "siem.destination": "Destinazione",
+    "siem.url": "URL HTTPS",
+    "siem.transport": "Formato",
+    "siem.webhook": "Webhook JSON",
+    "siem.cef": "Syslog CEF",
+    "siem.create": "Salva destinazione",
+    "siem.test": "Invia evento di prova",
+    "siem.rotate": "Ruota il segreto",
+    "siem.revoke": "Revoca destinazione",
+    "siem.backfill": "Backfill limitato",
+    "siem.lag": "Ritardo",
+    "siem.circuit": "Circuito",
+    "siem.secretOnce": "Copia il segreto ora. Non verrà mostrato di nuovo.",
+    "siem.saved": "Destinazione salvata.",
+    "siem.empty": "Nessuna destinazione configurata.",
+    "siem.health": "Ultimo successo",
+    "siem.error": "Impossibile aggiornare la destinazione SIEM."
   }
 }

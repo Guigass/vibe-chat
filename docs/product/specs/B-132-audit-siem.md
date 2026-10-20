@@ -39,11 +39,11 @@ event não contém dados reais.
 
 ## Aceite
 
-- [ ] Retry não duplica eventId.
-- [ ] Body/secret não saem por default.
-- [ ] Backfill respeita limite e ACL.
-- [ ] Destino inválido abre circuit breaker.
-- [ ] Cross-tenant impossível.
+- [x] Retry não duplica eventId.
+- [x] Body/secret não saem por default.
+- [x] Backfill respeita limite e ACL.
+- [x] Destino inválido abre circuit breaker.
+- [x] Cross-tenant impossível.
 
 ## Testes
 

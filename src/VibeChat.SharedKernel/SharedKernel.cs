@@ -289,6 +289,11 @@ public static class Permissions
         public const string Discovery = "compliance.discovery";
         public const string Dlp = "compliance.dlp";
     }
+
+    public static class Security
+    {
+        public const string AuditExport = "security.audit.export";
+    }
 }
 
 public enum Role

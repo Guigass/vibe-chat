@@ -1451,6 +1451,26 @@
     "error.DlpQuarantined": "The data policy quarantined this action.",
     "error.DlpDowngradeBlocked": "The classification cannot be lowered below the inherited level.",
     "dlp.channel": "Channel",
-    "dlp.assign": "Apply label"
+    "dlp.assign": "Apply label",
+    "compliance.grantSiem": "Can export audit",
+    "siem.title": "Audit export to SIEM",
+    "siem.disabled": "SIEM export is off in this installation.",
+    "siem.destination": "Destination",
+    "siem.url": "HTTPS URL",
+    "siem.transport": "Format",
+    "siem.webhook": "JSON webhook",
+    "siem.cef": "Syslog CEF",
+    "siem.create": "Save destination",
+    "siem.test": "Send test event",
+    "siem.rotate": "Rotate secret",
+    "siem.revoke": "Revoke destination",
+    "siem.backfill": "Limited backfill",
+    "siem.lag": "Lag",
+    "siem.circuit": "Circuit",
+    "siem.secretOnce": "Copy the secret now. It will not be shown again.",
+    "siem.saved": "Destination saved.",
+    "siem.empty": "No destination configured.",
+    "siem.health": "Last success",
+    "siem.error": "The SIEM destination could not be updated."
   }
 }

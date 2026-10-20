@@ -334,6 +334,12 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/workspaces/{workspaceId:guid}/dlp/exceptions` | permission | `compliance.dlp` | ✗ | ✗ | ✗ | Expira em até 30 dias |
 | GET | `/workspaces/{workspaceId:guid}/dlp/metrics` | permission | `compliance.dlp` | ✗ | ✗ | ✗ | Conta decisões, sem body |
 | POST | `/workspaces/{workspaceId:guid}/dlp/simulate` | permission | `compliance.dlp` | ✗ | ✗ | ✗ | Mede e não bloqueia o caller |
+| GET | `/workspaces/{workspaceId:guid}/siem/destinations` | permission | `security.audit.export` | ✗ | ✗ | ✗ | B-132; flag off → 404 `SiemDisabled`; sem segredo |
+| POST | `/workspaces/{workspaceId:guid}/siem/destinations` | permission | `security.audit.export` | ✗ | ✗ | ✗ | Grant, não papel; Idempotency-Key; segredo uma vez |
+| POST | `/workspaces/{workspaceId:guid}/siem/destinations/{destinationId:guid}/rotate` | permission | `security.audit.export` | ✗ | ✗ | ✗ | Novo HMAC; circuito fecha |
+| POST | `/workspaces/{workspaceId:guid}/siem/destinations/{destinationId:guid}/revoke` | permission | `security.audit.export` | ✗ | ✗ | ✗ | Para o envio; não apaga o audit local |
+| POST | `/workspaces/{workspaceId:guid}/siem/destinations/{destinationId:guid}/test` | permission | `security.audit.export` | ✗ | ✗ | ✗ | Evento sintético, sem dado real |
+| POST | `/workspaces/{workspaceId:guid}/siem/destinations/{destinationId:guid}/backfill` | permission | `security.audit.export` | ✗ | ✗ | ✗ | Máximo 24 h e 100 eventos do tenant |
 
 ## Hub SignalR `/hubs/chat`
 

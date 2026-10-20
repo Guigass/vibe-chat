@@ -150,6 +150,19 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | E2EE | `ConfidentialE2EE` não é inspecionado (`NotInspectable`). Auditoria desligada também não lê body |
 | Cross-tenant | RLS FORCE nas tabelas `compliance.dlp_*` e `compliance.data_labels` |
 
+### Export de audit para SIEM (B-132 / ADR-045)
+
+| Item | Controle |
+|------|----------|
+| AuthZ | `security.audit.export` não está em `workspace.admin`. O admin só nomeia outra pessoa |
+| Flag | `Features:Siem:Enabled` off → 404 `SiemDisabled` e nenhum POST |
+| Payload | Envelope `audit.event.recorded` v1. Body de mensagem não sai. Minimização é o default |
+| Segredo | HMAC só no envelope AES-GCM. A API mostra o valor uma vez |
+| Egress | HTTPS, sem redirect, DNS duas vezes, rede privada bloqueada |
+| Retry | Um `eventId` por destino. 4xx abre o circuito; 5xx abre na terceira falha |
+| Backfill | No máximo 24 h e 100 eventos do tenant do destino |
+| Cross-tenant | RLS FORCE em `compliance.siem_destinations` e `compliance.siem_deliveries`. O claim `siem` só lê destinos |
+
 ### Export de workspace (B-046)
 
 | Item | Controle |

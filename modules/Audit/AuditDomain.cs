@@ -136,6 +136,11 @@ public static class AuditActions
     public const string DlpDetectorChange = "dlp.detector.change";
     public const string DlpExceptionCreate = "dlp.exception.create";
     public const string DlpFalsePositive = "dlp.false_positive.review";
+    public const string SiemDestinationCreate = "siem.destination.create";
+    public const string SiemDestinationRotate = "siem.destination.rotate";
+    public const string SiemDestinationRevoke = "siem.destination.revoke";
+    public const string SiemTest = "siem.test";
+    public const string SiemBackfill = "siem.backfill";
 }
 
 public interface IAuditWriter

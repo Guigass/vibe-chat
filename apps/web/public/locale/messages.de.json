@@ -1451,6 +1451,26 @@
     "error.DlpQuarantined": "Die Datenrichtlinie hat diese Aktion unter Quarantäne gestellt.",
     "error.DlpDowngradeBlocked": "Die Klassifizierung kann nicht unter die geerbte Stufe gesenkt werden.",
     "dlp.channel": "Kanal",
-    "dlp.assign": "Label setzen"
+    "dlp.assign": "Label setzen",
+    "compliance.grantSiem": "Darf Audit exportieren",
+    "siem.title": "Audit-Export an SIEM",
+    "siem.disabled": "Der SIEM-Export ist in dieser Installation aus.",
+    "siem.destination": "Ziel",
+    "siem.url": "HTTPS-URL",
+    "siem.transport": "Format",
+    "siem.webhook": "JSON-Webhook",
+    "siem.cef": "Syslog CEF",
+    "siem.create": "Ziel speichern",
+    "siem.test": "Testereignis senden",
+    "siem.rotate": "Geheimnis rotieren",
+    "siem.revoke": "Ziel widerrufen",
+    "siem.backfill": "Begrenzter Backfill",
+    "siem.lag": "Verzug",
+    "siem.circuit": "Kreis",
+    "siem.secretOnce": "Kopieren Sie das Geheimnis jetzt. Es wird nicht erneut angezeigt.",
+    "siem.saved": "Ziel gespeichert.",
+    "siem.empty": "Kein Ziel konfiguriert.",
+    "siem.health": "Letzter Erfolg",
+    "siem.error": "Das SIEM-Ziel konnte nicht aktualisiert werden."
   }
 }

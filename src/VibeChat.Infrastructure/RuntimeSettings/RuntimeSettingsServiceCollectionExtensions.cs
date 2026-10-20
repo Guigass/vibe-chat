@@ -23,6 +23,7 @@ internal static class RuntimeSettingsServiceCollectionExtensions
         services.AddScoped<SupportDiagnosticsService>();
         services.AddScoped<LegalHoldService>();
         services.AddScoped<DlpService>();
+        services.AddScoped<SiemExportService>();
         services.Configure<GroupDmOptions>(configuration.GetSection(GroupDmOptions.SectionName));
         services.Configure<TopicChannelOptions>(configuration.GetSection(TopicChannelOptions.SectionName));
         services.Configure<KnowledgePageOptions>(configuration.GetSection(KnowledgePageOptions.SectionName));
@@ -35,6 +36,7 @@ internal static class RuntimeSettingsServiceCollectionExtensions
         services.Configure<MalwareScanOptions>(configuration.GetSection(MalwareScanOptions.SectionName));
         services.Configure<LegalHoldOptions>(configuration.GetSection(LegalHoldOptions.SectionName));
         services.Configure<DlpOptions>(configuration.GetSection(DlpOptions.SectionName));
+        services.Configure<SiemOptions>(configuration.GetSection(SiemOptions.SectionName));
         services.AddMemoryCache();
         services.AddSingleton<RuntimeSecretProtector>();
         services.AddSingleton<IRuntimeSettingsCacheInvalidator, RuntimeSettingsCacheInvalidator>();

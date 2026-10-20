@@ -65,7 +65,7 @@ organiza. Estados:
 | Modo auditoria de conteúdo (gate E2EE) | Atual | B-169 / W14 |
 | Classificação e DLP | Planned | B-130 / W14 |
 | Malware scanning/quarentena | Done | B-131 / W13 |
-| Export de audit para SIEM | Planned | B-132 / W14 |
+| Export de audit para SIEM | Atual | B-132 / W14 |
 | Policy packs e admin delegado | Planned | B-133/B-134 / W14 |
 | E2EE | Planned | B-064 / W16 (deps B-169) |
 | Diagnóstico e support bundle sanitizado | Atual | B-154 / W11 |

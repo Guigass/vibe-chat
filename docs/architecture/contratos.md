@@ -930,6 +930,8 @@ Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send
 
 **Classificação e DLP (B-130 / ADR-044).** Flag `Features:Dlp:Enabled` default false → 404 `DlpDisabled` e o gate não muda efeitos. Rotas em `/api/v1/workspaces/{workspaceId}/dlp/`: `label` (`workspace.read`), demais (`compliance.dlp`, grant, não papel). Herança canal → space → workspace. Sem política, simulação mede e não bloqueia. Enforce é explícito. `block`/`quarantine` impedem encaminhamento, convite, export, webhook HTTP, IA e download antes do efeito. Decisão não guarda body. E2EE responde `NotInspectable`.
 
+**SIEM (B-132 / ADR-045).** Flag `Features:Siem:Enabled` default false → 404 `SiemDisabled` e o worker não envia. Rotas em `/api/v1/workspaces/{workspaceId}/siem/destinations` exigem grant `security.audit.export` (capability `audit.export`, não papel). Transporte `webhook-json` ou `syslog-cef`, HMAC-SHA256, envelope `audit.event.recorded` v1. Sem body de mensagem. Retry reutiliza `eventId`. Backfill máximo 24 h e 100 eventos do próprio tenant. Destino inválido abre o circuito.
+
 **Metadata de `message.delete` (B-169 / ADR-043):** quando `contentAuditEnabled=true`,
 `metadataJson` inclui `channelId`, `threadId?`, `sequence`, `authorId`, `deletedAt` e `body`
 (conteúdo no soft-delete). Com `false`, os mesmos ids e timestamps, sem `body`.

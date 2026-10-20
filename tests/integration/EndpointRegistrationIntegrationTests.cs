@@ -328,6 +328,12 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/dlp/exceptions", string.Join(",", new[] { Permissions.Compliance.Dlp }), false, ""),
             new("GET", "/api/v1/workspaces/{workspaceId:guid}/dlp/metrics", string.Join(",", new[] { Permissions.Compliance.Dlp }), false, ""),
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/dlp/simulate", string.Join(",", new[] { Permissions.Compliance.Dlp }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/siem/destinations", string.Join(",", new[] { Permissions.Security.AuditExport }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/siem/destinations", string.Join(",", new[] { Permissions.Security.AuditExport }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/siem/destinations/{destinationId:guid}/rotate", string.Join(",", new[] { Permissions.Security.AuditExport }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/siem/destinations/{destinationId:guid}/revoke", string.Join(",", new[] { Permissions.Security.AuditExport }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/siem/destinations/{destinationId:guid}/test", string.Join(",", new[] { Permissions.Security.AuditExport }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/siem/destinations/{destinationId:guid}/backfill", string.Join(",", new[] { Permissions.Security.AuditExport }), false, ""),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(
