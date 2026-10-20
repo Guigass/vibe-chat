@@ -47,6 +47,7 @@ internal static class AdministrationEndpoints
                 }
                 : "down";
 
+            var contentAuditEnabled = await IsContentAuditEnabledAsync(db, membershipTenant, ct);
             return Results.Ok(new AdminDashboardResponse(
                 stats.UserCount,
                 online,
@@ -58,7 +59,8 @@ internal static class AdministrationEndpoints
                 failures,
                 new AdminHealthResponse(MapHealth("postgres"), MapHealth("redis"), MapHealth("minio")),
                 typeof(Program).Assembly.GetName().Version?.ToString() ?? "0.1.0",
-                config["Observability:GrafanaUrl"] ?? "http://localhost:3000"));
+                config["Observability:GrafanaUrl"] ?? "http://localhost:3000",
+                contentAuditEnabled));
         }).RequirePermission(Permissions.Admin.Dashboard);
 
         v1.MapGet("/admin/audit-events", async (
@@ -200,6 +202,7 @@ internal static class AdministrationEndpoints
                 return Results.Forbid();
             }
 
+            var includeBody = await IsContentAuditEnabledAsync(db, tenantId, ct);
             var take = Math.Clamp(limit ?? 50, 1, 200);
             var rows = await (
                 from m in db.Messages.IgnoreQueryFilters().AsNoTracking()
@@ -251,7 +254,7 @@ internal static class AdministrationEndpoints
                 x.Sequence,
                 x.AuthorId.Value,
                 x.AuthorName,
-                x.Body,
+                includeBody ? x.Body : string.Empty,
                 x.CreatedAt,
                 x.EditedAt,
                 x.DeletedAt,
@@ -261,7 +264,8 @@ internal static class AdministrationEndpoints
                 x.ReplyToMessageId?.Value,
                 x.ThreadId is Guid tid && replyCounts.TryGetValue(tid, out var count) ? count : 0,
                 attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [],
-                pollsByMessage.TryGetValue(x.Id.Value, out var poll) ? poll : null)).ToArray();
+                pollsByMessage.TryGetValue(x.Id.Value, out var poll) ? poll : null,
+                !includeBody)).ToArray();
 
             return Results.Ok(new AdminConversationMessagesResponse(items));
         }).RequirePermission(Permissions.Admin.Dashboard);
@@ -284,6 +288,7 @@ internal static class AdministrationEndpoints
             }
 
             var (_, tenantId) = access.Value;
+            var includeBody = await IsContentAuditEnabledAsync(db, tenantId, ct);
             var thread = await db.MessageThreads.IgnoreQueryFilters().AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == threadId && x.TenantId == tenantId, ct);
             if (thread is null)
@@ -330,7 +335,7 @@ internal static class AdministrationEndpoints
                 x.Sequence,
                 x.AuthorId.Value,
                 x.AuthorName,
-                x.Body,
+                includeBody ? x.Body : string.Empty,
                 x.CreatedAt,
                 x.EditedAt,
                 x.DeletedAt,
@@ -339,7 +344,8 @@ internal static class AdministrationEndpoints
                 x.ThreadId ?? thread.Id,
                 x.ReplyToMessageId?.Value,
                 0,
-                attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [])).ToArray();
+                attachmentsByMessage.TryGetValue(x.Id.Value, out var atts) ? atts : [],
+                BodyRedacted: !includeBody)).ToArray();
 
             return Results.Ok(new AdminConversationMessagesResponse(items));
         }).RequirePermission(Permissions.Admin.Dashboard);
@@ -402,6 +408,28 @@ internal static class AdministrationEndpoints
             }
 
             var changes = new List<string>();
+            if (request.ContentAudit is not null)
+            {
+                var applied = await ApplyContentAuditAsync(
+                    db,
+                    workspace.TenantId,
+                    workspace.Id.Value,
+                    profile.Id,
+                    request.ContentAudit,
+                    changes,
+                    audit,
+                    clock,
+                    ct);
+                if (applied.Rejected)
+                {
+                    if (applied.Persist)
+                    {
+                        await db.SaveChangesAsync(ct);
+                    }
+
+                    return Results.Json(new { error = applied.Error }, statusCode: applied.StatusCode);
+                }
+            }
 
             if (request.Ai is not null)
             {

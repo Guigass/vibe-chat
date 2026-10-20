@@ -36,7 +36,8 @@ public sealed record AdminConversationMessageResponse(
     Guid? ReplyToMessageId,
     int ReplyCount,
     AttachmentResponse[] Attachments,
-    PollDto? Poll = null);
+    PollDto? Poll = null,
+    bool BodyRedacted = false);
 public sealed record AdminConversationMessagesResponse(AdminConversationMessageResponse[] Items);
 public sealed record AdminHealthResponse(string Postgres, string Redis, string Storage);
 public sealed record AdminDashboardResponse(
@@ -50,7 +51,8 @@ public sealed record AdminDashboardResponse(
     int ProcessingFailures,
     AdminHealthResponse Health,
     string AppVersion,
-    string GrafanaUrl);
+    string GrafanaUrl,
+    bool ContentAuditEnabled);
 public sealed record UpdateAiSensitiveSettingsRequest(
     bool? WorkspaceEnabled = null,
     string? Provider = null,
@@ -107,7 +109,11 @@ public sealed record UpdateSensitiveSettingsRequest(
     UpdateFilesSettingsRequest? Files = null,
     UpdateRateLimitSettingsRequest? RateLimit = null,
     UpdatePushSettingsRequest? Push = null,
-    UpdateMessagingPolicyRequest? Messaging = null);
+    UpdateMessagingPolicyRequest? Messaging = null,
+    UpdateContentAuditSettingsRequest? ContentAudit = null);
+public sealed record UpdateContentAuditSettingsRequest(
+    bool? Enabled = null,
+    bool ConfirmDisable = false);
 public sealed record RotateCredentialRequest(
     Guid? WorkspaceId = null,
     string? Value = null);

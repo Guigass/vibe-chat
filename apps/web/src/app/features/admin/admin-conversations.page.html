@@ -75,7 +75,7 @@
               <td>{{ m.createdAt | date: 'short' }}</td>
               <td>{{ m.authorName }}</td>
               <td>
-                <span class="conv-audit__body">{{ m.body || '—' }}</span>
+                <span class="conv-audit__body">{{ m.bodyRedacted ? ui.adminContentAuditRedacted : (m.body || '—') }}</span>
                 @if (m.attachments.length) {
                   <span class="conv-audit__atts">
                     @for (a of m.attachments; track a.id) {
@@ -128,7 +128,7 @@
                   <td>{{ m.createdAt | date: 'short' }}</td>
                   <td>{{ m.authorName }}</td>
                   <td>
-                    <span class="conv-audit__body">{{ m.body || '—' }}</span>
+                    <span class="conv-audit__body">{{ m.bodyRedacted ? ui.adminContentAuditRedacted : (m.body || '—') }}</span>
                   </td>
                   <td>
                     <vc-badge [tone]="messageStatusTone(m)">{{ messageStatusLabel(m) }}</vc-badge>

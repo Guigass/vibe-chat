@@ -1,0 +1,54 @@
+<section class="settings__section">
+  <header class="settings__section-head">
+    <h2 class="settings__section-title">{{ ui.adminContentAuditTitle }}</h2>
+    <p class="settings__section-desc">{{ ui.adminContentAuditDesc }}</p>
+  </header>
+
+  @if (loading()) {
+    <p class="admin-empty">{{ ui.adminLoadingSettings }}</p>
+  } @else if (loadError()) {
+    <p class="admin-empty">{{ ui.adminSettingsLoadError }}</p>
+  } @else {
+    @if (!savedEnabled()) {
+      <p class="admin-error" role="status">{{ ui.adminContentAuditIndicator }}</p>
+    }
+
+    <form (submit)="save($event)">
+      <label class="settings__check">
+        <input
+          type="radio"
+          name="contentAuditMode"
+          [checked]="mode() === 'compliance'"
+          (change)="setMode('compliance')"
+        />
+        <span>{{ ui.adminContentAuditCompliance }}</span>
+      </label>
+      <label class="settings__check">
+        <input
+          type="radio"
+          name="contentAuditMode"
+          [checked]="mode() === 'confidential'"
+          (change)="setMode('confidential')"
+        />
+        <span>{{ ui.adminContentAuditConfidential }}</span>
+      </label>
+      <p class="settings__meta">{{ ui.adminContentAuditWarning }}</p>
+      @if (needsConfirm()) {
+        <label class="settings__check">
+          <input type="checkbox" [checked]="confirm()" (change)="onConfirm($event)" />
+          <span>{{ ui.adminContentAuditConfirm }}</span>
+        </label>
+      }
+      <button type="submit" class="admin-btn" [disabled]="busy()">
+        {{ busy() ? ui.adminSaving : ui.adminSaveSettings }}
+      </button>
+    </form>
+
+    @if (feedback(); as message) {
+      <p class="admin-feedback" role="status">{{ message }}</p>
+    }
+    @if (errorMessage(); as message) {
+      <p class="admin-error" role="alert">{{ message }}</p>
+    }
+  }
+</section>

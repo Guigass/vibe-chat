@@ -2,7 +2,9 @@ using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using VibeChat.Administration;
 using VibeChat.Api;
+using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
 using VibeChat.Directory;
@@ -108,6 +110,18 @@ internal static class AdministrationEndpointHelpers
         DateTimeOffset exportedAt,
         CancellationToken ct)
     {
+        var includeBody = await IsContentAuditEnabledAsync(db, workspace.TenantId, ct);
+        return await BuildWorkspaceExportZipCoreAsync(workspace, db, actorUserId, exportedAt, includeBody, ct);
+    }
+
+    private static async Task<byte[]> BuildWorkspaceExportZipCoreAsync(
+        Workspace workspace,
+        VibeChatDbContext db,
+        UserId actorUserId,
+        DateTimeOffset exportedAt,
+        bool includeBody,
+        CancellationToken ct)
+    {
         var jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -210,7 +224,8 @@ internal static class AdministrationEndpointHelpers
                 conversationId = x.ConversationId.Value,
                 sequence = x.Sequence,
                 authorId = x.AuthorId.Value,
-                body = x.Body,
+                body = includeBody ? x.Body : string.Empty,
+                bodyRedacted = !includeBody,
                 replyToMessageId = x.ReplyToMessageId?.Value,
                 threadId = x.ThreadId,
                 createdAt = x.CreatedAt,
@@ -230,7 +245,8 @@ internal static class AdministrationEndpointHelpers
             {
                 messageId = x.MessageId.Value,
                 version = x.VersionNumber,
-                body = x.Body,
+                body = includeBody ? x.Body : string.Empty,
+                bodyRedacted = !includeBody,
                 actorUserId = x.ActorUserId.Value,
                 createdAt = x.CreatedAt
             })
@@ -465,5 +481,106 @@ internal static class AdministrationEndpointHelpers
         }
 
         return null;
+    }
+
+    internal readonly record struct ContentAuditApplyResult(bool Rejected, bool Persist, int StatusCode, string? Error);
+
+    internal static async Task<bool> IsContentAuditEnabledAsync(
+        VibeChatDbContext db,
+        TenantId tenantId,
+        CancellationToken ct)
+    {
+        var stored = await db.ContentAuditSettings.AsNoTracking()
+            .Where(x => x.TenantId == tenantId)
+            .Select(x => (bool?)x.Enabled)
+            .FirstOrDefaultAsync(ct);
+        return ContentAuditRules.IsEnabled(stored);
+    }
+
+    internal static async Task<ContentAuditApplyResult> ApplyContentAuditAsync(
+        VibeChatDbContext db,
+        TenantId tenantId,
+        Guid workspaceId,
+        UserId actorUserId,
+        UpdateContentAuditSettingsRequest? request,
+        List<string> changes,
+        IAuditWriter audit,
+        IClock clock,
+        CancellationToken ct)
+    {
+        if (request?.Enabled is not bool requested)
+        {
+            return new ContentAuditApplyResult(false, false, StatusCodes.Status200OK, null);
+        }
+
+        var row = await db.ContentAuditSettings.FirstOrDefaultAsync(x => x.TenantId == tenantId, ct);
+        var current = ContentAuditRules.IsEnabled(row?.Enabled);
+        if (current == requested)
+        {
+            return new ContentAuditApplyResult(false, false, StatusCodes.Status200OK, null);
+        }
+
+        if (current && !requested)
+        {
+            if (!request.ConfirmDisable)
+            {
+                return new ContentAuditApplyResult(
+                    true, false, StatusCodes.Status400BadRequest, ContentAuditRules.ConfirmationRequired);
+            }
+
+            var now = clock.UtcNow;
+            var hold = await db.LegalHolds.AsNoTracking().AnyAsync(
+                x => x.TenantId == tenantId
+                    && x.Status == LegalHoldStatus.Active
+                    && (x.ExpiresAt == null || x.ExpiresAt > now),
+                ct);
+            if (hold)
+            {
+                audit.Add(new AuditEvent
+                {
+                    TenantId = tenantId,
+                    ActorUserId = actorUserId,
+                    Action = AuditActions.SettingsContentAuditChange,
+                    EntityType = "ContentAuditSettings",
+                    EntityId = workspaceId.ToString(),
+                    MetadataJson = JsonSerializer.Serialize(new
+                    {
+                        enabled = current,
+                        requestedEnabled = requested,
+                        blocked = ContentAuditRules.BlockedByLegalHold
+                    })
+                });
+                return new ContentAuditApplyResult(
+                    true, true, StatusCodes.Status409Conflict, ContentAuditRules.BlockedByLegalHold);
+            }
+        }
+
+        if (row is null)
+        {
+            row = new ContentAuditSettings
+            {
+                TenantId = tenantId,
+                Enabled = requested,
+                UpdatedAt = clock.UtcNow
+            };
+            db.ContentAuditSettings.Add(row);
+        }
+        else
+        {
+            row.Enabled = requested;
+            row.UpdatedAt = clock.UtcNow;
+        }
+
+        changes.Add("contentAudit.enabled");
+        audit.Add(new AuditEvent
+        {
+            TenantId = tenantId,
+            ActorUserId = actorUserId,
+            Action = AuditActions.SettingsContentAuditChange,
+            EntityType = "ContentAuditSettings",
+            EntityId = workspaceId.ToString(),
+            MetadataJson = JsonSerializer.Serialize(new { enabled = requested, previousEnabled = current })
+        });
+        return new ContentAuditApplyResult(false, false, StatusCodes.Status200OK, null);
     }
 }

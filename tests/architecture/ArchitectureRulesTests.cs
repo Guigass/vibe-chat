@@ -121,6 +121,7 @@ public sealed class ArchitectureRulesTests
             "messaging.link_preview_settings",
             "building_blocks.outbox_messages",
             "audit.audit_events",
+            "audit.content_audit_settings",
             "ai.usage_records",
             "ai.settings",
             "notifications.preferences",

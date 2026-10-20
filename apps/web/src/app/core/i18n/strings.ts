@@ -1286,6 +1286,17 @@ export const ui = {
   adminSaving: $localize`:@@admin.saving:Salvando…`,
   adminSaveSettings: $localize`:@@admin.saveSettings:Salvar configurações`,
   adminSaveHint: $localize`:@@admin.saveHint:Não envia secrets — use “Substituir” em cada integração.`,
+  adminContentAuditTitle: $localize`:@@admin.contentAuditTitle:Auditoria de conteúdo`,
+  adminContentAuditDesc: $localize`:@@admin.contentAuditDesc:Escolha se o tenant opera em compliance ou em modo confidencial.`,
+  adminContentAuditCompliance: $localize`:@@admin.contentAuditCompliance:Compliance — auditores, export e o snapshot de exclusão incluem o texto`,
+  adminContentAuditConfidential: $localize`:@@admin.contentAuditConfidential:Confidencial — sem leitura privilegiada do texto`,
+  adminContentAuditWarning: $localize`:@@admin.contentAuditWarning:Desligar não apaga o texto já gravado nem snapshots de exclusão já emitidos. Busca, IA, legal hold e auditores deixam de ver o conteúdo. A troca é bloqueada enquanto houver legal hold ativo.`,
+  adminContentAuditConfirm: $localize`:@@admin.contentAuditConfirm:Entendo que auditores e o export deixam de ver o texto das mensagens.`,
+  adminContentAuditIndicator: $localize`:@@admin.contentAuditIndicator:Modo confidencial: auditores e o export não leem o texto das mensagens.`,
+  adminContentAuditRedacted: $localize`:@@admin.contentAuditRedacted:Conteúdo oculto pela política de auditoria.`,
+  adminContentAuditSaved: $localize`:@@admin.contentAuditSaved:Modo de auditoria atualizado.`,
+  errorContentAuditBlockedByLegalHold: $localize`:@@error.ContentAuditBlockedByLegalHold:Não é possível desligar a auditoria enquanto houver legal hold ativo.`,
+  errorContentAuditConfirmationRequired: $localize`:@@error.ContentAuditConfirmationRequired:Confirme que deseja desligar a auditoria de conteúdo.`,
   adminExportDownloaded: $localize`:@@admin.exportDownloaded:Export baixado.`,
   adminExportForbidden: $localize`:@@admin.exportForbidden:Falha ao exportar — sem permissão.`,
   adminExportFailed: $localize`:@@admin.exportFailed:Falha ao gerar o export.`,
@@ -1491,6 +1502,10 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.errorNoteTooLong;
     case 'MessageBodyTooLong':
       return ui.errorMessageBodyTooLong;
+    case 'ContentAuditBlockedByLegalHold':
+      return ui.errorContentAuditBlockedByLegalHold;
+    case 'ContentAuditConfirmationRequired':
+      return ui.errorContentAuditConfirmationRequired;
     case 'StatusTextTooLong':
       return ui.errorStatusTextTooLong;
     case 'StatusEmojiTooLong':

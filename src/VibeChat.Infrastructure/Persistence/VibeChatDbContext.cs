@@ -75,6 +75,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<IdempotencyEntry> IdempotencyEntries => Set<IdempotencyEntry>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
+    public DbSet<ContentAuditSettings> ContentAuditSettings => Set<ContentAuditSettings>();
     public DbSet<AiUsageRecord> AiUsageRecords => Set<AiUsageRecord>();
     public DbSet<AiSettings> AiSettings => Set<AiSettings>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
@@ -1198,6 +1199,15 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.ActorUserId).HasConversion(v => v.HasValue ? v.Value.Value : (Guid?)null, v => v.HasValue ? new UserId(v.Value) : null);
             entity.Property(x => x.Action).HasMaxLength(100);
             entity.Property(x => x.EntityType).HasMaxLength(100);
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ContentAuditSettings>(entity =>
+        {
+            entity.ToTable("content_audit_settings", "audit");
+            entity.HasKey(x => x.TenantId);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.Enabled).HasDefaultValue(true);
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

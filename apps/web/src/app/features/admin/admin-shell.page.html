@@ -33,6 +33,10 @@
       </div>
     </header>
 
+    @if (confidentialMode()) {
+      <p class="admin-shell__audit" role="status">{{ ui.adminContentAuditIndicator }}</p>
+    }
+
     <main class="admin-shell__content">
       @if (loading()) {
         <p class="admin-shell__hint">{{ ui.adminLoadingConsole }}</p>

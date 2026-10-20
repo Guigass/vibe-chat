@@ -127,13 +127,24 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Cross-tenant | RLS FORCE em `compliance.*`. Outro tenant não lê hold nem export |
 | Flag | `Features:LegalHold:Enabled` off → 404 `LegalHoldDisabled`. Hold já ativo continua no purge |
 
+### Auditoria de conteúdo (B-169 / ADR-043)
+
+| Item | Controle |
+|------|----------|
+| Setting | `contentAuditEnabled` por tenant, default `true` (sem linha). Só `workspace.admin` grava |
+| Leitura privilegiada | Com `false`, B-067 e o export de workspace não devolvem body. O membro da conversa continua lendo a própria mensagem |
+| Delete | Snapshot de body em `message.delete` só com a flag ligada no momento do soft-delete. Purge não apaga o evento |
+| E2EE | `ConfidentialE2EE` → `ContentAuditBlocksE2ee` com a flag ligada. Sem a flag, `ConfidentialE2eeUnavailable` até B-064 — o servidor não grava canal confidencial em plaintext |
+| Hold | Hold ativo bloqueia desligar a flag (409). A recusa é auditada, sem body |
+| Cross-tenant | RLS FORCE em `audit.content_audit_settings` |
+
 ### Export de workspace (B-046)
 
 | Item | Controle |
 |------|----------|
 | AuthZ | `GET /admin/workspaces/{id}/export` exige `workspace.admin` (não só `admin.dashboard`) |
 | Escopo | Workspace do `tenant_id` do actor + membership; cross-tenant → 403 |
-| Conteúdo | Soft-deleted bodies incluídos; anexos só metadados (sem `storageKey`/bytes MinIO) |
+| Conteúdo | Com `contentAuditEnabled=true`, soft-deleted bodies incluídos; com `false`, body redigido. Anexos só metadados (sem `storageKey`/bytes MinIO) |
 | Audit | `workspace.export` em `audit.audit_events` |
 | Membro/Auditor | 403 |
 
@@ -211,7 +222,7 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Override de edição | `message.edit.any` só com `allowModeratorOverride` default **false** |
 | Override de exclusão | `message.delete.any` com default **true** (preserva moderação atual) |
 | Janela | `0` e valores fora de 1…525600 rejeitados (`InvalidMessagingPolicy`) |
-| Soft-delete | Body permanece na linha (ADR-018) para o snapshot futuro de B-169; este item não copia body para o audit |
+| Soft-delete | Body permanece na linha (ADR-018). O snapshot em `message.delete` é B-169 / ADR-043, só com `contentAuditEnabled=true` |
 | Rollback | Sem linha na tabela = default atual; sem kill switch que ignore a checagem |
 
 ### B-117 — Inbox unificada

@@ -4,12 +4,13 @@ import { fillTemplate, ui } from '../../core/i18n/strings';
 import { Channel, SensitiveSettings, WebhookEndpointSettings } from '../../shared/models/chat.models';
 import { AdminContextService } from './admin-context.service';
 import { AdminAreaId } from './admin-permissions';
+import { ContentAuditPanel } from './content-audit-panel';
 
 type CredentialKind = 'openrouter' | 'smtp' | 'webhook' | 'vapid';
-
 @Component({
   selector: 'vc-admin-settings',
   standalone: true,
+  imports: [ContentAuditPanel],
   templateUrl: './admin-settings.page.html',
   styleUrl: './admin-shared.scss',
 })
@@ -530,7 +531,6 @@ export class AdminSettingsPage implements OnInit {
       this.channels.set([]);
     }
   }
-
   private async loadSettings(): Promise<void> {
     const workspaceId = this.ctx.workspace()?.id;
     try {

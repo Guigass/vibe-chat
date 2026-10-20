@@ -271,6 +271,13 @@ public static class DatabaseBootstrap
     public const string MigratorConnectionName = "DatabaseMigrator";
     public const string RuntimeConnectionName = "Database";
 
+    // pg_advisory_lock(int, int). Session-scoped: the critical section uses several
+    // connections (roles, EF migrate, ownership, RLS catalog, seed), so a transaction
+    // lock would drop before the next connection starts.
+    private const int BootstrapLockClass = 861_045;
+    private const int BootstrapLockId = 1;
+    private const int RlsCatalogAttempts = 3;
+
     public static string ResolveMigratorConnectionString(IConfiguration configuration)
     {
         var migrator = configuration.GetConnectionString(MigratorConnectionName);
@@ -299,6 +306,10 @@ public static class DatabaseBootstrap
                         ?? configuration["POSTGRES_BOOTSTRAP_CONNECTION"]
                         ?? BuildBootstrapFromEnv(configuration)
                         ?? ResolveMigratorConnectionString(configuration);
+
+        // Two test hosts (collection host + WithWebHostBuilder) both run this on startup.
+        // Concurrent RLS DDL takes AccessExclusiveLock in crossing orders and raises 40P01.
+        await using var gate = await BootstrapLock.AcquireAsync(bootstrap, cancellationToken);
 
         await EnsureRolesAsync(bootstrap, configuration, logger, cancellationToken);
 
@@ -553,6 +564,31 @@ public static class DatabaseBootstrap
         ILogger logger,
         CancellationToken cancellationToken)
     {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await ApplyRlsCatalogOnceAsync(migratorConnectionString, configuration, logger, cancellationToken);
+                return;
+            }
+            catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.DeadlockDetected && attempt < RlsCatalogAttempts)
+            {
+                // A live host (outbox) can still deadlock with this DDL. The catalog is idempotent.
+                logger.LogWarning(
+                    "RLS catalog hit a Postgres deadlock (40P01), attempt {Attempt} of {Max}. Retrying.",
+                    attempt,
+                    RlsCatalogAttempts);
+                await Task.Delay(TimeSpan.FromMilliseconds(50 * attempt), cancellationToken);
+            }
+        }
+    }
+
+    private static async Task ApplyRlsCatalogOnceAsync(
+        string migratorConnectionString,
+        IConfiguration configuration,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
         var sql = await LoadRlsCatalogSqlAsync(cancellationToken);
         var appUser = configuration["POSTGRES_APP_USER"] ?? "vibechat_app";
         var backupUser = configuration["POSTGRES_BACKUP_USER"] ?? "vibechat_backup";
@@ -575,6 +611,42 @@ public static class DatabaseBootstrap
         cmd.CommandText = sql;
         await cmd.ExecuteNonQueryAsync(cancellationToken);
         logger.LogInformation("Applied RLS catalog (FORCE + WITH CHECK + grants) for app role {AppRole}", appUser);
+    }
+
+    private sealed class BootstrapLock : IAsyncDisposable
+    {
+        private readonly NpgsqlConnection _connection;
+
+        private BootstrapLock(NpgsqlConnection connection) => _connection = connection;
+
+        public static async Task<BootstrapLock> AcquireAsync(string connectionString, CancellationToken cancellationToken)
+        {
+            var connection = new NpgsqlConnection(connectionString);
+            await connection.OpenAsync(cancellationToken);
+            await using var command = connection.CreateCommand();
+            command.CommandTimeout = 180;
+            command.CommandText = "SELECT pg_advisory_lock(@class, @id)";
+            command.Parameters.AddWithValue("class", BootstrapLockClass);
+            command.Parameters.AddWithValue("id", BootstrapLockId);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+            return new BootstrapLock(connection);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            try
+            {
+                await using var command = _connection.CreateCommand();
+                command.CommandText = "SELECT pg_advisory_unlock(@class, @id)";
+                command.Parameters.AddWithValue("class", BootstrapLockClass);
+                command.Parameters.AddWithValue("id", BootstrapLockId);
+                await command.ExecuteNonQueryAsync();
+            }
+            finally
+            {
+                await _connection.DisposeAsync();
+            }
+        }
     }
 
     private static async Task<string> LoadRlsCatalogSqlAsync(CancellationToken cancellationToken)

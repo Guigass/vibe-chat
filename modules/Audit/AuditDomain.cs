@@ -43,6 +43,7 @@ public static class AuditActions
     public const string GuestRevoke = "guest.revoke";
     public const string GuestExpire = "guest.expire";
     public const string SettingsChange = "settings.change";
+    public const string SettingsContentAuditChange = "settings.content_audit.change";
     public const string SettingsCredentialRotate = "settings.credential.rotate";
     public const string SettingsEncryptionReencrypt = "settings.encryption.reencrypt";
     public const string SettingsLegacySecretMigrate = "settings.legacy-secret.migrate";

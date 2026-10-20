@@ -240,6 +240,12 @@ public sealed class RuntimeSettingsAdminService(
                 ceilingMaxAttachmentsPerMessage = filesCeiling.MaxAttachmentsPerMessage
             },
             messaging = MessageLifecyclePolicyRules.ToDto(lifecycle),
+            contentAudit = new
+            {
+                enabled = ContentAuditRules.IsEnabled(
+                    (await db.ContentAuditSettings.AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.TenantId == workspace.TenantId, ct))?.Enabled)
+            },
             rateLimit = new
             {
                 source = rate.Source,

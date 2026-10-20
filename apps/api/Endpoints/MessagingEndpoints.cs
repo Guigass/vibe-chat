@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using VibeChat.Administration;
 using VibeChat.Api;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
@@ -1737,8 +1738,24 @@ internal static class MessagingEndpoints
                     deletedAt = message.DeletedAt
                 })
             });
-            // Body stays on the row (ADR-018). B-169 snapshots it into message.delete when content audit is on.
-            audit.Add(new AuditEvent { TenantId = channel.TenantId, ActorUserId = profile.Id, Action = AuditActions.MessageDelete, EntityType = "Message", EntityId = message.Id.ToString(), MetadataJson = JsonSerializer.Serialize(new { channelId, threadId = message.ThreadId, message.Sequence }) });
+            // Body stays on the row (ADR-018). The audit snapshot keeps it after purge when content audit is on.
+            var includeBody = await AdministrationEndpointHelpers.IsContentAuditEnabledAsync(db, channel.TenantId, ct);
+            audit.Add(new AuditEvent
+            {
+                TenantId = channel.TenantId,
+                ActorUserId = profile.Id,
+                Action = AuditActions.MessageDelete,
+                EntityType = "Message",
+                EntityId = message.Id.ToString(),
+                MetadataJson = ContentAuditRules.DeleteMetadataJson(
+                    channelId,
+                    message.ThreadId,
+                    message.Sequence,
+                    message.AuthorId.Value,
+                    message.DeletedAt,
+                    message.Body,
+                    includeBody)
+            });
             await db.SaveChangesAsync(ct);
             return Results.NoContent();
         }).AllowPermissionGateExempt("conditional DeleteOwn/DeleteAny (B-023)");

@@ -39,7 +39,6 @@ interface AdminDashboardDto {
   appVersion: string;
   grafanaUrl: string;
 }
-
 interface AuditEventDto {
   id: string;
   action: string;
@@ -49,7 +48,6 @@ interface AuditEventDto {
   occurredAt: string;
   metadataJson?: string;
 }
-
 interface AdminConversationDto {
   id: string;
   workspaceId: string;
@@ -68,6 +66,7 @@ interface AdminConversationMessageDto {
   authorId: string;
   authorName: string;
   body: string;
+  bodyRedacted?: boolean;
   createdAt: string;
   editedAt?: string | null;
   deletedAt?: string | null;
@@ -415,6 +414,7 @@ export class AdminApiService extends HttpApiClient {
       authorId: row.authorId,
       authorName: row.authorName,
       body: row.body,
+      bodyRedacted: row.bodyRedacted === true,
       createdAt: row.createdAt,
       editedAt: row.editedAt ?? null,
       deletedAt: row.deletedAt ?? null,

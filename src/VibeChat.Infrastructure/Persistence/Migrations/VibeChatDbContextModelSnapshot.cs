@@ -123,6 +123,24 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("grants", "compliance");
                 });
 
+            modelBuilder.Entity("VibeChat.Administration.ContentAuditSettings", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Enabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("TenantId");
+
+                    b.ToTable("content_audit_settings", "audit");
+                });
+
             modelBuilder.Entity("VibeChat.Administration.CustodyEvent", b =>
                 {
                     b.Property<Guid>("Id")

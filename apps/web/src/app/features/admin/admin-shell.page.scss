@@ -110,6 +110,14 @@
   font-size: 0.9rem;
 }
 
+.admin-shell__audit {
+  margin: 0;
+  padding: 0.65rem 1.25rem;
+  background: var(--vc-warning-soft, var(--vc-surface-sunken));
+  color: var(--vc-ink);
+  border-bottom: 1px solid var(--vc-border);
+}
+
 @media (max-width: 840px) {
   .admin-shell {
     grid-template-columns: 1fr;
