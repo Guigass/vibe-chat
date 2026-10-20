@@ -11,6 +11,7 @@ import { ImportApiService } from './import-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { AutomationApiService } from './automation-api.service';
 import { ConnectorApiService } from './connector-api.service';
+import { ComplianceApiService } from './compliance-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -29,6 +30,7 @@ export class ApiService {
   private readonly diagnostics = inject(DiagnosticsApiService);
   private readonly automations = inject(AutomationApiService);
   private readonly connectors = inject(ConnectorApiService);
+  private readonly compliance = inject(ComplianceApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -200,4 +202,17 @@ export class ApiService {
   readonly rotateConnector: ConnectorApiService['rotate'] = this.connectors.rotate.bind(this.connectors);
   readonly revokeConnector: ConnectorApiService['revoke'] = this.connectors.revoke.bind(this.connectors);
   readonly reconnectConnector: ConnectorApiService['reconnect'] = this.connectors.reconnect.bind(this.connectors);
+  readonly complianceAccess: ComplianceApiService['access'] = this.compliance.access.bind(this.compliance);
+  readonly listComplianceGrants: ComplianceApiService['listGrants'] = this.compliance.listGrants.bind(this.compliance);
+  readonly grantCompliance: ComplianceApiService['grant'] = this.compliance.grant.bind(this.compliance);
+  readonly revokeComplianceGrant: ComplianceApiService['revokeGrant'] = this.compliance.revokeGrant.bind(this.compliance);
+  readonly listLegalHolds: ComplianceApiService['listHolds'] = this.compliance.listHolds.bind(this.compliance);
+  readonly requestLegalHold: ComplianceApiService['requestHold'] = this.compliance.requestHold.bind(this.compliance);
+  readonly approveLegalHold: ComplianceApiService['approveHold'] = this.compliance.approveHold.bind(this.compliance);
+  readonly requestHoldRelease: ComplianceApiService['requestRelease'] = this.compliance.requestRelease.bind(this.compliance);
+  readonly approveHoldRelease: ComplianceApiService['approveRelease'] = this.compliance.approveRelease.bind(this.compliance);
+  readonly listDiscoveryCases: ComplianceApiService['listCases'] = this.compliance.listCases.bind(this.compliance);
+  readonly createDiscoveryCase: ComplianceApiService['createCase'] = this.compliance.createCase.bind(this.compliance);
+  readonly exportDiscoveryCase: ComplianceApiService['exportCase'] = this.compliance.exportCase.bind(this.compliance);
+  readonly getDiscoveryExport: ComplianceApiService['getExport'] = this.compliance.getExport.bind(this.compliance);
 }

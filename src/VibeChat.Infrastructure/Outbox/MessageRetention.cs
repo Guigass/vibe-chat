@@ -30,6 +30,7 @@ using VibeChat.Realtime;
 using NpgsqlTypes;
 using VibeChat.Search;
 using VibeChat.SharedKernel;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.Tenancy;
 using Role = VibeChat.SharedKernel.Role;
 
@@ -100,15 +101,37 @@ public sealed class MessageRetentionPurgeProcessor(
             purgedTotal += await VibeChat.Infrastructure.Messaging.FormRetention.PurgeExpiredAsync(
                 db, policy.TenantId, now, batchSize, cancellationToken);
 
-            var candidates = await db.Messages.IgnoreQueryFilters()
+            var loaded = await db.Messages.IgnoreQueryFilters()
                 .Where(x => x.TenantId == policy.TenantId
                     && x.DeletedAt != null
                     && x.DeletedAt < cutoff)
                 .OrderBy(x => x.DeletedAt)
                 .Take(batchSize)
                 .ToListAsync(cancellationToken);
+            var split = await LegalHoldCoverage.SplitAsync(db, policy.TenantId, loaded, now, cancellationToken);
+            if (split.Preserved > 0)
+            {
+                db.AuditEvents.Add(new AuditEvent
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = policy.TenantId,
+                    ActorUserId = null,
+                    Action = AuditActions.MessagePreserve,
+                    EntityType = "Message",
+                    EntityId = null,
+                    MetadataJson = JsonSerializer.Serialize(new { count = split.Preserved, reason = "legal_hold" }),
+                    OccurredAt = now
+                });
+            }
+
+            var candidates = split.Purgeable.ToList();
             if (candidates.Count == 0)
             {
+                if (split.Preserved > 0)
+                {
+                    await db.SaveChangesAsync(cancellationToken);
+                }
+
                 continue;
             }
 

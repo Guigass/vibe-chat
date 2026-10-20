@@ -929,6 +929,17 @@ CREATE POLICY tenant_isolation_scim_membership_grants ON identity.scim_membershi
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS compliance.grants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.grants FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.legal_holds ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.legal_holds FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.discovery_cases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.discovery_cases FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.discovery_exports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.discovery_exports FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.custody_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.custody_events FORCE ROW LEVEL SECURITY;
+
 DROP POLICY IF EXISTS tenant_isolation_access_revocations ON identity.access_revocations;
 CREATE POLICY tenant_isolation_access_revocations ON identity.access_revocations
     USING (
@@ -939,6 +950,54 @@ CREATE POLICY tenant_isolation_access_revocations ON identity.access_revocations
         )
     )
     WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_compliance_grants ON compliance.grants;
+CREATE POLICY tenant_isolation_compliance_grants ON compliance.grants
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_legal_holds ON compliance.legal_holds;
+CREATE POLICY tenant_isolation_legal_holds ON compliance.legal_holds
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_discovery_cases ON compliance.discovery_cases;
+CREATE POLICY tenant_isolation_discovery_cases ON compliance.discovery_cases
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_discovery_exports ON compliance.discovery_exports;
+CREATE POLICY tenant_isolation_discovery_exports ON compliance.discovery_exports
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_custody_events ON compliance.custody_events;
+CREATE POLICY tenant_isolation_custody_events ON compliance.custody_events
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+CREATE SCHEMA IF NOT EXISTS compliance;
+
+CREATE OR REPLACE FUNCTION compliance.reject_custody_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RAISE EXCEPTION 'custody_events are append-only'
+    USING ERRCODE = '55000';
+END;
+$$;
+
+DO $$
+BEGIN
+  IF to_regclass('compliance.custody_events') IS NOT NULL THEN
+    DROP TRIGGER IF EXISTS custody_events_append_only ON compliance.custody_events;
+    CREATE TRIGGER custody_events_append_only
+      BEFORE UPDATE OR DELETE ON compliance.custody_events
+      FOR EACH ROW EXECUTE FUNCTION compliance.reject_custody_mutation();
+  END IF;
+END
+$$;
 
 -- ---------------------------------------------------------------------------
 -- Grants for runtime / backup (migrator owns objects via migration connection)
@@ -960,7 +1019,7 @@ BEGIN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'automation', 'incident', 'connectors', 'app', 'public'
+      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'automation', 'incident', 'connectors', 'compliance', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, app_role);
@@ -976,13 +1035,16 @@ BEGIN
     EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_invite_token_hash() TO %I', app_role);
     EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_integration_token_hash() TO %I', app_role);
     EXECUTE format('GRANT EXECUTE ON FUNCTION app.current_scim_token_hash() TO %I', app_role);
+    IF to_regclass('compliance.custody_events') IS NOT NULL THEN
+      EXECUTE format('REVOKE UPDATE, DELETE ON compliance.custody_events FROM %I', app_role);
+    END IF;
   END IF;
 
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = backup_role) THEN
     FOREACH sch IN ARRAY ARRAY[
       'tenancy', 'directory', 'conversations', 'messaging', 'files',
       'building_blocks', 'audit', 'ai', 'notifications', 'integrations',
-      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'automation', 'incident', 'connectors', 'app', 'public'
+      'identity', 'administration', 'import', 'support', 'knowledge', 'search', 'automation', 'incident', 'connectors', 'compliance', 'app', 'public'
     ]
     LOOP
       EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I', sch, backup_role);

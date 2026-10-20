@@ -150,7 +150,12 @@ public sealed class ArchitectureRulesTests
             "import.id_map",
             "import.historical_principals",
             "support.bundles",
-            "support.repair_jobs"
+            "support.repair_jobs",
+            "compliance.grants",
+            "compliance.legal_holds",
+            "compliance.discovery_cases",
+            "compliance.discovery_exports",
+            "compliance.custody_events"
         ];
 
         foreach (var table in tenantTables)

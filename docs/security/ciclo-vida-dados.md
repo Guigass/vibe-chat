@@ -112,7 +112,7 @@ concluído se store obrigatório permanece pendente.
 
 ## Legal hold
 
-O hold:
+O hold (B-129 / ADR-042; flag off por default):
 
 - não aparece para quem perdeu ACL;
 - não impede revogação de acesso;

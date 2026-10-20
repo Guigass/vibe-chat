@@ -309,6 +309,19 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/suggest-reply` | permission | `ai.suggest_reply` | ✓ | ✗ | ✓ | |
 | POST | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/messages/{messageId:guid}/attachments/{attachmentId:guid}/transcribe` | permission | `ai.transcribe` | ✓ | ✗ | ✓ | |
 | POST | `/dev/seed` | exempt | AllowAnonymous lab | — | — | — | Só Development |
+| GET | `/workspaces/{workspaceId:guid}/compliance/access` | permission | `workspace.read` | ✓ | ✓ | ✓ | B-129; flag off → 404 `LegalHoldDisabled` |
+| GET | `/workspaces/{workspaceId:guid}/compliance/grants` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Lista nomeações |
+| POST | `/workspaces/{workspaceId:guid}/compliance/grants` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Não nomeia a si; Idempotency-Key |
+| DELETE | `/workspaces/{workspaceId:guid}/compliance/grants/{grantId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Não apaga hold já ativo |
+| GET | `/workspaces/{workspaceId:guid}/compliance/holds` | permission | `compliance.hold` | ✗ | ✗ | ✗ | Grant, não papel; Ad sem grant → 403 |
+| POST | `/workspaces/{workspaceId:guid}/compliance/holds` | permission | `compliance.hold` | ✗ | ✗ | ✗ | Duas confirmações; aprovação é outra pessoa |
+| POST | `/workspaces/{workspaceId:guid}/compliance/holds/{holdId:guid}/approve` | permission | `compliance.hold` | ✗ | ✗ | ✗ | Quem pediu recebe 409 `ComplianceSegregation` |
+| POST | `/workspaces/{workspaceId:guid}/compliance/holds/{holdId:guid}/release` | permission | `compliance.hold` | ✗ | ✗ | ✗ | Não apaga a mensagem |
+| POST | `/workspaces/{workspaceId:guid}/compliance/holds/{holdId:guid}/release/approve` | permission | `compliance.hold` | ✗ | ✗ | ✗ | Quem pediu a remoção não aprova |
+| GET | `/workspaces/{workspaceId:guid}/compliance/cases` | permission | `compliance.discovery` | ✗ | ✗ | ✗ | Grant separado de hold |
+| POST | `/workspaces/{workspaceId:guid}/compliance/cases` | permission | `compliance.discovery` | ✗ | ✗ | ✗ | Query sem escolher tenant |
+| POST | `/workspaces/{workspaceId:guid}/compliance/cases/{caseId:guid}/exports` | permission | `compliance.discovery` | ✗ | ✗ | ✗ | Snapshot `vibechat.ediscovery.export.v1` + checksum |
+| GET | `/workspaces/{workspaceId:guid}/compliance/cases/{caseId:guid}/exports/{exportId:guid}` | permission | `compliance.discovery` | ✗ | ✗ | ✗ | Manifesto imutável depois do purge |
 
 ## Hub SignalR `/hubs/chat`
 

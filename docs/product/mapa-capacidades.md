@@ -61,7 +61,7 @@ organiza. Estados:
 | Backup de chat (tarefas + destinos) | Planned | B-172 / W16 |
 | Guests restritos e políticas de edição | Committed | Wave 10 |
 | SCIM e sincronização de grupos | Planned | B-128 / W13 |
-| Legal hold e eDiscovery | Planned | B-129 / W14 |
+| Legal hold e eDiscovery | Atual | B-129 / W14 |
 | Modo auditoria de conteúdo (gate E2EE) | Planned | B-169 / W14 |
 | Classificação e DLP | Planned | B-130 / W14 |
 | Malware scanning/quarentena | Done | B-131 / W13 |

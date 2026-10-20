@@ -40,11 +40,11 @@ Permissions `compliance.hold` e `compliance.discovery`, separadas de
 
 ## Aceite
 
-- [ ] Conteúdo em hold não é purgado.
-- [ ] Fora do hold continua política normal.
-- [ ] Remoção reativa purge futuro, não apaga imediatamente.
-- [ ] Export tem manifest/checksums.
-- [ ] Segregação e cross-tenant são testados.
+- [x] Conteúdo em hold não é purgado.
+- [x] Fora do hold continua política normal.
+- [x] Remoção reativa purge futuro, não apaga imediatamente.
+- [x] Export tem manifest/checksums.
+- [x] Segregação e cross-tenant são testados.
 
 ## Testes
 

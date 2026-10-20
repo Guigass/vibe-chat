@@ -48,6 +48,7 @@ public static class AuditActions
     public const string SettingsLegacySecretMigrate = "settings.legacy-secret.migrate";
     public const string WorkspaceExport = "workspace.export";
     public const string MessagePurge = "message.purge";
+    public const string MessagePreserve = "message.preserve";
     public const string AiTranscribe = "ai.transcribe";
     public const string AnnouncementCreated = "announcement.created";
     public const string AnnouncementPublished = "announcement.published";

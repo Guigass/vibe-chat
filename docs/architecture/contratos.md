@@ -923,7 +923,9 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 
 `AdminConversationMessageResponse`: `id`, `channelId`, `conversationId`, `sequence`, `authorId`, `authorName`, `body` (sempre o valor persistido), `createdAt`, `editedAt`, `deletedAt`, `deletedBy`, `deletedByName`, `threadId`, `replyToMessageId`, `replyCount`, `attachments`, `poll?` (B-096; anônima sem votantes).
 
-Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `contact_group.create`, `contact_group.delete`, `contact_group.members.replace` (só departamento), `settings.change`, `settings.credential.rotate`, `settings.encryption.reencrypt`, `workspace.export`, `message.purge`, `poll.create`, `poll.vote`, `poll.unvote`, `poll.close`.
+Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `contact_group.create`, `contact_group.delete`, `contact_group.members.replace` (só departamento), `settings.change`, `settings.credential.rotate`, `settings.encryption.reencrypt`, `workspace.export`, `message.purge`, `message.preserve`, `poll.create`, `poll.vote`, `poll.unvote`, `poll.close`.
+
+**Legal hold e eDiscovery (B-129 / ADR-042).** Flag `Features:LegalHold:Enabled` default false → 404 `LegalHoldDisabled`. Rotas em `/api/v1/workspaces/{workspaceId}/compliance/`: `access` (`workspace.read`), `grants` (`workspace.admin`, sem auto-nomeação), `holds` (`compliance.hold`, aprovação de outra pessoa, duas confirmações), `cases` e `exports` (`compliance.discovery`). Export `vibechat.ediscovery.export.v1` com progresso e SHA-256 do manifesto. Hold ativo e não expirado impede o purge só no escopo. `compliance.custody_events` é append-only.
 
 **Planned (B-169) — metadata de `message.delete`:** quando `contentAuditEnabled=true`,
 `metadataJson` inclui `channelId`, `threadId?`, `sequence`, `authorId`, `body`

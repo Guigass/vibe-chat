@@ -1409,6 +1409,41 @@ export const ui = {
   catchUpThu: $localize`:@@catchup.thu:Quinta`,
   catchUpFri: $localize`:@@catchup.fri:Sexta`,
   catchUpSat: $localize`:@@catchup.sat:Sábado`,
+  compliance: $localize`:@@shell.compliance:Compliance`,
+  complianceTitle: $localize`:@@compliance.title:Legal hold e eDiscovery`,
+  complianceBack: $localize`:@@compliance.back:Voltar ao chat`,
+  complianceLead: $localize`:@@compliance.lead:Preservação e busca autorizada. Não é aconselhamento jurídico nem certificação.`,
+  complianceWarning: $localize`:@@compliance.warning:Conteúdo em hold não entra no purge. Remover o hold não apaga na hora.`,
+  complianceDisabled: $localize`:@@compliance.disabled:Legal hold está desligado nesta instalação.`,
+  complianceDenied: $localize`:@@compliance.denied:Você não tem permissão de compliance neste workspace.`,
+  complianceLoading: $localize`:@@compliance.loading:Carregando`,
+  complianceError: $localize`:@@compliance.error:Não foi possível concluir. Tente de novo.`,
+  complianceGrantTitle: $localize`:@@compliance.grantTitle:Nomear responsável`,
+  complianceGrantHold: $localize`:@@compliance.grantHold:Pode aplicar hold`,
+  complianceGrantDiscovery: $localize`:@@compliance.grantDiscovery:Pode buscar e exportar`,
+  complianceGrantUser: $localize`:@@compliance.grantUser:Pessoa`,
+  complianceGrantSave: $localize`:@@compliance.grantSave:Nomear`,
+  complianceHoldTitle: $localize`:@@compliance.holdTitle:Pedir hold`,
+  complianceScope: $localize`:@@compliance.scope:Escopo`,
+  complianceScopeWorkspace: $localize`:@@compliance.scopeWorkspace:Workspace`,
+  complianceScopeUser: $localize`:@@compliance.scopeUser:Pessoa`,
+  complianceScopeChannel: $localize`:@@compliance.scopeChannel:Canal`,
+  complianceScopeConversation: $localize`:@@compliance.scopeConversation:Conversa`,
+  complianceScopeInterval: $localize`:@@compliance.scopeInterval:Intervalo`,
+  complianceReason: $localize`:@@compliance.reason:Motivo`,
+  complianceExpiry: $localize`:@@compliance.expiry:Validade`,
+  complianceConfirmPreserve: $localize`:@@compliance.confirmPreserve:Entendo que a retenção não apaga este conteúdo.`,
+  complianceConfirmAudit: $localize`:@@compliance.confirmAudit:Entendo que a ação fica na cadeia de custódia.`,
+  complianceRequest: $localize`:@@compliance.request:Pedir hold`,
+  complianceApprove: $localize`:@@compliance.approve:Aprovar`,
+  complianceRelease: $localize`:@@compliance.release:Pedir remoção`,
+  complianceReleaseApprove: $localize`:@@compliance.releaseApprove:Aprovar remoção`,
+  complianceCaseTitle: $localize`:@@compliance.caseTitle:Caso de eDiscovery`,
+  complianceCaseName: $localize`:@@compliance.caseName:Nome do caso`,
+  complianceExport: $localize`:@@compliance.export:Exportar`,
+  complianceChecksum: $localize`:@@compliance.checksum:Checksum`,
+  complianceProgress: $localize`:@@compliance.progress:Progresso`,
+  complianceHistory: $localize`:@@compliance.history:Histórico`,
 } as const;
 
 export function fillTemplate(
@@ -1610,6 +1645,22 @@ export function translateErrorCode(code: string | undefined): string {
     case 'NotConvertible':
     case 'InvalidCommitmentFilter':
       return ui.commitmentSaveError;
+    case 'LegalHoldDisabled':
+      return ui.complianceDisabled;
+    case 'ComplianceSelfGrant':
+    case 'ComplianceSegregation':
+    case 'ComplianceConfirmationRequired':
+    case 'ComplianceReasonRequired':
+    case 'ComplianceScopeInvalid':
+    case 'ComplianceNotFound':
+    case 'ComplianceState':
+    case 'ComplianceIdempotencyRequired':
+    case 'ComplianceIdempotencyConflict':
+    case 'DiscoveryResultTooLarge':
+    case 'ComplianceMemberRequired':
+    case 'ComplianceExpiryInvalid':
+    case 'ComplianceCapabilityInvalid':
+      return ui.complianceError;
     default:
       return code ?? '';
   }

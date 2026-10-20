@@ -303,6 +303,19 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/scim/mappings", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
             new("DELETE", "/api/v1/admin/workspaces/{workspaceId:guid}/scim/mappings/{mappingId:guid}", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
             new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/scim/provisioning/users", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/compliance/access", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/compliance/grants", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/compliance/grants", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("DELETE", "/api/v1/workspaces/{workspaceId:guid}/compliance/grants/{grantId:guid}", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/compliance/holds", string.Join(",", new[] { Permissions.Compliance.Hold }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/compliance/holds", string.Join(",", new[] { Permissions.Compliance.Hold }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/compliance/holds/{holdId:guid}/approve", string.Join(",", new[] { Permissions.Compliance.Hold }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/compliance/holds/{holdId:guid}/release", string.Join(",", new[] { Permissions.Compliance.Hold }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/compliance/holds/{holdId:guid}/release/approve", string.Join(",", new[] { Permissions.Compliance.Hold }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/compliance/cases", string.Join(",", new[] { Permissions.Compliance.Discovery }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/compliance/cases", string.Join(",", new[] { Permissions.Compliance.Discovery }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/compliance/cases/{caseId:guid}/exports", string.Join(",", new[] { Permissions.Compliance.Discovery }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/compliance/cases/{caseId:guid}/exports/{exportId:guid}", string.Join(",", new[] { Permissions.Compliance.Discovery }), false, ""),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(

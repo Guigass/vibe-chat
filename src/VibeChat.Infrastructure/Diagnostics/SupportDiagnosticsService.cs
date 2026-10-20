@@ -424,7 +424,8 @@ public sealed class SupportDiagnosticsService(
         ["history"] = configuration.GetValue("Messaging:History:Enabled", false),
         ["import"] = configuration.GetValue("Features:Import:Enabled", false),
         ["push"] = configuration.GetValue("Push:Enabled", false),
-        ["supportBundle"] = options.Value.Enabled
+        ["supportBundle"] = options.Value.Enabled,
+        ["legalHold"] = configuration.GetValue("Features:LegalHold:Enabled", false)
     };
 
     private Task<SupportProbeResult> EmailProbeAsync() =>

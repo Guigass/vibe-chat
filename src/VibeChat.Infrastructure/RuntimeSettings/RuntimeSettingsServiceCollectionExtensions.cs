@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using VibeChat.Administration;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.Conversations;
 using VibeChat.Directory;
 using VibeChat.Files;
@@ -20,6 +21,7 @@ internal static class RuntimeSettingsServiceCollectionExtensions
         services.Configure<SupportBundleOptions>(configuration.GetSection(SupportBundleOptions.SectionName));
         services.AddScoped<WorkspaceImportService>();
         services.AddScoped<SupportDiagnosticsService>();
+        services.AddScoped<LegalHoldService>();
         services.Configure<GroupDmOptions>(configuration.GetSection(GroupDmOptions.SectionName));
         services.Configure<TopicChannelOptions>(configuration.GetSection(TopicChannelOptions.SectionName));
         services.Configure<KnowledgePageOptions>(configuration.GetSection(KnowledgePageOptions.SectionName));
@@ -30,6 +32,7 @@ internal static class RuntimeSettingsServiceCollectionExtensions
         services.Configure<RuntimeSettingsOptions>(configuration.GetSection(RuntimeSettingsOptions.SectionName));
         services.Configure<MessageHistoryOptions>(configuration.GetSection(MessageHistoryOptions.SectionName));
         services.Configure<MalwareScanOptions>(configuration.GetSection(MalwareScanOptions.SectionName));
+        services.Configure<LegalHoldOptions>(configuration.GetSection(LegalHoldOptions.SectionName));
         services.AddMemoryCache();
         services.AddSingleton<RuntimeSecretProtector>();
         services.AddSingleton<IRuntimeSettingsCacheInvalidator, RuntimeSettingsCacheInvalidator>();

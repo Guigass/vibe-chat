@@ -35,6 +35,7 @@ testes nem uma revisão de segurança.
 | [029](../adrs/ADR-029-historico-edicao-movimentacao.md) | Histórico de edição e move | `message_versions`, `message_moves`, flag `Messaging:History:Enabled=false` | **Alinhado** (W11 / B-114) |
 | [030](../adrs/ADR-030-importacao-assistida.md) | Importação assistida | `import.jobs`, flag `Features:Import:Enabled=false` | **Alinhado** (W11 / B-153) |
 | [041](../adrs/ADR-041-eventos-versionados.md) | Registry de eventos no repositório | `PublicEventCatalog`, flag `Integrations:EventSchemas:Enabled=false`, sem bus | **Alinhado** (W13 / B-139) |
+| [042](../adrs/ADR-042-legal-hold-ediscovery.md) | Legal hold e eDiscovery | `compliance.*`, flag `Features:LegalHold:Enabled=false` | **Alinhado** (W14 / B-129) |
 
 ## Gaps transversais derivados
 
