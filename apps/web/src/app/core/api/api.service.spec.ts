@@ -6,6 +6,7 @@ import { AiApiService } from './ai-api.service';
 import { AutomationApiService } from './automation-api.service';
 import { ConnectorApiService } from './connector-api.service';
 import { ComplianceApiService } from './compliance-api.service';
+import { DlpApiService } from './dlp-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
@@ -39,6 +40,7 @@ function createApi(auth: AuthStub): ApiService {
       AutomationApiService,
       ConnectorApiService,
       ComplianceApiService,
+      DlpApiService,
       { provide: AuthService, useValue: auth },
     ],
   });

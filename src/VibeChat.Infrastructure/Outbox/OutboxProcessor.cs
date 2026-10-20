@@ -17,6 +17,7 @@ using Minio;
 using StackExchange.Redis;
 using VibeChat.Administration;
 using VibeChat.AI;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
@@ -279,8 +280,38 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
 
                     try
                     {
-                        var semantic = scope.ServiceProvider.GetRequiredService<ISemanticIndex>();
-                        await semantic.SyncMessageAsync(tenantId, new MessageId(messageIdNode.GetValue<Guid>()), cancellationToken);
+                        var dlp = scope.ServiceProvider.GetRequiredService<DlpService>();
+                        var index = true;
+                        if (dlp.Enabled)
+                        {
+                            var channelRow = await dbContext.Channels.AsNoTracking()
+                                .FirstOrDefaultAsync(x => x.TenantId == tenantId && x.Id == channelId, cancellationToken);
+                            if (channelRow is null)
+                            {
+                                index = false;
+                            }
+                            else
+                            {
+                                var ai = await dlp.EvaluateAsync(
+                                    tenantId,
+                                    channelRow.WorkspaceId,
+                                    channelRow.SpaceId,
+                                    channelId.Value,
+                                    channelRow.Type.ToString(),
+                                    DlpActions.Ai,
+                                    null,
+                                    messageIdNode.GetValue<Guid>(),
+                                    save: false,
+                                    cancellationToken);
+                                index = ai.Proceed;
+                            }
+                        }
+
+                        if (index)
+                        {
+                            var semantic = scope.ServiceProvider.GetRequiredService<ISemanticIndex>();
+                            await semantic.SyncMessageAsync(tenantId, new MessageId(messageIdNode.GetValue<Guid>()), cancellationToken);
+                        }
                     }
                     catch (Exception semanticEx)
                     {

@@ -1432,6 +1432,25 @@
     "compliance.export": "导出",
     "compliance.checksum": "校验和",
     "compliance.progress": "进度",
-    "compliance.history": "历史"
+    "compliance.history": "历史",
+    "compliance.grantDlp": "可以分类数据",
+    "dlp.title": "分类与 DLP",
+    "dlp.disabled": "此安装中的数据分类已关闭。",
+    "dlp.badge": "分类",
+    "dlp.public": "公开",
+    "dlp.internal": "内部",
+    "dlp.confidential": "机密",
+    "dlp.restricted": "受限",
+    "dlp.notInspectable": "内容不可检查",
+    "dlp.simulation": "模拟 — 只测量不拦截",
+    "dlp.enforce": "生效 — 会真正拦截",
+    "dlp.saved": "策略已更新。",
+    "dlp.metrics": "测量",
+    "dlp.review": "请向策略管理员申请复核。",
+    "error.DlpBlocked": "数据策略阻止了此操作。",
+    "error.DlpQuarantined": "数据策略已将此操作隔离。",
+    "error.DlpDowngradeBlocked": "不能把分类降到继承级别以下。",
+    "dlp.channel": "频道",
+    "dlp.assign": "应用标签"
   }
 }

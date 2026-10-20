@@ -322,6 +322,18 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/workspaces/{workspaceId:guid}/compliance/cases` | permission | `compliance.discovery` | ✗ | ✗ | ✗ | Query sem escolher tenant |
 | POST | `/workspaces/{workspaceId:guid}/compliance/cases/{caseId:guid}/exports` | permission | `compliance.discovery` | ✗ | ✗ | ✗ | Snapshot `vibechat.ediscovery.export.v1` + checksum |
 | GET | `/workspaces/{workspaceId:guid}/compliance/cases/{caseId:guid}/exports/{exportId:guid}` | permission | `compliance.discovery` | ✗ | ✗ | ✗ | Manifesto imutável depois do purge |
+| GET | `/workspaces/{workspaceId:guid}/dlp/label` | permission | `workspace.read` | ✓ | ✓ | ✓ | B-130; flag off → 404 `DlpDisabled` |
+| GET | `/workspaces/{workspaceId:guid}/dlp/policy` | permission | `compliance.dlp` | ✗ | ✗ | ✗ | Grant, não papel |
+| PUT | `/workspaces/{workspaceId:guid}/dlp/policy` | permission | `compliance.dlp` | ✗ | ✗ | ✗ | Simulação é o default |
+| GET | `/workspaces/{workspaceId:guid}/dlp/labels` | permission | `compliance.dlp` | ✗ | ✗ | ✗ | Built-in e custom |
+| POST | `/workspaces/{workspaceId:guid}/dlp/labels` | permission | `compliance.dlp` | ✗ | ✗ | ✗ | Idempotency-Key |
+| PUT | `/workspaces/{workspaceId:guid}/dlp/assignments` | permission | `compliance.dlp` | ✗ | ✗ | ✗ | Downgrade → 409 `DlpDowngradeBlocked` |
+| PUT | `/workspaces/{workspaceId:guid}/dlp/rules` | permission | `compliance.dlp` | ✗ | ✗ | ✗ | Uma regra por ação |
+| POST | `/workspaces/{workspaceId:guid}/dlp/detectors` | permission | `compliance.dlp` | ✗ | ✗ | ✗ | Regex local; Idempotency-Key |
+| POST | `/workspaces/{workspaceId:guid}/dlp/false-positives` | permission | `compliance.dlp` | ✗ | ✗ | ✗ | Não guarda o trecho |
+| POST | `/workspaces/{workspaceId:guid}/dlp/exceptions` | permission | `compliance.dlp` | ✗ | ✗ | ✗ | Expira em até 30 dias |
+| GET | `/workspaces/{workspaceId:guid}/dlp/metrics` | permission | `compliance.dlp` | ✗ | ✗ | ✗ | Conta decisões, sem body |
+| POST | `/workspaces/{workspaceId:guid}/dlp/simulate` | permission | `compliance.dlp` | ✗ | ✗ | ✗ | Mede e não bloqueia o caller |
 
 ## Hub SignalR `/hubs/chat`
 

@@ -3,12 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using VibeChat.Administration;
 using VibeChat.Audit;
+using VibeChat.Conversations;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
 
 namespace VibeChat.Infrastructure.Compliance;
 
-public sealed class LegalHoldService(VibeChatDbContext db, IClock clock, ILogger<LegalHoldService> logger)
+public sealed class LegalHoldService(VibeChatDbContext db, IClock clock, ILogger<LegalHoldService> logger, DlpService dlp)
 {
     private static readonly JsonSerializerOptions Json = new()
     {
@@ -355,6 +356,38 @@ public sealed class LegalHoldService(VibeChatDbContext db, IClock clock, ILogger
 
         var query = JsonSerializer.Deserialize<DiscoveryQuery>(discoveryCase.QueryJson, Json)
             ?? new DiscoveryQuery([], [], null, null, null);
+        var exportTargets = query.ChannelIds.Length == 0 ? new Guid?[] { null } : query.ChannelIds.Select(id => (Guid?)id).ToArray();
+        foreach (var channelId in exportTargets)
+        {
+            Guid? spaceId = null;
+            string? channelType = null;
+            if (channelId is Guid id)
+            {
+                var channel = await db.Channels.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == new ChannelId(id) && x.WorkspaceId == workspace.Id, cancellationToken);
+                spaceId = channel?.SpaceId;
+                channelType = channel?.Type.ToString();
+            }
+
+            var outcome = await dlp.EvaluateAsync(
+                workspace.TenantId,
+                workspace.Id,
+                spaceId,
+                channelId,
+                channelType,
+                DlpActions.Export,
+                null,
+                null,
+                save: true,
+                cancellationToken);
+            if (!outcome.Proceed)
+            {
+                return ComplianceResult.Fail(
+                    403,
+                    outcome.Effect == DlpEffects.Quarantine ? DlpErrors.Quarantined : DlpErrors.Blocked);
+            }
+        }
+
         var rows = await LoadMatchesAsync(workspace, query, cancellationToken);
         if (rows.Count > LegalHoldLimits.MaxItems)
         {

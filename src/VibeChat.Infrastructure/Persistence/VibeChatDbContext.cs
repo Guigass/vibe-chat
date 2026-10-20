@@ -145,6 +145,14 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<DiscoveryCase> DiscoveryCases => Set<DiscoveryCase>();
     public DbSet<DiscoveryExportRecord> DiscoveryExports => Set<DiscoveryExportRecord>();
     public DbSet<CustodyEvent> CustodyEvents => Set<CustodyEvent>();
+    public DbSet<DlpPolicy> DlpPolicies => Set<DlpPolicy>();
+    public DbSet<DataLabel> DataLabels => Set<DataLabel>();
+    public DbSet<LabelAssignment> LabelAssignments => Set<LabelAssignment>();
+    public DbSet<DlpRule> DlpRules => Set<DlpRule>();
+    public DbSet<DlpDetector> DlpDetectors => Set<DlpDetector>();
+    public DbSet<DlpException> DlpExceptions => Set<DlpException>();
+    public DbSet<DlpFalsePositive> DlpFalsePositives => Set<DlpFalsePositive>();
+    public DbSet<DlpDecisionRecord> DlpDecisions => Set<DlpDecisionRecord>();
 
     public override int SaveChanges()
     {
@@ -1612,6 +1620,112 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.IdempotencyKey).HasMaxLength(LegalHoldLimits.MaxIdempotencyKeyLength);
             entity.HasIndex(x => new { x.TenantId, x.ActorUserId, x.IdempotencyKey }).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.OccurredAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<DlpPolicy>(entity =>
+        {
+            entity.ToTable("dlp_policies", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<DataLabel>(entity =>
+        {
+            entity.ToTable("data_labels", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Key).HasMaxLength(DlpLimits.MaxKeyLength);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(DlpLimits.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.Key }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.CreatedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<LabelAssignment>(entity =>
+        {
+            entity.ToTable("label_assignments", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.UpdatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.ScopeKind).HasMaxLength(32);
+            entity.Property(x => x.LabelKey).HasMaxLength(DlpLimits.MaxKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.ScopeKind, x.ScopeId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<DlpRule>(entity =>
+        {
+            entity.ToTable("dlp_rules", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Action).HasMaxLength(32);
+            entity.Property(x => x.Effect).HasMaxLength(32);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.Action }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<DlpDetector>(entity =>
+        {
+            entity.ToTable("dlp_detectors", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Name).HasMaxLength(DlpLimits.MaxNameLength);
+            entity.Property(x => x.Pattern).HasMaxLength(DlpLimits.MaxPatternLength);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(DlpLimits.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.CreatedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<DlpException>(entity =>
+        {
+            entity.ToTable("dlp_exceptions", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Action).HasMaxLength(32);
+            entity.Property(x => x.ScopeKind).HasMaxLength(32);
+            entity.Property(x => x.Reason).HasMaxLength(DlpLimits.MaxReasonLength);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(DlpLimits.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.CreatedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<DlpFalsePositive>(entity =>
+        {
+            entity.ToTable("dlp_false_positives", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ReviewedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Reason).HasMaxLength(DlpLimits.MaxReasonLength);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(DlpLimits.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.DetectorId, x.SubjectId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.ReviewedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<DlpDecisionRecord>(entity =>
+        {
+            entity.ToTable("dlp_decisions", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Action).HasMaxLength(32);
+            entity.Property(x => x.Effect).HasMaxLength(32);
+            entity.Property(x => x.ReasonCode).HasMaxLength(32);
+            entity.Property(x => x.LabelKey).HasMaxLength(DlpLimits.MaxKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.CreatedAt });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
     }

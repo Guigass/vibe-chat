@@ -1,4 +1,5 @@
 using System.Text.Json;
+using VibeChat.Administration;
 using VibeChat.AI;
 using VibeChat.Api;
 using VibeChat.Audit;
@@ -6,6 +7,7 @@ using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
 using VibeChat.Files;
 using VibeChat.Infrastructure;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
 using static VibeChat.Api.Endpoints.IdentityEndpointHelpers;
@@ -16,7 +18,7 @@ internal static class AIEndpoints
 {
     internal static void MapAI(this RouteGroupBuilder v1)
     {
-        v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/summarize", async (Guid workspaceId, Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, ISummarizeChannelFeature summarize, IClock clock, CancellationToken ct) =>
+        v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/summarize", async (Guid workspaceId, Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, ISummarizeChannelFeature summarize, DlpService dlp, IClock clock, CancellationToken ct) =>
         {
             var profile = await EnsureProfileAsync(http.User, db, clock, ct);
             var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
@@ -29,6 +31,12 @@ internal static class AIEndpoints
             if (channel is null || channel.WorkspaceId != workspace.Id)
             {
                 return Results.Forbid();
+            }
+
+            var denied = await DlpGuard.BlockAsync(dlp, workspace.TenantId, workspace.Id, channel.SpaceId, channel.Id.Value, channel.Type.ToString(), DlpActions.Ai, null, null, ct);
+            if (denied is not null)
+            {
+                return denied;
             }
 
             // Never on SendMessage hot path — opt-in summarize only (D-06 / ADR-012).
@@ -44,7 +52,7 @@ internal static class AIEndpoints
             return Results.Ok(new AiSummaryResponse(result.Summary));
         }).RequirePermission(Permissions.Ai.Summarize);
 
-        v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/suggest-reply", async (Guid workspaceId, Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, ISuggestChannelReplyFeature suggestReply, IClock clock, CancellationToken ct) =>
+        v1.MapPost("/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/suggest-reply", async (Guid workspaceId, Guid channelId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, ISuggestChannelReplyFeature suggestReply, DlpService dlp, IClock clock, CancellationToken ct) =>
         {
             var profile = await EnsureProfileAsync(http.User, db, clock, ct);
             var workspace = await ResolveWorkspaceAsync(new WorkspaceId(workspaceId), profile.Id, db, tenant, ct);
@@ -57,6 +65,12 @@ internal static class AIEndpoints
             if (channel is null || channel.WorkspaceId != workspace.Id)
             {
                 return Results.Forbid();
+            }
+
+            var denied = await DlpGuard.BlockAsync(dlp, workspace.TenantId, workspace.Id, channel.SpaceId, channel.Id.Value, channel.Type.ToString(), DlpActions.Ai, null, null, ct);
+            if (denied is not null)
+            {
+                return denied;
             }
 
             // Never on SendMessage hot path — opt-in suggest-reply only (D-06 / ADR-012 / B-045).
@@ -81,6 +95,7 @@ internal static class AIEndpoints
             VibeChatDbContext db,
             ITenantContext tenant,
             ITranscribeAttachmentFeature transcribe,
+            DlpService dlp,
             IAuditWriter audit,
             IClock clock,
             CancellationToken ct) =>
@@ -96,6 +111,12 @@ internal static class AIEndpoints
             if (channel is null || channel.WorkspaceId != workspace.Id)
             {
                 return Results.Forbid();
+            }
+
+            var denied = await DlpGuard.BlockAsync(dlp, workspace.TenantId, workspace.Id, channel.SpaceId, channel.Id.Value, channel.Type.ToString(), DlpActions.Ai, null, null, ct);
+            if (denied is not null)
+            {
+                return denied;
             }
 
             var result = await transcribe.TranscribeAsync(

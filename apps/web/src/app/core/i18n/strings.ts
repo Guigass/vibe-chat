@@ -1455,6 +1455,25 @@ export const ui = {
   complianceChecksum: $localize`:@@compliance.checksum:Checksum`,
   complianceProgress: $localize`:@@compliance.progress:Progresso`,
   complianceHistory: $localize`:@@compliance.history:Histórico`,
+  complianceGrantDlp: $localize`:@@compliance.grantDlp:Pode classificar dados`,
+  dlpTitle: $localize`:@@dlp.title:Classificação e DLP`,
+  dlpDisabled: $localize`:@@dlp.disabled:A classificação de dados está desligada nesta instalação.`,
+  dlpBadge: $localize`:@@dlp.badge:Classificação`,
+  dlpPublic: $localize`:@@dlp.public:Público`,
+  dlpInternal: $localize`:@@dlp.internal:Interno`,
+  dlpConfidential: $localize`:@@dlp.confidential:Confidencial`,
+  dlpRestricted: $localize`:@@dlp.restricted:Restrito`,
+  dlpNotInspectable: $localize`:@@dlp.notInspectable:Conteúdo não inspecionável`,
+  dlpSimulation: $localize`:@@dlp.simulation:Simulação — mede sem bloquear`,
+  dlpEnforce: $localize`:@@dlp.enforce:Em vigor — bloqueia de verdade`,
+  dlpSaved: $localize`:@@dlp.saved:Política atualizada.`,
+  dlpMetrics: $localize`:@@dlp.metrics:Medição`,
+  dlpReview: $localize`:@@dlp.review:Peça revisão a um administrador de política.`,
+  dlpBlocked: $localize`:@@error.DlpBlocked:A política de dados bloqueou esta ação.`,
+  dlpQuarantined: $localize`:@@error.DlpQuarantined:A política de dados colocou esta ação em quarentena.`,
+  dlpDowngradeBlocked: $localize`:@@error.DlpDowngradeBlocked:Não dá para baixar a classificação abaixo do nível herdado.`,
+  dlpChannel: $localize`:@@dlp.channel:Canal`,
+  dlpAssign: $localize`:@@dlp.assign:Aplicar rótulo`,
 } as const;
 
 export function fillTemplate(
@@ -1676,6 +1695,14 @@ export function translateErrorCode(code: string | undefined): string {
     case 'ComplianceExpiryInvalid':
     case 'ComplianceCapabilityInvalid':
       return ui.complianceError;
+    case 'DlpBlocked':
+      return ui.dlpBlocked;
+    case 'DlpQuarantined':
+      return ui.dlpQuarantined;
+    case 'DlpDowngradeBlocked':
+      return ui.dlpDowngradeBlocked;
+    case 'DlpDisabled':
+      return ui.dlpDisabled;
     default:
       return code ?? '';
   }

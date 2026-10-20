@@ -156,7 +156,15 @@ public sealed class ArchitectureRulesTests
             "compliance.legal_holds",
             "compliance.discovery_cases",
             "compliance.discovery_exports",
-            "compliance.custody_events"
+            "compliance.custody_events",
+            "compliance.dlp_policies",
+            "compliance.data_labels",
+            "compliance.label_assignments",
+            "compliance.dlp_rules",
+            "compliance.dlp_detectors",
+            "compliance.dlp_exceptions",
+            "compliance.dlp_false_positives",
+            "compliance.dlp_decisions"
         ];
 
         foreach (var table in tenantTables)

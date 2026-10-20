@@ -11,7 +11,7 @@ export interface ComplianceAccess {
 export interface ComplianceGrant {
   id: string;
   userId: string;
-  capability: 'hold' | 'discovery';
+  capability: 'hold' | 'discovery' | 'dlp';
   grantedBy: string;
   createdAt: string;
 }
@@ -71,7 +71,7 @@ export class ComplianceApiService extends HttpApiClient {
     return this.request(`/api/v1/workspaces/${workspaceId}/compliance/grants`);
   }
 
-  grant(workspaceId: string, userId: string, capability: 'hold' | 'discovery'): Promise<ComplianceGrant> {
+  grant(workspaceId: string, userId: string, capability: 'hold' | 'discovery' | 'dlp'): Promise<ComplianceGrant> {
     return this.send(`/api/v1/workspaces/${workspaceId}/compliance/grants`, { userId, capability });
   }
 

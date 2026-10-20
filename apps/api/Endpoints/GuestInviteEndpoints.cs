@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using VibeChat.Administration;
 using VibeChat.Api;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
@@ -9,6 +10,7 @@ using VibeChat.Conversations;
 using VibeChat.Directory;
 using VibeChat.Identity;
 using VibeChat.Infrastructure;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.Realtime;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
@@ -41,6 +43,7 @@ internal static class GuestInviteEndpoints
         IRateLimiter rateLimiter,
         IOptions<InviteOptions> options,
         IClock clock,
+        DlpService dlp,
         CancellationToken ct)
     {
         if (!options.Value.Enabled)
@@ -89,6 +92,22 @@ internal static class GuestInviteEndpoints
             {
                 return Results.Conflict(new { error = "AlreadyMember" });
             }
+        }
+
+        var denied = await DlpGuard.BlockAsync(
+            dlp,
+            workspace.TenantId,
+            workspace.Id,
+            channel.SpaceId,
+            channel.Id.Value,
+            channel.Type.ToString(),
+            DlpActions.Guest,
+            null,
+            null,
+            ct);
+        if (denied is not null)
+        {
+            return denied;
         }
 
         var raw = InviteToken.CreateRaw();

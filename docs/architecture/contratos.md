@@ -928,6 +928,8 @@ Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send
 
 **Legal hold e eDiscovery (B-129 / ADR-042).** Flag `Features:LegalHold:Enabled` default false → 404 `LegalHoldDisabled`. Rotas em `/api/v1/workspaces/{workspaceId}/compliance/`: `access` (`workspace.read`), `grants` (`workspace.admin`, sem auto-nomeação), `holds` (`compliance.hold`, aprovação de outra pessoa, duas confirmações), `cases` e `exports` (`compliance.discovery`). Export `vibechat.ediscovery.export.v1` com progresso e SHA-256 do manifesto. Hold ativo e não expirado impede o purge só no escopo. `compliance.custody_events` é append-only.
 
+**Classificação e DLP (B-130 / ADR-044).** Flag `Features:Dlp:Enabled` default false → 404 `DlpDisabled` e o gate não muda efeitos. Rotas em `/api/v1/workspaces/{workspaceId}/dlp/`: `label` (`workspace.read`), demais (`compliance.dlp`, grant, não papel). Herança canal → space → workspace. Sem política, simulação mede e não bloqueia. Enforce é explícito. `block`/`quarantine` impedem encaminhamento, convite, export, webhook HTTP, IA e download antes do efeito. Decisão não guarda body. E2EE responde `NotInspectable`.
+
 **Metadata de `message.delete` (B-169 / ADR-043):** quando `contentAuditEnabled=true`,
 `metadataJson` inclui `channelId`, `threadId?`, `sequence`, `authorId`, `deletedAt` e `body`
 (conteúdo no soft-delete). Com `false`, os mesmos ids e timestamps, sem `body`.

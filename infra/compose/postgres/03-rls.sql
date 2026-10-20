@@ -985,6 +985,63 @@ CREATE POLICY tenant_isolation_custody_events ON compliance.custody_events
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS compliance.dlp_policies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.dlp_policies FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.data_labels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.data_labels FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.label_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.label_assignments FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.dlp_rules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.dlp_rules FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.dlp_detectors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.dlp_detectors FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.dlp_exceptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.dlp_exceptions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.dlp_false_positives ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.dlp_false_positives FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.dlp_decisions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.dlp_decisions FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_dlp_policies ON compliance.dlp_policies;
+CREATE POLICY tenant_isolation_dlp_policies ON compliance.dlp_policies
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_data_labels ON compliance.data_labels;
+CREATE POLICY tenant_isolation_data_labels ON compliance.data_labels
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_label_assignments ON compliance.label_assignments;
+CREATE POLICY tenant_isolation_label_assignments ON compliance.label_assignments
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_dlp_rules ON compliance.dlp_rules;
+CREATE POLICY tenant_isolation_dlp_rules ON compliance.dlp_rules
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_dlp_detectors ON compliance.dlp_detectors;
+CREATE POLICY tenant_isolation_dlp_detectors ON compliance.dlp_detectors
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_dlp_exceptions ON compliance.dlp_exceptions;
+CREATE POLICY tenant_isolation_dlp_exceptions ON compliance.dlp_exceptions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_dlp_false_positives ON compliance.dlp_false_positives;
+CREATE POLICY tenant_isolation_dlp_false_positives ON compliance.dlp_false_positives
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_dlp_decisions ON compliance.dlp_decisions;
+CREATE POLICY tenant_isolation_dlp_decisions ON compliance.dlp_decisions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 CREATE SCHEMA IF NOT EXISTS compliance;
 
 CREATE OR REPLACE FUNCTION compliance.reject_custody_mutation()

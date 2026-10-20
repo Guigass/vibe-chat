@@ -47,8 +47,9 @@ public static class ComplianceCapabilities
 {
     public const string Hold = "hold";
     public const string Discovery = "discovery";
+    public const string Dlp = "dlp";
 
-    public static bool Known(string? capability) => capability is Hold or Discovery;
+    public static bool Known(string? capability) => capability is Hold or Discovery or Dlp;
 }
 
 public static class LegalHoldErrors

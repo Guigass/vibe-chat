@@ -1,12 +1,14 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using VibeChat.Administration;
 using VibeChat.Api;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
 using VibeChat.Files;
 using VibeChat.Infrastructure;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.Messaging;
 using VibeChat.SharedKernel;
 using static VibeChat.Api.Endpoints.FilesEndpointHelpers;
@@ -313,6 +315,7 @@ internal static class FilesEndpoints
             IObjectStorage storage,
             FilesSettingsResolver filesSettings,
             IOptions<MalwareScanOptions> scanOptions,
+            DlpService dlp,
             IClock clock,
             CancellationToken ct) =>
         {
@@ -328,6 +331,12 @@ internal static class FilesEndpoints
             if (attachment is null || !AttachmentScanPolicies.CanDownload(attachment, scanOptions.Value.FailClosed))
             {
                 return Results.NotFound();
+            }
+
+            var denied = await DlpGuard.BlockAsync(dlp, channel.TenantId, channel.WorkspaceId, channel.SpaceId, channel.Id.Value, channel.Type.ToString(), DlpActions.Download, null, attachment.Id, ct);
+            if (denied is not null)
+            {
+                return denied;
             }
 
             var files = await filesSettings.ResolveAsync(channel.TenantId, ct);
@@ -350,6 +359,7 @@ internal static class FilesEndpoints
             ITenantContext tenant,
             IObjectStorage storage,
             FilesSettingsResolver filesSettings,
+            DlpService dlp,
             IClock clock,
             CancellationToken ct) =>
         {
@@ -369,6 +379,12 @@ internal static class FilesEndpoints
                 || string.IsNullOrWhiteSpace(attachment.ThumbnailKey))
             {
                 return Results.NotFound();
+            }
+
+            var denied = await DlpGuard.BlockAsync(dlp, channel.TenantId, channel.WorkspaceId, channel.SpaceId, channel.Id.Value, channel.Type.ToString(), DlpActions.Download, null, attachment.Id, ct);
+            if (denied is not null)
+            {
+                return denied;
             }
 
             var files = await filesSettings.ResolveAsync(channel.TenantId, ct);

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using VibeChat.Administration;
 using VibeChat.Api;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
@@ -7,6 +8,7 @@ using VibeChat.Conversations;
 using VibeChat.Files;
 using VibeChat.Identity;
 using VibeChat.Infrastructure;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.Messaging;
 using VibeChat.Search;
 using VibeChat.SharedKernel;
@@ -266,6 +268,7 @@ internal static class SearchEndpoints
         VibeChatDbContext db,
         ITenantContext tenant,
         ISemanticQuery semantic,
+        DlpService dlp,
         IOptions<SemanticSearchOptions> options,
         IClock clock,
         CancellationToken ct)
@@ -287,6 +290,13 @@ internal static class SearchEndpoints
             return gate.Error;
         }
 
+        var denied = await DlpGuard.BlockAsync(
+            dlp, gate.Workspace!.TenantId, gate.Workspace.Id, null, null, null, DlpActions.Ai, null, null, ct);
+        if (denied is not null)
+        {
+            return denied;
+        }
+
         var outcome = await semantic.QueryAsync(
             new SemanticQueryRequest(gate.Workspace!.TenantId, gate.Workspace.Id, gate.Profile!.Id, query),
             ct);
@@ -300,6 +310,7 @@ internal static class SearchEndpoints
         VibeChatDbContext db,
         ITenantContext tenant,
         IAuditWriter audit,
+        DlpService dlp,
         IOptions<SemanticSearchOptions> options,
         IClock clock,
         CancellationToken ct)
@@ -321,6 +332,13 @@ internal static class SearchEndpoints
         if (!enabled)
         {
             return Disabled();
+        }
+
+        var denied = await DlpGuard.BlockAsync(
+            dlp, gate.Workspace!.TenantId, gate.Workspace.Id, null, null, null, DlpActions.Ai, null, null, ct);
+        if (denied is not null)
+        {
+            return denied;
         }
 
         var ids = (body.CitationIds ?? []).Where(id => id != Guid.Empty).Distinct().Take(SemanticPolicies.MaxCitations).ToArray();

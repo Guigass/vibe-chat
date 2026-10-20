@@ -1432,6 +1432,25 @@
     "compliance.export": "Экспорт",
     "compliance.checksum": "Контрольная сумма",
     "compliance.progress": "Прогресс",
-    "compliance.history": "История"
+    "compliance.history": "История",
+    "compliance.grantDlp": "Может классифицировать данные",
+    "dlp.title": "Классификация и DLP",
+    "dlp.disabled": "Классификация данных выключена в этой установке.",
+    "dlp.badge": "Классификация",
+    "dlp.public": "Публичный",
+    "dlp.internal": "Внутренний",
+    "dlp.confidential": "Конфиденциальный",
+    "dlp.restricted": "Ограниченный",
+    "dlp.notInspectable": "Содержимое нельзя проверить",
+    "dlp.simulation": "Симуляция — измеряет без блокировки",
+    "dlp.enforce": "Включено — действительно блокирует",
+    "dlp.saved": "Политика обновлена.",
+    "dlp.metrics": "Измерение",
+    "dlp.review": "Попросите проверку у администратора политики.",
+    "error.DlpBlocked": "Политика данных заблокировала это действие.",
+    "error.DlpQuarantined": "Политика данных поместила это действие в карантин.",
+    "error.DlpDowngradeBlocked": "Нельзя понизить классификацию ниже унаследованного уровня.",
+    "dlp.channel": "Канал",
+    "dlp.assign": "Применить метку"
   }
 }
