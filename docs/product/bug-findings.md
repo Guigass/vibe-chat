@@ -27,6 +27,7 @@ Regras do registro:
 
 | ID      | Área              | Achado                                                                | Severidade | Status                                       |
 | ------- | ----------------- | --------------------------------------------------------------------- | ---------- | -------------------------------------------- |
+| BUG-030 | Login / Keycloak  | Volume novo: id de client duplicado; Keycloak reinicia e o OIDC não sobe | Média      | Aberto                                       |
 | BUG-029 | Header / busca    | Hífen no meio da palavra vira exclusão; `Bem-vindo` não acha a mensagem | Baixa      | Aberto                                       |
 | BUG-028 | Shell / perfil    | Painel My profile corta o formulário; Save profile fica fora do mouse | Média      | Aberto                                       |
 | BUG-027 | Shell / painéis laterais | Abrir Settings e depois My profile empilha painéis; overlay não some e só reload limpa | Média      | Aberto                                       |
@@ -50,6 +51,47 @@ Regras do registro:
 | BUG-018 | Timeline / scroll | Scroll não fica colado no fim ao enviar/receber (às vezes)           | Média      | Done                                         |
 
 ## Detalhamento
+
+### BUG-030 — Keycloak não sobe em volume novo: id de client duplicado
+
+- Status: **Aberto**
+- Severidade: **Média**. Num banco do Keycloak novo o import do realm falha,
+  o container reinicia e o login OIDC não abre. Não é **Alta**: no lab a API
+  sobe (health 200) e o DevAuth continua — entrar, ler e enviar na tela
+  seguem. O efeito é instalação nova do Keycloak. Volume que já importou o
+  realm antes não deve ser afetado (hipótese: `--import-realm` ignora realm
+  existente). Não é **Baixa**: o servidor de login oficial não fica healthy;
+  não é polimento de tela.
+- Observado em: 2026-10-20, ~19:15–19:30 America/Sao_Paulo; lab Compose
+  (`apps`, volumes novos), `main` em `32977f0`. Container `keycloak`
+  (`quay.io/keycloak/keycloak:26.0.2`, `start-dev --import-realm`) não sobe
+  e fica reiniciando. Log: `ERROR: Failed to start server in (development)
+  mode` / `ERROR: Duplicate resource error` /
+  `A different object with the same identifier value was already associated
+  with the session: [org.keycloak.models.jpa.entities.ClientEntity#22222222-2222-2222-2222-222222222204]`.
+  A API responde health 200. Login DevAuth segue. Login OIDC via Keycloak
+  não há, porque o servidor não fica de pé.
+- Hipótese: em `infra/keycloak/realm-vibechat.json` o id
+  `22222222-2222-2222-2222-222222222204` está em dois clients:
+  `vibechat-sso-directory` (~linha 259) e `account-console` (~linha 300).
+  O client `vibechat-sso-directory` entrou no PR #203 (`842d864`, B-164 SSO
+  broker, 18/10/2026) e reusou o id que `account-console` já tinha. O
+  Hibernate recusa a segunda `ClientEntity` com o mesmo identificador e o
+  import aborta. `realm-vibechat.staging.json` tem esse id só em
+  `account-console`. Hipótese a verificar em deploy já importado:
+  `--import-realm` ignora realm existente, então volume antigo não
+  reimporta e não bate nesse erro.
+- Arquivos: `infra/keycloak/realm-vibechat.json` (`vibechat-sso-directory`,
+  `account-console`).
+- Resultado esperado: cada client do realm com id único. Com volume novo o
+  Keycloak fica healthy e o login OIDC abre. DevAuth de Development segue.
+- Risk class: R1.
+- Owner automático: Infra (A).
+- Critério de resolução: ids únicos no realm (o
+  `22222222-2222-2222-2222-222222222204` fica num client só); no lab,
+  Keycloak healthy com volume novo; login OIDC funciona; um check (teste ou
+  validação de CI) falha se o realm tiver id de client duplicado; finding
+  `Done`. Distinto do DevAuth, que já segue neste lab.
 
 ### BUG-029 — Busca trata hífen no meio da palavra como exclusão
 
