@@ -31,6 +31,7 @@ public sealed class LegalHoldService(VibeChatDbContext db, IClock clock, ILogger
             enabled = true,
             hold = grants.Contains(ComplianceCapabilities.Hold),
             discovery = grants.Contains(ComplianceCapabilities.Discovery),
+            siem = grants.Contains(ComplianceCapabilities.AuditExport),
             canGrant
         });
     }

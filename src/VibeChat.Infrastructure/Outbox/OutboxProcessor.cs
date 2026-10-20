@@ -394,6 +394,17 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await RlsSession.CommitAsync(dbContext, cancellationToken);
+        try
+        {
+            using var siemScope = scopeFactory.CreateScope();
+            var siem = siemScope.ServiceProvider.GetRequiredService<SiemExportService>();
+            await siem.DrainAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "SIEM drain failed after the outbox batch was committed");
+        }
+
         return messages.Length;
     }
 

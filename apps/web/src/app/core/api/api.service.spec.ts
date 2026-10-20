@@ -7,6 +7,7 @@ import { AutomationApiService } from './automation-api.service';
 import { ConnectorApiService } from './connector-api.service';
 import { ComplianceApiService } from './compliance-api.service';
 import { DlpApiService } from './dlp-api.service';
+import { SiemApiService } from './siem-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
@@ -41,6 +42,7 @@ function createApi(auth: AuthStub): ApiService {
       ConnectorApiService,
       ComplianceApiService,
       DlpApiService,
+      SiemApiService,
       { provide: AuthService, useValue: auth },
     ],
   });
@@ -91,6 +93,12 @@ describe('ApiService facade', () => {
     for (const name of names) {
       expect(typeof (api as unknown as Record<string, unknown>)[name], name).toBe('function');
     }
+    expect(typeof api.listSiemDestinations).toBe('function');
+    expect(typeof api.createSiemDestination).toBe('function');
+    expect(typeof api.rotateSiemDestination).toBe('function');
+    expect(typeof api.revokeSiemDestination).toBe('function');
+    expect(typeof api.testSiemDestination).toBe('function');
+    expect(typeof api.backfillSiemDestination).toBe('function');
   });
 
   it('sends the dev user header and keeps idempotency on send', async () => {

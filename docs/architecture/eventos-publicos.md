@@ -422,3 +422,95 @@ Schema:
 }
 ```
 
+### audit.event.recorded v1
+
+- Wire: `audit.event.recorded`
+- Status: active
+- Changelog: Minimized audit envelope for SIEM. Message body is not a property.
+
+Exemplo:
+
+```json
+{
+  "eventType": "audit.event.recorded",
+  "schemaVersion": 1,
+  "eventId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "occurredAt": "2026-10-20T12:00:00.0000000\u002B00:00",
+  "category": "siem",
+  "severity": "info",
+  "action": "siem.test",
+  "synthetic": true
+}
+```
+
+Schema:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "eventType",
+    "schemaVersion",
+    "eventId",
+    "occurredAt",
+    "category",
+    "severity",
+    "action",
+    "synthetic"
+  ],
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "enum": [
+        "audit.event.recorded"
+      ]
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "category": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "action": {
+      "type": "string"
+    },
+    "synthetic": {
+      "type": "boolean"
+    },
+    "entityType": {
+      "type": "string"
+    },
+    "entityId": {
+      "type": "string"
+    },
+    "actorId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  }
+}
+```
+

@@ -1451,6 +1451,26 @@
     "error.DlpQuarantined": "데이터 정책이 이 작업을 격리했습니다.",
     "error.DlpDowngradeBlocked": "상속된 수준보다 분류를 낮출 수 없습니다.",
     "dlp.channel": "채널",
-    "dlp.assign": "라벨 적용"
+    "dlp.assign": "라벨 적용",
+    "compliance.grantSiem": "감사 내보내기 가능",
+    "siem.title": "감사 SIEM 내보내기",
+    "siem.disabled": "이 설치에서는 SIEM 내보내기가 꺼져 있습니다.",
+    "siem.destination": "대상",
+    "siem.url": "HTTPS URL",
+    "siem.transport": "형식",
+    "siem.webhook": "JSON 웹훅",
+    "siem.cef": "Syslog CEF",
+    "siem.create": "대상 저장",
+    "siem.test": "테스트 이벤트 보내기",
+    "siem.rotate": "비밀 회전",
+    "siem.revoke": "대상 철회",
+    "siem.backfill": "제한된 백필",
+    "siem.lag": "지연",
+    "siem.circuit": "회로",
+    "siem.secretOnce": "지금 비밀을 복사하세요. 다시 표시되지 않습니다.",
+    "siem.saved": "대상을 저장했습니다.",
+    "siem.empty": "구성된 대상이 없습니다.",
+    "siem.health": "마지막 성공",
+    "siem.error": "SIEM 대상을 업데이트하지 못했습니다."
   }
 }

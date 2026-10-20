@@ -4,7 +4,7 @@
 -- Session GUCs (SET LOCAL / set_config is_local preferred inside transactions):
 --   app.tenant_id  — required for tenant-scoped reads/writes (fail closed when unset)
 --   app.user_id    — bootstrap membership discovery before tenant is known
---   app.job_role   — 'outbox' | 'retention' | 'polls' | 'schedule' | 'digest' | 'tasks' | 'automation' | 'connector' for worker cross-tenant claim paths only
+--   app.job_role   — 'outbox' | 'retention' | 'polls' | 'schedule' | 'digest' | 'tasks' | 'automation' | 'connector' | 'siem' for worker cross-tenant claim paths only
 --   app.invite_token_hash — B-040 accept lookup only; reveals the single matching invite row
 --   app.integration_token_hash — B-109 token lookup only; reveals the single matching bot token row
 --   app.scim_token_hash — B-128 token lookup only; reveals the single matching SCIM token row
@@ -1039,6 +1039,24 @@ CREATE POLICY tenant_isolation_dlp_false_positives ON compliance.dlp_false_posit
 
 DROP POLICY IF EXISTS tenant_isolation_dlp_decisions ON compliance.dlp_decisions;
 CREATE POLICY tenant_isolation_dlp_decisions ON compliance.dlp_decisions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+ALTER TABLE IF EXISTS compliance.siem_destinations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.siem_destinations FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.siem_deliveries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.siem_deliveries FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_siem_destinations ON compliance.siem_destinations;
+CREATE POLICY tenant_isolation_siem_destinations ON compliance.siem_destinations
+    USING (
+        "TenantId" = app.current_tenant_id()
+        OR app.current_job_role() = 'siem'
+    )
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_siem_deliveries ON compliance.siem_deliveries;
+CREATE POLICY tenant_isolation_siem_deliveries ON compliance.siem_deliveries
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

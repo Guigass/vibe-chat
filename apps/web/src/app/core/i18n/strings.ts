@@ -1474,6 +1474,26 @@ export const ui = {
   dlpDowngradeBlocked: $localize`:@@error.DlpDowngradeBlocked:Não dá para baixar a classificação abaixo do nível herdado.`,
   dlpChannel: $localize`:@@dlp.channel:Canal`,
   dlpAssign: $localize`:@@dlp.assign:Aplicar rótulo`,
+  complianceGrantSiem: $localize`:@@compliance.grantSiem:Pode exportar audit`,
+  siemTitle: $localize`:@@siem.title:Exportação de audit para SIEM`,
+  siemDisabled: $localize`:@@siem.disabled:A exportação para SIEM está desligada nesta instalação.`,
+  siemDestination: $localize`:@@siem.destination:Destino`,
+  siemUrl: $localize`:@@siem.url:URL HTTPS`,
+  siemTransport: $localize`:@@siem.transport:Formato`,
+  siemWebhook: $localize`:@@siem.webhook:Webhook JSON`,
+  siemCef: $localize`:@@siem.cef:Syslog CEF`,
+  siemCreate: $localize`:@@siem.create:Salvar destino`,
+  siemTest: $localize`:@@siem.test:Enviar evento de teste`,
+  siemRotate: $localize`:@@siem.rotate:Rotacionar segredo`,
+  siemRevoke: $localize`:@@siem.revoke:Revogar destino`,
+  siemBackfill: $localize`:@@siem.backfill:Backfill limitado`,
+  siemLag: $localize`:@@siem.lag:Atraso`,
+  siemCircuit: $localize`:@@siem.circuit:Circuito`,
+  siemSecretOnce: $localize`:@@siem.secretOnce:Copie o segredo agora. Ele não aparece de novo.`,
+  siemSaved: $localize`:@@siem.saved:Destino salvo.`,
+  siemEmpty: $localize`:@@siem.empty:Nenhum destino configurado.`,
+  siemHealth: $localize`:@@siem.health:Último sucesso`,
+  siemError: $localize`:@@siem.error:Não foi possível atualizar o destino de SIEM.`,
 } as const;
 
 export function fillTemplate(
@@ -1703,6 +1723,14 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.dlpDowngradeBlocked;
     case 'DlpDisabled':
       return ui.dlpDisabled;
+    case 'SiemDisabled':
+      return ui.siemDisabled;
+    case 'SiemEgressBlocked':
+    case 'SiemCircuitOpen':
+    case 'SiemDestinationLimit':
+    case 'SiemRevoked':
+    case 'SiemBackfillInvalid':
+      return ui.siemError;
     default:
       return code ?? '';
   }

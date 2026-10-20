@@ -925,6 +925,159 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("process_settings", "administration");
                 });
 
+            modelBuilder.Entity("VibeChat.Administration.SiemDelivery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeliveredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DestinationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DestinationId", "EventId")
+                        .IsUnique();
+
+                    b.ToTable("siem_deliveries", "compliance");
+                });
+
+            modelBuilder.Entity("VibeChat.Administration.SiemDestination", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BackfillCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("BackfillKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("CategoriesJson")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<DateTimeOffset>("CheckpointAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CheckpointEventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Circuit")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FailureCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("LastSuccessAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("MinSeverity")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<bool>("Minimize")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTimeOffset?>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("OpenUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RotateKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TestEventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TestKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Transport")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "WorkspaceId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.ToTable("siem_destinations", "compliance");
+                });
+
             modelBuilder.Entity("VibeChat.Administration.SupportBundleRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5338,6 +5491,54 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("VapidPrivateKey")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("VibeChat.Administration.SiemDestination", b =>
+                {
+                    b.OwnsOne("VibeChat.SharedKernel.EncryptedSecretEnvelope", "SigningSecret", b1 =>
+                        {
+                            b1.Property<Guid>("SiemDestinationId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<byte[]>("Ciphertext")
+                                .HasColumnType("bytea")
+                                .HasColumnName("SigningSecretCiphertext");
+
+                            b1.Property<short?>("FormatVersion")
+                                .HasColumnType("smallint")
+                                .HasColumnName("SigningSecretFormatVersion");
+
+                            b1.Property<int?>("KeyVersion")
+                                .HasColumnType("integer")
+                                .HasColumnName("SigningSecretKeyVersion");
+
+                            b1.Property<string>("MaskSuffix")
+                                .HasMaxLength(8)
+                                .HasColumnType("character varying(8)")
+                                .HasColumnName("SigningSecretMaskSuffix");
+
+                            b1.Property<byte[]>("Nonce")
+                                .HasColumnType("bytea")
+                                .HasColumnName("SigningSecretNonce");
+
+                            b1.Property<DateTimeOffset?>("RotatedAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("SigningSecretRotatedAt");
+
+                            b1.Property<byte[]>("Tag")
+                                .HasColumnType("bytea")
+                                .HasColumnName("SigningSecretTag");
+
+                            b1.HasKey("SiemDestinationId");
+
+                            b1.ToTable("siem_destinations", "compliance");
+
+                            b1.WithOwner()
+                                .HasForeignKey("SiemDestinationId");
+                        });
+
+                    b.Navigation("SigningSecret")
                         .IsRequired();
                 });
 

@@ -56,6 +56,7 @@ public sealed class InfrastructureRegistrationTests
             "Scoped:SupportDiagnosticsService:SupportDiagnosticsService",
             "Scoped:LegalHoldService:LegalHoldService",
             "Scoped:DlpService:DlpService",
+            "Scoped:SiemExportService:SiemExportService",
             "Singleton:RuntimeSecretProtector:RuntimeSecretProtector",
             "Singleton:IRuntimeSettingsCacheInvalidator:RuntimeSettingsCacheInvalidator",
             "Scoped:ProcessSettingsResolver:ProcessSettingsResolver",

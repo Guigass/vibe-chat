@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using VibeChat.Administration;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.Integrations;
 
 namespace VibeChat.Infrastructure;
@@ -26,6 +28,15 @@ internal static class IntegrationsServiceCollectionExtensions
             AllowAutoRedirect = false
         });
         services.AddScoped<IOutboundWebhookDispatcher, OutboundWebhookDispatcher>();
+        services.AddHttpClient(SiemExportService.HttpClientName, client =>
+        {
+            client.Timeout = SiemLimits.HttpTimeout;
+            client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "VibeChat-SIEM/1.0");
+        })
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            AllowAutoRedirect = false
+        });
         services.AddHttpClient(HttpConnectorTransport.HttpClientName, client =>
         {
             client.Timeout = TimeSpan.FromSeconds(5);

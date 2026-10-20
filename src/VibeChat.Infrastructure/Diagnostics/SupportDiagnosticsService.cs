@@ -425,7 +425,8 @@ public sealed class SupportDiagnosticsService(
         ["import"] = configuration.GetValue("Features:Import:Enabled", false),
         ["push"] = configuration.GetValue("Push:Enabled", false),
         ["supportBundle"] = options.Value.Enabled,
-        ["legalHold"] = configuration.GetValue("Features:LegalHold:Enabled", false)
+        ["legalHold"] = configuration.GetValue("Features:LegalHold:Enabled", false),
+        ["siem"] = configuration.GetValue("Features:Siem:Enabled", false)
     };
 
     private Task<SupportProbeResult> EmailProbeAsync() =>

@@ -48,8 +48,9 @@ public static class ComplianceCapabilities
     public const string Hold = "hold";
     public const string Discovery = "discovery";
     public const string Dlp = "dlp";
+    public const string AuditExport = "audit.export";
 
-    public static bool Known(string? capability) => capability is Hold or Discovery or Dlp;
+    public static bool Known(string? capability) => capability is Hold or Discovery or Dlp or AuditExport;
 }
 
 public static class LegalHoldErrors

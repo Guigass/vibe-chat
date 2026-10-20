@@ -153,6 +153,8 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<DlpException> DlpExceptions => Set<DlpException>();
     public DbSet<DlpFalsePositive> DlpFalsePositives => Set<DlpFalsePositive>();
     public DbSet<DlpDecisionRecord> DlpDecisions => Set<DlpDecisionRecord>();
+    public DbSet<SiemDestination> SiemDestinations => Set<SiemDestination>();
+    public DbSet<SiemDelivery> SiemDeliveries => Set<SiemDelivery>();
 
     public override int SaveChanges()
     {
@@ -1726,6 +1728,41 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.ReasonCode).HasMaxLength(32);
             entity.Property(x => x.LabelKey).HasMaxLength(DlpLimits.MaxKeyLength);
             entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.CreatedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<SiemDestination>(entity =>
+        {
+            entity.ToTable("siem_destinations", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Name).HasMaxLength(SiemLimits.MaxNameLength);
+            entity.Property(x => x.Transport).HasMaxLength(32);
+            entity.Property(x => x.Url).HasMaxLength(SiemLimits.MaxUrlLength);
+            entity.Property(x => x.CategoriesJson).HasMaxLength(400);
+            entity.Property(x => x.MinSeverity).HasMaxLength(16);
+            entity.Property(x => x.Status).HasMaxLength(16);
+            entity.Property(x => x.Circuit).HasMaxLength(16);
+            entity.Property(x => x.LastError).HasMaxLength(64);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(SiemLimits.MaxIdempotencyKeyLength);
+            entity.Property(x => x.RotateKey).HasMaxLength(SiemLimits.MaxIdempotencyKeyLength);
+            entity.Property(x => x.TestKey).HasMaxLength(SiemLimits.MaxIdempotencyKeyLength);
+            entity.Property(x => x.BackfillKey).HasMaxLength(SiemLimits.MaxIdempotencyKeyLength);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.IdempotencyKey }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+            MapEncryptedSecret(entity.OwnsOne(x => x.SigningSecret), "SigningSecret");
+        });
+
+        modelBuilder.Entity<SiemDelivery>(entity =>
+        {
+            entity.ToTable("siem_deliveries", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Status).HasMaxLength(16);
+            entity.Property(x => x.ErrorCode).HasMaxLength(64);
+            entity.HasIndex(x => new { x.DestinationId, x.EventId }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
     }

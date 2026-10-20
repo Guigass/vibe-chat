@@ -5,13 +5,14 @@ export interface ComplianceAccess {
   enabled: boolean;
   hold: boolean;
   discovery: boolean;
+  siem: boolean;
   canGrant: boolean;
 }
 
 export interface ComplianceGrant {
   id: string;
   userId: string;
-  capability: 'hold' | 'discovery' | 'dlp';
+  capability: 'hold' | 'discovery' | 'dlp' | 'audit.export';
   grantedBy: string;
   createdAt: string;
 }
@@ -71,7 +72,7 @@ export class ComplianceApiService extends HttpApiClient {
     return this.request(`/api/v1/workspaces/${workspaceId}/compliance/grants`);
   }
 
-  grant(workspaceId: string, userId: string, capability: 'hold' | 'discovery' | 'dlp'): Promise<ComplianceGrant> {
+  grant(workspaceId: string, userId: string, capability: 'hold' | 'discovery' | 'dlp' | 'audit.export'): Promise<ComplianceGrant> {
     return this.send(`/api/v1/workspaces/${workspaceId}/compliance/grants`, { userId, capability });
   }
 

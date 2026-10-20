@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ComplianceApiService, ComplianceGrant, CustodyEvent, DiscoveryCase, DiscoveryExport, LegalHold } from '../../core/api/compliance-api.service';
 import { DlpPanel } from './dlp-panel';
+import { SiemPanel } from './siem-panel';
 import { DirectoryApiService } from '../../core/api/directory-api.service';
 import { ui, translateErrorCode } from '../../core/i18n/strings';
 import { Workspace, WorkspaceMember } from '../../shared/models/chat.models';
@@ -9,7 +10,7 @@ import { Workspace, WorkspaceMember } from '../../shared/models/chat.models';
 @Component({
   selector: 'vc-compliance-page',
   standalone: true,
-  imports: [RouterLink, DlpPanel],
+  imports: [RouterLink, DlpPanel, SiemPanel],
   template: `
     <main class="compliance" data-testid="compliance-page">
       <header class="compliance__bar">
@@ -19,6 +20,7 @@ import { Workspace, WorkspaceMember } from '../../shared/models/chat.models';
       <p class="compliance__lead">{{ ui.complianceLead }}</p>
       <p class="compliance__warn" role="note">{{ ui.complianceWarning }}</p>
       <vc-dlp-panel />
+      <vc-siem-panel />
 
       @if (loading()) {
         <p role="status">{{ ui.complianceLoading }}</p>
@@ -50,6 +52,9 @@ import { Workspace, WorkspaceMember } from '../../shared/models/chat.models';
               </label>
               <label>{{ ui.complianceGrantDlp }}
                 <input type="radio" name="capability" value="dlp" (change)="capability.set('dlp')" [checked]="capability() === 'dlp'" />
+              </label>
+              <label>{{ ui.complianceGrantSiem }}
+                <input type="radio" name="capability" value="audit.export" (change)="capability.set('audit.export')" [checked]="capability() === 'audit.export'" />
               </label>
               <button type="submit" data-testid="compliance-grant">{{ ui.complianceGrantSave }}</button>
             </form>
@@ -173,7 +178,7 @@ export class CompliancePage implements OnInit {
   protected readonly cases = signal<DiscoveryCase[]>([]);
   protected readonly exported = signal<DiscoveryExport | null>(null);
   protected readonly userId = signal('');
-  protected readonly capability = signal<'hold' | 'discovery' | 'dlp'>('hold');
+  protected readonly capability = signal<'hold' | 'discovery' | 'dlp' | 'audit.export'>('hold');
   protected readonly scope = signal('workspace');
   protected readonly scopeId = signal('');
   protected readonly intervalStart = signal('');

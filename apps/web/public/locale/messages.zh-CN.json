@@ -1451,6 +1451,26 @@
     "error.DlpQuarantined": "数据策略已将此操作隔离。",
     "error.DlpDowngradeBlocked": "不能把分类降到继承级别以下。",
     "dlp.channel": "频道",
-    "dlp.assign": "应用标签"
+    "dlp.assign": "应用标签",
+    "compliance.grantSiem": "可以导出审计",
+    "siem.title": "审计导出到 SIEM",
+    "siem.disabled": "此安装中的 SIEM 导出已关闭。",
+    "siem.destination": "目的地",
+    "siem.url": "HTTPS URL",
+    "siem.transport": "格式",
+    "siem.webhook": "JSON Webhook",
+    "siem.cef": "Syslog CEF",
+    "siem.create": "保存目的地",
+    "siem.test": "发送测试事件",
+    "siem.rotate": "轮换密钥",
+    "siem.revoke": "撤销目的地",
+    "siem.backfill": "有限回填",
+    "siem.lag": "延迟",
+    "siem.circuit": "熔断",
+    "siem.secretOnce": "请立即复制密钥。它不会再次显示。",
+    "siem.saved": "目的地已保存。",
+    "siem.empty": "尚未配置目的地。",
+    "siem.health": "最近成功",
+    "siem.error": "无法更新 SIEM 目的地。"
   }
 }

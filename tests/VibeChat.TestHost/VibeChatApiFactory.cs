@@ -10,6 +10,7 @@ using Testcontainers.PostgreSql;
 using Testcontainers.Redis;
 using VibeChat.BuildingBlocks;
 using VibeChat.Infrastructure;
+using VibeChat.Infrastructure.Compliance;
 using Xunit;
 
 namespace VibeChat.TestHost;
@@ -201,6 +202,8 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Features:SupportBundle:Enabled", "true");
         builder.UseSetting("Features:LegalHold:Enabled", "true");
         builder.UseSetting("Features:Dlp:Enabled", "true");
+        builder.UseSetting("Features:Siem:Enabled", "true");
+        SiemTestDoubles.Send = SiemSandbox.Shared.Send;
         builder.UseSetting("Directory:Invites:MaxExpiryDays", "30");
         builder.UseSetting("Database:BootstrapOnStartup", "true");
         builder.UseSetting("Ai:Enabled", "true");

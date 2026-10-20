@@ -1451,6 +1451,26 @@
     "error.DlpQuarantined": "Политика данных поместила это действие в карантин.",
     "error.DlpDowngradeBlocked": "Нельзя понизить классификацию ниже унаследованного уровня.",
     "dlp.channel": "Канал",
-    "dlp.assign": "Применить метку"
+    "dlp.assign": "Применить метку",
+    "compliance.grantSiem": "Может экспортировать аудит",
+    "siem.title": "Экспорт аудита в SIEM",
+    "siem.disabled": "Экспорт в SIEM выключен в этой установке.",
+    "siem.destination": "Назначение",
+    "siem.url": "HTTPS URL",
+    "siem.transport": "Формат",
+    "siem.webhook": "JSON webhook",
+    "siem.cef": "Syslog CEF",
+    "siem.create": "Сохранить назначение",
+    "siem.test": "Отправить тестовое событие",
+    "siem.rotate": "Сменить секрет",
+    "siem.revoke": "Отозвать назначение",
+    "siem.backfill": "Ограниченный backfill",
+    "siem.lag": "Отставание",
+    "siem.circuit": "Контур",
+    "siem.secretOnce": "Скопируйте секрет сейчас. Он больше не появится.",
+    "siem.saved": "Назначение сохранено.",
+    "siem.empty": "Назначение не настроено.",
+    "siem.health": "Последний успех",
+    "siem.error": "Не удалось обновить назначение SIEM."
   }
 }
