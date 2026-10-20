@@ -9,6 +9,7 @@ using VibeChat.Conversations;
 using VibeChat.Files;
 using VibeChat.Identity;
 using VibeChat.Infrastructure;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.Infrastructure.Messaging;
 using VibeChat.Messaging;
 using VibeChat.SharedKernel;
@@ -737,6 +738,7 @@ internal static class MessagingEndpoints
             IRateLimiter rateLimiter,
             RateLimitSettingsResolver rateLimits,
             IClock clock,
+            DlpService dlp,
             CancellationToken ct) =>
         {
             var profile = await EnsureProfileAsync(http.User, db, clock, ct);
@@ -776,6 +778,40 @@ internal static class MessagingEndpoints
             if (!allowed)
             {
                 return Results.StatusCode(StatusCodes.Status429TooManyRequests);
+            }
+
+            var source = await db.Messages.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == new MessageId(messageId), ct);
+            if (source is not null)
+            {
+                var sourceChannelId = source.ConversationId;
+                if (source.ThreadId is Guid sourceThreadId)
+                {
+                    var thread = await db.MessageThreads.AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.Id == sourceThreadId, ct);
+                    if (thread is not null)
+                    {
+                        sourceChannelId = thread.ChannelId;
+                    }
+                }
+
+                var sourceChannel = await db.Channels.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == sourceChannelId, ct);
+                var denied = await DlpGuard.BlockAsync(
+                    dlp,
+                    membership.TenantId,
+                    new WorkspaceId(workspaceId),
+                    sourceChannel?.SpaceId,
+                    sourceChannelId.Value,
+                    sourceChannel?.Type.ToString(),
+                    DlpActions.Share,
+                    source.Body,
+                    source.Id.Value,
+                    ct);
+                if (denied is not null)
+                {
+                    return denied;
+                }
             }
 
             try
@@ -1816,6 +1852,7 @@ internal static class MessagingEndpoints
             ITenantContext tenant,
             IObjectStorage storage,
             FilesSettingsResolver filesSettings,
+            DlpService dlp,
             IClock clock,
             CancellationToken ct) =>
         {
@@ -1845,6 +1882,14 @@ internal static class MessagingEndpoints
             if (row?.ImageKey is null)
             {
                 return Results.NotFound();
+            }
+
+            var denied = await DlpGuard.BlockAsync(
+                dlp, channel.TenantId, channel.WorkspaceId, channel.SpaceId, channel.Id.Value, channel.Type.ToString(),
+                DlpActions.Download, null, message.Id.Value, ct);
+            if (denied is not null)
+            {
+                return denied;
             }
 
             var files = await filesSettings.ResolveAsync(channel.TenantId, ct);

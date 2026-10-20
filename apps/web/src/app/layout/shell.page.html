@@ -142,6 +142,7 @@
         <h1>
           {{ channels.activeChannel()?.isGroupDm ? '' : channels.activeChannel()?.isDirect ? '@' : '#' }}{{ channels.activeChannel()?.name || 'channel' }}
         </h1>
+        <vc-dlp-badge />
         @if (channels.activeChannel()?.isGroupDm) {
           <p data-testid="group-dm-header">
             {{ groupDmCountLabel() }}

@@ -211,7 +211,8 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-139 | Versionamento de eventos | **Done** (W13) — catálogo no repo, compatibilidade e flag off; [spec](../product/specs/B-139-eventos-versionados.md) |
 | B-129 | Legal hold e eDiscovery | **Done** — W14; flag `Features:LegalHold:Enabled` off; ADR-042; [spec](../product/specs/B-129-legal-hold-ediscovery.md) |
 | B-169 | Modo auditoria de conteúdo por tenant | **Done** — W14; `contentAuditEnabled` default true; ADR-043; [spec](../product/specs/B-169-modo-auditoria-conteudo-tenant.md) |
-| B-130/B-132…B-134/B-146 | Segurança enterprise, SIEM, policies e capacidade | Planned — W14 |
+| B-130 | Classificação de dados e DLP | **Done** — W14; flag `Features:Dlp:Enabled` off; ADR-044; [spec](../product/specs/B-130-classificacao-dlp.md) |
+| B-132…B-134/B-146 | SIEM, policies e capacidade | Planned — W14 |
 | B-135…B-138, B-140/B-141, B-063/B-066/B-111 | Plataforma, registry, bridges, branding e clients | Planned — W15 |
 | B-170, B-143…B-145, B-172 + B-064/B-065 | Performance/escalabilidade, offline, HA, storage, backup de chat (destinos), federação e E2EE | Planned — W16 |
 | B-147…B-149, B-152 | Live media, notas de reunião e canvas | Planned — W17 |
@@ -239,7 +240,7 @@ diferentes.
 
 Depois disso, usar a sequência de validação do horizonte ambicioso: comunicação
 organizada → conhecimento/ações → automação/governança (W13: B-164 e B-128
-Done; B-131 Done; B-139 Done; B-129 Done; B-169 Done; próximo B-130) → plataforma → apostas arquiteturais. Abrir no máximo uma aposta
+Done; B-131 Done; B-139 Done; B-129 Done; B-169 Done; B-130 Done; próximo B-132) → plataforma → apostas arquiteturais. Abrir no máximo uma aposta
 arquitetural por vez.
 
 ## Itens explicitamente rejeitados na fase 1

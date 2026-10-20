@@ -1432,6 +1432,25 @@
     "compliance.export": "Export",
     "compliance.checksum": "Checksum",
     "compliance.progress": "Progress",
-    "compliance.history": "History"
+    "compliance.history": "History",
+    "compliance.grantDlp": "Can classify data",
+    "dlp.title": "Classification and DLP",
+    "dlp.disabled": "Data classification is off in this installation.",
+    "dlp.badge": "Classification",
+    "dlp.public": "Public",
+    "dlp.internal": "Internal",
+    "dlp.confidential": "Confidential",
+    "dlp.restricted": "Restricted",
+    "dlp.notInspectable": "Content cannot be inspected",
+    "dlp.simulation": "Simulation — measures without blocking",
+    "dlp.enforce": "Enforced — actually blocks",
+    "dlp.saved": "Policy updated.",
+    "dlp.metrics": "Measurement",
+    "dlp.review": "Ask a policy administrator for review.",
+    "error.DlpBlocked": "The data policy blocked this action.",
+    "error.DlpQuarantined": "The data policy quarantined this action.",
+    "error.DlpDowngradeBlocked": "The classification cannot be lowered below the inherited level.",
+    "dlp.channel": "Channel",
+    "dlp.assign": "Apply label"
   }
 }

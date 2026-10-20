@@ -316,6 +316,18 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/compliance/cases", string.Join(",", new[] { Permissions.Compliance.Discovery }), false, ""),
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/compliance/cases/{caseId:guid}/exports", string.Join(",", new[] { Permissions.Compliance.Discovery }), false, ""),
             new("GET", "/api/v1/workspaces/{workspaceId:guid}/compliance/cases/{caseId:guid}/exports/{exportId:guid}", string.Join(",", new[] { Permissions.Compliance.Discovery }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/dlp/label", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/dlp/policy", string.Join(",", new[] { Permissions.Compliance.Dlp }), false, ""),
+            new("PUT", "/api/v1/workspaces/{workspaceId:guid}/dlp/policy", string.Join(",", new[] { Permissions.Compliance.Dlp }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/dlp/labels", string.Join(",", new[] { Permissions.Compliance.Dlp }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/dlp/labels", string.Join(",", new[] { Permissions.Compliance.Dlp }), false, ""),
+            new("PUT", "/api/v1/workspaces/{workspaceId:guid}/dlp/assignments", string.Join(",", new[] { Permissions.Compliance.Dlp }), false, ""),
+            new("PUT", "/api/v1/workspaces/{workspaceId:guid}/dlp/rules", string.Join(",", new[] { Permissions.Compliance.Dlp }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/dlp/detectors", string.Join(",", new[] { Permissions.Compliance.Dlp }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/dlp/false-positives", string.Join(",", new[] { Permissions.Compliance.Dlp }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/dlp/exceptions", string.Join(",", new[] { Permissions.Compliance.Dlp }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/dlp/metrics", string.Join(",", new[] { Permissions.Compliance.Dlp }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/dlp/simulate", string.Join(",", new[] { Permissions.Compliance.Dlp }), false, ""),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(

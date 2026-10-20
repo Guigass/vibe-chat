@@ -1,12 +1,14 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using VibeChat.Administration;
 using VibeChat.Api.Contracts;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
 using VibeChat.Identity;
 using VibeChat.Infrastructure;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.Integrations;
 using VibeChat.Messaging;
 using VibeChat.SharedKernel;
@@ -577,6 +579,7 @@ internal static class IncidentEndpoints
         VibeChatDbContext db,
         ITenantContext tenantContext,
         IAuditWriter audit,
+        DlpService dlp,
         IClock clock,
         IOptionsMonitor<IncidentOptions> options,
         CancellationToken ct)
@@ -590,6 +593,22 @@ internal static class IncidentEndpoints
         if (loaded.Room.Status != IncidentPolicies.Resolved || string.IsNullOrWhiteSpace(loaded.Room.PostmortemJson))
         {
             return Conflict("IncidentNotResolved");
+        }
+
+        var denied = await DlpGuard.BlockAsync(
+            dlp,
+            loaded.Room.TenantId,
+            loaded.Room.WorkspaceId,
+            null,
+            loaded.Room.ChannelId.Value,
+            null,
+            DlpActions.Export,
+            null,
+            loaded.Room.Id,
+            ct);
+        if (denied is not null)
+        {
+            return denied;
         }
 
         audit.Add(NewAudit(loaded.Room, loaded.Profile.Id, AuditActions.IncidentExported, clock.UtcNow, new { status = loaded.Room.Status }));

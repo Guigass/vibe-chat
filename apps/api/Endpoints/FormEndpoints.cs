@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using VibeChat.Administration;
 using VibeChat.Api.Contracts;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
@@ -9,6 +10,7 @@ using VibeChat.Conversations;
 using VibeChat.Files;
 using VibeChat.Identity;
 using VibeChat.Infrastructure;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.Infrastructure.Messaging;
 using VibeChat.Messaging;
 using VibeChat.SharedKernel;
@@ -682,6 +684,7 @@ internal static class FormEndpoints
         VibeChatDbContext db,
         ITenantContext tenant,
         IAuditWriter audit,
+        DlpService dlp,
         IClock clock,
         IOptionsMonitor<FormOptions> options,
         CancellationToken ct)
@@ -695,6 +698,22 @@ internal static class FormEndpoints
         if (opened.Error is not null)
         {
             return opened.Error;
+        }
+
+        var denied = await DlpGuard.BlockAsync(
+            dlp,
+            opened.Form!.TenantId,
+            opened.Form.WorkspaceId,
+            null,
+            opened.Form.ChannelId.Value,
+            null,
+            DlpActions.Export,
+            null,
+            opened.Form.Id,
+            ct);
+        if (denied is not null)
+        {
+            return denied;
         }
 
         var rows = await db.FormSubmissions.AsNoTracking()

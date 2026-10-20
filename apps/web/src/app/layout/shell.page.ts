@@ -80,6 +80,7 @@ import { defaultSidebarOpen, readNavCompact, SHELL_NARROW_MEDIA_QUERY, writeNavC
 import { LocaleService } from '../core/i18n/locale.service';
 import { ui } from '../core/i18n/strings';
 import { pluralCount } from '../core/i18n/format';
+import { DlpBadge } from './dlp-badge';
 @Component({
   selector: 'vc-shell-page',
   standalone: true,
@@ -88,7 +89,7 @@ import { pluralCount } from '../core/i18n/format';
     RouterLink,
     RouterLinkActive,
     ChannelList,
-    Timeline, Composer, TopicBoard,
+    Timeline, Composer, TopicBoard, DlpBadge,
     ShellContext,
     SummarizeButton,
     SuggestReplyButton,
@@ -203,7 +204,6 @@ export class ShellPage implements OnInit, OnDestroy {
     if (!path) return '';
     return `${window.location.origin}${path}`;
   }
-
   async copyInviteLink(): Promise<void> {
     const url = this.inviteAbsoluteUrl();
     if (!url) return;

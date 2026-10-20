@@ -47,6 +47,9 @@ original.
 | [039](ADR-039-scim-provisioning.md) | SCIM 2.0 como adapter de provisioning | Accepted |
 | [040](ADR-040-malware-scan.md) | Verificação de malware e quarentena de anexos | Accepted |
 | [041](ADR-041-eventos-versionados.md) | Registry de eventos públicos no repositório | Accepted |
+| [042](ADR-042-legal-hold-ediscovery.md) | Legal hold e eDiscovery | Accepted |
+| [043](ADR-043-auditoria-conteudo-tenant.md) | Auditoria de conteúdo por tenant | Accepted |
+| [044](ADR-044-classificacao-dlp.md) | Classificação de dados e DLP local | Accepted |
 
 ## Quando criar um ADR
 

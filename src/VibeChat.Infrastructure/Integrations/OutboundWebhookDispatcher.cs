@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using Minio;
 using StackExchange.Redis;
 using VibeChat.Administration;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.AI;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
@@ -43,7 +44,8 @@ public sealed class OutboundWebhookDispatcher(
     IHttpClientFactory httpClientFactory,
     IClock clock,
     IOptions<EventSchemaOptions> schemaOptions,
-    ILogger<OutboundWebhookDispatcher> logger) : IOutboundWebhookDispatcher
+    ILogger<OutboundWebhookDispatcher> logger,
+    DlpService dlp) : IOutboundWebhookDispatcher
 {
     public const string HttpClientName = "OutboundWebhooks";
 
@@ -66,6 +68,7 @@ public sealed class OutboundWebhookDispatcher(
             return;
         }
 
+        var gated = false;
         foreach (var endpoint in endpoints)
         {
             if (!endpoint.Enabled
@@ -78,6 +81,15 @@ public sealed class OutboundWebhookDispatcher(
                 continue;
             }
 
+            if (!gated && dlp.Enabled)
+            {
+                gated = true;
+                if (!await WebhookAllowedAsync(tenantId, channelId, payloadJson, cancellationToken))
+                {
+                    return;
+                }
+            }
+
             await DeliverOneAsync(
                 tenantId,
                 endpoint,
@@ -86,6 +98,58 @@ public sealed class OutboundWebhookDispatcher(
                 payloadJson,
                 persistImmediately: false,
                 cancellationToken);
+        }
+    }
+
+    private async Task<bool> WebhookAllowedAsync(
+        TenantId tenantId,
+        Guid channelId,
+        string payloadJson,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var channel = await dbContext.Channels.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.TenantId == tenantId && x.Id == new ChannelId(channelId), cancellationToken);
+            if (channel is null)
+            {
+                logger.LogWarning("DLP blocked webhook because channel {ChannelId} was missing", channelId);
+                return false;
+            }
+
+            string? body = null;
+            Guid? subjectId = null;
+            try
+            {
+                var root = JsonNode.Parse(payloadJson);
+                body = root?["body"]?.GetValue<string>();
+                if (root?["messageId"] is JsonNode messageNode && messageNode.GetValue<Guid>() is Guid messageId && messageId != Guid.Empty)
+                {
+                    subjectId = messageId;
+                }
+            }
+            catch (JsonException)
+            {
+                body = null;
+            }
+
+            var outcome = await dlp.EvaluateAsync(
+                tenantId,
+                channel.WorkspaceId,
+                channel.SpaceId,
+                channel.Id.Value,
+                channel.Type.ToString(),
+                DlpActions.Webhook,
+                body,
+                subjectId,
+                save: false,
+                cancellationToken);
+            return outcome.Proceed;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "DLP webhook gate failed closed for channel {ChannelId}", channelId);
+            return false;
         }
     }
 

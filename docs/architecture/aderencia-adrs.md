@@ -37,6 +37,7 @@ testes nem uma revisão de segurança.
 | [041](../adrs/ADR-041-eventos-versionados.md) | Registry de eventos no repositório | `PublicEventCatalog`, flag `Integrations:EventSchemas:Enabled=false`, sem bus | **Alinhado** (W13 / B-139) |
 | [042](../adrs/ADR-042-legal-hold-ediscovery.md) | Legal hold e eDiscovery | `compliance.*`, flag `Features:LegalHold:Enabled=false` | **Alinhado** (W14 / B-129) |
 | [043](../adrs/ADR-043-auditoria-conteudo-tenant.md) | Auditoria de conteúdo por tenant | `audit.content_audit_settings`, `contentAuditEnabled` default true | **Alinhado** (W14 / B-169) |
+| [044](../adrs/ADR-044-classificacao-dlp.md) | Classificação e DLP | `compliance.dlp_*`, flag `Features:Dlp:Enabled=false`, simulação por default | **Alinhado** (W14 / B-130) |
 
 ## Gaps transversais derivados
 

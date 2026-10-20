@@ -8,6 +8,7 @@ using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
 using VibeChat.Infrastructure;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.Integrations;
 using VibeChat.Messaging;
 using VibeChat.Notifications;
@@ -1089,6 +1090,7 @@ internal static class AdministrationEndpoints
             ITenantContext tenant,
             IPermissionChecker permissions,
             IAuditWriter audit,
+            DlpService dlp,
             IClock clock,
             CancellationToken ct) =>
         {
@@ -1100,6 +1102,13 @@ internal static class AdministrationEndpoints
             }
 
             var (profile, workspace) = access.Value;
+            var denied = await DlpGuard.BlockAsync(
+                dlp, workspace.TenantId, workspace.Id, null, null, null, DlpActions.Export, null, null, ct);
+            if (denied is not null)
+            {
+                return denied;
+            }
+
             var exportedAt = clock.UtcNow;
             var zipBytes = await BuildWorkspaceExportZipAsync(workspace, db, profile.Id, exportedAt, ct);
 

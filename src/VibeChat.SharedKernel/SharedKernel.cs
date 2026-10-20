@@ -287,6 +287,7 @@ public static class Permissions
     {
         public const string Hold = "compliance.hold";
         public const string Discovery = "compliance.discovery";
+        public const string Dlp = "compliance.dlp";
     }
 }
 

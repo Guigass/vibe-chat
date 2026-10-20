@@ -1432,6 +1432,25 @@
     "compliance.export": "내보내기",
     "compliance.checksum": "체크섬",
     "compliance.progress": "진행",
-    "compliance.history": "이력"
+    "compliance.history": "이력",
+    "compliance.grantDlp": "데이터를 분류할 수 있음",
+    "dlp.title": "분류 및 DLP",
+    "dlp.disabled": "이 설치에서는 데이터 분류가 꺼져 있습니다.",
+    "dlp.badge": "분류",
+    "dlp.public": "공개",
+    "dlp.internal": "내부",
+    "dlp.confidential": "기밀",
+    "dlp.restricted": "제한",
+    "dlp.notInspectable": "내용을 검사할 수 없음",
+    "dlp.simulation": "시뮬레이션 — 차단 없이 측정",
+    "dlp.enforce": "적용 — 실제로 차단",
+    "dlp.saved": "정책이 업데이트되었습니다.",
+    "dlp.metrics": "측정",
+    "dlp.review": "정책 관리자에게 검토를 요청하세요.",
+    "error.DlpBlocked": "데이터 정책이 이 작업을 차단했습니다.",
+    "error.DlpQuarantined": "데이터 정책이 이 작업을 격리했습니다.",
+    "error.DlpDowngradeBlocked": "상속된 수준보다 분류를 낮출 수 없습니다.",
+    "dlp.channel": "채널",
+    "dlp.assign": "라벨 적용"
   }
 }

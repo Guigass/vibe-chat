@@ -200,6 +200,7 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Features:Import:Enabled", "true");
         builder.UseSetting("Features:SupportBundle:Enabled", "true");
         builder.UseSetting("Features:LegalHold:Enabled", "true");
+        builder.UseSetting("Features:Dlp:Enabled", "true");
         builder.UseSetting("Directory:Invites:MaxExpiryDays", "30");
         builder.UseSetting("Database:BootstrapOnStartup", "true");
         builder.UseSetting("Ai:Enabled", "true");

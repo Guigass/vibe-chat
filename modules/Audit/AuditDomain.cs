@@ -130,6 +130,12 @@ public static class AuditActions
     public const string ScimUserDeprovision = "scim.user.deprovision";
     public const string ScimGroupProvision = "scim.group.provision";
     public const string ScimMappingApply = "scim.mapping.apply";
+    public const string DlpPolicyChange = "dlp.policy.change";
+    public const string DlpLabelAssign = "dlp.label.assign";
+    public const string DlpRuleChange = "dlp.rule.change";
+    public const string DlpDetectorChange = "dlp.detector.change";
+    public const string DlpExceptionCreate = "dlp.exception.create";
+    public const string DlpFalsePositive = "dlp.false_positive.review";
 }
 
 public interface IAuditWriter

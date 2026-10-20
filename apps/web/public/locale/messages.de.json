@@ -1432,6 +1432,25 @@
     "compliance.export": "Exportieren",
     "compliance.checksum": "Prüfsumme",
     "compliance.progress": "Fortschritt",
-    "compliance.history": "Verlauf"
+    "compliance.history": "Verlauf",
+    "compliance.grantDlp": "Darf Daten klassifizieren",
+    "dlp.title": "Klassifizierung und DLP",
+    "dlp.disabled": "Die Datenklassifizierung ist in dieser Installation aus.",
+    "dlp.badge": "Klassifizierung",
+    "dlp.public": "Öffentlich",
+    "dlp.internal": "Intern",
+    "dlp.confidential": "Vertraulich",
+    "dlp.restricted": "Eingeschränkt",
+    "dlp.notInspectable": "Inhalt nicht prüfbar",
+    "dlp.simulation": "Simulation — misst, ohne zu blockieren",
+    "dlp.enforce": "Aktiv — blockiert wirklich",
+    "dlp.saved": "Richtlinie aktualisiert.",
+    "dlp.metrics": "Messung",
+    "dlp.review": "Bitte eine Richtlinienverwaltung um Prüfung.",
+    "error.DlpBlocked": "Die Datenrichtlinie hat diese Aktion blockiert.",
+    "error.DlpQuarantined": "Die Datenrichtlinie hat diese Aktion unter Quarantäne gestellt.",
+    "error.DlpDowngradeBlocked": "Die Klassifizierung kann nicht unter die geerbte Stufe gesenkt werden.",
+    "dlp.channel": "Kanal",
+    "dlp.assign": "Label setzen"
   }
 }

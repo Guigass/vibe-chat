@@ -159,6 +159,7 @@ internal sealed class RequirePermissionFilter : IEndpointFilter
         {
             Permissions.Compliance.Hold => ComplianceCapabilities.Hold,
             Permissions.Compliance.Discovery => ComplianceCapabilities.Discovery,
+            Permissions.Compliance.Dlp => ComplianceCapabilities.Dlp,
             _ => null
         };
         if (capability is null || !TryGetGuid(route, "workspaceId", out var workspaceId))

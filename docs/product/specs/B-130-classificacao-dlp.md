@@ -40,11 +40,11 @@ trecho completo desnecessário.
 
 ## Aceite
 
-- [ ] Regra block impede efeito antes da outbox externa.
-- [ ] Simulation não bloqueia e mede.
-- [ ] Guest/AI/export respeitam label.
-- [ ] Exceção é limitada, expira e auditada.
-- [ ] E2EE é marcado “não inspecionável”.
+- [x] Regra block impede efeito antes da outbox externa.
+- [x] Simulation não bloqueia e mede.
+- [x] Guest/AI/export respeitam label.
+- [x] Exceção é limitada, expira e auditada.
+- [x] E2EE é marcado “não inspecionável”.
 
 ## Testes
 

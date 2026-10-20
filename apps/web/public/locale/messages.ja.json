@@ -1432,6 +1432,25 @@
     "compliance.export": "書き出し",
     "compliance.checksum": "チェックサム",
     "compliance.progress": "進捗",
-    "compliance.history": "履歴"
+    "compliance.history": "履歴",
+    "compliance.grantDlp": "データを分類できる",
+    "dlp.title": "分類と DLP",
+    "dlp.disabled": "この環境ではデータ分類はオフです。",
+    "dlp.badge": "分類",
+    "dlp.public": "公開",
+    "dlp.internal": "内部",
+    "dlp.confidential": "社外秘",
+    "dlp.restricted": "制限",
+    "dlp.notInspectable": "内容は検査できません",
+    "dlp.simulation": "シミュレーション — ブロックせず計測",
+    "dlp.enforce": "適用中 — 実際にブロック",
+    "dlp.saved": "ポリシーを更新しました。",
+    "dlp.metrics": "計測",
+    "dlp.review": "ポリシー管理者に見直しを依頼してください。",
+    "error.DlpBlocked": "データポリシーがこの操作をブロックしました。",
+    "error.DlpQuarantined": "データポリシーがこの操作を隔離しました。",
+    "error.DlpDowngradeBlocked": "継承されたレベルより分類を下げることはできません。",
+    "dlp.channel": "チャンネル",
+    "dlp.assign": "ラベルを適用"
   }
 }

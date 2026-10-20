@@ -105,6 +105,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Features:SupportBundle:Enabled` | instance | false | B-154 | health/runbooks permanecem |
 | `Features:AvailabilityCalendar:Enabled` | instance | false | B-116 | `GET /me/availability/calendar` → 404; status e disponibilidade seguem ativos |
 | `Features:LegalHold:Enabled` | instance | false | B-129 | API de compliance → 404 `LegalHoldDisabled`; hold já ativo continua bloqueando o purge |
+| `Features:Dlp:Enabled` | instance | false | B-130 | API `/dlp/*` → 404 `DlpDisabled`; gate não altera efeitos externos |
 
 Nomes de binding podem mudar no ADR, mas semântica/default não muda
 silenciosamente.

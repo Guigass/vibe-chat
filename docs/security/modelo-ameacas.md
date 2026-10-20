@@ -138,6 +138,18 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Hold | Hold ativo bloqueia desligar a flag (409). A recusa é auditada, sem body |
 | Cross-tenant | RLS FORCE em `audit.content_audit_settings` |
 
+### Classificação e DLP (B-130 / ADR-044)
+
+| Item | Controle |
+|------|----------|
+| AuthZ | `compliance.dlp` não está em `workspace.admin`. O admin só nomeia outra pessoa |
+| Flag | `Features:Dlp:Enabled` off → 404 `DlpDisabled` e nenhum efeito é alterado |
+| Simulação | Sem política, ou `simulation: true`, a decisão é medida e o efeito segue |
+| Efeito | `block` e `quarantine` param encaminhamento, guest, export, webhook, IA e download antes do efeito externo |
+| Detector | Regex local, timeout 100 ms, sem trecho na decisão. Falso positivo é por detector e assunto |
+| E2EE | `ConfidentialE2EE` não é inspecionado (`NotInspectable`). Auditoria desligada também não lê body |
+| Cross-tenant | RLS FORCE nas tabelas `compliance.dlp_*` e `compliance.data_labels` |
+
 ### Export de workspace (B-046)
 
 | Item | Controle |

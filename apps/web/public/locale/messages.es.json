@@ -1432,6 +1432,25 @@
     "compliance.export": "Exportar",
     "compliance.checksum": "Checksum",
     "compliance.progress": "Progreso",
-    "compliance.history": "Historial"
+    "compliance.history": "Historial",
+    "compliance.grantDlp": "Puede clasificar datos",
+    "dlp.title": "Clasificación y DLP",
+    "dlp.disabled": "La clasificación de datos está apagada en esta instalación.",
+    "dlp.badge": "Clasificación",
+    "dlp.public": "Público",
+    "dlp.internal": "Interno",
+    "dlp.confidential": "Confidencial",
+    "dlp.restricted": "Restringido",
+    "dlp.notInspectable": "Contenido no inspeccionable",
+    "dlp.simulation": "Simulación — mide sin bloquear",
+    "dlp.enforce": "En vigor — bloquea de verdad",
+    "dlp.saved": "Política actualizada.",
+    "dlp.metrics": "Medición",
+    "dlp.review": "Pide revisión a un administrador de política.",
+    "error.DlpBlocked": "La política de datos bloqueó esta acción.",
+    "error.DlpQuarantined": "La política de datos puso esta acción en cuarentena.",
+    "error.DlpDowngradeBlocked": "No se puede bajar la clasificación por debajo del nivel heredado.",
+    "dlp.channel": "Canal",
+    "dlp.assign": "Aplicar etiqueta"
   }
 }
