@@ -39,11 +39,11 @@ Somente policy admin. Pack não contém IDs de tenant e aplicação usa contexto
 
 ## Aceite
 
-- [ ] Preview é igual ao resultado aplicado.
-- [ ] Retry é idempotente.
-- [ ] Secret não exporta.
-- [ ] Override proibido falha fechado.
-- [ ] Drift é detectado.
+- [x] Preview é igual ao resultado aplicado.
+- [x] Retry é idempotente.
+- [x] Secret não exporta.
+- [x] Override proibido falha fechado.
+- [x] Drift é detectado.
 
 ## Testes
 

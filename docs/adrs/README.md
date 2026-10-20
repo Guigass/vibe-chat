@@ -51,6 +51,7 @@ original.
 | [043](ADR-043-auditoria-conteudo-tenant.md) | Auditoria de conteúdo por tenant | Accepted |
 | [044](ADR-044-classificacao-dlp.md) | Classificação de dados e DLP local | Accepted |
 | [045](ADR-045-audit-siem.md) | Export de audit para SIEM | Accepted |
+| [046](ADR-046-policy-packs.md) | Policy packs por tipo de organização | Accepted |
 
 ## Quando criar um ADR
 

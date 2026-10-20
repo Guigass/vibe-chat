@@ -1471,6 +1471,23 @@
     "siem.saved": "Ziel gespeichert.",
     "siem.empty": "Kein Ziel konfiguriert.",
     "siem.health": "Letzter Erfolg",
-    "siem.error": "Das SIEM-Ziel konnte nicht aktualisiert werden."
+    "siem.error": "Das SIEM-Ziel konnte nicht aktualisiert werden.",
+    "compliance.grantPolicy": "Darf Policy Packs anwenden",
+    "policyPack.title": "Policy Packs",
+    "policyPack.disabled": "Policy Packs sind in dieser Installation aus.",
+    "policyPack.baseline": "Das ist eine technische Baseline. Kein Zertifikat und kein Siegel.",
+    "policyPack.pack": "Paket",
+    "policyPack.preview": "Simulieren",
+    "policyPack.apply": "Anwenden",
+    "policyPack.rollback": "Vorherige Version wiederherstellen",
+    "policyPack.drift": "Das angewendete Paket und die aktuellen Kontrollen weichen ab.",
+    "policyPack.export": "Ohne Geheimnisse exportieren",
+    "policyPack.locked": "Gesperrt",
+    "policyPack.empty": "Kein Paket angewendet.",
+    "policyPack.saved": "Paket aktualisiert.",
+    "policyPack.upgrade": "Es gibt eine neuere Paketversion. Die Aktualisierung ist nicht automatisch.",
+    "policyPack.error": "Das Policy Pack konnte nicht aktualisiert werden.",
+    "error.PolicyPackGuestsBlocked": "Das Policy Pack blockiert neue Gäste.",
+    "error.PolicyPackOverrideForbidden": "Diese Kontrolle ist gesperrt und darf nicht schwächer werden."
   }
 }

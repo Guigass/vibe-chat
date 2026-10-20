@@ -1471,6 +1471,23 @@
     "siem.saved": "目的地已保存。",
     "siem.empty": "尚未配置目的地。",
     "siem.health": "最近成功",
-    "siem.error": "无法更新 SIEM 目的地。"
+    "siem.error": "无法更新 SIEM 目的地。",
+    "compliance.grantPolicy": "可以应用策略包",
+    "policyPack.title": "策略包",
+    "policyPack.disabled": "此安装中策略包已关闭。",
+    "policyPack.baseline": "这是技术基线，不是认证，也不是合规印章。",
+    "policyPack.pack": "策略包",
+    "policyPack.preview": "预览",
+    "policyPack.apply": "应用",
+    "policyPack.rollback": "恢复上一版本",
+    "policyPack.drift": "已应用的策略包与当前控制不一致。",
+    "policyPack.export": "导出且不含密钥",
+    "policyPack.locked": "已锁定",
+    "policyPack.empty": "尚未应用策略包。",
+    "policyPack.saved": "策略包已更新。",
+    "policyPack.upgrade": "有更新的版本。更新不会自动进行。",
+    "policyPack.error": "无法更新策略包。",
+    "error.PolicyPackGuestsBlocked": "策略包阻止新的访客。",
+    "error.PolicyPackOverrideForbidden": "该控制已锁定，不能再放宽。"
   }
 }

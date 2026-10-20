@@ -932,6 +932,8 @@ Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send
 
 **SIEM (B-132 / ADR-045).** Flag `Features:Siem:Enabled` default false → 404 `SiemDisabled` e o worker não envia. Rotas em `/api/v1/workspaces/{workspaceId}/siem/destinations` exigem grant `security.audit.export` (capability `audit.export`, não papel). Transporte `webhook-json` ou `syslog-cef`, HMAC-SHA256, envelope `audit.event.recorded` v1. Sem body de mensagem. Retry reutiliza `eventId`. Backfill máximo 24 h e 100 eventos do próprio tenant. Destino inválido abre o circuito.
 
+**Policy packs (B-133 / ADR-046).** Flag `Features:PolicyPacks:Enabled` default false → 404 `PolicyPackDisabled` e o convite não consulta pack. Rotas em `/api/v1/workspaces/{workspaceId}/policy-packs` exigem grant `compliance.policy` (capability `policy`, não papel). Manifesto `policy-pack.v1`: `small-team`, `enterprise-baseline`, `regulated`. Preview e apply devolvem o mesmo documento. Override que enfraquece controle locked → 409 `PolicyPackOverrideForbidden`. Import com tenant, segredo ou código → 400 `PolicyPackImportRejected`. Export não leva segredo. Drift compara o documento com IA, retenção, upload, DLP e auditoria de conteúdo. Rollback exige versão anterior. `certification` é sempre false.
+
 **Metadata de `message.delete` (B-169 / ADR-043):** quando `contentAuditEnabled=true`,
 `metadataJson` inclui `channelId`, `threadId?`, `sequence`, `authorId`, `deletedAt` e `body`
 (conteúdo no soft-delete). Com `false`, os mesmos ids e timestamps, sem `body`.

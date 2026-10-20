@@ -1471,6 +1471,23 @@
     "siem.saved": "Назначение сохранено.",
     "siem.empty": "Назначение не настроено.",
     "siem.health": "Последний успех",
-    "siem.error": "Не удалось обновить назначение SIEM."
+    "siem.error": "Не удалось обновить назначение SIEM.",
+    "compliance.grantPolicy": "Может применять policy packs",
+    "policyPack.title": "Policy packs",
+    "policyPack.disabled": "Policy packs выключены в этой установке.",
+    "policyPack.baseline": "Это технический baseline. Это не сертификация и не знак соответствия.",
+    "policyPack.pack": "Пакет",
+    "policyPack.preview": "Смоделировать",
+    "policyPack.apply": "Применить",
+    "policyPack.rollback": "Вернуть предыдущую версию",
+    "policyPack.drift": "Применённый пакет и текущие контроли различаются.",
+    "policyPack.export": "Экспорт без секретов",
+    "policyPack.locked": "Заблокировано",
+    "policyPack.empty": "Пакет не применён.",
+    "policyPack.saved": "Пакет обновлён.",
+    "policyPack.upgrade": "Есть более новая версия. Обновление не автоматическое.",
+    "policyPack.error": "Не удалось обновить policy pack.",
+    "error.PolicyPackGuestsBlocked": "Policy pack блокирует новых гостей.",
+    "error.PolicyPackOverrideForbidden": "Этот контроль заблокирован и не может стать слабее."
   }
 }

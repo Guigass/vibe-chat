@@ -140,6 +140,7 @@ public static class SiemRules
             "message.delete" or "member.role.change" or "guest.revoke" or "integration.token.revoke" => SiemSeverities.High,
             _ when value.StartsWith("dlp.", StringComparison.Ordinal)
                 || value.StartsWith("siem.", StringComparison.Ordinal)
+                || value.StartsWith("policy.", StringComparison.Ordinal)
                 || value.StartsWith("scim.token", StringComparison.Ordinal) => SiemSeverities.High,
             "message.send" or "attachment.upload" or "member.invite" => SiemSeverities.Medium,
             "message.pin" or "profile.update" => SiemSeverities.Low,

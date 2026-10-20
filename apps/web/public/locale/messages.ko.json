@@ -1471,6 +1471,23 @@
     "siem.saved": "대상을 저장했습니다.",
     "siem.empty": "구성된 대상이 없습니다.",
     "siem.health": "마지막 성공",
-    "siem.error": "SIEM 대상을 업데이트하지 못했습니다."
+    "siem.error": "SIEM 대상을 업데이트하지 못했습니다.",
+    "compliance.grantPolicy": "정책 팩을 적용할 수 있음",
+    "policyPack.title": "정책 팩",
+    "policyPack.disabled": "이 설치에서는 정책 팩이 꺼져 있습니다.",
+    "policyPack.baseline": "이것은 기술 기준선입니다. 인증이나 규정 준수 인장이 아닙니다.",
+    "policyPack.pack": "팩",
+    "policyPack.preview": "시뮬레이션",
+    "policyPack.apply": "적용",
+    "policyPack.rollback": "이전 버전 복원",
+    "policyPack.drift": "적용한 팩과 현재 통제가 다릅니다.",
+    "policyPack.export": "비밀 없이 내보내기",
+    "policyPack.locked": "잠김",
+    "policyPack.empty": "적용된 팩이 없습니다.",
+    "policyPack.saved": "팩을 업데이트했습니다.",
+    "policyPack.upgrade": "더 새 버전이 있습니다. 업데이트는 자동이 아닙니다.",
+    "policyPack.error": "정책 팩을 업데이트하지 못했습니다.",
+    "error.PolicyPackGuestsBlocked": "정책 팩이 새 손님을 막습니다.",
+    "error.PolicyPackOverrideForbidden": "이 통제는 잠겨 있어 더 약해질 수 없습니다."
   }
 }

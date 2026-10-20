@@ -1060,6 +1060,14 @@ CREATE POLICY tenant_isolation_siem_deliveries ON compliance.siem_deliveries
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS compliance.policy_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.policy_assignments FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_policy_assignments ON compliance.policy_assignments;
+CREATE POLICY tenant_isolation_policy_assignments ON compliance.policy_assignments
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 CREATE SCHEMA IF NOT EXISTS compliance;
 
 CREATE OR REPLACE FUNCTION compliance.reject_custody_mutation()

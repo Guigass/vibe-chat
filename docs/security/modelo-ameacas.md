@@ -163,6 +163,20 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Backfill | No máximo 24 h e 100 eventos do tenant do destino |
 | Cross-tenant | RLS FORCE em `compliance.siem_destinations` e `compliance.siem_deliveries`. O claim `siem` só lê destinos |
 
+### Policy packs (B-133 / ADR-046)
+
+| Item | Controle |
+|------|----------|
+| AuthZ | `compliance.policy` não está em `workspace.admin`. O admin só nomeia outra pessoa |
+| Flag | `Features:PolicyPacks:Enabled` off → 404 `PolicyPackDisabled` e o convite ignora o pack |
+| Baseline | Manifesto `policy-pack.v1` sem id de tenant e sem segredo. `certification` é false |
+| Lock | Override mais fraco, inclusive desligar auditoria de conteúdo, → 409 `PolicyPackOverrideForbidden` |
+| Import | `tenantId`, segredo ou código executável → 400 `PolicyPackImportRejected` e nada é gravado |
+| Export | A resposta remove chave de segredo. A auditoria guarda before/after sem segredo |
+| Efeito | IA, retenção, teto de upload, simulação de DLP e auditoria (só ligar) são escritos. Guest novo para com `guests.enabled=false` |
+| Drift | Compara o documento com o valor vivo. Versão nova do catálogo não se aplica sozinha |
+| Cross-tenant | RLS FORCE em `compliance.policy_assignments` |
+
 ### Export de workspace (B-046)
 
 | Item | Controle |

@@ -1471,6 +1471,23 @@
     "siem.saved": "Destinazione salvata.",
     "siem.empty": "Nessuna destinazione configurata.",
     "siem.health": "Ultimo successo",
-    "siem.error": "Impossibile aggiornare la destinazione SIEM."
+    "siem.error": "Impossibile aggiornare la destinazione SIEM.",
+    "compliance.grantPolicy": "Può applicare i policy pack",
+    "policyPack.title": "Policy pack",
+    "policyPack.disabled": "I policy pack sono spenti in questa installazione.",
+    "policyPack.baseline": "Questa è una baseline tecnica. Non è una certificazione né un sigillo.",
+    "policyPack.pack": "Pacchetto",
+    "policyPack.preview": "Simula",
+    "policyPack.apply": "Applica",
+    "policyPack.rollback": "Ripristina la versione precedente",
+    "policyPack.drift": "Il pacchetto applicato e i controlli attuali non coincidono.",
+    "policyPack.export": "Esporta senza segreti",
+    "policyPack.locked": "Bloccato",
+    "policyPack.empty": "Nessun pacchetto applicato.",
+    "policyPack.saved": "Pacchetto aggiornato.",
+    "policyPack.upgrade": "Esiste una versione più nuova. L'aggiornamento non è automatico.",
+    "policyPack.error": "Impossibile aggiornare il policy pack.",
+    "error.PolicyPackGuestsBlocked": "Il policy pack blocca i nuovi ospiti.",
+    "error.PolicyPackOverrideForbidden": "Quel controllo è bloccato e non può diventare più debole."
   }
 }

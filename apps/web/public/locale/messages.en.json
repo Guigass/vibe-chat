@@ -1471,6 +1471,23 @@
     "siem.saved": "Destination saved.",
     "siem.empty": "No destination configured.",
     "siem.health": "Last success",
-    "siem.error": "The SIEM destination could not be updated."
+    "siem.error": "The SIEM destination could not be updated.",
+    "compliance.grantPolicy": "Can apply policy packs",
+    "policyPack.title": "Policy packs",
+    "policyPack.disabled": "Policy packs are off in this installation.",
+    "policyPack.baseline": "This is a technical baseline. It is not a certification or a compliance seal.",
+    "policyPack.pack": "Pack",
+    "policyPack.preview": "Preview",
+    "policyPack.apply": "Apply",
+    "policyPack.rollback": "Restore previous version",
+    "policyPack.drift": "The applied pack and the live controls differ.",
+    "policyPack.export": "Export without secrets",
+    "policyPack.locked": "Locked",
+    "policyPack.empty": "No pack applied.",
+    "policyPack.saved": "Pack updated.",
+    "policyPack.upgrade": "A newer pack version exists. The update is not automatic.",
+    "policyPack.error": "The policy pack could not be updated.",
+    "error.PolicyPackGuestsBlocked": "The policy pack blocks new guests.",
+    "error.PolicyPackOverrideForbidden": "That control is locked and cannot be weakened."
   }
 }
