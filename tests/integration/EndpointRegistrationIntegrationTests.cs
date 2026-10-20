@@ -334,6 +334,14 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/siem/destinations/{destinationId:guid}/revoke", string.Join(",", new[] { Permissions.Security.AuditExport }), false, ""),
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/siem/destinations/{destinationId:guid}/test", string.Join(",", new[] { Permissions.Security.AuditExport }), false, ""),
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/siem/destinations/{destinationId:guid}/backfill", string.Join(",", new[] { Permissions.Security.AuditExport }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/policy-packs/catalog", string.Join(",", new[] { Permissions.Compliance.Policy }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/policy-packs", string.Join(",", new[] { Permissions.Compliance.Policy }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/policy-packs/preview", string.Join(",", new[] { Permissions.Compliance.Policy }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/policy-packs/apply", string.Join(",", new[] { Permissions.Compliance.Policy }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/policy-packs/rollback", string.Join(",", new[] { Permissions.Compliance.Policy }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/policy-packs/export", string.Join(",", new[] { Permissions.Compliance.Policy }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/policy-packs/import", string.Join(",", new[] { Permissions.Compliance.Policy }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/policy-packs/drift", string.Join(",", new[] { Permissions.Compliance.Policy }), false, ""),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(

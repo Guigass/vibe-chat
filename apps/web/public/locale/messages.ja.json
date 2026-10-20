@@ -1471,6 +1471,23 @@
     "siem.saved": "宛先を保存しました。",
     "siem.empty": "宛先はまだありません。",
     "siem.health": "最後の成功",
-    "siem.error": "SIEM の宛先を更新できませんでした。"
+    "siem.error": "SIEM の宛先を更新できませんでした。",
+    "compliance.grantPolicy": "ポリシーパックを適用できる",
+    "policyPack.title": "ポリシーパック",
+    "policyPack.disabled": "このインストールではポリシーパックはオフです。",
+    "policyPack.baseline": "これは技術上のベースラインです。認証や適合シールではありません。",
+    "policyPack.pack": "パック",
+    "policyPack.preview": "シミュレーション",
+    "policyPack.apply": "適用",
+    "policyPack.rollback": "前の版に戻す",
+    "policyPack.drift": "適用したパックと現在の制御が違います。",
+    "policyPack.export": "秘密情報なしで書き出す",
+    "policyPack.locked": "ロック",
+    "policyPack.empty": "適用されたパックはありません。",
+    "policyPack.saved": "パックを更新しました。",
+    "policyPack.upgrade": "新しい版があります。更新は自動では行われません。",
+    "policyPack.error": "ポリシーパックを更新できませんでした。",
+    "error.PolicyPackGuestsBlocked": "ポリシーパックが新しいゲストをブロックしています。",
+    "error.PolicyPackOverrideForbidden": "この制御はロックされており、弱められません。"
   }
 }

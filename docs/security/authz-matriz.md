@@ -340,6 +340,14 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/workspaces/{workspaceId:guid}/siem/destinations/{destinationId:guid}/revoke` | permission | `security.audit.export` | ✗ | ✗ | ✗ | Para o envio; não apaga o audit local |
 | POST | `/workspaces/{workspaceId:guid}/siem/destinations/{destinationId:guid}/test` | permission | `security.audit.export` | ✗ | ✗ | ✗ | Evento sintético, sem dado real |
 | POST | `/workspaces/{workspaceId:guid}/siem/destinations/{destinationId:guid}/backfill` | permission | `security.audit.export` | ✗ | ✗ | ✗ | Máximo 24 h e 100 eventos do tenant |
+| GET | `/workspaces/{workspaceId:guid}/policy-packs/catalog` | permission | `compliance.policy` | ✗ | ✗ | ✗ | B-133; flag off → 404 `PolicyPackDisabled`; baseline técnica, sem selo |
+| GET | `/workspaces/{workspaceId:guid}/policy-packs` | permission | `compliance.policy` | ✗ | ✗ | ✗ | Grant, não papel; sem assignment devolve `assigned: false` |
+| POST | `/workspaces/{workspaceId:guid}/policy-packs/preview` | permission | `compliance.policy` | ✗ | ✗ | ✗ | Mesmo documento do apply; não grava |
+| POST | `/workspaces/{workspaceId:guid}/policy-packs/apply` | permission | `compliance.policy` | ✗ | ✗ | ✗ | Idempotency-Key; confirmação; override mais fraco → 409 |
+| POST | `/workspaces/{workspaceId:guid}/policy-packs/rollback` | permission | `compliance.policy` | ✗ | ✗ | ✗ | Só com versão anterior; senão 409 `PolicyPackRollbackUnsafe` |
+| GET | `/workspaces/{workspaceId:guid}/policy-packs/export` | permission | `compliance.policy` | ✗ | ✗ | ✗ | Sem segredo, sem id de tenant |
+| POST | `/workspaces/{workspaceId:guid}/policy-packs/import` | permission | `compliance.policy` | ✗ | ✗ | ✗ | Manifesto malicioso → 400 `PolicyPackImportRejected` |
+| GET | `/workspaces/{workspaceId:guid}/policy-packs/drift` | permission | `compliance.policy` | ✗ | ✗ | ✗ | Compara o efetivo com o controle vivo |
 
 ## Hub SignalR `/hubs/chat`
 

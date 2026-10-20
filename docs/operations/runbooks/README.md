@@ -27,6 +27,7 @@ Use estes runbooks em incidente ou mudança. Detalhes de rotina ficam nos guias 
 | [formularios.md](./formularios.md) | Formulários: flag, retenção das respostas e rollback (B-124) |
 | [sso-broker.md](./sso-broker.md) | SSO OIDC/SAML no Keycloak: rótulo, vínculo e rollback (B-164) |
 | [scim.md](./scim.md) | SCIM 2.0: token, mapeamento, deprovision e rollback (B-128) |
+| [policy-packs.md](./policy-packs.md) | Policy packs: flag, lock, drift e rollback (B-133) |
 
 ## Princípios
 

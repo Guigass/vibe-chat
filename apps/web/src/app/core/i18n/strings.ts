@@ -1494,6 +1494,23 @@ export const ui = {
   siemEmpty: $localize`:@@siem.empty:Nenhum destino configurado.`,
   siemHealth: $localize`:@@siem.health:Último sucesso`,
   siemError: $localize`:@@siem.error:Não foi possível atualizar o destino de SIEM.`,
+  complianceGrantPolicy: $localize`:@@compliance.grantPolicy:Pode aplicar policy packs`,
+  policyPackTitle: $localize`:@@policyPack.title:Policy packs`,
+  policyPackDisabled: $localize`:@@policyPack.disabled:Os policy packs estão desligados nesta instalação.`,
+  policyPackBaseline: $localize`:@@policyPack.baseline:Isto é uma baseline técnica. Não é certificação nem selo de conformidade.`,
+  policyPackPack: $localize`:@@policyPack.pack:Pacote`,
+  policyPackPreview: $localize`:@@policyPack.preview:Simular`,
+  policyPackApply: $localize`:@@policyPack.apply:Aplicar`,
+  policyPackRollback: $localize`:@@policyPack.rollback:Restaurar versão anterior`,
+  policyPackDrift: $localize`:@@policyPack.drift:Há diferença entre o pacote aplicado e os controles atuais.`,
+  policyPackExport: $localize`:@@policyPack.export:Exportar sem segredos`,
+  policyPackLocked: $localize`:@@policyPack.locked:Bloqueado`,
+  policyPackEmpty: $localize`:@@policyPack.empty:Nenhum pacote aplicado.`,
+  policyPackSaved: $localize`:@@policyPack.saved:Pacote atualizado.`,
+  policyPackUpgrade: $localize`:@@policyPack.upgrade:Há uma versão mais nova do pacote. A atualização não é automática.`,
+  policyPackError: $localize`:@@policyPack.error:Não foi possível atualizar o policy pack.`,
+  policyPackGuests: $localize`:@@error.PolicyPackGuestsBlocked:O policy pack bloqueia novos convidados.`,
+  policyPackOverride: $localize`:@@error.PolicyPackOverrideForbidden:Esse controle está bloqueado e não pode ficar mais fraco.`,
 } as const;
 
 export function fillTemplate(
@@ -1731,6 +1748,17 @@ export function translateErrorCode(code: string | undefined): string {
     case 'SiemRevoked':
     case 'SiemBackfillInvalid':
       return ui.siemError;
+    case 'PolicyPackDisabled':
+      return ui.policyPackDisabled;
+    case 'PolicyPackOverrideForbidden':
+      return ui.policyPackOverride;
+    case 'PolicyPackGuestsBlocked':
+      return ui.policyPackGuests;
+    case 'PolicyPackImportRejected':
+    case 'PolicyPackRollbackUnsafe':
+    case 'PolicyPackConfirmationRequired':
+    case 'PolicyPackIdempotencyConflict':
+      return ui.policyPackError;
     default:
       return code ?? '';
   }

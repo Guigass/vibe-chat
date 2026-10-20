@@ -44,6 +44,7 @@ internal static class GuestInviteEndpoints
         IOptions<InviteOptions> options,
         IClock clock,
         DlpService dlp,
+        PolicyPackService policyPacks,
         CancellationToken ct)
     {
         if (!options.Value.Enabled)
@@ -92,6 +93,11 @@ internal static class GuestInviteEndpoints
             {
                 return Results.Conflict(new { error = "AlreadyMember" });
             }
+        }
+
+        if (await policyPacks.BlocksGuestsAsync(workspace, ct))
+        {
+            return Results.Conflict(new { error = PolicyPackErrors.GuestsBlocked });
         }
 
         var denied = await DlpGuard.BlockAsync(

@@ -39,6 +39,7 @@ testes nem uma revisão de segurança.
 | [043](../adrs/ADR-043-auditoria-conteudo-tenant.md) | Auditoria de conteúdo por tenant | `audit.content_audit_settings`, `contentAuditEnabled` default true | **Alinhado** (W14 / B-169) |
 | [044](../adrs/ADR-044-classificacao-dlp.md) | Classificação e DLP | `compliance.dlp_*`, flag `Features:Dlp:Enabled=false`, simulação por default | **Alinhado** (W14 / B-130) |
 | [045](../adrs/ADR-045-audit-siem.md) | Export de audit para SIEM | `compliance.siem_*`, flag `Features:Siem:Enabled=false`, envelope `audit.event.recorded` v1 | **Alinhado** (W14 / B-132) |
+| [046](../adrs/ADR-046-policy-packs.md) | Policy packs | `compliance.policy_assignments`, flag `Features:PolicyPacks:Enabled=false`, baseline técnica | **Alinhado** (W14 / B-133) |
 
 ## Gaps transversais derivados
 

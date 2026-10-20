@@ -166,7 +166,8 @@ public sealed class ArchitectureRulesTests
             "compliance.dlp_false_positives",
             "compliance.dlp_decisions",
             "compliance.siem_destinations",
-            "compliance.siem_deliveries"
+            "compliance.siem_deliveries",
+            "compliance.policy_assignments"
         ];
 
         foreach (var table in tenantTables)

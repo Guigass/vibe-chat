@@ -14,6 +14,7 @@ import { ConnectorApiService } from './connector-api.service';
 import { ComplianceApiService } from './compliance-api.service';
 import { DlpApiService } from './dlp-api.service';
 import { SiemApiService } from './siem-api.service';
+import { PolicyPackApiService } from './policy-pack-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -35,6 +36,7 @@ export class ApiService {
   private readonly compliance = inject(ComplianceApiService);
   private readonly dlp = inject(DlpApiService);
   private readonly siem = inject(SiemApiService);
+  private readonly policyPacks = inject(PolicyPackApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -226,4 +228,11 @@ export class ApiService {
   readonly revokeSiemDestination: SiemApiService['revoke'] = this.siem.revoke.bind(this.siem);
   readonly testSiemDestination: SiemApiService['test'] = this.siem.test.bind(this.siem);
   readonly backfillSiemDestination: SiemApiService['backfill'] = this.siem.backfill.bind(this.siem);
+  readonly policyPackCatalog: PolicyPackApiService['catalog'] = this.policyPacks.catalog.bind(this.policyPacks);
+  readonly policyPackCurrent: PolicyPackApiService['current'] = this.policyPacks.current.bind(this.policyPacks);
+  readonly previewPolicyPack: PolicyPackApiService['preview'] = this.policyPacks.preview.bind(this.policyPacks);
+  readonly applyPolicyPack: PolicyPackApiService['apply'] = this.policyPacks.apply.bind(this.policyPacks);
+  readonly rollbackPolicyPack: PolicyPackApiService['rollback'] = this.policyPacks.rollback.bind(this.policyPacks);
+  readonly policyPackDrift: PolicyPackApiService['drift'] = this.policyPacks.drift.bind(this.policyPacks);
+  readonly exportPolicyPack: PolicyPackApiService['exportPack'] = this.policyPacks.exportPack.bind(this.policyPacks);
 }

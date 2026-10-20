@@ -141,6 +141,9 @@ public static class AuditActions
     public const string SiemDestinationRevoke = "siem.destination.revoke";
     public const string SiemTest = "siem.test";
     public const string SiemBackfill = "siem.backfill";
+    public const string PolicyPackApply = "policy.pack.apply";
+    public const string PolicyPackImport = "policy.pack.import";
+    public const string PolicyPackRollback = "policy.pack.rollback";
 }
 
 public interface IAuditWriter

@@ -124,7 +124,7 @@ Objetivo: operar com segurança, compliance e delegação em organizações maio
 | B-169 | B/D/E | Modo auditoria de conteúdo por tenant (gate E2EE; snapshot de body em `message.delete`) | B-023, B-042, B-067, B-046, B-069, B-107, D-26 | [B-169](../product/specs/B-169-modo-auditoria-conteudo-tenant.md) | **Done** — `contentAuditEnabled` default true; snapshot em `message.delete`; export/B-067 sem body quando false; E2EE bloqueado com auditoria ligada; ADR-043 |
 | B-130 | B/C/D/E | Classificação de dados e DLP | B-129, D-23 | [B-130](../product/specs/B-130-classificacao-dlp.md) | **Done** — rótulos com herança, regras warn/block/quarantine, detector regex, simulação e flag off; ADR-044 |
 | B-132 | B/E/A | Audit streaming/export para SIEM | B-042, B-108 | [B-132](../product/specs/B-132-audit-siem.md) | **Done** — webhook/CEF assinado, checkpoint, retry, backfill e flag off; ADR-045 |
-| B-133 | B/D/E | Policy packs por tipo de organização | B-128, B-130 | [B-133](../product/specs/B-133-policy-packs.md) | Planned |
+| B-133 | B/D/E | Policy packs por tipo de organização | B-128, B-130 | [B-133](../product/specs/B-133-policy-packs.md) | **Done** — packs `small-team` / `enterprise-baseline` / `regulated`, preview = apply, lock, drift e flag off; ADR-046 |
 | B-134 | B/D/E | Administração delegada, escopos e quotas | B-128 | [B-134](../product/specs/B-134-admin-delegada-quotas.md) | Planned |
 | B-146 | A/E/F | Benchmarks por porte, capacity model e SLOs | Wave 10 Done | [B-146](../product/specs/B-146-capacity-slos.md) | Planned |
 

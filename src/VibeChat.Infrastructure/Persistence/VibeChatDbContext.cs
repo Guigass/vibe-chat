@@ -155,6 +155,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<DlpDecisionRecord> DlpDecisions => Set<DlpDecisionRecord>();
     public DbSet<SiemDestination> SiemDestinations => Set<SiemDestination>();
     public DbSet<SiemDelivery> SiemDeliveries => Set<SiemDelivery>();
+    public DbSet<PolicyPackAssignment> PolicyPackAssignments => Set<PolicyPackAssignment>();
 
     public override int SaveChanges()
     {
@@ -1763,6 +1764,25 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Status).HasMaxLength(16);
             entity.Property(x => x.ErrorCode).HasMaxLength(64);
             entity.HasIndex(x => new { x.DestinationId, x.EventId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<PolicyPackAssignment>(entity =>
+        {
+            entity.ToTable("policy_assignments", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.AppliedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.PackId).HasMaxLength(64);
+            entity.Property(x => x.OverridesJson).HasMaxLength(4000);
+            entity.Property(x => x.EffectiveJson).HasMaxLength(12000);
+            entity.Property(x => x.PreviousPackId).HasMaxLength(64);
+            entity.Property(x => x.PreviousOverridesJson).HasMaxLength(4000);
+            entity.Property(x => x.PreviousEffectiveJson).HasMaxLength(12000);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(PolicyPackLimits.MaxIdempotencyKeyLength);
+            entity.Property(x => x.RequestHash).HasMaxLength(64);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
     }

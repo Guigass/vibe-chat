@@ -1471,6 +1471,23 @@
     "siem.saved": "Destination enregistrée.",
     "siem.empty": "Aucune destination configurée.",
     "siem.health": "Dernier succès",
-    "siem.error": "La destination SIEM n'a pas pu être mise à jour."
+    "siem.error": "La destination SIEM n'a pas pu être mise à jour.",
+    "compliance.grantPolicy": "Peut appliquer des policy packs",
+    "policyPack.title": "Policy packs",
+    "policyPack.disabled": "Les policy packs sont désactivés sur cette installation.",
+    "policyPack.baseline": "Ceci est une baseline technique. Ce n'est pas une certification ni un sceau.",
+    "policyPack.pack": "Pack",
+    "policyPack.preview": "Simuler",
+    "policyPack.apply": "Appliquer",
+    "policyPack.rollback": "Restaurer la version précédente",
+    "policyPack.drift": "Le pack appliqué et les contrôles en vigueur diffèrent.",
+    "policyPack.export": "Exporter sans secrets",
+    "policyPack.locked": "Verrouillé",
+    "policyPack.empty": "Aucun pack appliqué.",
+    "policyPack.saved": "Pack mis à jour.",
+    "policyPack.upgrade": "Une version plus récente existe. La mise à jour n'est pas automatique.",
+    "policyPack.error": "Impossible de mettre à jour le policy pack.",
+    "error.PolicyPackGuestsBlocked": "Le policy pack bloque les nouveaux invités.",
+    "error.PolicyPackOverrideForbidden": "Ce contrôle est verrouillé et ne peut pas être affaibli."
   }
 }

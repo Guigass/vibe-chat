@@ -160,6 +160,7 @@ internal sealed class RequirePermissionFilter : IEndpointFilter
             Permissions.Compliance.Hold => ComplianceCapabilities.Hold,
             Permissions.Compliance.Discovery => ComplianceCapabilities.Discovery,
             Permissions.Compliance.Dlp => ComplianceCapabilities.Dlp,
+            Permissions.Compliance.Policy => ComplianceCapabilities.Policy,
             Permissions.Security.AuditExport => ComplianceCapabilities.AuditExport,
             _ => null
         };
