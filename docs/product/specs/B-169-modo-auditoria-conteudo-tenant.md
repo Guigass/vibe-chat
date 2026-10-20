@@ -90,17 +90,17 @@ compliance.
 
 ## Aceite
 
-- [ ] Default `contentAuditEnabled=true` preserva B-067/B-046 atuais.
-- [ ] Com `true`, criar `ConfidentialE2EE` → 400/403 com código estável.
-- [ ] Com `false`, auditor não lê body via B-067; metadata permanece.
-- [ ] Com `false`, export privilegiado redige ou omite body.
-- [ ] Com `true`, soft-delete gera `message.delete` com `body` no `metadataJson`.
-- [ ] Com `false`, soft-delete gera `message.delete` **sem** `body`.
-- [ ] Após purge da linha em `messages`, o evento `message.delete` ainda contém
+- [x] Default `contentAuditEnabled=true` preserva B-067/B-046 atuais.
+- [x] Com `true`, criar `ConfidentialE2EE` → 400/403 com código estável.
+- [x] Com `false`, auditor não lê body via B-067; metadata permanece.
+- [x] Com `false`, export privilegiado redige ou omite body.
+- [x] Com `true`, soft-delete gera `message.delete` com `body` no `metadataJson`.
+- [x] Com `false`, soft-delete gera `message.delete` **sem** `body`.
+- [x] Após purge da linha em `messages`, o evento `message.delete` ainda contém
       o body se a flag era `true` no momento do delete.
-- [ ] `true → false` bloqueado sob legal hold de body; mudança auditada.
-- [ ] `false → true` não revela ciphertext antigo.
-- [ ] Cross-tenant: setting de A não afeta B.
+- [x] `true → false` bloqueado sob legal hold de body; mudança auditada.
+- [x] `false → true` não revela ciphertext antigo.
+- [x] Cross-tenant: setting de A não afeta B.
 
 ## Testes
 

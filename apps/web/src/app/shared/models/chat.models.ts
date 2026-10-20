@@ -458,6 +458,7 @@ export interface AdminStats {
   };
   appVersion: string;
   grafanaUrl: string;
+  contentAuditEnabled?: boolean;
 }
 
 export interface AuditEventItem {
@@ -488,6 +489,7 @@ export interface AdminConversationMessageItem {
   authorId: string;
   authorName: string;
   body: string;
+  bodyRedacted?: boolean;
   createdAt: string;
   editedAt?: string | null;
   deletedAt?: string | null;
@@ -602,6 +604,9 @@ export interface SensitiveSettings {
     ceilingHubPerMinute: number;
   };
   messaging: MessagingPolicy;
+  contentAudit: {
+    enabled: boolean;
+  };
   encryption: {
     databaseOverridesEnabled: boolean;
     encryptionAvailable: boolean;
@@ -685,6 +690,10 @@ export interface UpdateSensitiveSettingsInput {
   rateLimit?: {
     sendPerMinute?: number;
     hubPerMinute?: number;
+  };
+  contentAudit?: {
+    enabled?: boolean;
+    confirmDisable?: boolean;
   };
   messaging?: MessagingPolicyInput;
 }

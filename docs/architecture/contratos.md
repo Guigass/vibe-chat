@@ -256,10 +256,11 @@ Flag `Messaging:History:Enabled` default **false**. Off → edição não grava 
 - Códigos estáveis: `DeleteDisabled` (403), `DeleteRoleDenied` (403), `DeleteWindowExpired` (422); não autor sem override continua 403 vazio
 - Soft-delete (`DeletedAt`); body oculto nas leituras (ADR-018)
 - Também cobre replies de thread do canal (authZ por membership do canal pai)
-- **Planned (B-169):** com `contentAuditEnabled=true`, o evento `message.delete`
-  em `audit.audit_events` inclui snapshot do body (e ids mínimos) no
-  `metadataJson`, para sobreviver a purge (B-047). Com `false`, metadata sem
-  body. Políticas de quem/quando pode apagar: B-107 (`messaging.delete.*`).
+- Com `contentAuditEnabled=true` (default, B-169 / ADR-043), o evento `message.delete`
+  em `audit.audit_events` inclui `channelId`, `threadId?`, `sequence`, `authorId`,
+  `deletedAt` e `body` no `metadataJson`. O snapshot sobrevive ao purge da linha.
+  Com `false`, os mesmos ids e timestamps, sem `body`. Políticas de quem/quando
+  pode apagar: B-107 (`messaging.delete.*`).
 
 ### Reactions
 
@@ -568,7 +569,7 @@ Inbox: kind `topic` (prioridade depois de `saved`). `topicId` na navegação. Ev
 | `POST /api/v1/workspaces/{workspaceId}/channels/{channelId}/members` | Body `{ userId }`. Só `Private`. Criador ou `channel.manage`. Alvo no mesmo workspace. 409 `AlreadyChannelMember` / `LastChannelManager` não se aplica no add. 400 `ChannelMembershipNotPrivate`. Fora do workspace → 403. Audit `channel.member.add`. Mensagem `<system:member-add:userId>` + outbox `MessageCreated`. `JoinedSeq=0` |
 | `DELETE /api/v1/workspaces/{workspaceId}/channels/{channelId}/members/{userId}` | Remove outro membro do privado. Não remove o último gestor (criador ainda membro ou `channel.manage`). 409 `LastChannelManager`. Audit `channel.member.remove`. `LeftAt` + evict SignalR |
 | `DELETE /api/v1/workspaces/{workspaceId}/channels/{channelId}/members/me` | Sair do privado. Mesma regra do último gestor. Audit `channel.member.leave` |
-| `POST /api/v1/workspaces/{workspaceId}/channels` | Body `{ name, type, spaceId? }`; exige `channel.create`; `spaceId` deve pertencer ao workspace |
+| `POST /api/v1/workspaces/{workspaceId}/channels` | Body `{ name, type, spaceId? }`; exige `channel.create`; `spaceId` deve pertencer ao workspace. `type: ConfidentialE2EE` → 400 `ContentAuditBlocksE2ee` com auditoria ligada; 400 `ConfidentialE2eeUnavailable` com auditoria desligada até B-064 (ADR-043) |
 | `PUT /api/v1/workspaces/{workspaceId}/channels/{channelId}/topic` | Body `{ topic }` (máx. 250; vazio limpa); membership + `channel.create`; rejeita `Direct` (B-087 `/topico`) |
 | `GET /api/v1/workspaces/{workspaceId}/commands` | Descoberta de slash commands disponíveis ao ator (B-087); membership; filtrado por permissão; `description` segue o `locale` do caller (`me.locale`; null → `pt-BR`); `name` e `usage` são estáveis — ver tabela abaixo |
 | `GET /api/v1/workspaces/{workspaceId}/members` | Membros do workspace (membership obrigatória — D-07); inclui `role` |
@@ -901,10 +902,10 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 | `GET /api/v1/admin/version` | Versão da API; exige `admin.dashboard` (B-175) |
 | `GET /api/v1/admin/audit-events?limit=&action=` | Lista eventos de `audit.audit_events` do tenant do actor; exige `admin.dashboard`; `limit` 1–200 (default 50); nunca retorna eventos de outro tenant |
 | `GET /api/v1/admin/conversations?workspaceId=&limit=` | Lista canais/DMs do tenant para auditoria (B-067); exige `admin.dashboard`; **não** exige `channel_members`; `limit` 1–200 (default 100) |
-| `GET /api/v1/admin/conversations/{channelId}/messages?after=&limit=` | Histórico admin do canal/DM (root); body **visível** mesmo com soft-delete; inclui `deletedBy` / anexos; exige `admin.dashboard`; canal fora do tenant → 403 |
+| `GET /api/v1/admin/conversations/{channelId}/messages?after=&limit=` | Histórico admin do canal/DM (root); com `contentAuditEnabled=true`, body visível mesmo com soft-delete; com `false`, `body` vazio e `bodyRedacted: true` (ids, seq e timestamps permanecem); inclui `deletedBy` / anexos; exige `admin.dashboard`; canal fora do tenant → 403 |
 | `GET /api/v1/admin/threads/{threadId}/messages?after=&limit=` | Histórico admin de replies da thread; mesma authZ e semântica de body |
 | `GET /api/v1/admin/settings?workspaceId=` | Settings sensíveis mascarados (B-069 / ADR-020); exige `workspace.admin` (Auditor com só `admin.dashboard` → 403); `workspaceId` opcional (default: primeiro workspace do actor) |
-| `PUT /api/v1/admin/settings` | Atualiza flags não-secretas (AI/email/webhooks/retention/linkPreview/files/rateLimit/`openRouterBaseUrl`/`*.processEnabled`); mesma authZ; rejeita secrets no body (`SecretsNotWritable`); audit `settings.change` |
+| `PUT /api/v1/admin/settings` | Atualiza flags não-secretas (AI/email/webhooks/retention/linkPreview/files/rateLimit/`contentAudit`/`openRouterBaseUrl`/`*.processEnabled`); mesma authZ; rejeita secrets no body (`SecretsNotWritable`); audit `settings.change`. `contentAudit.enabled: false` exige `confirmDisable: true` (400 `ContentAuditConfirmationRequired`) e recusa 409 `ContentAuditBlockedByLegalHold` se houver hold ativo; audit `settings.content_audit.change` sem body de mensagem (B-169 / ADR-043) |
 | `POST /api/v1/admin/settings/credentials/openrouter/rotate` | Rotaciona API key OpenRouter (envelope AES-GCM em `ai.settings`); body `{ workspaceId?, value }`; resposta `{ configured, mask, keyVersion, rotatedAt }`; `503` se keyring indisponível |
 | `POST /api/v1/admin/settings/credentials/smtp/rotate` | Rotaciona senha SMTP do tenant (envelope em `notifications.email_settings`); mesma forma de resposta |
 | `POST /api/v1/admin/settings/credentials/webhook/rotate` | Rotaciona o signing secret quando o tenant tem 0 ou 1 endpoint (0 cria `default`). Mais de um → `409 WebhookEndpointAmbiguous` |
@@ -915,31 +916,29 @@ Indexação: coluna `messaging.messages.search_vector` (trigger + reindex via ou
 | `POST /api/v1/admin/webhooks/{endpointId}/test` | Envia `WebhookTest` assinado e devolve `{ ok, statusCode, lastError }` |
 | `POST /api/v1/admin/settings/credentials/vapid/rotate` | Rotaciona VAPID da instância (envelope em `administration.process_settings`); body `{ workspaceId?, publicKey, privateKey, subject? }`; resposta máscara/versão; `503` se keyring indisponível (B-187) |
 | `POST /api/v1/admin/settings/encryption/reencrypt` | Regrava envelopes do workspace/tenant/instância para `ActiveKeyVersion`; migra plaintext legado de webhook; audit `settings.encryption.reencrypt` |
-| `GET /api/v1/admin/workspaces/{workspaceId}/export` | Export compliance do workspace (B-046); ZIP `application/zip` com JSON (`manifest`, `workspace`, `members`, `contact-groups`, `spaces`, `channels`, `threads`, `messages`, `attachments` metadata); corpos soft-deleted incluídos (paridade B-067); **sem** binários MinIO; exige `workspace.admin` (Auditor → 403); audit `workspace.export`; workspace fora do tenant/membership → 403 |
+| `GET /api/v1/admin/workspaces/{workspaceId}/export` | Export compliance do workspace (B-046); ZIP `application/zip` com JSON (`manifest`, `workspace`, `members`, `contact-groups`, `spaces`, `channels`, `threads`, `messages`, `attachments` metadata); com `contentAuditEnabled=true`, corpos soft-deleted incluídos (paridade B-067); com `false`, `body` vazio e `bodyRedacted: true` em mensagens e versões; **sem** binários MinIO; exige `workspace.admin` (Auditor → 403); audit `workspace.export`; workspace fora do tenant/membership → 403 |
 
 `AuditEventResponse`: `id`, `action`, `entityType`, `entityId`, `actorUserId`, `occurredAt`, `metadataJson`.
 
 `AdminConversationResponse`: `id`, `workspaceId`, `name`, `type`, `spaceId`, `peerUserId`, `peerDisplayName`.
 
-`AdminConversationMessageResponse`: `id`, `channelId`, `conversationId`, `sequence`, `authorId`, `authorName`, `body` (sempre o valor persistido), `createdAt`, `editedAt`, `deletedAt`, `deletedBy`, `deletedByName`, `threadId`, `replyToMessageId`, `replyCount`, `attachments`, `poll?` (B-096; anônima sem votantes).
+`AdminConversationMessageResponse`: `id`, `channelId`, `conversationId`, `sequence`, `authorId`, `authorName`, `body`, `createdAt`, `editedAt`, `deletedAt`, `deletedBy`, `deletedByName`, `threadId`, `replyToMessageId`, `replyCount`, `attachments`, `poll?` (B-096; anônima sem votantes), `bodyRedacted`. Com `contentAuditEnabled=false`, `body` vem vazio e `bodyRedacted` é `true`.
 
-Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `contact_group.create`, `contact_group.delete`, `contact_group.members.replace` (só departamento), `settings.change`, `settings.credential.rotate`, `settings.encryption.reencrypt`, `workspace.export`, `message.purge`, `message.preserve`, `poll.create`, `poll.vote`, `poll.unvote`, `poll.close`.
+Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send`, `message.delete`, `attachment.upload`, `member.role.change`, `member.invite`, `contact_group.create`, `contact_group.delete`, `contact_group.members.replace` (só departamento), `settings.change`, `settings.content_audit.change`, `settings.credential.rotate`, `settings.encryption.reencrypt`, `workspace.export`, `message.purge`, `message.preserve`, `poll.create`, `poll.vote`, `poll.unvote`, `poll.close`.
 
 **Legal hold e eDiscovery (B-129 / ADR-042).** Flag `Features:LegalHold:Enabled` default false → 404 `LegalHoldDisabled`. Rotas em `/api/v1/workspaces/{workspaceId}/compliance/`: `access` (`workspace.read`), `grants` (`workspace.admin`, sem auto-nomeação), `holds` (`compliance.hold`, aprovação de outra pessoa, duas confirmações), `cases` e `exports` (`compliance.discovery`). Export `vibechat.ediscovery.export.v1` com progresso e SHA-256 do manifesto. Hold ativo e não expirado impede o purge só no escopo. `compliance.custody_events` é append-only.
 
-**Planned (B-169) — metadata de `message.delete`:** quando `contentAuditEnabled=true`,
-`metadataJson` inclui `channelId`, `threadId?`, `sequence`, `authorId`, `body`
-(conteúdo no soft-delete). Com `false`, mesmos ids/`sequence` sem `body`.
-Hoje o runtime grava só `channelId` / `threadId` / `sequence` (sem body) —
-comportamento acima é contrato alvo da flag, não o estado atual do código.
-Outros eventos de audit (ex. `settings.content_audit.change`) continuam sem
-body de mensagem.
+**Metadata de `message.delete` (B-169 / ADR-043):** quando `contentAuditEnabled=true`,
+`metadataJson` inclui `channelId`, `threadId?`, `sequence`, `authorId`, `deletedAt` e `body`
+(conteúdo no soft-delete). Com `false`, os mesmos ids e timestamps, sem `body`.
+`settings.content_audit.change` não carrega body de mensagem. O dashboard admin
+inclui `contentAuditEnabled` para o indicador de modo confidencial.
 
 ### Export de workspace (B-046)
 
 - Formato: `vibechat.workspace.export.v1` (`manifest.json.format`)
 - AuthZ alinhada a settings sensíveis (`workspace.admin`); não usar só `admin.dashboard`
-- Mensagens: body persistido inclusive soft-delete (`deletedAt` / `deletedBy`)
+- Mensagens: body persistido inclusive soft-delete (`deletedAt` / `deletedBy`) quando `contentAuditEnabled=true`; com `false`, `body` vazio e `bodyRedacted: true` (também em `message-versions.json`)
 - Anexos: metadados apenas (`fileName`, `contentType`, `sizeBytes`, `checksumSha256`, `status`) — sem `storageKey` nem bytes
 - Tenant do actor; nunca aceitar `tenantId` do body
 
@@ -972,6 +971,7 @@ body de mensagem.
 | `push.processEnabled` / `processSource` | Kill switch de processo (`process_settings.PushEnabled`) — B-187 |
 | `push.vapidPublicKey` / `vapidConfigured` / `vapidMask` / `vapidSource` | Pública visível; privada só máscara; rotate dedicado |
 | `encryption.activeKeyVersion` / `credentialsUsingActiveKey` / `databaseOverridesEnabled` | Metadata do keyring (sem nomes de variáveis com valor) |
+| `contentAudit.enabled` | `audit.content_audit_settings`; ausência da linha = `true` (B-169 / ADR-043). `false` exige `confirmDisable` e não convive com legal hold ativo |
 
 Regras:
 
@@ -1114,7 +1114,7 @@ Contrato `vibechat.support-bundle.v1` (`SupportBundleComposer`). Flag `Features:
 
 ### Auditoria de conversa (B-067)
 
-Distinta do feed `audit_events` (B-042). Viewer compliance: admin/Auditor com `admin.dashboard` lê histórico completo **dentro do tenant**, inclusive DMs onde não é membro e corpos soft-deleted (ADR-018). Membro comum → 403. Canal/thread de outro tenant → 403. Histórico normal (`GET /channels/.../messages`) continua redigindo body deletado e exigindo membership.
+Distinta do feed `audit_events` (B-042). Viewer compliance: admin/Auditor com `admin.dashboard` lê histórico completo **dentro do tenant**, inclusive DMs onde não é membro e corpos soft-deleted (ADR-018), enquanto `contentAuditEnabled=true`. Com a flag desligada, o body sai vazio (`bodyRedacted`). Membro comum → 403. Canal/thread de outro tenant → 403. Histórico normal (`GET /channels/.../messages`) continua redigindo body deletado e exigindo membership, nos dois modos.
 
 Provisionamento (B-068): no primeiro login OIDC, `EnsureProfile` vincula stub `pending:{email}` ao `sub` real — a membership já provisionada pelo admin passa a valer sem self-signup.
 

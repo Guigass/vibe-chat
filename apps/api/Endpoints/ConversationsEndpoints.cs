@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using VibeChat.Administration;
 using VibeChat.Api;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
@@ -242,6 +243,12 @@ internal static class ConversationsEndpoints
                 {
                     return Results.NotFound(new { error = "TopicsDisabled" });
                 }
+            }
+
+            if (ContentAuditRules.IsConfidentialE2eeType(request.Type))
+            {
+                var auditOn = await AdministrationEndpointHelpers.IsContentAuditEnabledAsync(db, workspace.TenantId, ct);
+                return Results.BadRequest(new { error = ContentAuditRules.E2eeCreationError(auditOn) });
             }
 
             var channelType = Enum.TryParse<ChannelType>(request.Type, true, out var type) ? type : ChannelType.Public;

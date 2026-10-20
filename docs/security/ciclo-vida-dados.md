@@ -71,6 +71,11 @@ entram em fila de purge com grace period e evidência, não permanecem para semp
 | Dados de plugin/bridge | Declaração por destino | Revogação/delete best-effort | Conforme contrato externo | Conforme integração |
 | Grupo de contatos | Enquanto o workspace existir | Delete do grupo apaga atribuições; sair do workspace remove a pessoa dos grupos | Não | Sim (`contact-groups.json`, admin) |
 
+Com `contentAuditEnabled=true` (B-169 / ADR-043), o soft-delete copia o body para
+`audit.audit_events` (`message.delete`). O purge da linha em `messaging.messages`
+não apaga esse snapshot. Com a flag desligada, o evento não leva body e a
+leitura privilegiada (auditoria de conversa e export) também não.
+
 ## Criação e classificação
 
 Antes de persistir novo tipo:

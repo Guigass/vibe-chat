@@ -104,6 +104,7 @@ const baseSettings: SensitiveSettings = {
     ceilingSendPerMinute: 60,
     ceilingHubPerMinute: 120,
   },
+  contentAudit: { enabled: true },
   encryption: {
     databaseOverridesEnabled: true,
     encryptionAvailable: true,
@@ -272,6 +273,7 @@ describe('AdminSettingsPage', () => {
       ui.adminMessagingTitle,
       ui.adminRetentionExport,
       ui.adminEncryption,
+      ui.adminContentAuditTitle,
     ]);
   });
 });

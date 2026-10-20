@@ -110,6 +110,8 @@ ALTER TABLE IF EXISTS building_blocks.outbox_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS building_blocks.outbox_messages FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS audit.audit_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS audit.audit_events FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS audit.content_audit_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS audit.content_audit_settings FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ai.usage_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ai.usage_records FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ai.settings ENABLE ROW LEVEL SECURITY;
@@ -724,6 +726,13 @@ CREATE POLICY tenant_isolation_outbox_messages ON building_blocks.outbox_message
 
 DROP POLICY IF EXISTS tenant_isolation_audit_events ON audit.audit_events;
 CREATE POLICY tenant_isolation_audit_events ON audit.audit_events
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+ALTER TABLE IF EXISTS audit.content_audit_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS audit.content_audit_settings FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation_content_audit_settings ON audit.content_audit_settings;
+CREATE POLICY tenant_isolation_content_audit_settings ON audit.content_audit_settings
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
