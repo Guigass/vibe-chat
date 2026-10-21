@@ -968,6 +968,7 @@ export const ui = {
   adminNavScim: $localize`:@@admin.navScim:SCIM`,
   adminNavQuarantine: $localize`:@@admin.navQuarantine:Quarentena`,
   adminNavCapacity: $localize`:@@admin.navCapacity:Capacidade`,
+  adminNavDeveloper: $localize`:@@admin.navDeveloper:Desenvolvedores`,
   adminQuarantineLead: $localize`:@@admin.quarantineLead:Arquivos retidos pelo verificador. Liberar ou apagar exige uma justificativa e fica no audit.`,
   adminQuarantineDisabled: $localize`:@@admin.quarantineDisabled:A verificação de malware está desligada nesta instalação.`,
   adminQuarantineEmpty: $localize`:@@admin.quarantineEmpty:Nenhum arquivo em quarentena.`,
@@ -1591,6 +1592,58 @@ export const ui = {
   capacityDisabledError: $localize`:@@error.CapacitySloDisabled:A medição de capacidade está desligada nesta instalação.`,
   capacityEnvelopeRejected: $localize`:@@error.CapacitySloEnvelopeRejected:O resultado não segue o formato versionado.`,
   capacitySlaRejected: $localize`:@@error.CapacitySloSlaRejected:Esse número é um objetivo, não um SLA comercial.`,
+  developerLead: $localize`:@@developer.lead:Credenciais, contratos e chamadas sintéticas deste workspace. O segredo aparece uma vez e não fica no navegador.`,
+  developerLoading: $localize`:@@developer.loading:Carregando o portal…`,
+  developerDisabled: $localize`:@@developer.disabled:O portal de desenvolvedores está desligado nesta instalação.`,
+  developerDenied: $localize`:@@developer.denied:Você não pode abrir o portal de desenvolvedores.`,
+  developerError: $localize`:@@developer.error:O portal não respondeu.`,
+  developerSandbox: $localize`:@@developer.sandbox:Sandbox deste tenant. A chamada de teste não sai da instalação e não grava mensagem.`,
+  developerLiveSendOff: $localize`:@@developer.liveSendOff:O envio real continua desligado nesta instalação.`,
+  developerQuickstart: $localize`:@@developer.quickstart:Começo rápido`,
+  developerQuickstartBody: $localize`:@@developer.quickstartBody:Crie uma credencial, copie o segredo e use o explorador. O segredo não vai na URL.`,
+  developerDownloadOpenApi: $localize`:@@developer.downloadOpenApi:Baixar OpenAPI`,
+  developerDownloadKit: $localize`:@@developer.downloadKit:Baixar contract kit`,
+  developerOpenApiFile: $localize`:@@developer.openApiFile:vibechat-openapi.json`,
+  developerKitFile: $localize`:@@developer.kitFile:vibechat-contract-kit.json`,
+  developerRateLimit: $localize`:@@developer.rateLimit:%n% envios por minuto`,
+  developerSecretOnce: $localize`:@@developer.secretOnce:Copie o segredo agora. Ele não será mostrado de novo.`,
+  developerCopy: $localize`:@@developer.copy:Copiar segredo`,
+  developerCopied: $localize`:@@developer.copied:Segredo copiado. Ele saiu da tela.`,
+  developerCopyError: $localize`:@@developer.copyError:Não foi possível copiar. O segredo continua só nesta tela.`,
+  developerDismiss: $localize`:@@developer.dismiss:Fechar`,
+  developerCredentials: $localize`:@@developer.credentials:Credenciais`,
+  developerName: $localize`:@@developer.name:Nome`,
+  developerCreate: $localize`:@@developer.create:Criar credencial`,
+  developerEmpty: $localize`:@@developer.empty:Nenhuma credencial ainda.`,
+  developerLast4: $localize`:@@developer.last4:Final`,
+  developerRevoked: $localize`:@@developer.revoked:Revogada`,
+  developerRotate: $localize`:@@developer.rotate:Rotacionar`,
+  developerRevoke: $localize`:@@developer.revoke:Revogar`,
+  developerRevokeConfirm: $localize`:@@developer.revokeConfirm:Revogar agora. O acesso acaba na hora.`,
+  developerRotateWarning: $localize`:@@developer.rotateWarning:Rotacionar invalida o segredo atual na hora.`,
+  developerExplorer: $localize`:@@developer.explorer:Explorador`,
+  developerOperationSend: $localize`:@@developer.operationSend:Enviar no canal`,
+  developerOperationDm: $localize`:@@developer.operationDm:Mensagem direta`,
+  developerRun: $localize`:@@developer.run:Executar chamada sintética`,
+  developerInspector: $localize`:@@developer.inspector:Inspecionar webhook`,
+  developerSynthetic: $localize`:@@developer.synthetic:Resultado sintético`,
+  developerUsage: $localize`:@@developer.usage:Uso`,
+  developerCapabilities: $localize`:@@developer.capabilities:Capacidades`,
+  developerEvents: $localize`:@@developer.events:Eventos`,
+  developerExamples: $localize`:@@developer.examples:Exemplos`,
+  developerChangelog: $localize`:@@developer.changelog:Changelog`,
+  developerStatusCurrent: $localize`:@@developer.statusCurrent:Vigente`,
+  developerStatusDeprecated: $localize`:@@developer.statusDeprecated:Descontinuado`,
+  developerChangelogHttp: $localize`:@@developer.changelogHttp:API de integração v1`,
+  developerChangelogEvent: $localize`:@@developer.changelogEvent:Evento message.created v1`,
+  developerPortalDisabled: $localize`:@@error.DeveloperPortalDisabled:O portal de desenvolvedores está desligado nesta instalação.`,
+  developerScopeDenied: $localize`:@@error.ExplorerScopeDenied:A credencial não tem esse escopo.`,
+  developerCredentialNotFound: $localize`:@@error.CredentialNotFound:Credencial não encontrada.`,
+  developerCredentialRevoked: $localize`:@@error.CredentialRevoked:A credencial foi revogada.`,
+  developerIdempotencyKeyRequired: $localize`:@@error.IdempotencyKeyRequired:Informe a chave de idempotência.`,
+  developerInvalidChannelScope: $localize`:@@error.InvalidChannelScope:Canal inválido para esta credencial.`,
+  developerInvalidName: $localize`:@@error.InvalidBotName:Nome inválido.`,
+  developerUnknownOperation: $localize`:@@error.UnknownDeveloperOperation:Operação desconhecida.`,
 } as const;
 
 export function fillTemplate(
@@ -1853,6 +1906,22 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.capacityEnvelopeRejected;
     case 'CapacitySloSlaRejected':
       return ui.capacitySlaRejected;
+    case 'DeveloperPortalDisabled':
+      return ui.developerPortalDisabled;
+    case 'ExplorerScopeDenied':
+      return ui.developerScopeDenied;
+    case 'CredentialNotFound':
+      return ui.developerCredentialNotFound;
+    case 'CredentialRevoked':
+      return ui.developerCredentialRevoked;
+    case 'IdempotencyKeyRequired':
+      return ui.developerIdempotencyKeyRequired;
+    case 'InvalidChannelScope':
+      return ui.developerInvalidChannelScope;
+    case 'InvalidBotName':
+      return ui.developerInvalidName;
+    case 'UnknownDeveloperOperation':
+      return ui.developerUnknownOperation;
     case 'DelegationReasonRequired':
     case 'DelegationExpiryInvalid':
     case 'DelegationScopeUnknown':

@@ -159,7 +159,8 @@ public static class RolePermissionCatalog
         Permissions.Forms.Create, Permissions.Forms.Publish, Permissions.Forms.Submit, Permissions.Forms.Review,
         Permissions.Automation.Manage, Permissions.Automation.Notify, Permissions.Automation.Connector,
         Permissions.Incident.Manage, Permissions.Incident.Export,
-        Permissions.Connector.Manage
+        Permissions.Connector.Manage,
+        Permissions.Integration.Read, Permissions.Integration.Manage
     ];
 
     private static readonly HashSet<string> ModeratorPermissions =

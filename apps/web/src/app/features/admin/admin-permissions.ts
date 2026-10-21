@@ -16,7 +16,8 @@ export type AdminAreaId =
   | 'diagnostics'
   | 'scim'
   | 'quarantine'
-  | 'capacity';
+  | 'capacity'
+  | 'developer';
 
 const WORKSPACE_ADMIN_ROLES = new Set(['PlatformOwner', 'WorkspaceOwner', 'Admin']);
 const ADMIN_DASHBOARD_ROLES = new Set([...WORKSPACE_ADMIN_ROLES, 'Auditor']);
@@ -42,6 +43,7 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   { id: 'scim', label: ui.adminNavScim, path: 'scim' },
   { id: 'quarantine', label: ui.adminNavQuarantine, path: 'quarantine' },
   { id: 'capacity', label: ui.adminNavCapacity, path: 'capacity' },
+  { id: 'developer', label: ui.adminNavDeveloper, path: 'developer' },
 ] as const;
 
 export function hasAdminDashboard(role?: string | null): boolean {
@@ -73,6 +75,7 @@ export function canAccessArea(role: string | undefined | null, area: AdminAreaId
     case 'scim':
     case 'quarantine':
     case 'capacity':
+    case 'developer':
       return hasWorkspaceAdmin(role);
     default:
       return false;

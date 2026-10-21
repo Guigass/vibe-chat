@@ -355,6 +355,16 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("GET", "/api/v1/workspaces/{workspaceId:guid}/delegated-admin/alerts", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
             new("GET", "/api/v1/workspaces/{workspaceId:guid}/capacity", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/capacity/evaluations", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/developer/catalog", string.Join(",", new[] { Permissions.Integration.Read }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/developer/openapi", string.Join(",", new[] { Permissions.Integration.Read }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/developer/contract-kit", string.Join(",", new[] { Permissions.Integration.Read }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/developer/credentials", string.Join(",", new[] { Permissions.Integration.Read }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/developer/credentials", string.Join(",", new[] { Permissions.Integration.Manage }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/developer/credentials/{credentialId:guid}/rotate", string.Join(",", new[] { Permissions.Integration.Manage }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/developer/credentials/{credentialId:guid}/revoke", string.Join(",", new[] { Permissions.Integration.Manage }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/developer/explore", string.Join(",", new[] { Permissions.Integration.Manage }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/developer/webhook-inspector", string.Join(",", new[] { Permissions.Integration.Manage }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/developer/usage", string.Join(",", new[] { Permissions.Integration.Read }), false, ""),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(

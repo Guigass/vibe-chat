@@ -1,0 +1,170 @@
+<article class="admin-panel" data-testid="developer-page">
+  <p class="admin-panel__lead">{{ ui.developerLead }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty" role="status">{{ ui.developerLoading }}</p>
+  } @else if (disabled()) {
+    <p class="admin-empty" role="status" data-testid="developer-disabled">{{ ui.developerDisabled }}</p>
+  } @else if (denied()) {
+    <p class="admin-error" role="alert" data-testid="developer-denied">{{ ui.developerDenied }}</p>
+  } @else if (loadError() || !catalog()) {
+    <p class="admin-error" role="alert">{{ ui.developerError }}</p>
+  } @else {
+    <p class="admin-empty" role="note">{{ ui.developerSandbox }}</p>
+    @if (!catalog()!.liveSendEnabled) {
+      <p class="admin-empty" role="status">{{ ui.developerLiveSendOff }}</p>
+    }
+
+    <h2>{{ ui.developerQuickstart }}</h2>
+    <p>{{ ui.developerQuickstartBody }}</p>
+    <p>
+      <button type="button" class="admin-btn" (click)="download('openapi')">{{ ui.developerDownloadOpenApi }}</button>
+      <button type="button" class="admin-btn" (click)="download('kit')">{{ ui.developerDownloadKit }}</button>
+    </p>
+    <p>{{ rateLimit() }}</p>
+
+    @if (secret(); as value) {
+      <p role="status" data-testid="developer-secret">{{ ui.developerSecretOnce }}</p>
+      <p class="mono">{{ value }}</p>
+      <p>
+        <button type="button" class="admin-btn" (click)="copySecret()">{{ ui.developerCopy }}</button>
+        <button type="button" class="admin-btn" (click)="dismissSecret()">{{ ui.developerDismiss }}</button>
+      </p>
+    }
+    @if (copied()) {
+      <p role="status">{{ ui.developerCopied }}</p>
+    }
+    @if (formError()) {
+      <p class="admin-error" role="alert">{{ formError() }}</p>
+    }
+
+    <h2>{{ ui.developerCredentials }}</h2>
+    <form class="admin-filters" (submit)="$event.preventDefault(); create()">
+      <label class="admin-filters__field">
+        <span>{{ ui.developerName }}</span>
+        <input [value]="name()" (input)="name.set($any($event.target).value)" [attr.aria-label]="ui.developerName" />
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.adminBotAllowDms }}</span>
+        <input type="checkbox" [checked]="allowDms()" (change)="allowDms.set($any($event.target).checked)" />
+      </label>
+      <div class="admin-filters__field">
+        <span>{{ ui.adminBotChannels }}</span>
+        @for (channel of channels(); track channel.id) {
+          <label>
+            <input
+              type="checkbox"
+              [checked]="selectedChannelIds().includes(channel.id)"
+              (change)="toggleChannel(channel.id, $any($event.target).checked)"
+            />
+            {{ channel.name }}
+          </label>
+        }
+      </div>
+      <button type="submit" class="admin-btn" [disabled]="busy()">{{ ui.developerCreate }}</button>
+    </form>
+
+    @if (credentials().length === 0) {
+      <p class="admin-empty">{{ ui.developerEmpty }}</p>
+    } @else {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.developerName }}</th>
+              <th>{{ ui.developerLast4 }}</th>
+              <th>{{ ui.developerRevoked }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of credentials(); track row.id) {
+              <tr>
+                <td>{{ row.name }}</td>
+                <td class="mono">{{ row.last4 }}</td>
+                <td>{{ row.revoked ? ui.developerRevoked : ui.developerStatusCurrent }}</td>
+                <td>
+                  <button type="button" class="admin-btn" [disabled]="busy()" (click)="rotate(row.id)">{{ ui.developerRotate }}</button>
+                  @if (confirmingId() === row.id) {
+                    <button type="button" class="admin-btn" [disabled]="busy()" (click)="revoke(row.id)">{{ ui.developerRevokeConfirm }}</button>
+                  } @else {
+                    <button type="button" class="admin-btn" [disabled]="busy()" (click)="confirmingId.set(row.id)">{{ ui.developerRevoke }}</button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <h2>{{ ui.developerExplorer }}</h2>
+    <p class="admin-empty" role="note">{{ ui.developerRotateWarning }}</p>
+    <form class="admin-filters" (submit)="$event.preventDefault(); runExplore()">
+      <label class="admin-filters__field">
+        <span>{{ ui.developerCredentials }}</span>
+        <select [value]="exploreCredentialId()" (change)="exploreCredentialId.set($any($event.target).value)">
+          @for (row of credentials(); track row.id) {
+            <option [value]="row.id">{{ row.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.developerOperationSend }}</span>
+        <select [value]="exploreOperation()" (change)="exploreOperation.set($any($event.target).value)">
+          <option value="messages.send">{{ ui.developerOperationSend }}</option>
+          <option value="messages.dm">{{ ui.developerOperationDm }}</option>
+        </select>
+      </label>
+      @if (exploreOperation() === 'messages.send') {
+        <label class="admin-filters__field">
+          <span>{{ ui.adminBotChannels }}</span>
+          <select [value]="exploreChannelId()" (change)="exploreChannelId.set($any($event.target).value)">
+            @for (channel of channels(); track channel.id) {
+              <option [value]="channel.id">{{ channel.name }}</option>
+            }
+          </select>
+        </label>
+      }
+      <button type="submit" class="admin-btn" [disabled]="busy()">{{ ui.developerRun }}</button>
+      <button type="button" class="admin-btn" [disabled]="busy()" (click)="inspect()">{{ ui.developerInspector }}</button>
+    </form>
+    @if (exploreResult(); as result) {
+      <p role="status" data-testid="developer-synthetic">{{ ui.developerSynthetic }} {{ result.operation }}</p>
+    }
+    @if (inspectorEvent(); as eventType) {
+      <p role="status">{{ ui.developerSynthetic }} {{ eventType }}</p>
+    }
+
+    <h2>{{ ui.developerUsage }}</h2>
+    <p>{{ ui.developerUsage }}: {{ usage()?.errors ?? 0 }}</p>
+
+    <h2>{{ ui.developerCapabilities }}</h2>
+    <ul>
+      @for (item of catalog()!.capabilities; track item) {
+        <li class="mono">{{ item }}</li>
+      }
+    </ul>
+
+    <h2>{{ ui.developerEvents }}</h2>
+    <ul>
+      @for (item of catalog()!.events; track item.eventType + item.schemaVersion) {
+        <li class="mono">{{ item.eventType }} {{ item.schemaVersion }} {{ statusLabel(item.status) }}</li>
+      }
+    </ul>
+
+    <h2>{{ ui.developerExamples }}</h2>
+    <ul>
+      @for (item of catalog()!.examples; track item.operation) {
+        <li class="mono">{{ item.operation }}</li>
+      }
+    </ul>
+
+    <h2>{{ ui.developerChangelog }}</h2>
+    <ul>
+      @for (item of catalog()!.changelog; track item.id) {
+        <li>{{ changelogLabel(item.id) }} — {{ statusLabel(item.status) }}@if (item.retiresOn) { {{ item.retiresOn }} }</li>
+      }
+    </ul>
+  }
+</article>

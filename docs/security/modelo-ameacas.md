@@ -381,6 +381,19 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Rate-limit | Chave Redis própria por bot, mesmo teto de send do tenant |
 | Rollback | Flag off no mesmo binário. `Down` remove só as tabelas do bot; mensagens ficam |
 
+### B-135 — Portal do desenvolvedor
+
+| Item | Controle |
+|------|----------|
+| Flag | `Integrations:DeveloperPortal:Enabled` off → 404 `DeveloperPortalDisabled`. O send de mensagem não passa pelo portal |
+| AuthZ | `integration.read` lista catálogo, OpenAPI, kit, credenciais e usage. `integration.manage` cria, rotaciona, revoga, explora e inspeciona. Member → 403 sem corpo do catálogo |
+| Segredo | SHA-256 no bot token. Valor cru só no create/rotate. Replay da idempotência e GET não devolvem `vc_int_`. `Cache-Control: no-store`. Sem token na URL |
+| Revogação | `RevokedAt` na mesma transação. O próximo send autenticado com o token é 401 |
+| Explorador | Decisão pelo escopo de canal / `allowDms`. Fora do escopo → 403 `ExplorerScopeDenied`. Não grava mensagem nem chama URL |
+| Webhook | Inspector devolve exemplo do catálogo com `delivered: false`. Não há cliente HTTP |
+| Usage | Auditoria `developer.*` sem token. Outro workspace/tenant não aparece na lista |
+| Rollback | Flag off no mesmo binário. Não há migration; as credenciais continuam nas tabelas do bot |
+
 ### B-110 / ADR-028 — Plugin local
 
 | Item | Controle |

@@ -94,6 +94,14 @@ task load:smoke
 
 Cobre `GET /health`, `GET /me`, history e `POST .../messages` no canal demo.
 
+## Portal do desenvolvedor (B-135)
+
+A flag `Integrations:DeveloperPortal:Enabled` nasce desligada. Com ela ligada,
+Admin/Owner abre `/admin/developer`. O segredo da credencial aparece uma vez.
+O explorador e o inspetor de webhook são sintéticos: não gravam mensagem e não
+chamam URL externa. Desligar a flag devolve 404 no portal e não apaga bots já
+criados. O envio real continua em `Integrations:Bots:Enabled`.
+
 ## Capacidade e SLOs (B-146)
 
 ```bash
