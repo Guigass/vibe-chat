@@ -28,6 +28,8 @@ internal static class IntegrationsServiceCollectionExtensions
             AllowAutoRedirect = false
         });
         services.AddScoped<IOutboundWebhookDispatcher, OutboundWebhookDispatcher>();
+        services.Configure<DeveloperPortalOptions>(configuration.GetSection(DeveloperPortalOptions.SectionName));
+        services.AddScoped<DeveloperPortalService>();
         services.AddHttpClient(SiemExportService.HttpClientName, client =>
         {
             client.Timeout = SiemLimits.HttpTimeout;

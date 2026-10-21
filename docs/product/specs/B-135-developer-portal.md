@@ -40,11 +40,11 @@ workspace e channel scopes.
 
 ## Aceite
 
-- [ ] OpenAPI/schema correspondem ao runtime.
-- [ ] Secret aparece uma vez.
-- [ ] Revogação é imediata.
-- [ ] Explorer respeita scopes.
-- [ ] Usage não cruza tenant.
+- [x] OpenAPI/schema correspondem ao runtime.
+- [x] Secret aparece uma vez.
+- [x] Revogação é imediata.
+- [x] Explorer respeita scopes.
+- [x] Usage não cruza tenant.
 
 ## Testes
 

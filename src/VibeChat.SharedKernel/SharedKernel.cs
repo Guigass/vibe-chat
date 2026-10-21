@@ -300,6 +300,12 @@ public static class Permissions
     {
         public const string Read = "billing.read";
     }
+
+    public static class Integration
+    {
+        public const string Read = "integration.read";
+        public const string Manage = "integration.manage";
+    }
 }
 
 public enum Role

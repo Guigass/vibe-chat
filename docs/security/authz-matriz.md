@@ -361,6 +361,16 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/workspaces/{workspaceId:guid}/delegated-admin/alerts` | permission | `workspace.read` | ✗ | ✗ | ✓ | Soft, hard e break-glass |
 | GET | `/workspaces/{workspaceId:guid}/capacity` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-146; flag off → 404 `CapacitySloDisabled`; sem SLA e sem PII |
 | POST | `/workspaces/{workspaceId:guid}/capacity/evaluations` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-146; envelope `vibechat.capacity-result.v1`; não grava |
+| GET | `/workspaces/{workspaceId:guid}/developer/catalog` | permission | `integration.read` | ✗ | ✗ | ✓ | B-135; flag off → 404 `DeveloperPortalDisabled`; sem segredo |
+| GET | `/workspaces/{workspaceId:guid}/developer/openapi` | permission | `integration.read` | ✗ | ✗ | ✓ | B-135; paths iguais ao runtime de integração |
+| GET | `/workspaces/{workspaceId:guid}/developer/contract-kit` | permission | `integration.read` | ✗ | ✗ | ✓ | B-135; schemas do catálogo público; sem credencial |
+| GET | `/workspaces/{workspaceId:guid}/developer/credentials` | permission | `integration.read` | ✗ | ✗ | ✓ | B-135; só last4; nunca `vc_int_` |
+| POST | `/workspaces/{workspaceId:guid}/developer/credentials` | permission | `integration.manage` | ✗ | ✗ | ✓ | B-135; token uma vez; `Idempotency-Key`; replay sem segredo |
+| POST | `/workspaces/{workspaceId:guid}/developer/credentials/{credentialId:guid}/rotate` | permission | `integration.manage` | ✗ | ✗ | ✓ | B-135; invalida o token anterior na hora |
+| POST | `/workspaces/{workspaceId:guid}/developer/credentials/{credentialId:guid}/revoke` | permission | `integration.manage` | ✗ | ✗ | ✓ | B-135; `RevokedAt` imediato → 401 no send |
+| POST | `/workspaces/{workspaceId:guid}/developer/explore` | permission | `integration.manage` | ✗ | ✗ | ✓ | B-135; chamada sintética; fora do escopo → 403 `ExplorerScopeDenied`; não grava mensagem |
+| POST | `/workspaces/{workspaceId:guid}/developer/webhook-inspector` | permission | `integration.manage` | ✗ | ✗ | ✓ | B-135; payload sintético; não faz POST externo |
+| GET | `/workspaces/{workspaceId:guid}/developer/usage` | permission | `integration.read` | ✗ | ✗ | ✓ | B-135; só o workspace do ator; sem token |
 
 ## Hub SignalR `/hubs/chat`
 

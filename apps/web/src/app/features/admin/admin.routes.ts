@@ -91,6 +91,11 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     loadComponent: () => import('./admin-capacity.page').then((m) => m.AdminCapacityPage),
   },
   {
+    path: 'developer',
+    canActivate: [adminAreaGuard('developer')],
+    loadComponent: () => import('./admin-developer.page').then((m) => m.AdminDeveloperPage),
+  },
+  {
     path: '**',
     redirectTo: 'overview',
   },

@@ -17,6 +17,7 @@ import { SiemApiService } from './siem-api.service';
 import { PolicyPackApiService } from './policy-pack-api.service';
 import { DelegatedAdminApiService } from './delegated-admin-api.service';
 import { CapacityApiService } from './capacity-api.service';
+import { DeveloperApiService } from './developer-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -41,6 +42,7 @@ export class ApiService {
   private readonly policyPacks = inject(PolicyPackApiService);
   private readonly delegatedAdmin = inject(DelegatedAdminApiService);
   private readonly capacity = inject(CapacityApiService);
+  private readonly developer = inject(DeveloperApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -247,4 +249,12 @@ export class ApiService {
   readonly delegatedAdminUsage: DelegatedAdminApiService['usage'] = this.delegatedAdmin.usage.bind(this.delegatedAdmin);
   readonly delegatedAdminAlerts: DelegatedAdminApiService['alerts'] = this.delegatedAdmin.alerts.bind(this.delegatedAdmin);
   readonly capacityDashboard: CapacityApiService['dashboard'] = this.capacity.dashboard.bind(this.capacity);
+  readonly developerCatalog: DeveloperApiService['catalog'] = this.developer.catalog.bind(this.developer);
+  readonly developerCredentials: DeveloperApiService['credentials'] = this.developer.credentials.bind(this.developer);
+  readonly createDeveloperCredential: DeveloperApiService['createCredential'] = this.developer.createCredential.bind(this.developer);
+  readonly rotateDeveloperCredential: DeveloperApiService['rotateCredential'] = this.developer.rotateCredential.bind(this.developer);
+  readonly revokeDeveloperCredential: DeveloperApiService['revokeCredential'] = this.developer.revokeCredential.bind(this.developer);
+  readonly exploreDeveloperCall: DeveloperApiService['explore'] = this.developer.explore.bind(this.developer);
+  readonly inspectDeveloperWebhook: DeveloperApiService['inspectWebhook'] = this.developer.inspectWebhook.bind(this.developer);
+  readonly developerUsage: DeveloperApiService['usage'] = this.developer.usage.bind(this.developer);
 }

@@ -145,7 +145,7 @@ Objetivo: tornar extensibilidade um produto sustentável.
 
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
-| B-135 | B/D/G | Developer portal, credenciais e documentação de API | B-109, B-110 | [B-135](../product/specs/B-135-developer-portal.md) | Planned |
+| B-135 | B/D/G | Developer portal, credenciais e documentação de API | B-109, B-110 | [B-135](../product/specs/B-135-developer-portal.md) | **Done** — catálogo OpenAPI/eventos, credencial com segredo uma vez, explorador e webhook sintéticos, usage por tenant, flag off |
 | B-066 | B/C/D/E | Plataforma de plugins com capabilities avançadas | B-108, B-109, B-110 | [B-066](../product/specs/B-066-plugins-plataforma.md) | Planned |
 | B-111 | B/C/D/E | Interações, histórico e anexos governados para plugins | B-066 | [B-111](../product/specs/B-111-plugins-horizonte.md) | Planned |
 | B-136 | B/C/E/G | SDK e contract-test kit para plugins | B-066, B-139 | [B-136](../product/specs/B-136-sdk-contract-kit.md) | Planned |

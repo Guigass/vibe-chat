@@ -1027,6 +1027,29 @@ Flag `Integrations:EventSchemas:Enabled` default **false**.
 
 O catálogo não contém dado de tenant. `messaging.message.created` v1 (wire `MessageCreated`, deprecated até 2027-04-19) e v2 (envelope) coexistem. O wire default continua v1. Métrica `vibechat.events.schema.rejected` com `reason` e `event_type` apenas.
 
+### Portal do desenvolvedor (B-135)
+
+Flag `Integrations:DeveloperPortal:Enabled` default **false**. Off → 404 `DeveloperPortalDisabled`. O chat e o send de B-109 não dependem desta flag. O send real continua em `Integrations:Bots:Enabled`.
+
+Credencial reusa `integrations.bots` / `bot_tokens` / `bot_channel_scopes` (hash SHA-256, prefixo `vc_int_`, escopo de canal e `allowDms`). `POST` de criação e rotação exigem `Idempotency-Key`. A resposta inclui `token` uma vez; o replay e o `GET` devolvem `token: null` e só `last4`. Revogação grava `RevokedAt` na mesma transação; o próximo send com esse token é 401.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| GET | `/api/v1/workspaces/{workspaceId}/developer/catalog` | `integration.read` |
+| GET | `/api/v1/workspaces/{workspaceId}/developer/openapi` | `integration.read`; paths iguais a `POST /api/v1/integrations/v1/channels/{channelId}/messages` e `POST /api/v1/integrations/v1/dms` |
+| GET | `/api/v1/workspaces/{workspaceId}/developer/contract-kit` | `integration.read`; OpenAPI + schemas de `PublicEventCatalog` |
+| GET | `/api/v1/workspaces/{workspaceId}/developer/credentials` | `integration.read` |
+| POST | `/api/v1/workspaces/{workspaceId}/developer/credentials` | `integration.manage`; body `{ name, channelIds[], allowDms }` |
+| POST | `/api/v1/workspaces/{workspaceId}/developer/credentials/{credentialId}/rotate` | `integration.manage` |
+| POST | `/api/v1/workspaces/{workspaceId}/developer/credentials/{credentialId}/revoke` | `integration.manage` |
+| POST | `/api/v1/workspaces/{workspaceId}/developer/explore` | `integration.manage`; body `{ credentialId, operation, channelId? }`; `messages.send` exige o canal no escopo; `messages.dm` exige `allowDms`; resposta `synthetic: true`, `delivered: false`; não chama `SendMessage` |
+| POST | `/api/v1/workspaces/{workspaceId}/developer/webhook-inspector` | `integration.manage`; payload sintético de `messaging.message.created` v1; sem POST externo |
+| GET | `/api/v1/workspaces/{workspaceId}/developer/usage` | `integration.read`; chamadas `developer.*` do próprio workspace |
+
+`integration.read` e `integration.manage` estão no catálogo de Admin/Owner. Member, Auditor, Guest e Bot não têm. Respostas do portal usam `Cache-Control: no-store`. O token não entra em query string, auditoria nem idempotência.
+
+Sandbox é o tenant autenticado: a chamada de teste não cria outro tenant e não atravessa o workspace. Usage filtra `workspaceId` no metadata e a RLS de `audit.audit_events`.
+
 ### Bots de integração (B-109 / ADR-027)
 
 Flag `Integrations:Bots:Enabled` default **false** (Development/lab pode ligar). Off → 404 `IntegrationDisabled` em admin e em send.

@@ -93,7 +93,8 @@ public sealed class InfrastructureRegistrationTests
             "Scoped:ConnectorService:ConnectorService",
             "Singleton:IConnectorAddressLookup:DnsConnectorAddressLookup",
             "Singleton:IConnectorTransport:HttpConnectorTransport",
-            "Scoped:IOutboundWebhookDispatcher:OutboundWebhookDispatcher");
+            "Scoped:IOutboundWebhookDispatcher:OutboundWebhookDispatcher",
+            "Scoped:DeveloperPortalService:DeveloperPortalService");
 
         worker.Should().Equal(signalR.Select(entry => entry
             .Replace("Scoped:IChatPublisher:SignalRChatPublisher", "Scoped:IChatPublisher:RedisChannelChatPublisher", StringComparison.Ordinal)
