@@ -134,6 +134,13 @@ internal static class FilesEndpoints
                 Height = kind == AttachmentKind.Video ? request.Height : null,
                 CreatedAt = now
             };
+            var storageQuota = await http.RequestServices.GetRequiredService<DelegatedAdminService>()
+                .TryConsumeAsync(channel.TenantId, channel.WorkspaceId, DelegatedResources.Storage, request.SizeBytes, ct);
+            if (!storageQuota.Allowed)
+            {
+                return Results.Json(new { error = storageQuota.Error }, statusCode: StatusCodes.Status409Conflict);
+            }
+
             db.Attachments.Add(attachment);
             audit.Add(new AuditEvent
             {

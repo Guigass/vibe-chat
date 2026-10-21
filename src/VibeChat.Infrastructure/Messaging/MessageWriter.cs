@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using Minio;
 using StackExchange.Redis;
 using VibeChat.Administration;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.AI;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
@@ -46,7 +47,8 @@ public sealed class MessageWriter(
     IPermissionChecker permissions,
     IChannelMembershipReader channels,
     IPresenceService presence,
-    FilesSettingsResolver filesSettings) : IMessageWriter
+    FilesSettingsResolver filesSettings,
+    DelegatedAdminService quotas) : IMessageWriter
 {
     public async Task<MessageSendResult> SendAsync(SendMessageCommand command, CancellationToken cancellationToken)
     {
@@ -228,6 +230,14 @@ public sealed class MessageWriter(
         {
             var idempotentResult = JsonSerializer.Deserialize<MessageSendResult>(existing.ResultJson)!;
             return idempotentResult with { Idempotent = true };
+        }
+
+        var messageQuota = await quotas.TryConsumeAsync(
+            command.TenantId, parentChannel.WorkspaceId, DelegatedResources.Messages, 1, cancellationToken);
+        if (!messageQuota.Allowed)
+        {
+            VibeChatMetrics.MessagesRejected.Add(1);
+            throw new InvalidOperationException(messageQuota.Error ?? DelegatedAdminErrors.QuotaHardLimit);
         }
 
         Attachment[] attachments = [];

@@ -4,6 +4,7 @@ using VibeChat.Administration;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
 using VibeChat.Infrastructure;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.Messaging;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
@@ -141,6 +142,12 @@ internal sealed class RequirePermissionFilter : IEndpointFilter
                 continue;
             }
 
+            var delegated = http.RequestServices.GetRequiredService<DelegatedAdminService>();
+            if (await HasDelegatedScopeAsync(db, delegated, tenantId.Value, userId, permission, route, http.RequestAborted))
+            {
+                continue;
+            }
+
             return Results.Forbid();
         }
 
@@ -175,6 +182,41 @@ internal sealed class RequirePermissionFilter : IEndpointFilter
                 && x.UserId == userId
                 && x.Capability == capability,
             cancellationToken);
+    }
+
+    private static async Task<bool> HasDelegatedScopeAsync(
+        VibeChatDbContext db,
+        DelegatedAdminService delegated,
+        TenantId tenantId,
+        UserId userId,
+        string permission,
+        RouteValueDictionary route,
+        CancellationToken cancellationToken)
+    {
+        WorkspaceId workspaceId;
+        Guid? spaceId = null;
+        if (TryGetGuid(route, "workspaceId", out var workspace))
+        {
+            workspaceId = new WorkspaceId(workspace);
+        }
+        else if (TryGetGuid(route, "channelId", out var channelId))
+        {
+            var channel = await db.Channels.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.TenantId == tenantId && x.Id == new ChannelId(channelId), cancellationToken);
+            if (channel is null)
+            {
+                return false;
+            }
+
+            workspaceId = channel.WorkspaceId;
+            spaceId = channel.SpaceId;
+        }
+        else
+        {
+            return false;
+        }
+
+        return await delegated.AllowsPermissionAsync(tenantId, workspaceId, userId, permission, spaceId, cancellationToken);
     }
 
     private static bool TryGetGuid(RouteValueDictionary route, string key, out Guid value)

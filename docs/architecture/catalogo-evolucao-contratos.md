@@ -108,6 +108,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Features:Dlp:Enabled` | instance | false | B-130 | API `/dlp/*` → 404 `DlpDisabled`; gate não altera efeitos externos |
 | `Features:Siem:Enabled` | instance | false | B-132 | API `/siem/*` → 404 `SiemDisabled`; worker não envia audit |
 | `Features:PolicyPacks:Enabled` | instance | false | B-133 | API `/policy-packs/*` → 404 `PolicyPackDisabled`; convite não consulta pack |
+| `Features:DelegatedAdmin:Enabled` | instance | false | B-134 | API `/delegated-admin/*` e `/quotas/*` → 404 `DelegatedAdminDisabled`; chat não consulta quota |
 
 Nomes de binding podem mudar no ADR, mas semântica/default não muda
 silenciosamente.

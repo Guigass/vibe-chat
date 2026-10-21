@@ -1511,6 +1511,30 @@ export const ui = {
   policyPackError: $localize`:@@policyPack.error:Não foi possível atualizar o policy pack.`,
   policyPackGuests: $localize`:@@error.PolicyPackGuestsBlocked:O policy pack bloqueia novos convidados.`,
   policyPackOverride: $localize`:@@error.PolicyPackOverrideForbidden:Esse controle está bloqueado e não pode ficar mais fraco.`,
+  delegatedAdminTitle: $localize`:@@delegatedAdmin.title:Administração delegada`,
+  delegatedAdminLead: $localize`:@@delegatedAdmin.lead:Você só vê as áreas do seu escopo. A quota mostra uso, tendência e a próxima ação.`,
+  delegatedAdminDisabled: $localize`:@@delegatedAdmin.disabled:A administração delegada está desligada nesta instalação.`,
+  delegatedAdminScopes: $localize`:@@delegatedAdmin.scopes:Áreas`,
+  delegatedAdminScope: $localize`:@@delegatedAdmin.scope:Escopo`,
+  delegatedAdminSpace: $localize`:@@delegatedAdmin.space:Space`,
+  delegatedAdminReason: $localize`:@@delegatedAdmin.reason:Motivo`,
+  delegatedAdminBreakGlass: $localize`:@@delegatedAdmin.breakGlass:Break-glass`,
+  delegatedAdminGrant: $localize`:@@delegatedAdmin.grant:Conceder escopo`,
+  delegatedAdminRevoke: $localize`:@@delegatedAdmin.revoke:Revogar`,
+  delegatedAdminUsage: $localize`:@@delegatedAdmin.usage:Uso`,
+  delegatedAdminAlerts: $localize`:@@delegatedAdmin.alerts:Alertas`,
+  delegatedAdminEmpty: $localize`:@@delegatedAdmin.empty:Nenhuma atribuição ativa.`,
+  delegatedAdminSaved: $localize`:@@delegatedAdmin.saved:Escopo atualizado.`,
+  delegatedAdminError: $localize`:@@delegatedAdmin.error:Não foi possível atualizar a delegação.`,
+  delegatedAdminTrendUp: $localize`:@@delegatedAdmin.trendUp:Subindo`,
+  delegatedAdminTrendDown: $localize`:@@delegatedAdmin.trendDown:Caindo`,
+  delegatedAdminTrendFlat: $localize`:@@delegatedAdmin.trendFlat:Estável`,
+  delegatedAdminActionNone: $localize`:@@delegatedAdmin.actionNone:Nenhuma ação`,
+  delegatedAdminActionWarning: $localize`:@@delegatedAdmin.actionWarning:Perto do limite`,
+  delegatedAdminActionBlocked: $localize`:@@delegatedAdmin.actionBlocked:Bloqueado no limite rígido`,
+  delegatedAdminHardLimit: $localize`:@@error.QuotaHardLimit:A quota rígida foi atingida.`,
+  delegatedAdminScopeExceeded: $localize`:@@error.DelegationScopeExceeded:Esse escopo está acima do que você pode conceder.`,
+  delegatedAdminSelfGrant: $localize`:@@error.DelegationSelfGrant:Você não pode conceder um escopo a si mesmo.`,
 } as const;
 
 export function fillTemplate(
@@ -1759,6 +1783,22 @@ export function translateErrorCode(code: string | undefined): string {
     case 'PolicyPackConfirmationRequired':
     case 'PolicyPackIdempotencyConflict':
       return ui.policyPackError;
+    case 'DelegatedAdminDisabled':
+      return ui.delegatedAdminDisabled;
+    case 'QuotaHardLimit':
+      return ui.delegatedAdminHardLimit;
+    case 'DelegationScopeExceeded':
+      return ui.delegatedAdminScopeExceeded;
+    case 'DelegationSelfGrant':
+      return ui.delegatedAdminSelfGrant;
+    case 'DelegationReasonRequired':
+    case 'DelegationExpiryInvalid':
+    case 'DelegationScopeUnknown':
+    case 'DelegationSpaceInvalid':
+    case 'DelegationAlreadyAssigned':
+    case 'QuotaInvalidLimit':
+    case 'QuotaResourceUnknown':
+      return ui.delegatedAdminError;
     default:
       return code ?? '';
   }

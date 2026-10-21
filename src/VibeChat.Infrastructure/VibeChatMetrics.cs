@@ -60,6 +60,10 @@ public static class VibeChatMetrics
     public static readonly Counter<long> ScimProvisioned = Meter.CreateCounter<long>("vibechat.scim.provisioned");
     public static readonly Counter<long> AttachmentScans = Meter.CreateCounter<long>("vibechat.files.scan");
     public static readonly Counter<long> EventSchemaRejected = Meter.CreateCounter<long>("vibechat.events.schema.rejected");
+    public static readonly Counter<long> QuotaConsumed = Meter.CreateCounter<long>("vibechat.quota.consumed");
+    public static readonly Counter<long> QuotaDenied = Meter.CreateCounter<long>("vibechat.quota.denied");
+    public static readonly Counter<long> QuotaCheckFailed = Meter.CreateCounter<long>("vibechat.quota.check_failed");
+    public static readonly Counter<long> BreakGlassOpened = Meter.CreateCounter<long>("vibechat.delegation.break_glass");
     public static readonly UpDownCounter<long> AttachmentScanQueue = Meter.CreateUpDownCounter<long>("vibechat.files.scan.queue");
     public static readonly UpDownCounter<long> RealtimeConnections = Meter.CreateUpDownCounter<long>("vibechat.realtime.connections");
     private static long _realtimeConnectionsGauge;

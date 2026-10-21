@@ -144,6 +144,10 @@ public static class AuditActions
     public const string PolicyPackApply = "policy.pack.apply";
     public const string PolicyPackImport = "policy.pack.import";
     public const string PolicyPackRollback = "policy.pack.rollback";
+    public const string DelegationGrant = "delegation.grant";
+    public const string DelegationRevoke = "delegation.revoke";
+    public const string DelegationBreakGlass = "delegation.break_glass";
+    public const string QuotaUpdate = "quota.update";
 }
 
 public interface IAuditWriter

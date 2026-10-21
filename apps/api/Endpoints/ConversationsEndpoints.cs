@@ -262,6 +262,13 @@ internal static class ConversationsEndpoints
                 return Results.Json(new { error = "AnnouncementPublishForbidden" }, statusCode: StatusCodes.Status403Forbidden);
             }
 
+            var channelQuota = await http.RequestServices.GetRequiredService<VibeChat.Infrastructure.Compliance.DelegatedAdminService>()
+                .TryConsumeAsync(workspace.TenantId, workspace.Id, DelegatedResources.Channels, 1, ct);
+            if (!channelQuota.Allowed)
+            {
+                return Results.Json(new { error = channelQuota.Error }, statusCode: StatusCodes.Status409Conflict);
+            }
+
             var channel = new Channel
             {
                 Id = ChannelId.New(),

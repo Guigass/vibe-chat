@@ -40,11 +40,11 @@ break-glass auditados.
 
 ## Aceite
 
-- [ ] Space admin não gerencia outro space.
-- [ ] Grantor não concede acima do próprio scope.
-- [ ] Expiry revoga.
-- [ ] Quota concorrente não ultrapassa hard limit.
-- [ ] Break-glass expira e alerta.
+- [x] Space admin não gerencia outro space.
+- [x] Grantor não concede acima do próprio scope.
+- [x] Expiry revoga.
+- [x] Quota concorrente não ultrapassa hard limit.
+- [x] Break-glass expira e alerta.
 
 ## Testes
 

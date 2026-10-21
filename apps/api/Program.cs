@@ -290,6 +290,7 @@ v1.MapCompliance();
 v1.MapDlp();
 v1.MapSiem();
 v1.MapPolicyPacks();
+v1.MapDelegatedAdmin();
 
 app.MapScim();
 app.MapHub<ChatHub>("/hubs/chat").RequireAuthorization();

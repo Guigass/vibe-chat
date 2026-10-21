@@ -4,6 +4,7 @@ import { ComplianceApiService, ComplianceGrant, CustodyEvent, DiscoveryCase, Dis
 import { DlpPanel } from './dlp-panel';
 import { SiemPanel } from './siem-panel';
 import { PolicyPackPanel } from './policy-pack-panel';
+import { DelegatedAdminPanel } from './delegated-admin-panel';
 import { DirectoryApiService } from '../../core/api/directory-api.service';
 import { ui, translateErrorCode } from '../../core/i18n/strings';
 import { Workspace, WorkspaceMember } from '../../shared/models/chat.models';
@@ -11,7 +12,7 @@ import { Workspace, WorkspaceMember } from '../../shared/models/chat.models';
 @Component({
   selector: 'vc-compliance-page',
   standalone: true,
-  imports: [RouterLink, DlpPanel, SiemPanel, PolicyPackPanel],
+  imports: [RouterLink, DlpPanel, SiemPanel, PolicyPackPanel, DelegatedAdminPanel],
   template: `
     <main class="compliance" data-testid="compliance-page">
       <header class="compliance__bar">
@@ -23,6 +24,7 @@ import { Workspace, WorkspaceMember } from '../../shared/models/chat.models';
       <vc-dlp-panel />
       <vc-siem-panel />
       <vc-policy-pack-panel />
+      <vc-delegated-admin-panel />
 
       @if (loading()) {
         <p role="status">{{ ui.complianceLoading }}</p>

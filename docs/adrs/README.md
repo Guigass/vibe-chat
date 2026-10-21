@@ -52,6 +52,7 @@ original.
 | [044](ADR-044-classificacao-dlp.md) | Classificação de dados e DLP local | Accepted |
 | [045](ADR-045-audit-siem.md) | Export de audit para SIEM | Accepted |
 | [046](ADR-046-policy-packs.md) | Policy packs por tipo de organização | Accepted |
+| [047](ADR-047-admin-delegada-quotas.md) | Administração delegada e quotas | Accepted |
 
 ## Quando criar um ADR
 
