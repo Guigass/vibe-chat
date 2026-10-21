@@ -295,6 +295,11 @@ public static class Permissions
     {
         public const string AuditExport = "security.audit.export";
     }
+
+    public static class Billing
+    {
+        public const string Read = "billing.read";
+    }
 }
 
 public enum Role

@@ -177,6 +177,17 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Drift | Compara o documento com o valor vivo. Versão nova do catálogo não se aplica sozinha |
 | Cross-tenant | RLS FORCE em `compliance.policy_assignments` |
 
+### Administração delegada (B-134 / ADR-047)
+
+| Item | Controle |
+|------|----------|
+| AuthZ | Catálogo fixo. Owner concede, mas não vira compliance/security só por ser owner. Auto-atribuição → 403 `DelegationSelfGrant`. Acima do grantor → 403 `DelegationScopeExceeded` |
+| Flag | `Features:DelegatedAdmin:Enabled` off → 404 `DelegatedAdminDisabled` e o chat não consulta quota |
+| Space | O escopo `space` só administra o `spaceId` concedido |
+| Break-glass | No máximo 4 horas. Alerta na abertura e ao expirar. A leitura revoga |
+| Quota | `UPDATE` só quando `Used + delta <= HardLimit`. Sem linha, não bloqueia. Falha do contador não derruba o envio |
+| Cross-tenant | RLS FORCE em `compliance.scoped_role_assignments`, `compliance.quotas`, `compliance.quota_counters` e `compliance.quota_alerts` |
+
 ### Export de workspace (B-046)
 
 | Item | Controle |

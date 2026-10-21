@@ -3,10 +3,10 @@
 Snapshot factual para orientação rápida. Não substitui o
 [roadmap executável](roadmap.md), o [backlog](backlog.md) nem evidência de testes.
 
-- **Data de corte:** 2026-10-20
-- **Fase:** W14 em curso. B-133 Done (policy packs, flag off). B-132 Done (export de audit para SIEM, flag off). B-130 Done (classificação de dados e DLP, flag off). B-169 Done (auditoria de conteúdo por tenant, default ligada). B-129 Done (legal hold e eDiscovery, flag off). B-139 permanece Done. B-131 permanece Done. B-128 permanece Done. B-164 permanece Done. B-127 permanece Done. B-126 permanece Done. Wave 19 permanece Done (W19-6 / B-183). Wave 10 permanece Done (W10-15 / B-186, W10-16 / B-188).
+- **Data de corte:** 2026-10-21
+- **Fase:** W14 em curso. B-134 Done (administração delegada e quotas, flag off). B-133 Done (policy packs, flag off). B-132 Done (export de audit para SIEM, flag off). B-130 Done (classificação de dados e DLP, flag off). B-169 Done (auditoria de conteúdo por tenant, default ligada). B-129 Done (legal hold e eDiscovery, flag off). B-139 permanece Done. B-131 permanece Done. B-128 permanece Done. B-164 permanece Done. B-127 permanece Done. B-126 permanece Done. Wave 19 permanece Done (W19-6 / B-183). Wave 10 permanece Done (W10-15 / B-186, W10-16 / B-188).
 - **Safety lane obrigatória:** OPS-INT-B125 Resolved (CI de `main` pós-#199: retry de automação contava o eco depth-1 como segundo run live); OPS-E2E-B100 Resolved (Playwright `locale: pt-BR` + isolamento i18n E2E + foco paleta + select Settings); OPS-E2E-B099 Resolved (#154); OPS-E2E-B098 Resolved (#148); OPS-E2E-B097 Resolved (#145+#149); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); BUG-020 Done (B-186 / W10-15); BUG-021 Aberto (Média — convidado para DM em grupo não atualiza o front até F5); BUG-022 Aberto (Média — busca do header desalinhada na 1ª abertura e fecha ao selecionar opção); BUG-023 Done (Média, B-188 / W10-16 — busca versátil); BUG-024 Aberto (Média — comandos slash não acompanham o idioma da UI); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
-- **Próximo item elegível:** W14 / B-134 (admin delegada e quotas); B-133 está Done
+- **Próximo item elegível:** W14 / B-146 (benchmarks, capacity model e SLOs); B-134 está Done
 - **Override humano concluído:** W19-1 / B-178 — decomposição da API em maps por fronteira; `Program.cs` com 220 linhas; build e 241 testes verdes. A fila W10 permanece na ordem acima.
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
@@ -79,7 +79,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W14 / B-134 | B-133 Done (policy packs); próxima linha `Planned` da Wave 14 |
+| 1 | W14 / B-146 | B-134 Done (admin delegada); próxima linha `Planned` da Wave 14 |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
@@ -127,11 +127,11 @@ canal/pessoa/anexo no FTS; fecha BUG-023).
 
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W19. Wave 19
 (organização do código, B-178…B-183) está Done, inclusive o gate de linhas
-B-183. O Build segue na Wave 14; B-133 está Done e a próxima linha `Planned` da Wave 14 é B-134.
+B-183. O Build segue na Wave 14; B-134 está Done e a próxima linha `Planned` da Wave 14 é B-146.
 
 ## Baseline de planejamento
 
-- 80 itens `Planned` entre W8–W19 (B-129/W14 Done — legal hold e eDiscovery; B-139/W13 Done — schema de eventos públicos; B-131/W13 Done — malware e quarentena; B-127/W13 Done — conectores bidirecionais; B-126/W13 Done — incident rooms; B-125/W13 Done — automation builder; B-124/W12 Done — formulários e aprovações; B-123/W12 Done — tarefas derivadas de mensagens; B-121/W12 Done — RAG opt-in; B-110/W10-14 Done; B-103/W10-9 Done; B-188/W10-16 Done — busca versátil, fecha BUG-023; B-186/W10-15 Done; B-178…B-183
+- 79 itens `Planned` entre W8–W19 (B-134/W14 Done — administração delegada e quotas; B-129/W14 Done — legal hold e eDiscovery; B-139/W13 Done — schema de eventos públicos; B-131/W13 Done — malware e quarentena; B-127/W13 Done — conectores bidirecionais; B-126/W13 Done — incident rooms; B-125/W13 Done — automation builder; B-124/W12 Done — formulários e aprovações; B-123/W12 Done — tarefas derivadas de mensagens; B-121/W12 Done — RAG opt-in; B-110/W10-14 Done; B-103/W10-9 Done; B-188/W10-16 Done — busca versátil, fecha BUG-023; B-186/W10-15 Done; B-178…B-183
   catalogados em W19 — organização do código; B-104/W7-6 Done via #82;
   B-076/W7-3 Done via #84; B-165/W7-9 Done 2026-08-10; B-088/W9-1 Done;
   B-171/W9-9 Done via #129; B-173/W9-10 Done; B-177/W7-13 Done;

@@ -15,6 +15,7 @@ import { ComplianceApiService } from './compliance-api.service';
 import { DlpApiService } from './dlp-api.service';
 import { SiemApiService } from './siem-api.service';
 import { PolicyPackApiService } from './policy-pack-api.service';
+import { DelegatedAdminApiService } from './delegated-admin-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -37,6 +38,7 @@ export class ApiService {
   private readonly dlp = inject(DlpApiService);
   private readonly siem = inject(SiemApiService);
   private readonly policyPacks = inject(PolicyPackApiService);
+  private readonly delegatedAdmin = inject(DelegatedAdminApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -235,4 +237,11 @@ export class ApiService {
   readonly rollbackPolicyPack: PolicyPackApiService['rollback'] = this.policyPacks.rollback.bind(this.policyPacks);
   readonly policyPackDrift: PolicyPackApiService['drift'] = this.policyPacks.drift.bind(this.policyPacks);
   readonly exportPolicyPack: PolicyPackApiService['exportPack'] = this.policyPacks.exportPack.bind(this.policyPacks);
+  readonly delegatedAdminMe: DelegatedAdminApiService['me'] = this.delegatedAdmin.me.bind(this.delegatedAdmin);
+  readonly delegatedAdminCatalog: DelegatedAdminApiService['catalog'] = this.delegatedAdmin.catalog.bind(this.delegatedAdmin);
+  readonly delegatedAdminAssignments: DelegatedAdminApiService['assignments'] = this.delegatedAdmin.assignments.bind(this.delegatedAdmin);
+  readonly grantDelegatedScope: DelegatedAdminApiService['grant'] = this.delegatedAdmin.grant.bind(this.delegatedAdmin);
+  readonly revokeDelegatedScope: DelegatedAdminApiService['revoke'] = this.delegatedAdmin.revoke.bind(this.delegatedAdmin);
+  readonly delegatedAdminUsage: DelegatedAdminApiService['usage'] = this.delegatedAdmin.usage.bind(this.delegatedAdmin);
+  readonly delegatedAdminAlerts: DelegatedAdminApiService['alerts'] = this.delegatedAdmin.alerts.bind(this.delegatedAdmin);
 }

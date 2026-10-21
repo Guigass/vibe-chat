@@ -1068,6 +1068,35 @@ CREATE POLICY tenant_isolation_policy_assignments ON compliance.policy_assignmen
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS compliance.scoped_role_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.scoped_role_assignments FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.quotas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.quotas FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.quota_counters ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.quota_counters FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.quota_alerts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS compliance.quota_alerts FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_scoped_role_assignments ON compliance.scoped_role_assignments;
+CREATE POLICY tenant_isolation_scoped_role_assignments ON compliance.scoped_role_assignments
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_quotas ON compliance.quotas;
+CREATE POLICY tenant_isolation_quotas ON compliance.quotas
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_quota_counters ON compliance.quota_counters;
+CREATE POLICY tenant_isolation_quota_counters ON compliance.quota_counters
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_quota_alerts ON compliance.quota_alerts;
+CREATE POLICY tenant_isolation_quota_alerts ON compliance.quota_alerts
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 CREATE SCHEMA IF NOT EXISTS compliance;
 
 CREATE OR REPLACE FUNCTION compliance.reject_custody_mutation()

@@ -1,7 +1,9 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using VibeChat.Administration;
 using VibeChat.Api.Contracts;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
 using VibeChat.Conversations;
@@ -101,6 +103,13 @@ internal static class AutomationEndpoints
         if (!await ChannelsInWorkspaceAsync(db, gate.Workspace.Id, model.ChannelIds, ct))
         {
             return Results.Forbid();
+        }
+
+        var automationQuota = await http.RequestServices.GetRequiredService<DelegatedAdminService>()
+            .TryConsumeAsync(gate.Workspace.TenantId, gate.Workspace.Id, DelegatedResources.Automations, 1, ct);
+        if (!automationQuota.Allowed)
+        {
+            return Results.Json(new { error = automationQuota.Error }, statusCode: StatusCodes.Status409Conflict);
         }
 
         var now = clock.UtcNow;

@@ -156,6 +156,10 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<SiemDestination> SiemDestinations => Set<SiemDestination>();
     public DbSet<SiemDelivery> SiemDeliveries => Set<SiemDelivery>();
     public DbSet<PolicyPackAssignment> PolicyPackAssignments => Set<PolicyPackAssignment>();
+    public DbSet<ScopedRoleAssignment> ScopedRoleAssignments => Set<ScopedRoleAssignment>();
+    public DbSet<ResourceQuota> ResourceQuotas => Set<ResourceQuota>();
+    public DbSet<QuotaCounter> QuotaCounters => Set<QuotaCounter>();
+    public DbSet<QuotaAlert> QuotaAlerts => Set<QuotaAlert>();
 
     public override int SaveChanges()
     {
@@ -1783,6 +1787,61 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.IdempotencyKey).HasMaxLength(PolicyPackLimits.MaxIdempotencyKeyLength);
             entity.Property(x => x.RequestHash).HasMaxLength(64);
             entity.HasIndex(x => new { x.TenantId, x.WorkspaceId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ScopedRoleAssignment>(entity =>
+        {
+            entity.ToTable("scoped_role_assignments", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.GranteeId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.GrantedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Scope).HasMaxLength(32);
+            entity.Property(x => x.Reason).HasMaxLength(DelegatedAdminLimits.MaxReasonLength);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(DelegatedAdminLimits.MaxIdempotencyKeyLength);
+            entity.Property(x => x.RequestHash).HasMaxLength(64);
+            entity.Property(x => x.ResultJson).HasMaxLength(4000);
+            entity.HasIndex(x => new { x.TenantId, x.GrantedBy, x.IdempotencyKey }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.GranteeId, x.Scope, x.SpaceKey })
+                .IsUnique()
+                .HasFilter("\"RevokedAt\" IS NULL");
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<ResourceQuota>(entity =>
+        {
+            entity.ToTable("quotas", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.UpdatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Resource).HasMaxLength(32);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.Resource }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<QuotaCounter>(entity =>
+        {
+            entity.ToTable("quota_counters", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Resource).HasMaxLength(32);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.Resource }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<QuotaAlert>(entity =>
+        {
+            entity.ToTable("quota_alerts", "compliance");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Resource).HasMaxLength(32);
+            entity.Property(x => x.Kind).HasMaxLength(32);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.CreatedAt });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
     }

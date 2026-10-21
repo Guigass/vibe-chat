@@ -348,6 +348,17 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/workspaces/{workspaceId:guid}/policy-packs/export` | permission | `compliance.policy` | ✗ | ✗ | ✗ | Sem segredo, sem id de tenant |
 | POST | `/workspaces/{workspaceId:guid}/policy-packs/import` | permission | `compliance.policy` | ✗ | ✗ | ✗ | Manifesto malicioso → 400 `PolicyPackImportRejected` |
 | GET | `/workspaces/{workspaceId:guid}/policy-packs/drift` | permission | `compliance.policy` | ✗ | ✗ | ✗ | Compara o efetivo com o controle vivo |
+| GET | `/workspaces/{workspaceId:guid}/delegated-admin/catalog` | permission | `workspace.read` | ✓ | ✓ | ✓ | B-134; flag off → 404 `DelegatedAdminDisabled`; catálogo fixo |
+| GET | `/workspaces/{workspaceId:guid}/delegated-admin/me` | permission | `workspace.read` | ✓ | ✓ | ✓ | Só as áreas do caller |
+| GET | `/workspaces/{workspaceId:guid}/delegated-admin/assignments` | permission | `workspace.read` | ✗ | ✗ | ✓ | Membro sem escopo → 403 `DelegationScopeExceeded` |
+| POST | `/workspaces/{workspaceId:guid}/delegated-admin/assignments` | permission | `workspace.read` | ✗* | ✗ | ✓ | *só dentro do escopo; auto-atribuição 403; Idempotency-Key |
+| POST | `/workspaces/{workspaceId:guid}/delegated-admin/assignments/{assignmentId:guid}/revoke` | permission | `workspace.read` | ✗* | ✗ | ✓ | *quem poderia conceder aquele escopo |
+| GET | `/workspaces/{workspaceId:guid}/delegated-admin/spaces/{spaceId:guid}` | permission | `workspace.read` | ✗* | ✗ | ✓ | *space admin só no próprio space |
+| GET | `/workspaces/{workspaceId:guid}/quotas` | permission | `workspace.read` | ✗ | ✗ | ✓ | Uso, tendência e ação |
+| GET | `/workspaces/{workspaceId:guid}/quotas/usage` | permission | `workspace.read` | ✗ | ✗ | ✓ | Igual a `GET /quotas` |
+| PUT | `/workspaces/{workspaceId:guid}/quotas/{resource}` | permission | `workspace.read` | ✗ | ✗ | ✓ | Soft ≤ hard; billing-read não grava |
+| POST | `/workspaces/{workspaceId:guid}/quotas/{resource}/reserve` | permission | `workspace.read` | ✗ | ✗ | ✓ | Hard limit atômico → 409 `QuotaHardLimit` |
+| GET | `/workspaces/{workspaceId:guid}/delegated-admin/alerts` | permission | `workspace.read` | ✗ | ✗ | ✓ | Soft, hard e break-glass |
 
 ## Hub SignalR `/hubs/chat`
 

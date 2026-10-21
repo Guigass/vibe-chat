@@ -342,6 +342,17 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("GET", "/api/v1/workspaces/{workspaceId:guid}/policy-packs/export", string.Join(",", new[] { Permissions.Compliance.Policy }), false, ""),
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/policy-packs/import", string.Join(",", new[] { Permissions.Compliance.Policy }), false, ""),
             new("GET", "/api/v1/workspaces/{workspaceId:guid}/policy-packs/drift", string.Join(",", new[] { Permissions.Compliance.Policy }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/delegated-admin/catalog", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/delegated-admin/me", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/delegated-admin/assignments", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/delegated-admin/assignments", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/delegated-admin/assignments/{assignmentId:guid}/revoke", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/delegated-admin/spaces/{spaceId:guid}", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/quotas", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/quotas/usage", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
+            new("PUT", "/api/v1/workspaces/{workspaceId:guid}/quotas/{resource}", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/quotas/{resource}/reserve", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/delegated-admin/alerts", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(

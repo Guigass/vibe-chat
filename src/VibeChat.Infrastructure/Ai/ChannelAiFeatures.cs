@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using Minio;
 using StackExchange.Redis;
 using VibeChat.Administration;
+using VibeChat.Infrastructure.Compliance;
 using VibeChat.AI;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
@@ -39,7 +40,8 @@ public sealed class SummarizeChannelFeature(
     VibeChatDbContext dbContext,
     OpenRouterAiProvider openRouter,
     AiSettingsResolver aiSettings,
-    IClock clock) : ISummarizeChannelFeature
+    IClock clock,
+    DelegatedAdminService quotas) : ISummarizeChannelFeature
 {
     public async Task<SummarizeChannelResult> SummarizeAsync(TenantId tenantId, WorkspaceId workspaceId, ChannelId channelId, CancellationToken cancellationToken)
     {
@@ -59,6 +61,12 @@ public sealed class SummarizeChannelFeature(
         if (activeProvider is null)
         {
             return new SummarizeChannelResult(false, "AI is disabled.", "AiDisabled");
+        }
+
+        var summarizeQuota = await quotas.TryConsumeAsync(tenantId, workspaceId, DelegatedResources.AiBudget, 1, cancellationToken);
+        if (!summarizeQuota.Allowed)
+        {
+            return new SummarizeChannelResult(false, DelegatedAdminErrors.QuotaHardLimit, DelegatedAdminErrors.QuotaHardLimit);
         }
 
         var recent = await dbContext.Messages.AsNoTracking()
@@ -118,7 +126,8 @@ public sealed class SuggestChannelReplyFeature(
     VibeChatDbContext dbContext,
     OpenRouterAiProvider openRouter,
     AiSettingsResolver aiSettings,
-    IClock clock) : ISuggestChannelReplyFeature
+    IClock clock,
+    DelegatedAdminService quotas) : ISuggestChannelReplyFeature
 {
     public async Task<SuggestChannelReplyResult> SuggestAsync(TenantId tenantId, WorkspaceId workspaceId, ChannelId channelId, CancellationToken cancellationToken)
     {
@@ -137,6 +146,12 @@ public sealed class SuggestChannelReplyFeature(
         if (activeProvider is null)
         {
             return new SuggestChannelReplyResult(false, "AI is disabled.", "AiDisabled");
+        }
+
+        var suggestQuota = await quotas.TryConsumeAsync(tenantId, workspaceId, DelegatedResources.AiBudget, 1, cancellationToken);
+        if (!suggestQuota.Allowed)
+        {
+            return new SuggestChannelReplyResult(false, DelegatedAdminErrors.QuotaHardLimit, DelegatedAdminErrors.QuotaHardLimit);
         }
 
         var recent = await dbContext.Messages.AsNoTracking()
@@ -183,7 +198,8 @@ public sealed class TranscribeAttachmentFeature(
     VibeChatDbContext dbContext,
     OpenRouterAiProvider openRouter,
     AiSettingsResolver aiSettings,
-    IClock clock) : ITranscribeAttachmentFeature
+    IClock clock,
+    DelegatedAdminService quotas) : ITranscribeAttachmentFeature
 {
     public async Task<TranscribeAttachmentResult> TranscribeAsync(
         TenantId tenantId,
@@ -208,6 +224,12 @@ public sealed class TranscribeAttachmentFeature(
         if (activeProvider is null)
         {
             return new TranscribeAttachmentResult(false, string.Empty, null, null, "AiDisabled");
+        }
+
+        var transcribeQuota = await quotas.TryConsumeAsync(tenantId, workspaceId, DelegatedResources.AiBudget, 1, cancellationToken);
+        if (!transcribeQuota.Allowed)
+        {
+            return new TranscribeAttachmentResult(false, string.Empty, null, null, DelegatedAdminErrors.QuotaHardLimit);
         }
 
         var attachment = await dbContext.Attachments.AsNoTracking()

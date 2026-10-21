@@ -427,7 +427,8 @@ public sealed class SupportDiagnosticsService(
         ["supportBundle"] = options.Value.Enabled,
         ["legalHold"] = configuration.GetValue("Features:LegalHold:Enabled", false),
         ["siem"] = configuration.GetValue("Features:Siem:Enabled", false),
-        ["policyPacks"] = configuration.GetValue("Features:PolicyPacks:Enabled", false)
+        ["policyPacks"] = configuration.GetValue("Features:PolicyPacks:Enabled", false),
+        ["delegatedAdmin"] = configuration.GetValue("Features:DelegatedAdmin:Enabled", false)
     };
 
     private Task<SupportProbeResult> EmailProbeAsync() =>

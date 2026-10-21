@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using VibeChat.Administration;
 using VibeChat.Api;
 using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
@@ -255,6 +256,13 @@ internal static class DirectoryEndpoints
             if (existing is not null)
             {
                 return Results.Conflict(new { error = "AlreadyMember", userId = targetProfile.Id.Value, role = existing.Role.ToString() });
+            }
+
+            var userQuota = await http.RequestServices.GetRequiredService<VibeChat.Infrastructure.Compliance.DelegatedAdminService>()
+                .TryConsumeAsync(workspace.TenantId, workspace.Id, DelegatedResources.Users, 1, ct);
+            if (!userQuota.Allowed)
+            {
+                return Results.Json(new { error = userQuota.Error }, statusCode: StatusCodes.Status409Conflict);
             }
 
             var membership = new WorkspaceMember
