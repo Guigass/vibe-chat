@@ -967,6 +967,7 @@ export const ui = {
   adminNavDiagnostics: $localize`:@@admin.navDiagnostics:Diagnóstico`,
   adminNavScim: $localize`:@@admin.navScim:SCIM`,
   adminNavQuarantine: $localize`:@@admin.navQuarantine:Quarentena`,
+  adminNavCapacity: $localize`:@@admin.navCapacity:Capacidade`,
   adminQuarantineLead: $localize`:@@admin.quarantineLead:Arquivos retidos pelo verificador. Liberar ou apagar exige uma justificativa e fica no audit.`,
   adminQuarantineDisabled: $localize`:@@admin.quarantineDisabled:A verificação de malware está desligada nesta instalação.`,
   adminQuarantineEmpty: $localize`:@@admin.quarantineEmpty:Nenhum arquivo em quarentena.`,
@@ -1535,6 +1536,61 @@ export const ui = {
   delegatedAdminHardLimit: $localize`:@@error.QuotaHardLimit:A quota rígida foi atingida.`,
   delegatedAdminScopeExceeded: $localize`:@@error.DelegationScopeExceeded:Esse escopo está acima do que você pode conceder.`,
   delegatedAdminSelfGrant: $localize`:@@error.DelegationSelfGrant:Você não pode conceder um escopo a si mesmo.`,
+  capacityLead: $localize`:@@capacity.lead:Objetivos da instalação para dimensionar carga. Não é um SLA comercial.`,
+  capacityLoading: $localize`:@@capacity.loading:Carregando capacidade…`,
+  capacityDisabled: $localize`:@@capacity.disabled:A medição de capacidade está desligada nesta instalação.`,
+  capacityDenied: $localize`:@@capacity.denied:Você não pode ver estes objetivos.`,
+  capacityError: $localize`:@@capacity.error:Não foi possível carregar a capacidade.`,
+  capacityProfiles: $localize`:@@capacity.profiles:Perfis de carga`,
+  capacityRecovery: $localize`:@@capacity.recovery:Recuperação`,
+  capacitySlos: $localize`:@@capacity.slos:SLOs`,
+  capacityTriggers: $localize`:@@capacity.triggers:Gatilhos de arquitetura`,
+  capacityBurn: $localize`:@@capacity.burn:Burn rate`,
+  capacityObjective: $localize`:@@capacity.objective:Objetivo`,
+  capacityThreshold: $localize`:@@capacity.threshold:Limite`,
+  capacityUnmeasured: $localize`:@@capacity.unmeasured:Sem amostra medida`,
+  capacityWithin: $localize`:@@capacity.within:Dentro do objetivo`,
+  capacityBurning: $localize`:@@capacity.burning:Acima do objetivo`,
+  capacityNotSla: $localize`:@@capacity.notSla:Objetivo, não SLA`,
+  capacityHardware: $localize`:@@capacity.hardware:Hardware de referência`,
+  capacityHardwareLine: $localize`:@@capacity.hardwareLine:%vcpu% vCPU · %memory% GiB`,
+  capacityHardwareCompose: $localize`:@@capacity.hardwareCompose:Um nó Compose: Postgres 16, Redis 7, MinIO, uma API e um worker. Envelope de planejamento, não uma medição.`,
+  capacityUsers: $localize`:@@capacity.users:Usuários`,
+  capacityConcurrency: $localize`:@@capacity.concurrency:Concorrência`,
+  capacityConnections: $localize`:@@capacity.connections:Conexões/nó`,
+  capacityMessagesPerSecond: $localize`:@@capacity.messagesPerSecond:Mensagens/s`,
+  capacityLargestChannel: $localize`:@@capacity.largestChannel:Maior canal`,
+  capacityFanOut: $localize`:@@capacity.fanOut:Fan-out`,
+  capacityStorage: $localize`:@@capacity.storage:Storage (GiB)`,
+  capacityRetention: $localize`:@@capacity.retention:Retenção`,
+  capacityTenants: $localize`:@@capacity.tenants:Tenants`,
+  capacityWindow: $localize`:@@capacity.window:Janela`,
+  capacityMinutes: $localize`:@@capacity.minutes:%n% min`,
+  capacityDays: $localize`:@@capacity.days:%n% dias`,
+  capacityBestEffort: $localize`:@@capacity.bestEffort:Melhor esforço`,
+  capacityLater: $localize`:@@capacity.later:Depois de %item%`,
+  capacityRpo: $localize`:@@capacity.rpo:RPO`,
+  capacityRto: $localize`:@@capacity.rto:RTO`,
+  capacitySliApiAvailability: $localize`:@@capacity.sli.apiAvailability:Disponibilidade da API`,
+  capacitySliApiLatency: $localize`:@@capacity.sli.apiLatency:Latência da API`,
+  capacitySliMessageEcho: $localize`:@@capacity.sli.messageEcho:Eco da mensagem`,
+  capacitySliOutboxLag: $localize`:@@capacity.sli.outboxLag:Atraso do outbox`,
+  capacitySliSearchLag: $localize`:@@capacity.sli.searchLag:Atraso da busca`,
+  capacitySliPersistence: $localize`:@@capacity.sli.persistence:Persistência`,
+  capacitySliRealtime: $localize`:@@capacity.sli.realtime:Entrega em tempo real`,
+  capacitySliReconnect: $localize`:@@capacity.sli.reconnect:Reconexão`,
+  capacitySliSync: $localize`:@@capacity.sli.sync:Sincronização`,
+  capacitySliRevocation: $localize`:@@capacity.sli.revocation:Revogação`,
+  capacitySliAttachments: $localize`:@@capacity.sli.attachments:Anexos`,
+  capacitySliRestore: $localize`:@@capacity.sli.restore:Restore verificado`,
+  capacityTriggerBus: $localize`:@@capacity.trigger.bus:Barramento de mensagens`,
+  capacityTriggerSearch: $localize`:@@capacity.trigger.search:Busca dedicada`,
+  capacityTriggerSearchCpu: $localize`:@@capacity.trigger.searchCpu:Carga de busca no primário`,
+  capacityTriggerReplicas: $localize`:@@capacity.trigger.replicas:Réplicas da API`,
+  capacityTriggerConnections: $localize`:@@capacity.trigger.connections:Conexões por nó`,
+  capacityDisabledError: $localize`:@@error.CapacitySloDisabled:A medição de capacidade está desligada nesta instalação.`,
+  capacityEnvelopeRejected: $localize`:@@error.CapacitySloEnvelopeRejected:O resultado não segue o formato versionado.`,
+  capacitySlaRejected: $localize`:@@error.CapacitySloSlaRejected:Esse número é um objetivo, não um SLA comercial.`,
 } as const;
 
 export function fillTemplate(
@@ -1791,6 +1847,12 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.delegatedAdminScopeExceeded;
     case 'DelegationSelfGrant':
       return ui.delegatedAdminSelfGrant;
+    case 'CapacitySloDisabled':
+      return ui.capacityDisabledError;
+    case 'CapacitySloEnvelopeRejected':
+      return ui.capacityEnvelopeRejected;
+    case 'CapacitySloSlaRejected':
+      return ui.capacitySlaRejected;
     case 'DelegationReasonRequired':
     case 'DelegationExpiryInvalid':
     case 'DelegationScopeUnknown':

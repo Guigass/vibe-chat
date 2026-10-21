@@ -53,6 +53,7 @@ original.
 | [045](ADR-045-audit-siem.md) | Export de audit para SIEM | Accepted |
 | [046](ADR-046-policy-packs.md) | Policy packs por tipo de organização | Accepted |
 | [047](ADR-047-admin-delegada-quotas.md) | Administração delegada e quotas | Accepted |
+| [048](ADR-048-capacity-slos.md) | Capacity model, benchmarks e SLOs | Accepted |
 
 ## Quando criar um ADR
 

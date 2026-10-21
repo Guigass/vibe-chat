@@ -936,6 +936,8 @@ Ações mínimas: `admin.login`, `channel.create`, `space.create`, `message.send
 
 **Administração delegada (B-134 / ADR-047).** Flag `Features:DelegatedAdmin:Enabled` default false → 404 `DelegatedAdminDisabled` e o chat não consulta quota. Escopos fixos: `tenant`, `workspace`, `space`, `compliance`, `security`, `billing-read`. Grant exige `Idempotency-Key`, motivo e não pode subir acima do grantor nem atribuir a si mesmo (`DelegationScopeExceeded`, `DelegationSelfGrant`). Space só administra o próprio `spaceId`. Expiração revoga na leitura. Break-glass dura no máximo 4 horas, alerta na abertura e de novo ao expirar. Quotas `users`, `channels`, `storage`, `messages`, `automations`, `ai-budget`: hard limit é um `UPDATE` condicional; estouro → 409 `QuotaHardLimit`. Sem linha de quota o recurso não bloqueia. Falha do contador não derruba o envio.
 
+**Capacidade e SLOs (B-146 / ADR-048).** Flag `Features:CapacitySlo:Enabled` default false → 404 `CapacitySloDisabled`. `GET /api/v1/workspaces/{workspaceId}/capacity` e `POST .../capacity/evaluations` exigem `workspace.admin`. O corpo é o catálogo da instalação (`isSla: false`): perfis `small`/`standard`/`large`, recuperação Basic/Standard/HA e SLIs. Sem amostra, `burnState` é `unmeasured`. Resultado medido: `vibechat.capacity-result.v1`, com commit, ambiente, data e margem. `isSla: true` → 400 `CapacitySloSlaRejected`. E-mail ou campo de pessoa → 400 `CapacitySloEnvelopeRejected`. A avaliação não grava linha.
+
 **Metadata de `message.delete` (B-169 / ADR-043):** quando `contentAuditEnabled=true`,
 `metadataJson` inclui `channelId`, `threadId?`, `sequence`, `authorId`, `deletedAt` e `body`
 (conteúdo no soft-delete). Com `false`, os mesmos ids e timestamps, sem `body`.

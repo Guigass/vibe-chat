@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "isSla": false,
+  "profiles": {
+    "small": {
+      "users": 50,
+      "concurrency": 10,
+      "connectionsPerNode": 50,
+      "messagesPerSecond": 2,
+      "largestChannel": 50,
+      "fanOut": 50,
+      "storageGb": 20,
+      "retentionDays": 90,
+      "tenants": 1
+    },
+    "standard": {
+      "users": 500,
+      "concurrency": 100,
+      "connectionsPerNode": 500,
+      "messagesPerSecond": 20,
+      "largestChannel": 200,
+      "fanOut": 200,
+      "storageGb": 200,
+      "retentionDays": 365,
+      "tenants": 5
+    },
+    "large": {
+      "users": 5000,
+      "concurrency": 1000,
+      "connectionsPerNode": 2000,
+      "messagesPerSecond": 100,
+      "largestChannel": 1000,
+      "fanOut": 1000,
+      "storageGb": 2000,
+      "retentionDays": 365,
+      "tenants": 25
+    }
+  },
+  "recovery": {
+    "basic": { "availability": null, "rpoMinutes": 1440, "rtoMinutes": 240 },
+    "standard": { "availability": 0.999, "rpoMinutes": 60, "rtoMinutes": 240 },
+    "ha": { "availability": 0.9995, "rpoMinutes": 5, "rtoMinutes": 30 }
+  },
+  "slis": {
+    "api-availability": 0.999,
+    "api-latency": 500,
+    "message-echo": 1000,
+    "outbox-lag": 5000,
+    "search-lag": 10000,
+    "persistence": 400,
+    "realtime-delivery": 1000,
+    "reconnect": 3000,
+    "sync": 800,
+    "revocation": 30000,
+    "attachments": 5000,
+    "restore-verified": 1
+  },
+  "triggers": {
+    "adr-015-outbox": 30000,
+    "adr-016-search-query": 500,
+    "adr-016-search-cpu": 0.4,
+    "adr-017-replicas": 3,
+    "adr-017-connections": 2000
+  }
+}

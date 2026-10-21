@@ -359,6 +359,8 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | PUT | `/workspaces/{workspaceId:guid}/quotas/{resource}` | permission | `workspace.read` | ✗ | ✗ | ✓ | Soft ≤ hard; billing-read não grava |
 | POST | `/workspaces/{workspaceId:guid}/quotas/{resource}/reserve` | permission | `workspace.read` | ✗ | ✗ | ✓ | Hard limit atômico → 409 `QuotaHardLimit` |
 | GET | `/workspaces/{workspaceId:guid}/delegated-admin/alerts` | permission | `workspace.read` | ✗ | ✗ | ✓ | Soft, hard e break-glass |
+| GET | `/workspaces/{workspaceId:guid}/capacity` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-146; flag off → 404 `CapacitySloDisabled`; sem SLA e sem PII |
+| POST | `/workspaces/{workspaceId:guid}/capacity/evaluations` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-146; envelope `vibechat.capacity-result.v1`; não grava |
 
 ## Hub SignalR `/hubs/chat`
 

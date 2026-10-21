@@ -16,6 +16,7 @@ import { DlpApiService } from './dlp-api.service';
 import { SiemApiService } from './siem-api.service';
 import { PolicyPackApiService } from './policy-pack-api.service';
 import { DelegatedAdminApiService } from './delegated-admin-api.service';
+import { CapacityApiService } from './capacity-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -39,6 +40,7 @@ export class ApiService {
   private readonly siem = inject(SiemApiService);
   private readonly policyPacks = inject(PolicyPackApiService);
   private readonly delegatedAdmin = inject(DelegatedAdminApiService);
+  private readonly capacity = inject(CapacityApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -244,4 +246,5 @@ export class ApiService {
   readonly revokeDelegatedScope: DelegatedAdminApiService['revoke'] = this.delegatedAdmin.revoke.bind(this.delegatedAdmin);
   readonly delegatedAdminUsage: DelegatedAdminApiService['usage'] = this.delegatedAdmin.usage.bind(this.delegatedAdmin);
   readonly delegatedAdminAlerts: DelegatedAdminApiService['alerts'] = this.delegatedAdmin.alerts.bind(this.delegatedAdmin);
+  readonly capacityDashboard: CapacityApiService['dashboard'] = this.capacity.dashboard.bind(this.capacity);
 }

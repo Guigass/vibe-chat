@@ -205,6 +205,7 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Features:Siem:Enabled", "true");
         builder.UseSetting("Features:PolicyPacks:Enabled", "true");
         builder.UseSetting("Features:DelegatedAdmin:Enabled", "true");
+        builder.UseSetting("Features:CapacitySlo:Enabled", "true");
         SiemTestDoubles.Send = SiemSandbox.Shared.Send;
         builder.UseSetting("Directory:Invites:MaxExpiryDays", "30");
         builder.UseSetting("Database:BootstrapOnStartup", "true");

@@ -177,6 +177,17 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Drift | Compara o documento com o valor vivo. Versão nova do catálogo não se aplica sozinha |
 | Cross-tenant | RLS FORCE em `compliance.policy_assignments` |
 
+### Capacidade e SLOs (B-146 / ADR-048)
+
+| Item | Controle |
+|------|----------|
+| AuthZ | `workspace.admin` no workspace do ator. Member e Auditor não leem o catálogo |
+| Flag | `Features:CapacitySlo:Enabled` off → 404 `CapacitySloDisabled`. O chat não consulta o modelo |
+| SLA | `isSla: true` → 400 `CapacitySloSlaRejected`. O objetivo não vira promessa comercial |
+| PII | E-mail, nome, body, token ou segredo no envelope → 400 `CapacitySloEnvelopeRejected`. Nada é gravado |
+| Cross-tenant | O catálogo não carrega id de outro tenant. Workspace fora do ator → 403, sem o corpo |
+| Carga | O workload `isolation` espera 403/404 no canal estrangeiro. Não usa tenant real de cliente |
+
 ### Administração delegada (B-134 / ADR-047)
 
 | Item | Controle |

@@ -126,7 +126,7 @@ Objetivo: operar com segurança, compliance e delegação em organizações maio
 | B-132 | B/E/A | Audit streaming/export para SIEM | B-042, B-108 | [B-132](../product/specs/B-132-audit-siem.md) | **Done** — webhook/CEF assinado, checkpoint, retry, backfill e flag off; ADR-045 |
 | B-133 | B/D/E | Policy packs por tipo de organização | B-128, B-130 | [B-133](../product/specs/B-133-policy-packs.md) | **Done** — packs `small-team` / `enterprise-baseline` / `regulated`, preview = apply, lock, drift e flag off; ADR-046 |
 | B-134 | B/D/E | Administração delegada, escopos e quotas | B-128 | [B-134](../product/specs/B-134-admin-delegada-quotas.md) | **Done** — escopos fixos, expiração, break-glass auditado, quota atômica e flag off; ADR-047 |
-| B-146 | A/E/F | Benchmarks por porte, capacity model e SLOs | Wave 10 Done | [B-146](../product/specs/B-146-capacity-slos.md) | Planned |
+| B-146 | A/E/F | Benchmarks por porte, capacity model e SLOs | Wave 10 Done | [B-146](../product/specs/B-146-capacity-slos.md) | **Done** — perfis Small/Standard/Large, SLOs de D-25/D-28 sem SLA, gatilhos numéricos das ADR 015–017, flag off; ADR-048 |
 
 ### Critérios de saída
 
