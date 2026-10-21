@@ -94,6 +94,17 @@ task load:smoke
 
 Cobre `GET /health`, `GET /me`, history e `POST .../messages` no canal demo.
 
+## Capacidade e SLOs (B-146)
+
+```bash
+task load:capacity
+MODE=full PROFILE=standard WORKLOAD=send task load:capacity
+```
+
+Perfis, SLIs, gatilhos ADR-015/016/017 e o hardware de referência estão em
+[`capacity.md`](./capacity.md). O objetivo não é SLA. A flag
+`Features:CapacitySlo:Enabled` nasce desligada.
+
 ## Configuração
 
 - Infra e bootstrap via variáveis de ambiente (`.env` na raiz; ver `.env.example`)

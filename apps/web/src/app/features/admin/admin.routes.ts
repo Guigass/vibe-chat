@@ -86,6 +86,11 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     loadComponent: () => import('./admin-quarantine.page').then((m) => m.AdminQuarantinePage),
   },
   {
+    path: 'capacity',
+    canActivate: [adminAreaGuard('capacity')],
+    loadComponent: () => import('./admin-capacity.page').then((m) => m.AdminCapacityPage),
+  },
+  {
     path: '**',
     redirectTo: 'overview',
   },

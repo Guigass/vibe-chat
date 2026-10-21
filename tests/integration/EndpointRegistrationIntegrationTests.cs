@@ -353,6 +353,8 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("PUT", "/api/v1/workspaces/{workspaceId:guid}/quotas/{resource}", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/quotas/{resource}/reserve", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
             new("GET", "/api/v1/workspaces/{workspaceId:guid}/delegated-admin/alerts", string.Join(",", new[] { Permissions.Workspace.Read }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/capacity", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/capacity/evaluations", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(

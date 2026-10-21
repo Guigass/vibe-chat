@@ -24,6 +24,7 @@ describe('admin-permissions (B-106)', () => {
       'diagnostics',
       'scim',
       'quarantine',
+      'capacity',
     ]);
     expect(hasWorkspaceAdmin('Admin')).toBe(true);
   });
@@ -32,6 +33,7 @@ describe('admin-permissions (B-106)', () => {
     const items = visibleNavItems('Auditor');
     expect(items.map((i) => i.id)).toEqual(['overview', 'members', 'conversations', 'audit', 'diagnostics']);
     expect(canAccessArea('Auditor', 'diagnostics')).toBe(true);
+    expect(canAccessArea('Auditor', 'capacity')).toBe(false);
     expect(canAccessArea('Auditor', 'settings')).toBe(false);
     expect(canAccessArea('Auditor', 'onboarding')).toBe(false);
     expect(firstAllowedPath('Auditor')).toBe('overview');

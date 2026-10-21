@@ -1,0 +1,22 @@
+name: Capacity benchmark
+
+# B-146 — weekly inspection of the capacity script. This job does not send
+# load to production. A full lab run is `MODE=full task load:capacity`.
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    name: Inspect capacity script
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Inspect workloads
+        run: docker run --rm -v "$PWD/tests/load:/scripts:ro" grafana/k6:0.54.0 inspect /scripts/capacity.js

@@ -10,6 +10,7 @@ import { DlpApiService } from './dlp-api.service';
 import { SiemApiService } from './siem-api.service';
 import { PolicyPackApiService } from './policy-pack-api.service';
 import { DelegatedAdminApiService } from './delegated-admin-api.service';
+import { CapacityApiService } from './capacity-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
@@ -47,6 +48,7 @@ function createApi(auth: AuthStub): ApiService {
       SiemApiService,
       PolicyPackApiService,
       DelegatedAdminApiService,
+      CapacityApiService,
       { provide: AuthService, useValue: auth },
     ],
   });
@@ -112,6 +114,7 @@ describe('ApiService facade', () => {
     expect(typeof api.delegatedAdminMe).toBe('function');
     expect(typeof api.grantDelegatedScope).toBe('function');
     expect(typeof api.delegatedAdminUsage).toBe('function');
+    expect(typeof api.capacityDashboard).toBe('function');
   });
 
   it('sends the dev user header and keeps idempotency on send', async () => {

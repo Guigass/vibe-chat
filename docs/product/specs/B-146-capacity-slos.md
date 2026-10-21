@@ -41,13 +41,13 @@ Load usa tenants sintéticos e inclui noisy-neighbor/cross-tenant assertions.
 
 ## Aceite
 
-- [ ] Workloads reproduzíveis por profile.
-- [ ] Baseline e hardware documentados.
-- [ ] SLO Standard reflete D-25.
-- [ ] Perfis Basic/Standard/HA refletem D-28 sem transformar objetivo em SLA.
-- [ ] Outbox/search/reconnect têm thresholds.
-- [ ] Gatilhos ADR possuem números.
-- [ ] Envelope registra users, concorrência, conexões/nó, msg/s, maior canal,
+- [x] Workloads reproduzíveis por profile.
+- [x] Baseline e hardware documentados.
+- [x] SLO Standard reflete D-25.
+- [x] Perfis Basic/Standard/HA refletem D-28 sem transformar objetivo em SLA.
+- [x] Outbox/search/reconnect têm thresholds.
+- [x] Gatilhos ADR possuem números.
+- [x] Envelope registra users, concorrência, conexões/nó, msg/s, maior canal,
   fan-out, storage, retenção e tenants.
 
 ## Testes

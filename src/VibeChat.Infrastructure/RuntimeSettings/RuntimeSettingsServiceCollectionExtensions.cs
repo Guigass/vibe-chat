@@ -26,6 +26,7 @@ internal static class RuntimeSettingsServiceCollectionExtensions
         services.AddScoped<SiemExportService>();
         services.AddScoped<PolicyPackService>();
         services.AddScoped<DelegatedAdminService>();
+        services.AddScoped<CapacitySloService>();
         services.Configure<GroupDmOptions>(configuration.GetSection(GroupDmOptions.SectionName));
         services.Configure<TopicChannelOptions>(configuration.GetSection(TopicChannelOptions.SectionName));
         services.Configure<KnowledgePageOptions>(configuration.GetSection(KnowledgePageOptions.SectionName));
@@ -41,6 +42,7 @@ internal static class RuntimeSettingsServiceCollectionExtensions
         services.Configure<SiemOptions>(configuration.GetSection(SiemOptions.SectionName));
         services.Configure<PolicyPackOptions>(configuration.GetSection(PolicyPackOptions.SectionName));
         services.Configure<DelegatedAdminOptions>(configuration.GetSection(DelegatedAdminOptions.SectionName));
+        services.Configure<CapacitySloOptions>(configuration.GetSection(CapacitySloOptions.SectionName));
         services.AddMemoryCache();
         services.AddSingleton<RuntimeSecretProtector>();
         services.AddSingleton<IRuntimeSettingsCacheInvalidator, RuntimeSettingsCacheInvalidator>();

@@ -1,0 +1,130 @@
+<article class="admin-panel" data-testid="capacity-page">
+  <p class="admin-panel__lead">{{ ui.capacityLead }}</p>
+  <p class="admin-empty" role="note">{{ ui.capacityNotSla }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty" role="status">{{ ui.capacityLoading }}</p>
+  } @else if (disabled()) {
+    <p class="admin-empty" role="status" data-testid="capacity-disabled">{{ ui.capacityDisabled }}</p>
+  } @else if (denied()) {
+    <p class="admin-error" role="alert" data-testid="capacity-denied">{{ ui.capacityDenied }}</p>
+  } @else if (loadError() || !dashboard()) {
+    <p class="admin-error" role="alert">{{ ui.capacityError }}</p>
+  } @else {
+    @if (dashboard(); as model) {
+      <h2>{{ ui.capacityProfiles }}</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.capacityProfiles }}</th>
+              <th>{{ ui.capacityUsers }}</th>
+              <th>{{ ui.capacityConcurrency }}</th>
+              <th>{{ ui.capacityConnections }}</th>
+              <th>{{ ui.capacityMessagesPerSecond }}</th>
+              <th>{{ ui.capacityLargestChannel }}</th>
+              <th>{{ ui.capacityFanOut }}</th>
+              <th>{{ ui.capacityStorage }}</th>
+              <th>{{ ui.capacityRetention }}</th>
+              <th>{{ ui.capacityTenants }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of model.profiles; track row.id) {
+              <tr>
+                <td class="mono">{{ row.id }}</td>
+                <td>{{ row.users }}</td>
+                <td>{{ row.concurrency }}</td>
+                <td>{{ row.connectionsPerNode }}</td>
+                <td>{{ row.messagesPerSecond }}</td>
+                <td>{{ row.largestChannel }}</td>
+                <td>{{ row.fanOut }}</td>
+                <td>{{ row.storageGb }}</td>
+                <td>{{ days(row.retentionDays) }}</td>
+                <td>{{ row.tenants }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <h2>{{ ui.capacityRecovery }}</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.capacityRecovery }}</th>
+              <th>{{ ui.capacityObjective }}</th>
+              <th>{{ ui.capacityRpo }}</th>
+              <th>{{ ui.capacityRto }}</th>
+              <th>{{ ui.capacityNotSla }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of model.recovery; track row.id) {
+              <tr>
+                <td class="mono">{{ row.id }}</td>
+                <td>{{ row.availability ?? ui.capacityBestEffort }}</td>
+                <td>{{ minutes(row.rpoMinutes) }}</td>
+                <td>{{ minutes(row.rtoMinutes) }}</td>
+                <td>{{ recoveryNote(row) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <h2>{{ ui.capacitySlos }}</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.capacitySlos }}</th>
+              <th>{{ ui.capacityObjective }}</th>
+              <th>{{ ui.capacityThreshold }}</th>
+              <th>{{ ui.capacityBurn }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of model.slis; track row.id) {
+              <tr>
+                <td>{{ sliLabel(row.id) }}</td>
+                <td>{{ row.objective }}</td>
+                <td>{{ row.threshold }}</td>
+                <td [attr.data-testid]="'capacity-burn-' + row.id">{{ burnLabel(row) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <h2>{{ ui.capacityTriggers }}</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.capacityTriggers }}</th>
+              <th>{{ ui.capacityThreshold }}</th>
+              <th>{{ ui.capacityWindow }}</th>
+              <th>{{ ui.capacityBurn }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of model.triggers; track row.id) {
+              <tr>
+                <td>{{ triggerLabel(row) }} <span class="mono">{{ row.adr }}</span></td>
+                <td>{{ row.threshold }}</td>
+                <td>{{ minutes(row.windowMinutes) }}</td>
+                <td>{{ row.measured ? (row.met ? ui.capacityBurning : ui.capacityWithin) : ui.capacityUnmeasured }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <h2>{{ ui.capacityHardware }}</h2>
+      <p class="admin-empty">{{ hardwareLine(model) }}</p>
+      <p class="admin-empty">{{ ui.capacityHardwareCompose }}</p>
+    }
+  }
+</article>

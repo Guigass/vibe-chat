@@ -215,7 +215,7 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-132 | Audit streaming/export para SIEM | **Done** — W14; flag `Features:Siem:Enabled` off; ADR-045; [spec](../product/specs/B-132-audit-siem.md) |
 | B-133 | Policy packs por tipo de organização | **Done** — W14; flag `Features:PolicyPacks:Enabled` off; ADR-046; [spec](../product/specs/B-133-policy-packs.md) |
 | B-134 | Administração delegada, escopos e quotas | **Done** — W14; flag `Features:DelegatedAdmin:Enabled` off; ADR-047; [spec](../product/specs/B-134-admin-delegada-quotas.md) |
-| B-146 | Benchmarks, capacity model e SLOs | Planned — W14 |
+| B-146 | Benchmarks, capacity model e SLOs | **Done** — W14; flag `Features:CapacitySlo:Enabled` off; ADR-048; [spec](../product/specs/B-146-capacity-slos.md) |
 | B-135…B-138, B-140/B-141, B-063/B-066/B-111 | Plataforma, registry, bridges, branding e clients | Planned — W15 |
 | B-170, B-143…B-145, B-172 + B-064/B-065 | Performance/escalabilidade, offline, HA, storage, backup de chat (destinos), federação e E2EE | Planned — W16 |
 | B-147…B-149, B-152 | Live media, notas de reunião e canvas | Planned — W17 |
@@ -243,7 +243,7 @@ diferentes.
 
 Depois disso, usar a sequência de validação do horizonte ambicioso: comunicação
 organizada → conhecimento/ações → automação/governança (W13: B-164 e B-128
-Done; B-131 Done; B-139 Done; B-129 Done; B-169 Done; B-130 Done; B-132 Done; B-133 Done; B-134 Done; próximo B-146) → plataforma → apostas arquiteturais. Abrir no máximo uma aposta
+Done; B-131 Done; B-139 Done; B-129 Done; B-169 Done; B-130 Done; B-132 Done; B-133 Done; B-134 Done; B-146 Done; próximo B-135) → plataforma → apostas arquiteturais. Abrir no máximo uma aposta
 arquitetural por vez.
 
 ## Itens explicitamente rejeitados na fase 1
