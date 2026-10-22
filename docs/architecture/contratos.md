@@ -1050,6 +1050,21 @@ Credencial reusa `integrations.bots` / `bot_tokens` / `bot_channel_scopes` (hash
 
 Sandbox é o tenant autenticado: a chamada de teste não cria outro tenant e não atravessa o workspace. Usage filtra `workspaceId` no metadata e a RLS de `audit.audit_events`.
 
+### SDK de plugins (B-136 / ADR-051)
+
+Flag `Integrations:PluginSdk:Enabled` default **false**. Off → 404 `PluginSdkDisabled`. O chat, o send de B-109 e o portal de B-135 não dependem desta flag.
+
+O SDK `1.0.0` (contrato HTTP `1`, licença Apache-2.0) deriva de `WebhookDelivery` e de `PublicEventCatalog`. Não há feed público (`published: false`). Pacotes: `sdks/dotnet/VibeChat.Sdk` e `sdks/typescript`. O verificador recusa assinatura inválida, replay (cache do caller) e entrega fora de 5 minutos. O segredo `sandbox-not-a-secret` só assina a rota sintética e não é credencial. Respostas usam `Cache-Control: no-store` e não devolvem `vc_int_` nem o segredo de sandbox.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| GET | `/api/v1/workspaces/{workspaceId}/developer/sdk` | `integration.read`; catálogo, matriz e exemplos sintéticos |
+| POST | `/api/v1/workspaces/{workspaceId}/developer/sdk/verify` | `integration.read`; body `{ body, signature, deliveryId, deliveredAt, seenDeliveryIds }`; não persiste o segredo |
+| POST | `/api/v1/workspaces/{workspaceId}/developer/sdk/contract-tests` | `integration.read`; runner sintético com 401, 403 e cross-tenant; sem token na resposta |
+| POST | `/api/v1/workspaces/{workspaceId}/developer/sdk/sandbox` | `integration.read`; `messages.send` exige idempotency key; `delivered: false`; `tenantId` do body é ignorado |
+
+`integration.read` está no catálogo de Admin/Owner. Member recebe 403. Workspace sem membership recebe 403. Auditoria `developer.sdk.verify`, `developer.sdk.contract` e `developer.sdk.sandbox` não leva corpo nem segredo.
+
 ### Bots de integração (B-109 / ADR-027)
 
 Flag `Integrations:Bots:Enabled` default **false** (Development/lab pode ligar). Off → 404 `IntegrationDisabled` em admin e em send.

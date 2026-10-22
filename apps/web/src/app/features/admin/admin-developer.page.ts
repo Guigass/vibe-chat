@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { DeveloperApiService, DeveloperCatalog, DeveloperCredential, DeveloperExploreResult, DeveloperUsage } from '../../core/api/developer-api.service';
+import { PluginSdkCatalog, SdkApiService } from '../../core/api/sdk-api.service';
 import { ApiService } from '../../core/api/api.service';
 import { fillTemplate, translateErrorCode, ui } from '../../core/i18n/strings';
 import { Channel } from '../../shared/models/chat.models';
@@ -17,6 +18,7 @@ export class AdminDeveloperPage implements OnInit {
   readonly ui = ui;
 
   private readonly portal = inject(DeveloperApiService);
+  private readonly sdk = inject(SdkApiService);
   private readonly api = inject(ApiService);
   readonly ctx = inject(AdminContextService);
 
@@ -26,6 +28,8 @@ export class AdminDeveloperPage implements OnInit {
   readonly loadError = signal(false);
   readonly busy = signal(false);
   readonly catalog = signal<DeveloperCatalog | null>(null);
+  readonly sdkCatalog = signal<PluginSdkCatalog | null>(null);
+  readonly sdkDisabled = signal(false);
   readonly credentials = signal<DeveloperCredential[]>([]);
   readonly channels = signal<Channel[]>([]);
   readonly usage = signal<DeveloperUsage | null>(null);
@@ -65,6 +69,7 @@ export class AdminDeveloperPage implements OnInit {
       if (!this.exploreCredentialId() && credentials[0]) {
         this.exploreCredentialId.set(credentials[0].id);
       }
+      await this.loadSdk(workspaceId);
     } catch (error) {
       this.readFailure(error, true);
     } finally {
@@ -213,6 +218,17 @@ export class AdminDeveloperPage implements OnInit {
     if (id === 'integration-http-v1') return ui.developerChangelogHttp;
     if (id === 'messaging.message.created.v1') return ui.developerChangelogEvent;
     return id;
+  }
+
+  private async loadSdk(workspaceId: string): Promise<void> {
+    try {
+      this.sdkCatalog.set(await this.sdk.catalog(workspaceId));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('PluginSdkDisabled')) {
+        this.sdkDisabled.set(true);
+      }
+    }
   }
 
   private async reload(workspaceId: string): Promise<void> {

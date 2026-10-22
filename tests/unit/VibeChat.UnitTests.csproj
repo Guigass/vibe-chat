@@ -35,6 +35,7 @@
     <ProjectReference Include="..\..\modules\AI\VibeChat.AI.csproj" />
     <ProjectReference Include="..\..\modules\Notifications\VibeChat.Notifications.csproj" />
     <ProjectReference Include="..\..\modules\Integrations\VibeChat.Integrations.csproj" />
+    <ProjectReference Include="..\..\sdks\dotnet\VibeChat.Sdk\VibeChat.Sdk.csproj" />
     <ProjectReference Include="..\..\modules\Administration\VibeChat.Administration.csproj" />
     <ProjectReference Include="..\..\src\VibeChat.Infrastructure\VibeChat.Infrastructure.csproj" />
   </ItemGroup>

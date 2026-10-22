@@ -41,6 +41,8 @@ internal static class IntegrationsServiceCollectionExtensions
             AllowAutoRedirect = false
         });
         services.AddScoped<IPluginCallbackDispatcher, PluginCallbackDispatcher>();
+        services.Configure<PluginSdkOptions>(configuration.GetSection(PluginSdkOptions.SectionName));
+        services.AddScoped<PluginSdkService>();
         services.AddHttpClient(SiemExportService.HttpClientName, client =>
         {
             client.Timeout = SiemLimits.HttpTimeout;

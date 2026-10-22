@@ -13,6 +13,7 @@ import { DelegatedAdminApiService } from './delegated-admin-api.service';
 import { CapacityApiService } from './capacity-api.service';
 import { DeveloperApiService } from './developer-api.service';
 import { PluginApiService } from './plugin-api.service';
+import { SdkApiService } from './sdk-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
@@ -53,6 +54,7 @@ function createApi(auth: AuthStub): ApiService {
       CapacityApiService,
       DeveloperApiService,
       PluginApiService,
+      SdkApiService,
       { provide: AuthService, useValue: auth },
     ],
   });
@@ -124,6 +126,10 @@ describe('ApiService facade', () => {
     expect(typeof api.exploreDeveloperCall).toBe('function');
     expect(typeof api.inspectDeveloperWebhook).toBe('function');
     expect(typeof api.developerUsage).toBe('function');
+    expect(typeof api.pluginSdkCatalog).toBe('function');
+    expect(typeof api.verifyPluginSdk).toBe('function');
+    expect(typeof api.pluginSdkContractTests).toBe('function');
+    expect(typeof api.sandboxPluginSdk).toBe('function');
     expect(typeof api.listPluginBuiltins).toBe('function');
     expect(typeof api.invokePluginCommand).toBe('function');
     expect(typeof api.grantPluginHistory).toBe('function');

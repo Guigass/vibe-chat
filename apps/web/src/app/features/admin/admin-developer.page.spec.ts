@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api/api.service';
 import { DeveloperApiService, DeveloperCatalog, DeveloperCredentialSecret } from '../../core/api/developer-api.service';
+import { SdkApiService } from '../../core/api/sdk-api.service';
 import { AdminContextService } from './admin-context.service';
 import { AdminDeveloperPage } from './admin-developer.page';
 
@@ -55,6 +56,22 @@ describe('AdminDeveloperPage (B-135)', () => {
           },
         },
         {
+          provide: SdkApiService,
+          useValue: {
+            catalog: vi.fn().mockResolvedValue({
+              schemaVersion: 1,
+              sdkVersion: '1.0.0',
+              apiContract: '1',
+              license: 'Apache-2.0',
+              sandbox: true,
+              published: false,
+              install: { dotnet: 'sdks/dotnet/VibeChat.Sdk', typescript: 'sdks/typescript' },
+              examples: [{ id: 'bot', operation: 'messages.send', synthetic: true }],
+              failures: ['InvalidSignature'],
+            }),
+          },
+        },
+        {
           provide: ApiService,
           useValue: { getChannels: vi.fn().mockResolvedValue([]) },
         },
@@ -88,6 +105,11 @@ describe('AdminDeveloperPage (B-135)', () => {
     expect(writeText).toHaveBeenCalledWith('vc_int_secret');
     expect(fixture.componentInstance.secret()).toBeNull();
     expect(setItem).not.toHaveBeenCalled();
+    const sdkVersion = fixture.nativeElement.querySelector('[data-testid="sdk-version"]') as HTMLElement;
+    const sdkInstall = fixture.nativeElement.querySelector('[data-testid="sdk-install"]') as HTMLElement;
+    expect(sdkVersion.textContent).toContain('1.0.0');
+    expect(sdkInstall.textContent).toContain('sdks/dotnet/VibeChat.Sdk');
+    expect(sdkInstall.textContent).not.toContain('vc_int_');
     setItem.mockRestore();
   });
 });

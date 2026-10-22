@@ -74,6 +74,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Directory:Invites:Enabled` | instance | false | B-040 | create/list/revoke/accept → 404; guests já aceitos permanecem até revogar |
 | `Integrations:Bots:Enabled` | instance | false | B-109 | create/list/rotate/revoke/send → 404; mensagens já gravadas permanecem |
 | `Integrations:DeveloperPortal:Enabled` | instance | false | B-135 | portal → 404 `DeveloperPortalDisabled`; credenciais e mensagens já gravadas permanecem |
+| `Integrations:PluginSdk:Enabled` | instance | false | B-136 | SDK → 404 `PluginSdkDisabled`; chat, send e portal seguem |
 | `Messaging:History:Enabled` | instance | false | B-114 | history/move → 404; edição não grava versão; versões já gravadas permanecem |
 | `SemanticSearch:Enabled` | instance + workspace | false | B-121 | FTS continua; opt-in do workspace apaga a projeção ao desligar |
 | `Notifications:Digests:Enabled` | instance | false | B-122 | settings/catch-up → 404 `DigestDisabled`; worker não varre; mensagens e inbox seguem |

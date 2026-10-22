@@ -40,11 +40,11 @@ SDK não aceita “bypass tenant”; token determina scope. Test kit inclui caso
 
 ## Aceite
 
-- [ ] Quickstart executa contra sandbox.
-- [ ] Webhook verifier rejeita replay/assinatura inválida.
-- [ ] Matrix de versão é testada.
-- [ ] Pacotes têm license/provenance.
-- [ ] SDK não loga token.
+- [x] Quickstart executa contra sandbox.
+- [x] Webhook verifier rejeita replay/assinatura inválida.
+- [x] Matrix de versão é testada.
+- [x] Pacotes têm license/provenance.
+- [x] SDK não loga token.
 
 ## Testes
 
