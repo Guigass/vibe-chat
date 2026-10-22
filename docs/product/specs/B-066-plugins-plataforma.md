@@ -50,10 +50,10 @@ Igual B-109/B-110. Callbacks nunca cruzam tenant. Token/secret só hash.
 
 ## Aceite
 
-- [ ] Plugin built-in do repo instala via B-110 e declara capability extra
-- [ ] Slash do plugin executa só com capability e escopo
-- [ ] Sem endpoint de “loja” ou download de pacote remoto arbitrário
-- [ ] D-11 respeitado: zero App Directory público
+- [x] Plugin built-in do repo instala via B-110 e declara capability extra
+- [x] Slash do plugin executa só com capability e escopo
+- [x] Sem endpoint de “loja” ou download de pacote remoto arbitrário
+- [x] D-11 respeitado: zero App Directory público
 
 ## Testes
 

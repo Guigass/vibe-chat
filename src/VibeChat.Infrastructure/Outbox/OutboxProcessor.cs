@@ -63,6 +63,7 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
         var searchIndexer = scope.ServiceProvider.GetRequiredService<ISearchIndexer>();
         var emailSender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
         var webhooks = scope.ServiceProvider.GetRequiredService<IOutboundWebhookDispatcher>();
+        var pluginCallbacks = scope.ServiceProvider.GetRequiredService<IPluginCallbackDispatcher>();
         var now = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow;
 
         var tenant = scope.ServiceProvider.GetRequiredService<ITenantContext>();
@@ -336,6 +337,23 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                         outbox.Payload,
                         channelId.Value,
                         cancellationToken);
+                    try
+                    {
+                        await pluginCallbacks.TryDispatchEventAsync(
+                            tenantId,
+                            eventName,
+                            outbox.Id,
+                            outbox.Payload,
+                            channelId.Value,
+                            cancellationToken);
+                    }
+                    catch (Exception pluginEx)
+                    {
+                        logger.LogWarning(
+                            pluginEx,
+                            "Plugin callback failed for outbox {OutboxMessageId}; realtime already published",
+                            outbox.Id);
+                    }
                 }
 
                 // B-091: link preview after realtime — never on SendMessage hot path.

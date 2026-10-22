@@ -62,6 +62,7 @@ describe('AdminPluginsPage (B-110)', () => {
     const host = fixture.nativeElement as HTMLElement;
     expect(host.textContent).toContain(ui.adminPluginsEmpty);
     expect(host.textContent).toContain(ui.adminPluginInstallBuiltin);
+    expect(host.textContent).toContain(ui.adminPluginInstallSlashNote);
     expect(host.textContent).not.toContain('vc_int_');
   });
 

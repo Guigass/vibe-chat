@@ -3053,12 +3053,20 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("BotId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("CallbackUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
                     b.PrimitiveCollection<string[]>("Capabilities")
                         .IsRequired()
                         .HasColumnType("text[]");
 
                     b.Property<bool>("Enabled")
                         .HasColumnType("boolean");
+
+                    b.PrimitiveCollection<string[]>("Hooks")
+                        .IsRequired()
+                        .HasColumnType("text[]");
 
                     b.Property<DateTimeOffset>("InstalledAt")
                         .HasColumnType("timestamp with time zone");
@@ -3077,6 +3085,10 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
+
+                    b.PrimitiveCollection<string[]>("SubscribedEvents")
+                        .IsRequired()
+                        .HasColumnType("text[]");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
@@ -5928,6 +5940,54 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("RefreshToken")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("VibeChat.Integrations.InstalledPlugin", b =>
+                {
+                    b.OwnsOne("VibeChat.SharedKernel.EncryptedSecretEnvelope", "CallbackSecret", b1 =>
+                        {
+                            b1.Property<Guid>("InstalledPluginId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<byte[]>("Ciphertext")
+                                .HasColumnType("bytea")
+                                .HasColumnName("CallbackSecretCiphertext");
+
+                            b1.Property<short?>("FormatVersion")
+                                .HasColumnType("smallint")
+                                .HasColumnName("CallbackSecretFormatVersion");
+
+                            b1.Property<int?>("KeyVersion")
+                                .HasColumnType("integer")
+                                .HasColumnName("CallbackSecretKeyVersion");
+
+                            b1.Property<string>("MaskSuffix")
+                                .HasMaxLength(8)
+                                .HasColumnType("character varying(8)")
+                                .HasColumnName("CallbackSecretMaskSuffix");
+
+                            b1.Property<byte[]>("Nonce")
+                                .HasColumnType("bytea")
+                                .HasColumnName("CallbackSecretNonce");
+
+                            b1.Property<DateTimeOffset?>("RotatedAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("CallbackSecretRotatedAt");
+
+                            b1.Property<byte[]>("Tag")
+                                .HasColumnType("bytea")
+                                .HasColumnName("CallbackSecretTag");
+
+                            b1.HasKey("InstalledPluginId");
+
+                            b1.ToTable("plugins", "integrations");
+
+                            b1.WithOwner()
+                                .HasForeignKey("InstalledPluginId");
+                        });
+
+                    b.Navigation("CallbackSecret")
                         .IsRequired();
                 });
 

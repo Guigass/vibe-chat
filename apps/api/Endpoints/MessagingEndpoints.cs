@@ -9,6 +9,7 @@ using VibeChat.Conversations;
 using VibeChat.Files;
 using VibeChat.Identity;
 using VibeChat.Infrastructure;
+using VibeChat.Integrations;
 using VibeChat.Infrastructure.Compliance;
 using VibeChat.Infrastructure.Messaging;
 using VibeChat.Messaging;
@@ -30,6 +31,8 @@ internal static class MessagingEndpoints
             VibeChatDbContext db,
             ITenantContext tenant,
             IPermissionChecker permissions,
+            IOptions<BotIntegrationOptions> bots,
+            IOptions<PluginPlatformOptions> plugins,
             IClock clock,
             CancellationToken ct) =>
         {
@@ -66,6 +69,32 @@ internal static class MessagingEndpoints
                     SlashCommandCatalog.Describe(item.Name, locale),
                     item.Usage,
                     item.Permission));
+            }
+
+            if (bots.Value.Enabled && plugins.Value.Enabled)
+            {
+                var installed = await db.InstalledPlugins.AsNoTracking()
+                    .Where(plugin => plugin.WorkspaceId == workspace.Id && plugin.Enabled)
+                    .ToListAsync(ct);
+                foreach (var plugin in installed)
+                {
+                    if (!plugin.Capabilities.Contains(PluginManifestRules.CapabilityCommandsSlash, StringComparer.Ordinal)
+                        || !PluginManifestRules.TryParse(plugin.ManifestJson, out var manifest, out _)
+                        || manifest is null)
+                    {
+                        continue;
+                    }
+
+                    foreach (var command in manifest.Commands)
+                    {
+                        var name = PluginManifestRules.QualifiedCommand(plugin.PluginId, command.Name);
+                        allowed.Add(new SlashCommandResponse(
+                            name,
+                            PluginCommandCopy.Describe(plugin.PluginId, command.Name, locale, command.Description),
+                            $"/{name} <texto>",
+                            null));
+                    }
+                }
             }
 
             return Results.Ok(allowed);

@@ -77,6 +77,7 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/workspaces/{workspaceId:guid}/channels` | permission | `channel.create` | ✓ | ✗ | ✓ | |
 | PUT | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/topic` | permission | `channel.create` | ✓ | ✗ | ✓ | Slash `/topico` |
 | GET | `/workspaces/{workspaceId:guid}/commands` | membership | (filtra por perm) | ✓ | ✓ | ✓ | Discovery; itens filtrados por permissão |
+| POST | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/plugin-commands` | permission | `message.send` | ✓ | ✗ | ✓ | B-066; capability + escopo; flag off → 404 |
 | GET | `/channels/{channelId:guid}/messages` | membership | — | ✓ | ✓ | ✓ | Timeline; membership-only justificado (leitura de canal) |
 | POST | `/channels/{channelId:guid}/messages` | permission | `message.send` | ✓ | ✗ | ✓ | |
 | POST | `/channels/{channelId:guid}/polls` | permission | `message.send` + membership | ✓ | ✗ | ✓ | B-096; não DM/thread |
@@ -264,6 +265,7 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/admin/workspaces/{workspaceId:guid}/scim/mappings` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Papel allowlisted |
 | DELETE | `/admin/workspaces/{workspaceId:guid}/scim/mappings/{mappingId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Remove grant do mapeamento |
 | POST | `/admin/workspaces/{workspaceId:guid}/scim/provisioning/users` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Mesmo comando do SCIM |
+| GET | `/admin/workspaces/{workspaceId:guid}/plugins/builtins` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-066; catálogo compilado; sem pacote remoto |
 | GET | `/admin/workspaces/{workspaceId:guid}/plugins` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-110; flag off → 404; sem secret |
 | POST | `/admin/workspaces/{workspaceId:guid}/plugins` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Built-in ou manifesto; token só na criação |
 | PATCH | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | `enabled`; outro workspace → 404 |

@@ -90,6 +90,10 @@ export class SlashCommandsService {
       return this.fail(fillTemplate(ui.slashUnknownHelp, { name: parsed.name }), false);
     }
 
+    if (parsed.name.includes('/')) {
+      return this.runPlugin(parsed, workspace.id, channel.id);
+    }
+
     switch (parsed.name) {
       case 'ajuda':
         return this.runAjuda(available);
@@ -310,6 +314,28 @@ export class SlashCommandsService {
       openPollComposer: true,
       pollQuestion: parts[0] ?? '',
     };
+  }
+
+  private async runPlugin(
+    parsed: ParsedSlashCommand,
+    workspaceId: string,
+    channelId: string,
+  ): Promise<SlashExecResult> {
+    try {
+      const result = await this.api.invokePluginCommand(workspaceId, channelId, {
+        name: parsed.name,
+        args: parsed.argsRaw,
+        idempotencyKey: globalThis.crypto?.randomUUID?.() ?? `plugin-${Date.now()}`,
+      });
+      const notice: SlashNotice = {
+        kind: 'info',
+        text: result.posted ? ui.slashPluginPosted : ui.slashPluginCallback,
+      };
+      this.notice.set(notice);
+      return { ok: true, clearDraft: true, notice };
+    } catch (err) {
+      return this.fail(this.errorMessage(err, ui.slashPluginError), false);
+    }
   }
 
   private fail(text: string, clearDraft: boolean): SlashExecResult {

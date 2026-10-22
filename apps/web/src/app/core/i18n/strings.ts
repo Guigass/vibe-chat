@@ -281,6 +281,9 @@ export const ui = {
   slashCommands: $localize`:@@slash.commands:Comandos`,
   slashInvalid: $localize`:@@slash.invalid:Comando inválido.`,
   slashNeedChannel: $localize`:@@slash.needChannel:Selecione um canal para usar comandos.`,
+  slashPluginPosted: $localize`:@@slash.pluginPosted:Nota publicada.`,
+  slashPluginCallback: $localize`:@@slash.pluginCallback:Comando enviado ao plugin.`,
+  slashPluginError: $localize`:@@slash.pluginError:Não foi possível executar o comando do plugin.`,
   slashUnknownHelp: $localize`:@@slash.unknownHelp:Comando desconhecido: /%name%. Digite /ajuda para ver a lista.`,
   slashUnknown: $localize`:@@slash.unknown:Comando desconhecido: /%name%.`,
   slashAvailable: $localize`:@@slash.available:Comandos disponíveis`,
@@ -1176,6 +1179,9 @@ export const ui = {
   adminPluginsLead: $localize`:@@admin.pluginsLead:Plugins instalados publicam com um token de bot. O token aparece uma vez. Webhooks continuam em`,
   adminPluginsEmpty: $localize`:@@admin.pluginsEmpty:Nenhum plugin instalado neste workspace.`,
   adminPluginInstallBuiltin: $localize`:@@admin.pluginInstallBuiltin:Instalar Incoming Messages`,
+  adminPluginInstallSlashNote: $localize`:@@admin.pluginInstallSlashNote:Instalar Slash Note`,
+  adminPluginHooks: $localize`:@@admin.pluginHooks:Ganchos`,
+  adminPluginCallbackOnce: $localize`:@@admin.pluginCallbackOnce:Copie o segredo do callback agora. Ele não será mostrado de novo.`,
   adminPluginManifest: $localize`:@@admin.pluginManifest:Manifesto (avançado)`,
   adminPluginInstallCustom: $localize`:@@admin.pluginInstallCustom:Instalar manifesto`,
   adminPluginVersion: $localize`:@@admin.pluginVersion:Versão`,
@@ -1922,6 +1928,16 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.developerInvalidName;
     case 'UnknownDeveloperOperation':
       return ui.developerUnknownOperation;
+    case 'PluginPlatformDisabled':
+    case 'PluginCapabilityDenied':
+    case 'PluginCommandNotFound':
+    case 'PluginCommandOutOfScope':
+    case 'PluginCommandArgsRequired':
+    case 'PluginCallbackFailed':
+    case 'InvalidCallbackUrl':
+    case 'EgressBlocked':
+    case 'UnknownPluginHook':
+      return ui.slashPluginError;
     case 'DelegationReasonRequired':
     case 'DelegationExpiryInvalid':
     case 'DelegationScopeUnknown':

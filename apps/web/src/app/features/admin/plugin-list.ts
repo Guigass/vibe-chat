@@ -7,7 +7,7 @@ export function filterInstalledPlugins(plugins: readonly InstalledPlugin[], quer
   }
 
   return plugins.filter((plugin) => {
-    const haystack = [plugin.name, plugin.pluginId, plugin.version, ...plugin.capabilities]
+    const haystack = [plugin.name, plugin.pluginId, plugin.version, ...plugin.capabilities, ...(plugin.hooks ?? [])]
       .join(' ')
       .toLocaleLowerCase();
     return haystack.includes(needle);

@@ -48,4 +48,63 @@ public sealed class PluginManifestTests
         PluginManifestRules.TryGetBuiltin("marketplace", out _, out var error).Should().BeFalse();
         error.Should().Be(PluginManifestRules.UnknownBuiltin);
     }
+
+    [Fact]
+    public void Slash_note_builtin_declares_commands_without_a_callback()
+    {
+        PluginManifestRules.TryGetBuiltin(PluginManifestRules.BuiltinSlashNoteId, out var manifest, out var error)
+            .Should().BeTrue(error);
+        manifest!.Capabilities.Should().Equal(
+            PluginManifestRules.CapabilityMessagesSend,
+            PluginManifestRules.CapabilityCommandsSlash);
+        manifest.Commands.Select(command => command.Name).Should().Equal(PluginManifestRules.SlashNoteCommand);
+        manifest.Callback.Should().BeNull();
+        PluginManifestRules.RequiresPlatform(manifest).Should().BeTrue();
+        PluginManifestRules.IsProductSlash(manifest, PluginManifestRules.SlashNoteCommand).Should().BeTrue();
+        PluginManifestRules.Builtins(platformEnabled: false).Select(item => item.Id)
+            .Should().Equal(PluginManifestRules.BuiltinIncomingMessagesId);
+        PluginManifestRules.Builtins(platformEnabled: true).Select(item => item.Id)
+            .Should().Equal(PluginManifestRules.BuiltinIncomingMessagesId, PluginManifestRules.BuiltinSlashNoteId);
+    }
+
+    [Fact]
+    public void Callback_urls_block_metadata_and_private_addresses()
+    {
+        PluginManifestRules.TryAcceptCallbackUrl("https://169.254.169.254/latest", out _, out var metadata)
+            .Should().BeFalse();
+        metadata.Should().Be(PluginPlatformErrors.EgressBlocked);
+        PluginManifestRules.TryAcceptCallbackUrl("https://10.1.2.3/hook", out _, out var priv)
+            .Should().BeFalse();
+        priv.Should().Be(PluginPlatformErrors.EgressBlocked);
+        PluginManifestRules.TryAcceptCallbackUrl("http://hooks.example.test/hook", out _, out var plain)
+            .Should().BeFalse();
+        plain.Should().Be(PluginPlatformErrors.InvalidCallbackUrl);
+        PluginManifestRules.TryAcceptCallbackUrl("http://127.0.0.1:9/hook", out var lab, out var labError)
+            .Should().BeTrue(labError);
+        lab.Should().StartWith("http://127.0.0.1:9/");
+
+        const string hostile = """
+            {"schema":"vibechat.plugin.manifest.v1","id":"pager","name":"Pager","version":"1.0.0","capabilities":["ui.hooks"],"hooks":["<script>"]}
+            """;
+        PluginManifestRules.TryParse(hostile, out _, out var hookError).Should().BeFalse();
+        hookError.Should().Be(PluginPlatformErrors.UnknownHook);
+    }
+
+    [Fact]
+    public void Custom_slash_requires_callback_and_known_hooks_are_config_only()
+    {
+        const string missing = """
+            {"schema":"vibechat.plugin.manifest.v1","id":"pager","name":"Pager","version":"1.0.0","capabilities":["commands.slash"],"commands":[{"name":"ping","description":"Ping"}]}
+            """;
+        PluginManifestRules.TryParse(missing, out _, out var missingError).Should().BeFalse();
+        missingError.Should().Be(PluginPlatformErrors.InvalidCallbackUrl);
+
+        const string ok = """
+            {"schema":"vibechat.plugin.manifest.v1","id":"pager","name":"Pager","version":"1.0.0","capabilities":["events.subscribe","ui.hooks"],"callback":{"url":"https://hooks.example.test/in","events":["MessageCreated"]},"hooks":["message.badge.bot"]}
+            """;
+        PluginManifestRules.TryParse(ok, out var manifest, out var error).Should().BeTrue(error);
+        manifest!.Hooks.Should().Equal(PluginManifestRules.HookMessageBadgeBot);
+        manifest.Callback!.Events.Should().Equal(WebhookEventTypes.MessageCreated);
+        manifest.CanonicalJson.Should().NotContain("plugin.js").And.NotContain("dll");
+    }
 }

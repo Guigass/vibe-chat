@@ -12,6 +12,7 @@ import { SlashCommandsService } from './slash-commands.service';
 describe('SlashCommandsService (B-087)', () => {
   const api = {
     getCommands: vi.fn(),
+    invokePluginCommand: vi.fn(),
     updateChannelTopic: vi.fn(),
     inviteMember: vi.fn(),
     summarizeChannel: vi.fn(),
@@ -116,6 +117,21 @@ describe('SlashCommandsService (B-087)', () => {
     const result = await svc.execute('/resumir');
     expect(result.ok).toBe(false);
     expect(result.notice?.text).toMatch(/IA está desligada/i);
+  });
+
+  it('runs a namespaced plugin command from the catalog', async () => {
+    api.getCommands.mockResolvedValue([
+      { name: 'slash-note/nota', description: 'Nota', usage: '/slash-note/nota <texto>' },
+    ]);
+    api.invokePluginCommand.mockResolvedValue({ name: 'slash-note/nota', posted: true, callbackDelivered: false });
+    const svc = TestBed.inject(SlashCommandsService);
+    const result = await svc.execute('/slash-note/nota olá');
+    expect(result.ok).toBe(true);
+    expect(api.invokePluginCommand).toHaveBeenCalledWith(
+      'ws-1',
+      'ch-1',
+      expect.objectContaining({ name: 'slash-note/nota', args: 'olá' }),
+    );
   });
 
   it('opens DM by member display name', async () => {

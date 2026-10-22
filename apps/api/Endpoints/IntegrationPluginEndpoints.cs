@@ -6,6 +6,7 @@ using VibeChat.Audit;
 using VibeChat.BuildingBlocks;
 using VibeChat.Infrastructure;
 using VibeChat.Integrations;
+using VibeChat.Administration;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
 
@@ -15,6 +16,8 @@ internal static class IntegrationPluginEndpoints
 {
     internal static void MapIntegrationPlugins(this RouteGroupBuilder v1)
     {
+        v1.MapGet("/admin/workspaces/{workspaceId:guid}/plugins/builtins", ListBuiltins)
+            .RequirePermission(Permissions.Workspace.Admin);
         v1.MapGet("/admin/workspaces/{workspaceId:guid}/plugins", ListPlugins)
             .RequirePermission(Permissions.Workspace.Admin);
         v1.MapPost("/admin/workspaces/{workspaceId:guid}/plugins", InstallPlugin)
@@ -25,6 +28,38 @@ internal static class IntegrationPluginEndpoints
             .RequirePermission(Permissions.Workspace.Admin);
         v1.MapPost("/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}/rotate", RotatePlugin)
             .RequirePermission(Permissions.Workspace.Admin);
+    }
+
+    private static async Task<IResult> ListBuiltins(
+        Guid workspaceId,
+        HttpContext http,
+        VibeChatDbContext db,
+        ITenantContext tenant,
+        IOptions<BotIntegrationOptions> options,
+        IOptions<PluginPlatformOptions> platform,
+        IClock clock,
+        CancellationToken ct)
+    {
+        if (!options.Value.Enabled)
+        {
+            return IntegrationBotEndpoints.Disabled();
+        }
+
+        var workspace = await ResolveWorkspaceAsync(workspaceId, http, db, tenant, clock, ct);
+        if (workspace is null)
+        {
+            return Results.Forbid();
+        }
+
+        var items = PluginManifestRules.Builtins(platform.Value.Enabled)
+            .Select(manifest => new BuiltinPluginResponse(
+                manifest.Id,
+                manifest.Name,
+                manifest.Version,
+                manifest.Capabilities,
+                manifest.Commands.Select(command => command.Name).ToArray()))
+            .ToArray();
+        return Results.Ok(items);
     }
 
     private static async Task<IResult> ListPlugins(
@@ -68,6 +103,8 @@ internal static class IntegrationPluginEndpoints
         ITenantContext tenant,
         IAuditWriter audit,
         IOptions<BotIntegrationOptions> options,
+        IOptions<PluginPlatformOptions> platform,
+        RuntimeSecretProtector secrets,
         IClock clock,
         CancellationToken ct)
     {
@@ -79,6 +116,11 @@ internal static class IntegrationPluginEndpoints
         if (!TryResolveManifest(request, out var manifest, out var error))
         {
             return Results.BadRequest(new { error });
+        }
+
+        if (PluginManifestRules.RequiresPlatform(manifest!) && !platform.Value.Enabled)
+        {
+            return Results.NotFound(new { error = PluginPlatformErrors.Disabled });
         }
 
         var profile = await RequestAuth.EnsureProfileAsync(http.User, db, clock, ct);
@@ -109,12 +151,27 @@ internal static class IntegrationPluginEndpoints
         }
 
         var now = clock.UtcNow;
+        var pluginId = Guid.NewGuid();
+        string? callbackSecret = null;
+        var callbackEnvelope = new EncryptedSecretEnvelope();
+        if (manifest!.Callback is not null)
+        {
+            callbackSecret = PluginCallbackSecret.CreateRaw();
+            callbackEnvelope = secrets.Protect(
+                callbackSecret,
+                RuntimeSecretKinds.PluginCallbackSecret,
+                workspace.TenantId,
+                workspace.Id,
+                pluginId.ToString("D"),
+                now);
+        }
+
         var (bot, raw, last4) = IntegrationBotEndpoints.ProvisionBot(
-            db, workspace.TenantId, workspace.Id, manifest!.Name, request.AllowDms, now);
+            db, workspace.TenantId, workspace.Id, manifest.Name, request.AllowDms, now);
         await IntegrationBotEndpoints.ReplaceScopesAsync(db, bot, channels, now, ct);
         var plugin = new InstalledPlugin
         {
-            Id = Guid.NewGuid(),
+            Id = pluginId,
             TenantId = workspace.TenantId,
             WorkspaceId = workspace.Id,
             PluginId = manifest.Id,
@@ -125,14 +182,18 @@ internal static class IntegrationPluginEndpoints
             BotId = bot.Id,
             Enabled = true,
             InstalledAt = now,
-            UpdatedAt = now
+            UpdatedAt = now,
+            CallbackUrl = manifest.Callback?.Url,
+            SubscribedEvents = manifest.Callback?.Events ?? [],
+            Hooks = manifest.Hooks,
+            CallbackSecret = callbackEnvelope
         };
         db.InstalledPlugins.Add(plugin);
         audit.Add(PluginAudit(workspace.TenantId, profile.Id, AuditActions.IntegrationPluginInstall, plugin, now));
         await db.SaveChangesAsync(ct);
         return Results.Created(
             $"/api/v1/admin/workspaces/{workspace.Id.Value}/plugins/{plugin.Id}",
-            ToSecret(plugin, bot.AllowDms, channels.Select(x => x.Id.Value).ToArray(), raw, last4));
+            ToSecret(plugin, bot.AllowDms, channels.Select(x => x.Id.Value).ToArray(), raw, last4, callbackSecret));
     }
 
     private static async Task<IResult> UpdatePlugin(
@@ -280,7 +341,7 @@ internal static class IntegrationPluginEndpoints
             .Where(x => x.BotId == bot.Id)
             .Select(x => x.ChannelId.Value)
             .ToArrayAsync(ct);
-        return Results.Ok(ToSecret(plugin, bot.AllowDms, channelIds, raw, token.Last4));
+        return Results.Ok(ToSecret(plugin, bot.AllowDms, channelIds, raw, token.Last4, callbackSecret: null));
     }
 
     private static bool TryResolveManifest(InstallPluginRequest request, out PluginManifestDocument? manifest, out string error)
@@ -350,7 +411,10 @@ internal static class IntegrationPluginEndpoints
             token is not null,
             token?.Last4,
             plugin.InstalledAt,
-            plugin.UpdatedAt);
+            plugin.UpdatedAt,
+            plugin.Hooks,
+            plugin.SubscribedEvents,
+            plugin.CallbackSecret.IsPresent);
     }
 
     private static InstalledPluginSecretResponse ToSecret(
@@ -358,7 +422,8 @@ internal static class IntegrationPluginEndpoints
         bool allowDms,
         Guid[] channelIds,
         string raw,
-        string last4) =>
+        string last4,
+        string? callbackSecret) =>
         new(
             plugin.Id,
             plugin.PluginId,
@@ -372,5 +437,9 @@ internal static class IntegrationPluginEndpoints
             raw,
             last4,
             plugin.InstalledAt,
-            plugin.UpdatedAt);
+            plugin.UpdatedAt,
+            plugin.Hooks,
+            plugin.SubscribedEvents,
+            plugin.CallbackSecret.IsPresent,
+            callbackSecret);
 }
