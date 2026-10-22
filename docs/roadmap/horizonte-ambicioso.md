@@ -148,7 +148,7 @@ Objetivo: tornar extensibilidade um produto sustentável.
 | B-135 | B/D/G | Developer portal, credenciais e documentação de API | B-109, B-110 | [B-135](../product/specs/B-135-developer-portal.md) | **Done** — catálogo OpenAPI/eventos, credencial com segredo uma vez, explorador e webhook sintéticos, usage por tenant, flag off |
 | B-066 | B/C/D/E | Plataforma de plugins com capabilities avançadas | B-108, B-109, B-110 | [B-066](../product/specs/B-066-plugins-plataforma.md) | **Done** — slash, eventos HMAC e ganchos documentados; built-in `slash-note`; flag off; ADR-049 |
 | B-111 | B/C/D/E | Interações, histórico e anexos governados para plugins | B-066 | [B-111](../product/specs/B-111-plugins-horizonte.md) | **Done** — ações namespaced, grant de janela, anexo com scan, quota e revogação; built-in `action-ack`; flag off; ADR-050 |
-| B-136 | B/C/E/G | SDK e contract-test kit para plugins | B-066, B-139 | [B-136](../product/specs/B-136-sdk-contract-kit.md) | Planned |
+| B-136 | B/C/E/G | SDK e contract-test kit para plugins | B-066, B-139 | [B-136](../product/specs/B-136-sdk-contract-kit.md) | **Done** — SDK 1.0.0 .NET/TypeScript, verificador HMAC, matriz e sandbox sintético; flag off; ADR-051 |
 | B-137 | B/C/D/E | Registry assinado e catálogos governados | B-136, D-18 | [B-137](../product/specs/B-137-registry-plugins.md) | Planned |
 | B-138 | B/C/E | Framework de bridges para redes externas | B-136, D-21 | [B-138](../product/specs/B-138-framework-bridges.md) | Planned |
 | B-140 | D/G/B | White-label e branding por tenant | B-100, D-24 | [B-140](../product/specs/B-140-white-label.md) | Planned |

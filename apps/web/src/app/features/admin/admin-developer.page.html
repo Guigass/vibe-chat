@@ -139,6 +139,19 @@
     <h2>{{ ui.developerUsage }}</h2>
     <p>{{ ui.developerUsage }}: {{ usage()?.errors ?? 0 }}</p>
 
+    <h2>{{ ui.developerSdkTitle }}</h2>
+    @if (sdkDisabled()) {
+      <p class="admin-empty" role="status" data-testid="sdk-disabled">{{ ui.developerSdkDisabled }}</p>
+    } @else if (sdkCatalog(); as sdk) {
+      <p>{{ ui.developerSdkLead }}</p>
+      <p class="mono" data-testid="sdk-version">{{ sdk.sdkVersion }}</p>
+      <p>{{ ui.developerSdkInstall }}</p>
+      <p class="mono" data-testid="sdk-install">{{ sdk.install.dotnet }}</p>
+      <p class="mono">{{ sdk.install.typescript }}</p>
+      <p>{{ ui.developerSdkFirstMessage }}</p>
+      <p>{{ ui.developerSdkFailures }}</p>
+    }
+
     <h2>{{ ui.developerCapabilities }}</h2>
     <ul>
       @for (item of catalog()!.capabilities; track item) {

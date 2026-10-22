@@ -1,0 +1,8 @@
+{
+  "license": "Apache-2.0",
+  "sdkVersion": "1.0.0",
+  "apiContract": "1",
+  "published": false,
+  "reproducible": true,
+  "source": "modules/Integrations/PluginSdk.cs"
+}

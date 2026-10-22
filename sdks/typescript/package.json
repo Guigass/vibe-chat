@@ -1,0 +1,10 @@
+{
+  "name": "@vibechat/plugin-sdk",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "description": "Curated webhook verifier, idempotency helper and sandbox client for the VibeChat integration API.",
+  "main": "./src/index.ts",
+  "files": ["src", "provenance.json"]
+}

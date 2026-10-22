@@ -1664,6 +1664,14 @@ export const ui = {
   developerInvalidChannelScope: $localize`:@@error.InvalidChannelScope:Canal inválido para esta credencial.`,
   developerInvalidName: $localize`:@@error.InvalidBotName:Nome inválido.`,
   developerUnknownOperation: $localize`:@@error.UnknownDeveloperOperation:Operação desconhecida.`,
+  developerSdkTitle: $localize`:@@developer.sdkTitle:SDK`,
+  developerSdkLead: $localize`:@@developer.sdkLead:Pacotes oficiais .NET e TypeScript. Eles seguem o contrato HTTP e não atravessam o tenant.`,
+  developerSdkInstall: $localize`:@@developer.sdkInstall:Instalação local. Nada é publicado num registro público.`,
+  developerSdkFirstMessage: $localize`:@@developer.sdkFirstMessage:A primeira mensagem é sintética. O sandbox aceita e não grava no canal.`,
+  developerSdkFailures: $localize`:@@developer.sdkFailures:O verificador recusa assinatura inválida, replay, entrega velha, 401, 403 e leitura de outro tenant. O token não entra em log.`,
+  developerSdkDisabled: $localize`:@@developer.sdkDisabled:O SDK de plugins está desligado nesta instalação.`,
+  pluginSdkDisabled: $localize`:@@error.PluginSdkDisabled:O SDK de plugins está desligado nesta instalação.`,
+  unknownSdkOperation: $localize`:@@error.UnknownSdkOperation:Operação de SDK desconhecida.`,
 } as const;
 
 export function fillTemplate(
@@ -1928,6 +1936,10 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.capacitySlaRejected;
     case 'DeveloperPortalDisabled':
       return ui.developerPortalDisabled;
+    case 'PluginSdkDisabled':
+      return ui.pluginSdkDisabled;
+    case 'UnknownSdkOperation':
+      return ui.unknownSdkOperation;
     case 'ExplorerScopeDenied':
       return ui.developerScopeDenied;
     case 'CredentialNotFound':

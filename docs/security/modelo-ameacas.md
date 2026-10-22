@@ -394,6 +394,18 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Usage | Auditoria `developer.*` sem token. Outro workspace/tenant não aparece na lista |
 | Rollback | Flag off no mesmo binário. Não há migration; as credenciais continuam nas tabelas do bot |
 
+### B-136 / ADR-051 — SDK e contract-test kit
+
+| Item | Controle |
+|------|----------|
+| Flag | `Integrations:PluginSdk:Enabled` off → 404 `PluginSdkDisabled`. Chat e send não passam pelo SDK |
+| AuthZ | `integration.read` nas quatro rotas. Member e workspace sem membership → 403, sem catálogo |
+| Assinatura | HMAC `sha256=` igual ao webhook. Janela de 5 minutos. Replay só com os delivery ids enviados pelo caller |
+| Segredo | `sandbox-not-a-secret` não é credencial e não volta no catálogo. `vc_int_` / `vc_cb_` / `Bearer` saem do texto de log |
+| Sandbox | Não grava mensagem e não chama URL. `tenantId` no body é ignorado. Auditoria sem corpo |
+| Pacotes | Apache-2.0 no repositório. Sem publicação em feed |
+| Rollback | Flag off no mesmo binário. Sem migration |
+
 ### B-110 / ADR-028 — Plugin local
 
 | Item | Controle |

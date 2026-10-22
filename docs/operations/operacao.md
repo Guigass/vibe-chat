@@ -102,6 +102,14 @@ O explorador e o inspetor de webhook são sintéticos: não gravam mensagem e n�
 chamam URL externa. Desligar a flag devolve 404 no portal e não apaga bots já
 criados. O envio real continua em `Integrations:Bots:Enabled`.
 
+## SDK de plugins (B-136)
+
+A flag `Integrations:PluginSdk:Enabled` nasce desligada. Com ela ligada,
+Admin/Owner vê o catálogo em `/admin/developer`. O quickstart é sintético: não
+grava mensagem e não chama URL externa. Desligar a flag devolve 404
+`PluginSdkDisabled` e não altera bots nem mensagens. Os pacotes ficam em
+`sdks/dotnet` e `sdks/typescript` (Apache-2.0, sem feed público).
+
 ## Capacidade e SLOs (B-146)
 
 ```bash

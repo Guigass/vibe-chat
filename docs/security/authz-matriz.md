@@ -380,6 +380,10 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/workspaces/{workspaceId:guid}/developer/explore` | permission | `integration.manage` | ✗ | ✗ | ✓ | B-135; chamada sintética; fora do escopo → 403 `ExplorerScopeDenied`; não grava mensagem |
 | POST | `/workspaces/{workspaceId:guid}/developer/webhook-inspector` | permission | `integration.manage` | ✗ | ✗ | ✓ | B-135; payload sintético; não faz POST externo |
 | GET | `/workspaces/{workspaceId:guid}/developer/usage` | permission | `integration.read` | ✗ | ✗ | ✓ | B-135; só o workspace do ator; sem token |
+| GET | `/workspaces/{workspaceId:guid}/developer/sdk` | permission | `integration.read` | ✗ | ✗ | ✓ | B-136; flag off → 404 `PluginSdkDisabled`; sem segredo |
+| POST | `/workspaces/{workspaceId:guid}/developer/sdk/verify` | permission | `integration.read` | ✗ | ✗ | ✓ | B-136; HMAC sintético; replay no cache do caller |
+| POST | `/workspaces/{workspaceId:guid}/developer/sdk/contract-tests` | permission | `integration.read` | ✗ | ✗ | ✓ | B-136; 401/403/cross-tenant sintéticos; sem token |
+| POST | `/workspaces/{workspaceId:guid}/developer/sdk/sandbox` | permission | `integration.read` | ✗ | ✗ | ✓ | B-136; não grava mensagem; `tenantId` do body é ignorado |
 
 ## Hub SignalR `/hubs/chat`
 

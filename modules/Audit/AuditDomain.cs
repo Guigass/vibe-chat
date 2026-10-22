@@ -80,6 +80,9 @@ public static class AuditActions
     public const string DeveloperCredentialRevoke = "developer.credential.revoke";
     public const string DeveloperExplore = "developer.explore";
     public const string DeveloperWebhookInspect = "developer.webhook.inspect";
+    public const string DeveloperSdkVerify = "developer.sdk.verify";
+    public const string DeveloperSdkContract = "developer.sdk.contract";
+    public const string DeveloperSdkSandbox = "developer.sdk.sandbox";
     public const string ProfileUpdate = "profile.update";
     public const string ProfileAvatar = "profile.avatar";
     public const string UserStatusClear = "user_status.clear";
