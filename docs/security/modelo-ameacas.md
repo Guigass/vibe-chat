@@ -407,6 +407,18 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Capacidade | Máximo 20 plugins por workspace |
 | Rollback | Flag off no mesmo binário. `Down` remove só `integrations.plugins`; bots e mensagens ficam |
 
+### B-066 / ADR-049 — Capabilities de plugin
+
+| Item | Controle |
+|------|----------|
+| Kill switch | `Features:Plugins:Enabled` default false. Off não apaga `messages.send`. Capability extra, slash e callback → 404 `PluginPlatformDisabled` |
+| Código | Manifesto continua JSON. `entry`, script e hook desconhecido não instalam. Nenhum JS/DLL entra no processo ou no browser |
+| Loja | Não existe rota de marketplace, registry ou download. Built-ins saem do binário |
+| Slash | Namespace `plugin/comando`. Sem capability ou canal fora do escopo → 403. Idempotência por chave |
+| Callback | HTTPS + HMAC. Segredo só no create, envelope AES-GCM. SSRF bloqueia metadata, IP privado e redirect. Evento filtrado por tenant, capability e escopo |
+| Ganchos | Allowlist `message.badge.bot` e `message.menu` |
+| Rollback | Flag off no mesmo binário. `Down` remove colunas de callback; bots e mensagens ficam |
+
 ## Ameaças priorizadas para a fatia vertical
 
 1. Leitura/escrita cross-tenant

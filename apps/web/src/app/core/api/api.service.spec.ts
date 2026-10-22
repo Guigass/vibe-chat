@@ -12,6 +12,7 @@ import { PolicyPackApiService } from './policy-pack-api.service';
 import { DelegatedAdminApiService } from './delegated-admin-api.service';
 import { CapacityApiService } from './capacity-api.service';
 import { DeveloperApiService } from './developer-api.service';
+import { PluginApiService } from './plugin-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
@@ -51,6 +52,7 @@ function createApi(auth: AuthStub): ApiService {
       DelegatedAdminApiService,
       CapacityApiService,
       DeveloperApiService,
+      PluginApiService,
       { provide: AuthService, useValue: auth },
     ],
   });
@@ -122,6 +124,8 @@ describe('ApiService facade', () => {
     expect(typeof api.exploreDeveloperCall).toBe('function');
     expect(typeof api.inspectDeveloperWebhook).toBe('function');
     expect(typeof api.developerUsage).toBe('function');
+    expect(typeof api.listPluginBuiltins).toBe('function');
+    expect(typeof api.invokePluginCommand).toBe('function');
   });
 
   it('sends the dev user header and keeps idempotency on send', async () => {

@@ -1408,6 +1408,10 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Version).HasMaxLength(PluginManifestRules.MaxVersionLength).IsRequired();
             entity.Property(x => x.ManifestJson).HasMaxLength(PluginManifestRules.MaxManifestBytes).IsRequired();
             entity.Property(x => x.Capabilities).HasColumnType("text[]").IsRequired();
+            entity.Property(x => x.CallbackUrl).HasMaxLength(PluginManifestRules.MaxCallbackUrlLength);
+            entity.Property(x => x.SubscribedEvents).HasColumnType("text[]").IsRequired();
+            entity.Property(x => x.Hooks).HasColumnType("text[]").IsRequired();
+            MapEncryptedSecret(entity.OwnsOne(x => x.CallbackSecret), "CallbackSecret");
             entity.HasIndex(x => x.BotId).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.PluginId }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);

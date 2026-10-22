@@ -45,7 +45,10 @@ public sealed record InstalledPluginResponse(
     bool TokenConfigured,
     string? TokenLast4,
     DateTimeOffset InstalledAt,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    string[] Hooks,
+    string[] SubscribedEvents,
+    bool CallbackConfigured);
 
 public sealed record InstalledPluginSecretResponse(
     Guid Id,
@@ -60,7 +63,27 @@ public sealed record InstalledPluginSecretResponse(
     string Token,
     string TokenLast4,
     DateTimeOffset InstalledAt,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    string[] Hooks,
+    string[] SubscribedEvents,
+    bool CallbackConfigured,
+    string? CallbackSecret);
+
+public sealed record BuiltinPluginResponse(
+    string Id,
+    string Name,
+    string Version,
+    string[] Capabilities,
+    string[] Commands);
+
+public sealed record InvokePluginCommandRequest(string Name, string? Args, string IdempotencyKey);
+
+public sealed record PluginCommandResponse(
+    string Name,
+    bool Posted,
+    Guid? MessageId,
+    long? Sequence,
+    bool CallbackDelivered);
 
 public sealed record IntegrationMessageResponse(
     Guid MessageId,

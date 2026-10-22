@@ -69,6 +69,10 @@ export interface InstalledPlugin {
   installedAt: string;
   updatedAt: string;
   token?: string | null;
+  hooks?: string[];
+  subscribedEvents?: string[];
+  callbackConfigured?: boolean;
+  callbackSecret?: string | null;
 }
 
 export interface IntegrationBot {

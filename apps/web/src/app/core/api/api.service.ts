@@ -18,6 +18,7 @@ import { PolicyPackApiService } from './policy-pack-api.service';
 import { DelegatedAdminApiService } from './delegated-admin-api.service';
 import { CapacityApiService } from './capacity-api.service';
 import { DeveloperApiService } from './developer-api.service';
+import { PluginApiService } from './plugin-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -43,6 +44,7 @@ export class ApiService {
   private readonly delegatedAdmin = inject(DelegatedAdminApiService);
   private readonly capacity = inject(CapacityApiService);
   private readonly developer = inject(DeveloperApiService);
+  private readonly plugins = inject(PluginApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -257,4 +259,6 @@ export class ApiService {
   readonly exploreDeveloperCall: DeveloperApiService['explore'] = this.developer.explore.bind(this.developer);
   readonly inspectDeveloperWebhook: DeveloperApiService['inspectWebhook'] = this.developer.inspectWebhook.bind(this.developer);
   readonly developerUsage: DeveloperApiService['usage'] = this.developer.usage.bind(this.developer);
+  readonly listPluginBuiltins: PluginApiService['listPluginBuiltins'] = this.plugins.listPluginBuiltins.bind(this.plugins);
+  readonly invokePluginCommand: PluginApiService['invokePluginCommand'] = this.plugins.invokePluginCommand.bind(this.plugins);
 }

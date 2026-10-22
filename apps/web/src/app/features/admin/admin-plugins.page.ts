@@ -18,6 +18,7 @@ export class AdminPluginsPage implements OnInit {
   readonly areaId: AdminAreaId = 'plugins';
   readonly ui = ui;
   readonly builtinId = 'incoming-messages';
+  readonly slashNoteId = 'slash-note';
 
   private readonly api = inject(ApiService);
   readonly ctx = inject(AdminContextService);
@@ -33,6 +34,7 @@ export class AdminPluginsPage implements OnInit {
   readonly allowDms = signal(false);
   readonly selectedChannelIds = signal<string[]>([]);
   readonly revealedToken = signal<string | null>(null);
+  readonly revealedCallback = signal<string | null>(null);
   readonly filtered = computed(() => filterInstalledPlugins(this.plugins(), this.filterQuery()));
 
   async ngOnInit(): Promise<void> {
@@ -67,6 +69,10 @@ export class AdminPluginsPage implements OnInit {
 
   async installBuiltin(): Promise<void> {
     await this.install({ builtinId: this.builtinId });
+  }
+
+  async installSlashNote(): Promise<void> {
+    await this.install({ builtinId: this.slashNoteId });
   }
 
   async installManifest(): Promise<void> {
@@ -166,6 +172,7 @@ export class AdminPluginsPage implements OnInit {
       });
       this.plugins.set([...this.plugins(), created]);
       this.revealedToken.set(created.token ?? null);
+      this.revealedCallback.set(created.callbackSecret ?? null);
       this.allowDms.set(false);
       this.selectedChannelIds.set([]);
       return true;

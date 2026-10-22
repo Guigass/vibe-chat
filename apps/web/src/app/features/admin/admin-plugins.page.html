@@ -30,6 +30,9 @@
       <button type="submit" class="admin-btn" [disabled]="busy()">
         {{ ui.adminPluginInstallBuiltin }}
       </button>
+      <button type="button" class="admin-btn" [disabled]="busy()" (click)="installSlashNote()">
+        {{ ui.adminPluginInstallSlashNote }}
+      </button>
     </form>
 
     <form class="admin-filters" (submit)="$event.preventDefault(); installManifest()">
@@ -54,6 +57,10 @@
       <p class="admin-feedback">{{ ui.adminBotTokenOnce }}</p>
       <p class="admin-panel__lead"><code>{{ token }}</code></p>
     }
+    @if (revealedCallback(); as callbackSecret) {
+      <p class="admin-feedback">{{ ui.adminPluginCallbackOnce }}</p>
+      <p class="admin-panel__lead"><code>{{ callbackSecret }}</code></p>
+    }
 
     @if (plugins().length === 0) {
       <p class="admin-empty">{{ ui.adminPluginsEmpty }}</p>
@@ -76,6 +83,7 @@
                 <th>{{ ui.adminBotName }}</th>
                 <th>{{ ui.adminPluginVersion }}</th>
                 <th>{{ ui.adminPluginCapabilities }}</th>
+                <th>{{ ui.adminPluginHooks }}</th>
                 <th>{{ ui.adminBotEnabled }}</th>
                 <th>{{ ui.adminBotLast4 }}</th>
                 <th></th>
@@ -89,6 +97,11 @@
                   <td>
                     @for (capability of plugin.capabilities; track capability) {
                       <span class="admin-chip">{{ capability }}</span>
+                    }
+                  </td>
+                  <td>
+                    @for (hook of plugin.hooks ?? []; track hook) {
+                      <span class="admin-chip">{{ hook }}</span>
                     }
                   </td>
                   <td>

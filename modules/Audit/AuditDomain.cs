@@ -68,6 +68,7 @@ public static class AuditActions
     public const string IntegrationPluginDisable = "integration.plugin.disable";
     public const string IntegrationPluginUninstall = "integration.plugin.uninstall";
     public const string IntegrationPluginRotate = "integration.plugin.rotate";
+    public const string IntegrationPluginCommand = "integration.plugin.command";
     public const string DeveloperCredentialCreate = "developer.credential.create";
     public const string DeveloperCredentialRotate = "developer.credential.rotate";
     public const string DeveloperCredentialRevoke = "developer.credential.revoke";

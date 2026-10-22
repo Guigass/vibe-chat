@@ -171,7 +171,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-172 | Backup de chat (export/import, tarefas, destinos remotos) | Planned — W16; SFTP/FTP, SMB, S3, Drive, WebDAV; complementa B-031/B-046; [spec](../product/specs/B-172-backup-chat-destinos.md) |
 | B-064 | Canais confidenciais E2EE | Planned — W16; deps B-169 (gate `contentAuditEnabled`) |
 | B-065 | Federação entre instâncias | Planned — W16 |
-| B-066 | Plugins — capabilities avançadas | Planned — W15, após B-109/B-110 |
+| B-066 | Plugins — capabilities avançadas | **Done** (W15) — capabilities `commands.slash` / `events.subscribe` / `ui.hooks`, built-in `slash-note`, callback HMAC, flag off; ADR-049 |
 | B-111 | Interações governadas para plugins | Planned — W15, após B-066 |
 
 ## Wave 19 — Organização e decomposição do código

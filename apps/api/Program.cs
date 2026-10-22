@@ -254,6 +254,7 @@ v1.MapGuestInvites();
 v1.MapPresence();
 v1.MapChannelCreation();
 v1.MapCommands();
+v1.MapPluginCommands();
 v1.MapPolls();
 v1.MapAnnouncements();
 v1.MapMessages();

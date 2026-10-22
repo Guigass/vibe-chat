@@ -20,7 +20,9 @@ B-066, B-111 e B-137. Divergência registrada aqui, sem reabrir D-11.
    `name`, `version` (`N.N.N`) e `capabilities`. Campo extra é
    `InvalidPluginManifest`. Na fatia 1 a única capability aceita é
    `messages.send`; qualquer outra é `UnknownPluginCapability` (400). Corpo
-   acima de 4 KiB é `PluginManifestTooLarge`.
+   acima de 4 KiB é `PluginManifestTooLarge`. B-066 estende as capabilities
+   conhecidas em [ADR-049](ADR-049-plugins-capabilities.md); o que não está
+   nessa lista continua inválido.
 3. **Catálogo.** O único built-in é `incoming-messages` (“Incoming Messages
    API”), compilado no binário. Não há discovery remoto. Instalar exige
    exatamente um de `builtinId` ou `manifest`.

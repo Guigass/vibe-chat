@@ -1074,15 +1074,19 @@ Tabelas `integrations.bots`, `integrations.bot_tokens` (só hash SHA-256), `inte
 
 Mesma flag `Integrations:Bots:Enabled`. Off → 404 `IntegrationDisabled`. O plugin é configuração: manifesto JSON + bot 1:1. Não executa código de terceiro.
 
-Manifesto v1 estrito (`vibechat.plugin.manifest.v1`): `id`, `name`, `version` (`N.N.N`), `capabilities`. Campo extra → 400 `InvalidPluginManifest`. Capability diferente de `messages.send` → 400 `UnknownPluginCapability`. Corpo acima de 4 KiB → 400 `PluginManifestTooLarge`. Built-in do binário: `incoming-messages`.
+Manifesto v1 (`vibechat.plugin.manifest.v1`): `id`, `name`, `version` (`N.N.N`), `capabilities`. Campo desconhecido → 400 `InvalidPluginManifest`. Capability fora de `messages.send`, `commands.slash`, `events.subscribe` e `ui.hooks` → 400 `UnknownPluginCapability`. Corpo acima de 4 KiB → 400 `PluginManifestTooLarge`. Built-ins do binário: `incoming-messages` e, com a flag abaixo, `slash-note`. Não há loja nem download de pacote.
+
+Flag `Features:Plugins:Enabled` default **false** (ADR-049). Off preserva `messages.send` e responde 404 `PluginPlatformDisabled` para capability extra, slash e callback. `commands.slash` exige `commands[]` (`name` slug + `description`). Comando na paleta: `pluginId/comando`. Execução `POST /api/v1/workspaces/{workspaceId}/channels/{channelId}/plugin-commands` com `{ name, args, idempotencyKey }`, permissão `message.send`, capability e canal no escopo do bot. Fora do escopo → 403 `PluginCommandOutOfScope`. O built-in `slash-note` publica o argumento como mensagem do bot. Manifesto customizado não executa código: `callback.url` recebe POST HMAC (`X-VibeChat-Signature`, paridade B-048). URL http só em `localhost` / `127.0.0.1`; metadata, IP privado e redirect → `EgressBlocked` / falha fechada. Segredo `vc_cb_` uma vez, envelope AES-GCM. `events.subscribe` usa o mesmo callback no outbox (`MessageCreated`, `MessageEdited`, `MessageDeleted`, `ReactionChanged`) e não reenvia o eco do próprio bot. `ui.hooks` aceita só `message.badge.bot` e `message.menu` como dados.
 
 | Método | Caminho | AuthZ |
 |--------|---------|--------|
+| GET | `/api/v1/admin/workspaces/{workspaceId}/plugins/builtins` | `workspace.admin`; catálogo compilado, sem pacote remoto |
 | GET | `/api/v1/admin/workspaces/{workspaceId}/plugins` | `workspace.admin` |
 | POST | `/api/v1/admin/workspaces/{workspaceId}/plugins` | `workspace.admin`; body com exatamente um de `builtinId` ou `manifest`, mais `channelIds[]` e `allowDms`; resposta inclui `token` **uma vez** |
 | PATCH | `/api/v1/admin/workspaces/{workspaceId}/plugins/{installedId}` | `workspace.admin`; body `{ enabled }`; desligar responde 403 nos sends novos e preserva histórico |
 | DELETE | `/api/v1/admin/workspaces/{workspaceId}/plugins/{installedId}` | `workspace.admin`; revoga o token na mesma transação; 204 |
 | POST | `/api/v1/admin/workspaces/{workspaceId}/plugins/{installedId}/rotate` | `workspace.admin`; novo `token` uma vez |
+| POST | `/api/v1/workspaces/{workspaceId}/channels/{channelId}/plugin-commands` | `message.send`; body `{ name, args, idempotencyKey }`; 202 |
 
 Slug duplicado ou acima de 20 plugins no workspace → 409 (`PluginAlreadyInstalled` / `PluginLimitReached`). Id de outro workspace → 404 `PluginNotFound`. Member → 403. Tabela `integrations.plugins` com RLS FORCE e FK para `integrations.bots`. Uninstall não apaga mensagens.
 

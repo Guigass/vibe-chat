@@ -30,6 +30,17 @@ internal static class IntegrationsServiceCollectionExtensions
         services.AddScoped<IOutboundWebhookDispatcher, OutboundWebhookDispatcher>();
         services.Configure<DeveloperPortalOptions>(configuration.GetSection(DeveloperPortalOptions.SectionName));
         services.AddScoped<DeveloperPortalService>();
+        services.Configure<PluginPlatformOptions>(configuration.GetSection(PluginPlatformOptions.SectionName));
+        services.AddHttpClient(PluginCallbackDispatcher.HttpClientName, client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(5);
+            client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "VibeChat-Plugins/1.0");
+        })
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            AllowAutoRedirect = false
+        });
+        services.AddScoped<IPluginCallbackDispatcher, PluginCallbackDispatcher>();
         services.AddHttpClient(SiemExportService.HttpClientName, client =>
         {
             client.Timeout = SiemLimits.HttpTimeout;

@@ -110,7 +110,7 @@ ordem, métodos HTTP e metadata de autorização existentes antes da decomposiç
 | Audit | Registro de ações sensíveis |
 | Administration | Dashboard, settings, export, legal hold (B-129) e auditoria de conversas |
 | AI | Portas, settings e uso das features de IA |
-| Integrations | Webhooks outbound; bot/token (B-109); plugin local por manifesto (B-110); catálogo de eventos públicos (B-139, flag off) |
+| Integrations | Webhooks outbound; bot/token (B-109); plugin local por manifesto (B-110); capabilities avançadas (B-066, flag off); catálogo de eventos públicos (B-139, flag off) |
 | Moderation | Assembly reservado, ainda sem domínio material |
 | BuildingBlocks | Outbox e tipos técnicos compartilhados |
 | SharedKernel | Identificadores, clock e primitivas mínimas |
