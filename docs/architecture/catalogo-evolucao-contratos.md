@@ -85,7 +85,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Identity:Scim:Enabled` | instance | false | B-128 | `/scim/v2` e admin SCIM → 404 `ScimDisabled`; chat e login seguem |
 | `Identity:Scim:KeycloakAdapter` | instance | false | B-128 | revogação local segue; falha do IdP não desfaz o deprovision |
 | `Integrations:EventSchemas:Enabled` | instance | false | B-139 | webhook segue com o body atual; `/admin/event-schemas` → 404 `EventSchemasDisabled` |
-| `Features:Plugins:Enabled` | instance | false | B-066 | capabilities além de `messages.send`, slash e callback → 404 `PluginPlatformDisabled`; envio B-109/B-110 segue |
+| `Features:Plugins:Enabled` | instance | false | B-066, B-111 | capabilities além de `messages.send`, slash, callback, interação, histórico e anexo → 404 `PluginPlatformDisabled`; envio B-109/B-110 segue |
 
 ## Registro inicial de flags futuras
 

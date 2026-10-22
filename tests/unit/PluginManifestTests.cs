@@ -64,7 +64,10 @@ public sealed class PluginManifestTests
         PluginManifestRules.Builtins(platformEnabled: false).Select(item => item.Id)
             .Should().Equal(PluginManifestRules.BuiltinIncomingMessagesId);
         PluginManifestRules.Builtins(platformEnabled: true).Select(item => item.Id)
-            .Should().Equal(PluginManifestRules.BuiltinIncomingMessagesId, PluginManifestRules.BuiltinSlashNoteId);
+            .Should().Equal(
+                PluginManifestRules.BuiltinIncomingMessagesId,
+                PluginManifestRules.BuiltinSlashNoteId,
+                PluginManifestRules.BuiltinActionAckId);
     }
 
     [Fact]
@@ -106,5 +109,44 @@ public sealed class PluginManifestTests
         manifest!.Hooks.Should().Equal(PluginManifestRules.HookMessageBadgeBot);
         manifest.Callback!.Events.Should().Equal(WebhookEventTypes.MessageCreated);
         manifest.CanonicalJson.Should().NotContain("plugin.js").And.NotContain("dll");
+    }
+
+    [Fact]
+    public void Action_ack_is_a_compiled_builtin_and_custom_interact_needs_a_callback()
+    {
+        PluginManifestRules.TryGetBuiltin(PluginManifestRules.BuiltinActionAckId, out var builtin, out var error)
+            .Should().BeTrue(error);
+        builtin!.Capabilities.Should().Contain(PluginManifestRules.CapabilityMessagesInteract);
+        PluginManifestRules.IsProductAction(builtin, PluginManifestRules.ActionAckName).Should().BeTrue();
+        PluginManifestRules.RequiresPlatform(builtin).Should().BeTrue();
+
+        const string missing = """
+            {"schema":"vibechat.plugin.manifest.v1","id":"pager","name":"Pager","version":"1.0.0","capabilities":["messages.interact"],"actions":[{"name":"ack","description":"Ack"}]}
+            """;
+        PluginManifestRules.TryParse(missing, out _, out var missingError).Should().BeFalse();
+        missingError.Should().Be(PluginPlatformErrors.InvalidCallbackUrl);
+
+        const string script = """
+            {"schema":"vibechat.plugin.manifest.v1","id":"pager","name":"Pager","version":"1.0.0","capabilities":["messages.interact"],"actions":[{"name":"ack","description":"Ack"}],"entry":"plugin.js"}
+            """;
+        PluginManifestRules.TryParse(script, out _, out var scriptError).Should().BeFalse();
+        scriptError.Should().Be(PluginManifestRules.Invalid);
+    }
+
+    [Fact]
+    public void History_window_and_attachment_names_stay_inside_the_grant()
+    {
+        var start = DateTimeOffset.Parse("2026-10-22T12:00:00Z");
+        var end = start.AddHours(2);
+        PluginGovernedRules.TryValidateWindow(start, end, out _).Should().BeTrue();
+        PluginGovernedRules.TryValidateWindow(start, start.AddDays(8), out var tooLong).Should().BeFalse();
+        tooLong.Should().Be(PluginGovernedRules.InvalidWindow);
+        PluginGovernedRules.WindowCovers(start, end, start.AddMinutes(1), end).Should().BeTrue();
+        PluginGovernedRules.WindowCovers(start, end, start.AddMinutes(-1), end).Should().BeFalse();
+        PluginGovernedRules.IsBlockedAttachmentName("payload.dll").Should().BeTrue();
+        PluginGovernedRules.IsBlockedAttachmentName("notes.txt").Should().BeFalse();
+        PluginGovernedRules.IsBlockedAttachmentType("text/javascript").Should().BeTrue();
+        PluginGovernedRules.IsBlockedAttachmentType("text/plain").Should().BeFalse();
+        PluginGovernedRules.DailyLimit(PluginManifestRules.CapabilityHistoryRead).Should().Be(100);
     }
 }

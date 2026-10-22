@@ -1186,6 +1186,20 @@ export const ui = {
   adminPluginInstallCustom: $localize`:@@admin.pluginInstallCustom:Instalar manifesto`,
   adminPluginVersion: $localize`:@@admin.pluginVersion:Versão`,
   adminPluginCapabilities: $localize`:@@admin.pluginCapabilities:Capabilities`,
+  adminPluginInstallActionAck: $localize`:@@admin.pluginInstallActionAck:Instalar Action Ack`,
+  adminPluginLastUsed: $localize`:@@admin.pluginLastUsed:Último uso`,
+  adminPluginQuota: $localize`:@@admin.pluginQuota:Quota de hoje`,
+  adminPluginGrantHistory: $localize`:@@admin.pluginGrantHistory:Conceder janela`,
+  adminPluginRevokeGrant: $localize`:@@admin.pluginRevokeGrant:Revogar`,
+  adminPluginWindowStart: $localize`:@@admin.pluginWindowStart:Início da janela`,
+  adminPluginWindowEnd: $localize`:@@admin.pluginWindowEnd:Fim da janela`,
+  adminPluginNeverUsed: $localize`:@@admin.pluginNeverUsed:Ainda não usado`,
+  pluginActionBy: $localize`:@@plugin.actionBy:Ação do plugin %name%`,
+  pluginActionAck: $localize`:@@plugin.actionAck:Confirmar`,
+  pluginActionNamed: $localize`:@@plugin.actionNamed:Ação %action%`,
+  pluginActionExpired: $localize`:@@plugin.actionExpired:Esta ação expirou.`,
+  pluginActionFailed: $localize`:@@plugin.actionFailed:Não foi possível executar a ação. Tente de novo com a mesma chave.`,
+  pluginActionDenied: $localize`:@@plugin.actionDenied:O plugin não pode executar esta ação.`,
   adminPluginFilter: $localize`:@@admin.pluginFilter:Filtrar plugins`,
   adminPluginUninstall: $localize`:@@admin.pluginUninstall:Desinstalar`,
   adminPluginNoMatch: $localize`:@@admin.pluginNoMatch:Nenhum plugin corresponde a este filtro.`,
@@ -1933,11 +1947,21 @@ export function translateErrorCode(code: string | undefined): string {
     case 'PluginCommandNotFound':
     case 'PluginCommandOutOfScope':
     case 'PluginCommandArgsRequired':
-    case 'PluginCallbackFailed':
     case 'InvalidCallbackUrl':
     case 'EgressBlocked':
     case 'UnknownPluginHook':
       return ui.slashPluginError;
+    case 'PluginActionExpired':
+      return ui.pluginActionExpired;
+    case 'PluginCallbackFailed':
+      return ui.pluginActionFailed;
+    case 'PluginHistoryGrantNotFound':
+    case 'PluginHistoryWindowDenied':
+    case 'PluginActionNotFound':
+    case 'PluginQuotaExceeded':
+    case 'PluginAttachmentRejected':
+    case 'PluginDisabled':
+      return ui.pluginActionDenied;
     case 'DelegationReasonRequired':
     case 'DelegationExpiryInvalid':
     case 'DelegationScopeUnknown':

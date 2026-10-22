@@ -1627,6 +1627,20 @@
     "error.IdempotencyKeyRequired": "Indiquez la clé d'idempotence.",
     "error.InvalidChannelScope": "Canal invalide pour cet identifiant.",
     "error.InvalidBotName": "Nom invalide.",
-    "error.UnknownDeveloperOperation": "Opération inconnue."
+    "error.UnknownDeveloperOperation": "Opération inconnue.",
+    "admin.pluginInstallActionAck": "Installer Action Ack",
+    "admin.pluginLastUsed": "Dernière utilisation",
+    "admin.pluginQuota": "Quota du jour",
+    "admin.pluginGrantHistory": "Accorder une fenêtre",
+    "admin.pluginRevokeGrant": "Révoquer",
+    "admin.pluginWindowStart": "Début de la fenêtre",
+    "admin.pluginWindowEnd": "Fin de la fenêtre",
+    "admin.pluginNeverUsed": "Pas encore utilisé",
+    "plugin.actionBy": "Action du plugin %name%",
+    "plugin.actionAck": "Confirmer",
+    "plugin.actionNamed": "Action %action%",
+    "plugin.actionExpired": "Cette action a expiré.",
+    "plugin.actionFailed": "L'action n'a pas abouti. Réessayez avec la même clé.",
+    "plugin.actionDenied": "Le plugin ne peut pas exécuter cette action."
   }
 }

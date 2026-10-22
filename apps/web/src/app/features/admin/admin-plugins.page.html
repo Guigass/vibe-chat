@@ -33,6 +33,9 @@
       <button type="button" class="admin-btn" [disabled]="busy()" (click)="installSlashNote()">
         {{ ui.adminPluginInstallSlashNote }}
       </button>
+      <button type="button" class="admin-btn" [disabled]="busy()" (click)="installActionAck()">
+        {{ ui.adminPluginInstallActionAck }}
+      </button>
     </form>
 
     <form class="admin-filters" (submit)="$event.preventDefault(); installManifest()">
@@ -83,6 +86,8 @@
                 <th>{{ ui.adminBotName }}</th>
                 <th>{{ ui.adminPluginVersion }}</th>
                 <th>{{ ui.adminPluginCapabilities }}</th>
+                <th>{{ ui.adminPluginLastUsed }}</th>
+                <th>{{ ui.adminPluginQuota }}</th>
                 <th>{{ ui.adminPluginHooks }}</th>
                 <th>{{ ui.adminBotEnabled }}</th>
                 <th>{{ ui.adminBotLast4 }}</th>
@@ -97,6 +102,28 @@
                   <td>
                     @for (capability of plugin.capabilities; track capability) {
                       <span class="admin-chip">{{ capability }}</span>
+                    }
+                  </td>
+                  <td>{{ plugin.lastUsedAt ? (plugin.lastUsedAt | date: 'short') : ui.adminPluginNeverUsed }}</td>
+                  <td>
+                    @for (quota of plugin.quotas ?? []; track quota.capability) {
+                      <span class="admin-chip">{{ quota.capability }} {{ quota.used }}/{{ quota.limit }}</span>
+                    }
+                    @if (plugin.capabilities.includes('history.read')) {
+                      <form (submit)="$event.preventDefault(); grantHistory(plugin, start.value, end.value)">
+                        <input #start type="datetime-local" [attr.aria-label]="ui.adminPluginWindowStart" />
+                        <input #end type="datetime-local" [attr.aria-label]="ui.adminPluginWindowEnd" />
+                        <button type="submit" class="admin-btn" [disabled]="busy() || selectedChannelIds().length === 0">
+                          {{ ui.adminPluginGrantHistory }}
+                        </button>
+                      </form>
+                    }
+                    @for (grant of plugin.historyGrants ?? []; track grant.id) {
+                      @if (!grant.revokedAt) {
+                        <button type="button" class="admin-btn" [disabled]="busy()" (click)="revokeGrant(plugin, grant.id)">
+                          {{ ui.adminPluginRevokeGrant }}
+                        </button>
+                      }
                     }
                   </td>
                   <td>

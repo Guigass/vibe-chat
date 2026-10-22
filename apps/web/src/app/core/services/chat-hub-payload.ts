@@ -1,4 +1,4 @@
-import { AnnouncementSummary, ChatMessage } from '../../shared/models/chat.models';
+import { AnnouncementSummary, ChatMessage, MessagePluginCard } from '../../shared/models/chat.models';
 import { mapPollSummary } from '../../shared/polls/poll-summary';
 import { AvailabilityKind, UserStatusStateName } from '../../shared/status/user-status';
 import { MessageCreatedPayload } from './chat-hub.types';
@@ -89,6 +89,19 @@ export function mapMessageCreated(
     })),
     poll: mapPollSummary(payload.poll),
     announcement: mapAnnouncementPayload(payload.announcement),
+    pluginCard: mapPluginCard(payload.pluginCard),
+  };
+}
+
+export function mapPluginCard(value: Partial<MessagePluginCard> | null | undefined): MessagePluginCard | null {
+  if (!value?.pluginId || !value.expiresAt || !Array.isArray(value.actions) || value.actions.length === 0) {
+    return null;
+  }
+  return {
+    pluginId: String(value.pluginId),
+    pluginName: value.pluginName ?? value.pluginId,
+    expiresAt: value.expiresAt,
+    actions: value.actions.map((action) => String(action)),
   };
 }
 

@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
@@ -10,7 +11,7 @@ import { filterInstalledPlugins } from './plugin-list';
 @Component({
   selector: 'vc-admin-plugins',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, DatePipe],
   templateUrl: './admin-plugins.page.html',
   styleUrl: './admin-shared.scss',
 })
@@ -19,6 +20,7 @@ export class AdminPluginsPage implements OnInit {
   readonly ui = ui;
   readonly builtinId = 'incoming-messages';
   readonly slashNoteId = 'slash-note';
+  readonly actionAckId = 'action-ack';
 
   private readonly api = inject(ApiService);
   readonly ctx = inject(AdminContextService);
@@ -73,6 +75,10 @@ export class AdminPluginsPage implements OnInit {
 
   async installSlashNote(): Promise<void> {
     await this.install({ builtinId: this.slashNoteId });
+  }
+
+  async installActionAck(): Promise<void> {
+    await this.install({ builtinId: this.actionAckId });
   }
 
   async installManifest(): Promise<void> {
@@ -137,6 +143,47 @@ export class AdminPluginsPage implements OnInit {
     }
   }
 
+  async grantHistory(plugin: InstalledPlugin, start: string, end: string): Promise<void> {
+    const workspaceId = this.ctx.workspace()?.id;
+    const channelId = this.selectedChannelIds()[0];
+    if (!workspaceId || !channelId || !start || !end || this.busy()) {
+      return;
+    }
+
+    this.busy.set(true);
+    this.saveError.set(false);
+    try {
+      await this.api.grantPluginHistory(workspaceId, plugin.id, {
+        channelId,
+        windowStart: new Date(start).toISOString(),
+        windowEnd: new Date(end).toISOString(),
+      });
+      await this.reload(workspaceId);
+    } catch {
+      this.saveError.set(true);
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  async revokeGrant(plugin: InstalledPlugin, grantId: string): Promise<void> {
+    const workspaceId = this.ctx.workspace()?.id;
+    if (!workspaceId || this.busy()) {
+      return;
+    }
+
+    this.busy.set(true);
+    this.saveError.set(false);
+    try {
+      await this.api.revokePluginHistory(workspaceId, plugin.id, grantId);
+      await this.reload(workspaceId);
+    } catch {
+      this.saveError.set(true);
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
   async uninstall(plugin: InstalledPlugin): Promise<void> {
     const workspaceId = this.ctx.workspace()?.id;
     if (!workspaceId || this.busy()) {
@@ -154,6 +201,10 @@ export class AdminPluginsPage implements OnInit {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  private async reload(workspaceId: string): Promise<void> {
+    this.plugins.set(await this.api.listInstalledPlugins(workspaceId));
   }
 
   private async install(input: { builtinId?: string; manifest?: Record<string, unknown> }): Promise<boolean> {

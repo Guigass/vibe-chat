@@ -1627,6 +1627,20 @@
     "error.IdempotencyKeyRequired": "冪等キーを指定してください。",
     "error.InvalidChannelScope": "この資格情報には無効なチャンネルです。",
     "error.InvalidBotName": "無効な名前です。",
-    "error.UnknownDeveloperOperation": "不明な操作です。"
+    "error.UnknownDeveloperOperation": "不明な操作です。",
+    "admin.pluginInstallActionAck": "Action Ack をインストール",
+    "admin.pluginLastUsed": "最終使用",
+    "admin.pluginQuota": "本日のクォータ",
+    "admin.pluginGrantHistory": "期間を許可",
+    "admin.pluginRevokeGrant": "取り消す",
+    "admin.pluginWindowStart": "期間の開始",
+    "admin.pluginWindowEnd": "期間の終了",
+    "admin.pluginNeverUsed": "未使用",
+    "plugin.actionBy": "プラグイン %name% の操作",
+    "plugin.actionAck": "確認",
+    "plugin.actionNamed": "操作 %action%",
+    "plugin.actionExpired": "この操作は期限切れです。",
+    "plugin.actionFailed": "操作を実行できませんでした。同じキーで再試行してください。",
+    "plugin.actionDenied": "このプラグインは操作を実行できません。"
   }
 }

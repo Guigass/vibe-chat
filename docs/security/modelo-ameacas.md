@@ -419,6 +419,19 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Ganchos | Allowlist `message.badge.bot` e `message.menu` |
 | Rollback | Flag off no mesmo binário. `Down` remove colunas de callback; bots e mensagens ficam |
 
+### B-111 / ADR-050 — Interações governadas
+
+| Item | Controle |
+|------|----------|
+| Kill switch | Mesma flag de B-066. Off bloqueia interact, history e attachment; `messages.send` segue |
+| Código | Botão é dado no cartão. `entry`/script continua 400. Nomes `.js`/`.dll`/`.exe`/`.html` e content-type de script são recusados antes do objeto |
+| Histórico | Grant de canal + janela, separado do escopo do bot. Sem grant ou canal alheio → 404 idêntico. Revogação é imediata |
+| Ação | Membership do ator + capability + canal no escopo. Idempotência por chave. Callback HMAC com o mesmo SSRF de B-066 |
+| Anexo | Tipo, tamanho, quota de storage, tenant e scan do pipeline existente. `attachmentIds` sem capability → 403 |
+| Quota | Teto diário por plugin e capability. Estouro → 429 |
+| Isolamento | RLS FORCE nas quatro tabelas novas. Member não concede grant |
+| Rollback | Flag off. `Down` remove grant, oferta, recibo, quota e `LastUsedAt`. Mensagens e anexos ficam |
+
 ## Ameaças priorizadas para a fatia vertical
 
 1. Leitura/escrita cross-tenant

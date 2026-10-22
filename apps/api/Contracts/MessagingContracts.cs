@@ -98,7 +98,8 @@ public sealed record MessageResponse(
     bool MovedToAccessible = false,
     Guid? MovedFromMessageId = null,
     Guid? MovedFromChannelId = null,
-    long? MovedFromSequence = null);
+    long? MovedFromSequence = null,
+    MessagePluginCard? PluginCard = null);
 
 public sealed record MoveMessageRequest(string IdempotencyKey, Guid TargetChannelId, string? Scope = null, bool? LeaveTombstone = null);
 

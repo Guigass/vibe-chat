@@ -287,6 +287,7 @@ internal static class IntegrationBotEndpoints
         IRateLimiter rateLimiter,
         RateLimitSettingsResolver rateLimits,
         IOptions<BotIntegrationOptions> options,
+        IOptions<PluginPlatformOptions> platform,
         IClock clock,
         CancellationToken ct)
     {
@@ -327,7 +328,25 @@ internal static class IntegrationBotEndpoints
             return Results.Json(new { error = "ChannelOutOfScope" }, statusCode: StatusCodes.Status403Forbidden);
         }
 
-        return await SendAsync(principal, channel, request.Body, request.IdempotencyKey, request.ThreadId, db, messages, audit, rateLimiter, rateLimits, clock, ct);
+        var attachmentIds = (request.AttachmentIds ?? []).Where(id => id != Guid.Empty).Distinct().ToArray();
+        if (attachmentIds.Length > 0)
+        {
+            if (!platform.Value.Enabled)
+            {
+                return Results.NotFound(new { error = PluginPlatformErrors.Disabled });
+            }
+
+            var plugin = await db.InstalledPlugins.AsNoTracking()
+                .FirstOrDefaultAsync(item => item.BotId == principal.Bot.Id && item.TenantId == principal.Bot.TenantId, ct);
+            if (plugin is null
+                || !plugin.Enabled
+                || !plugin.Capabilities.Contains(PluginManifestRules.CapabilityAttachmentsSend, StringComparer.Ordinal))
+            {
+                return Results.Json(new { error = PluginPlatformErrors.CapabilityDenied }, statusCode: StatusCodes.Status403Forbidden);
+            }
+        }
+
+        return await SendAsync(principal, channel, request.Body, request.IdempotencyKey, request.ThreadId, attachmentIds, db, messages, audit, rateLimiter, rateLimits, clock, ct);
     }
 
     private static async Task<IResult> SendDirect(
@@ -418,7 +437,7 @@ internal static class IntegrationBotEndpoints
             await db.SaveChangesAsync(ct);
         }
 
-        return await SendAsync(principal, channel, request.Body, request.IdempotencyKey, request.ThreadId, db, messages, audit, rateLimiter, rateLimits, clock, ct);
+        return await SendAsync(principal, channel, request.Body, request.IdempotencyKey, request.ThreadId, null, db, messages, audit, rateLimiter, rateLimits, clock, ct);
     }
 
     private static async Task<IResult> SendAsync(
@@ -427,6 +446,7 @@ internal static class IntegrationBotEndpoints
         string? body,
         string? idempotencyKey,
         Guid? threadId,
+        Guid[]? attachmentIds,
         VibeChatDbContext db,
         IMessageWriter messages,
         IAuditWriter audit,
@@ -471,7 +491,7 @@ internal static class IntegrationBotEndpoints
                     body.Trim(),
                     null,
                     threadId is { } tid && tid != Guid.Empty ? tid : null,
-                    null,
+                    attachmentIds,
                     AuthorIsBot: true),
                 ct);
             if (!result.Idempotent)
@@ -512,7 +532,7 @@ internal static class IntegrationBotEndpoints
         }
     }
 
-    private static async Task<BotSession?> AuthenticateAsync(
+    internal static async Task<BotSession?> AuthenticateAsync(
         HttpContext http,
         VibeChatDbContext db,
         ITenantContext tenant,
@@ -742,5 +762,5 @@ internal static class IntegrationBotEndpoints
 
     internal static IResult Disabled() => Results.NotFound(new { error = "IntegrationDisabled" });
 
-    private sealed record BotSession(IntegrationBot Bot, IntegrationBotToken Token);
+    internal sealed record BotSession(IntegrationBot Bot, IntegrationBotToken Token);
 }

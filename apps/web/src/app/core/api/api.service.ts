@@ -261,4 +261,7 @@ export class ApiService {
   readonly developerUsage: DeveloperApiService['usage'] = this.developer.usage.bind(this.developer);
   readonly listPluginBuiltins: PluginApiService['listPluginBuiltins'] = this.plugins.listPluginBuiltins.bind(this.plugins);
   readonly invokePluginCommand: PluginApiService['invokePluginCommand'] = this.plugins.invokePluginCommand.bind(this.plugins);
+  readonly grantPluginHistory: PluginApiService['grantPluginHistory'] = this.plugins.grantPluginHistory.bind(this.plugins);
+  readonly revokePluginHistory: PluginApiService['revokePluginHistory'] = this.plugins.revokePluginHistory.bind(this.plugins);
+  readonly invokePluginAction: PluginApiService['invokePluginAction'] = this.plugins.invokePluginAction.bind(this.plugins);
 }

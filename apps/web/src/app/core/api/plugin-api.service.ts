@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpApiClient } from './http-api.client';
+import { PluginHistoryGrant } from '../../shared/models/chat.models';
 
 export interface BuiltinPlugin {
   id: string;
@@ -34,6 +35,36 @@ export class PluginApiService extends HttpApiClient {
         method: 'POST',
         body: JSON.stringify(input),
       },
+    );
+  }
+
+  grantPluginHistory(
+    workspaceId: string,
+    installedId: string,
+    input: { channelId: string; windowStart: string; windowEnd: string },
+  ): Promise<PluginHistoryGrant> {
+    return this.request(
+      `/api/v1/admin/workspaces/${workspaceId}/plugins/${installedId}/history-grants`,
+      { method: 'POST', body: JSON.stringify(input) },
+    );
+  }
+
+  revokePluginHistory(workspaceId: string, installedId: string, grantId: string): Promise<void> {
+    return this.request(
+      `/api/v1/admin/workspaces/${workspaceId}/plugins/${installedId}/history-grants/${grantId}`,
+      { method: 'DELETE' },
+    );
+  }
+
+  invokePluginAction(
+    workspaceId: string,
+    channelId: string,
+    messageId: string,
+    input: { action: string; idempotencyKey: string },
+  ): Promise<{ action: string; status: string; idempotent: boolean }> {
+    return this.request(
+      `/api/v1/workspaces/${workspaceId}/channels/${channelId}/messages/${messageId}/plugin-actions`,
+      { method: 'POST', body: JSON.stringify(input) },
     );
   }
 }

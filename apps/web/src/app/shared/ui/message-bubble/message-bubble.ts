@@ -17,6 +17,7 @@ import { ThemeService } from '../../../core/services/theme.service';
 import { EmojiPicker } from '../emoji-picker/emoji-picker';
 import { PollCard } from '../poll-card/poll-card';
 import { AnnouncementCard } from '../announcement-card/announcement-card';
+import { PluginActionBar } from '../plugin-action-bar/plugin-action-bar';
 import { rememberRecentEmoji } from '../../emoji/emoji-data';
 import { environment } from '../../../../environments/environment';
 import { LocaleService } from '../../../core/i18n/locale.service';
@@ -60,6 +61,7 @@ import { MOVED_BODY } from '../../messaging/message-history';
     EmojiPicker,
     PollCard,
     AnnouncementCard,
+    PluginActionBar,
     CdkContextMenuTrigger,
     CdkMenuTrigger,
     CdkMenu,

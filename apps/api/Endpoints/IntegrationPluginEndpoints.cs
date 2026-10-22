@@ -288,6 +288,10 @@ internal static class IntegrationPluginEndpoints
         }
 
         audit.Add(PluginAudit(workspace.TenantId, profile.Id, AuditActions.IntegrationPluginUninstall, plugin, now));
+        db.PluginHistoryGrants.RemoveRange(await db.PluginHistoryGrants.Where(x => x.InstalledPluginId == plugin.Id).ToListAsync(ct));
+        db.PluginInteractiveOffers.RemoveRange(await db.PluginInteractiveOffers.Where(x => x.InstalledPluginId == plugin.Id).ToListAsync(ct));
+        db.PluginActionReceipts.RemoveRange(await db.PluginActionReceipts.Where(x => x.InstalledPluginId == plugin.Id).ToListAsync(ct));
+        db.PluginQuotaCounters.RemoveRange(await db.PluginQuotaCounters.Where(x => x.InstalledPluginId == plugin.Id).ToListAsync(ct));
         db.InstalledPlugins.Remove(plugin);
         await db.SaveChangesAsync(ct);
         return Results.NoContent();
@@ -398,6 +402,7 @@ internal static class IntegrationPluginEndpoints
             .Where(x => x.BotId == plugin.BotId && x.RevokedAt == null)
             .OrderByDescending(x => x.CreatedAt)
             .FirstOrDefaultAsync(ct);
+        var usage = await PluginUsageAsync(db, plugin, ct);
         return new InstalledPluginResponse(
             plugin.Id,
             plugin.PluginId,
@@ -414,7 +419,47 @@ internal static class IntegrationPluginEndpoints
             plugin.UpdatedAt,
             plugin.Hooks,
             plugin.SubscribedEvents,
-            plugin.CallbackSecret.IsPresent);
+            plugin.CallbackSecret.IsPresent,
+            plugin.LastUsedAt,
+            usage.Grants,
+            usage.Quotas);
+    }
+
+    internal static async Task<(PluginHistoryGrantResponse[] Grants, PluginQuotaSnapshot[] Quotas)> PluginUsageAsync(
+        VibeChatDbContext db,
+        InstalledPlugin plugin,
+        CancellationToken ct)
+    {
+        var grants = await db.PluginHistoryGrants.AsNoTracking()
+            .Where(grant => grant.InstalledPluginId == plugin.Id)
+            .OrderByDescending(grant => grant.GrantedAt)
+            .Select(grant => new PluginHistoryGrantResponse(
+                grant.Id,
+                grant.ChannelId.Value,
+                grant.WindowStart,
+                grant.WindowEnd,
+                grant.RevokedAt))
+            .ToArrayAsync(ct);
+        var day = DateOnly.FromDateTime(DateTime.UtcNow);
+        var counters = await db.PluginQuotaCounters.AsNoTracking()
+            .Where(counter => counter.InstalledPluginId == plugin.Id && counter.Day == day)
+            .ToListAsync(ct);
+        var quotas = plugin.Capabilities
+            .Select(capability =>
+            {
+                var limit = PluginGovernedRules.DailyLimit(capability);
+                if (limit <= 0)
+                {
+                    return null;
+                }
+
+                var used = counters.FirstOrDefault(counter => counter.Capability == capability)?.Count ?? 0;
+                return new PluginQuotaSnapshot(capability, used, limit);
+            })
+            .Where(snapshot => snapshot is not null)
+            .Cast<PluginQuotaSnapshot>()
+            .ToArray();
+        return (grants, quotas);
     }
 
     private static InstalledPluginSecretResponse ToSecret(
@@ -441,5 +486,16 @@ internal static class IntegrationPluginEndpoints
             plugin.Hooks,
             plugin.SubscribedEvents,
             plugin.CallbackSecret.IsPresent,
-            callbackSecret);
+            callbackSecret,
+            plugin.LastUsedAt,
+            [],
+            plugin.Capabilities
+                .Select(capability =>
+                {
+                    var limit = PluginGovernedRules.DailyLimit(capability);
+                    return limit <= 0 ? null : new PluginQuotaSnapshot(capability, 0, limit);
+                })
+                .Where(snapshot => snapshot is not null)
+                .Cast<PluginQuotaSnapshot>()
+                .ToArray());
 }

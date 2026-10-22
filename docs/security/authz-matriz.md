@@ -78,6 +78,7 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | PUT | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/topic` | permission | `channel.create` | ✓ | ✗ | ✓ | Slash `/topico` |
 | GET | `/workspaces/{workspaceId:guid}/commands` | membership | (filtra por perm) | ✓ | ✓ | ✓ | Discovery; itens filtrados por permissão |
 | POST | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/plugin-commands` | permission | `message.send` | ✓ | ✗ | ✓ | B-066; capability + escopo; flag off → 404 |
+| POST | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/messages/{messageId:guid}/plugin-actions` | permission | `message.send` | ✓ | ✗ | ✓ | B-111; membership + capability + grant do canal; idempotente |
 | GET | `/channels/{channelId:guid}/messages` | membership | — | ✓ | ✓ | ✓ | Timeline; membership-only justificado (leitura de canal) |
 | POST | `/channels/{channelId:guid}/messages` | permission | `message.send` | ✓ | ✗ | ✓ | |
 | POST | `/channels/{channelId:guid}/polls` | permission | `message.send` + membership | ✓ | ✗ | ✓ | B-096; não DM/thread |
@@ -271,6 +272,8 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | PATCH | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | `enabled`; outro workspace → 404 |
 | DELETE | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Revoga o token na mesma transação |
 | POST | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Token só na resposta |
+| POST | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}/history-grants` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-111; janela máxima 7 dias; canal no escopo do bot |
+| DELETE | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}/history-grants/{grantId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Revogação imediata da leitura |
 | GET | `/admin/event-schemas` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; flag off → 404 `EventSchemasDisabled`; sem dado de tenant |
 | GET | `/admin/event-schemas/{eventType}/versions/{schemaVersion:int}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; versão desconhecida → 404 `UnknownSchemaVersion` |
 | POST | `/admin/event-schemas/check` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; não persiste o documento; teto 16 KiB |
@@ -302,6 +305,10 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/workspaces/{workspaceId:guid}/diagnostics/repairs/{repairId:guid}/cancel` | permission | `support.repair` | ✗ | ✗ | ✓ | Só a partir de `running` |
 | POST | `/integrations/v1/channels/{channelId:guid}/messages` | exempt | integration token | — | — | — | B-109; `AllowAnonymous` + hash; fora do escopo → 403 |
 | POST | `/integrations/v1/dms` | exempt | integration token | — | — | — | Exige `allowDms`; peer do mesmo workspace |
+| POST | `/integrations/v1/channels/{channelId:guid}/interactive-messages` | exempt | integration token | — | — | — | B-111; `messages.interact`; cartão é dado, sem JS |
+| GET | `/integrations/v1/channels/{channelId:guid}/history` | exempt | integration token | — | — | — | B-111; só grant de janela; sem grant → 404 |
+| POST | `/integrations/v1/channels/{channelId:guid}/attachments` | exempt | integration token | — | — | — | B-111; tipo, tamanho e quota; script/DLL recusados |
+| POST | `/integrations/v1/channels/{channelId:guid}/attachments/{attachmentId:guid}/complete` | exempt | integration token | — | — | — | Mesmo scan do anexo de usuário |
 | POST | `/admin/settings/credentials/vapid/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-187 |
 | POST | `/admin/settings/encryption/reencrypt` | permission | `workspace.admin` | ✗ | ✗ | ✓ | |
 | GET | `/admin/workspaces/{workspaceId:guid}/export` | permission | `workspace.admin` | ✗ | ✗ | ✓ | |

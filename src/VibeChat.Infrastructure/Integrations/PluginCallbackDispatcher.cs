@@ -24,6 +24,12 @@ public interface IPluginCallbackDispatcher
         string payloadJson,
         Guid deliveryId,
         CancellationToken cancellationToken);
+
+    Task<bool> TryDispatchActionAsync(
+        InstalledPlugin plugin,
+        string payloadJson,
+        Guid deliveryId,
+        CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -39,6 +45,7 @@ public sealed class PluginCallbackDispatcher(
 {
     public const string HttpClientName = "PluginCallbacks";
     public const string CommandEvent = "plugin.command.invoked";
+    public const string ActionEvent = "plugin.action.invoked";
 
     public async Task TryDispatchEventAsync(
         TenantId tenantId,
@@ -107,6 +114,20 @@ public sealed class PluginCallbackDispatcher(
         }
 
         return DeliverAsync(plugin, CommandEvent, deliveryId, payloadJson, cancellationToken);
+    }
+
+    public Task<bool> TryDispatchActionAsync(
+        InstalledPlugin plugin,
+        string payloadJson,
+        Guid deliveryId,
+        CancellationToken cancellationToken)
+    {
+        if (!options.Value.Enabled || string.IsNullOrWhiteSpace(plugin.CallbackUrl) || !plugin.CallbackSecret.IsPresent)
+        {
+            return Task.FromResult(false);
+        }
+
+        return DeliverAsync(plugin, ActionEvent, deliveryId, payloadJson, cancellationToken);
     }
 
     private async Task<bool> DeliverAsync(

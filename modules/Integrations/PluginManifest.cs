@@ -25,6 +25,7 @@ public sealed class InstalledPlugin
     public bool Enabled { get; set; }
     public DateTimeOffset InstalledAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+    public DateTimeOffset? LastUsedAt { get; set; }
     public string? CallbackUrl { get; set; }
     public string[] SubscribedEvents { get; set; } = [];
     public string[] Hooks { get; set; } = [];
@@ -35,6 +36,8 @@ public sealed class InstalledPlugin
 
 public sealed record PluginCommandDeclaration(string Name, string Description);
 
+public sealed record PluginActionDeclaration(string Name, string Description);
+
 public sealed record PluginCallbackDeclaration(string Url, string[] Events);
 
 public sealed record PluginManifestDocument(
@@ -44,6 +47,7 @@ public sealed record PluginManifestDocument(
     string Version,
     string[] Capabilities,
     PluginCommandDeclaration[] Commands,
+    PluginActionDeclaration[] Actions,
     PluginCallbackDeclaration? Callback,
     string[] Hooks,
     string CanonicalJson);
@@ -55,11 +59,16 @@ public static class PluginManifestRules
     public const string CapabilityCommandsSlash = "commands.slash";
     public const string CapabilityEventsSubscribe = "events.subscribe";
     public const string CapabilityUiHooks = "ui.hooks";
+    public const string CapabilityMessagesInteract = "messages.interact";
+    public const string CapabilityHistoryRead = "history.read";
+    public const string CapabilityAttachmentsSend = "attachments.send";
     public const string HookMessageBadgeBot = "message.badge.bot";
     public const string HookMessageMenu = "message.menu";
     public const string BuiltinIncomingMessagesId = "incoming-messages";
     public const string BuiltinSlashNoteId = "slash-note";
+    public const string BuiltinActionAckId = "action-ack";
     public const string SlashNoteCommand = "nota";
+    public const string ActionAckName = "ack";
     public const int MaxManifestBytes = 4096;
     public const int MaxPluginsPerWorkspace = 20;
     public const int MaxPluginIdLength = 64;
@@ -77,13 +86,16 @@ public static class PluginManifestRules
     public const string LimitReached = "PluginLimitReached";
     public const string NotFound = "PluginNotFound";
 
-    private static readonly string[] AllowedProperties = ["schema", "id", "name", "version", "capabilities", "commands", "callback", "hooks"];
+    private static readonly string[] AllowedProperties = ["schema", "id", "name", "version", "capabilities", "commands", "actions", "callback", "hooks"];
     private static readonly string[] AllowedCapabilities =
     [
         CapabilityMessagesSend,
         CapabilityCommandsSlash,
         CapabilityEventsSubscribe,
-        CapabilityUiHooks
+        CapabilityUiHooks,
+        CapabilityMessagesInteract,
+        CapabilityHistoryRead,
+        CapabilityAttachmentsSend
     ];
     private static readonly string[] AllowedHooks = [HookMessageBadgeBot, HookMessageMenu];
     private static readonly Regex Slug = new("^[a-z0-9]+(?:-[a-z0-9]+)*$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
@@ -99,6 +111,11 @@ public static class PluginManifestRules
         {"schema":"vibechat.plugin.manifest.v1","id":"slash-note","name":"Slash Note","version":"1.0.0","capabilities":["messages.send","commands.slash"],"commands":[{"name":"nota","description":"Publica uma nota no canal"}]}
         """;
 
+    public const string ActionAckJson =
+        """
+        {"schema":"vibechat.plugin.manifest.v1","id":"action-ack","name":"Action Ack","version":"1.0.0","capabilities":["messages.send","messages.interact"],"actions":[{"name":"ack","description":"Confirma a mensagem"}]}
+        """;
+
     public static bool RequiresPlatform(PluginManifestDocument manifest) =>
         manifest.Capabilities.Any(capability => capability != CapabilityMessagesSend);
 
@@ -109,6 +126,13 @@ public static class PluginManifestRules
         && manifest.Capabilities.Contains(CapabilityMessagesSend, StringComparer.Ordinal)
         && manifest.Capabilities.Contains(CapabilityCommandsSlash, StringComparer.Ordinal)
         && manifest.Commands.Any(item => item.Name == command);
+
+    public static bool IsProductAction(PluginManifestDocument manifest, string action) =>
+        manifest.Id == BuiltinActionAckId
+        && action == ActionAckName
+        && manifest.Callback is null
+        && manifest.Capabilities.Contains(CapabilityMessagesInteract, StringComparer.Ordinal)
+        && manifest.Actions.Any(item => item.Name == action);
 
     public static string QualifiedCommand(string pluginId, string command) => $"{pluginId}/{command}";
 
@@ -130,8 +154,8 @@ public static class PluginManifestRules
 
     public static IReadOnlyList<PluginManifestDocument> Builtins(bool platformEnabled)
     {
-        var items = new List<PluginManifestDocument>(2);
-        foreach (var id in new[] { BuiltinIncomingMessagesId, BuiltinSlashNoteId })
+        var items = new List<PluginManifestDocument>(3);
+        foreach (var id in new[] { BuiltinIncomingMessagesId, BuiltinSlashNoteId, BuiltinActionAckId })
         {
             if (!TryGetBuiltin(id, out var manifest, out _) || manifest is null)
             {
@@ -157,6 +181,7 @@ public static class PluginManifestRules
         {
             BuiltinIncomingMessagesId => IncomingMessagesJson,
             BuiltinSlashNoteId => SlashNoteJson,
+            BuiltinActionAckId => ActionAckJson,
             _ => null
         };
         if (json is null)
@@ -322,12 +347,18 @@ public static class PluginManifestRules
             var hasSlash = capabilities.Contains(CapabilityCommandsSlash, StringComparer.Ordinal);
             var hasEvents = capabilities.Contains(CapabilityEventsSubscribe, StringComparer.Ordinal);
             var hasHooks = capabilities.Contains(CapabilityUiHooks, StringComparer.Ordinal);
+            var hasInteract = capabilities.Contains(CapabilityMessagesInteract, StringComparer.Ordinal);
             if (!TryCommands(document.RootElement, hasSlash, out var commands, ref error))
             {
                 return false;
             }
 
-            if (!TryCallback(document.RootElement, id, hasSlash, hasEvents, out var callback, ref error))
+            if (!TryActions(document.RootElement, hasInteract, out var actions, ref error))
+            {
+                return false;
+            }
+
+            if (!TryCallback(document.RootElement, id, hasSlash, hasEvents, hasInteract, out var callback, ref error))
             {
                 return false;
             }
@@ -344,9 +375,10 @@ public static class PluginManifestRules
                 version,
                 capabilities,
                 commands,
+                actions,
                 callback,
                 hooks,
-                Canonical(schema, id, name, version, capabilities, commands, callback, hooks));
+                Canonical(schema, id, name, version, capabilities, commands, actions, callback, hooks));
             error = string.Empty;
             return true;
         }
@@ -449,11 +481,69 @@ public static class PluginManifestRules
         return true;
     }
 
+    private static bool TryActions(JsonElement root, bool hasInteract, out PluginActionDeclaration[] actions, ref string error)
+    {
+        actions = [];
+        var present = root.TryGetProperty("actions", out var items);
+        if (!hasInteract)
+        {
+            return !present;
+        }
+
+        if (!present || items.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+
+        var list = new List<PluginActionDeclaration>();
+        foreach (var item in items.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            foreach (var property in item.EnumerateObject())
+            {
+                if (property.Name is not ("name" or "description"))
+                {
+                    return false;
+                }
+            }
+
+            if (!TryString(item, "name", out var name)
+                || name.Length > MaxCommandNameLength
+                || !Slug.IsMatch(name)
+                || !TryString(item, "description", out var description)
+                || description.Length > MaxCommandDescriptionLength)
+            {
+                return false;
+            }
+
+            if (list.Any(existing => existing.Name == name))
+            {
+                return false;
+            }
+
+            list.Add(new PluginActionDeclaration(name, description));
+        }
+
+        if (list.Count is 0 or > PluginGovernedRules.MaxActions)
+        {
+            return false;
+        }
+
+        actions = list.ToArray();
+        error = string.Empty;
+        return true;
+    }
+
     private static bool TryCallback(
         JsonElement root,
         string id,
         bool hasSlash,
         bool hasEvents,
+        bool hasInteract,
         out PluginCallbackDeclaration? callback,
         ref string error)
     {
@@ -461,7 +551,7 @@ public static class PluginManifestRules
         var present = root.TryGetProperty("callback", out var item);
         if (!present)
         {
-            if (hasEvents || (hasSlash && id != BuiltinSlashNoteId))
+            if (hasEvents || (hasSlash && id != BuiltinSlashNoteId) || (hasInteract && id != BuiltinActionAckId))
             {
                 error = PluginPlatformErrors.InvalidCallbackUrl;
                 return false;
@@ -470,7 +560,7 @@ public static class PluginManifestRules
             return true;
         }
 
-        if ((!hasSlash && !hasEvents) || item.ValueKind != JsonValueKind.Object)
+        if ((!hasSlash && !hasEvents && !hasInteract) || item.ValueKind != JsonValueKind.Object)
         {
             return false;
         }
@@ -590,10 +680,11 @@ public static class PluginManifestRules
         string version,
         string[] capabilities,
         PluginCommandDeclaration[] commands,
+        PluginActionDeclaration[] actions,
         PluginCallbackDeclaration? callback,
         string[] hooks)
     {
-        if (commands.Length == 0 && callback is null && hooks.Length == 0)
+        if (commands.Length == 0 && actions.Length == 0 && callback is null && hooks.Length == 0)
         {
             return JsonSerializer.Serialize(new { schema, id, name, version, capabilities });
         }
@@ -609,6 +700,11 @@ public static class PluginManifestRules
         if (commands.Length > 0)
         {
             payload["commands"] = commands.Select(command => new { name = command.Name, description = command.Description }).ToArray();
+        }
+
+        if (actions.Length > 0)
+        {
+            payload["actions"] = actions.Select(action => new { name = action.Name, description = action.Description }).ToArray();
         }
 
         if (callback is not null)

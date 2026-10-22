@@ -131,6 +131,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
             $"/api/v1/channels/{DemoChannelId}/messages",
             new SendMessageRequest(messageId, $"idem-react-{messageId:N}", $"react-me-{messageId:N}", null, null));
         create.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var created = await create.Content.ReadFromJsonAsync<MessageDto>(JsonOptions);
 
         var add = await client.PutAsJsonAsync(
             $"/api/v1/channels/{DemoChannelId}/messages/{messageId}/reactions",
@@ -143,7 +144,7 @@ public sealed class MessageFlowIntegrationTests(VibeChatApiFactory factory)
         added.Reactions.Should().ContainSingle(r => r.Emoji == "👍" && r.Count == 1 && r.Me);
 
         var list = await client.GetFromJsonAsync<ChannelMessagesResponseDto>(
-            $"/api/v1/channels/{DemoChannelId}/messages?after=0&limit=100",
+            $"/api/v1/channels/{DemoChannelId}/messages?after={created!.Sequence - 1}",
             JsonOptions);
         list!.Messages.Single(m => m.Id == messageId).Reactions.Should()
             .ContainSingle(r => r.Emoji == "👍" && r.Count == 1 && r.Me);

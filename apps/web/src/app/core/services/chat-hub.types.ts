@@ -49,6 +49,12 @@ export interface MessageCreatedPayload {
   authorId?: string;
   authorName?: string;
   authorIsBot?: boolean;
+  pluginCard?: {
+    pluginId: string;
+    pluginName?: string;
+    expiresAt: string;
+    actions: string[];
+  } | null;
   body?: string;
   createdAt?: string;
   movedFromMessageId?: string;
