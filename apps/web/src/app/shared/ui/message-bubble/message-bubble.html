@@ -106,6 +106,9 @@
                 (fileOpen)="download($event)"
                 (transcribeRequest)="transcribe($event)"
               />
+              @if (message().pluginCard; as pluginCard) {
+                <vc-plugin-action-bar [message]="message()" [card]="pluginCard" />
+              }
               <vc-message-reactions
                 [message]="message()"
                 [tooltips]="reactionTooltips()"

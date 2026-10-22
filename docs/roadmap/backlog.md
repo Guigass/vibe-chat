@@ -172,7 +172,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-064 | Canais confidenciais E2EE | Planned — W16; deps B-169 (gate `contentAuditEnabled`) |
 | B-065 | Federação entre instâncias | Planned — W16 |
 | B-066 | Plugins — capabilities avançadas | **Done** (W15) — capabilities `commands.slash` / `events.subscribe` / `ui.hooks`, built-in `slash-note`, callback HMAC, flag off; ADR-049 |
-| B-111 | Interações governadas para plugins | Planned — W15, após B-066 |
+| B-111 | Interações governadas para plugins | **Done** (W15) — `messages.interact` / `history.read` / `attachments.send`, grant de janela, quota, revogação imediata; ADR-050 |
 
 ## Wave 19 — Organização e decomposição do código
 
@@ -217,7 +217,7 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-134 | Administração delegada, escopos e quotas | **Done** — W14; flag `Features:DelegatedAdmin:Enabled` off; ADR-047; [spec](../product/specs/B-134-admin-delegada-quotas.md) |
 | B-146 | Benchmarks, capacity model e SLOs | **Done** — W14; flag `Features:CapacitySlo:Enabled` off; ADR-048; [spec](../product/specs/B-146-capacity-slos.md) |
 | B-135 | Developer portal, credenciais e documentação de API | **Done** — W15; flag `Integrations:DeveloperPortal:Enabled` off; [spec](../product/specs/B-135-developer-portal.md) |
-| B-136…B-138, B-140/B-141, B-063/B-066/B-111 | SDK, registry, bridges, branding, clients e plugins | Planned — W15 |
+| B-136…B-138, B-140/B-141, B-063 | SDK, registry, bridges, branding e clients | Planned — W15 |
 | B-170, B-143…B-145, B-172 + B-064/B-065 | Performance/escalabilidade, offline, HA, storage, backup de chat (destinos), federação e E2EE | Planned — W16 |
 | B-147…B-149, B-152 | Live media, notas de reunião e canvas | Planned — W17 |
 
@@ -238,13 +238,13 @@ waves — 8 (composição; W8-9 / B-087 Done), 9 (leitura; W9-0 / B-163 Done; W9
 BUG-002 / não lidas persistentes; W9-11 / B-184 nav esquerda), 10 (notificações, organização, acesso e
 núcleo de plugins: B-109 → B-108 → B-110; membros do canal B-186 / W10-15 Done; busca versátil B-188 / W10-16 Done, fecha BUG-023). Depois **Wave 19** (organização do
 código — recomendada antes de W11) ou seguir W11–W17; a trilha avançada de
-plugins continua em W15 com B-066 → B-111/B-136. Dentro de cada wave, seguir a
+plugins continua em W15 com B-066 e B-111 Done → B-136. Dentro de cada wave, seguir a
 ordem da tabela; itens sem dependência entre si podem ir em paralelo por trilhas
 diferentes.
 
 Depois disso, usar a sequência de validação do horizonte ambicioso: comunicação
 organizada → conhecimento/ações → automação/governança (W13: B-164 e B-128
-Done; B-131 Done; B-139 Done; B-129 Done; B-169 Done; B-130 Done; B-132 Done; B-133 Done; B-134 Done; B-146 Done; B-135 Done; próximo B-066) → plataforma → apostas arquiteturais. Abrir no máximo uma aposta
+Done; B-131 Done; B-139 Done; B-129 Done; B-169 Done; B-130 Done; B-132 Done; B-133 Done; B-134 Done; B-146 Done; B-135 Done; B-066 Done; B-111 Done; próximo B-136) → plataforma → apostas arquiteturais. Abrir no máximo uma aposta
 arquitetural por vez.
 
 ## Itens explicitamente rejeitados na fase 1

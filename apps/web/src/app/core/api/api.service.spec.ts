@@ -126,6 +126,9 @@ describe('ApiService facade', () => {
     expect(typeof api.developerUsage).toBe('function');
     expect(typeof api.listPluginBuiltins).toBe('function');
     expect(typeof api.invokePluginCommand).toBe('function');
+    expect(typeof api.grantPluginHistory).toBe('function');
+    expect(typeof api.revokePluginHistory).toBe('function');
+    expect(typeof api.invokePluginAction).toBe('function');
   });
 
   it('sends the dev user header and keeps idempotency on send', async () => {

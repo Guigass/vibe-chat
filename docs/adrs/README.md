@@ -54,6 +54,8 @@ original.
 | [046](ADR-046-policy-packs.md) | Policy packs por tipo de organização | Accepted |
 | [047](ADR-047-admin-delegada-quotas.md) | Administração delegada e quotas | Accepted |
 | [048](ADR-048-capacity-slos.md) | Capacity model, benchmarks e SLOs | Accepted |
+| [049](ADR-049-plugins-capabilities.md) | Capabilities de plugin = config + callback | Accepted |
+| [050](ADR-050-plugins-interacoes-governadas.md) | Interação de plugin = dados, grant e callback | Accepted |
 
 ## Quando criar um ADR
 

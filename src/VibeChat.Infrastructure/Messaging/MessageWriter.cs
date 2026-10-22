@@ -355,6 +355,15 @@ public sealed class MessageWriter(
                 authorId = command.UserId.Value,
                 authorName,
                 authorIsBot = command.AuthorIsBot,
+                pluginCard = command.PluginCard is null
+                    ? null
+                    : new
+                    {
+                        pluginId = command.PluginCard.PluginId,
+                        pluginName = command.PluginCard.PluginName,
+                        expiresAt = command.PluginCard.ExpiresAt,
+                        actions = command.PluginCard.Actions
+                    },
                 sequence,
                 body,
                 createdAt = now,

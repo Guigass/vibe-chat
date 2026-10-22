@@ -1074,9 +1074,11 @@ Tabelas `integrations.bots`, `integrations.bot_tokens` (só hash SHA-256), `inte
 
 Mesma flag `Integrations:Bots:Enabled`. Off → 404 `IntegrationDisabled`. O plugin é configuração: manifesto JSON + bot 1:1. Não executa código de terceiro.
 
-Manifesto v1 (`vibechat.plugin.manifest.v1`): `id`, `name`, `version` (`N.N.N`), `capabilities`. Campo desconhecido → 400 `InvalidPluginManifest`. Capability fora de `messages.send`, `commands.slash`, `events.subscribe` e `ui.hooks` → 400 `UnknownPluginCapability`. Corpo acima de 4 KiB → 400 `PluginManifestTooLarge`. Built-ins do binário: `incoming-messages` e, com a flag abaixo, `slash-note`. Não há loja nem download de pacote.
+Manifesto v1 (`vibechat.plugin.manifest.v1`): `id`, `name`, `version` (`N.N.N`), `capabilities`. Campo desconhecido → 400 `InvalidPluginManifest`. Capability fora de `messages.send`, `commands.slash`, `events.subscribe`, `ui.hooks`, `messages.interact`, `history.read` e `attachments.send` → 400 `UnknownPluginCapability`. Corpo acima de 4 KiB → 400 `PluginManifestTooLarge`. Built-ins do binário: `incoming-messages` e, com a flag abaixo, `slash-note` e `action-ack`. Não há loja nem download de pacote.
 
 Flag `Features:Plugins:Enabled` default **false** (ADR-049). Off preserva `messages.send` e responde 404 `PluginPlatformDisabled` para capability extra, slash e callback. `commands.slash` exige `commands[]` (`name` slug + `description`). Comando na paleta: `pluginId/comando`. Execução `POST /api/v1/workspaces/{workspaceId}/channels/{channelId}/plugin-commands` com `{ name, args, idempotencyKey }`, permissão `message.send`, capability e canal no escopo do bot. Fora do escopo → 403 `PluginCommandOutOfScope`. O built-in `slash-note` publica o argumento como mensagem do bot. Manifesto customizado não executa código: `callback.url` recebe POST HMAC (`X-VibeChat-Signature`, paridade B-048). URL http só em `localhost` / `127.0.0.1`; metadata, IP privado e redirect → `EgressBlocked` / falha fechada. Segredo `vc_cb_` uma vez, envelope AES-GCM. `events.subscribe` usa o mesmo callback no outbox (`MessageCreated`, `MessageEdited`, `MessageDeleted`, `ReactionChanged`) e não reenvia o eco do próprio bot. `ui.hooks` aceita só `message.badge.bot` e `message.menu` como dados.
+
+B-111 (ADR-050), mesma flag. `messages.interact` exige `actions[]`. O cartão na mensagem é dado (`pluginId`, nome, expiração, ações `pluginId/ação`). Clique `POST …/plugin-actions` com `{ action, idempotencyKey }`, permissão `message.send` e membership do canal. Built-in `action-ack` confirma no servidor. Callback customizado é HMAC `plugin.action.invoked`; timeout → 502 `PluginCallbackFailed` e a mesma chave pode repetir. Expirada → 409 `PluginActionExpired`. `history.read` exige grant de canal e janela (máx. 7 dias), distinto do escopo do bot. Sem grant, ou canal inexistente, → 404 `PluginHistoryGrantNotFound`. Janela fora do grant → 403 `PluginHistoryWindowDenied`. Revogação grava `RevokedAt` e a leitura seguinte falha. `attachments.send` inicia e completa o upload pelo pipeline de anexos (tipo, tamanho, quota, scan, tenant) e rejeita script/DLL antes do objeto. O envio com `attachmentIds` no POST de mensagem do bot exige essa capability. Quotas diárias por plugin: interact 200, history 100, attachments 20. Acima → 429 `PluginQuotaExceeded`. Grant, revoke, leitura, ação e anexo entram em audit.
 
 | Método | Caminho | AuthZ |
 |--------|---------|--------|
@@ -1087,8 +1089,15 @@ Flag `Features:Plugins:Enabled` default **false** (ADR-049). Off preserva `messa
 | DELETE | `/api/v1/admin/workspaces/{workspaceId}/plugins/{installedId}` | `workspace.admin`; revoga o token na mesma transação; 204 |
 | POST | `/api/v1/admin/workspaces/{workspaceId}/plugins/{installedId}/rotate` | `workspace.admin`; novo `token` uma vez |
 | POST | `/api/v1/workspaces/{workspaceId}/channels/{channelId}/plugin-commands` | `message.send`; body `{ name, args, idempotencyKey }`; 202 |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/plugins/{installedId}/history-grants` | `workspace.admin`; body `{ channelId, windowStart, windowEnd }`; 201 |
+| DELETE | `/api/v1/admin/workspaces/{workspaceId}/plugins/{installedId}/history-grants/{grantId}` | `workspace.admin`; revoga na hora; 204 |
+| POST | `/api/v1/integrations/v1/channels/{channelId}/interactive-messages` | token do plugin; `{ body, actions, idempotencyKey, expiresInSeconds? }`; 202 |
+| GET | `/api/v1/integrations/v1/channels/{channelId}/history` | token do plugin; `from`, `to`, `idempotencyKey`; só a janela concedida |
+| POST | `/api/v1/integrations/v1/channels/{channelId}/attachments` | token do plugin; `{ fileName, contentType, sizeBytes, idempotencyKey }` |
+| POST | `/api/v1/integrations/v1/channels/{channelId}/attachments/{attachmentId}/complete` | token do plugin; mesmo scan do anexo de usuário |
+| POST | `/api/v1/workspaces/{workspaceId}/channels/{channelId}/messages/{messageId}/plugin-actions` | `message.send`; `{ action, idempotencyKey }`; 202 |
 
-Slug duplicado ou acima de 20 plugins no workspace → 409 (`PluginAlreadyInstalled` / `PluginLimitReached`). Id de outro workspace → 404 `PluginNotFound`. Member → 403. Tabela `integrations.plugins` com RLS FORCE e FK para `integrations.bots`. Uninstall não apaga mensagens.
+Slug duplicado ou acima de 20 plugins no workspace → 409 (`PluginAlreadyInstalled` / `PluginLimitReached`). Id de outro workspace → 404 `PluginNotFound`. Member → 403. Tabelas `integrations.plugins`, `plugin_history_grants`, `plugin_interactive_offers`, `plugin_action_receipts` e `plugin_quota_counters` com RLS FORCE. Uninstall não apaga mensagens. O `Down` remove as tabelas de B-111 e `LastUsedAt`; bots, mensagens e anexos ficam.
 
 ### Templates de workspace (B-115)
 

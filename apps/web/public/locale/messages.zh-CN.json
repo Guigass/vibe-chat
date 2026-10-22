@@ -1627,6 +1627,20 @@
     "error.IdempotencyKeyRequired": "请提供幂等键。",
     "error.InvalidChannelScope": "此凭证的频道无效。",
     "error.InvalidBotName": "名称无效。",
-    "error.UnknownDeveloperOperation": "未知操作。"
+    "error.UnknownDeveloperOperation": "未知操作。",
+    "admin.pluginInstallActionAck": "安装 Action Ack",
+    "admin.pluginLastUsed": "最近使用",
+    "admin.pluginQuota": "今日配额",
+    "admin.pluginGrantHistory": "授予时间窗",
+    "admin.pluginRevokeGrant": "撤销",
+    "admin.pluginWindowStart": "时间窗开始",
+    "admin.pluginWindowEnd": "时间窗结束",
+    "admin.pluginNeverUsed": "尚未使用",
+    "plugin.actionBy": "插件 %name% 的操作",
+    "plugin.actionAck": "确认",
+    "plugin.actionNamed": "操作 %action%",
+    "plugin.actionExpired": "此操作已过期。",
+    "plugin.actionFailed": "操作未能完成。请使用同一密钥重试。",
+    "plugin.actionDenied": "该插件不能执行此操作。"
   }
 }

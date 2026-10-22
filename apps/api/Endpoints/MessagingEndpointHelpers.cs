@@ -693,6 +693,7 @@ internal static class MessagingEndpointHelpers
             Announcement: x.DeletedAt == null && announcementsByMessage.TryGetValue(x.Id.Value, out var announcement) ? announcement : null)).ToArray();
 
         messages = await MarkBotAuthorsAsync(db, channel.TenantId, messages, ct);
+        messages = await AttachPluginCardsAsync(db, channel.TenantId, messages, ct);
         messages = await MessageHistoryEndpoints.ApplyMoveLinksAsync(db, profile.Id, messages, ct);
         return new ChannelMessagesResponse(messages, hasMoreBefore, hasMoreAfter);
     }
@@ -719,6 +720,36 @@ internal static class MessagingEndpointHelpers
 
         var bots = botUserIds.Select(x => x.Value).ToHashSet();
         return messages.Select(m => bots.Contains(m.AuthorId) ? m with { AuthorIsBot = true } : m).ToArray();
+    }
+
+    internal static async Task<MessageResponse[]> AttachPluginCardsAsync(
+        VibeChatDbContext db,
+        TenantId tenantId,
+        MessageResponse[] messages,
+        CancellationToken ct)
+    {
+        var ids = messages.Where(message => message.DeletedAt is null).Select(message => new MessageId(message.Id)).ToArray();
+        if (ids.Length == 0)
+        {
+            return messages;
+        }
+
+        var offers = await db.PluginInteractiveOffers.AsNoTracking()
+            .Where(offer => offer.TenantId == tenantId && ids.Contains(offer.MessageId))
+            .ToListAsync(ct);
+        if (offers.Count == 0)
+        {
+            return messages;
+        }
+
+        var byMessage = offers.ToDictionary(offer => offer.MessageId.Value);
+        return messages.Select(message =>
+            message.DeletedAt is null && byMessage.TryGetValue(message.Id, out var offer)
+                ? message with
+                {
+                    PluginCard = new MessagePluginCard(offer.PluginSlug, offer.PluginName, offer.ExpiresAt, offer.Actions)
+                }
+                : message).ToArray();
     }
 
     internal static async Task<Dictionary<Guid, LinkPreviewResponse>> LoadLinkPreviewsByMessageAsync(

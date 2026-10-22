@@ -1627,6 +1627,20 @@
     "error.IdempotencyKeyRequired": "Provide the idempotency key.",
     "error.InvalidChannelScope": "Invalid channel for this credential.",
     "error.InvalidBotName": "Invalid name.",
-    "error.UnknownDeveloperOperation": "Unknown operation."
+    "error.UnknownDeveloperOperation": "Unknown operation.",
+    "admin.pluginInstallActionAck": "Install Action Ack",
+    "admin.pluginLastUsed": "Last use",
+    "admin.pluginQuota": "Today's quota",
+    "admin.pluginGrantHistory": "Grant window",
+    "admin.pluginRevokeGrant": "Revoke",
+    "admin.pluginWindowStart": "Window start",
+    "admin.pluginWindowEnd": "Window end",
+    "admin.pluginNeverUsed": "Not used yet",
+    "plugin.actionBy": "Action from plugin %name%",
+    "plugin.actionAck": "Confirm",
+    "plugin.actionNamed": "Action %action%",
+    "plugin.actionExpired": "This action expired.",
+    "plugin.actionFailed": "The action could not run. Retry with the same key.",
+    "plugin.actionDenied": "The plugin cannot run this action."
   }
 }

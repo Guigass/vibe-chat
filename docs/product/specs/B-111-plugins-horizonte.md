@@ -45,11 +45,11 @@ separados. Revogação invalida tokens/caches e bloqueia callbacks posteriores.
 
 ## Aceite
 
-- [ ] Ação interativa é autenticada, idempotente e auditada.
-- [ ] Plugin só lê a janela/canal concedidos.
-- [ ] Upload respeita tipo, tamanho, quota, scan e tenant.
-- [ ] Revogação impede nova leitura/ação imediatamente.
-- [ ] Nenhum JS/DLL remoto é executado no processo ou no browser.
+- [x] Ação interativa é autenticada, idempotente e auditada.
+- [x] Plugin só lê a janela/canal concedidos.
+- [x] Upload respeita tipo, tamanho, quota, scan e tenant.
+- [x] Revogação impede nova leitura/ação imediatamente.
+- [x] Nenhum JS/DLL remoto é executado no processo ou no browser.
 
 ## Testes
 

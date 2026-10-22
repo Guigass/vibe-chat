@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpApiClient } from './http-api.client';
 import { mapAttachment, mapMoveFields, type AttachmentDto } from './api-mappers';
 import { mapPollSummary } from '../../shared/polls/poll-summary';
+import { mapAnnouncementPayload, mapPluginCard } from '../services/chat-hub-payload';
 import type { MessagingPolicy } from '../../shared/messaging/messaging-policy';
 import {
   ChatMessage,
@@ -14,6 +15,7 @@ import {
   FollowedThreadItem,
   PollSummary,
   AnnouncementSummary,
+  MessagePluginCard,
   AnnouncementReportItem,
   PendingAnnouncement,
 } from '../../shared/models/chat.models';
@@ -87,6 +89,7 @@ interface MessageDto {
   isPinned?: boolean;
   poll?: PollDto | null;
   announcement?: AnnouncementDto | null;
+  pluginCard?: MessagePluginCard | null;
 }
 
 interface AnnouncementDto {
@@ -915,7 +918,9 @@ export class MessagingApiService extends HttpApiClient {
       linkPreview: this.mapLinkPreview(m.linkPreview),
       isPinned: !!m.isPinned,
       poll: this.mapPoll(m.poll),
-      announcement: this.mapAnnouncement(m.announcement), ...mapMoveFields(m),
+      announcement: this.mapAnnouncement(m.announcement),
+      pluginCard: mapPluginCard(m.pluginCard),
+      ...mapMoveFields(m),
     };
   }
 
@@ -924,17 +929,7 @@ export class MessagingApiService extends HttpApiClient {
   }
 
   private mapAnnouncement(row?: AnnouncementDto | null): AnnouncementSummary | null {
-    if (!row?.messageId) return null;
-    return {
-      messageId: String(row.messageId),
-      requiresAcknowledgement: !!row.requiresAcknowledgement,
-      acknowledgeBy: row.acknowledgeBy ?? null,
-      closedAt: row.closedAt ?? null,
-      acknowledgedByMe: !!row.acknowledgedByMe,
-      acknowledgementCount: row.acknowledgementCount ?? 0,
-      canAcknowledge: !!row.canAcknowledge,
-      canViewReport: !!row.canViewReport,
-    };
+    return mapAnnouncementPayload(row);
   }
 
   private mapLinkPreview(preview?: LinkPreviewDto | null): MessageLinkPreview | null {

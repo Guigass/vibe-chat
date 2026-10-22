@@ -1627,6 +1627,20 @@
     "error.IdempotencyKeyRequired": "Geben Sie den Idempotenzschlüssel an.",
     "error.InvalidChannelScope": "Ungültiger Kanal für diese Zugangsdaten.",
     "error.InvalidBotName": "Ungültiger Name.",
-    "error.UnknownDeveloperOperation": "Unbekannte Operation."
+    "error.UnknownDeveloperOperation": "Unbekannte Operation.",
+    "admin.pluginInstallActionAck": "Action Ack installieren",
+    "admin.pluginLastUsed": "Letzte Nutzung",
+    "admin.pluginQuota": "Heutiges Kontingent",
+    "admin.pluginGrantHistory": "Fenster gewähren",
+    "admin.pluginRevokeGrant": "Widerrufen",
+    "admin.pluginWindowStart": "Fensterbeginn",
+    "admin.pluginWindowEnd": "Fensterende",
+    "admin.pluginNeverUsed": "Noch nicht verwendet",
+    "plugin.actionBy": "Aktion des Plugins %name%",
+    "plugin.actionAck": "Bestätigen",
+    "plugin.actionNamed": "Aktion %action%",
+    "plugin.actionExpired": "Diese Aktion ist abgelaufen.",
+    "plugin.actionFailed": "Die Aktion ist fehlgeschlagen. Mit demselben Schlüssel erneut versuchen.",
+    "plugin.actionDenied": "Das Plugin darf diese Aktion nicht ausführen."
   }
 }

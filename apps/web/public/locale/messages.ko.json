@@ -1627,6 +1627,20 @@
     "error.IdempotencyKeyRequired": "멱등 키를 입력하세요.",
     "error.InvalidChannelScope": "이 자격 증명에 잘못된 채널입니다.",
     "error.InvalidBotName": "이름이 올바르지 않습니다.",
-    "error.UnknownDeveloperOperation": "알 수 없는 작업입니다."
+    "error.UnknownDeveloperOperation": "알 수 없는 작업입니다.",
+    "admin.pluginInstallActionAck": "Action Ack 설치",
+    "admin.pluginLastUsed": "마지막 사용",
+    "admin.pluginQuota": "오늘 할당량",
+    "admin.pluginGrantHistory": "기간 허용",
+    "admin.pluginRevokeGrant": "철회",
+    "admin.pluginWindowStart": "기간 시작",
+    "admin.pluginWindowEnd": "기간 끝",
+    "admin.pluginNeverUsed": "아직 사용하지 않음",
+    "plugin.actionBy": "플러그인 %name%의 동작",
+    "plugin.actionAck": "확인",
+    "plugin.actionNamed": "동작 %action%",
+    "plugin.actionExpired": "이 동작은 만료되었습니다.",
+    "plugin.actionFailed": "동작을 실행하지 못했습니다. 같은 키로 다시 시도하세요.",
+    "plugin.actionDenied": "이 플러그인은 동작을 실행할 수 없습니다."
   }
 }

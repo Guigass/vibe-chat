@@ -1627,6 +1627,20 @@
     "error.IdempotencyKeyRequired": "Укажите ключ идемпотентности.",
     "error.InvalidChannelScope": "Недопустимый канал для этих учётных данных.",
     "error.InvalidBotName": "Недопустимое имя.",
-    "error.UnknownDeveloperOperation": "Неизвестная операция."
+    "error.UnknownDeveloperOperation": "Неизвестная операция.",
+    "admin.pluginInstallActionAck": "Установить Action Ack",
+    "admin.pluginLastUsed": "Последнее использование",
+    "admin.pluginQuota": "Квота на сегодня",
+    "admin.pluginGrantHistory": "Выдать окно",
+    "admin.pluginRevokeGrant": "Отозвать",
+    "admin.pluginWindowStart": "Начало окна",
+    "admin.pluginWindowEnd": "Конец окна",
+    "admin.pluginNeverUsed": "Ещё не использовался",
+    "plugin.actionBy": "Действие плагина %name%",
+    "plugin.actionAck": "Подтвердить",
+    "plugin.actionNamed": "Действие %action%",
+    "plugin.actionExpired": "Это действие истекло.",
+    "plugin.actionFailed": "Не удалось выполнить действие. Повторите с тем же ключом.",
+    "plugin.actionDenied": "Плагин не может выполнить это действие."
   }
 }

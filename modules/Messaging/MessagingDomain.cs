@@ -646,7 +646,10 @@ public sealed record SendMessageCommand(
     bool AuthorIsBot = false,
     bool RequiresAcknowledgement = false,
     DateTimeOffset? AcknowledgeBy = null,
-    Guid? TopicId = null);
+    Guid? TopicId = null,
+    MessagePluginCard? PluginCard = null);
+
+public sealed record MessagePluginCard(string PluginId, string PluginName, DateTimeOffset ExpiresAt, string[] Actions);
 
 public sealed record MessageSendResult(MessageId MessageId, long Sequence, DateTimeOffset CreatedAt, bool Idempotent);
 

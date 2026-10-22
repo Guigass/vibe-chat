@@ -21,6 +21,13 @@ public static class PluginPlatformErrors
     public const string InvalidCallbackUrl = "InvalidCallbackUrl";
     public const string EgressBlocked = "EgressBlocked";
     public const string UnknownHook = "UnknownPluginHook";
+    public const string HistoryGrantNotFound = "PluginHistoryGrantNotFound";
+    public const string HistoryWindowDenied = "PluginHistoryWindowDenied";
+    public const string ActionExpired = "PluginActionExpired";
+    public const string ActionNotFound = "PluginActionNotFound";
+    public const string QuotaExceeded = "PluginQuotaExceeded";
+    public const string AttachmentRejected = "PluginAttachmentRejected";
+    public const string PluginDisabled = "PluginDisabled";
 }
 
 public static class PluginCommandCopy

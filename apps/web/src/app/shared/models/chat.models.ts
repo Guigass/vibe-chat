@@ -73,6 +73,23 @@ export interface InstalledPlugin {
   subscribedEvents?: string[];
   callbackConfigured?: boolean;
   callbackSecret?: string | null;
+  lastUsedAt?: string | null;
+  historyGrants?: PluginHistoryGrant[];
+  quotas?: PluginQuotaSnapshot[];
+}
+
+export interface PluginHistoryGrant {
+  id: string;
+  channelId: string;
+  windowStart: string;
+  windowEnd: string;
+  revokedAt?: string | null;
+}
+
+export interface PluginQuotaSnapshot {
+  capability: string;
+  used: number;
+  limit: number;
 }
 
 export interface IntegrationBot {
@@ -242,6 +259,15 @@ export interface ChatMessage {
   poll?: PollSummary | null;
   /** B-112 announcement on a read-only channel message. */
   announcement?: AnnouncementSummary | null;
+  /** B-111 namespaced plugin buttons. Data only; the browser does not load plugin code. */
+  pluginCard?: MessagePluginCard | null;
+}
+
+export interface MessagePluginCard {
+  pluginId: string;
+  pluginName: string;
+  expiresAt: string;
+  actions: string[];
 }
 
 export interface PollVoter {
