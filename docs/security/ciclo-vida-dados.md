@@ -154,6 +154,10 @@ Antes de enviar:
 Revogação remota é best-effort quando tecnicamente inevitável e isso deve estar
 visível antes de habilitar.
 
+O registry (B-137) guarda instalação e quarentena por tenant. Revogar a versão
+desliga o plugin e o bot. O `Down` da migration remove só essas tabelas;
+mensagens e o bot permanecem. Desligar a flag não apaga o histórico.
+
 ## Evidência e SLO
 
 Medir:

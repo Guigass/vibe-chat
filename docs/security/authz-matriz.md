@@ -274,6 +274,12 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Token só na resposta |
 | POST | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}/history-grants` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-111; janela máxima 7 dias; canal no escopo do bot |
 | DELETE | `/admin/workspaces/{workspaceId:guid}/plugins/{installedId:guid}/history-grants/{grantId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Revogação imediata da leitura |
+| GET | `/admin/workspaces/{workspaceId:guid}/plugin-registry` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-137; flag off → 404 `PluginRegistryDisabled`; sem token |
+| POST | `/admin/workspaces/{workspaceId:guid}/plugin-registry/preview` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-137; não persiste; URL remota → `RegistryEgressBlocked` |
+| POST | `/admin/workspaces/{workspaceId:guid}/plugin-registry/install` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-137; grant explícito; token só na criação |
+| POST | `/admin/workspaces/{workspaceId:guid}/plugin-registry/update` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-137; capability nova exige confirmação |
+| POST | `/admin/workspaces/{workspaceId:guid}/plugin-registry/rollback` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-137; restaura a versão anterior assinada |
+| POST | `/admin/workspaces/{workspaceId:guid}/plugin-registry/revoke` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-137; desliga a versão na hora |
 | GET | `/admin/event-schemas` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; flag off → 404 `EventSchemasDisabled`; sem dado de tenant |
 | GET | `/admin/event-schemas/{eventType}/versions/{schemaVersion:int}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; versão desconhecida → 404 `UnknownSchemaVersion` |
 | POST | `/admin/event-schemas/check` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; não persiste o documento; teto 16 KiB |

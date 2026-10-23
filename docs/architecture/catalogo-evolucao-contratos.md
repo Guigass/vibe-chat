@@ -75,6 +75,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Integrations:Bots:Enabled` | instance | false | B-109 | create/list/rotate/revoke/send → 404; mensagens já gravadas permanecem |
 | `Integrations:DeveloperPortal:Enabled` | instance | false | B-135 | portal → 404 `DeveloperPortalDisabled`; credenciais e mensagens já gravadas permanecem |
 | `Integrations:PluginSdk:Enabled` | instance | false | B-136 | SDK → 404 `PluginSdkDisabled`; chat, send e portal seguem |
+| `Integrations:PluginRegistry:Enabled` | instance | false | B-137 | registry → 404 `PluginRegistryDisabled`; install local e SDK seguem |
 | `Messaging:History:Enabled` | instance | false | B-114 | history/move → 404; edição não grava versão; versões já gravadas permanecem |
 | `SemanticSearch:Enabled` | instance + workspace | false | B-121 | FTS continua; opt-in do workspace apaga a projeção ao desligar |
 | `Notifications:Digests:Enabled` | instance | false | B-122 | settings/catch-up → 404 `DigestDisabled`; worker não varre; mensagens e inbox seguem |
@@ -93,7 +94,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | Flag lógica | Escopo | Default | B-ID | Comportamento off |
 |--------------|--------|---------|------|-------------------|
 | `Features:Automation:Enabled` | instance (binding `Automation:Enabled`) | false | B-125 | entregue; ver linha ativa |
-| `Features:Registry:Enabled` | instance | false | B-137 | catálogo local apenas |
+| `Features:Registry:Enabled` | instance (binding `Integrations:PluginRegistry:Enabled`) | false | B-137 | entregue; ver linha ativa |
 | `Features:Bridges:Enabled` | tenant | false | B-138 | sem tráfego externo |
 | `Features:Federation:Enabled` | instance/tenant | false | B-065 | instância isolada |
 | `Features:OfflineWrite:Enabled` | instance/client | false | B-143 | leitura online/PWA |

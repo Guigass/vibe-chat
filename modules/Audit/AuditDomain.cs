@@ -83,6 +83,10 @@ public static class AuditActions
     public const string DeveloperSdkVerify = "developer.sdk.verify";
     public const string DeveloperSdkContract = "developer.sdk.contract";
     public const string DeveloperSdkSandbox = "developer.sdk.sandbox";
+    public const string PluginRegistryInstall = "integration.plugin.registry.install";
+    public const string PluginRegistryUpdate = "integration.plugin.registry.update";
+    public const string PluginRegistryRollback = "integration.plugin.registry.rollback";
+    public const string PluginRegistryRevoke = "integration.plugin.registry.revoke";
     public const string ProfileUpdate = "profile.update";
     public const string ProfileAvatar = "profile.avatar";
     public const string UserStatusClear = "user_status.clear";

@@ -296,6 +296,7 @@ v1.MapDelegatedAdmin();
 v1.MapCapacity();
 v1.MapDeveloperPortal();
 v1.MapPluginSdk();
+v1.MapPluginRegistry();
 
 app.MapScim();
 app.MapHub<ChatHub>("/hubs/chat").RequireAuthorization();

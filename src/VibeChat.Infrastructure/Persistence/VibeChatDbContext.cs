@@ -94,6 +94,8 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<PluginInteractiveOffer> PluginInteractiveOffers => Set<PluginInteractiveOffer>();
     public DbSet<PluginActionReceipt> PluginActionReceipts => Set<PluginActionReceipt>();
     public DbSet<PluginQuotaCounter> PluginQuotaCounters => Set<PluginQuotaCounter>();
+    public DbSet<PluginRegistryInstall> PluginRegistryInstalls => Set<PluginRegistryInstall>();
+    public DbSet<PluginRegistryQuarantine> PluginRegistryQuarantines => Set<PluginRegistryQuarantine>();
     public DbSet<MessageRetentionSettings> MessageRetentionSettings => Set<MessageRetentionSettings>();
     public DbSet<MessageLifecyclePolicy> MessageLifecyclePolicies => Set<MessageLifecyclePolicy>();
     public DbSet<MessageVersion> MessageVersions => Set<MessageVersion>();
@@ -1478,6 +1480,52 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.Property(x => x.Capability).HasMaxLength(64).IsRequired();
             entity.HasIndex(x => new { x.TenantId, x.InstalledPluginId, x.Capability, x.Day }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<PluginRegistryInstall>(entity =>
+        {
+            entity.ToTable("plugin_registry_installs", "integrations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.PluginId).HasMaxLength(PluginManifestRules.MaxPluginIdLength).IsRequired();
+            entity.Property(x => x.Version).HasMaxLength(PluginManifestRules.MaxVersionLength).IsRequired();
+            entity.Property(x => x.PreviousVersion).HasMaxLength(PluginManifestRules.MaxVersionLength);
+            entity.Property(x => x.Payload).HasMaxLength(PluginRegistryRules.MaxIndexBytes).IsRequired();
+            entity.Property(x => x.Signature).HasMaxLength(512).IsRequired();
+            entity.Property(x => x.PreviousPayload).HasMaxLength(PluginRegistryRules.MaxIndexBytes);
+            entity.Property(x => x.PreviousSignature).HasMaxLength(512);
+            entity.Property(x => x.Publisher).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.Source).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.CatalogId).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.KeyId).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.Checksum).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.ArtifactRef).HasMaxLength(512).IsRequired();
+            entity.Property(x => x.Provenance).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.Risk).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.Advisory).HasMaxLength(200);
+            entity.Property(x => x.Capabilities).HasColumnType("text[]").IsRequired();
+            entity.Property(x => x.GrantedCapabilities).HasColumnType("text[]").IsRequired();
+            entity.Property(x => x.DependsOn).HasColumnType("text[]").IsRequired();
+            entity.Property(x => x.Status).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(PluginSdkPolicies.MaxIdempotencyLength);
+            entity.Property(x => x.RequestHash).HasMaxLength(64);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.PluginId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<PluginRegistryQuarantine>(entity =>
+        {
+            entity.ToTable("plugin_registry_quarantine", "integrations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.PluginId).HasMaxLength(PluginManifestRules.MaxPluginIdLength).IsRequired();
+            entity.Property(x => x.Version).HasMaxLength(PluginManifestRules.MaxVersionLength).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.PluginId, x.Version }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

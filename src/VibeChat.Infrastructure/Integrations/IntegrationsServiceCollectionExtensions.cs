@@ -43,6 +43,7 @@ internal static class IntegrationsServiceCollectionExtensions
         services.AddScoped<IPluginCallbackDispatcher, PluginCallbackDispatcher>();
         services.Configure<PluginSdkOptions>(configuration.GetSection(PluginSdkOptions.SectionName));
         services.AddScoped<PluginSdkService>();
+        services.Configure<PluginRegistryOptions>(configuration.GetSection(PluginRegistryOptions.SectionName));
         services.AddHttpClient(SiemExportService.HttpClientName, client =>
         {
             client.Timeout = SiemLimits.HttpTimeout;

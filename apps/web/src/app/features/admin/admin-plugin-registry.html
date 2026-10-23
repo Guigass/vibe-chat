@@ -1,0 +1,123 @@
+<section class="registry" [attr.aria-busy]="busy()">
+  <p class="admin-panel__lead">{{ ui.adminPluginRegistryLead }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty">{{ ui.adminLoadingSettings }}</p>
+  } @else if (disabled()) {
+    <p class="admin-empty">{{ ui.pluginRegistryDisabled }}</p>
+  } @else {
+    <form class="registry__form" (submit)="$event.preventDefault(); preview()">
+      <label class="registry__field">
+        <span>{{ ui.adminPluginRegistryIndex }}</span>
+        <textarea
+          rows="4"
+          [value]="indexText()"
+          (input)="indexText.set($any($event.target).value)"
+          [attr.aria-label]="ui.adminPluginRegistryIndex"
+        ></textarea>
+      </label>
+      <label class="registry__grant">
+        <input type="checkbox" [checked]="grant()" (change)="grant.set($any($event.target).checked)" />
+        <span>{{ ui.adminPluginRegistryGrant }}</span>
+      </label>
+      <div class="registry__actions">
+        <button type="submit" class="admin-btn" [disabled]="busy() || !indexText().trim()">
+          {{ ui.adminPluginRegistryPreview }}
+        </button>
+      </div>
+    </form>
+
+    @if (error()) {
+      <p class="admin-error" role="alert">{{ error() }}</p>
+    }
+    @if (revealedToken(); as token) {
+      <p class="admin-feedback">{{ ui.adminBotTokenOnce }}</p>
+      <p class="admin-panel__lead"><code>{{ token }}</code></p>
+    }
+
+    @if (entries().length === 0) {
+      <p class="admin-empty">{{ ui.adminPluginRegistryEmpty }}</p>
+    } @else {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.adminPluginRegistryPublisher }}</th>
+              <th>{{ ui.adminPluginRegistrySource }}</th>
+              <th>{{ ui.adminPluginRegistrySignature }}</th>
+              <th>{{ ui.adminPluginCapabilities }}</th>
+              <th>{{ ui.adminPluginVersion }}</th>
+              <th>{{ ui.adminPluginRegistryRisk }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of entries(); track entry.pluginId + entry.version) {
+              <tr>
+                <td>{{ entry.publisher }}</td>
+                <td>{{ entry.source }}</td>
+                <td><code>{{ entry.signatureKeyId }} · {{ entry.signatureFingerprint }}</code></td>
+                <td>{{ entry.capabilities.join(', ') }}</td>
+                <td>{{ entry.version }}</td>
+                <td>{{ entry.risk }}</td>
+                <td>
+                  <div class="registry__actions">
+                    <button type="button" class="admin-btn" [disabled]="busy() || !entry.accepted || !grant()" (click)="install(entry)">
+                      {{ ui.adminPluginRegistryInstall }}
+                    </button>
+                    <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy() || !entry.accepted || !grant()" (click)="update(entry)">
+                      {{ ui.adminPluginRegistryUpdate }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <p class="admin-panel__lead">{{ ui.adminPluginRegistryInstalled }}</p>
+    @if (installs().length === 0) {
+      <p class="admin-empty">{{ ui.adminPluginRegistryInstalledEmpty }}</p>
+    } @else {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.adminPluginRegistryPublisher }}</th>
+              <th>{{ ui.adminPluginRegistrySource }}</th>
+              <th>{{ ui.adminPluginRegistrySignature }}</th>
+              <th>{{ ui.adminPluginCapabilities }}</th>
+              <th>{{ ui.adminPluginVersion }}</th>
+              <th>{{ ui.adminPluginRegistryRisk }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of installs(); track row.id) {
+              <tr>
+                <td>{{ row.publisher }}</td>
+                <td>{{ row.source }}</td>
+                <td><code>{{ row.signatureKeyId }} · {{ row.signatureFingerprint }}</code></td>
+                <td>{{ row.capabilities.join(', ') }}</td>
+                <td>{{ row.version }}</td>
+                <td>{{ row.risk }}</td>
+                <td>
+                  <div class="registry__actions">
+                    <button type="button" class="admin-btn admin-btn--ghost" [disabled]="busy() || !row.previousVersion" (click)="rollback(row)">
+                      {{ ui.adminPluginRegistryRollback }}
+                    </button>
+                    <button type="button" class="admin-btn" [disabled]="busy() || row.status === 'revoked'" (click)="revoke(row)">
+                      {{ ui.adminPluginRegistryRevoke }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>

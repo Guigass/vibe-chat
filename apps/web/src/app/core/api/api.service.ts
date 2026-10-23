@@ -270,4 +270,10 @@ export class ApiService {
   readonly grantPluginHistory: PluginApiService['grantPluginHistory'] = this.plugins.grantPluginHistory.bind(this.plugins);
   readonly revokePluginHistory: PluginApiService['revokePluginHistory'] = this.plugins.revokePluginHistory.bind(this.plugins);
   readonly invokePluginAction: PluginApiService['invokePluginAction'] = this.plugins.invokePluginAction.bind(this.plugins);
+  readonly listPluginRegistry: PluginApiService['listPluginRegistry'] = this.plugins.listPluginRegistry.bind(this.plugins);
+  readonly previewPluginRegistry: PluginApiService['previewPluginRegistry'] = this.plugins.previewPluginRegistry.bind(this.plugins);
+  readonly installPluginRegistry: PluginApiService['installPluginRegistry'] = this.plugins.installPluginRegistry.bind(this.plugins);
+  readonly updatePluginRegistry: PluginApiService['updatePluginRegistry'] = this.plugins.updatePluginRegistry.bind(this.plugins);
+  readonly rollbackPluginRegistry: PluginApiService['rollbackPluginRegistry'] = this.plugins.rollbackPluginRegistry.bind(this.plugins);
+  readonly revokePluginRegistry: PluginApiService['revokePluginRegistry'] = this.plugins.revokePluginRegistry.bind(this.plugins);
 }

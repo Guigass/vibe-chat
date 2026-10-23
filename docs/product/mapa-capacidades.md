@@ -79,7 +79,7 @@ organiza. Estados:
 | Capabilities avançadas de plugins | Planned | B-066/B-111 / W15 |
 | Developer portal e credenciais de integração | Planned | B-135 / W15 |
 | SDK e kit de teste de plugins | Planned | B-136 / W15 |
-| Registry assinado e governado | Planned | B-137 / W15 |
+| Registry assinado e governado | Done | B-137 / W15 |
 | Bridge framework | Planned | B-138 / W15 |
 | Schema registry de eventos | Atual (flag off) | B-139 / W13 Done; portal em B-135 |
 | White-label governado | Planned | B-140 / W15 |

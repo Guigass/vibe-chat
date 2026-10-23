@@ -1187,6 +1187,21 @@ export const ui = {
   adminPluginVersion: $localize`:@@admin.pluginVersion:Versão`,
   adminPluginCapabilities: $localize`:@@admin.pluginCapabilities:Capabilities`,
   adminPluginInstallActionAck: $localize`:@@admin.pluginInstallActionAck:Instalar Action Ack`,
+  adminPluginRegistryLead: $localize`:@@admin.pluginRegistryLead:O registry assinado mostra publisher, origem, assinatura, capabilities, versão e risco antes de instalar. O mirror é local: não há download público.`,
+  adminPluginRegistryEmpty: $localize`:@@admin.pluginRegistryEmpty:Nenhum pacote conferido neste workspace.`,
+  adminPluginRegistryInstalledEmpty: $localize`:@@admin.pluginRegistryInstalledEmpty:Nenhuma instalação vinda do registry.`,
+  adminPluginRegistryIndex: $localize`:@@admin.pluginRegistryIndex:Índice offline do registry`,
+  adminPluginRegistryPreview: $localize`:@@admin.pluginRegistryPreview:Conferir catálogo`,
+  adminPluginRegistryPublisher: $localize`:@@admin.pluginRegistryPublisher:Publisher`,
+  adminPluginRegistrySource: $localize`:@@admin.pluginRegistrySource:Origem`,
+  adminPluginRegistrySignature: $localize`:@@admin.pluginRegistrySignature:Assinatura`,
+  adminPluginRegistryRisk: $localize`:@@admin.pluginRegistryRisk:Risco`,
+  adminPluginRegistryGrant: $localize`:@@admin.pluginRegistryGrant:Concedo as capabilities listadas`,
+  adminPluginRegistryInstall: $localize`:@@admin.pluginRegistryInstall:Instalar do registry`,
+  adminPluginRegistryUpdate: $localize`:@@admin.pluginRegistryUpdate:Atualizar`,
+  adminPluginRegistryRollback: $localize`:@@admin.pluginRegistryRollback:Rollback`,
+  adminPluginRegistryRevoke: $localize`:@@admin.pluginRegistryRevoke:Revogar versão`,
+  adminPluginRegistryInstalled: $localize`:@@admin.pluginRegistryInstalled:Instalações do registry`,
   adminPluginLastUsed: $localize`:@@admin.pluginLastUsed:Último uso`,
   adminPluginQuota: $localize`:@@admin.pluginQuota:Quota de hoje`,
   adminPluginGrantHistory: $localize`:@@admin.pluginGrantHistory:Conceder janela`,
@@ -1671,6 +1686,15 @@ export const ui = {
   developerSdkFailures: $localize`:@@developer.sdkFailures:O verificador recusa assinatura inválida, replay, entrega velha, 401, 403 e leitura de outro tenant. O token não entra em log.`,
   developerSdkDisabled: $localize`:@@developer.sdkDisabled:O SDK de plugins está desligado nesta instalação.`,
   pluginSdkDisabled: $localize`:@@error.PluginSdkDisabled:O SDK de plugins está desligado nesta instalação.`,
+  pluginRegistryDisabled: $localize`:@@error.PluginRegistryDisabled:O registry de plugins está desligado nesta instalação.`,
+  pluginRegistryInvalid: $localize`:@@error.pluginRegistryInvalid:O pacote do registry não passou na conferência.`,
+  pluginRegistryRevoked: $localize`:@@error.pluginRegistryRevoked:Esta versão foi revogada.`,
+  pluginRegistryDowngrade: $localize`:@@error.pluginRegistryDowngrade:Não é possível voltar a versão por atualização. Use o rollback.`,
+  pluginRegistryCapability: $localize`:@@error.pluginRegistryCapability:A nova capability precisa de confirmação.`,
+  pluginRegistryGrant: $localize`:@@error.pluginRegistryGrant:Conceda as capabilities antes de instalar.`,
+  pluginRegistryDependency: $localize`:@@error.pluginRegistryDependency:Falta uma dependência compatível instalada.`,
+  pluginRegistryEgress: $localize`:@@error.pluginRegistryEgress:Catálogo remoto bloqueado. Use o mirror offline.`,
+  pluginRegistryIdempotency: $localize`:@@error.pluginRegistryIdempotency:A mesma chave de idempotência veio com outro pedido.`,
   unknownSdkOperation: $localize`:@@error.UnknownSdkOperation:Operação de SDK desconhecida.`,
   dsTitle: $localize`:@@designSystem.title:Sistema de design`,
   dsLead: $localize`:@@designSystem.lead:Catálogo interno dos tokens, das primitivas de layout e dos componentes base.`,
@@ -1977,6 +2001,29 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.developerPortalDisabled;
     case 'PluginSdkDisabled':
       return ui.pluginSdkDisabled;
+    case 'PluginRegistryDisabled':
+      return ui.pluginRegistryDisabled;
+    case 'InvalidRegistryIndex':
+    case 'InvalidRegistrySignature':
+    case 'InvalidRegistryChecksum':
+    case 'UntrustedCatalog':
+    case 'RegistryEntryNotFound':
+    case 'RegistryCallbackRejected':
+      return ui.pluginRegistryInvalid;
+    case 'PluginVersionRevoked':
+      return ui.pluginRegistryRevoked;
+    case 'PluginDowngradeRejected':
+      return ui.pluginRegistryDowngrade;
+    case 'PluginCapabilityConfirmationRequired':
+      return ui.pluginRegistryCapability;
+    case 'PluginGrantRequired':
+      return ui.pluginRegistryGrant;
+    case 'PluginDependencyMissing':
+      return ui.pluginRegistryDependency;
+    case 'RegistryEgressBlocked':
+      return ui.pluginRegistryEgress;
+    case 'PluginRegistryIdempotencyConflict':
+      return ui.pluginRegistryIdempotency;
     case 'UnknownSdkOperation':
       return ui.unknownSdkOperation;
     case 'ExplorerScopeDenied':
