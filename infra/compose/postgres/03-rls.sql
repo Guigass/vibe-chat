@@ -839,6 +839,10 @@ ALTER TABLE IF EXISTS integrations.plugin_action_receipts ENABLE ROW LEVEL SECUR
 ALTER TABLE IF EXISTS integrations.plugin_action_receipts FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS integrations.plugin_quota_counters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS integrations.plugin_quota_counters FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.plugin_registry_installs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.plugin_registry_installs FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.plugin_registry_quarantine ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.plugin_registry_quarantine FORCE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS tenant_isolation_visual_preferences ON identity.visual_preferences;
 CREATE POLICY tenant_isolation_visual_preferences ON identity.visual_preferences
@@ -867,6 +871,16 @@ CREATE POLICY tenant_isolation_plugin_action_receipts ON integrations.plugin_act
 
 DROP POLICY IF EXISTS tenant_isolation_plugin_quota_counters ON integrations.plugin_quota_counters;
 CREATE POLICY tenant_isolation_plugin_quota_counters ON integrations.plugin_quota_counters
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_plugin_registry_installs ON integrations.plugin_registry_installs;
+CREATE POLICY tenant_isolation_plugin_registry_installs ON integrations.plugin_registry_installs
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_plugin_registry_quarantine ON integrations.plugin_registry_quarantine;
+CREATE POLICY tenant_isolation_plugin_registry_quarantine ON integrations.plugin_registry_quarantine
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

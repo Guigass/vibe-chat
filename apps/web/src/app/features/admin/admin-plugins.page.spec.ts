@@ -36,6 +36,7 @@ describe('AdminPluginsPage (B-110)', () => {
           useValue: {
             listInstalledPlugins: vi.fn().mockResolvedValue(plugins),
             getChannels: vi.fn().mockResolvedValue([]),
+            listPluginRegistry: vi.fn().mockResolvedValue({ installs: [] }),
           },
         },
         {

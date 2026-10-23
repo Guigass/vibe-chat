@@ -515,7 +515,7 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | Digest/catch-up | Resumo com body ou fonte revogada | B-122 entregue — ver seção abaixo |
 | Workflows | Loop, replay, privilégio transitivo e ação sem owner | Idempotência, depth/rate limits, identidade e capability por ação |
 | Conectores/bridges | SSRF, secret leak, impersonation e cópia fora do tenant | D-21; egress policy, scopes, HMAC/OAuth, consentimento e audit |
-| Registry de plugins | Supply-chain compromise e pacote revogado continuar ativo | D-18; assinatura, provenance, revisão, revogação e kill switch |
+| Registry de plugins | Supply-chain — ver seção B-137 abaixo | ADR-053 entregue |
 | Legal hold/DLP | Preservação indevida, abuso de busca e conflito com exclusão | D-23; authZ separada, cadeia de custódia e parecer legal |
 | Offline/mobile | Token e conteúdo persistidos no dispositivo; revogação tardia | D-20; secure storage, remote logout e contrato de sync |
 | Federação | Perda de soberania, retenção e controle de identidade | D-21; trust domains, allowlist e política de cópia |
@@ -524,6 +524,15 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | Canvas colaborativo | AuthZ por bloco, conflito, histórico e export incompletos | D-17; modelo de permissão e retenção antes de CRDT/OT |
 | Migração/import | Archive hostil, duplicação, papel falso e cross-tenant | B-153; staging, dry-run, adapters versionados, quarentena local e quotas |
 | Backup de chat / destinos | Credencial de destino vazada; exfiltração; import hostil; confusão com dump de infra | B-172; flag off default, secrets mascarados, dry-run, audit, destinos OSS |
+
+## Registry de plugins (B-137 / ADR-053)
+
+- Flag `Integrations:PluginRegistry:Enabled` off por default. Desligada, as rotas de registry respondem 404 e o install local continua.
+- Assinatura RSA-PSS/SHA-256 e checksum são conferidos antes de persistir. Pacote adulterado não ativa plugin.
+- Não há fetch. `http`/`https` responde `RegistryEgressBlocked`. O mirror é `mirror://`, `official://` ou `private://`.
+- Capability nova exige confirmação. Sem grant explícito nada é instalado. Revogação desliga plugin e bot e quarentena a versão.
+- RLS FORCE em `integrations.plugin_registry_installs` e `plugin_registry_quarantine`. Outro tenant não lê a linha. Member → 403.
+- Auditoria não leva manifesto, assinatura crua nem token. Rollback da flag não apaga mensagens. O `Down` remove só as duas tabelas novas.
 
 ## Busca semântica (B-121)
 

@@ -1114,6 +1114,25 @@ B-111 (ADR-050), mesma flag. `messages.interact` exige `actions[]`. O cartão na
 
 Slug duplicado ou acima de 20 plugins no workspace → 409 (`PluginAlreadyInstalled` / `PluginLimitReached`). Id de outro workspace → 404 `PluginNotFound`. Member → 403. Tabelas `integrations.plugins`, `plugin_history_grants`, `plugin_interactive_offers`, `plugin_action_receipts` e `plugin_quota_counters` com RLS FORCE. Uninstall não apaga mensagens. O `Down` remove as tabelas de B-111 e `LastUsedAt`; bots, mensagens e anexos ficam.
 
+### Registry assinado (B-137 / ADR-053)
+
+Flag `Integrations:PluginRegistry:Enabled` default **false**. Off → 404 `PluginRegistryDisabled`. O install local e o SDK não dependem desta flag.
+
+Índice `vibechat.registry-index.v1`. Cada entrada traz o payload canônico `vibechat.registry-entry.v1` e a assinatura `rsapss-sha256=`. O payload inclui publisher, source, checksum `sha256=` do manifesto, capabilities, versão, risco e o manifesto. A assinatura é conferida antes de gravar. `http`/`https` em `catalogUrl` ou `artifactRef` → 400 `RegistryEgressBlocked`, sem conexão. Mirror: `mirror://`, `official://`, `private://`. Catálogo `allowlisted` só com o id na allowlist.
+
+Instalar exige `grantCapabilities` cobrindo o pacote. Sem isso → 400 `PluginGrantRequired` e nada é gravado. Update com capability nova sem `confirmCapabilities` → 409 `PluginCapabilityConfirmationRequired` e a versão atual fica. Update para versão menor → 409 `PluginDowngradeRejected`. Rollback restaura o payload anterior compatível. Revoke desliga o plugin/bot e impede reinstalar aquela versão (`PluginVersionRevoked`). Dependência ausente no índice → 400 `InvalidRegistryIndex`; ausente no workspace → 409 `PluginDependencyMissing`.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| GET | `/api/v1/admin/workspaces/{workspaceId}/plugin-registry` | `workspace.admin`; instalações do workspace, sem token |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/plugin-registry/preview` | `workspace.admin`; body `{ index, catalogUrl? }`; não persiste |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/plugin-registry/install` | `workspace.admin`; `{ index, pluginId, version, grantCapabilities, channelIds?, allowDms, idempotencyKey }`; token **uma vez** |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/plugin-registry/update` | `workspace.admin`; capability nova exige `confirmCapabilities` |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/plugin-registry/rollback` | `workspace.admin`; restaura a versão anterior assinada |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/plugin-registry/revoke` | `workspace.admin`; desliga a versão e grava quarentena |
+
+`workspace.admin` apenas. Member e workspace sem membership → 403. Tabelas `integrations.plugin_registry_installs` e `plugin_registry_quarantine` com RLS FORCE. O `Down` remove só essas duas tabelas. Auditoria `integration.plugin.registry.*` não leva manifesto, assinatura crua nem `vc_int_`.
+
 ### Templates de workspace (B-115)
 
 Manifesto declarativo `vibechat.workspace-template.v1`. Não carrega `tenantId`, membros, e-mails, tokens nem secrets. Recursos criados recebem o tenant do contexto. Só `workspace.admin` (Auditor/membro → 403).

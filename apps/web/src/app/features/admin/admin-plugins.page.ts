@@ -6,12 +6,13 @@ import { ui } from '../../core/i18n/strings';
 import { Channel, InstalledPlugin } from '../../shared/models/chat.models';
 import { AdminContextService } from './admin-context.service';
 import { AdminAreaId } from './admin-permissions';
+import { AdminPluginRegistry } from './admin-plugin-registry';
 import { filterInstalledPlugins } from './plugin-list';
 
 @Component({
   selector: 'vc-admin-plugins',
   standalone: true,
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, AdminPluginRegistry],
   templateUrl: './admin-plugins.page.html',
   styleUrl: './admin-shared.scss',
 })

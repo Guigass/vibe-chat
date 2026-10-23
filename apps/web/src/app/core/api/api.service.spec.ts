@@ -135,6 +135,12 @@ describe('ApiService facade', () => {
     expect(typeof api.grantPluginHistory).toBe('function');
     expect(typeof api.revokePluginHistory).toBe('function');
     expect(typeof api.invokePluginAction).toBe('function');
+    expect(typeof api.listPluginRegistry).toBe('function');
+    expect(typeof api.previewPluginRegistry).toBe('function');
+    expect(typeof api.installPluginRegistry).toBe('function');
+    expect(typeof api.updatePluginRegistry).toBe('function');
+    expect(typeof api.rollbackPluginRegistry).toBe('function');
+    expect(typeof api.revokePluginRegistry).toBe('function');
   });
 
   it('sends the dev user header and keeps idempotency on send', async () => {

@@ -1,0 +1,65 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vc-space-3);
+  min-width: 0;
+  padding-top: var(--vc-space-4);
+  border-top: 1px solid var(--vc-border);
+}
+
+.registry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vc-space-3);
+  min-width: 0;
+}
+
+.registry__form,
+.registry__field,
+.registry__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--vc-space-2);
+  min-width: 0;
+}
+
+.registry__field span,
+.registry__grant span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--vc-ink-muted);
+}
+
+.registry__field textarea {
+  width: 100%;
+  min-height: 6.5rem;
+  padding: var(--vc-space-2) var(--vc-space-3);
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-sm);
+  background: var(--vc-surface);
+  color: var(--vc-ink);
+  font: inherit;
+  resize: vertical;
+}
+
+.registry__grant {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--vc-space-2);
+  min-height: var(--vc-control-height);
+}
+
+.registry__grant input {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.registry__actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}

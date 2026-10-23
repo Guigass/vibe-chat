@@ -197,6 +197,14 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Integrations:Bots:Enabled", "true");
         builder.UseSetting("Integrations:DeveloperPortal:Enabled", "true");
         builder.UseSetting("Integrations:PluginSdk:Enabled", "true");
+        builder.UseSetting("Integrations:PluginRegistry:Enabled", "true");
+        builder.UseSetting("Integrations:PluginRegistry:TrustRoots:0:KeyId", "lab");
+        builder.UseSetting("Integrations:PluginRegistry:TrustRoots:0:PublicKeyPem", PluginRegistryTestKeys.PublicKey);
+        builder.UseSetting("Integrations:PluginRegistry:TrustRoots:0:Catalogs:0", "mirror");
+        builder.UseSetting("Integrations:PluginRegistry:TrustRoots:0:Catalogs:1", "official");
+        builder.UseSetting("Integrations:PluginRegistry:TrustRoots:0:Catalogs:2", "private");
+        builder.UseSetting("Integrations:PluginRegistry:TrustRoots:0:Catalogs:3", "community");
+        builder.UseSetting("Integrations:PluginRegistry:AllowlistedCatalogs:0", "community");
         builder.UseSetting("Identity:Scim:Enabled", "true");
         builder.UseSetting("Identity:Scim:KeycloakAdapter", "false");
         builder.UseSetting("Messaging:History:Enabled", "true");

@@ -157,4 +157,8 @@
       }
     }
   }
+
+  @if (ctx.workspace()?.id; as workspaceId) {
+    <vc-admin-plugin-registry [workspaceId]="workspaceId" />
+  }
 </article>

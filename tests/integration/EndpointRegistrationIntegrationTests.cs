@@ -378,6 +378,12 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/developer/sdk/verify", string.Join(",", new[] { Permissions.Integration.Read }), false, ""),
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/developer/sdk/contract-tests", string.Join(",", new[] { Permissions.Integration.Read }), false, ""),
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/developer/sdk/sandbox", string.Join(",", new[] { Permissions.Integration.Read }), false, ""),
+            new("GET", "/api/v1/admin/workspaces/{workspaceId:guid}/plugin-registry", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/plugin-registry/preview", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/plugin-registry/install", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/plugin-registry/update", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/plugin-registry/rollback", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/plugin-registry/revoke", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(

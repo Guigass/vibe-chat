@@ -139,6 +139,8 @@ public sealed class ArchitectureRulesTests
             "integrations.plugin_interactive_offers",
             "integrations.plugin_action_receipts",
             "integrations.plugin_quota_counters",
+            "integrations.plugin_registry_installs",
+            "integrations.plugin_registry_quarantine",
             "identity.visual_preferences",
             "files.settings",
             "building_blocks.rate_limit_settings",
