@@ -48,6 +48,14 @@ export interface MessageTimeline {
   ): Promise<'ok' | 'deleted' | 'missing'>;
 }
 
+async function joinChannelBestEffort(deps: MessageTimelineDeps, channelId: string): Promise<void> {
+  try {
+    await deps.joinChannel(channelId);
+  } catch {
+    // History and pin jumps still work when the socket cannot join.
+  }
+}
+
 export function createMessageTimeline(getDeps: () => MessageTimelineDeps): MessageTimeline {
   const gapFillInFlight = new Set<string>();
 
@@ -103,7 +111,7 @@ export function createMessageTimeline(getDeps: () => MessageTimelineDeps): Messa
         deps.setLoading(true);
       }
       try {
-        await deps.joinChannel(channelId);
+        await joinChannelBestEffort(deps, channelId);
         if (deps.isDemo()) {
           deps.setMessages(demoChannelMessages(channelId));
           deps.patchPagination(channelId, {
@@ -171,7 +179,9 @@ export function createMessageTimeline(getDeps: () => MessageTimelineDeps): Messa
 
       deps.setLoading(true);
       try {
-        await deps.joinChannel(channelId);
+        // A hub rejection (rate limit, reconnect) must not cancel the jump.
+        // The target page is HTTP; realtime membership is optional.
+        await joinChannelBestEffort(deps, channelId);
         const page = await deps.getMessages(channelId, { around: seq, take: 50 });
         const target =
           page.messages.find((m) => idsEqual(m.id, messageId)) ??

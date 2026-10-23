@@ -11,9 +11,11 @@ import { ThreadStore } from './thread.store';
 describe('MessageStore loadChannel (OPS-E2E-B097)', () => {
   const channelId = '11111111-1111-1111-1111-111111111111';
   let getMessages: ReturnType<typeof vi.fn>;
+  let joinChannel: ReturnType<typeof vi.fn>;
   let store: MessageStore;
 
   beforeEach(() => {
+    joinChannel = vi.fn().mockResolvedValue(undefined);
     getMessages = vi.fn().mockResolvedValue({
       messages: [
         {
@@ -52,7 +54,7 @@ describe('MessageStore loadChannel (OPS-E2E-B097)', () => {
         {
           provide: ChatHubService,
           useValue: {
-            joinChannel: vi.fn().mockResolvedValue(undefined),
+            joinChannel,
             onMessage: () => () => undefined,
             onMessageEdited: () => () => undefined,
             onMessageDeleted: () => () => undefined,
@@ -128,6 +130,17 @@ describe('MessageStore loadChannel (OPS-E2E-B097)', () => {
     expect(store.loading()).toBe(true);
     release();
     await pending;
+    expect(store.loading()).toBe(false);
+  });
+
+  it('loads history when the realtime join is rejected', async () => {
+    joinChannel.mockRejectedValue(new Error('Rate limit exceeded'));
+
+    await store.loadChannel(channelId);
+
+    expect(getMessages).toHaveBeenCalledWith(channelId, { take: 50 });
+    expect(store.forActiveChannel()).toHaveLength(1);
+    expect(store.paginationForActive().loadError).toBeNull();
     expect(store.loading()).toBe(false);
   });
 });

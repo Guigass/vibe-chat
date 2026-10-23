@@ -12,9 +12,11 @@ describe('MessageStore targeted timeline scroll (BUG-013)', () => {
   const channelId = '11111111-1111-1111-1111-111111111111';
   const messageId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
   let getMessages: ReturnType<typeof vi.fn>;
+  let joinChannel: ReturnType<typeof vi.fn>;
   let store: MessageStore;
 
   beforeEach(() => {
+    joinChannel = vi.fn().mockResolvedValue(undefined);
     getMessages = vi.fn().mockResolvedValue({
       messages: [
         {
@@ -49,7 +51,7 @@ describe('MessageStore targeted timeline scroll (BUG-013)', () => {
         {
           provide: ChatHubService,
           useValue: {
-            joinChannel: vi.fn().mockResolvedValue(undefined),
+            joinChannel,
             onMessage: () => () => undefined,
             onMessageEdited: () => () => undefined,
             onMessageDeleted: () => () => undefined,
@@ -105,5 +107,15 @@ describe('MessageStore targeted timeline scroll (BUG-013)', () => {
 
     expect(await store.jumpToSequence(channelId, 99, messageId)).toBe('missing');
     expect(store.scrollRequest()).toBeNull();
+  });
+
+  it('still centers the target when the realtime join is rejected', async () => {
+    joinChannel.mockRejectedValue(new Error('Rate limit exceeded'));
+
+    expect(await store.jumpToSequence(channelId, 23, messageId)).toBe('ok');
+    expect(getMessages).toHaveBeenCalledWith(channelId, { around: 23, take: 50 });
+    expect(store.highlightMessageId()).toBe(messageId);
+    expect(store.scrollRequest()).toMatchObject({ channelId, messageId });
+    expect(store.loading()).toBe(false);
   });
 });

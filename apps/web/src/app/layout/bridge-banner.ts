@@ -39,6 +39,9 @@ import { fillTemplate, translateErrorCode, ui } from '../core/i18n/strings';
     }
   `,
   styles: `
+    :host {
+      display: contents;
+    }
     .bridge {
       display: flex;
       flex-direction: column;

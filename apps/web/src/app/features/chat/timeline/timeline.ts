@@ -812,6 +812,10 @@ export class Timeline {
   private anchorMessageRequest(request: MessageScrollRequest): void {
     const el = this.scroller()?.nativeElement;
     if (!el) return;
+    // Header growth (bridge banner) and the pins panel both resize the scroller.
+    // The bottom pin would treat that as "stick to latest" and pull the target
+    // back out of view. Re-arm only after the anchor window settles.
+    this.stickyBottomPin.setPinned(false);
     this.anchorTimeline(
       el,
       {
@@ -822,11 +826,13 @@ export class Timeline {
           ) ?? null,
       },
       () => {
-        this.setNearBottom(this.isNearBottom(el));
         this.messages.setViewingLatest(false);
       },
       () => this.messages.cancelScrollRequest(request.requestId),
-      () => this.messages.acknowledgeScrollRequest(request.requestId),
+      () => {
+        this.setNearBottom(this.isNearBottom(el));
+        this.messages.acknowledgeScrollRequest(request.requestId);
+      },
     );
   }
 
