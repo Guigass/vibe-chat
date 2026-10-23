@@ -46,6 +46,13 @@
               @if (message().authorIsBot) {
                 <span class="vc-msg__bot">{{ ui.bubbleBot }}</span>
               }
+              @if (message().remoteOrigin; as origin) {
+                @if (origin.link) {
+                  <a class="vc-msg__bridge" data-testid="bridge-origin" [href]="origin.link" target="_blank" rel="noopener noreferrer">{{ ui.bridgeBadge }}</a>
+                } @else {
+                  <span class="vc-msg__bridge" data-testid="bridge-origin">{{ ui.bridgeBadge }}</span>
+                }
+              }
               <time [attr.datetime]="message().createdAt">{{
                 message().createdAt | date: 'shortTime'
               }}</time>

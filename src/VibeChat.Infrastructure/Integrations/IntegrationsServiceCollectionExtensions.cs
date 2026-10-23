@@ -44,6 +44,7 @@ internal static class IntegrationsServiceCollectionExtensions
         services.Configure<PluginSdkOptions>(configuration.GetSection(PluginSdkOptions.SectionName));
         services.AddScoped<PluginSdkService>();
         services.Configure<PluginRegistryOptions>(configuration.GetSection(PluginRegistryOptions.SectionName));
+        services.Configure<BridgeOptions>(configuration.GetSection(BridgeOptions.SectionName));
         services.AddHttpClient(SiemExportService.HttpClientName, client =>
         {
             client.Timeout = SiemLimits.HttpTimeout;

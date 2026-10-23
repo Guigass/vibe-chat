@@ -443,6 +443,27 @@ describe('MessageBubble (B-163)', () => {
     expect(root.querySelector('.vc-msg__bot')?.textContent).toContain('Bot');
   });
 
+  it('shows a remote identity badge distinct from the local author', async () => {
+    const { fixture } = await setup(
+      baseMessage({
+        mine: false,
+        authorName: 'Bridge bot',
+        authorIsBot: true,
+        remoteOrigin: {
+          network: 'lab',
+          room: 'room-1',
+          subject: 'remote-user',
+          displayName: 'Remote Ada',
+          link: null,
+        },
+      }),
+      { showMeta: true },
+    );
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.vc-msg__meta strong')?.textContent).toContain('Remote Ada');
+    expect(root.querySelector('[data-testid="bridge-origin"]')?.textContent).toContain('Rede externa');
+  });
+
   it('applies plain surface styles for stack-embedded messages', async () => {
     const { fixture } = await setup(baseMessage({ mine: false }), {
       groupRole: 'middle',

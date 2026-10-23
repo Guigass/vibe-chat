@@ -519,6 +519,7 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | Legal hold/DLP | Preservação indevida, abuso de busca e conflito com exclusão | D-23; authZ separada, cadeia de custódia e parecer legal |
 | Offline/mobile | Token e conteúdo persistidos no dispositivo; revogação tardia | D-20; secure storage, remote logout e contrato de sync |
 | Federação | Perda de soberania, retenção e controle de identidade | D-21; trust domains, allowlist e política de cópia |
+| Bridge | Cópia silenciosa, loop, impersonation e SSRF | B-138 / ADR-054 entregue; flag off, pin, consentimento, bot escopado |
 | Live media | Gravação sem consentimento, abuso e exaustão de SFU/TURN | D-19; consentimento visível, quotas, moderação e SLO |
 | E2EE | Recuperação de conta, moderação e compliance incompatíveis | D-26; modelo formal antes de qualquer implementação persistente |
 | Canvas colaborativo | AuthZ por bloco, conflito, histórico e export incompletos | D-17; modelo de permissão e retenção antes de CRDT/OT |
@@ -533,6 +534,18 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 - Capability nova exige confirmação. Sem grant explícito nada é instalado. Revogação desliga plugin e bot e quarentena a versão.
 - RLS FORCE em `integrations.plugin_registry_installs` e `plugin_registry_quarantine`. Outro tenant não lê a linha. Member → 403.
 - Auditoria não leva manifesto, assinatura crua nem token. Rollback da flag não apaga mensagens. O `Down` remove só as duas tabelas novas.
+
+## Bridges (B-138 / ADR-054)
+
+Superfície implementada, R3. A ameaça principal é copiar conteúdo para fora sem
+consentimento, personificar um usuário local ou abrir SSRF no destino. O
+controle é: flag off por default; host só se estiver em `PinnedHosts`; `http`/
+`https` não abre conexão; tráfego só depois de `acknowledgeCopy`; a identidade
+da ponte é um bot de um canal; o mapping remoto é opaco e não vira usuário
+local; loop pelo `InstanceId` ou pelo id já emitido não grava mensagem; o
+mesmo `eventId` não duplica; delete remoto permanece não garantido e a recusa
+é auditada; DLP `federation` omite o corpo; RLS FORCE nas três tabelas; member
+recebe 403; outro tenant não lê a linha. A auditoria não leva corpo nem token.
 
 ## Busca semântica (B-121)
 

@@ -40,11 +40,11 @@ e DLP; inbound resolve mapping autenticado.
 
 ## Aceite
 
-- [ ] Loop não ocorre.
-- [ ] Replay não duplica.
-- [ ] Remote identity é distinguível.
-- [ ] Disconnect bloqueia tráfego.
-- [ ] Delete limitation é visível/auditada.
+- [x] Loop não ocorre.
+- [x] Replay não duplica.
+- [x] Remote identity é distinguível.
+- [x] Disconnect bloqueia tráfego.
+- [x] Delete limitation é visível/auditada.
 
 ## Testes
 

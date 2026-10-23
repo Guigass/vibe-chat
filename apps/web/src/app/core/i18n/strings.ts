@@ -1687,6 +1687,20 @@ export const ui = {
   developerSdkDisabled: $localize`:@@developer.sdkDisabled:O SDK de plugins está desligado nesta instalação.`,
   pluginSdkDisabled: $localize`:@@error.PluginSdkDisabled:O SDK de plugins está desligado nesta instalação.`,
   pluginRegistryDisabled: $localize`:@@error.PluginRegistryDisabled:O registry de plugins está desligado nesta instalação.`,
+  bridgesDisabled: $localize`:@@error.BridgesDisabled:As pontes estão desligadas nesta instalação.`,
+  bridgeBannerDestination: $localize`:@@bridge.bannerDestination:Ponte com %network% · %room%`,
+  bridgeStatePending: $localize`:@@bridge.statePending:Aguardando consentimento`,
+  bridgeStateActive: $localize`:@@bridge.stateActive:Ativa`,
+  bridgeStatePaused: $localize`:@@bridge.statePaused:Pausada`,
+  bridgeStateDisconnected: $localize`:@@bridge.stateDisconnected:Desligada`,
+  bridgeLimitation: $localize`:@@bridge.limitation:Apagar na rede externa não é garantido.`,
+  bridgeConsent: $localize`:@@bridge.consent:As mensagens deste canal serão copiadas para a rede externa.`,
+  bridgeConsentAction: $localize`:@@bridge.consentAction:Permitir cópia`,
+  bridgePause: $localize`:@@bridge.pause:Pausar ponte`,
+  bridgeResume: $localize`:@@bridge.resume:Retomar ponte`,
+  bridgeDisconnect: $localize`:@@bridge.disconnect:Desligar ponte`,
+  bridgeDisconnectConfirm: $localize`:@@bridge.disconnectConfirm:Confirmar desligamento`,
+  bridgeBadge: $localize`:@@bridge.badge:Rede externa`,
   pluginRegistryInvalid: $localize`:@@error.pluginRegistryInvalid:O pacote do registry não passou na conferência.`,
   pluginRegistryRevoked: $localize`:@@error.pluginRegistryRevoked:Esta versão foi revogada.`,
   pluginRegistryDowngrade: $localize`:@@error.pluginRegistryDowngrade:Não é possível voltar a versão por atualização. Use o rollback.`,
@@ -2003,6 +2017,8 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.pluginSdkDisabled;
     case 'PluginRegistryDisabled':
       return ui.pluginRegistryDisabled;
+    case 'BridgesDisabled':
+      return ui.bridgesDisabled;
     case 'InvalidRegistryIndex':
     case 'InvalidRegistrySignature':
     case 'InvalidRegistryChecksum':

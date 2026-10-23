@@ -87,6 +87,14 @@ public static class AuditActions
     public const string PluginRegistryUpdate = "integration.plugin.registry.update";
     public const string PluginRegistryRollback = "integration.plugin.registry.rollback";
     public const string PluginRegistryRevoke = "integration.plugin.registry.revoke";
+    public const string BridgeCreate = "integration.bridge.create";
+    public const string BridgeConsent = "integration.bridge.consent";
+    public const string BridgePause = "integration.bridge.pause";
+    public const string BridgeResume = "integration.bridge.resume";
+    public const string BridgeDisconnect = "integration.bridge.disconnect";
+    public const string BridgeInbound = "integration.bridge.inbound";
+    public const string BridgeCopyBlocked = "integration.bridge.copy.blocked";
+    public const string BridgeDeleteLimited = "integration.bridge.delete.limited";
     public const string ProfileUpdate = "profile.update";
     public const string ProfileAvatar = "profile.avatar";
     public const string UserStatusClear = "user_status.clear";

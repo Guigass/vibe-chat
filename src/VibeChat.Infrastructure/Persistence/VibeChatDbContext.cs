@@ -96,6 +96,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<PluginQuotaCounter> PluginQuotaCounters => Set<PluginQuotaCounter>();
     public DbSet<PluginRegistryInstall> PluginRegistryInstalls => Set<PluginRegistryInstall>();
     public DbSet<PluginRegistryQuarantine> PluginRegistryQuarantines => Set<PluginRegistryQuarantine>();
+    public DbSet<Bridge> Bridges => Set<Bridge>();
+    public DbSet<BridgeIdentity> BridgeIdentities => Set<BridgeIdentity>();
+    public DbSet<BridgeEvent> BridgeEvents => Set<BridgeEvent>();
     public DbSet<MessageRetentionSettings> MessageRetentionSettings => Set<MessageRetentionSettings>();
     public DbSet<MessageLifecyclePolicy> MessageLifecyclePolicies => Set<MessageLifecyclePolicy>();
     public DbSet<MessageVersion> MessageVersions => Set<MessageVersion>();
@@ -1526,6 +1529,58 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.PluginId).HasMaxLength(PluginManifestRules.MaxPluginIdLength).IsRequired();
             entity.Property(x => x.Version).HasMaxLength(PluginManifestRules.MaxVersionLength).IsRequired();
             entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.PluginId, x.Version }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<Bridge>(entity =>
+        {
+            entity.ToTable("bridges", "integrations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.Network).HasMaxLength(40).IsRequired();
+            entity.Property(x => x.RemoteRoom).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.DestinationHost).HasMaxLength(253).IsRequired();
+            entity.Property(x => x.Status).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.Capabilities).HasColumnType("text[]").IsRequired();
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(120);
+            entity.Property(x => x.RequestHash).HasMaxLength(64);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.ChannelId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.IdempotencyKey });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<BridgeIdentity>(entity =>
+        {
+            entity.ToTable("bridge_identities", "integrations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.RemoteSubject).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.DisplayName).HasMaxLength(80).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.BridgeId, x.RemoteSubject }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<BridgeEvent>(entity =>
+        {
+            entity.ToTable("bridge_events", "integrations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Direction).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.EventType).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.RemoteEventId).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.RemoteSubject).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.DisplayName).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.Link).HasMaxLength(300);
+            entity.Property(x => x.Outcome).HasMaxLength(16).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.BridgeId, x.RemoteEventId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.LocalMessageId });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

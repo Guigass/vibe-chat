@@ -1133,6 +1133,28 @@ Instalar exige `grantCapabilities` cobrindo o pacote. Sem isso → 400 `PluginGr
 
 `workspace.admin` apenas. Member e workspace sem membership → 403. Tabelas `integrations.plugin_registry_installs` e `plugin_registry_quarantine` com RLS FORCE. O `Down` remove só essas duas tabelas. Auditoria `integration.plugin.registry.*` não leva manifesto, assinatura crua nem `vc_int_`.
 
+### Bridges (B-138 / ADR-054)
+
+Flag `Integrations:Bridges:Enabled` default **false**. Off → 404 `BridgesDisabled`. O chat não depende desta flag.
+
+Envelope `vibechat.bridge.envelope.v1` (schemaVersion 1). A API não abre conexão: o processo externo puxa `POST /bridges/{bridgeId}/outbound` e empurra `POST /bridges/{bridgeId}/events` com o token do bot (`X-VibeChat-Integration-Token`). Destino `http`/`https` → 400 `BridgeEgressBlocked`. Host fora de `PinnedHosts` → 400 `BridgeDestinationUnpinned`.
+
+Uma ponte por canal, nunca DM. Estado `pending` até `acknowledgeCopy`. Sem consentimento, inbound e outbound respondem 409 `BridgeTrafficBlocked`. Pause e disconnect também. Disconnect desativa o bot. O mesmo `eventId` não cria outra mensagem. Eco com `InstanceId` local, ou id já emitido no pull, é loop e não grava mensagem. `deleteRemoteGuaranteed` é sempre false. Sem capability `deletes`, a mensagem local permanece e a auditoria registra `integration.bridge.delete.limited`. DLP `federation` que não prossegue omite o corpo.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| GET | `/api/v1/workspaces/{workspaceId}/channels/{channelId}/bridge` | membership + `message.read`; estado, destino e limitação |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/bridges` | `workspace.admin`; token do bot **uma vez** |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/bridges/{bridgeId}/consent` | `workspace.admin`; `acknowledgeCopy: true` |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/bridges/{bridgeId}/pause` | `workspace.admin` |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/bridges/{bridgeId}/resume` | `workspace.admin` |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/bridges/{bridgeId}/disconnect` | `workspace.admin`; desativa o bot |
+| GET | `/api/v1/admin/workspaces/{workspaceId}/bridges/{bridgeId}/mapping` | `workspace.admin`; subject opaco, sem e-mail local |
+| POST | `/api/v1/bridges/{bridgeId}/events` | token do bot desta ponte |
+| POST | `/api/v1/bridges/{bridgeId}/outbound` | token do bot desta ponte |
+
+Member → 403 nas rotas admin. Outro tenant não lê a linha (RLS FORCE). Auditoria não leva corpo nem `vc_int_`. O `Down` remove só as três tabelas novas.
+
 ### Templates de workspace (B-115)
 
 Manifesto declarativo `vibechat.workspace-template.v1`. Não carrega `tenantId`, membros, e-mails, tokens nem secrets. Recursos criados recebem o tenant do contexto. Só `workspace.admin` (Auditor/membro → 403).

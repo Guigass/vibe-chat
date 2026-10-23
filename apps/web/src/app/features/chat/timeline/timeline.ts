@@ -584,6 +584,7 @@ export class Timeline {
   onScroll(): void {
     const el = this.scroller()?.nativeElement;
     if (!el) return;
+    if (this.isScrollRequestForChannel(this.messages.scrollRequest(), this.channels.activeChannelId())) return;
     const near = this.isNearBottom(el);
     const wasNear = this.nearBottom();
     if (!near) this.scrollAnchorController?.releaseBottom();
@@ -798,7 +799,6 @@ export class Timeline {
 
   private scrollToBottom(el = this.scroller()?.nativeElement): void {
     if (!el) return;
-    // Scroller may appear after the latch was set; re-bind the pin observer.
     if (this.nearBottom()) this.stickyBottomPin.sync();
     this.anchorTimeline(el, { kind: 'bottom' });
   }
@@ -812,6 +812,7 @@ export class Timeline {
   private anchorMessageRequest(request: MessageScrollRequest): void {
     const el = this.scroller()?.nativeElement;
     if (!el) return;
+    this.setNearBottom(false);
     this.anchorTimeline(
       el,
       {
@@ -822,11 +823,10 @@ export class Timeline {
           ) ?? null,
       },
       () => {
-        this.setNearBottom(this.isNearBottom(el));
         this.messages.setViewingLatest(false);
       },
       () => this.messages.cancelScrollRequest(request.requestId),
-      () => this.messages.acknowledgeScrollRequest(request.requestId),
+      () => (this.setNearBottom(this.isNearBottom(el)), this.messages.acknowledgeScrollRequest(request.requestId)),
     );
   }
 

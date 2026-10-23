@@ -219,7 +219,8 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-135 | Developer portal, credenciais e documentação de API | **Done** — W15; flag `Integrations:DeveloperPortal:Enabled` off; [spec](../product/specs/B-135-developer-portal.md) |
 | B-136 | SDK e contract-test kit | **Done** (W15) — flag `Integrations:PluginSdk:Enabled` off; ADR-051; [spec](../product/specs/B-136-sdk-contract-kit.md) |
 | B-137 | Registry assinado e catálogos governados | **Done** (W15) — flag `Integrations:PluginRegistry:Enabled` off; ADR-053; [spec](../product/specs/B-137-registry-plugins.md) |
-| B-138, B-140/B-141, B-063 | Bridges, branding e clients | Planned — W15 |
+| B-138 | Framework de bridges | **Done** (W15) — flag `Integrations:Bridges:Enabled` off; ADR-054; [spec](../product/specs/B-138-framework-bridges.md) |
+| B-140/B-141, B-063 | Branding e clients | Planned — W15 |
 | B-170, B-143…B-145, B-172 + B-064/B-065 | Performance/escalabilidade, offline, HA, storage, backup de chat (destinos), federação e E2EE | Planned — W16 |
 | B-147…B-149, B-152 | Live media, notas de reunião e canvas | Planned — W17 |
 
@@ -246,7 +247,7 @@ diferentes.
 
 Depois disso, usar a sequência de validação do horizonte ambicioso: comunicação
 organizada → conhecimento/ações → automação/governança (W13: B-164 e B-128
-Done; B-131 Done; B-139 Done; B-129 Done; B-169 Done; B-130 Done; B-132 Done; B-133 Done; B-134 Done; B-146 Done; B-135 Done; B-066 Done; B-111 Done; B-136 Done; B-137 Done; próximo B-138) → plataforma → apostas arquiteturais. Abrir no máximo uma aposta
+Done; B-131 Done; B-139 Done; B-129 Done; B-169 Done; B-130 Done; B-132 Done; B-133 Done; B-134 Done; B-146 Done; B-135 Done; B-066 Done; B-111 Done; B-136 Done; B-137 Done; B-138 Done; próximo B-140) → plataforma → apostas arquiteturais. Abrir no máximo uma aposta
 arquitetural por vez.
 
 ## Itens explicitamente rejeitados na fase 1

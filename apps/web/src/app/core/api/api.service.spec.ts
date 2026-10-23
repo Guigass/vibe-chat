@@ -14,6 +14,7 @@ import { CapacityApiService } from './capacity-api.service';
 import { DeveloperApiService } from './developer-api.service';
 import { PluginApiService } from './plugin-api.service';
 import { SdkApiService } from './sdk-api.service';
+import { BridgeApiService } from './bridge-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
@@ -55,6 +56,7 @@ function createApi(auth: AuthStub): ApiService {
       DeveloperApiService,
       PluginApiService,
       SdkApiService,
+      BridgeApiService,
       { provide: AuthService, useValue: auth },
     ],
   });
@@ -141,6 +143,11 @@ describe('ApiService facade', () => {
     expect(typeof api.updatePluginRegistry).toBe('function');
     expect(typeof api.rollbackPluginRegistry).toBe('function');
     expect(typeof api.revokePluginRegistry).toBe('function');
+    expect(typeof api.channelBridge).toBe('function');
+    expect(typeof api.consentBridge).toBe('function');
+    expect(typeof api.pauseBridge).toBe('function');
+    expect(typeof api.resumeBridge).toBe('function');
+    expect(typeof api.disconnectBridge).toBe('function');
   });
 
   it('sends the dev user header and keeps idempotency on send', async () => {

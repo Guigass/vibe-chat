@@ -280,6 +280,15 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/admin/workspaces/{workspaceId:guid}/plugin-registry/update` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-137; capability nova exige confirmação |
 | POST | `/admin/workspaces/{workspaceId:guid}/plugin-registry/rollback` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-137; restaura a versão anterior assinada |
 | POST | `/admin/workspaces/{workspaceId:guid}/plugin-registry/revoke` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-137; desliga a versão na hora |
+| GET | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/bridge` | permission | `message.read` | ✗ | ✗ | ✓ | B-138; membership; flag off → 404 `BridgesDisabled` |
+| POST | `/admin/workspaces/{workspaceId:guid}/bridges` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-138; pin; token só na criação |
+| POST | `/admin/workspaces/{workspaceId:guid}/bridges/{bridgeId:guid}/consent` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-138; cópia só após acknowledge |
+| POST | `/admin/workspaces/{workspaceId:guid}/bridges/{bridgeId:guid}/pause` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-138; bloqueia os dois lados |
+| POST | `/admin/workspaces/{workspaceId:guid}/bridges/{bridgeId:guid}/resume` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-138; só a partir de paused |
+| POST | `/admin/workspaces/{workspaceId:guid}/bridges/{bridgeId:guid}/disconnect` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-138; desativa o bot |
+| GET | `/admin/workspaces/{workspaceId:guid}/bridges/{bridgeId:guid}/mapping` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-138; subject opaco |
+| POST | `/bridges/{bridgeId:guid}/events` | exempt | bridge bot token | — | — | — | B-138; `AllowAnonymous` + token; outro bot → 403 |
+| POST | `/bridges/{bridgeId:guid}/outbound` | exempt | bridge bot token | — | — | — | B-138; pull; sem socket de saída |
 | GET | `/admin/event-schemas` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; flag off → 404 `EventSchemasDisabled`; sem dado de tenant |
 | GET | `/admin/event-schemas/{eventType}/versions/{schemaVersion:int}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; versão desconhecida → 404 `UnknownSchemaVersion` |
 | POST | `/admin/event-schemas/check` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; não persiste o documento; teto 16 KiB |

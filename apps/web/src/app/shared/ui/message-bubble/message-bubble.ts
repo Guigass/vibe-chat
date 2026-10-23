@@ -130,6 +130,8 @@ export class MessageBubble {
   readonly emojiOptions = REACTION_EMOJI_OPTIONS;
   readonly own = computed(() => idsEqual(this.message().authorUserId, this.auth.profile()?.id));
   readonly authorLabel = computed(() => {
+    const remote = this.message().remoteOrigin?.displayName;
+    if (remote) return remote;
     const id = this.message().authorUserId;
     const members = this.channels.members?.() ?? [];
     return members.find((member) => idsEqual(member.userId, id))?.displayName || this.message().authorName;

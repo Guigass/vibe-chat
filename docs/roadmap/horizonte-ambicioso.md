@@ -150,7 +150,7 @@ Objetivo: tornar extensibilidade um produto sustentável.
 | B-111 | B/C/D/E | Interações, histórico e anexos governados para plugins | B-066 | [B-111](../product/specs/B-111-plugins-horizonte.md) | **Done** — ações namespaced, grant de janela, anexo com scan, quota e revogação; built-in `action-ack`; flag off; ADR-050 |
 | B-136 | B/C/E/G | SDK e contract-test kit para plugins | B-066, B-139 | [B-136](../product/specs/B-136-sdk-contract-kit.md) | **Done** — SDK 1.0.0 .NET/TypeScript, verificador HMAC, matriz e sandbox sintético; flag off; ADR-051 |
 | B-137 | B/C/D/E | Registry assinado e catálogos governados | B-136, D-18 | [B-137](../product/specs/B-137-registry-plugins.md) | **Done** — mirror offline, RSA-PSS, grant, rollback e revogação; flag off; ADR-053 |
-| B-138 | B/C/E | Framework de bridges para redes externas | B-136, D-21 | [B-138](../product/specs/B-138-framework-bridges.md) | Planned |
+| B-138 | B/C/E | Framework de bridges para redes externas | B-136, D-21 | [B-138](../product/specs/B-138-framework-bridges.md) | **Done** — contrato externo, pin, consentimento, loop/replay, identidade remota e delete best-effort; flag off; ADR-054 |
 | B-140 | D/G/B | White-label e branding por tenant | B-100, D-24 | [B-140](../product/specs/B-140-white-label.md) | Planned |
 | B-141 | D/A/E | Cliente desktop empacotado | W10-9, D-20 | [B-141](../product/specs/B-141-cliente-desktop.md) | Planned |
 | B-063 | D/A/E | Clientes mobile nativos | B-141, D-20 | [B-063](../product/specs/B-063-clientes-mobile.md) | Planned |
