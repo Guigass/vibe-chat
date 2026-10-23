@@ -584,6 +584,11 @@ export class Timeline {
   onScroll(): void {
     const el = this.scroller()?.nativeElement;
     if (!el) return;
+    // The anchor's own scrollTop write emits scroll. Re-arming the bottom pin
+    // here snaps the jumped message back into the spacer (viewport ratio 0).
+    if (this.isScrollRequestForChannel(this.messages.scrollRequest(), this.channels.activeChannelId())) {
+      return;
+    }
     const near = this.isNearBottom(el);
     const wasNear = this.nearBottom();
     if (!near) this.scrollAnchorController?.releaseBottom();
@@ -815,7 +820,7 @@ export class Timeline {
     // Header growth (bridge banner) and the pins panel both resize the scroller.
     // The bottom pin would treat that as "stick to latest" and pull the target
     // back out of view. Re-arm only after the anchor window settles.
-    this.stickyBottomPin.setPinned(false);
+    this.setNearBottom(false);
     this.anchorTimeline(
       el,
       {
