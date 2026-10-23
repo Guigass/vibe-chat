@@ -584,11 +584,7 @@ export class Timeline {
   onScroll(): void {
     const el = this.scroller()?.nativeElement;
     if (!el) return;
-    // The anchor's own scrollTop write emits scroll. Re-arming the bottom pin
-    // here snaps the jumped message back into the spacer (viewport ratio 0).
-    if (this.isScrollRequestForChannel(this.messages.scrollRequest(), this.channels.activeChannelId())) {
-      return;
-    }
+    if (this.isScrollRequestForChannel(this.messages.scrollRequest(), this.channels.activeChannelId())) return;
     const near = this.isNearBottom(el);
     const wasNear = this.nearBottom();
     if (!near) this.scrollAnchorController?.releaseBottom();
@@ -803,7 +799,6 @@ export class Timeline {
 
   private scrollToBottom(el = this.scroller()?.nativeElement): void {
     if (!el) return;
-    // Scroller may appear after the latch was set; re-bind the pin observer.
     if (this.nearBottom()) this.stickyBottomPin.sync();
     this.anchorTimeline(el, { kind: 'bottom' });
   }
@@ -817,9 +812,6 @@ export class Timeline {
   private anchorMessageRequest(request: MessageScrollRequest): void {
     const el = this.scroller()?.nativeElement;
     if (!el) return;
-    // Header growth (bridge banner) and the pins panel both resize the scroller.
-    // The bottom pin would treat that as "stick to latest" and pull the target
-    // back out of view. Re-arm only after the anchor window settles.
     this.setNearBottom(false);
     this.anchorTimeline(
       el,
@@ -834,10 +826,7 @@ export class Timeline {
         this.messages.setViewingLatest(false);
       },
       () => this.messages.cancelScrollRequest(request.requestId),
-      () => {
-        this.setNearBottom(this.isNearBottom(el));
-        this.messages.acknowledgeScrollRequest(request.requestId);
-      },
+      () => (this.setNearBottom(this.isNearBottom(el)), this.messages.acknowledgeScrollRequest(request.requestId)),
     );
   }
 
