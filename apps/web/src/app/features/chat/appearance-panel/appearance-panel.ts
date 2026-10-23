@@ -115,7 +115,7 @@ interface ChoiceOption {
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
-      min-height: 2rem;
+      min-height: var(--vc-touch);
       padding: 0.2rem 0.55rem;
       border: 1px solid var(--vc-border);
       border-radius: var(--vc-radius-sm);

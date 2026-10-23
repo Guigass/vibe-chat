@@ -23,6 +23,8 @@ import { VcTooltip } from '../tooltip/tooltip';
     .vc-icon-btn {
       width: 2.25rem;
       height: 2.25rem;
+      min-width: 2.25rem;
+      min-height: 2.25rem;
       display: inline-grid;
       place-items: center;
       border: 1px solid transparent;
@@ -41,6 +43,14 @@ import { VcTooltip } from '../tooltip/tooltip';
     .vc-icon-btn:disabled {
       opacity: 0.45;
       cursor: not-allowed;
+    }
+    @media (max-width: 960px) {
+      .vc-icon-btn {
+        width: var(--vc-touch);
+        height: var(--vc-touch);
+        min-width: var(--vc-touch);
+        min-height: var(--vc-touch);
+      }
     }
   `,
 })

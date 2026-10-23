@@ -25,18 +25,18 @@ import { Component, input, model, output } from '@angular/core';
   styles: `
     .vc-field {
       display: grid;
-      gap: 0.35rem;
+      gap: var(--vc-space-1);
       width: 100%;
     }
     .vc-field__label {
-      font-size: 0.85rem;
+      font-size: var(--vc-text-sm);
       color: var(--vc-ink-muted);
       font-weight: 500;
     }
     .vc-field__control {
       width: 100%;
-      min-height: 2.5rem;
-      padding: 0.55rem 0.8rem;
+      min-height: var(--vc-control-height);
+      padding: var(--vc-space-2) var(--vc-space-3);
       border-radius: var(--vc-radius-md);
       border: 1px solid var(--vc-border);
       background: var(--vc-surface-elevated);

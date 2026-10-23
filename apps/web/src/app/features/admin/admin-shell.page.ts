@@ -42,19 +42,7 @@ export class AdminShellPage implements OnInit {
   }
 
   setToolbarTitle(area: string): void {
-    const titles: Record<string, string> = {
-      overview: areaTitle('overview'),
-      members: areaTitle('members'),
-      conversations: areaTitle('conversations'),
-      audit: areaTitle('audit'),
-      settings: areaTitle('settings'),
-      onboarding: areaTitle('onboarding'),
-      plugins: areaTitle('plugins'),
-      automations: areaTitle('automations'),
-      import: areaTitle('import'),
-      diagnostics: areaTitle('diagnostics'),
-    };
-    this.activeTitle.set(titles[area] ?? ui.admin);
+    this.activeTitle.set(areaTitle(area as AdminAreaId));
   }
 
   onChildActivate(component: { areaId?: AdminAreaId }): void {

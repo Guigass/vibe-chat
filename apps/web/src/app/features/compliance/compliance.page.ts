@@ -159,12 +159,34 @@ import { Workspace, WorkspaceMember } from '../../shared/models/chat.models';
     </main>
   `,
   styles: `
-    .compliance { max-width: 46rem; margin: 0 auto; padding: var(--vc-space-6); color: var(--vc-ink); font-family: var(--vc-font-body); }
-    .compliance__bar, form, li { display: flex; gap: var(--vc-space-3); align-items: center; flex-wrap: wrap; }
+    :host { display: block; min-height: 100dvh; background: var(--vc-bg-atmosphere); }
+    .compliance {
+      width: min(100%, 46rem);
+      margin: 0 auto;
+      padding: var(--vc-space-4);
+      min-width: 0;
+      color: var(--vc-ink);
+      font-family: var(--vc-font-body);
+    }
+    .compliance__bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--vc-space-3);
+    }
+    .compliance__bar h1 { margin: 0; font-size: var(--vc-text-xl); }
+    .compliance__lead, .compliance__warn { overflow-wrap: anywhere; }
     .compliance__warn { padding: var(--vc-space-3); border: 1px solid var(--vc-danger); border-radius: var(--vc-radius-md); }
-    section { margin-top: var(--vc-space-6); }
-    label { display: flex; flex-direction: column; gap: var(--vc-space-1); }
-    button, input, select { font: inherit; }
+    form { display: flex; flex-direction: column; align-items: stretch; gap: var(--vc-space-3); min-width: 0; }
+    li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--vc-space-2); min-width: 0; }
+    section { margin-top: var(--vc-space-6); min-width: 0; }
+    label { display: flex; flex-direction: column; gap: var(--vc-space-1); min-width: 0; }
+    button, input, select, textarea { font: inherit; max-width: 100%; }
+    input, select, textarea, button {
+      min-height: var(--vc-control-height);
+    }
+    input:not([type='radio']):not([type='checkbox']), select, textarea { width: 100%; }
+    h1, h2, p, ul { overflow-wrap: anywhere; }
   `,
 })
 export class CompliancePage implements OnInit {

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { adminRouteGuard } from './features/admin/admin.routes';
+import { designSystemGuard } from './features/dev/design-system.guard';
 
 export const routes: Routes = [
   {
@@ -44,6 +45,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/compliance/compliance.page').then((m) => m.CompliancePage),
+  },
+  {
+    path: 'dev/design-system',
+    canActivate: [designSystemGuard, authGuard],
+    loadComponent: () =>
+      import('./features/dev/design-system.page').then((m) => m.DesignSystemPage),
   },
   {
     path: 'admin',

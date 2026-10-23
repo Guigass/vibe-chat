@@ -8,6 +8,7 @@ testes nem uma revisão de segurança.
 |-----|---------|---------------------|-----------|
 | [001](../adrs/ADR-001-monolito-modular.md) | Monólito modular | `apps/api`, `apps/worker`, `modules/*`, testes de arquitetura | Alinhado; ampliar varredura de dependências entre todos os módulos |
 | [002](../adrs/ADR-002-angular.md) | Angular 22 + CDK + UI própria | Angular/CDK + `@spartan-ng/brain` (MIT); sem `primeng` (#82 / B-104) | **Alinhado** (D-15 / D-27 / B-104) |
+| [052](../adrs/ADR-052-design-system-layout.md) | Tokens e primitivas de layout no front | `styles/_tokens.scss`, `shared/ui`, `/dev/design-system` | **Alinhado** |
 | [003](../adrs/ADR-003-aspnet-core.md) | ASP.NET Core / .NET 10 | projetos API/Worker e target framework dos `*.csproj` | Alinhado |
 | [004](../adrs/ADR-004-signalr.md) | SignalR para realtime | módulo Realtime, hub na API, cliente `@microsoft/signalr` | Alinhado |
 | [005](../adrs/ADR-005-postgresql.md) | PostgreSQL como SoT | Compose, EF Core migrations, history no banco | Alinhado |

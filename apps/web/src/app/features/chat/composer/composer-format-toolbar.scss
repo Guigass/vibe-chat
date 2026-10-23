@@ -3,11 +3,13 @@
 }
     .composer__format {
       display: flex;
+      flex-wrap: wrap;
       gap: 0;
       align-items: center;
       position: relative;
       grid-column: 1;
       grid-row: 2;
+      max-width: 100%;
       min-width: 0;
     }
     .composer__format ::ng-deep .vc-icon-btn,
@@ -45,5 +47,10 @@
   .composer__format {
     grid-column: 1;
     grid-row: 2;
+  }
+  .composer__format ::ng-deep .vc-icon-btn,
+  .composer__icon-btn {
+    width: var(--vc-touch);
+    height: var(--vc-touch);
   }
 }

@@ -1,0 +1,93 @@
+<vc-page>
+  <main class="ds">
+    <vc-stack gap="2">
+      <h1>{{ ui.dsTitle }}</h1>
+      <p>{{ ui.dsLead }}</p>
+    </vc-stack>
+
+    <section class="ds__section" [attr.aria-label]="ui.dsTokens">
+      <h2>{{ ui.dsTokens }}</h2>
+      <div class="ds__swatches">
+        @for (swatch of swatches; track swatch.name) {
+          <figure class="ds__swatch">
+            <span [style.background]="swatch.color"></span>
+            <figcaption>{{ swatch.name }}</figcaption>
+          </figure>
+        }
+      </div>
+    </section>
+
+    <section class="ds__section" [attr.aria-label]="ui.dsPrimitives">
+      <h2>{{ ui.dsPrimitives }}</h2>
+      <vc-stack gap="2">
+        <p>{{ ui.dsStack }}</p>
+        <vc-stack gap="2">
+          <vc-badge tone="muted">{{ ui.dsStack }}</vc-badge>
+          <vc-badge>{{ ui.dsBadgeNew }}</vc-badge>
+        </vc-stack>
+      </vc-stack>
+      <vc-stack gap="2">
+        <p>{{ ui.dsCluster }}</p>
+        <vc-cluster>
+          <vc-button>{{ ui.dsPrimary }}</vc-button>
+          <vc-button variant="ghost">{{ ui.dsGhost }}</vc-button>
+          <vc-button variant="subtle">{{ ui.dsSubtle }}</vc-button>
+        </vc-cluster>
+      </vc-stack>
+      <vc-split class="ds-split">
+        <p vcSplitSide>{{ ui.dsSide }}</p>
+        <p>{{ ui.dsContent }}</p>
+      </vc-split>
+    </section>
+
+    <section class="ds__section" [attr.aria-label]="ui.dsComponents">
+      <h2>{{ ui.dsComponents }}</h2>
+      <vc-toolbar [label]="ui.dsToolbar">
+        <span vcToolbarStart>{{ ui.dsToolbar }}</span>
+        <vc-badge tone="success">{{ ui.dsSampleActive }}</vc-badge>
+      </vc-toolbar>
+      <vc-tabs [tabs]="tabs" [(active)]="tab" />
+      <vc-cluster>
+        <vc-input [label]="ui.dsName" [placeholder]="ui.dsPlaceholder" [(value)]="name" />
+        <vc-select [label]="ui.dsChannel" [(value)]="channel" [options]="channelOptions" />
+      </vc-cluster>
+      <vc-card [title]="ui.dsCardTitle">
+        <p>{{ ui.dsCardBody }}</p>
+        <vc-button (click)="modalOpen.set(true)">{{ ui.dsOpenModal }}</vc-button>
+      </vc-card>
+      <vc-table [caption]="ui.dsMembers">
+        <thead>
+          <tr>
+            <th scope="col">{{ ui.dsColName }}</th>
+            <th scope="col">{{ ui.dsColStatus }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ ui.dsSampleName }}</td>
+            <td>{{ ui.dsSampleActive }}</td>
+          </tr>
+        </tbody>
+      </vc-table>
+      <vc-list>
+        <li>{{ ui.dsListItem }}</li>
+        <li>{{ ui.dsListItem }}</li>
+      </vc-list>
+      <vc-empty-state [title]="ui.dsEmptyTitle" [description]="ui.dsEmptyBody" />
+    </section>
+
+    <section class="ds__rules">
+      <vc-card [title]="ui.dsDoTitle"><p>{{ ui.dsDoBody }}</p></vc-card>
+      <vc-card [title]="ui.dsDontTitle"><p>{{ ui.dsDontBody }}</p></vc-card>
+    </section>
+  </main>
+</vc-page>
+
+<vc-modal
+  [(open)]="modalOpen"
+  [title]="ui.dsModalTitle"
+  [closeLabel]="ui.dsClose"
+  titleId="ds-modal-title"
+>
+  <p>{{ ui.dsModalBody }}</p>
+</vc-modal>

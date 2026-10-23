@@ -105,18 +105,33 @@
             [attr.aria-label]="navCompact() && !narrowViewport() ? ui.admin : null"
             [vcTooltip]="navCompact() && !narrowViewport() ? ui.admin : null"
             [tooltipDisabled]="!(navCompact() && !narrowViewport())"
-          >{{ ui.admin }}</a>
+          >
+            <span class="shell__link-mark" aria-hidden="true">{{ ui.admin.slice(0, 1) }}</span>
+            <span class="shell__link-label">{{ ui.admin }}</span>
+          </a>
         }
-        <a routerLink="/app/catch-up" data-testid="catch-up-open">{{ ui.catchUp }}</a>
-        <a routerLink="/compliance" data-testid="compliance-open">{{ ui.compliance }}</a>
-        <button type="button" data-testid="own-profile-open" (click)="openOwnProfile()">{{ ui.profileMine }}</button>
+        <a routerLink="/app/catch-up" data-testid="catch-up-open">
+          <span class="shell__link-mark" aria-hidden="true">{{ ui.catchUp.slice(0, 1) }}</span>
+          <span class="shell__link-label">{{ ui.catchUp }}</span>
+        </a>
+        <a routerLink="/compliance" data-testid="compliance-open">
+          <span class="shell__link-mark" aria-hidden="true">{{ ui.compliance.slice(0, 1) }}</span>
+          <span class="shell__link-label">{{ ui.compliance }}</span>
+        </a>
+        <button type="button" data-testid="own-profile-open" (click)="openOwnProfile()">
+          <span class="shell__link-mark" aria-hidden="true">{{ ui.profileMine.slice(0, 1) }}</span>
+          <span class="shell__link-label">{{ ui.profileMine }}</span>
+        </button>
         <button
           type="button"
           [attr.aria-label]="navCompact() && !narrowViewport() ? ui.logout : null"
           [vcTooltip]="navCompact() && !narrowViewport() ? ui.logout : null"
           [tooltipDisabled]="!(navCompact() && !narrowViewport())"
           (click)="logout()"
-        >{{ ui.logout }}</button>
+        >
+          <span class="shell__link-mark" aria-hidden="true">{{ ui.logout.slice(0, 1) }}</span>
+          <span class="shell__link-label">{{ ui.logout }}</span>
+        </button>
       </div>
     </footer>
   </aside>

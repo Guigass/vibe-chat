@@ -75,27 +75,34 @@ import { Avatar } from '../../../shared/ui/avatar/avatar';
     }
   `,
   styles: `
-    :host { position: fixed; inset: 0; z-index: 40; display: contents; }
+    :host { position: fixed; inset: 0; z-index: var(--vc-z-modal); display: contents; }
     .profile-drawer__backdrop {
       position: fixed; inset: 0; border: 0;
       background: color-mix(in srgb, var(--vc-ink) 35%, transparent);
     }
     .profile-drawer {
       position: fixed; top: 0; right: 0; bottom: 0; width: min(24rem, 100%);
-      overflow: auto; display: grid; align-content: start; gap: 0.75rem;
+      overflow: auto; display: grid; align-content: start; gap: var(--vc-space-3);
       padding: var(--vc-space-4); border-left: 1px solid var(--vc-border);
       background: var(--vc-surface-elevated); color: var(--vc-ink);
     }
-    .profile-drawer__head, .profile-drawer__actions { display: flex; justify-content: space-between; gap: 0.5rem; }
-    .profile-drawer h2 { margin: 0; font-family: var(--vc-font-display); font-size: 1.15rem; }
-    .profile-drawer label { display: grid; gap: 0.25rem; }
+    .profile-drawer__head, .profile-drawer__actions {
+      display: flex; justify-content: space-between; align-items: center; gap: var(--vc-space-2); min-width: 0;
+    }
+    .profile-drawer h2 {
+      margin: 0; min-width: 0; font-family: var(--vc-font-display); font-size: var(--vc-text-lg);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .profile-drawer label { display: grid; gap: var(--vc-space-1); min-width: 0; }
     .profile-drawer input, .profile-drawer textarea {
-      min-height: 2.5rem; border: 1px solid var(--vc-border); border-radius: var(--vc-radius-sm);
-      background: var(--vc-surface); color: var(--vc-ink); padding: 0.4rem 0.6rem; font: inherit;
+      width: 100%; max-width: 100%; min-height: var(--vc-control-height);
+      border: 1px solid var(--vc-border); border-radius: var(--vc-radius-sm);
+      background: var(--vc-surface); color: var(--vc-ink); padding: var(--vc-space-2) var(--vc-space-3); font: inherit;
     }
     .profile-drawer button {
       border: 1px solid var(--vc-border); background: transparent; color: var(--vc-ink);
-      border-radius: var(--vc-radius-sm); min-height: 2.25rem; padding: 0.35rem 0.7rem; font: inherit; cursor: pointer;
+      border-radius: var(--vc-radius-sm); min-height: var(--vc-touch); min-width: var(--vc-touch);
+      padding: var(--vc-space-2) var(--vc-space-3); font: inherit; cursor: pointer;
     }
     .profile-drawer__name { margin: 0; font-weight: 600; }
     .profile-drawer p { margin: 0; }

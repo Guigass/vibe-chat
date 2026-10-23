@@ -226,7 +226,7 @@ function weekdayLabels(locale: string): Array<{ bit: number; label: string }> {
       gap: var(--vc-space-4);
       height: 100%;
       min-height: 0;
-      overflow-y: auto;
+      overflow: auto clip;
       padding: var(--vc-space-4);
       background: var(--vc-surface-elevated);
       color: var(--vc-ink);
@@ -311,8 +311,8 @@ function weekdayLabels(locale: string): Array<{ bit: number; label: string }> {
       gap: var(--vc-space-1);
     }
     .notif-panel__day {
-      min-width: 2rem;
-      min-height: 2rem;
+      min-width: var(--vc-touch);
+      min-height: var(--vc-touch);
       padding: 0 var(--vc-space-1);
       border-radius: var(--vc-radius-sm);
       border: 1px solid var(--vc-border);
@@ -335,7 +335,7 @@ function weekdayLabels(locale: string): Array<{ bit: number; label: string }> {
     .notif-panel__hint {
       margin: 0;
       color: var(--vc-ink-muted);
-      font-size: 0.8rem;
+      font-size: var(--vc-text-sm); overflow-wrap: anywhere;
     }
     .notif-panel__field {
       display: grid;

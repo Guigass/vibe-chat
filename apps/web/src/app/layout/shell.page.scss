@@ -31,7 +31,7 @@
 .shell__backdrop {
   position: fixed;
   inset: 0;
-  z-index: 19;
+  z-index: var(--vc-z-overlay);
   margin: 0;
   padding: 0;
   border: 0;
@@ -60,13 +60,13 @@
 }
 
 .shell--nav-compact {
-  --vc-sidebar-width: 4.5rem;
+  --vc-sidebar-width: var(--vc-sidebar-rail);
 }
 
 .shell__brand-actions {
   display: flex;
   align-items: center;
-  gap: 0.15rem;
+  gap: var(--vc-space-1);
 }
 
 .shell__wordmark-short {
@@ -96,12 +96,42 @@
   flex-direction: column;
   align-items: center;
   padding-inline: var(--vc-space-2);
-  font-size: 0.78rem;
+  font-size: var(--vc-text-xs);
+}
+
+.shell__link-mark {
+  display: none;
+}
+
+.shell--nav-compact .shell__sidebar-links {
+  flex-direction: column;
+  align-items: center;
+}
+
+.shell--nav-compact .shell__link-mark {
+  display: inline;
+}
+
+.shell--nav-compact .shell__link-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .shell--nav-compact .shell__sidebar-links a,
 .shell--nav-compact .shell__sidebar-links button {
-  padding: 0.25rem;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--vc-touch);
+  height: var(--vc-touch);
+  padding: 0;
 }
 
 .shell__brand {
@@ -137,7 +167,7 @@
 
 .shell__sidebar-footer {
   display: grid;
-  gap: 0.65rem;
+  gap: var(--vc-space-3);
   padding: var(--vc-space-3) var(--vc-space-4) 0;
   border-top: 1px solid var(--vc-border);
 }
@@ -199,18 +229,40 @@
 
 .shell__sidebar-links {
   display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--vc-space-1);
+  min-width: 0;
 }
 
 .shell__sidebar-links a,
 .shell__sidebar-links button {
+  display: flex;
+  align-items: center;
+  min-height: 2rem;
+  min-width: 0;
   border: 0;
+  border-radius: var(--vc-radius-sm);
   background: transparent;
   color: var(--vc-ink-muted);
   cursor: pointer;
   font-weight: 500;
-  padding: 0.35rem 0;
+  padding: var(--vc-space-1) var(--vc-space-2);
+  text-align: start;
+}
+
+.shell__link-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 960px) {
+  .shell__sidebar-links a,
+  .shell__sidebar-links button {
+    min-height: var(--vc-touch);
+  }
 }
 
 .shell__sidebar-links a.is-active,
@@ -272,7 +324,7 @@
 .shell__drop-overlay {
   position: absolute;
   inset: 0;
-  z-index: 12;
+  z-index: var(--vc-z-dropdown);
   display: grid;
   place-items: center;
   pointer-events: none;
@@ -284,31 +336,43 @@
 
 .shell__header {
   display: flex;
-  align-items: center;
-  gap: var(--vc-space-3);
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--vc-space-2) var(--vc-space-3);
   padding: var(--vc-space-3) var(--vc-space-4);
   border-bottom: 1px solid var(--vc-border);
-  min-height: 4.25rem;
+  min-height: 4rem;
+  min-width: 0;
 }
 
 .shell__title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--vc-space-1);
   /* OPS-E2E-B098: never collapse to 0 — Playwright treats a 0×n h1 as hidden. */
   min-width: 6.5rem;
-  flex: 1 1 8rem;
+  flex: 1 1 12rem;
+}
+
+.shell__title h1,
+.shell__title p {
+  max-width: 100%;
 }
 
 .shell__title h1 {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: var(--vc-text-lg);
+  line-height: var(--vc-leading-tight);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .shell__title p {
-  margin: 0.15rem 0 0;
+  margin: 0;
   color: var(--vc-ink-muted);
-  font-size: 0.85rem;
+  font-size: var(--vc-text-sm);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -328,7 +392,7 @@
   position: absolute;
   top: calc(100% + 0.35rem);
   right: 0;
-  z-index: 12;
+  z-index: var(--vc-z-dropdown);
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -450,6 +514,10 @@
   max-width: min(22rem, 42vw);
 }
 
+.shell__search[hidden] {
+  display: none !important;
+}
+
 .shell__search.is-open .shell__search-panel,
 .shell__search.is-focused .shell__search-panel {
   animation: shell-search-in 160ms ease-out;
@@ -479,7 +547,7 @@
   position: absolute;
   top: calc(100% + 0.35rem);
   right: 0;
-  z-index: 12;
+  z-index: var(--vc-z-dropdown);
   width: min(28rem, 86vw);
   max-height: min(28rem, 62vh);
   overflow: auto;
@@ -603,7 +671,11 @@
 .shell__actions {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--vc-space-1);
+  margin-left: auto;
+  min-width: 0;
 }
 
 .shell__dnd-pill {
@@ -710,6 +782,15 @@
   margin-bottom: var(--vc-space-4);
 }
 
+vc-shell-context:not(:has(aside)) { display: none; }
+vc-shell-context:has(aside) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
 .shell__context h2 {
   margin: 0;
   font-size: 1rem;
@@ -739,8 +820,8 @@
   .shell__sidebar {
     position: fixed;
     inset: 0 auto 0 0;
-    width: min(86vw, var(--vc-sidebar-width));
-    z-index: 20;
+    width: min(18rem, calc(100vw - 3rem));
+    z-index: calc(var(--vc-z-overlay) + 1);
     box-shadow: var(--vc-shadow-soft);
   }
 
@@ -748,16 +829,29 @@
     display: none;
   }
 
-  .shell__context {
+  vc-shell-context:has(aside) {
     position: fixed;
     inset: 0 0 0 auto;
-    width: min(86vw, var(--vc-context-width));
-    z-index: 21;
+    width: min(22rem, calc(100vw - 3rem));
+    height: 100dvh;
+    z-index: calc(var(--vc-z-overlay) + 2);
+    overflow: hidden;
+    background: var(--vc-surface-elevated);
     box-shadow: var(--vc-shadow-soft);
   }
 
   .shell__search {
-    display: none;
+    order: 5;
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .shell__search-panel {
+    left: 0;
+    right: 0;
+    width: 100%;
   }
 
   /* Keep channel title readable; AI actions are secondary on narrow. */

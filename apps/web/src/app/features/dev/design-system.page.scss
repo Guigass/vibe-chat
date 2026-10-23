@@ -1,0 +1,101 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  background: var(--vc-bg-atmosphere);
+  color: var(--vc-ink);
+}
+
+.ds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vc-space-8);
+}
+
+.ds__section,
+.ds h1,
+.ds h2,
+.ds p,
+.ds figure {
+  margin: 0;
+}
+
+.ds__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vc-space-4);
+  min-width: 0;
+}
+
+.ds h1,
+.ds h2 {
+  font-family: var(--vc-font-display);
+}
+
+.ds h1 {
+  font-size: var(--vc-text-2xl);
+}
+
+.ds h2 {
+  font-size: var(--vc-text-xl);
+}
+
+.ds p {
+  max-width: 62ch;
+  color: var(--vc-ink-muted);
+  line-height: var(--vc-leading-body);
+}
+
+.ds__swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vc-space-3);
+}
+
+.ds__swatch {
+  display: grid;
+  gap: var(--vc-space-1);
+  width: 7.5rem;
+}
+
+.ds__swatch span {
+  display: block;
+  height: 3rem;
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-sm);
+}
+
+.ds__swatch figcaption {
+  font-family: var(--vc-font-mono);
+  font-size: var(--vc-text-xs);
+  color: var(--vc-ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.ds__rules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--vc-space-4);
+}
+
+.ds-split {
+  overflow: hidden;
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius-md);
+  background: var(--vc-surface-elevated);
+}
+
+:host ::ng-deep .ds-split .vc-split__side,
+:host ::ng-deep .ds-split .vc-split__main {
+  padding: var(--vc-space-4);
+}
+
+:host ::ng-deep .ds-split .vc-split__side {
+  border-inline-end: 1px solid var(--vc-border);
+}
+
+@media (max-width: 960px) {
+  :host ::ng-deep .ds-split .vc-split__side {
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--vc-border);
+  }
+}

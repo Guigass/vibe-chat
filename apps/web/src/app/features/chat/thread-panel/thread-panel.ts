@@ -197,20 +197,11 @@ import { MessageAnnouncer } from '../../../shared/ui/message-announcer';
       height: 100%;
       overflow: hidden;
     }
-    .thread {
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      height: 100%;
-      min-height: 0;
-      overflow: hidden;
-    }
+    .thread { display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0; overflow: hidden; }
+    .thread__header, .thread__auto-follow, .thread__composer { flex: 0 0 auto; }
     .thread__header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 0.75rem;
-      padding: var(--vc-space-4);
-      border-bottom: 1px solid var(--vc-border);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: var(--vc-space-3);
+      min-width: 0; padding: var(--vc-space-4); border-bottom: 1px solid var(--vc-border);
     }
     .thread__header h2 {
       margin: 0;
@@ -228,9 +219,8 @@ import { MessageAnnouncer } from '../../../shared/ui/message-announcer';
       gap: var(--vc-space-2);
     }
     .thread__follow {
-      font: inherit;
-      font-size: var(--vc-text-xs);
-      padding: var(--vc-space-1) var(--vc-space-2);
+      font: inherit; font-size: var(--vc-text-xs); min-height: var(--vc-touch);
+      padding: var(--vc-space-2) var(--vc-space-3);
       border-radius: var(--vc-radius-sm);
       border: 1px solid var(--vc-border-subtle);
       background: transparent;
@@ -264,7 +254,7 @@ import { MessageAnnouncer } from '../../../shared/ui/message-announcer';
       padding: 0;
     }
     .thread__scroll {
-      min-height: 0;
+      flex: 1 1 auto; min-height: 0; min-width: 0;
       overflow: auto;
       overscroll-behavior: contain;
       padding: var(--vc-space-4);
@@ -283,16 +273,15 @@ import { MessageAnnouncer } from '../../../shared/ui/message-announcer';
       gap: var(--vc-space-3);
     }
     .thread__composer {
-      display: grid;
-      gap: 0.65rem;
-      padding: var(--vc-space-4);
-      border-top: 1px solid var(--vc-border);
+      display: grid; gap: var(--vc-space-3); min-width: 0;
+      padding: var(--vc-space-4); border-top: 1px solid var(--vc-border);
     }
     .thread__reply {
       display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 0.55rem;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--vc-space-2);
       align-items: start;
+      min-width: 0;
       padding: 0.45rem 0.6rem;
       border-left: 3px solid var(--vc-brand);
       border-radius: 0 var(--vc-radius-sm) var(--vc-radius-sm) 0;

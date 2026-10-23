@@ -33,6 +33,44 @@
   --vc-msg-gap: 0.7rem;
   --vc-msg-avatar: 2.125rem;
   --vc-composer-pad: var(--vc-space-3);
+
+  /* Type scale. 1rem = 16px, steps stay on the 4px grid. */
+  --vc-text-xs: 0.75rem;
+  --vc-text-sm: 0.875rem;
+  --vc-text-md: 1rem;
+  --vc-text-lg: 1.125rem;
+  --vc-text-xl: 1.25rem;
+  --vc-text-2xl: 1.5rem;
+  --vc-text-display: 2.5rem;
+  --vc-leading-tight: 1.2;
+  --vc-leading-body: 1.5;
+
+  /* Elevation. Ink is resolved from the active theme. */
+  --vc-shadow-sm: 0 1px 2px color-mix(in srgb, var(--vc-ink, #1c1917) 12%, transparent);
+  --vc-shadow-md: 0 8px 24px color-mix(in srgb, var(--vc-ink, #1c1917) 18%, transparent);
+  --vc-shadow-lg: 0 16px 40px color-mix(in srgb, var(--vc-ink, #1c1917) 22%, transparent);
+
+  /* Stacking. CDK overlays stay above --vc-z-skip. */
+  --vc-z-base: 0;
+  --vc-z-raised: 1;
+  --vc-z-sticky: 10;
+  --vc-z-dropdown: 20;
+  --vc-z-overlay: 30;
+  --vc-z-modal: 40;
+  --vc-z-toast: 50;
+  --vc-z-skip: 60;
+
+  /* Breakpoint names. Media queries repeat these px values. */
+  --vc-bp-sm: 640px;
+  --vc-bp-md: 768px;
+  --vc-bp-lg: 960px;
+  --vc-bp-xl: 1280px;
+  --vc-bp-2xl: 1440px;
+
+  --vc-control-height: 2.5rem;
+  --vc-touch: 2.5rem;
+  --vc-page-max: 72rem;
+  --vc-sidebar-rail: 4.5rem;
 }
 
 /* Light colors only when not dark — must not sit on bare :root (that always matches). */
@@ -79,6 +117,13 @@ html:not([data-theme='dark']) {
 
   --vc-focus-ring: 0 0 0 3px rgba(13, 148, 136, 0.35);
   --vc-shadow-soft: 0 8px 30px rgba(15, 23, 42, 0.08);
+
+  --vc-text: var(--vc-ink);
+  --vc-text-muted: var(--vc-ink-muted);
+  --vc-border-subtle: color-mix(in srgb, var(--vc-border) 65%, transparent);
+  --vc-surface-sunken: color-mix(in srgb, var(--vc-ink) 5%, var(--vc-surface));
+  --vc-surface-raised: var(--vc-surface-elevated);
+  --vc-warning-soft: color-mix(in srgb, var(--vc-warning) 18%, var(--vc-surface));
 }
 
 /*
@@ -124,6 +169,13 @@ html[data-theme='dark'] {
 
   --vc-focus-ring: 0 0 0 3px rgba(45, 212, 191, 0.35);
   --vc-shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.35);
+
+  --vc-text: var(--vc-ink);
+  --vc-text-muted: var(--vc-ink-muted);
+  --vc-border-subtle: color-mix(in srgb, var(--vc-border) 65%, transparent);
+  --vc-surface-sunken: color-mix(in srgb, var(--vc-ink) 5%, var(--vc-surface));
+  --vc-surface-raised: var(--vc-surface-elevated);
+  --vc-warning-soft: color-mix(in srgb, var(--vc-warning) 18%, var(--vc-surface));
 }
 
 html[data-density='compact'] {
