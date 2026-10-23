@@ -8,6 +8,7 @@ using VibeChat.Conversations;
 using VibeChat.Files;
 using VibeChat.Identity;
 using VibeChat.Infrastructure;
+using VibeChat.Integrations;
 using VibeChat.Messaging;
 using VibeChat.SharedKernel;
 using VibeChat.Tenancy;
@@ -693,6 +694,7 @@ internal static class MessagingEndpointHelpers
             Announcement: x.DeletedAt == null && announcementsByMessage.TryGetValue(x.Id.Value, out var announcement) ? announcement : null)).ToArray();
 
         messages = await MarkBotAuthorsAsync(db, channel.TenantId, messages, ct);
+        messages = await AttachRemoteOriginsAsync(db, channel.TenantId, messages, ct);
         messages = await AttachPluginCardsAsync(db, channel.TenantId, messages, ct);
         messages = await MessageHistoryEndpoints.ApplyMoveLinksAsync(db, profile.Id, messages, ct);
         return new ChannelMessagesResponse(messages, hasMoreBefore, hasMoreAfter);
@@ -720,6 +722,53 @@ internal static class MessagingEndpointHelpers
 
         var bots = botUserIds.Select(x => x.Value).ToHashSet();
         return messages.Select(m => bots.Contains(m.AuthorId) ? m with { AuthorIsBot = true } : m).ToArray();
+    }
+
+    internal static async Task<MessageResponse[]> AttachRemoteOriginsAsync(
+        VibeChatDbContext db,
+        TenantId tenantId,
+        MessageResponse[] messages,
+        CancellationToken ct)
+    {
+        if (messages.Length == 0)
+        {
+            return messages;
+        }
+
+        var ids = messages.Select(m => m.Id).ToArray();
+        var rows = await db.BridgeEvents.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.Direction == BridgeRules.Inbound && x.LocalMessageId != null && ids.Contains(x.LocalMessageId.Value))
+            .ToListAsync(ct);
+        if (rows.Count == 0)
+        {
+            return messages;
+        }
+
+        var bridgeIds = rows.Select(x => x.BridgeId).Distinct().ToArray();
+        var bridges = await db.Bridges.AsNoTracking()
+            .Where(x => bridgeIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id, ct);
+        var byMessage = rows
+            .GroupBy(x => x.LocalMessageId!.Value)
+            .ToDictionary(group => group.Key, group => group.First());
+        return messages.Select(message =>
+        {
+            if (!byMessage.TryGetValue(message.Id, out var row) || !bridges.TryGetValue(row.BridgeId, out var bridge))
+            {
+                return message;
+            }
+
+            return message with
+            {
+                RemoteOrigin = new MessageRemoteOrigin(
+                    bridge.Network,
+                    bridge.RemoteRoom,
+                    row.RemoteSubject,
+                    row.DisplayName,
+                    row.Link,
+                    false)
+            };
+        }).ToArray();
     }
 
     internal static async Task<MessageResponse[]> AttachPluginCardsAsync(

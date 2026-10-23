@@ -843,6 +843,12 @@ ALTER TABLE IF EXISTS integrations.plugin_registry_installs ENABLE ROW LEVEL SEC
 ALTER TABLE IF EXISTS integrations.plugin_registry_installs FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS integrations.plugin_registry_quarantine ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS integrations.plugin_registry_quarantine FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.bridges ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.bridges FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.bridge_identities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.bridge_identities FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.bridge_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.bridge_events FORCE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS tenant_isolation_visual_preferences ON identity.visual_preferences;
 CREATE POLICY tenant_isolation_visual_preferences ON identity.visual_preferences
@@ -881,6 +887,21 @@ CREATE POLICY tenant_isolation_plugin_registry_installs ON integrations.plugin_r
 
 DROP POLICY IF EXISTS tenant_isolation_plugin_registry_quarantine ON integrations.plugin_registry_quarantine;
 CREATE POLICY tenant_isolation_plugin_registry_quarantine ON integrations.plugin_registry_quarantine
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_bridges ON integrations.bridges;
+CREATE POLICY tenant_isolation_bridges ON integrations.bridges
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_bridge_identities ON integrations.bridge_identities;
+CREATE POLICY tenant_isolation_bridge_identities ON integrations.bridge_identities
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_bridge_events ON integrations.bridge_events;
+CREATE POLICY tenant_isolation_bridge_events ON integrations.bridge_events
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

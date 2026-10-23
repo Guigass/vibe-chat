@@ -20,6 +20,7 @@ import { CapacityApiService } from './capacity-api.service';
 import { DeveloperApiService } from './developer-api.service';
 import { PluginApiService } from './plugin-api.service';
 import { SdkApiService } from './sdk-api.service';
+import { BridgeApiService } from './bridge-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -47,6 +48,7 @@ export class ApiService {
   private readonly developer = inject(DeveloperApiService);
   private readonly plugins = inject(PluginApiService);
   private readonly sdk = inject(SdkApiService);
+  private readonly bridges = inject(BridgeApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -276,4 +278,9 @@ export class ApiService {
   readonly updatePluginRegistry: PluginApiService['updatePluginRegistry'] = this.plugins.updatePluginRegistry.bind(this.plugins);
   readonly rollbackPluginRegistry: PluginApiService['rollbackPluginRegistry'] = this.plugins.rollbackPluginRegistry.bind(this.plugins);
   readonly revokePluginRegistry: PluginApiService['revokePluginRegistry'] = this.plugins.revokePluginRegistry.bind(this.plugins);
+  readonly channelBridge: BridgeApiService['channelBridge'] = this.bridges.channelBridge.bind(this.bridges);
+  readonly consentBridge: BridgeApiService['consentBridge'] = this.bridges.consentBridge.bind(this.bridges);
+  readonly pauseBridge: BridgeApiService['pauseBridge'] = this.bridges.pauseBridge.bind(this.bridges);
+  readonly resumeBridge: BridgeApiService['resumeBridge'] = this.bridges.resumeBridge.bind(this.bridges);
+  readonly disconnectBridge: BridgeApiService['disconnectBridge'] = this.bridges.disconnectBridge.bind(this.bridges);
 }

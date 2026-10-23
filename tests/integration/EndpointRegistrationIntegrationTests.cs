@@ -384,6 +384,15 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/plugin-registry/update", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
             new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/plugin-registry/rollback", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
             new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/plugin-registry/revoke", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/channels/{channelId:guid}/bridge", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/bridges", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/bridges/{bridgeId:guid}/consent", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/bridges/{bridgeId:guid}/pause", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/bridges/{bridgeId:guid}/resume", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/admin/workspaces/{workspaceId:guid}/bridges/{bridgeId:guid}/disconnect", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("GET", "/api/v1/admin/workspaces/{workspaceId:guid}/bridges/{bridgeId:guid}/mapping", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/bridges/{bridgeId:guid}/events", "", true, "bridge bot token (B-138)"),
+            new("POST", "/api/v1/bridges/{bridgeId:guid}/outbound", "", true, "bridge bot token (B-138)"),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(

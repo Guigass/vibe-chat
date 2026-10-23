@@ -205,6 +205,9 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Integrations:PluginRegistry:TrustRoots:0:Catalogs:2", "private");
         builder.UseSetting("Integrations:PluginRegistry:TrustRoots:0:Catalogs:3", "community");
         builder.UseSetting("Integrations:PluginRegistry:AllowlistedCatalogs:0", "community");
+        builder.UseSetting("Integrations:Bridges:Enabled", "true");
+        builder.UseSetting("Integrations:Bridges:InstanceId", "lab-instance");
+        builder.UseSetting("Integrations:Bridges:PinnedHosts:0", "fake.bridge.local");
         builder.UseSetting("Identity:Scim:Enabled", "true");
         builder.UseSetting("Identity:Scim:KeycloakAdapter", "false");
         builder.UseSetting("Messaging:History:Enabled", "true");

@@ -221,6 +221,15 @@ export interface ChatMessage {
   authorName: string;
   /** B-109 — discreet bot marker on the timeline. */
   authorIsBot?: boolean;
+  /** B-138 — remote identity copied by a bridge. Never a local user. */
+  remoteOrigin?: {
+    network: string;
+    room: string;
+    subject: string;
+    displayName: string;
+    link?: string | null;
+    deleteRemoteGuaranteed?: boolean;
+  } | null;
   body: string;
   createdAt: string;
   editedAt?: string | null;

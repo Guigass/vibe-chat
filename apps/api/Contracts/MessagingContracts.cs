@@ -99,7 +99,16 @@ public sealed record MessageResponse(
     Guid? MovedFromMessageId = null,
     Guid? MovedFromChannelId = null,
     long? MovedFromSequence = null,
-    MessagePluginCard? PluginCard = null);
+    MessagePluginCard? PluginCard = null,
+    MessageRemoteOrigin? RemoteOrigin = null);
+
+public sealed record MessageRemoteOrigin(
+    string Network,
+    string Room,
+    string Subject,
+    string DisplayName,
+    string? Link,
+    bool DeleteRemoteGuaranteed);
 
 public sealed record MoveMessageRequest(string IdempotencyKey, Guid TargetChannelId, string? Scope = null, bool? LeaveTombstone = null);
 

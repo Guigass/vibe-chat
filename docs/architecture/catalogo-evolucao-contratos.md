@@ -88,6 +88,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Identity:Scim:KeycloakAdapter` | instance | false | B-128 | revogação local segue; falha do IdP não desfaz o deprovision |
 | `Integrations:EventSchemas:Enabled` | instance | false | B-139 | webhook segue com o body atual; `/admin/event-schemas` → 404 `EventSchemasDisabled` |
 | `Features:Plugins:Enabled` | instance | false | B-066, B-111 | capabilities além de `messages.send`, slash, callback, interação, histórico e anexo → 404 `PluginPlatformDisabled`; envio B-109/B-110 segue |
+| `Integrations:Bridges:Enabled` | instance (binding de `Features:Bridges:Enabled`) | false | B-138 | rotas de bridge → 404 `BridgesDisabled`; chat segue; mensagens já copiadas permanecem |
 
 ## Registro inicial de flags futuras
 
@@ -95,7 +96,7 @@ R3 nasce `false`. Flag não substitui authZ.
 |--------------|--------|---------|------|-------------------|
 | `Features:Automation:Enabled` | instance (binding `Automation:Enabled`) | false | B-125 | entregue; ver linha ativa |
 | `Features:Registry:Enabled` | instance (binding `Integrations:PluginRegistry:Enabled`) | false | B-137 | entregue; ver linha ativa |
-| `Features:Bridges:Enabled` | tenant | false | B-138 | sem tráfego externo |
+| `Features:Bridges:Enabled` | instance (binding `Integrations:Bridges:Enabled`) | false | B-138 | entregue; ver linha ativa |
 | `Features:Federation:Enabled` | instance/tenant | false | B-065 | instância isolada |
 | `Features:OfflineWrite:Enabled` | instance/client | false | B-143 | leitura online/PWA |
 | `Features:E2EE:Enabled` | workspace | false | B-064 | canais server-readable |

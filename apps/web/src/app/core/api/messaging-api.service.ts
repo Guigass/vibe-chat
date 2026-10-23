@@ -90,6 +90,7 @@ interface MessageDto {
   poll?: PollDto | null;
   announcement?: AnnouncementDto | null;
   pluginCard?: MessagePluginCard | null;
+  remoteOrigin?: { network: string; room: string; subject: string; displayName: string; link?: string | null } | null;
 }
 
 interface AnnouncementDto {
@@ -879,6 +880,7 @@ export class MessagingApiService extends HttpApiClient {
       authorUserId: m.authorId,
       authorName: m.authorName || m.authorId,
       authorIsBot: !!m.authorIsBot,
+      remoteOrigin: m.remoteOrigin ?? null,
       body: m.deletedAt ? '' : m.body,
       createdAt: m.createdAt,
       editedAt: m.editedAt,
