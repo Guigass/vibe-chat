@@ -236,8 +236,10 @@ paginação anterior e ecos repetidos não anunciam o histórico.
 Tokens de contraste: `--vc-on-brand` branco no light e `#042f2e` no dark;
 `--vc-ink-subtle` dark = `#a8a29e`; metadados em mensagem própria usam
 `--vc-msg-mine-muted` (`#57534e` light / `#e7e5e4` dark). Foco usa outline
-de 2px com offset, inclusive `forced-colors`; controles têm mínimo de 24×24px,
-placeholders opacos e estados disabled legíveis. O gate axe de E2E cobre login,
+de 2px com offset, inclusive `forced-colors`. Controles têm mínimo de 24×24px
+no desktop e 40×40px abaixo de 960px. Placeholders opacos e estados disabled
+legíveis. A escala de espaço, tipo, sombra, z-index e as primitivas de layout
+estão em [`docs/design-system.md`](../design-system.md). O gate axe de E2E cobre login,
 shell, thread, admin, emoji e encaminhamento nos dois temas, guardando JSON e
 screenshots mesmo em CI verde.
 

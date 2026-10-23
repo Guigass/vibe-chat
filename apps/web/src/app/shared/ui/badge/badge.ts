@@ -33,7 +33,7 @@ export type BadgeTone = 'accent' | 'muted' | 'success' | 'warn' | 'danger';
     }
     .vc-badge--accent {
       background: var(--vc-brand);
-      color: #042f2e;
+      color: var(--vc-on-brand);
     }
     .vc-badge--muted {
       background: color-mix(in srgb, var(--vc-ink) 10%, transparent);

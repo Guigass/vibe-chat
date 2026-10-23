@@ -1,4 +1,16 @@
 export { Button } from './button/button';
+export { Stack } from './stack/stack';
+export { Cluster } from './cluster/cluster';
+export { PageShell } from './page-shell/page-shell';
+export { Split } from './split/split';
+export { Select } from './select/select';
+export { Card } from './card/card';
+export { Modal } from './modal/modal';
+export { DataTable } from './data-table/data-table';
+export { UiList } from './list/list';
+export { Toolbar } from './toolbar/toolbar';
+export { Tabs } from './tabs/tabs';
+export type { TabItem } from './tabs/tabs';
 export { IconButton } from './icon-button/icon-button';
 export { Avatar } from './avatar/avatar';
 export { Badge } from './badge/badge';

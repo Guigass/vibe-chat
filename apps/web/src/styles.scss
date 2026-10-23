@@ -1,4 +1,6 @@
 @use 'styles/tokens';
+@use 'styles/layout';
+@use 'styles/controls';
 @use 'styles/motion';
 
 @import 'tailwindcss/theme.css' layer(theme);
@@ -20,6 +22,7 @@ html,
 body {
   height: 100%;
   margin: 0;
+  overflow-x: clip;
 }
 
 body {
@@ -64,9 +67,9 @@ a:hover {
 
 .vc-skip-link {
   position: fixed;
-  top: 0.5rem;
-  left: 0.5rem;
-  z-index: 1000;
+  top: var(--vc-space-2);
+  left: var(--vc-space-2);
+  z-index: var(--vc-z-skip);
   padding: 0.75rem 1rem;
   background: var(--vc-surface);
   color: var(--vc-ink);

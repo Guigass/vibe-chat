@@ -216,7 +216,7 @@ const NEAR_TOP_PX = 120;
       overflow-x: clip;
       overflow-y: auto;
       overscroll-behavior: contain;
-      padding: 0 var(--vc-timeline-pad) 0.5rem;
+      padding: 0 var(--vc-timeline-pad) var(--vc-space-2);
       display: flex;
       flex-direction: column;
     }

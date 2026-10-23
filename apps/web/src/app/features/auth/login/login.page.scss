@@ -4,6 +4,8 @@
   display: grid;
   place-items: center;
   overflow: hidden;
+  padding: var(--vc-space-8) var(--vc-space-4);
+  padding-top: calc(var(--vc-space-8) + var(--vc-control-height));
   isolation: isolate;
   /* Hero is always dark; invert ink/border so ghost DevAuth labels stay legible
      under light data-theme (UX-001). */
@@ -39,21 +41,21 @@
 
 .login-hero__top {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: var(--vc-space-4);
+  right: var(--vc-space-4);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--vc-space-2);
 }
 
 .login-hero__content {
-  width: min(36rem, calc(100% - 2.5rem));
+  width: min(36rem, 100%);
   color: #e8eef4;
   text-align: left;
 }
 
 .login-hero__brand {
-  margin: 0 0 1rem;
+  margin: 0 0 var(--vc-space-4);
   font-family: var(--vc-font-display);
   font-size: clamp(2.8rem, 8vw, 4.4rem);
   font-weight: 700;
@@ -64,7 +66,7 @@
 }
 
 h1 {
-  margin: 0 0 0.85rem;
+  margin: 0 0 var(--vc-space-3);
   font-size: clamp(1.35rem, 3.4vw, 1.85rem);
   font-weight: 500;
   line-height: 1.25;
@@ -73,7 +75,7 @@ h1 {
 }
 
 .login-hero__lead {
-  margin: 0 0 1.75rem;
+  margin: 0 0 var(--vc-space-6);
   max-width: 34ch;
   color: #8b9cb3;
   line-height: 1.55;
@@ -84,14 +86,14 @@ h1 {
 .login-hero__sso {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  margin-bottom: 1.25rem;
+  gap: var(--vc-space-3);
+  margin-bottom: var(--vc-space-4);
 }
 
 .login-hero__domain {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--vc-space-1);
   color: #8b9cb3;
   font-size: 0.92rem;
 }
@@ -99,10 +101,11 @@ h1 {
 .login-hero__domain input {
   width: 100%;
   border: 1px solid rgba(232, 238, 244, 0.35);
-  border-radius: 0.6rem;
+  border-radius: var(--vc-radius-md);
   background: rgba(7, 16, 24, 0.45);
   color: #e8eef4;
-  padding: 0.65rem 0.8rem;
+  min-height: var(--vc-control-height);
+  padding: var(--vc-space-2) var(--vc-space-3);
   font: inherit;
 }
 
@@ -112,20 +115,20 @@ h1 {
   font-size: 0.85rem;
 }
 
-.login-hero__sso-actions {
+.login-hero__sso-actions,
+.login-hero__cta,
+.login-hero__dev-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--vc-space-3);
 }
 
 .login-hero__cta {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
 }
 
 .login-hero__error {
-  margin-top: 1rem;
+  margin-top: var(--vc-space-4);
   color: #fecaca;
 }
 
@@ -150,15 +153,37 @@ h1 {
 }
 
 @media (max-width: 640px) {
+  .login-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    padding-top: var(--vc-space-4);
+  }
+
+  .login-hero__top {
+    position: static;
+    justify-content: flex-end;
+    margin-bottom: var(--vc-space-4);
+  }
+
   .login-hero__content {
+    width: 100%;
     text-align: left;
+  }
+
+  .login-hero__sso-actions,
+  .login-hero__cta,
+  .login-hero__dev-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 .login-hero__dev {
-  margin-top: 1.75rem;
+  margin-top: var(--vc-space-6);
   display: grid;
-  gap: 0.65rem;
+  gap: var(--vc-space-3);
 }
 
 .login-hero__dev > p {
@@ -166,12 +191,6 @@ h1 {
   color: var(--vc-ink-muted, #8b9cb3);
   font-size: 0.85rem;
   letter-spacing: 0.02em;
-}
-
-.login-hero__dev-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
 }
 
 .login-hero__offline {
