@@ -89,6 +89,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Integrations:EventSchemas:Enabled` | instance | false | B-139 | webhook segue com o body atual; `/admin/event-schemas` → 404 `EventSchemasDisabled` |
 | `Features:Plugins:Enabled` | instance | false | B-066, B-111 | capabilities além de `messages.send`, slash, callback, interação, histórico e anexo → 404 `PluginPlatformDisabled`; envio B-109/B-110 segue |
 | `Integrations:Bridges:Enabled` | instance (binding de `Features:Bridges:Enabled`) | false | B-138 | rotas de bridge → 404 `BridgesDisabled`; chat segue; mensagens já copiadas permanecem |
+| `Desktop:Enabled` | instance (binding de `Features:Desktop:Enabled`) | false | B-141 | rotas `/desktop/*` → 404 `DesktopDisabled`; PWA e chat seguem; aparelhos já registrados permanecem |
 
 ## Registro inicial de flags futuras
 

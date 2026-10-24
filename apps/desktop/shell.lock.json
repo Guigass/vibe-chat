@@ -1,0 +1,10 @@
+{
+  "recipe": "vibechat-desktop-recipe/1",
+  "wrapper": "tauri",
+  "wrapperVersion": "2",
+  "targets": {
+    "windows-x64": "6abd9dba51fc25552d1bf86d4f1380899c1d03bcd579404534d9220a04e1158e",
+    "macos-arm64": "bdf1c3f840125f2418f060018c6ab22ab40d50a2a1918573e05e19c1f637b9d6",
+    "linux-x64": "6ad52c2d20840c6037b98ca213e1306b822d01fcf71acd4e1a18070b8072b5ee"
+  }
+}

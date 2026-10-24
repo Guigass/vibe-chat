@@ -22,6 +22,7 @@ import { PluginApiService } from './plugin-api.service';
 import { SdkApiService } from './sdk-api.service';
 import { BridgeApiService } from './bridge-api.service';
 import { BrandingApiService } from './branding-api.service';
+import { DesktopApiService } from './desktop-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -51,6 +52,7 @@ export class ApiService {
   private readonly sdk = inject(SdkApiService);
   private readonly bridges = inject(BridgeApiService);
   private readonly branding = inject(BrandingApiService);
+  private readonly desktop = inject(DesktopApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -292,4 +294,11 @@ export class ApiService {
   readonly uploadBrandAsset: BrandingApiService['uploadAsset'] = this.branding.uploadAsset.bind(this.branding);
   readonly clearBrandAsset: BrandingApiService['clearAsset'] = this.branding.clearAsset.bind(this.branding);
   readonly rollbackBrand: BrandingApiService['rollback'] = this.branding.rollback.bind(this.branding);
+  readonly desktopShell: DesktopApiService['desktopShell'] = this.desktop.desktopShell.bind(this.desktop);
+  readonly validateDesktopLink: DesktopApiService['validateDesktopLink'] = this.desktop.validateDesktopLink.bind(this.desktop);
+  readonly verifyDesktopUpdate: DesktopApiService['verifyDesktopUpdate'] = this.desktop.verifyDesktopUpdate.bind(this.desktop);
+  readonly listDesktopDevices: DesktopApiService['listDesktopDevices'] = this.desktop.listDesktopDevices.bind(this.desktop);
+  readonly registerDesktopDevice: DesktopApiService['registerDesktopDevice'] = this.desktop.registerDesktopDevice.bind(this.desktop);
+  readonly saveDesktopPreferences: DesktopApiService['saveDesktopPreferences'] = this.desktop.saveDesktopPreferences.bind(this.desktop);
+  readonly logoutDesktopDevice: DesktopApiService['logoutDesktopDevice'] = this.desktop.logoutDesktopDevice.bind(this.desktop);
 }

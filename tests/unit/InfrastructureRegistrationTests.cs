@@ -97,7 +97,8 @@ public sealed class InfrastructureRegistrationTests
             "Scoped:DeveloperPortalService:DeveloperPortalService",
             "Scoped:IPluginCallbackDispatcher:PluginCallbackDispatcher",
             "Scoped:PluginSdkService:PluginSdkService",
-            "Scoped:BrandingService:BrandingService");
+            "Scoped:BrandingService:BrandingService",
+            "Scoped:DesktopClientService:DesktopClientService");
 
         worker.Should().Equal(signalR.Select(entry => entry
             .Replace("Scoped:IChatPublisher:SignalRChatPublisher", "Scoped:IChatPublisher:RedisChannelChatPublisher", StringComparison.Ordinal)

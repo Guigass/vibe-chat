@@ -220,7 +220,8 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-136 | SDK e contract-test kit | **Done** (W15) — flag `Integrations:PluginSdk:Enabled` off; ADR-051; [spec](../product/specs/B-136-sdk-contract-kit.md) |
 | B-137 | Registry assinado e catálogos governados | **Done** (W15) — flag `Integrations:PluginRegistry:Enabled` off; ADR-053; [spec](../product/specs/B-137-registry-plugins.md) |
 | B-138 | Framework de bridges | **Done** (W15) — flag `Integrations:Bridges:Enabled` off; ADR-054; [spec](../product/specs/B-138-framework-bridges.md) |
-| B-140/B-141, B-063 | Branding e clients | Planned — W15 |
+| B-140 | White-label e branding por tenant | **Done** (W15) — ADR-055; [spec](../product/specs/B-140-white-label.md) |
+| B-141 | Cliente desktop empacotado | **Done** (W15) — flag `Desktop:Enabled` off; ADR-056; [spec](../product/specs/B-141-cliente-desktop.md) |
 | B-170, B-143…B-145, B-172 + B-064/B-065 | Performance/escalabilidade, offline, HA, storage, backup de chat (destinos), federação e E2EE | Planned — W16 |
 | B-147…B-149, B-152 | Live media, notas de reunião e canvas | Planned — W17 |
 

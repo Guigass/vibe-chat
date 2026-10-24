@@ -178,6 +178,9 @@ public static class AuditActions
     public const string BrandUpdate = "brand.update";
     public const string BrandAsset = "brand.asset";
     public const string BrandRollback = "brand.rollback";
+    public const string DesktopDeviceRegister = "desktop.device.register";
+    public const string DesktopDevicePreferences = "desktop.device.preferences";
+    public const string DesktopDeviceLogout = "desktop.device.logout";
 }
 
 public interface IAuditWriter

@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.AddDigestInfrastructure(configuration);
         services.AddIntegrationsInfrastructure(configuration);
         services.AddBrandingInfrastructure(configuration);
+        services.AddDesktopInfrastructure(configuration);
         services.AddInfrastructureHealthChecks();
         return services;
     }
