@@ -156,6 +156,7 @@ public sealed class ArchitectureRulesTests
             "identity.scim_membership_grants",
             "identity.access_revocations",
             "identity.member_profiles",
+            "identity.desktop_devices",
             "directory.brand_settings",
             "import.jobs",
             "import.id_map",

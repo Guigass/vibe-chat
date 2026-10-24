@@ -56,7 +56,12 @@ original.
 | [048](ADR-048-capacity-slos.md) | Capacity model, benchmarks e SLOs | Accepted |
 | [049](ADR-049-plugins-capabilities.md) | Capabilities de plugin = config + callback | Accepted |
 | [050](ADR-050-plugins-interacoes-governadas.md) | Interação de plugin = dados, grant e callback | Accepted |
+| [051](ADR-051-sdk-contract-kit.md) | SDK de plugins deriva do contrato HTTP | Accepted |
+| [052](ADR-052-design-system-layout.md) | Design system de layout no front | Accepted |
+| [053](ADR-053-registry-plugins.md) | Registry assinado de plugins por mirror offline | Accepted |
+| [054](ADR-054-framework-bridges.md) | Framework de bridges por contrato externo | Accepted |
 | [055](ADR-055-white-label-governado.md) | White-label governado por tenant | Accepted |
+| [056](ADR-056-cliente-desktop.md) | Cliente desktop Tauri sobre o mesmo web | Accepted |
 
 ## Quando criar um ADR
 

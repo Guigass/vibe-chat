@@ -1177,6 +1177,32 @@ Cores `#RRGGBB` precisam de contraste ≥ 3:1 nas superfícies clara e escura; s
 
 `kind` é `logo-light`, `logo-dark` ou `favicon`. Member e Auditor → 403 na escrita. RLS `FORCE` em `directory.brand_settings`. O `Down` remove só essa tabela. Auditoria `brand.update` / `brand.asset` / `brand.rollback` não leva o nome nem os bytes.
 
+### Cliente desktop (B-141 / ADR-056)
+
+Flag `Desktop:Enabled` default **false**. Off → 404 `DesktopDisabled`. O chat e a PWA não dependem desta flag. Não há endpoint privilegiado: as rotas usam `message.read`, o mesmo contrato de `/api/v1`.
+
+O shell é Tauri 2 e carrega o mesmo bundle web (`uiFork: false`, `apiBase: /api/v1`). Esquema `vibechat://{host}/v1/{channel|thread|workspace}/{guid}`. Host fora de `Desktop:AllowedHosts`, versão diferente de `v1`, userinfo, query, fragmento ou destino desconhecido → 400 `DesktopDeepLinkRejected`.
+
+Auto-update fica **off** quando `Desktop:UpdateFeedUrl` está vazio ou não é `https` na porta padrão. A API não busca a URL. O manifesto canônico `vibechat-update/1` é conferido com RSA-PSS/SHA-256 (`Desktop:UpdatePublicKeyPem`, SPKI base64 ou PEM). Assinatura ou host divergente → 400 `DesktopUpdateRejected`. Feed ausente → 409 `DesktopUpdateOff`.
+
+`Desktop:SigningCredentialRef` é só uma referência. PEM, `token`, `secret` ou `private` → `signing: rejected` e o valor não volta na resposta. A chave privada e o certificado não entram no repositório.
+
+Registro de aparelho não aceita `access_token`, `refresh_token`, `authorization` nem `Bearer`. A tabela `identity.desktop_devices` não tem coluna de token. Logout remoto (`DELETE`) marca `RevokedAt` e a resposta pede `wipeSecureStorage: true` para o shell apagar o secure storage do OS. Dono ou `workspace.admin`. Outro membro → 403. Outro tenant → 404.
+
+Matrix de pacote: `windows-x64`, `macos-arm64`, `linux-x64`. O hash de `apps/desktop/shell.lock.json` é o build reproduzível. Tray, notificações e launch-at-login nascem desligados; launch-at-login só liga com `true` explícito.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| GET | `/api/v1/desktop/shell` | `message.read` |
+| POST | `/api/v1/desktop/deep-links/validate` | `message.read`; body `{ url }` |
+| POST | `/api/v1/desktop/updates/verify` | `message.read`; manifesto + `signature` |
+| GET | `/api/v1/desktop/devices` | `message.read`; só os do caller |
+| POST | `/api/v1/desktop/devices` | `message.read`; `{ platform, appVersion }` + `Idempotency-Key` |
+| PUT | `/api/v1/desktop/devices/{deviceId}/preferences` | `message.read`; dono; `{ launchAtLogin, notifications, tray }` |
+| DELETE | `/api/v1/desktop/devices/{deviceId}` | `message.read`; dono ou `workspace.admin` |
+
+RLS `FORCE` em `identity.desktop_devices`. O `Down` remove só essa tabela. Auditoria `desktop.device.register` / `desktop.device.preferences` / `desktop.device.logout` com metadata `{}`.
+
 ### Templates de workspace (B-115)
 
 Manifesto declarativo `vibechat.workspace-template.v1`. Não carrega `tenantId`, membros, e-mails, tokens nem secrets. Recursos criados recebem o tenant do contexto. Só `workspace.admin` (Auditor/membro → 403).

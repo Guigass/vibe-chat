@@ -517,7 +517,7 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | Conectores/bridges | SSRF, secret leak, impersonation e cópia fora do tenant | D-21; egress policy, scopes, HMAC/OAuth, consentimento e audit |
 | Registry de plugins | Supply-chain — ver seção B-137 abaixo | ADR-053 entregue |
 | Legal hold/DLP | Preservação indevida, abuso de busca e conflito com exclusão | D-23; authZ separada, cadeia de custódia e parecer legal |
-| Offline/mobile | Token e conteúdo persistidos no dispositivo; revogação tardia | D-20; secure storage, remote logout e contrato de sync |
+| Offline/mobile | Token e conteúdo persistidos no dispositivo; revogação tardia | B-141 cobre o desktop (sem token no servidor, logout remoto); sync offline segue em B-143 |
 | Federação | Perda de soberania, retenção e controle de identidade | D-21; trust domains, allowlist e política de cópia |
 | Bridge | Cópia silenciosa, loop, impersonation e SSRF | B-138 / ADR-054 entregue; flag off, pin, consentimento, bot escopado |
 | Live media | Gravação sem consentimento, abuso e exaustão de SFU/TURN | D-19; consentimento visível, quotas, moderação e SLO |
@@ -623,6 +623,16 @@ Superfície implementada, R2. A ameaça principal é copiar o body, manter um ex
 ## Decisões e action items (B-119)
 
 Superfície implementada, R2. A ameaça principal é uma segunda cópia do body sobreviver a delete/purge ou a ACL revogada. O controle é: persistir só campos curados + hash de excerpt; revalidar leitura do canal em toda lista; visibilidade `restricted` limitada a criador e owner; RLS `FORCE` em `messaging.commitments` e `messaging.commitment_changes`; eventos de outbox sem título nem body.
+
+## Cliente desktop (B-141 / ADR-056)
+
+Superfície implementada, R3, flag off. A ameaça principal é token em arquivo
+ou log, deep link aberto e update adulterado. O controle é: nenhuma coluna de
+token; body com `access_token` / `Bearer` responde `DesktopTokenRejected`;
+scheme `vibechat://v1` só para host da lista; manifesto RSA-PSS rejeitado
+quando a assinatura ou o host divergem; feed ausente deixa o update off sem
+fetch; RLS `FORCE` em `identity.desktop_devices`; logout remoto pede wipe do
+secure storage. Certificado e chave privada não entram no repositório.
 
 ## White-label (B-140)
 

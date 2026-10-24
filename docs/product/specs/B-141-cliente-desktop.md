@@ -39,11 +39,11 @@ Token no secure storage do OS; tenant do token. Logout remoto limpa sessão/cach
 
 ## Aceite
 
-- [ ] Contract/E2E parity com web.
-- [ ] Token não fica em arquivo/log.
-- [ ] Deep link valida host/destino.
-- [ ] Update inválido é rejeitado.
-- [ ] Build reproduzível por OS suportado.
+- [x] Contract/E2E parity com web.
+- [x] Token não fica em arquivo/log.
+- [x] Deep link valida host/destino.
+- [x] Update inválido é rejeitado.
+- [x] Build reproduzível por OS suportado.
 
 ## Testes
 

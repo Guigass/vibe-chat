@@ -402,6 +402,13 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("POST", "/api/v1/admin/branding/assets/{kind}", string.Join(",", new[] { Permissions.Admin.Brand }), false, ""),
             new("DELETE", "/api/v1/admin/branding/assets/{kind}", string.Join(",", new[] { Permissions.Admin.Brand }), false, ""),
             new("POST", "/api/v1/admin/branding/rollback", string.Join(",", new[] { Permissions.Admin.Brand }), false, ""),
+            new("GET", "/api/v1/desktop/shell", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
+            new("POST", "/api/v1/desktop/deep-links/validate", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
+            new("POST", "/api/v1/desktop/updates/verify", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
+            new("GET", "/api/v1/desktop/devices", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
+            new("POST", "/api/v1/desktop/devices", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
+            new("PUT", "/api/v1/desktop/devices/{deviceId:guid}/preferences", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
+            new("DELETE", "/api/v1/desktop/devices/{deviceId:guid}", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(

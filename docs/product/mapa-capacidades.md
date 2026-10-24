@@ -89,7 +89,7 @@ organiza. Estados:
 | Capacidade | Estado | Próximo passo |
 |------------|--------|---------------|
 | Web/PWA e Compose | Atual | Waves 7–10 |
-| Desktop empacotado | Planned | B-141 / W15 |
+| Desktop empacotado | Done | B-141 / W15 |
 | Mobile nativo | Planned | B-063 / W15 |
 | Offline sync real | Planned | B-143 / W16 |
 | HA e rolling upgrade | Planned | B-144 / W16 |

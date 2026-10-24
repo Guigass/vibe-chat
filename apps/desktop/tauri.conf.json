@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "VibeChat",
+  "version": "0.1.0",
+  "identifier": "app.vibechat.desktop",
+  "build": {
+    "frontendDist": "../web/dist/browser",
+    "devUrl": "http://127.0.0.1:4200",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "VibeChat",
+        "url": "/"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'"
+    }
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["vibechat"]
+      }
+    },
+    "updater": {
+      "active": false,
+      "endpoints": [],
+      "pubkey": ""
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "app", "deb"],
+    "createUpdaterArtifacts": false
+  }
+}

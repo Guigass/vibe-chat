@@ -298,6 +298,13 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/admin/branding/assets/{kind}` | permission | `admin.brand` | ✗ | ✗ | ✓ | B-140; PNG/JPEG |
 | DELETE | `/admin/branding/assets/{kind}` | permission | `admin.brand` | ✗ | ✗ | ✓ | B-140; volta ao asset oficial |
 | POST | `/admin/branding/rollback` | permission | `admin.brand` | ✗ | ✗ | ✓ | B-140; um passo |
+| GET | `/desktop/shell` | permission | `message.read` | ✓ | ✓ | ✓ | B-141; flag off → 404 `DesktopDisabled`; sem segredo |
+| POST | `/desktop/deep-links/validate` | permission | `message.read` | ✓ | ✓ | ✓ | B-141; host fora da lista → 400 |
+| POST | `/desktop/updates/verify` | permission | `message.read` | ✓ | ✓ | ✓ | B-141; feed vazio → 409; assinatura inválida → 400 |
+| GET | `/desktop/devices` | permission | `message.read` | ✓ | ✓ | ✓ | B-141; só os aparelhos do caller |
+| POST | `/desktop/devices` | permission | `message.read` | ✓ | ✓ | ✓ | B-141; recusa token no body |
+| PUT | `/desktop/devices/{deviceId:guid}/preferences` | permission | `message.read` | ✓ | ✓ | ✓ | B-141; dono; launch-at-login opt-in |
+| DELETE | `/desktop/devices/{deviceId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-141; dono ou `workspace.admin`; limpa sessão no cliente |
 | GET | `/admin/event-schemas` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; flag off → 404 `EventSchemasDisabled`; sem dado de tenant |
 | GET | `/admin/event-schemas/{eventType}/versions/{schemaVersion:int}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; versão desconhecida → 404 `UnknownSchemaVersion` |
 | POST | `/admin/event-schemas/check` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; não persiste o documento; teto 16 KiB |
