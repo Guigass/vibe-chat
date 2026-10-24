@@ -517,7 +517,7 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | Conectores/bridges | SSRF, secret leak, impersonation e cópia fora do tenant | D-21; egress policy, scopes, HMAC/OAuth, consentimento e audit |
 | Registry de plugins | Supply-chain — ver seção B-137 abaixo | ADR-053 entregue |
 | Legal hold/DLP | Preservação indevida, abuso de busca e conflito com exclusão | D-23; authZ separada, cadeia de custódia e parecer legal |
-| Offline/mobile | Token e conteúdo persistidos no dispositivo; revogação tardia | B-141 cobre o desktop (sem token no servidor, logout remoto); sync offline segue em B-143 |
+| Offline/mobile | Token e conteúdo persistidos no dispositivo; revogação tardia | B-141 cobre o desktop e B-063 o mobile (sem token no servidor, logout remoto, push sem body); sync offline segue em B-143 |
 | Federação | Perda de soberania, retenção e controle de identidade | D-21; trust domains, allowlist e política de cópia |
 | Bridge | Cópia silenciosa, loop, impersonation e SSRF | B-138 / ADR-054 entregue; flag off, pin, consentimento, bot escopado |
 | Live media | Gravação sem consentimento, abuso e exaustão de SFU/TURN | D-19; consentimento visível, quotas, moderação e SLO |
@@ -633,6 +633,18 @@ scheme `vibechat://v1` só para host da lista; manifesto RSA-PSS rejeitado
 quando a assinatura ou o host divergem; feed ausente deixa o update off sem
 fetch; RLS `FORCE` em `identity.desktop_devices`; logout remoto pede wipe do
 secure storage. Certificado e chave privada não entram no repositório.
+
+## Cliente mobile (B-063 / ADR-057)
+
+Superfície implementada, R3, flag off. A ameaça principal é token ou conteúdo
+no aparelho, share enviado ao tenant errado e push com o body da mensagem. O
+controle é: nenhuma coluna de token; body com `access_token`, `fcmToken`,
+`tenantId` ou `text` responde `MobileTokenRejected`; scheme `vibechat://v1` e
+share só para host da lista; share exige `confirm: true` e não cria mensagem;
+preview de push aceita só `message`/`mention` + `conversationId`; sem FCM/APNs
+no servidor; RLS `FORCE` em `identity.mobile_devices`; logout remoto pede wipe
+do secure storage. Conta de loja não entra no repositório; sem ela o artefato
+é sideload.
 
 ## White-label (B-140)
 

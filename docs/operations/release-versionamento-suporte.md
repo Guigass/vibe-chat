@@ -40,7 +40,7 @@ MAJOR.MINOR.PATCH[-prerelease]
 | Banco | migration forward-compatible dentro da janela de rolling upgrade |
 | API/Worker | versões adjacentes precisam coexistir na janela definida por B-144 |
 | Web/PWA | servidor informa incompatibilidade; cache antigo não pode corromper dados |
-| Desktop/mobile | B-141: `windows-x64`, `macos-arm64`, `linux-x64`, mesmo `/api/v1`; mobile segue em B-063 |
+| Desktop/mobile | B-141: `windows-x64`, `macos-arm64`, `linux-x64`; B-063: `android-arm64`, `ios-arm64`; mesmo `/api/v1` |
 | Plugins | versão de contrato + capabilities; incompatibilidade bloqueia ativação |
 | Federação | negotiation explícita; peer incompatível falha fechado |
 

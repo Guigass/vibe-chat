@@ -1203,6 +1203,31 @@ Matrix de pacote: `windows-x64`, `macos-arm64`, `linux-x64`. O hash de `apps/des
 
 RLS `FORCE` em `identity.desktop_devices`. O `Down` remove só essa tabela. Auditoria `desktop.device.register` / `desktop.device.preferences` / `desktop.device.logout` com metadata `{}`.
 
+### Cliente mobile (B-063 / ADR-057)
+
+Flag `Mobile:Enabled` default **false**. Off → 404 `MobileDisabled`. O chat, a PWA e o desktop não dependem desta flag. Não há endpoint privilegiado: as rotas usam `message.read`, o mesmo contrato de `/api/v1`.
+
+O shell é Capacitor 7 e carrega o mesmo bundle web (`uiFork: false`, `apiBase: /api/v1`). Esquema igual ao desktop: `vibechat://{host}/v1/{channel|thread|workspace}/{guid}`. Host fora de `Mobile:AllowedHosts` → 400 `MobileDeepLinkRejected`. Share exige `confirm: true` e devolve `sendsMessage: false`; `tenantId`, `text` ou token no body → 400 `MobileTokenRejected`. O share não cria mensagem.
+
+Push nativo não usa FCM nem APNs no servidor. `POST /mobile/push/preview` aceita só `{ kind: message|mention, conversationId }` e responde `containsContent: false`. Campo de texto ou token de push → 400 `MobileTokenRejected`.
+
+`Mobile:StoreCredentialRef` vazio mantém `distribution: sideload`. Referência segura (`operator/mobile-store`) marca `store: ready`. PEM, `token`, `secret` ou `private` → `store: rejected` e o valor não volta na resposta. Sem conta de loja, `apps/mobile/sideload.json` continua sendo o artefato. O hash de `apps/mobile/shell.lock.json` cobre `android-arm64` e `ios-arm64`.
+
+Registro de aparelho não aceita token. A tabela `identity.mobile_devices` não tem coluna de token. Biometria, câmera, seletor de arquivo e notificação nascem desligados; biometria só liga com `true` explícito do dono. Logout remoto marca `RevokedAt` e pede `wipeSecureStorage: true`. Dono ou `workspace.admin`. Outro membro → 403. Outro tenant → 404.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| GET | `/api/v1/mobile/shell` | `message.read` |
+| POST | `/api/v1/mobile/deep-links/validate` | `message.read`; body `{ url }` |
+| POST | `/api/v1/mobile/share/validate` | `message.read`; `{ host, kind, id, confirm: true }`; não envia |
+| POST | `/api/v1/mobile/push/preview` | `message.read`; só ids |
+| GET | `/api/v1/mobile/devices` | `message.read`; só os do caller |
+| POST | `/api/v1/mobile/devices` | `message.read`; `{ platform, appVersion }` + `Idempotency-Key` |
+| PUT | `/api/v1/mobile/devices/{deviceId}/preferences` | `message.read`; dono; `{ biometricLock, notifications, camera, filePicker }` |
+| DELETE | `/api/v1/mobile/devices/{deviceId}` | `message.read`; dono ou `workspace.admin` |
+
+RLS `FORCE` em `identity.mobile_devices`. O `Down` remove só essa tabela. Auditoria `mobile.device.register` / `mobile.device.preferences` / `mobile.device.logout` com metadata `{}`.
+
 ### Templates de workspace (B-115)
 
 Manifesto declarativo `vibechat.workspace-template.v1`. Não carrega `tenantId`, membros, e-mails, tokens nem secrets. Recursos criados recebem o tenant do contexto. Só `workspace.admin` (Auditor/membro → 403).

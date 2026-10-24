@@ -23,6 +23,7 @@ import { SdkApiService } from './sdk-api.service';
 import { BridgeApiService } from './bridge-api.service';
 import { BrandingApiService } from './branding-api.service';
 import { DesktopApiService } from './desktop-api.service';
+import { MobileApiService } from './mobile-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -53,6 +54,7 @@ export class ApiService {
   private readonly bridges = inject(BridgeApiService);
   private readonly branding = inject(BrandingApiService);
   private readonly desktop = inject(DesktopApiService);
+  private readonly mobile = inject(MobileApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -301,4 +303,12 @@ export class ApiService {
   readonly registerDesktopDevice: DesktopApiService['registerDesktopDevice'] = this.desktop.registerDesktopDevice.bind(this.desktop);
   readonly saveDesktopPreferences: DesktopApiService['saveDesktopPreferences'] = this.desktop.saveDesktopPreferences.bind(this.desktop);
   readonly logoutDesktopDevice: DesktopApiService['logoutDesktopDevice'] = this.desktop.logoutDesktopDevice.bind(this.desktop);
+  readonly mobileShell: MobileApiService['mobileShell'] = this.mobile.mobileShell.bind(this.mobile);
+  readonly validateMobileLink: MobileApiService['validateMobileLink'] = this.mobile.validateMobileLink.bind(this.mobile);
+  readonly validateMobileShare: MobileApiService['validateMobileShare'] = this.mobile.validateMobileShare.bind(this.mobile);
+  readonly previewMobilePush: MobileApiService['previewMobilePush'] = this.mobile.previewMobilePush.bind(this.mobile);
+  readonly listMobileDevices: MobileApiService['listMobileDevices'] = this.mobile.listMobileDevices.bind(this.mobile);
+  readonly registerMobileDevice: MobileApiService['registerMobileDevice'] = this.mobile.registerMobileDevice.bind(this.mobile);
+  readonly saveMobilePreferences: MobileApiService['saveMobilePreferences'] = this.mobile.saveMobilePreferences.bind(this.mobile);
+  readonly logoutMobileDevice: MobileApiService['logoutMobileDevice'] = this.mobile.logoutMobileDevice.bind(this.mobile);
 }

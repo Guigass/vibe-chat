@@ -90,7 +90,7 @@ organiza. Estados:
 |------------|--------|---------------|
 | Web/PWA e Compose | Atual | Waves 7–10 |
 | Desktop empacotado | Done | B-141 / W15 |
-| Mobile nativo | Planned | B-063 / W15 |
+| Mobile nativo | Done | B-063 / W15 |
 | Offline sync real | Planned | B-143 / W16 |
 | HA e rolling upgrade | Planned | B-144 / W16 |
 | Lifecycle de storage/CDN | Planned | B-145 / W16 |

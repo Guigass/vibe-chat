@@ -1,0 +1,26 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "name": "vibechat-mobile",
+      "version": "0.1.0",
+      "type": "application"
+    }
+  },
+  "components": [
+    {
+      "name": "@capacitor/core",
+      "version": "7",
+      "licenses": [
+        { "license": { "id": "Apache-2.0" } }
+      ]
+    },
+    {
+      "name": "vibechat-web",
+      "version": "workspace",
+      "description": "same web bundle; no UI fork"
+    }
+  ]
+}

@@ -300,6 +300,7 @@ v1.MapPluginRegistry();
 v1.MapBridges();
 v1.MapBranding();
 v1.MapDesktop();
+v1.MapMobile();
 
 app.MapScim();
 app.MapHub<ChatHub>("/hubs/chat").RequireAuthorization();

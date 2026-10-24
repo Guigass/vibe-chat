@@ -128,7 +128,7 @@ Guest entra por convite de uso único para um canal, com validade:
 ## Offline e clientes
 
 - PWA é o cliente canônico.
-- Desktop/mobile entram depois de W15.
+- Desktop (B-141) e mobile (B-063) reutilizam a PWA. A PWA continua canônica.
 - Escrita offline real entra em W16.
 - Cliente nunca inventa ordem final; servidor continua autoritativo.
 

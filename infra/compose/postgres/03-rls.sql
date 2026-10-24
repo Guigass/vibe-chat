@@ -1174,6 +1174,13 @@ CREATE POLICY tenant_isolation_desktop_devices ON identity.desktop_devices
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS identity.mobile_devices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS identity.mobile_devices FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation_mobile_devices ON identity.mobile_devices;
+CREATE POLICY tenant_isolation_mobile_devices ON identity.mobile_devices
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 CREATE SCHEMA IF NOT EXISTS compliance;
 
 CREATE OR REPLACE FUNCTION compliance.reject_custody_mutation()
