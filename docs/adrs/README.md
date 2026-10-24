@@ -56,6 +56,7 @@ original.
 | [048](ADR-048-capacity-slos.md) | Capacity model, benchmarks e SLOs | Accepted |
 | [049](ADR-049-plugins-capabilities.md) | Capabilities de plugin = config + callback | Accepted |
 | [050](ADR-050-plugins-interacoes-governadas.md) | Interação de plugin = dados, grant e callback | Accepted |
+| [055](ADR-055-white-label-governado.md) | White-label governado por tenant | Accepted |
 
 ## Quando criar um ADR
 

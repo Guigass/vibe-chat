@@ -393,6 +393,15 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("GET", "/api/v1/admin/workspaces/{workspaceId:guid}/bridges/{bridgeId:guid}/mapping", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
             new("POST", "/api/v1/bridges/{bridgeId:guid}/events", "", true, "bridge bot token (B-138)"),
             new("POST", "/api/v1/bridges/{bridgeId:guid}/outbound", "", true, "bridge bot token (B-138)"),
+            new("GET", "/api/v1/public/branding", "", true, "host-mapped public brand (B-140)"),
+            new("GET", "/api/v1/public/branding/assets/{kind}", "", true, "host-mapped public brand asset (B-140)"),
+            new("GET", "/api/v1/branding", "", false, "membership tenant brand (B-140)"),
+            new("GET", "/api/v1/branding/assets/{kind}", "", false, "membership tenant brand asset (B-140)"),
+            new("GET", "/api/v1/admin/branding", string.Join(",", new[] { Permissions.Admin.Brand }), false, ""),
+            new("PUT", "/api/v1/admin/branding", string.Join(",", new[] { Permissions.Admin.Brand }), false, ""),
+            new("POST", "/api/v1/admin/branding/assets/{kind}", string.Join(",", new[] { Permissions.Admin.Brand }), false, ""),
+            new("DELETE", "/api/v1/admin/branding/assets/{kind}", string.Join(",", new[] { Permissions.Admin.Brand }), false, ""),
+            new("POST", "/api/v1/admin/branding/rollback", string.Join(",", new[] { Permissions.Admin.Brand }), false, ""),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(

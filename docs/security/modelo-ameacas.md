@@ -624,6 +624,15 @@ Superfície implementada, R2. A ameaça principal é copiar o body, manter um ex
 
 Superfície implementada, R2. A ameaça principal é uma segunda cópia do body sobreviver a delete/purge ou a ACL revogada. O controle é: persistir só campos curados + hash de excerpt; revalidar leitura do canal em toda lista; visibilidade `restricted` limitada a criador e owner; RLS `FORCE` em `messaging.commitments` e `messaging.commitment_changes`; eventos de outbox sem título nem body.
 
+## White-label (B-140)
+
+Superfície implementada, R2. A ameaça principal é phishing entre tenants (brand
+de outro host), CSS/JS no logo ou cor ilegível. O controle é: host só no mapa
+do operador; query `tenantId` ignorada; RLS `FORCE` em
+`directory.brand_settings`; escrita só com `admin.brand`; PNG/JPEG com magic
+byte e scan; contraste ≥ 3:1 nas duas superfícies; `productName` fixo
+`VibeChat`. ADR-055.
+
 Ver também: [`multi-tenant.md`](multi-tenant.md) e
 [`ciclo-vida-dados.md`](ciclo-vida-dados.md),
 [`horizonte-ambicioso.md`](../roadmap/horizonte-ambicioso.md).

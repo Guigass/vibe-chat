@@ -228,6 +228,7 @@ public static class Permissions
     public static class Admin
     {
         public const string Dashboard = "admin.dashboard";
+        public const string Brand = "admin.brand";
     }
 
     public static class Ai

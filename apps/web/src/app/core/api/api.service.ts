@@ -21,6 +21,7 @@ import { DeveloperApiService } from './developer-api.service';
 import { PluginApiService } from './plugin-api.service';
 import { SdkApiService } from './sdk-api.service';
 import { BridgeApiService } from './bridge-api.service';
+import { BrandingApiService } from './branding-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -49,6 +50,7 @@ export class ApiService {
   private readonly plugins = inject(PluginApiService);
   private readonly sdk = inject(SdkApiService);
   private readonly bridges = inject(BridgeApiService);
+  private readonly branding = inject(BrandingApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -283,4 +285,11 @@ export class ApiService {
   readonly pauseBridge: BridgeApiService['pauseBridge'] = this.bridges.pauseBridge.bind(this.bridges);
   readonly resumeBridge: BridgeApiService['resumeBridge'] = this.bridges.resumeBridge.bind(this.bridges);
   readonly disconnectBridge: BridgeApiService['disconnectBridge'] = this.bridges.disconnectBridge.bind(this.bridges);
+  readonly publicBrand: BrandingApiService['publicBrand'] = this.branding.publicBrand.bind(this.branding);
+  readonly tenantBrand: BrandingApiService['tenantBrand'] = this.branding.tenantBrand.bind(this.branding);
+  readonly adminBrand: BrandingApiService['adminBrand'] = this.branding.adminBrand.bind(this.branding);
+  readonly saveBrand: BrandingApiService['saveBrand'] = this.branding.saveBrand.bind(this.branding);
+  readonly uploadBrandAsset: BrandingApiService['uploadAsset'] = this.branding.uploadAsset.bind(this.branding);
+  readonly clearBrandAsset: BrandingApiService['clearAsset'] = this.branding.clearAsset.bind(this.branding);
+  readonly rollbackBrand: BrandingApiService['rollback'] = this.branding.rollback.bind(this.branding);
 }

@@ -1155,6 +1155,28 @@ Uma ponte por canal, nunca DM. Estado `pending` até `acknowledgeCopy`. Sem cons
 
 Member → 403 nas rotas admin. Outro tenant não lê a linha (RLS FORCE). Auditoria não leva corpo nem `vc_int_`. O `Down` remove só as três tabelas novas.
 
+### White-label (B-140 / ADR-055)
+
+Sem flag. Sem linha em `directory.brand_settings`, a marca é a oficial do VibeChat. `productName` na resposta é sempre `VibeChat` e não é gravável.
+
+O login público (`GET /api/v1/public/branding`) resolve o tenant só pelo host em `Branding:Hosts` (operador). `?tenantId=` é ignorado. Host fora do mapa devolve a marca oficial, sem vazar outro tenant. Shell e admin usam o tenant da membership.
+
+Cores `#RRGGBB` precisam de contraste ≥ 3:1 nas superfícies clara e escura; senão `400 BrandContrastFailed`. Arquivo só PNG/JPEG, com scan, tamanho e encaixe no slot; SVG/HTML/script → `400`. Rollback restaura o snapshot anterior uma vez (`409 BrandRollbackEmpty` se não houver). Idempotency-Key obrigatória na escrita.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| GET | `/api/v1/public/branding` | anônimo; host do operador |
+| GET | `/api/v1/public/branding/assets/{kind}` | anônimo; mesmo host; 404 se não houver arquivo |
+| GET | `/api/v1/branding` | membership |
+| GET | `/api/v1/branding/assets/{kind}` | membership |
+| GET | `/api/v1/admin/branding` | `admin.brand` |
+| PUT | `/api/v1/admin/branding` | `admin.brand` |
+| POST | `/api/v1/admin/branding/assets/{kind}` | `admin.brand` |
+| DELETE | `/api/v1/admin/branding/assets/{kind}` | `admin.brand` |
+| POST | `/api/v1/admin/branding/rollback` | `admin.brand` |
+
+`kind` é `logo-light`, `logo-dark` ou `favicon`. Member e Auditor → 403 na escrita. RLS `FORCE` em `directory.brand_settings`. O `Down` remove só essa tabela. Auditoria `brand.update` / `brand.asset` / `brand.rollback` não leva o nome nem os bytes.
+
 ### Templates de workspace (B-115)
 
 Manifesto declarativo `vibechat.workspace-template.v1`. Não carrega `tenantId`, membros, e-mails, tokens nem secrets. Recursos criados recebem o tenant do contexto. Só `workspace.admin` (Auditor/membro → 403).

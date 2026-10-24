@@ -1726,6 +1726,27 @@
     "admin.pluginRegistryUpdate": "업데이트",
     "admin.pluginRegistryRollback": "롤백",
     "admin.pluginRegistryRevoke": "버전 철회",
-    "admin.pluginRegistryInstalled": "레지스트리 설치"
+    "admin.pluginRegistryInstalled": "레지스트리 설치",
+    "login.brandLogo": "조직 로고",
+    "admin.navBranding": "브랜드",
+    "admin.brandLead": "조직 이름, 로고, 색입니다. 버전은 계속 VibeChat을 표시합니다.",
+    "admin.brandName": "표시 이름",
+    "admin.brandColor": "브랜드 색",
+    "admin.brandAccent": "강조 색",
+    "admin.brandLogoLight": "밝은 배경용 로고",
+    "admin.brandLogoDark": "어두운 배경용 로고",
+    "admin.brandFavicon": "아이콘",
+    "admin.brandSave": "저장",
+    "admin.brandRollback": "이전 브랜드 복원",
+    "admin.brandPreview": "미리보기",
+    "admin.brandProduct": "VibeChat %version%",
+    "admin.brandFallback": "파일이 없으면 공식 브랜드가 보입니다.",
+    "admin.brandSaved": "브랜드를 저장했습니다.",
+    "admin.brandRolledBack": "이전 브랜드를 복원했습니다.",
+    "admin.brandFileRejected": "이 파일은 브랜드로 쓸 수 없습니다.",
+    "admin.brandContrast": "이 색은 두 테마 모두에서 대비가 부족합니다.",
+    "admin.brandLoadError": "브랜드를 불러오지 못했습니다.",
+    "admin.brandEmpty": "공식 VibeChat 브랜드를 사용 중입니다.",
+    "admin.brandRollbackEmpty": "복원할 이전 브랜드가 없습니다."
   }
 }

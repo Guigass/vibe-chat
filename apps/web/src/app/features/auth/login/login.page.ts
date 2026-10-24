@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService, DevUserName } from '../../../core/auth/auth.service';
+import { BrandingService } from '../../../core/services/branding.service';
 import { environment } from '../../../../environments/environment';
 import { Button, LocaleControl, ThemeToggle } from '../../../shared/ui';
 import { ui } from '../../../core/i18n/strings';
@@ -21,6 +22,7 @@ interface SsoProviderView {
 export class LoginPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  readonly brand = inject(BrandingService);
 
   readonly error = this.auth.error;
   readonly ui = ui;

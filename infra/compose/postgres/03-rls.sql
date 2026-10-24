@@ -1160,6 +1160,13 @@ CREATE POLICY tenant_isolation_quota_alerts ON compliance.quota_alerts
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS directory.brand_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS directory.brand_settings FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation_brand_settings ON directory.brand_settings;
+CREATE POLICY tenant_isolation_brand_settings ON directory.brand_settings
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 CREATE SCHEMA IF NOT EXISTS compliance;
 
 CREATE OR REPLACE FUNCTION compliance.reject_custody_mutation()

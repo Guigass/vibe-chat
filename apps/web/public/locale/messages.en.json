@@ -1726,6 +1726,27 @@
     "admin.pluginRegistryUpdate": "Update",
     "admin.pluginRegistryRollback": "Rollback",
     "admin.pluginRegistryRevoke": "Revoke version",
-    "admin.pluginRegistryInstalled": "Registry installs"
+    "admin.pluginRegistryInstalled": "Registry installs",
+    "login.brandLogo": "Organization logo",
+    "admin.navBranding": "Brand",
+    "admin.brandLead": "Organization name, logos and colors. The version still identifies VibeChat.",
+    "admin.brandName": "Display name",
+    "admin.brandColor": "Brand color",
+    "admin.brandAccent": "Accent color",
+    "admin.brandLogoLight": "Logo for light backgrounds",
+    "admin.brandLogoDark": "Logo for dark backgrounds",
+    "admin.brandFavicon": "Icon",
+    "admin.brandSave": "Save",
+    "admin.brandRollback": "Restore previous",
+    "admin.brandPreview": "Preview",
+    "admin.brandProduct": "VibeChat %version%",
+    "admin.brandFallback": "Without a file, the official brand is shown.",
+    "admin.brandSaved": "Brand saved.",
+    "admin.brandRolledBack": "Previous brand restored.",
+    "admin.brandFileRejected": "This file cannot be the brand.",
+    "admin.brandContrast": "This color does not have enough contrast on both themes.",
+    "admin.brandLoadError": "The brand could not be loaded.",
+    "admin.brandEmpty": "The official VibeChat brand is in use.",
+    "admin.brandRollbackEmpty": "There is no previous brand to restore."
   }
 }

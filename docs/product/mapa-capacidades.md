@@ -110,7 +110,7 @@ organiza. Estados:
 | Perfis ricos (cargo, sobre, destaque, avatar) | Planned | B-167 / W11 |
 | Personalização visual (wallpaper/accent) | Done | B-185 / W11 |
 | Diretório de expertise / skills | Later | Reavaliar depois de B-167 e B-128 |
-| Temas/branding por tenant | Planned | B-140 / W15 |
+| Temas/branding por tenant | Done | B-140 / W15 |
 
 ## Dependências estruturais
 

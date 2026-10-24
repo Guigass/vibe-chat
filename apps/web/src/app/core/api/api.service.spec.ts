@@ -15,6 +15,7 @@ import { DeveloperApiService } from './developer-api.service';
 import { PluginApiService } from './plugin-api.service';
 import { SdkApiService } from './sdk-api.service';
 import { BridgeApiService } from './bridge-api.service';
+import { BrandingApiService } from './branding-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
@@ -57,6 +58,7 @@ function createApi(auth: AuthStub): ApiService {
       PluginApiService,
       SdkApiService,
       BridgeApiService,
+      BrandingApiService,
       { provide: AuthService, useValue: auth },
     ],
   });
@@ -148,6 +150,13 @@ describe('ApiService facade', () => {
     expect(typeof api.pauseBridge).toBe('function');
     expect(typeof api.resumeBridge).toBe('function');
     expect(typeof api.disconnectBridge).toBe('function');
+    expect(typeof api.publicBrand).toBe('function');
+    expect(typeof api.tenantBrand).toBe('function');
+    expect(typeof api.adminBrand).toBe('function');
+    expect(typeof api.saveBrand).toBe('function');
+    expect(typeof api.uploadBrandAsset).toBe('function');
+    expect(typeof api.clearBrandAsset).toBe('function');
+    expect(typeof api.rollbackBrand).toBe('function');
   });
 
   it('sends the dev user header and keeps idempotency on send', async () => {

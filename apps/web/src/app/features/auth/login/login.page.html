@@ -8,7 +8,10 @@
   </header>
 
   <div class="login-hero__content vc-anim-fade-in">
-    <p class="login-hero__brand" id="brand-title">VibeChat</p>
+    @if (brand.loginLogo(); as logo) {
+      <img class="login-hero__logo" [src]="logo" [alt]="ui.loginBrandLogo" />
+    }
+    <p class="login-hero__brand" id="brand-title">{{ brand.label() }}</p>
     <h1>{{ ui.loginHeadline }}</h1>
     <p class="login-hero__lead">
       {{ ui.loginLead }}

@@ -298,6 +298,7 @@ v1.MapDeveloperPortal();
 v1.MapPluginSdk();
 v1.MapPluginRegistry();
 v1.MapBridges();
+v1.MapBranding();
 
 app.MapScim();
 app.MapHub<ChatHub>("/hubs/chat").RequireAuthorization();

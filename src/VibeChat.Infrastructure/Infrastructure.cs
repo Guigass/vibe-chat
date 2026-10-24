@@ -29,6 +29,7 @@ public static class DependencyInjection
         services.AddPushInfrastructure();
         services.AddDigestInfrastructure(configuration);
         services.AddIntegrationsInfrastructure(configuration);
+        services.AddBrandingInfrastructure(configuration);
         services.AddInfrastructureHealthChecks();
         return services;
     }

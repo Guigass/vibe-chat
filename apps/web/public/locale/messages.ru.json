@@ -1726,6 +1726,27 @@
     "admin.pluginRegistryUpdate": "Обновить",
     "admin.pluginRegistryRollback": "Откат",
     "admin.pluginRegistryRevoke": "Отозвать версию",
-    "admin.pluginRegistryInstalled": "Установки реестра"
+    "admin.pluginRegistryInstalled": "Установки реестра",
+    "login.brandLogo": "Логотип организации",
+    "admin.navBranding": "Бренд",
+    "admin.brandLead": "Имя, логотипы и цвета организации. Версия по-прежнему указывает VibeChat.",
+    "admin.brandName": "Отображаемое имя",
+    "admin.brandColor": "Цвет бренда",
+    "admin.brandAccent": "Акцентный цвет",
+    "admin.brandLogoLight": "Логотип для светлого фона",
+    "admin.brandLogoDark": "Логотип для тёмного фона",
+    "admin.brandFavicon": "Значок",
+    "admin.brandSave": "Сохранить",
+    "admin.brandRollback": "Вернуть предыдущий",
+    "admin.brandPreview": "Предпросмотр",
+    "admin.brandProduct": "VibeChat %version%",
+    "admin.brandFallback": "Без файла показывается официальный бренд.",
+    "admin.brandSaved": "Бренд сохранён.",
+    "admin.brandRolledBack": "Предыдущий бренд восстановлен.",
+    "admin.brandFileRejected": "Этот файл нельзя использовать как бренд.",
+    "admin.brandContrast": "У этого цвета недостаточно контраста в обеих темах.",
+    "admin.brandLoadError": "Не удалось загрузить бренд.",
+    "admin.brandEmpty": "Используется официальный бренд VibeChat.",
+    "admin.brandRollbackEmpty": "Нет предыдущего бренда для восстановления."
   }
 }

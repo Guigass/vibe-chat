@@ -26,6 +26,7 @@ describe('admin-permissions (B-106)', () => {
       'quarantine',
       'capacity',
       'developer',
+      'branding',
     ]);
     expect(hasWorkspaceAdmin('Admin')).toBe(true);
   });
@@ -36,6 +37,7 @@ describe('admin-permissions (B-106)', () => {
     expect(canAccessArea('Auditor', 'diagnostics')).toBe(true);
     expect(canAccessArea('Auditor', 'capacity')).toBe(false);
     expect(canAccessArea('Auditor', 'developer')).toBe(false);
+    expect(canAccessArea('Auditor', 'branding')).toBe(false);
     expect(canAccessArea('Auditor', 'settings')).toBe(false);
     expect(canAccessArea('Auditor', 'onboarding')).toBe(false);
     expect(firstAllowedPath('Auditor')).toBe('overview');

@@ -1,0 +1,67 @@
+<section class="admin-panel">
+  <header>
+    <h2>{{ ui.adminNavBranding }}</h2>
+    <p>{{ ui.adminBrandLead }}</p>
+  </header>
+
+  @if (loading()) {
+    <p class="admin-empty">{{ ui.adminLoadingSettings }}</p>
+  } @else if (denied()) {
+    <p class="admin-empty">{{ ui.adminNoAccessBody }}</p>
+  } @else if (loadError()) {
+    <p class="admin-empty">{{ ui.adminBrandLoadError }}</p>
+  } @else {
+    <p class="admin-meta">{{ fillTemplate(ui.adminBrandProduct, { version: view()?.productVersion || '' }) }}</p>
+    @if (view()?.fallback) {
+      <p>{{ ui.adminBrandEmpty }}</p>
+    }
+
+    <form class="admin-filters" (submit)="save($event)">
+      <label class="admin-filters__field">
+        <span>{{ ui.adminBrandName }}</span>
+        <input [value]="name()" maxlength="40" (input)="name.set(read($event))" />
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.adminBrandColor }}</span>
+        <input [value]="brandColor()" maxlength="7" (input)="brandColor.set(read($event))" />
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.adminBrandAccent }}</span>
+        <input [value]="accentColor()" maxlength="7" (input)="accentColor.set(read($event))" />
+      </label>
+      <vc-button type="submit" variant="primary" [disabled]="busy()">{{ ui.adminBrandSave }}</vc-button>
+      <vc-button type="button" variant="ghost" [disabled]="busy() || !view()?.hasRollback" (click)="rollback()">{{ ui.adminBrandRollback }}</vc-button>
+    </form>
+
+    <div
+      class="brand-preview"
+      [style.--vc-brand]="brandColor() || null"
+      [style.--vc-accent]="accentColor() || null"
+    >
+      <p>{{ ui.adminBrandPreview }}</p>
+      <strong>{{ name() || view()?.productName }}</strong>
+    </div>
+
+    <div class="admin-filters">
+      <label class="admin-filters__field">
+        <span>{{ ui.adminBrandLogoLight }}</span>
+        <input type="file" accept="image/png,image/jpeg" (change)="onFile('logo-light', $event)" />
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.adminBrandLogoDark }}</span>
+        <input type="file" accept="image/png,image/jpeg" (change)="onFile('logo-dark', $event)" />
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.adminBrandFavicon }}</span>
+        <input type="file" accept="image/png,image/jpeg" (change)="onFile('favicon', $event)" />
+      </label>
+    </div>
+    <p>{{ ui.adminBrandFallback }}</p>
+    @if (feedback()) {
+      <p role="status">{{ feedback() }}</p>
+    }
+    @if (errorMessage()) {
+      <p class="admin-error" role="alert">{{ errorMessage() }}</p>
+    }
+  }
+</section>

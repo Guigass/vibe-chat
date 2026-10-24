@@ -175,6 +175,9 @@ public static class AuditActions
     public const string DelegationRevoke = "delegation.revoke";
     public const string DelegationBreakGlass = "delegation.break_glass";
     public const string QuotaUpdate = "quota.update";
+    public const string BrandUpdate = "brand.update";
+    public const string BrandAsset = "brand.asset";
+    public const string BrandRollback = "brand.rollback";
 }
 
 public interface IAuditWriter

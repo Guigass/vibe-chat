@@ -1726,6 +1726,27 @@
     "admin.pluginRegistryUpdate": "Actualizar",
     "admin.pluginRegistryRollback": "Rollback",
     "admin.pluginRegistryRevoke": "Revocar versión",
-    "admin.pluginRegistryInstalled": "Instalaciones del registry"
+    "admin.pluginRegistryInstalled": "Instalaciones del registry",
+    "login.brandLogo": "Logo de la organización",
+    "admin.navBranding": "Marca",
+    "admin.brandLead": "Nombre, logos y colores de la organización. La versión sigue identificando a VibeChat.",
+    "admin.brandName": "Nombre visible",
+    "admin.brandColor": "Color de marca",
+    "admin.brandAccent": "Color de acento",
+    "admin.brandLogoLight": "Logo para fondo claro",
+    "admin.brandLogoDark": "Logo para fondo oscuro",
+    "admin.brandFavicon": "Icono",
+    "admin.brandSave": "Guardar",
+    "admin.brandRollback": "Restaurar anterior",
+    "admin.brandPreview": "Vista previa",
+    "admin.brandProduct": "VibeChat %version%",
+    "admin.brandFallback": "Sin archivo, aparece la marca oficial.",
+    "admin.brandSaved": "Marca guardada.",
+    "admin.brandRolledBack": "Marca anterior restaurada.",
+    "admin.brandFileRejected": "Este archivo no puede ser la marca.",
+    "admin.brandContrast": "Este color no tiene contraste suficiente en los dos temas.",
+    "admin.brandLoadError": "No se pudo cargar la marca.",
+    "admin.brandEmpty": "La marca oficial de VibeChat está en uso.",
+    "admin.brandRollbackEmpty": "No hay una marca anterior para restaurar."
   }
 }
