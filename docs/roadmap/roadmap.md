@@ -353,7 +353,7 @@ O roadmap executável posterior está em
 **Wave 19 — Organização e decomposição do código** está **Done**
 (W19-1…W19-6, `B-178`…`B-183`). O gate de linhas (B-183) vive em
 `tests/architecture/SourceLineLimitTests.cs` e roda em `task test:architecture`.
-Na ordem de scan, W13 está concluída (B-139 Done) e a Wave 14 está concluída (B-129, B-169, B-130, B-132, B-133, B-134 e B-146 Done). W15 / B-135, W15 / B-066, W15 / B-111, W15 / B-136, W15 / B-137, W15 / B-138, W15 / B-140 e W15 / B-141 estão Done. O próximo item `Planned` é W15 / B-063.
+Na ordem de scan, W13 está concluída (B-139 Done) e a Wave 14 está concluída (B-129, B-169, B-130, B-132, B-133, B-134 e B-146 Done). A Wave 15 está concluída (B-135, B-066, B-111, B-136, B-137, B-138, B-140, B-141 e B-063 Done). O próximo item `Planned` é W16 / B-170.
 
 Waves 11–17 estão `Planned`, possuem specs e são elegíveis para o Build somente
 depois da conclusão das Waves 7–10 e de suas dependências (Wave 19 não bloqueia

@@ -39,11 +39,11 @@ destino e confirmação.
 
 ## Aceite
 
-- [ ] Contract suite passa nos dois clients.
-- [ ] Remote logout limpa tokens.
-- [ ] Deep/share links não enviam ao tenant errado.
-- [ ] Push não contém conteúdo sensível por default.
-- [ ] Sem conta de store, artifact sideload/documentação ainda é gerado.
+- [x] Contract suite passa nos dois clients.
+- [x] Remote logout limpa tokens.
+- [x] Deep/share links não enviam ao tenant errado.
+- [x] Push não contém conteúdo sensível por default.
+- [x] Sem conta de store, artifact sideload/documentação ainda é gerado.
 
 ## Testes
 

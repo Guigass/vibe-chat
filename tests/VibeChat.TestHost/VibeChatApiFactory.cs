@@ -211,6 +211,8 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Desktop:UpdateFeedUrl", "https://updates.example/feed.json");
         builder.UseSetting("Desktop:UpdatePublicKeyPem", DesktopTestKeys.PublicKey);
         builder.UseSetting("Desktop:SigningCredentialRef", "operator/desktop-signing");
+        builder.UseSetting("Mobile:Enabled", "true");
+        builder.UseSetting("Mobile:AllowedHosts:0", "chat.example");
         builder.UseSetting("Integrations:Bridges:InstanceId", "lab-instance");
         builder.UseSetting("Integrations:Bridges:PinnedHosts:0", "fake.bridge.local");
         builder.UseSetting("Identity:Scim:Enabled", "true");

@@ -2391,6 +2391,52 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("member_profiles", "identity");
                 });
 
+            modelBuilder.Entity("VibeChat.Identity.MobileDevice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AppVersion")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<bool>("BiometricLock")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CameraEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("FilePickerEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("NotificationsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Platform")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "UserId");
+
+                    b.ToTable("mobile_devices", "identity");
+                });
+
             modelBuilder.Entity("VibeChat.Identity.ScimGroup", b =>
                 {
                     b.Property<Guid>("Id")

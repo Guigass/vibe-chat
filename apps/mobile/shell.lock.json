@@ -1,0 +1,10 @@
+{
+  "recipe": "vibechat-mobile-recipe/1",
+  "wrapper": "capacitor",
+  "wrapperVersion": "7",
+  "distribution": "sideload",
+  "targets": {
+    "android-arm64": "2a2e9b30d198972fc0793c9c745dbb7ad6bfd96ab750663c8994ed387d5f7fe0",
+    "ios-arm64": "bb79f1f8fb06d5de7fe590b7ab24770505989af2d415a59da2766614150b9716"
+  }
+}

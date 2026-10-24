@@ -181,6 +181,9 @@ public static class AuditActions
     public const string DesktopDeviceRegister = "desktop.device.register";
     public const string DesktopDevicePreferences = "desktop.device.preferences";
     public const string DesktopDeviceLogout = "desktop.device.logout";
+    public const string MobileDeviceRegister = "mobile.device.register";
+    public const string MobileDevicePreferences = "mobile.device.preferences";
+    public const string MobileDeviceLogout = "mobile.device.logout";
 }
 
 public interface IAuditWriter

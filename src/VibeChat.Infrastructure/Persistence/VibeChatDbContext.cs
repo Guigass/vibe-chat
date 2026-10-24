@@ -78,6 +78,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<ContentAuditSettings> ContentAuditSettings => Set<ContentAuditSettings>();
     public DbSet<BrandSettings> BrandSettings => Set<BrandSettings>();
     public DbSet<DesktopDevice> DesktopDevices => Set<DesktopDevice>();
+    public DbSet<MobileDevice> MobileDevices => Set<MobileDevice>();
     public DbSet<AiUsageRecord> AiUsageRecords => Set<AiUsageRecord>();
     public DbSet<AiSettings> AiSettings => Set<AiSettings>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
@@ -314,6 +315,19 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
         modelBuilder.Entity<DesktopDevice>(entity =>
         {
             entity.ToTable("desktop_devices", "identity");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Platform).HasMaxLength(32);
+            entity.Property(x => x.AppVersion).HasMaxLength(32);
+            entity.HasIndex(x => new { x.TenantId, x.UserId });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<MobileDevice>(entity =>
+        {
+            entity.ToTable("mobile_devices", "identity");
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedNever();
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));

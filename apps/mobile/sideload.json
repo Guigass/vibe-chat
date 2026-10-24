@@ -1,0 +1,9 @@
+{
+  "distribution": "sideload",
+  "storeAccount": false,
+  "targets": ["android-arm64", "ios-arm64"],
+  "artifacts": {
+    "android-arm64": "app-release-unsigned.apk",
+    "ios-arm64": "VibeChat-unsigned.ipa"
+  }
+}

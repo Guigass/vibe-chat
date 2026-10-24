@@ -62,6 +62,7 @@ original.
 | [054](ADR-054-framework-bridges.md) | Framework de bridges por contrato externo | Accepted |
 | [055](ADR-055-white-label-governado.md) | White-label governado por tenant | Accepted |
 | [056](ADR-056-cliente-desktop.md) | Cliente desktop Tauri sobre o mesmo web | Accepted |
+| [057](ADR-057-clientes-mobile.md) | Cliente mobile Capacitor sobre o mesmo web | Accepted |
 
 ## Quando criar um ADR
 

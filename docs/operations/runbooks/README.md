@@ -30,6 +30,7 @@ Use estes runbooks em incidente ou mudança. Detalhes de rotina ficam nos guias 
 | [policy-packs.md](./policy-packs.md) | Policy packs: flag, lock, drift e rollback (B-133) |
 | [bridges.md](./bridges.md) | Bridges: flag, pin, loop e rollback (B-138) |
 | [desktop.md](./desktop.md) | Cliente desktop: flag, update e rollback (B-141) |
+| [mobile.md](./mobile.md) | Cliente mobile: flag, sideload e rollback (B-063) |
 
 ## Princípios
 

@@ -1,0 +1,11 @@
+{
+  "appId": "app.vibechat.mobile",
+  "appName": "VibeChat",
+  "webDir": "../web/dist/browser",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https",
+    "allowNavigation": []
+  },
+  "plugins": {}
+}

@@ -153,7 +153,7 @@ Objetivo: tornar extensibilidade um produto sustentável.
 | B-138 | B/C/E | Framework de bridges para redes externas | B-136, D-21 | [B-138](../product/specs/B-138-framework-bridges.md) | **Done** — contrato externo, pin, consentimento, loop/replay, identidade remota e delete best-effort; flag off; ADR-054 |
 | B-140 | D/G/B | White-label e branding por tenant | B-100, D-24 | [B-140](../product/specs/B-140-white-label.md) | **Done** — nome, logos e cores com contraste; host do operador; `admin.brand`; ADR-055 |
 | B-141 | D/A/E | Cliente desktop empacotado | W10-9, D-20 | [B-141](../product/specs/B-141-cliente-desktop.md) | **Done** — shell Tauri 2, scheme `vibechat://v1`, update assinado, secure storage sem token no servidor, flag off; ADR-056 |
-| B-063 | D/A/E | Clientes mobile nativos | B-141, D-20 | [B-063](../product/specs/B-063-clientes-mobile.md) | Planned |
+| B-063 | D/A/E | Clientes mobile nativos | B-141, D-20 | [B-063](../product/specs/B-063-clientes-mobile.md) | **Done** — shell Capacitor 7, scheme `vibechat://v1`, share com confirmação, push só com ids, sideload sem conta de loja, flag off; ADR-057 |
 
 ### Critérios de saída
 

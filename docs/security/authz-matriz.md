@@ -305,6 +305,14 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/desktop/devices` | permission | `message.read` | ✓ | ✓ | ✓ | B-141; recusa token no body |
 | PUT | `/desktop/devices/{deviceId:guid}/preferences` | permission | `message.read` | ✓ | ✓ | ✓ | B-141; dono; launch-at-login opt-in |
 | DELETE | `/desktop/devices/{deviceId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-141; dono ou `workspace.admin`; limpa sessão no cliente |
+| GET | `/mobile/shell` | permission | `message.read` | ✓ | ✓ | ✓ | B-063; flag off → 404 `MobileDisabled`; sem segredo |
+| POST | `/mobile/deep-links/validate` | permission | `message.read` | ✓ | ✓ | ✓ | B-063; host fora da lista → 400 |
+| POST | `/mobile/share/validate` | permission | `message.read` | ✓ | ✓ | ✓ | B-063; confirma destino; não envia mensagem |
+| POST | `/mobile/push/preview` | permission | `message.read` | ✓ | ✓ | ✓ | B-063; payload só com ids |
+| GET | `/mobile/devices` | permission | `message.read` | ✓ | ✓ | ✓ | B-063; só os aparelhos do caller |
+| POST | `/mobile/devices` | permission | `message.read` | ✓ | ✓ | ✓ | B-063; recusa token no body |
+| PUT | `/mobile/devices/{deviceId:guid}/preferences` | permission | `message.read` | ✓ | ✓ | ✓ | B-063; dono; biometria opt-in |
+| DELETE | `/mobile/devices/{deviceId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-063; dono ou `workspace.admin`; pede wipe do secure storage |
 | GET | `/admin/event-schemas` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; flag off → 404 `EventSchemasDisabled`; sem dado de tenant |
 | GET | `/admin/event-schemas/{eventType}/versions/{schemaVersion:int}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; versão desconhecida → 404 `UnknownSchemaVersion` |
 | POST | `/admin/event-schemas/check` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; não persiste o documento; teto 16 KiB |
