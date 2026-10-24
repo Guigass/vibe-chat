@@ -14,6 +14,7 @@ export const ui = {
   loginSsoDomainHint: $localize`:@@login.ssoDomainHint:O domínio escolhe o acesso da empresa quando há uma única correspondência.`,
   loginSsoUnavailable: $localize`:@@login.ssoUnavailable:A lista de acessos da empresa não carregou. Ainda dá para entrar com Keycloak.`,
   loginSsoError: $localize`:@@login.ssoError:Não foi possível vincular esta conta. Peça um convite ao administrador.`,
+  loginBrandLogo: $localize`:@@login.brandLogo:Logo da organização`,
   closeSidebar: $localize`:@@shell.closeSidebar:Fechar barra lateral`,
   expandMenu: $localize`:@@shell.expandMenu:Expandir menu`,
   collapseMenu: $localize`:@@shell.collapseMenu:Encolher menu`,
@@ -972,6 +973,26 @@ export const ui = {
   adminNavQuarantine: $localize`:@@admin.navQuarantine:Quarentena`,
   adminNavCapacity: $localize`:@@admin.navCapacity:Capacidade`,
   adminNavDeveloper: $localize`:@@admin.navDeveloper:Desenvolvedores`,
+  adminNavBranding: $localize`:@@admin.navBranding:Marca`,
+  adminBrandLead: $localize`:@@admin.brandLead:Nome, logos e cores da organização. A versão continua identificando o VibeChat.`,
+  adminBrandName: $localize`:@@admin.brandName:Nome exibido`,
+  adminBrandColor: $localize`:@@admin.brandColor:Cor da marca`,
+  adminBrandAccent: $localize`:@@admin.brandAccent:Cor de destaque`,
+  adminBrandLogoLight: $localize`:@@admin.brandLogoLight:Logo para fundo claro`,
+  adminBrandLogoDark: $localize`:@@admin.brandLogoDark:Logo para fundo escuro`,
+  adminBrandFavicon: $localize`:@@admin.brandFavicon:Ícone`,
+  adminBrandSave: $localize`:@@admin.brandSave:Salvar`,
+  adminBrandRollback: $localize`:@@admin.brandRollback:Restaurar anterior`,
+  adminBrandPreview: $localize`:@@admin.brandPreview:Pré-visualização`,
+  adminBrandProduct: $localize`:@@admin.brandProduct:VibeChat %version%`,
+  adminBrandFallback: $localize`:@@admin.brandFallback:Sem arquivo, a marca oficial aparece.`,
+  adminBrandSaved: $localize`:@@admin.brandSaved:Marca salva.`,
+  adminBrandRolledBack: $localize`:@@admin.brandRolledBack:Marca anterior restaurada.`,
+  adminBrandFileRejected: $localize`:@@admin.brandFileRejected:Esse arquivo não pode ser a marca.`,
+  adminBrandContrast: $localize`:@@admin.brandContrast:Essa cor não tem contraste suficiente nos dois temas.`,
+  adminBrandLoadError: $localize`:@@admin.brandLoadError:Não foi possível carregar a marca.`,
+  adminBrandEmpty: $localize`:@@admin.brandEmpty:A marca oficial do VibeChat está em uso.`,
+  adminBrandRollbackEmpty: $localize`:@@admin.brandRollbackEmpty:Não há marca anterior para restaurar.`,
   adminQuarantineLead: $localize`:@@admin.quarantineLead:Arquivos retidos pelo verificador. Liberar ou apagar exige uma justificativa e fica no audit.`,
   adminQuarantineDisabled: $localize`:@@admin.quarantineDisabled:A verificação de malware está desligada nesta instalação.`,
   adminQuarantineEmpty: $localize`:@@admin.quarantineEmpty:Nenhum arquivo em quarentena.`,
@@ -2084,6 +2105,20 @@ export function translateErrorCode(code: string | undefined): string {
     case 'QuotaInvalidLimit':
     case 'QuotaResourceUnknown':
       return ui.delegatedAdminError;
+    case 'BrandContrastFailed':
+      return ui.adminBrandContrast;
+    case 'BrandNameInvalid':
+      return ui.errorDisplayNameInvalid;
+    case 'BrandAssetTypeNotAllowed':
+    case 'BrandAssetTooLarge':
+    case 'BrandAssetDimensions':
+    case 'BrandAssetRejected':
+    case 'BrandAssetKindInvalid':
+      return ui.adminBrandFileRejected;
+    case 'BrandRollbackEmpty':
+      return ui.adminBrandRollbackEmpty;
+    case 'BrandIdempotencyConflict':
+      return ui.errorIdempotencyConflict;
     default:
       return code ?? '';
   }

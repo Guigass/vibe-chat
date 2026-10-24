@@ -54,6 +54,16 @@
   text-align: left;
 }
 
+.login-hero__logo {
+  display: block;
+  height: 2.5rem;
+  width: auto;
+  max-width: 10rem;
+  margin: 0 0 var(--vc-space-3);
+  object-fit: contain;
+  padding: var(--vc-space-1);
+}
+
 .login-hero__brand {
   margin: 0 0 var(--vc-space-4);
   font-family: var(--vc-font-display);

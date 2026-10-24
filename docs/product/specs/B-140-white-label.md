@@ -40,11 +40,11 @@ aceitar TenantId do query para tela pública.
 
 ## Aceite
 
-- [ ] Branding aparece só no tenant correto.
-- [ ] Contraste e arquivos inválidos são rejeitados.
-- [ ] Fallback funciona em asset ausente.
-- [ ] Sem arbitrary code.
-- [ ] About preserva identificação técnica.
+- [x] Branding aparece só no tenant correto.
+- [x] Contraste e arquivos inválidos são rejeitados.
+- [x] Fallback funciona em asset ausente.
+- [x] Sem arbitrary code.
+- [x] About preserva identificação técnica.
 
 ## Testes
 

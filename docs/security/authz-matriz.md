@@ -289,6 +289,15 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/admin/workspaces/{workspaceId:guid}/bridges/{bridgeId:guid}/mapping` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-138; subject opaco |
 | POST | `/bridges/{bridgeId:guid}/events` | exempt | bridge bot token | — | — | — | B-138; `AllowAnonymous` + token; outro bot → 403 |
 | POST | `/bridges/{bridgeId:guid}/outbound` | exempt | bridge bot token | — | — | — | B-138; pull; sem socket de saída |
+| GET | `/public/branding` | exempt | AllowAnonymous | — | — | — | B-140; host do operador; ignora `tenantId` |
+| GET | `/public/branding/assets/{kind}` | exempt | AllowAnonymous | — | — | — | B-140; 404 sem arquivo |
+| GET | `/branding` | exempt | membership | ✓ | ✓ | ✓ | B-140; tenant da sessão |
+| GET | `/branding/assets/{kind}` | exempt | membership | ✓ | ✓ | ✓ | B-140 |
+| GET | `/admin/branding` | permission | `admin.brand` | ✗ | ✗ | ✓ | B-140; versão VibeChat permanece |
+| PUT | `/admin/branding` | permission | `admin.brand` | ✗ | ✗ | ✓ | B-140; contraste no servidor |
+| POST | `/admin/branding/assets/{kind}` | permission | `admin.brand` | ✗ | ✗ | ✓ | B-140; PNG/JPEG |
+| DELETE | `/admin/branding/assets/{kind}` | permission | `admin.brand` | ✗ | ✗ | ✓ | B-140; volta ao asset oficial |
+| POST | `/admin/branding/rollback` | permission | `admin.brand` | ✗ | ✗ | ✓ | B-140; um passo |
 | GET | `/admin/event-schemas` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; flag off → 404 `EventSchemasDisabled`; sem dado de tenant |
 | GET | `/admin/event-schemas/{eventType}/versions/{schemaVersion:int}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; versão desconhecida → 404 `UnknownSchemaVersion` |
 | POST | `/admin/event-schemas/check` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; não persiste o documento; teto 16 KiB |

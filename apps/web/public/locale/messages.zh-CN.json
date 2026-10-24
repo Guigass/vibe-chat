@@ -1726,6 +1726,27 @@
     "admin.pluginRegistryUpdate": "更新",
     "admin.pluginRegistryRollback": "回滚",
     "admin.pluginRegistryRevoke": "撤销版本",
-    "admin.pluginRegistryInstalled": "注册表安装"
+    "admin.pluginRegistryInstalled": "注册表安装",
+    "login.brandLogo": "组织标志",
+    "admin.navBranding": "品牌",
+    "admin.brandLead": "组织的名称、标志和颜色。版本仍然标明 VibeChat。",
+    "admin.brandName": "显示名称",
+    "admin.brandColor": "品牌色",
+    "admin.brandAccent": "强调色",
+    "admin.brandLogoLight": "浅色背景标志",
+    "admin.brandLogoDark": "深色背景标志",
+    "admin.brandFavicon": "图标",
+    "admin.brandSave": "保存",
+    "admin.brandRollback": "恢复上一版",
+    "admin.brandPreview": "预览",
+    "admin.brandProduct": "VibeChat %version%",
+    "admin.brandFallback": "没有文件时显示官方品牌。",
+    "admin.brandSaved": "品牌已保存。",
+    "admin.brandRolledBack": "已恢复上一版品牌。",
+    "admin.brandFileRejected": "此文件不能作为品牌。",
+    "admin.brandContrast": "此颜色在两种主题下对比度都不够。",
+    "admin.brandLoadError": "无法加载品牌。",
+    "admin.brandEmpty": "正在使用官方 VibeChat 品牌。",
+    "admin.brandRollbackEmpty": "没有可恢复的上一版品牌。"
   }
 }

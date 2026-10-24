@@ -1726,6 +1726,27 @@
     "admin.pluginRegistryUpdate": "更新",
     "admin.pluginRegistryRollback": "ロールバック",
     "admin.pluginRegistryRevoke": "バージョンを失効",
-    "admin.pluginRegistryInstalled": "レジストリのインストール"
+    "admin.pluginRegistryInstalled": "レジストリのインストール",
+    "login.brandLogo": "組織のロゴ",
+    "admin.navBranding": "ブランド",
+    "admin.brandLead": "組織の名前、ロゴ、色です。バージョンは引き続き VibeChat を示します。",
+    "admin.brandName": "表示名",
+    "admin.brandColor": "ブランドカラー",
+    "admin.brandAccent": "アクセントカラー",
+    "admin.brandLogoLight": "明るい背景用のロゴ",
+    "admin.brandLogoDark": "暗い背景用のロゴ",
+    "admin.brandFavicon": "アイコン",
+    "admin.brandSave": "保存",
+    "admin.brandRollback": "前のブランドに戻す",
+    "admin.brandPreview": "プレビュー",
+    "admin.brandProduct": "VibeChat %version%",
+    "admin.brandFallback": "ファイルがない場合は公式ブランドが表示されます。",
+    "admin.brandSaved": "ブランドを保存しました。",
+    "admin.brandRolledBack": "前のブランドに戻しました。",
+    "admin.brandFileRejected": "このファイルはブランドにできません。",
+    "admin.brandContrast": "この色は両方のテーマでコントラストが不足しています。",
+    "admin.brandLoadError": "ブランドを読み込めませんでした。",
+    "admin.brandEmpty": "公式の VibeChat ブランドを使用中です。",
+    "admin.brandRollbackEmpty": "戻せる前のブランドがありません。"
   }
 }

@@ -76,6 +76,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
     public DbSet<ContentAuditSettings> ContentAuditSettings => Set<ContentAuditSettings>();
+    public DbSet<BrandSettings> BrandSettings => Set<BrandSettings>();
     public DbSet<AiUsageRecord> AiUsageRecords => Set<AiUsageRecord>();
     public DbSet<AiSettings> AiSettings => Set<AiSettings>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
@@ -1232,6 +1233,24 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.HasKey(x => x.TenantId);
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.Property(x => x.Enabled).HasDefaultValue(true);
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<BrandSettings>(entity =>
+        {
+            entity.ToTable("brand_settings", "directory");
+            entity.HasKey(x => x.TenantId);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.DisplayName).HasMaxLength(BrandingRules.MaxNameLength);
+            entity.Property(x => x.BrandColor).HasMaxLength(7);
+            entity.Property(x => x.AccentColor).HasMaxLength(7);
+            entity.Property(x => x.LogoLightKey).HasMaxLength(200);
+            entity.Property(x => x.LogoDarkKey).HasMaxLength(200);
+            entity.Property(x => x.FaviconKey).HasMaxLength(200);
+            entity.Property(x => x.LogoLightContentType).HasMaxLength(80);
+            entity.Property(x => x.LogoDarkContentType).HasMaxLength(80);
+            entity.Property(x => x.FaviconContentType).HasMaxLength(80);
+            entity.Property(x => x.PreviousJson).HasColumnType("jsonb");
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

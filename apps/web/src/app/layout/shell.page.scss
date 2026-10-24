@@ -142,11 +142,38 @@
 }
 
 .shell__wordmark {
+  display: flex;
+  align-items: center;
+  gap: var(--vc-space-2);
+  min-width: 0;
   font-family: var(--vc-font-display);
   font-weight: 700;
   font-size: 1.35rem;
   letter-spacing: -0.03em;
   color: var(--vc-brand);
+}
+
+.shell__brand-logo {
+  display: block;
+  height: 1.75rem;
+  width: auto;
+  max-width: 7.5rem;
+  object-fit: contain;
+  padding: 0.15rem;
+}
+
+.shell__brand-logo[hidden] {
+  display: none;
+}
+
+.shell__wordmark-full {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell--nav-compact .shell__brand-logo {
+  display: none;
 }
 
 .shell__workspace {
