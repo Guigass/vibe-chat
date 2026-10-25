@@ -38,6 +38,10 @@ A introdução deve preservar o outbox (DB continua sendo a origem atômica); o 
 | RabbitMQ para typing/presence | Redis já cobre efêmero |
 | Substituir outbox por publish direto no broker | Reintroduz dual-write |
 
+B-170 (2026-10-25) confirma o número já fixado no ADR-048: reavaliar só se o
+lag p95 do outbox passar de 30 s por 15 minutos com pelo menos dois workers.
+Amostra mais curta não fecha este gatilho. O lote vigente é 20, num worker.
+
 ## Consequências
 
 - **+** Fase 1 simples; menos partes móveis

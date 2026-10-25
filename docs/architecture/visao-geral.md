@@ -87,6 +87,10 @@ atrás de portas e feature flags. Contrato:
 4. Worker processa outbox → Realtime/SignalR notifica assinantes (via backplane Redis se multi-instância).
 5. Clientes reconciliam por `seq` se necessário.
 
+Escala horizontal da API, limite do worker e gatilhos de bus/OpenSearch/Kubernetes
+estão em [performance e escalabilidade](performance-escalabilidade.md) (B-170).
+Não há serviço novo nesse caminho.
+
 Detalhes:
 
 - [`fluxo-envio-mensagem.md`](fluxo-envio-mensagem.md);

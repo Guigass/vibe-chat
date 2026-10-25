@@ -167,7 +167,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-061 | Bus externo | Conditional — somente gatilho ADR-015 medido |
 | B-062 | Helm/K8s | Conditional — somente gatilho ADR-017 medido |
 | B-063 | Clientes mobile nativos | **Done** (W15) — flag `Mobile:Enabled` off; ADR-057; [spec](../product/specs/B-063-clientes-mobile.md) |
-| B-170 | Performance e escalabilidade | Planned — W16; hot paths/gargalos após B-146; gate antes de B-144 |
+| B-170 | Performance e escalabilidade | **Done** (W16) — catálogo de hot paths, gatilhos ADR-015/016/017 confirmados, amostra de lab; ADR-058; [spec](../product/specs/B-170-performance-escalabilidade.md) |
 | B-172 | Backup de chat (export/import, tarefas, destinos remotos) | Planned — W16; SFTP/FTP, SMB, S3, Drive, WebDAV; complementa B-031/B-046; [spec](../product/specs/B-172-backup-chat-destinos.md) |
 | B-064 | Canais confidenciais E2EE | Planned — W16; deps B-169 (gate `contentAuditEnabled`) |
 | B-065 | Federação entre instâncias | Planned — W16 |
@@ -223,7 +223,7 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-140 | White-label e branding por tenant | **Done** (W15) — ADR-055; [spec](../product/specs/B-140-white-label.md) |
 | B-141 | Cliente desktop empacotado | **Done** (W15) — flag `Desktop:Enabled` off; ADR-056; [spec](../product/specs/B-141-cliente-desktop.md) |
 | B-063 | Clientes mobile nativos | **Done** (W15) — flag `Mobile:Enabled` off; ADR-057; [spec](../product/specs/B-063-clientes-mobile.md) |
-| B-170, B-143…B-145, B-172 + B-064/B-065 | Performance/escalabilidade, offline, HA, storage, backup de chat (destinos), federação e E2EE | Planned — W16 |
+| B-143…B-145, B-172 + B-064/B-065 | Offline, HA, storage, backup de chat (destinos), federação e E2EE | Planned — W16 (B-170 Done) |
 | B-147…B-149, B-152 | Live media, notas de reunião e canvas | Planned — W17 |
 
 Todos possuem decisão e spec. A elegibilidade concreta continua dependendo de

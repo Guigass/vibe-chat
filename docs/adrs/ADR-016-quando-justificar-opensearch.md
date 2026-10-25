@@ -33,6 +33,11 @@ A busca inicial usa PostgreSQL FTS (ADR-011). Motores dedicados oferecem relevâ
 | Meilisearch/Typesense | Opções válidas menores; avaliar se gatilhos forem leves |
 | pgvector apenas | Pode cobrir semantic search antes de OS — preferir se suficiente |
 
+B-170 (2026-10-25) confirma o número já fixado no ADR-048: query p95 acima
+de 500 ms com pelo menos 5 milhões de mensagens indexadas, ou CPU de busca
+no primário acima de 40%, por 15 minutos. Amostra mais curta não fecha
+este gatilho.
+
 ## Consequências
 
 - **+** Evita cluster de busca cedo

@@ -40,6 +40,11 @@ A fase 1 opera com **Docker Compose** (ou equivalente systemd+containers). Kuber
 | Nomad/ECS apenas | Podem ser alvos futuros; não oficiais na fase 1 |
 | Bare metal sem containers | Possível para experts; Compose permanece referência |
 
+B-170 (2026-10-25) confirma o número já fixado no ADR-048: mais de 3
+réplicas de API, ou mais de 2000 conexões por nó quando o restart rolante
+já não cabe no Compose, por 15 minutos. Amostra mais curta não fecha este
+gatilho.
+
 ## Consequências
 
 - **+** Onboarding local e demos em minutos

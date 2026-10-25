@@ -188,6 +188,15 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Cross-tenant | O catálogo não carrega id de outro tenant. Workspace fora do ator → 403, sem o corpo |
 | Carga | O workload `isolation` espera 403/404 no canal estrangeiro. Não usa tenant real de cliente |
 
+### Performance (B-170 / ADR-058)
+
+| Item | Controle |
+|------|----------|
+| Superfície | Sem endpoint e sem flag. O envio não consulta o catálogo |
+| Carga | Tenant sintético. O JSON de lab não leva e-mail, corpo, token nem `isSla: true` |
+| Isolamento | Amostra curta não autoriza desligar RLS, cache sem tenant nem segunda réplica sem `SKIP LOCKED` |
+| Gatilho | ADR-015/016/017 só fecham com a janela de 15 minutos do ADR-048 |
+
 ### Administração delegada (B-134 / ADR-047)
 
 | Item | Controle |

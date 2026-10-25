@@ -171,6 +171,8 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Metric** | Contadores/histogramas (Prometheus). |
 | **Log** | Log estruturado (Loki). |
 | **Correlation Id** | ID que amarra request HTTP ↔ hub ↔ outbox ↔ worker. |
+| **Hot path** | Caminho quente de envio, history, fan-out, outbox, busca, upload ou export. B-170 lista o dono e o SLI de B-146. |
+| **Alavanca de escala** | O que cresce primeiro dentro do Compose (réplica de API, worker, nó do Postgres) antes de bus, OpenSearch ou Kubernetes. |
 
 ## Siglas úteis
 

@@ -55,6 +55,7 @@ e ADR-017.
 ## Consequências
 
 - Rollback: `Features:CapacitySlo:Enabled=false`. Não há migration.
-- B-170 mede em cima destes perfis. B-144 continua bloqueado até a evidência.
+- B-170 mediu em cima destes perfis e confirmou os gatilhos, sem mudá-los.
+  B-144 continua bloqueado até a evidência de HA.
 - Os números envelhecem. Cada resultado medido carrega data, commit, ambiente
   e margem. O baseline deste ADR é envelope de planejamento de 2026-10-21.

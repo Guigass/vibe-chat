@@ -89,3 +89,9 @@ existir, usa `vibechat.capacity-result.v1` com commit, ambiente, data e margem
 de erro, sem e-mail e sem `isSla: true`.
 
 Catálogo compartilhado com o k6: `tests/load/capacity-profiles.json`.
+
+B-170 confirma estes gatilhos e publica a revisão dos hot paths em
+[`performance-escalabilidade.md`](../architecture/performance-escalabilidade.md).
+A amostra Small/Standard fica em `tests/load/performance-baseline.json`.
+O runbook de orçamento queimado é
+[`runbooks/performance.md`](runbooks/performance.md).
