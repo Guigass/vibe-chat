@@ -55,6 +55,33 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
         }
     }
 
+    /// <summary>
+    /// Keeps this processor from taking a batch until the returned hold is disposed.
+    /// Waits out an in-flight batch first. A second host that shares the database
+    /// and uses different scan settings holds the other processor so it cannot
+    /// claim <c>attachment.scan.requested</c>.
+    /// </summary>
+    public async Task<IAsyncDisposable> HoldBatchAsync(CancellationToken cancellationToken)
+    {
+        await _batchGate.WaitAsync(cancellationToken);
+        return new BatchGateHold(_batchGate);
+    }
+
+    private sealed class BatchGateHold(SemaphoreSlim gate) : IAsyncDisposable
+    {
+        private int _released;
+
+        public ValueTask DisposeAsync()
+        {
+            if (Interlocked.Exchange(ref _released, 1) == 0)
+            {
+                gate.Release();
+            }
+
+            return ValueTask.CompletedTask;
+        }
+    }
+
     private async Task<int> ProcessBatchCoreAsync(CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
