@@ -1,4 +1,5 @@
 import { ApiService } from '../api/api.service';
+import type { OfflineQueuePort } from '../offline/offline-engine';
 import { ui } from '../i18n/strings';
 import { ChatMessage, ChatThread } from '../../shared/models/chat.models';
 import { replyPreviewText } from './message-sync';
@@ -14,6 +15,7 @@ export interface ThreadSendDeps {
   setReplyTarget: (message: ChatMessage | null) => void;
   setSending: (value: boolean) => void;
   bumpReplyCount: (threadId: string) => void;
+  offline?: OfflineQueuePort;
 }
 
 export async function sendThreadMessage(deps: ThreadSendDeps, body: string): Promise<boolean> {
@@ -28,6 +30,20 @@ export async function sendThreadMessage(deps: ThreadSendDeps, body: string): Pro
 
   const clientMessageId = crypto.randomUUID();
   const idempotencyKey = crypto.randomUUID();
+  if (deps.offline?.shouldQueue()) {
+    const queued = await deps.offline.enqueue({
+      kind: 'send',
+      idempotencyKey,
+      clientId: clientMessageId,
+      channelId: thread.channelId,
+      threadId: thread.id,
+      body: text,
+    });
+    if (queued) {
+      deps.setReplyTarget(null);
+      return true;
+    }
+  }
   const optimistic: ChatMessage = {
     id: clientMessageId,
     clientMessageId,

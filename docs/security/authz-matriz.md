@@ -313,6 +313,7 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/mobile/devices` | permission | `message.read` | ✓ | ✓ | ✓ | B-063; recusa token no body |
 | PUT | `/mobile/devices/{deviceId:guid}/preferences` | permission | `message.read` | ✓ | ✓ | ✓ | B-063; dono; biometria opt-in |
 | DELETE | `/mobile/devices/{deviceId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-063; dono ou `workspace.admin`; pede wipe do secure storage |
+| GET | `/sync` | permission | `message.read` | ✓ | ✓ | ✓ | B-143; flag off ou chave inválida → 404 `OfflineWriteDisabled`; cursor não autoriza outro tenant |
 | GET | `/admin/event-schemas` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; flag off → 404 `EventSchemasDisabled`; sem dado de tenant |
 | GET | `/admin/event-schemas/{eventType}/versions/{schemaVersion:int}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; versão desconhecida → 404 `UnknownSchemaVersion` |
 | POST | `/admin/event-schemas/check` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; não persiste o documento; teto 16 KiB |

@@ -223,7 +223,8 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-140 | White-label e branding por tenant | **Done** (W15) — ADR-055; [spec](../product/specs/B-140-white-label.md) |
 | B-141 | Cliente desktop empacotado | **Done** (W15) — flag `Desktop:Enabled` off; ADR-056; [spec](../product/specs/B-141-cliente-desktop.md) |
 | B-063 | Clientes mobile nativos | **Done** (W15) — flag `Mobile:Enabled` off; ADR-057; [spec](../product/specs/B-063-clientes-mobile.md) |
-| B-143…B-145, B-172 + B-064/B-065 | Offline, HA, storage, backup de chat (destinos), federação e E2EE | Planned — W16 (B-170 Done) |
+| B-143 | Offline sync e fila local | **Done** — W16; flag `Features:OfflineWrite:Enabled` off; ADR-059; [spec](../product/specs/B-143-offline-sync.md) |
+| B-145, B-172 + B-064/B-065 | Storage, backup de chat (destinos), federação e E2EE | Planned — W16 (B-143 Done) |
 | B-147…B-149, B-152 | Live media, notas de reunião e canvas | Planned — W17 |
 
 Todos possuem decisão e spec. A elegibilidade concreta continua dependendo de

@@ -27,6 +27,7 @@ import { ReadCursorScheduler } from './message-read-cursor';
 import { ingestChannelMessage } from './message-ingest';
 import { MessageTimeline, createMessageTimeline } from './message-timeline';
 import { MessageCommandDeps } from './message-commands';
+import type { OfflineQueuePort } from '../offline/offline-engine';
 
 export interface MessageRuntimeHost {
   api: ApiService;
@@ -46,6 +47,7 @@ export interface MessageRuntimeHost {
   viewingLatest: WritableSignal<boolean>;
   setViewingLatest: (value: boolean) => void;
   cancelScroll: (requestId?: number) => void;
+  offline?: OfflineQueuePort;
 }
 
 /** Hub ingest, read cursor, timeline and command wiring for MessageStore. */
@@ -167,6 +169,7 @@ export class MessageRuntime {
       clearThreadLinkPreview: (messageId) => this.host.threads.applyLinkPreviewCleared(messageId),
       recordSuccessfulSend: () => this.host.push?.recordSuccessfulSend(),
       forgetPendingAnnouncement: (messageId) => this.host.channels.forgetPendingAnnouncement(messageId),
+      offline: this.host.offline,
       refreshPendingAnnouncements: () => void this.host.channels.refreshPendingAnnouncements(),
     };
   }

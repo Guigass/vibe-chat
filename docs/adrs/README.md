@@ -64,6 +64,7 @@ original.
 | [056](ADR-056-cliente-desktop.md) | Cliente desktop Tauri sobre o mesmo web | Accepted |
 | [057](ADR-057-clientes-mobile.md) | Cliente mobile Capacitor sobre o mesmo web | Accepted |
 | [058](ADR-058-performance-escalabilidade.md) | Performance permanece no Compose | Accepted |
+| [059](ADR-059-offline-sync.md) | Sync offline no cliente PWA | Accepted |
 
 ## Quando criar um ADR
 

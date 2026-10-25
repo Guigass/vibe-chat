@@ -197,6 +197,17 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Isolamento | Amostra curta não autoriza desligar RLS, cache sem tenant nem segunda réplica sem `SKIP LOCKED` |
 | Gatilho | ADR-015/016/017 só fecham com a janela de 15 minutos do ADR-048 |
 
+### Sync offline (B-143 / ADR-059)
+
+| Item | Controle |
+|------|----------|
+| Flag | `Features:OfflineWrite:Enabled` off, ou chave vazia/`CHANGE_ME`, → 404 `OfflineWriteDisabled`. O envio online não consulta a flag |
+| AuthZ | `message.read`. Membership revalidada em cada sync. Canal abandonado não entra na janela |
+| Cursor | HMAC por tenant, usuário e `deviceId`. Cursor de outro principal → `FullResyncRequired` só com dados do caller. Sem corpo de outro tenant |
+| Tombstone | Delete não devolve `body`. Edição com `expectedVersion` velho → 409 `MessageVersionConflict` e não grava |
+| Cliente | AES-GCM no IndexedDB, chave não exportável, partição por conta e tenant. Logout e `ScopeRevoked` apagam o banco local |
+| Retry | Reação `intent=add` não desfaz no segundo envio. A mesma idempotency key não cria outra mensagem |
+
 ### Administração delegada (B-134 / ADR-047)
 
 | Item | Controle |

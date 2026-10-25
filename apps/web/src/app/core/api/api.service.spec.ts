@@ -18,6 +18,7 @@ import { BridgeApiService } from './bridge-api.service';
 import { BrandingApiService } from './branding-api.service';
 import { DesktopApiService } from './desktop-api.service';
 import { MobileApiService } from './mobile-api.service';
+import { OfflineApiService } from './offline-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
@@ -63,6 +64,7 @@ function createApi(auth: AuthStub): ApiService {
       BrandingApiService,
       DesktopApiService,
       MobileApiService,
+      OfflineApiService,
       { provide: AuthService, useValue: auth },
     ],
   });
@@ -109,6 +111,7 @@ describe('ApiService facade', () => {
       DiagnosticsApiService,
       DesktopApiService,
       MobileApiService,
+      OfflineApiService,
     ];
     const names = domains.flatMap((domain) => publicMethods(domain));
     expect(names.length).toBeGreaterThan(100);
@@ -169,6 +172,7 @@ describe('ApiService facade', () => {
     expect(typeof api.mobileShell).toBe('function');
     expect(typeof api.registerMobileDevice).toBe('function');
     expect(typeof api.logoutMobileDevice).toBe('function');
+    expect(typeof api.sync).toBe('function');
   });
 
   it('sends the dev user header and keeps idempotency on send', async () => {

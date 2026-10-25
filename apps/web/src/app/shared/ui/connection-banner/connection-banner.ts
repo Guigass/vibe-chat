@@ -1,12 +1,17 @@
-import { Component, HostListener, input, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, effect, inject, input, signal } from '@angular/core';
+import { OfflineSyncService } from '../../../core/offline/offline-sync.service';
 import { ConnectionStatus } from '../../../core/services/chat-hub.service';
+import { MessageStore } from '../../../core/services/message.store';
 import { ui } from '../../../core/i18n/strings';
+import { OfflineBanner } from '../offline-banner/offline-banner';
 
 @Component({
   selector: 'vc-connection-banner',
   standalone: true,
+  imports: [OfflineBanner],
   template: `
-    @if (!online()) {
+    <vc-offline-banner />
+    @if (!online() && !offline.enabled()) {
       <div class="vc-banner vc-banner--warn" role="status">
         {{ ui.bannerOffline }}
       </div>
@@ -47,10 +52,24 @@ import { ui } from '../../../core/i18n/strings';
     }
   `,
 })
-export class ConnectionBanner {
+export class ConnectionBanner implements OnInit, OnDestroy {
   readonly ui = ui;
   readonly status = input<ConnectionStatus>('disconnected');
+  readonly offline = inject(OfflineSyncService);
+  private readonly messages = inject(MessageStore);
+  private readonly deliver = effect(() => {
+    const message = this.offline.delivered();
+    if (message) this.messages.ingestRemote(message);
+  });
   readonly online = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
+
+  ngOnInit(): void {
+    this.offline.start();
+  }
+
+  ngOnDestroy(): void {
+    this.offline.stop();
+  }
 
   @HostListener('window:online')
   onOnline(): void {

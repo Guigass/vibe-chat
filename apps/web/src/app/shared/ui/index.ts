@@ -26,6 +26,7 @@ export { MessageBubble } from './message-bubble/message-bubble';
 export { AnnouncementCard } from './announcement-card/announcement-card';
 export { TypingIndicator } from './typing-indicator/typing-indicator';
 export { ConnectionBanner } from './connection-banner/connection-banner';
+export { OfflineBanner } from './offline-banner/offline-banner';
 export { UpdateBanner } from './update-banner/update-banner';
 export { PushOptInBanner } from './push-opt-in-banner/push-opt-in-banner';
 export { PushDevicesControl } from './push-devices-control/push-devices-control';

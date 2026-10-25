@@ -459,12 +459,12 @@ export class MessagingApiService extends HttpApiClient {
     return this.request(`/api/v1/channels/${channelId}/messaging-policy`);
   }
 
-  async editMessage(channelId: string, messageId: string, body: string): Promise<ChatMessage> {
+  async editMessage(channelId: string, messageId: string, body: string, expectedVersion?: number | null): Promise<ChatMessage> {
     const dto = await this.request<MessageDto>(
       `/api/v1/channels/${channelId}/messages/${messageId}`,
       {
         method: 'PUT',
-        body: JSON.stringify({ body }),
+        body: JSON.stringify(expectedVersion == null ? { body } : { body, expectedVersion }),
       },
     );
     return this.mapMessage(dto, this.auth.profile()?.id);
@@ -710,12 +710,13 @@ export class MessagingApiService extends HttpApiClient {
     channelId: string,
     messageId: string,
     emoji: string,
+    intent?: 'add' | 'remove' | null,
   ): Promise<{ messageId: string; channelId: string; emoji: string; added: boolean; reactions: ReactionSummary[] }> {
     const dto = await this.request<ToggleReactionDto>(
       `/api/v1/channels/${channelId}/messages/${messageId}/reactions`,
       {
         method: 'PUT',
-        body: JSON.stringify({ emoji }),
+        body: JSON.stringify(intent ? { emoji, intent } : { emoji }),
       },
     );
     return {

@@ -13,6 +13,7 @@ import { ChannelStore } from './channel.store';
 import { MessageStore } from './message.store';
 import { ThreadStore } from './thread.store';
 import { ChatMessage } from '../../shared/models/chat.models';
+import { OfflineSyncService } from '../offline/offline-sync.service';
 
 export interface TaskDraft {
   messageId: string | null;
@@ -37,6 +38,7 @@ export class TaskStore {
   private readonly channels = inject(ChannelStore);
   private readonly messages = inject(MessageStore);
   private readonly threads = inject(ThreadStore);
+  private readonly offline = inject(OfflineSyncService, { optional: true });
 
   private readonly itemsSignal = signal<TaskItem[]>([]);
   private readonly loadingSignal = signal(false);
@@ -131,6 +133,29 @@ export class TaskStore {
     this.savingSignal.set(true);
     this.saveErrorSignal.set(null);
     try {
+      if (this.offline?.shouldQueue()) {
+        const queued = await this.offline.enqueue({
+          kind: 'task',
+          idempotencyKey: draft.idempotencyKey,
+          clientId: draft.idempotencyKey,
+          channelId: draft.channelId,
+          workspaceId,
+          messageId: form.messageId,
+          task: {
+            title: form.title.trim(),
+            description: form.description.trim() || null,
+            priority: form.priority,
+            assigneeUserIds: form.assigneeUserIds,
+            dueAt: form.dueAt ? new Date(form.dueAt).toISOString() : null,
+            visibility: form.visibility,
+            checklist: checklistFromText(form.checklistText),
+          },
+        });
+        if (queued) {
+          this.draftSignal.set(null);
+          return true;
+        }
+      }
       await this.api.create(workspaceId, {
         idempotencyKey: draft.idempotencyKey,
         messageId: form.messageId,

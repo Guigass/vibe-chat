@@ -21,11 +21,11 @@ public sealed record CreatePollRequest(
     bool Anonymous = false,
     DateTimeOffset? ClosesAt = null);
 public sealed record CastPollVoteRequest(Guid[] OptionIds);
-public sealed record EditMessageRequest(string Body);
+public sealed record EditMessageRequest(string Body, long? ExpectedVersion = null);
 public sealed record ReactionSummaryResponse(string Emoji, int Count, bool Me);
 public sealed record ReactionUserResponse(Guid UserId, string DisplayName);
 public sealed record ReactionUsersResponse(string Emoji, ReactionUserResponse[] Users, int Total);
-public sealed record ToggleReactionRequest(string Emoji);
+public sealed record ToggleReactionRequest(string Emoji, string? Intent = null);
 public sealed record ToggleReactionResponse(
     Guid MessageId,
     Guid ChannelId,
