@@ -61,16 +61,16 @@ sem expor internals.
 
 ## Aceite
 
-- [ ] Hot paths inventariados com owner de métrica e baseline B-146
-- [ ] Relatório versionado (ambiente, commit, hardware, margem) com p95/p99 e
+- [x] Hot paths inventariados com owner de métrica e baseline B-146
+- [x] Relatório versionado (ambiente, commit, hardware, margem) com p95/p99 e
       outbox lag por perfil Small/Standard
-- [ ] `docs/architecture/performance-escalabilidade.md` publicado e linkado no
+- [x] `docs/architecture/performance-escalabilidade.md` publicado e linkado no
       portal/ops
-- [ ] Gargalos top-N com evidência; correções R0/R1 mergeadas ou explicitamente
+- [x] Gargalos top-N com evidência; correções R0/R1 mergeadas ou explicitamente
       adiadas com motivo
-- [ ] Gatilhos numéricos para ADR-015/016/017 atualizados ou confirmados
-- [ ] Regressão de load smoke (W5-3) + suíte security cross-tenant verdes
-- [ ] Nenhuma dependência proprietária nem secret em logs/artefatos de bench
+- [x] Gatilhos numéricos para ADR-015/016/017 atualizados ou confirmados
+- [x] Regressão de load smoke (W5-3) + suíte security cross-tenant verdes
+- [x] Nenhuma dependência proprietária nem secret em logs/artefatos de bench
 
 ## Testes
 

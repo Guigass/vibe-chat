@@ -96,7 +96,7 @@ organiza. Estados:
 | Lifecycle de storage/CDN | Planned | B-145 / W16 |
 | Backup de chat (tarefas + destinos remotos) | Planned | B-172 / W16 |
 | Benchmarks e SLOs por porte | Planned | B-146 / W14 |
-| Revisão de performance e escalabilidade | Planned | B-170 / W16 |
+| Revisão de performance e escalabilidade | Done | B-170 / W16 |
 | Federação entre instâncias | Planned | B-065 / W16 |
 
 ## Delight e identidade

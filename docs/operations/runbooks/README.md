@@ -31,6 +31,7 @@ Use estes runbooks em incidente ou mudança. Detalhes de rotina ficam nos guias 
 | [bridges.md](./bridges.md) | Bridges: flag, pin, loop e rollback (B-138) |
 | [desktop.md](./desktop.md) | Cliente desktop: flag, update e rollback (B-141) |
 | [mobile.md](./mobile.md) | Cliente mobile: flag, sideload e rollback (B-063) |
+| [performance.md](./performance.md) | Hot paths, burn de latência e gatilhos ADR-015/016/017 (B-170) |
 
 ## Princípios
 

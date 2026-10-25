@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "review": "B-170",
+  "isSla": false,
+  "capturedAt": "2026-10-25T11:41:01Z",
+  "commit": "af5fd40bf9606336038c4081e81c3b280c7132bd",
+  "environment": "cursor-cloud-compose",
+  "errorMargin": "lab 20s; standard arrival capped at 8/s; not a 15-minute window",
+  "hardware": {
+    "nodeClass": "cloud-vm",
+    "vcpu": 4,
+    "memoryGb": 15,
+    "disk": "local-ssd"
+  },
+  "workloads": [
+    "send",
+    "history",
+    "search",
+    "upload",
+    "reconnect",
+    "admin",
+    "isolation"
+  ],
+  "profiles": {
+    "small": {
+      "vus": 8,
+      "durationSeconds": 20,
+      "p95Ms": 38.63,
+      "p99Ms": 39.62,
+      "outboxLagMs": 614.92,
+      "connectionsPerNode": null,
+      "messagesPerSecond": 2.049,
+      "largestChannel": 3,
+      "httpFailRate": 0.0,
+      "workerReplicas": 1,
+      "apiReplicas": 1,
+      "indexedMessages": 205,
+      "searchCpu": null,
+      "searchQueryP95Ms": 38.63,
+      "searchIndexLagMs": null
+    },
+    "standard": {
+      "vus": 8,
+      "durationSeconds": 20,
+      "p95Ms": 30.26,
+      "p99Ms": 33.71,
+      "outboxLagMs": 613.3,
+      "connectionsPerNode": null,
+      "messagesPerSecond": 8.044,
+      "largestChannel": 3,
+      "httpFailRate": 0.0,
+      "workerReplicas": 1,
+      "apiReplicas": 1,
+      "indexedMessages": 205,
+      "searchCpu": null,
+      "searchQueryP95Ms": 30.26,
+      "searchIndexLagMs": null
+    }
+  },
+  "samples": [
+    {
+      "profile": "small",
+      "workload": "send",
+      "p95Ms": 19.71,
+      "p99Ms": 25.06,
+      "failRate": 0.0
+    },
+    {
+      "profile": "small",
+      "workload": "history",
+      "p95Ms": 14.45,
+      "p99Ms": 15.4,
+      "failRate": 0.0
+    },
+    {
+      "profile": "small",
+      "workload": "search",
+      "p95Ms": 38.63,
+      "p99Ms": 39.62,
+      "failRate": 0.0
+    },
+    {
+      "profile": "small",
+      "workload": "upload",
+      "p95Ms": 14.34,
+      "p99Ms": 16.5,
+      "failRate": 0.0
+    },
+    {
+      "profile": "small",
+      "workload": "reconnect",
+      "p95Ms": 10.16,
+      "p99Ms": 12.6,
+      "failRate": 0.0
+    },
+    {
+      "profile": "small",
+      "workload": "admin",
+      "p95Ms": 28.85,
+      "p99Ms": 31.85,
+      "failRate": 0.0
+    },
+    {
+      "profile": "small",
+      "workload": "isolation",
+      "p95Ms": 8.16,
+      "p99Ms": 9.39,
+      "failRate": 0.0
+    },
+    {
+      "profile": "standard",
+      "workload": "send",
+      "p95Ms": 15.15,
+      "p99Ms": 17.02,
+      "failRate": 0.0
+    },
+    {
+      "profile": "standard",
+      "workload": "history",
+      "p95Ms": 19.06,
+      "p99Ms": 20.48,
+      "failRate": 0.0
+    },
+    {
+      "profile": "standard",
+      "workload": "search",
+      "p95Ms": 30.26,
+      "p99Ms": 33.71,
+      "failRate": 0.0
+    },
+    {
+      "profile": "standard",
+      "workload": "upload",
+      "p95Ms": 13.12,
+      "p99Ms": 17.71,
+      "failRate": 0.0
+    },
+    {
+      "profile": "standard",
+      "workload": "reconnect",
+      "p95Ms": 9.79,
+      "p99Ms": 12.48,
+      "failRate": 0.0
+    },
+    {
+      "profile": "standard",
+      "workload": "admin",
+      "p95Ms": 24.95,
+      "p99Ms": 25.91,
+      "failRate": 0.0
+    },
+    {
+      "profile": "standard",
+      "workload": "isolation",
+      "p95Ms": 7.43,
+      "p99Ms": 7.7,
+      "failRate": 0.0
+    }
+  ]
+}

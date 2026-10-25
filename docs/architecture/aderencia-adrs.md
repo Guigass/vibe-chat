@@ -21,9 +21,10 @@ testes nem uma revisão de segurança.
 | [012](../adrs/ADR-012-integracao-ia.md) | IA opcional e fora do hot path | módulo AI, Mock/OpenRouter, `Ai:Enabled=false` por default | Alinhado; emenda ADR-020/B-187: key + kill switch podem ir ao DB |
 | [013](../adrs/ADR-013-observabilidade.md) | OpenTelemetry + stack OSS | collector, Prometheus, Grafana, Loki, Tempo e dashboard | Alinhado |
 | [014](../adrs/ADR-014-estrategia-testes.md) | Pirâmide e testes de segurança | unit, integration, architecture, security, E2E e load | Alinhado; Dependabot (B-076 / #84) + `dependencias.md` |
-| [015](../adrs/ADR-015-quando-justificar-bus-mensagens.md) | Sem bus externo antes dos gatilhos | Nenhum NATS/Kafka/RabbitMQ no Compose/projetos | Alinhado |
+| [015](../adrs/ADR-015-quando-justificar-bus-mensagens.md) | Sem bus externo antes dos gatilhos | Nenhum NATS/Kafka/RabbitMQ no Compose/projetos; número confirmado em B-170 | Alinhado |
 | [016](../adrs/ADR-016-quando-justificar-opensearch.md) | Sem OpenSearch antes dos gatilhos | Busca permanece PostgreSQL; sem serviço externo | Alinhado |
-| [017](../adrs/ADR-017-quando-justificar-kubernetes.md) | Compose na fase 1 | `compose.yaml`, profiles e runbooks; sem Helm/K8s | Alinhado |
+| [017](../adrs/ADR-017-quando-justificar-kubernetes.md) | Compose na fase 1 | `compose.yaml`, profiles e runbooks; sem Helm/K8s; número confirmado em B-170 | Alinhado |
+| [058](../adrs/ADR-058-performance-escalabilidade.md) | Hot paths sem serviço novo | Catálogo em `PerformanceScale`, amostra k6, documento de escala | **Alinhado** (W16 / B-170) |
 | [018](../adrs/ADR-018-retencao-mensagens.md) | Soft-delete + purge configurável | settings, migration, worker purge e kill switch | Operacional: `MessageRetention__*` injetado no worker (B-105) |
 | [020](../adrs/ADR-020-runtime-settings-credenciais-criptografadas.md) | Settings runtime + AES-GCM | envelopes tipados, flag + keyring lab, rotate/reencrypt/VAPID, Files/RateLimit teto de código | **Alinhado** (B-187): `.env` só infra, produto no DB |
 | [021](../adrs/ADR-021-link-preview-ssrf.md) | Link preview + SSRF | outbox B-091, `LinkPreviewFetcher`, cache por tenant, ADR+threat model | **Alinhado** (W9-4) |

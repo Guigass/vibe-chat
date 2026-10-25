@@ -68,6 +68,7 @@ gap, não defendida apenas pelo texto.
 - [Estado, eventos, auditoria e projeções](architecture/estado-eventos-auditoria-projecoes.md)
 - [Pipeline de anexos](architecture/pipeline-anexos.md)
 - [SignalR em HA](architecture/signalr-ha.md)
+- [Performance e escalabilidade](architecture/performance-escalabilidade.md)
 - [Design system](architecture/design-system.md)
 - [Matriz de aderência aos ADRs](architecture/aderencia-adrs.md)
 - [Pacotes de decisão R3](architecture/pacotes-decisao-r3.md)
