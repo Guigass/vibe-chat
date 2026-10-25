@@ -19,6 +19,7 @@ import {
   setSavedFlag,
 } from './message-patches';
 import { MessageRuntime } from './message-runtime';
+import { OfflineSyncService } from '../offline/offline-sync.service';
 import {
   acknowledgeChannelAnnouncement,
   closeChannelAnnouncement,
@@ -42,6 +43,7 @@ export class MessageStore {
   private readonly channels = inject(ChannelStore);
   private readonly threads = inject(ThreadStore);
   private readonly push = inject(PushNotificationService, { optional: true });
+  private readonly offline = inject(OfflineSyncService, { optional: true });
 
   private readonly messagesSignal = signal<ChatMessage[]>([]);
   private readonly loadingSignal = signal(false);
@@ -311,6 +313,7 @@ export class MessageStore {
       viewingLatest: this.viewingLatestSignal,
       setViewingLatest: (value: boolean) => this.setViewingLatest(value),
       cancelScroll: (requestId?: number) => this.cancelScrollRequest(requestId),
+      offline: this.offline ?? undefined,
     };
   }
 }

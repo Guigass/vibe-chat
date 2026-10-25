@@ -999,6 +999,14 @@ internal static class MessagingEndpoints
                 return LifecycleDenied(decision);
             }
 
+            var currentVersion = OfflineSyncProtocol.MessageVersion(message.EditedAt);
+            if (request.ExpectedVersion is long expected && expected != currentVersion)
+            {
+                return Results.Json(
+                    new { error = OfflineSyncProtocol.MessageVersionConflict, currentVersion, currentBody = message.Body },
+                    statusCode: StatusCodes.Status409Conflict);
+            }
+
             if (history.Value.Enabled)
             {
                 await MessageHistoryCommands.SnapshotAsync(db, message, profile.Id, clock.UtcNow, ct);
@@ -1118,9 +1126,30 @@ internal static class MessagingEndpoints
                 return Results.NotFound();
             }
 
+            var intent = request.Intent;
+            if (intent is not null && intent is not ("add" or "remove"))
+            {
+                return Results.BadRequest(new { error = OfflineSyncProtocol.InvalidReactionIntent });
+            }
+
             var existing = await db.Reactions.FirstOrDefaultAsync(
                 x => x.MessageId == message.Id && x.UserId == profile.Id && x.Emoji == emoji,
                 ct);
+            if (intent is not null && (intent == "add") == (existing is not null))
+            {
+                var current = await db.Reactions.AsNoTracking()
+                    .Where(x => x.MessageId == message.Id)
+                    .ToListAsync(ct);
+                var unchanged = current
+                    .GroupBy(x => x.Emoji, StringComparer.Ordinal)
+                    .OrderBy(x => x.Key, StringComparer.Ordinal)
+                    .Select(group => new ReactionSummaryResponse(
+                        group.Key,
+                        group.Count(),
+                        group.Any(row => row.UserId == profile.Id)))
+                    .ToArray();
+                return Results.Ok(new ToggleReactionResponse(messageId, channelId, emoji, intent == "add", unchanged));
+            }
 
             var added = existing is null;
             if (existing is null)

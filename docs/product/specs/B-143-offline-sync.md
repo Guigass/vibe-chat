@@ -42,14 +42,14 @@ limpa storage.
 
 ## Aceite
 
-- [ ] Retry não duplica.
-- [ ] Ordem local reconcilia com `seq`.
-- [ ] Revogação remove dados no próximo contato.
-- [ ] Troca de conta não mistura cache.
-- [ ] Conflito é visível e recuperável.
-- [ ] Cursor expirado executa rebuild sem perder comando local ainda válido.
-- [ ] Ack e evento SignalR em qualquer ordem não duplicam item.
-- [ ] Operação offline anterior a delete/revogação não ressuscita conteúdo.
+- [x] Retry não duplica.
+- [x] Ordem local reconcilia com `seq`.
+- [x] Revogação remove dados no próximo contato.
+- [x] Troca de conta não mistura cache.
+- [x] Conflito é visível e recuperável.
+- [x] Cursor expirado executa rebuild sem perder comando local ainda válido.
+- [x] Ack e evento SignalR em qualquer ordem não duplicam item.
+- [x] Operação offline anterior a delete/revogação não ressuscita conteúdo.
 
 ## Testes
 

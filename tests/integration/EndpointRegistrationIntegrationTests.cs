@@ -417,6 +417,7 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("POST", "/api/v1/mobile/devices", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
             new("PUT", "/api/v1/mobile/devices/{deviceId:guid}/preferences", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
             new("DELETE", "/api/v1/mobile/devices/{deviceId:guid}", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
+            new("GET", "/api/v1/sync", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(

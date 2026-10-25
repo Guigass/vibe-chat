@@ -1,5 +1,6 @@
 import { ApiService } from '../api/api.service';
 import { ui } from '../i18n/strings';
+import { versionOf, type OfflineQueuePort } from '../offline/offline-engine';
 import { ChatMessage, PollSummary } from '../../shared/models/chat.models';
 import { idsEqual, replyPreviewText } from './message-sync';
 import {
@@ -40,6 +41,7 @@ export interface MessageCommandDeps {
   recordSuccessfulSend: () => void;
   forgetPendingAnnouncement: (messageId: string) => void;
   refreshPendingAnnouncements: () => void;
+  offline?: OfflineQueuePort;
 }
 
 export async function sendChannelMessage(
@@ -68,6 +70,19 @@ export async function sendChannelMessage(
 
   const clientMessageId = crypto.randomUUID();
   const idempotencyKey = crypto.randomUUID();
+  if (!hasAttachments && !announcement && deps.offline?.shouldQueue()) {
+    const queued = await deps.offline.enqueue({
+      kind: 'send',
+      idempotencyKey,
+      clientId: clientMessageId,
+      channelId: channel.id,
+      body: text,
+    });
+    if (queued) {
+      deps.setReplyTarget(null);
+      return true;
+    }
+  }
   const optimistic: ChatMessage = {
     id: clientMessageId,
     clientMessageId,
@@ -270,6 +285,23 @@ export async function editChannelMessage(
     return;
   }
 
+  if (deps.offline?.shouldQueue()) {
+    const existing = deps.messages().find((item) => idsEqual(item.id, messageId));
+    const queued = await deps.offline.enqueue({
+      kind: 'edit',
+      idempotencyKey: crypto.randomUUID(),
+      clientId: crypto.randomUUID(),
+      channelId: channel.id,
+      messageId,
+      body: body.trim(),
+      expectedVersion: versionOf(existing?.editedAt),
+    });
+    if (queued) {
+      deps.setEditing(null);
+      return;
+    }
+  }
+
   const updated = await deps.api.editMessage(channel.id, messageId, body.trim());
   deps.applyEdit({
     id: updated.id,
@@ -333,6 +365,21 @@ export async function toggleChannelReaction(
   if (deps.isDemo() || deps.isOfflineDemo()) {
     deps.updateMessages((list) => toggleLocalReaction(list, messageId, emoji));
     return;
+  }
+
+  if (deps.offline?.shouldQueue()) {
+    const existing = deps.messages().find((item) => idsEqual(item.id, messageId));
+    const mine = existing?.reactions?.some((reaction) => reaction.emoji === emoji && reaction.me) === true;
+    const queued = await deps.offline.enqueue({
+      kind: 'reaction',
+      idempotencyKey: crypto.randomUUID(),
+      clientId: crypto.randomUUID(),
+      channelId: channel.id,
+      messageId,
+      emoji,
+      intent: mine ? 'remove' : 'add',
+    });
+    if (queued) return;
   }
 
   const result = await deps.api.toggleReaction(channel.id, messageId, emoji);

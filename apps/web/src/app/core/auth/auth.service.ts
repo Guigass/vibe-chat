@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { User, UserManager, WebStorageStateStore } from 'oidc-client-ts';
 import { environment } from '../../../environments/environment';
 import { DraftStoreService } from '../services/draft-store.service';
+import { OfflineDatabase } from '../offline/offline-database';
 import { ui } from '../i18n/strings';
 import { TenantContext } from '../tenant/tenant-context';
 
@@ -46,6 +47,7 @@ const DEV_PROFILES: Record<DevUserName, AuthProfile> = {
 export class AuthService {
   private readonly tenant = inject(TenantContext);
   private readonly drafts = inject(DraftStoreService);
+  private readonly offline = inject(OfflineDatabase);
   private readonly userManager = new UserManager({
     authority: environment.keycloak.authority,
     client_id: environment.keycloak.clientId,
@@ -210,6 +212,7 @@ export class AuthService {
     if (tenantId && userId) {
       await this.drafts.clearUser(tenantId, userId);
     }
+    await this.offline.dropAll();
 
     if (this.devProfile() || this.offlineDemo()) {
       this.clearDevAuthStorage();

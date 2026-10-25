@@ -1228,6 +1228,29 @@ Registro de aparelho não aceita token. A tabela `identity.mobile_devices` não 
 
 RLS `FORCE` em `identity.mobile_devices`. O `Down` remove só essa tabela. Auditoria `mobile.device.register` / `mobile.device.preferences` / `mobile.device.logout` com metadata `{}`.
 
+### Sync offline (B-143 / ADR-059)
+
+Flag `Features:OfflineWrite:Enabled` default **false**. Off, ou `CursorKey` vazia/`CHANGE_ME`/curta, → 404 `OfflineWriteDisabled`. O envio online não muda.
+
+`GET /api/v1/sync?deviceId={guid}&cursor=` exige `message.read`. `deviceId` vazio → 400 `InvalidDevice`.
+
+Resposta: `protocolVersion` (1), `serverTime`, `cursor` opaco, `changes[]`, `tombstones[]`, `hasMore`, `rebuild.reason` ou null, `authorizedConversationIds[]`, `conversationCoverage` (`complete`|`partial`).
+
+Item: `kind` (`message`|`task`), `conversationId`, `channelId`, `id`, `seq`, `version`, `body`, `reason`. Tombstone de mensagem omite `body` e usa `reason=deleted`. A janela tem no máximo 50 itens. Não substitui `GET .../messages`.
+
+| Motivo | Quando |
+|--------|--------|
+| `CursorExpired` | Cursor com mais de 7 dias. Snapshot recente. A fila local ainda não confirmada permanece |
+| `FullResyncRequired` | Assinatura, tenant, usuário ou `deviceId` não batem. Só dados do caller |
+| `ScopeRevoked` | Principal sem membership nenhuma. Sem corpos |
+| `ProtocolUpgradeRequired` | Versão do cursor ≠ 1. **409**, sem corpos |
+
+`PUT .../messages/{id}` aceita `expectedVersion` opcional (ms de `editedAt`, ou 0). Diferente → **409** `MessageVersionConflict` com `currentVersion` e `currentBody`, sem gravar. Ausente: comportamento anterior.
+
+`PUT .../reactions` aceita `intent` opcional `add`|`remove`. Já no estado pedido → 200 sem novo evento. Outro valor → 400 `InvalidReactionIntent`. Ausente: toggle atual.
+
+Não há migration. A chave do cursor não entra em log.
+
 ### Templates de workspace (B-115)
 
 Manifesto declarativo `vibechat.workspace-template.v1`. Não carrega `tenantId`, membros, e-mails, tokens nem secrets. Recursos criados recebem o tenant do contexto. Só `workspace.admin` (Auditor/membro → 403).

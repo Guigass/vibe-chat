@@ -43,6 +43,7 @@ internal static class RuntimeSettingsServiceCollectionExtensions
         services.Configure<PolicyPackOptions>(configuration.GetSection(PolicyPackOptions.SectionName));
         services.Configure<DelegatedAdminOptions>(configuration.GetSection(DelegatedAdminOptions.SectionName));
         services.Configure<CapacitySloOptions>(configuration.GetSection(CapacitySloOptions.SectionName));
+        services.Configure<OfflineSyncOptions>(configuration.GetSection(OfflineSyncOptions.SectionName));
         services.AddMemoryCache();
         services.AddSingleton<RuntimeSecretProtector>();
         services.AddSingleton<IRuntimeSettingsCacheInvalidator, RuntimeSettingsCacheInvalidator>();

@@ -24,6 +24,7 @@ import { BridgeApiService } from './bridge-api.service';
 import { BrandingApiService } from './branding-api.service';
 import { DesktopApiService } from './desktop-api.service';
 import { MobileApiService } from './mobile-api.service';
+import { OfflineApiService } from './offline-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -55,6 +56,7 @@ export class ApiService {
   private readonly branding = inject(BrandingApiService);
   private readonly desktop = inject(DesktopApiService);
   private readonly mobile = inject(MobileApiService);
+  private readonly offline = inject(OfflineApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -311,4 +313,5 @@ export class ApiService {
   readonly registerMobileDevice: MobileApiService['registerMobileDevice'] = this.mobile.registerMobileDevice.bind(this.mobile);
   readonly saveMobilePreferences: MobileApiService['saveMobilePreferences'] = this.mobile.saveMobilePreferences.bind(this.mobile);
   readonly logoutMobileDevice: MobileApiService['logoutMobileDevice'] = this.mobile.logoutMobileDevice.bind(this.mobile);
+  readonly sync: OfflineApiService['sync'] = this.offline.sync.bind(this.offline);
 }

@@ -21,6 +21,8 @@ import {
   toggleThreadReactionLocal,
 } from './thread-patches';
 import { sendThreadMessage } from './thread-send';
+import { OfflineSyncService } from '../offline/offline-sync.service';
+import { versionOf } from '../offline/offline-engine';
 
 @Injectable({ providedIn: 'root' })
 export class ThreadStore {
@@ -28,6 +30,7 @@ export class ThreadStore {
   private readonly auth = inject(AuthService);
   private readonly hub = inject(ChatHubService);
   private readonly channels = inject(ChannelStore);
+  private readonly offline = inject(OfflineSyncService, { optional: true });
 
   private readonly activeSignal = signal<ChatThread | null>(null);
   private readonly messagesSignal = signal<ChatMessage[]>([]);
@@ -229,6 +232,7 @@ export class ThreadStore {
         setReplyTarget: (message) => this.replyTargetSignal.set(message),
         setSending: (value) => this.sendingSignal.set(value),
         bumpReplyCount: (threadId) => this.bumpReplyCount(threadId),
+        offline: this.offline ?? undefined,
       },
       body,
     );
@@ -254,6 +258,23 @@ export class ThreadStore {
       return;
     }
 
+    if (this.offline?.shouldQueue()) {
+      const existing = this.messagesSignal().find((item) => idsEqual(item.id, messageId));
+      const queued = await this.offline.enqueue({
+        kind: 'edit',
+        idempotencyKey: crypto.randomUUID(),
+        clientId: crypto.randomUUID(),
+        channelId: thread.channelId,
+        messageId,
+        body: text,
+        expectedVersion: versionOf(existing?.editedAt),
+      });
+      if (queued) {
+        this.editingMessageSignal.set(null);
+        return;
+      }
+    }
+
     const updated = await this.api.editMessage(thread.channelId, messageId, text);
     this.applyEdit({
       id: updated.id,
@@ -272,6 +293,21 @@ export class ThreadStore {
     if (this.channels.isDemo() || this.auth.isOfflineDemo()) {
       toggleThreadReactionLocal(this.patchState(), messageId, emoji);
       return;
+    }
+
+    if (this.offline?.shouldQueue()) {
+      const existing = this.messagesSignal().find((item) => idsEqual(item.id, messageId));
+      const mine = existing?.reactions?.some((reaction) => reaction.emoji === emoji && reaction.me) === true;
+      const queued = await this.offline.enqueue({
+        kind: 'reaction',
+        idempotencyKey: crypto.randomUUID(),
+        clientId: crypto.randomUUID(),
+        channelId: thread.channelId,
+        messageId,
+        emoji,
+        intent: mine ? 'remove' : 'add',
+      });
+      if (queued) return;
     }
 
     const result = await this.api.toggleReaction(thread.channelId, messageId, emoji);

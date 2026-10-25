@@ -171,7 +171,7 @@ topologia atual; só então HA e apostas de distribuição.
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
 | B-170 | A/C/E/F | Performance e escalabilidade — hot paths, gargalos e alavancas | B-146, D-25 | [B-170](../product/specs/B-170-performance-escalabilidade.md) | **Done** — hot paths, gatilhos 015–017 confirmados, amostra Small/Standard, sem serviço novo; ADR-058 |
-| B-143 | C/D/E | Offline sync real e fila local confiável | B-089, B-094, D-20 | [B-143](../product/specs/B-143-offline-sync.md) | Planned |
+| B-143 | C/D/E | Offline sync real e fila local confiável | B-089, B-094, D-20 | [B-143](../product/specs/B-143-offline-sync.md) | **Done** — cursor HMAC, tombstone, fila cifrada e conflito visível; flag off; ADR-059 |
 | B-145 | A/C/E | Lifecycle de objetos, quotas de storage e CDN opcional | B-131, B-134 | [B-145](../product/specs/B-145-lifecycle-storage.md) | Planned |
 | B-172 | A/B/D/E/G | Backup de chat: export/import, tarefas agendadas e destinos (SFTP/FTP, SMB, S3, Drive, WebDAV) | B-046, B-069, B-031, D-08, D-28 | [B-172](../product/specs/B-172-backup-chat-destinos.md) | Planned |
 | B-144 | A/B/C/E/F | HA, rolling upgrade e zero-downtime documentado | B-170, B-146, D-25, D-28 | [B-144](../product/specs/B-144-ha-rolling-upgrade.md) | Planned |

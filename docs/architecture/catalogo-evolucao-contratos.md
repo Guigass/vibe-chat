@@ -91,6 +91,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Integrations:Bridges:Enabled` | instance (binding de `Features:Bridges:Enabled`) | false | B-138 | rotas de bridge → 404 `BridgesDisabled`; chat segue; mensagens já copiadas permanecem |
 | `Desktop:Enabled` | instance (binding de `Features:Desktop:Enabled`) | false | B-141 | rotas `/desktop/*` → 404 `DesktopDisabled`; PWA e chat seguem; aparelhos já registrados permanecem |
 | `Mobile:Enabled` | instance (binding de `Features:Mobile:Enabled`) | false | B-063 | rotas `/mobile/*` → 404 `MobileDisabled`; PWA, chat e desktop seguem; aparelhos já registrados permanecem |
+| `Features:OfflineWrite:Enabled` | instance/client | false | B-143 | `GET /api/v1/sync` → 404 `OfflineWriteDisabled`; leitura online e PWA seguem; sem chave utilizável a rota também fica fechada |
 
 ## Registro inicial de flags futuras
 
@@ -100,7 +101,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Features:Registry:Enabled` | instance (binding `Integrations:PluginRegistry:Enabled`) | false | B-137 | entregue; ver linha ativa |
 | `Features:Bridges:Enabled` | instance (binding `Integrations:Bridges:Enabled`) | false | B-138 | entregue; ver linha ativa |
 | `Features:Federation:Enabled` | instance/tenant | false | B-065 | instância isolada |
-| `Features:OfflineWrite:Enabled` | instance/client | false | B-143 | leitura online/PWA |
+| `Features:OfflineWrite:Enabled` | instance/client | false | B-143 | entregue; ver linha ativa |
 | `Features:E2EE:Enabled` | workspace | false | B-064 | canais server-readable |
 | `Features:Live:Enabled` | tenant | false | B-147 | chat assíncrono |
 | `Features:Recording:Enabled` | tenant | false | B-148 | live sem gravação |
