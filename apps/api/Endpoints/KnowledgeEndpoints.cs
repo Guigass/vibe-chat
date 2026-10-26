@@ -462,14 +462,10 @@ internal static class KnowledgeEndpoints
         AddAudit(audit, page, loaded.Profile.Id, AuditActions.KnowledgePageUpdate, now);
         AddOutbox(outbox, page, loaded.Collection!, KnowledgePolicies.ActionUpdated, now);
 
-        try
+        var raced = await SaveOrConflictAsync(db, tenant, page.Id, ct);
+        if (raced is not null)
         {
-            await db.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            var current = await db.KnowledgePages.AsNoTracking().Where(row => row.Id == page.Id).Select(row => row.Version).FirstAsync(ct);
-            return Conflict(current);
+            return raced;
         }
 
         return Results.Ok(await ToPageAsync(db, page, loaded.Profile.Id, ct));
@@ -560,14 +556,10 @@ internal static class KnowledgeEndpoints
         AddAudit(audit, page, loaded.Profile.Id, AuditActions.KnowledgePageRestore, now);
         AddOutbox(outbox, page, loaded.Collection!, KnowledgePolicies.ActionRestored, now);
 
-        try
+        var raced = await SaveOrConflictAsync(db, tenant, page.Id, ct);
+        if (raced is not null)
         {
-            await db.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            var current = await db.KnowledgePages.AsNoTracking().Where(row => row.Id == page.Id).Select(row => row.Version).FirstAsync(ct);
-            return Conflict(current);
+            return raced;
         }
 
         return Results.Ok(await ToPageAsync(db, page, loaded.Profile.Id, ct));
@@ -1208,6 +1200,51 @@ internal static class KnowledgeEndpoints
 
     private static IResult Conflict(int version) =>
         Results.Json(new { error = "KnowledgeVersionConflict", currentVersion = version }, statusCode: StatusCodes.Status409Conflict);
+
+    private const string PageVersionUniqueIndex = "IX_page_versions_TenantId_PageId_Version";
+
+    private static async Task<IResult?> SaveOrConflictAsync(
+        VibeChatDbContext db,
+        ITenantContext tenant,
+        Guid pageId,
+        CancellationToken ct)
+    {
+        try
+        {
+            await db.SaveChangesAsync(ct);
+            return null;
+        }
+        catch (DbUpdateException ex) when (ex is DbUpdateConcurrencyException || IsPageVersionRace(ex))
+        {
+            // The version insert aborts the request transaction, which drops SET LOCAL.
+            // Roll back, then open a new transaction so the conflict read still sees the row.
+            db.ChangeTracker.Clear();
+            if (db.Database.CurrentTransaction is not null)
+            {
+                await db.Database.RollbackTransactionAsync(ct);
+            }
+
+            await RlsSession.EnsureAppliedAsync(db, tenant, ct);
+            var current = await db.KnowledgePages.AsNoTracking()
+                .Where(row => row.Id == pageId)
+                .Select(row => row.Version)
+                .FirstAsync(ct);
+            return Conflict(current);
+        }
+    }
+
+    private static bool IsPageVersionRace(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current.Message.Contains(PageVersionUniqueIndex, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private readonly record struct WorkspaceGate(Workspace? Workspace, UserProfile? Profile, IResult? Error);
 

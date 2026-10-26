@@ -487,8 +487,8 @@ Páginas server-authoritative em `knowledge.pages`. Coleções em `knowledge.col
 | ACL | Canal: membership atual. Workspace/space: membership do workspace. Manage não atravessa canal privado |
 | `POST …/knowledge/collections` | `{ idempotencyKey, title, scope, scopeId?, parentId? }`. Árvore de um nível. Teto 100 coleções vivas por workspace |
 | `POST …/knowledge/pages` | `{ idempotencyKey, collectionId, title, body }`. Body ≤ 16000, sem HTML nem `javascript:`/`data:`/`vbscript:`. Senão **400** `UnsafeKnowledgeBody`. Teto 200 páginas vivas por coleção |
-| `PATCH …/pages/{pageId}` | `{ version, title, body }`. Versão diferente → **409** `KnowledgeVersionConflict` com `currentVersion` e sem gravar |
-| `POST …/restore` | `{ expectedVersion, sourceVersion }` cria versão nova com o conteúdo antigo. `knowledge.manage` |
+| `PATCH …/pages/{pageId}` | `{ version, title, body }`. Versão diferente, ou duas gravações que colidem no índice único de `knowledge.page_versions`, → **409** `KnowledgeVersionConflict` com `currentVersion` e sem gravar |
+| `POST …/restore` | `{ expectedVersion, sourceVersion }` cria versão nova com o conteúdo antigo. A mesma corrida de versão do PATCH também responde **409** `KnowledgeVersionConflict` sem gravar. `knowledge.manage` |
 | `GET …/search?q=` | Mínimo 2 caracteres. Só páginas de coleções visíveis. Sem título de página inacessível |
 | Referências | Tokens `[[message:uuid]]`, `[[decision:uuid]]`, `[[task:uuid]]`, `[[attachment:uuid]]`. `task` resolve `messaging.tasks` (B-123). Inacessível ou apagado → `{ state: redacted }` sem label |
 | Export | `GET …/pages/{id}/export` devolve página e versões para quem vê. `GET …/knowledge/export` exige manage e o mesmo filtro de ACL |

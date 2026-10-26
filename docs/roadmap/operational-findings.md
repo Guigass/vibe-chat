@@ -18,6 +18,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 | ID | Categoria | Evidência | Severidade | Status | Próxima ação |
 |----|-----------|-----------|------------|--------|--------------|
+| OPS-E2E-KNOWLEDGE | CI / E2E | `main` RED em `90f936c` (#227): `knowledge.spec.ts:38` não acha `knowledge-conflict`; PATCH concorrente devolve 500 no índice `IX_page_versions_TenantId_PageId_Version` | Critical | **Resolved** — corrida de versão vira 409 `KnowledgeVersionConflict` sem gravar | — |
 | OPS-QA-AUDIT | Permissão da automação | Token QA recebe 403 em comment/approve | High | External action | Conceder `pull-requests: write`; `actions:write` apenas se re-run for desejado |
 | SEC-REVIEW-TEMPLATE | Cobertura de segurança | `privacy_guard` do template usa caminho interno inexistente e heurísticas de outro stack | High | External action | Substituir pelo prompt versionado `05-security-review.prompt.md` |
 | OPS-REQUIRED-CHECK | Branch protection | O check de segurança ainda depende de disciplina do prompt | Critical | External action | Tornar `VibeChat Security Review` um required check |
@@ -34,6 +35,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 
 | ID | Categoria | Evidência | Severidade | Status | Resolução |
 |----|-----------|-----------|------------|--------|----------|
+| OPS-E2E-KNOWLEDGE | CI / E2E | `main` RED em `90f936c`: save concorrente de página estoura unique de `page_versions` e vira HTTP 500 | Critical | Resolved | `SaveChanges` mapeia a corrida para 409 `KnowledgeVersionConflict`; o perdedor não grava |
 | OPS-INT-B125 | CI / integração | `main` RED pós-#199: retry de automação conta o eco depth-1 como segundo run live | Critical | Resolved | Asserção por `eventId` + drain explícito do eco antes do disable |
 | SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 + #73 — roles/FORCE + SET LOCAL na txn + validação de role app |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142: timeline-anchor (distância ~2780) + history-scroll (scrollTop ~3200) | Critical | Resolved | #145 lista com cache; #149 `releaseBottom()` no scroll sintético |
@@ -42,6 +44,44 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-B100 | CI / E2E | `main` RED pós-#156 (B-100 i18n): Chrome `en-US` + poluição de perfil Alice + paleta/settings i18n | Critical | Resolved | [#158](https://github.com/Guigass/vibe-chat/pull/158) — pin Playwright `locale: pt-BR`; reset de perfil; locators bilíngues; `cdkFocusInitial`; option ativa no `vc-locale-control` |
 
 ## Formato de detalhe
+
+### OPS-E2E-KNOWLEDGE
+
+- Status: **Resolved** — o PATCH e o restore de página que perdem a corrida
+  devolvem **409** `KnowledgeVersionConflict` e não gravam. O índice único de
+  `knowledge.page_versions` deixa de virar HTTP 500.
+- Observado em: CI `E2E (Playwright)` de `main` em `90f936c` (run
+  [40250589730](https://github.com/Guigass/vibe-chat/actions/runs/40250589730)),
+  `specs/knowledge.spec.ts:7` nas duas tentativas. Build & test, Secret scan e
+  Dependency audit passaram. Os quatro pushes anteriores, até `a0f56d6`,
+  estavam verdes. O PR #227 também estava verde antes do squash.
+- Base/head SHA: `90f936c30aaf53a39d74e1cf05f63f3a24a41bef` (#227, B-145).
+  O diff desse squash não altera knowledge; só alarga a janela em que o teste
+  já disparava dois PATCH com a mesma versão.
+- Reprodução: Alice grava a página e Bob abre o mesmo rascunho. O spec não
+  espera o PATCH da segunda gravação da Alice (a prévia é o body local) e o
+  Bob salva em seguida. Os dois requests leem a mesma `Version`. O batch do
+  `SaveChanges` insere `page_versions` antes do `UPDATE … WHERE Version = @original`.
+  O perdedor estoura `23505` em `IX_page_versions_TenantId_PageId_Version`
+  (`DbUpdateException`, não `DbUpdateConcurrencyException`). O cliente mostra
+  «Não foi possível salvar.» e o `knowledge-conflict` não aparece. Trace do
+  retry: Alice PATCH 200, Bob PATCH 500, body `{"version":2,…}`, traceId
+  `00-7403fe97c0efe863ff8d49bed76bacde-dc7d1dd05e0b02d2-01`.
+- Resultado esperado: uma gravação vence; a outra recebe 409
+  `KnowledgeVersionConflict` com `currentVersion` e a página permanece na
+  versão vencedora. O painel do Bob mostra o conflito.
+- Resultado atual: o `catch` trata a violação desse índice como a mesma
+  corrida do concurrency token. Contrato em `docs/architecture/contratos.md`.
+- Impacto: `main` vermelho e auto-merge parado. Sem vazamento cross-tenant;
+  a transação do perdedor faz rollback (auditoria e outbox não ficam pela metade).
+- Risk class: R1 (mapeamento de erro no save de página; sem schema, authZ ou contrato novo).
+- Owner automático: Build.
+- Critério de resolução:
+  1. dois ou mais PATCH com a mesma versão deixam exatamente uma gravação e o
+     resto em 409, nunca 500;
+  2. `knowledge.spec.ts` passa sem skip, timeout maior ou retry extra;
+  3. finding marcado Resolved.
+- Rollback: reverter o `catch`; o token de concorrência e o índice único permanecem.
 
 ### OPS-INT-B125
 
