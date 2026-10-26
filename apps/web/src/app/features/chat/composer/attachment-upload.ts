@@ -1,4 +1,4 @@
-import { fillTemplate, ui } from '../../../core/i18n/strings';
+import { fillTemplate, translateErrorCode, ui } from '../../../core/i18n/strings';
 
 export const MAX_ATTACHMENTS_PER_MESSAGE = 10;
 export const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
@@ -50,6 +50,18 @@ export interface VideoMetadata {
   durationMs: number;
   width?: number;
   height?: number;
+}
+
+export function attachmentFailureMessage(raw: string, fallback: string): string {
+  try {
+    const parsed = JSON.parse(raw) as { error?: string };
+    if (parsed?.error) {
+      return translateErrorCode(parsed.error);
+    }
+  } catch {
+    // The body is already a readable message.
+  }
+  return raw.trim() || fallback;
 }
 
 export function formatFileSize(bytes: number): string {

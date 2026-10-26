@@ -208,6 +208,18 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Cliente | AES-GCM no IndexedDB, chave não exportável, partição por conta e tenant. Logout e `ScopeRevoked` apagam o banco local |
 | Retry | Reação `intent=add` não desfaz no segundo envio. A mesma idempotency key não cria outra mensagem |
 
+### Lifecycle de storage (B-145 / ADR-060)
+
+| Item | Controle |
+|------|----------|
+| Flag | `Features:StorageLifecycle:Enabled` off → 404 `StorageLifecycleDisabled`. O upload não consulta o ledger |
+| AuthZ | Limites, reconciliação, GC, arquivo e purge exigem `workspace.admin`. Member → 403 |
+| Quota | `UPDATE` só quando `Used + Reserved + delta <= HardLimit`. Sem linha, o upload não bloqueia |
+| Hold | Hold ativo no escopo impede purge e GC. Objeto referenciado não entra no GC |
+| CDN | HMAC de tenant, id e expiração. A URL não contém a object key. Membership é revalidada. Token vencido → 410. Chave vazia/`CHANGE_ME` → 404 `StorageCdnDisabled` |
+| Restore | Tombstone impede ressuscitar o objeto. O ledger não volta a contar esses bytes |
+| Cross-tenant | RLS `FORCE` em `files.storage_ledgers`, `files.storage_objects`, `files.storage_tombstones` e `files.storage_jobs` |
+
 ### Administração delegada (B-134 / ADR-047)
 
 | Item | Controle |

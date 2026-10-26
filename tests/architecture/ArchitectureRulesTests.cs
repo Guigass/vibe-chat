@@ -183,7 +183,11 @@ public sealed class ArchitectureRulesTests
             "compliance.scoped_role_assignments",
             "compliance.quotas",
             "compliance.quota_counters",
-            "compliance.quota_alerts"
+            "compliance.quota_alerts",
+            "files.storage_ledgers",
+            "files.storage_objects",
+            "files.storage_tombstones",
+            "files.storage_jobs"
         ];
 
         foreach (var table in tenantTables)

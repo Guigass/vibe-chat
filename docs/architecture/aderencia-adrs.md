@@ -46,6 +46,7 @@ testes nem uma revisão de segurança.
 | [045](../adrs/ADR-045-audit-siem.md) | Export de audit para SIEM | `compliance.siem_*`, flag `Features:Siem:Enabled=false`, envelope `audit.event.recorded` v1 | **Alinhado** (W14 / B-132) |
 | [046](../adrs/ADR-046-policy-packs.md) | Policy packs | `compliance.policy_assignments`, flag `Features:PolicyPacks:Enabled=false`, baseline técnica | **Alinhado** (W14 / B-133) |
 | [047](../adrs/ADR-047-admin-delegada-quotas.md) | Administração delegada e quotas | `compliance.scoped_role_assignments`, `compliance.quotas`, flag `Features:DelegatedAdmin:Enabled=false` | **Alinhado** (W14 / B-134) |
+| [060](../adrs/ADR-060-lifecycle-storage.md) | Lifecycle de storage e CDN opcional | `files.storage_*`, flag `Features:StorageLifecycle:Enabled=false` | **Alinhado** (W16 / B-145) |
 
 ## Gaps transversais derivados
 

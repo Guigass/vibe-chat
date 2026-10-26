@@ -1,0 +1,58 @@
+<article class="admin-panel" data-testid="storage-page">
+  <p class="admin-panel__lead">{{ ui.storageLead }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty" role="status">{{ ui.storageLoading }}</p>
+  } @else if (disabled()) {
+    <p class="admin-empty" role="status" data-testid="storage-disabled">{{ ui.storageDisabled }}</p>
+  } @else if (denied()) {
+    <p class="admin-error" role="alert" data-testid="storage-denied">{{ ui.storageDenied }}</p>
+  } @else if (loadError() || !usage()) {
+    <p class="admin-error" role="alert">{{ ui.storageError }}</p>
+  } @else {
+    @if (usage(); as model) {
+      @if (model.largest) {
+        <p class="admin-empty" data-testid="storage-largest">{{ largestLabel(model.largest) }}</p>
+      }
+      @if (model.kinds.length === 0) {
+        <p class="admin-empty">{{ ui.storageEmpty }}</p>
+      } @else {
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>{{ ui.storageKind }}</th>
+                <th>{{ ui.storageUsed }}</th>
+                <th>{{ ui.storageReserved }}</th>
+                <th>{{ ui.storageSoft }}</th>
+                <th>{{ ui.storageHard }}</th>
+                <th>{{ ui.storageTrend }}</th>
+                <th>{{ ui.storageAction }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of model.kinds; track row.kind) {
+                <tr>
+                  <td>{{ kindLabel(row.kind) }}</td>
+                  <td class="mono">{{ row.usedBytes }}</td>
+                  <td class="mono">{{ row.reservedBytes }}</td>
+                  <td class="mono">{{ row.softLimit }}</td>
+                  <td class="mono">{{ row.hardLimit }}</td>
+                  <td>{{ trendLabel(row.trend) }}</td>
+                  <td>{{ actionLabel(row.action) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+      <p>
+        <button type="button" class="admin-btn" data-testid="storage-reconcile" (click)="reconcile()">{{ ui.storageReconcile }}</button>
+        <button type="button" class="admin-btn admin-btn--ghost" data-testid="storage-gc" (click)="collect()">{{ ui.storageGc }}</button>
+      </p>
+      @if (notice()) {
+        <p class="admin-empty" role="status">{{ notice() }}</p>
+      }
+    }
+  }
+</article>

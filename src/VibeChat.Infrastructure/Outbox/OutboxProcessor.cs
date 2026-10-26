@@ -176,6 +176,13 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     continue;
                 }
 
+                if (outbox.Type == StorageLifecycleRules.ChangedEvent)
+                {
+                    outbox.ProcessedAt = now;
+                    outbox.Error = null;
+                    continue;
+                }
+
                 if (outbox.Type == "files.attachment.ready")
                 {
                     await ProcessAttachmentReadyAsync(

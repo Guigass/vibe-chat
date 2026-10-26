@@ -9,6 +9,7 @@ import {
   extractVideoMetadata,
   isVideoContentType,
   resolveContentType,
+  attachmentFailureMessage,
   validateAttachmentFile,
   validateVideoAttachmentFile,
 } from './attachment-upload';
@@ -281,7 +282,10 @@ export class AttachmentQueueService {
       this.announce(ui.attachAudioSent);
       return { attachmentId: ready.id };
     } catch (error) {
-      const message = error instanceof Error ? error.message : ui.attachAudioUploadFail;
+      const message = attachmentFailureMessage(
+        error instanceof Error ? error.message : '',
+        ui.attachAudioUploadFail,
+      );
       this.patch(localId, { status: 'failed', progress: 0, error: message });
       return { error: message };
     }
@@ -345,7 +349,10 @@ export class AttachmentQueueService {
         this.patch(localId, { status: 'failed', progress: 0, error: ui.attachUploadCanceled });
         return;
       }
-      const message = error instanceof Error ? error.message : ui.attachUploadFail;
+      const message = attachmentFailureMessage(
+        error instanceof Error ? error.message : '',
+        ui.attachUploadFail,
+      );
       this.patch(localId, { status: 'failed', progress: 0, error: message });
     } finally {
       this.abortControllers.delete(localId);

@@ -27,6 +27,7 @@ describe('admin-permissions (B-106)', () => {
       'capacity',
       'developer',
       'branding',
+      'storage',
     ]);
     expect(hasWorkspaceAdmin('Admin')).toBe(true);
   });
@@ -38,6 +39,7 @@ describe('admin-permissions (B-106)', () => {
     expect(canAccessArea('Auditor', 'capacity')).toBe(false);
     expect(canAccessArea('Auditor', 'developer')).toBe(false);
     expect(canAccessArea('Auditor', 'branding')).toBe(false);
+    expect(canAccessArea('Auditor', 'storage')).toBe(false);
     expect(canAccessArea('Auditor', 'settings')).toBe(false);
     expect(canAccessArea('Auditor', 'onboarding')).toBe(false);
     expect(firstAllowedPath('Auditor')).toBe('overview');

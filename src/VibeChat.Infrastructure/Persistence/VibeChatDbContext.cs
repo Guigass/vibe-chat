@@ -172,6 +172,10 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<ResourceQuota> ResourceQuotas => Set<ResourceQuota>();
     public DbSet<QuotaCounter> QuotaCounters => Set<QuotaCounter>();
     public DbSet<QuotaAlert> QuotaAlerts => Set<QuotaAlert>();
+    public DbSet<StorageLedger> StorageLedgers => Set<StorageLedger>();
+    public DbSet<StorageObjectRecord> StorageObjects => Set<StorageObjectRecord>();
+    public DbSet<StorageTombstone> StorageTombstones => Set<StorageTombstone>();
+    public DbSet<StorageLifecycleJob> StorageJobs => Set<StorageLifecycleJob>();
 
     public override int SaveChanges()
     {
@@ -241,6 +245,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
         ConfigureShared(modelBuilder);
         SearchSql.Configure(modelBuilder);
         ImportModelConfiguration.Configure(modelBuilder, tenantContext);
+        StorageLifecycleConfiguration.Configure(modelBuilder, tenantContext);
         SupportDiagnosticsConfiguration.Configure(modelBuilder, tenantContext);
         ScimModelConfiguration.Configure(modelBuilder, tenantContext);
 

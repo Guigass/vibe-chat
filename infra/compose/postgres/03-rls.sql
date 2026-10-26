@@ -261,6 +261,35 @@ CREATE POLICY tenant_isolation_attachments ON files.attachments
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS files.storage_ledgers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS files.storage_ledgers FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS files.storage_objects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS files.storage_objects FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS files.storage_tombstones ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS files.storage_tombstones FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS files.storage_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS files.storage_jobs FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_storage_ledgers ON files.storage_ledgers;
+CREATE POLICY tenant_isolation_storage_ledgers ON files.storage_ledgers
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_storage_objects ON files.storage_objects;
+CREATE POLICY tenant_isolation_storage_objects ON files.storage_objects
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_storage_tombstones ON files.storage_tombstones;
+CREATE POLICY tenant_isolation_storage_tombstones ON files.storage_tombstones
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_storage_jobs ON files.storage_jobs;
+CREATE POLICY tenant_isolation_storage_jobs ON files.storage_jobs
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 DROP POLICY IF EXISTS tenant_isolation_reactions ON messaging.reactions;
 CREATE POLICY tenant_isolation_reactions ON messaging.reactions
     USING ("TenantId" = app.current_tenant_id())

@@ -418,6 +418,17 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("PUT", "/api/v1/mobile/devices/{deviceId:guid}/preferences", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
             new("DELETE", "/api/v1/mobile/devices/{deviceId:guid}", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
             new("GET", "/api/v1/sync", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/storage", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/storage/limits", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/storage/reservations", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/storage/objects", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/storage/reconcile", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/storage/gc", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/storage/restore", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/storage/objects/{objectId:guid}/archive", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/storage/objects/{objectId:guid}/purge", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/storage/objects/{objectId:guid}/cdn", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
+            new("GET", "/api/v1/storage/cdn", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(

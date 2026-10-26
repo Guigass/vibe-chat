@@ -24,6 +24,7 @@ internal static class FilesEndpointHelpers
         IMalwareScanner scanner,
         IAuditWriter audit,
         IClock clock,
+        StorageLifecycleService lifecycle,
         CancellationToken ct)
     {
         if (attachment.Status == AttachmentStatus.Ready
@@ -38,6 +39,7 @@ internal static class FilesEndpointHelpers
         if (stat is null || stat.SizeBytes <= 0)
         {
             attachment.Status = AttachmentStatus.Failed;
+            await lifecycle.ReleaseUploadAsync(channel.TenantId, attachment.Id, ct);
             await db.SaveChangesAsync(ct);
             return Results.BadRequest(new { error = "Uploaded object was not found in storage." });
         }
@@ -52,6 +54,7 @@ internal static class FilesEndpointHelpers
         if (stat.SizeBytes > maxSize || stat.SizeBytes > attachment.SizeBytes)
         {
             attachment.Status = AttachmentStatus.Failed;
+            await lifecycle.ReleaseUploadAsync(channel.TenantId, attachment.Id, ct);
             await db.SaveChangesAsync(ct);
             return Results.BadRequest(new { error = "Uploaded object exceeds declared or allowed size." });
         }
@@ -66,6 +69,7 @@ internal static class FilesEndpointHelpers
                 attachment.Status = AttachmentStatus.Failed;
                 attachment.ScanStatus = AttachmentScanStatus.ScanFailed;
                 attachment.ScanReason = "ScannerMissing";
+                await lifecycle.ReleaseUploadAsync(channel.TenantId, attachment.Id, ct);
                 await db.SaveChangesAsync(ct);
                 return Results.Json(new { error = "ScannerMissing" }, statusCode: StatusCodes.Status503ServiceUnavailable);
             }
@@ -86,6 +90,7 @@ internal static class FilesEndpointHelpers
             attachment.ScanStatus = AttachmentScanStatus.ScanFailed;
             attachment.ScanReason = "ScannerMissing";
             attachment.ScannedAt = clock.UtcNow;
+            await lifecycle.ReleaseUploadAsync(channel.TenantId, attachment.Id, ct);
             await db.SaveChangesAsync(ct);
             return Results.Json(new { error = "ScannerMissing" }, statusCode: StatusCodes.Status503ServiceUnavailable);
         }
@@ -118,10 +123,12 @@ internal static class FilesEndpointHelpers
                 EntityId = attachment.Id.ToString(),
                 MetadataJson = JsonSerializer.Serialize(new { stage = "requested" })
             });
+            await lifecycle.CommitUploadAsync(channel.TenantId, attachment.Id, clean: false, ct);
             await db.SaveChangesAsync(ct);
             return Results.Ok(ToAttachmentResponse(attachment));
         }
 
+        await lifecycle.CommitUploadAsync(channel.TenantId, attachment.Id, clean: true, ct);
         outbox.Add(new OutboxMessage
         {
             TenantId = channel.TenantId,
