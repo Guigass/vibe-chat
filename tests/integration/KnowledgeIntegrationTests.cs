@@ -63,6 +63,48 @@ public sealed class KnowledgeIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Concurrent_updates_conflict_instead_of_failing_the_request()
+    {
+        using var alice = Client("alice");
+        using var bob = Client("bob");
+        var collection = await CreateCollectionAsync(alice, $"race-{Guid.NewGuid():N}"[..20]);
+        var page = await CreatePageAsync(alice, collection.Id, "Corrida", "base");
+        var url = $"/api/v1/workspaces/{WorkspaceId}/knowledge/pages/{page.Id}";
+        var bodies = new[] { "alice-0", "bob-1", "alice-2", "bob-3" };
+
+        var results = await Task.WhenAll(bodies.Select((body, index) =>
+            (index % 2 == 0 ? alice : bob).PatchAsJsonAsync(
+                url,
+                new UpdateKnowledgePageRequest(page.Version, "Corrida", body))));
+
+        var unexpected = new List<string>();
+        foreach (var response in results)
+        {
+            if (response.StatusCode is HttpStatusCode.OK or HttpStatusCode.Conflict)
+            {
+                continue;
+            }
+
+            unexpected.Add($"{(int)response.StatusCode} {await response.Content.ReadAsStringAsync()}");
+        }
+
+        unexpected.Should().BeEmpty();
+        results.Count(response => response.StatusCode == HttpStatusCode.OK).Should().Be(1);
+        foreach (var lost in results.Where(response => response.StatusCode == HttpStatusCode.Conflict))
+        {
+            (await lost.Content.ReadAsStringAsync()).Should().Contain("KnowledgeVersionConflict");
+        }
+
+        var current = await alice.GetFromJsonAsync<PageDto>(url, JsonOptions);
+        current!.Version.Should().Be(page.Version + 1);
+        bodies.Should().Contain(current.Body);
+
+        var history = await alice.GetFromJsonAsync<HistoryDto>($"{url}/history", JsonOptions);
+        history!.Items.Select(item => item.Version).Should().OnlyHaveUniqueItems();
+        history.Items.Max(item => item.Version).Should().Be(page.Version + 1);
+    }
+
+    [Fact]
     public async Task Search_hides_channel_pages_and_revoked_references_are_redacted()
     {
         using var alice = Client("alice");
