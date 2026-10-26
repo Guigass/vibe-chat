@@ -19,6 +19,7 @@ import { BrandingApiService } from './branding-api.service';
 import { DesktopApiService } from './desktop-api.service';
 import { MobileApiService } from './mobile-api.service';
 import { OfflineApiService } from './offline-api.service';
+import { StorageApiService } from './storage-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
@@ -65,6 +66,7 @@ function createApi(auth: AuthStub): ApiService {
       DesktopApiService,
       MobileApiService,
       OfflineApiService,
+      StorageApiService,
       { provide: AuthService, useValue: auth },
     ],
   });
@@ -173,6 +175,9 @@ describe('ApiService facade', () => {
     expect(typeof api.registerMobileDevice).toBe('function');
     expect(typeof api.logoutMobileDevice).toBe('function');
     expect(typeof api.sync).toBe('function');
+    expect(typeof api.storageUsage).toBe('function');
+    expect(typeof api.storageReconcile).toBe('function');
+    expect(typeof api.storageCollect).toBe('function');
   });
 
   it('sends the dev user header and keeps idempotency on send', async () => {

@@ -141,6 +141,21 @@ internal static class FilesEndpoints
                 return Results.Json(new { error = storageQuota.Error }, statusCode: StatusCodes.Status409Conflict);
             }
 
+            var lifecycle = http.RequestServices.GetRequiredService<StorageLifecycleService>();
+            var lifecycleQuota = await lifecycle.TryReserveUploadAsync(
+                channel.TenantId,
+                channel.WorkspaceId,
+                attachmentId,
+                storageKey,
+                request.SizeBytes,
+                profile.Id,
+                channel.Id.Value,
+                ct);
+            if (!lifecycleQuota.Allowed)
+            {
+                return Results.Json(new { error = lifecycleQuota.Error }, statusCode: StatusCodes.Status409Conflict);
+            }
+
             db.Attachments.Add(attachment);
             audit.Add(new AuditEvent
             {
@@ -151,7 +166,15 @@ internal static class FilesEndpoints
                 EntityId = attachmentId.ToString(),
                 MetadataJson = JsonSerializer.Serialize(new { channelId, safeName, request.ContentType, request.SizeBytes, stage = "initiate" })
             });
-            await db.SaveChangesAsync(ct);
+            try
+            {
+                await db.SaveChangesAsync(ct);
+            }
+            catch
+            {
+                await lifecycle.ReleaseUploadAsync(channel.TenantId, attachmentId, ct);
+                throw;
+            }
 
             var upload = await storage.CreateUploadUrlAsync(storageKey, attachment.ContentType, uploadTtl, ct);
             return Results.Ok(new AttachmentUploadResponse(
@@ -209,6 +232,7 @@ internal static class FilesEndpoints
                 scanner,
                 audit,
                 clock,
+                http.RequestServices.GetRequiredService<StorageLifecycleService>(),
                 ct);
         }).RequirePermission(Permissions.Files.Upload);
 

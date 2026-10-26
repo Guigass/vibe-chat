@@ -314,6 +314,17 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | PUT | `/mobile/devices/{deviceId:guid}/preferences` | permission | `message.read` | ✓ | ✓ | ✓ | B-063; dono; biometria opt-in |
 | DELETE | `/mobile/devices/{deviceId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-063; dono ou `workspace.admin`; pede wipe do secure storage |
 | GET | `/sync` | permission | `message.read` | ✓ | ✓ | ✓ | B-143; flag off ou chave inválida → 404 `OfflineWriteDisabled`; cursor não autoriza outro tenant |
+| GET | `/workspaces/{workspaceId:guid}/storage` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-145; flag off → 404 `StorageLifecycleDisabled`; sem object key |
+| POST | `/workspaces/{workspaceId:guid}/storage/limits` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-145; soft/hard; hard abaixo do uso → 409 |
+| POST | `/workspaces/{workspaceId:guid}/storage/reservations` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-145; reserva atômica; estouro → 409 `StorageQuotaHardLimit` |
+| POST | `/workspaces/{workspaceId:guid}/storage/objects` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-145; resposta sem `storageKey` |
+| POST | `/workspaces/{workspaceId:guid}/storage/reconcile` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-145; `Idempotency-Key`; corrige o ledger |
+| POST | `/workspaces/{workspaceId:guid}/storage/gc` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-145; dry-run; não apaga referência nem hold |
+| POST | `/workspaces/{workspaceId:guid}/storage/restore` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-145; tombstone → 409 `StorageAlreadyPurged` |
+| POST | `/workspaces/{workspaceId:guid}/storage/objects/{objectId:guid}/archive` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-145; só a partir de `hot` |
+| POST | `/workspaces/{workspaceId:guid}/storage/objects/{objectId:guid}/purge` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-145; hold e referência bloqueiam |
+| GET | `/workspaces/{workspaceId:guid}/storage/objects/{objectId:guid}/cdn` | permission | `message.read` | ✓ | ✓ | ✓ | B-145; só objeto Clean; URL sem key |
+| GET | `/storage/cdn` | permission | `message.read` | ✓ | ✓ | ✓ | B-145; `?token=`; revalida membership; vencido → 410 |
 | GET | `/admin/event-schemas` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; flag off → 404 `EventSchemasDisabled`; sem dado de tenant |
 | GET | `/admin/event-schemas/{eventType}/versions/{schemaVersion:int}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; versão desconhecida → 404 `UnknownSchemaVersion` |
 | POST | `/admin/event-schemas/check` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; não persiste o documento; teto 16 KiB |

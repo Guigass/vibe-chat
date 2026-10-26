@@ -102,6 +102,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Features:Bridges:Enabled` | instance (binding `Integrations:Bridges:Enabled`) | false | B-138 | entregue; ver linha ativa |
 | `Features:Federation:Enabled` | instance/tenant | false | B-065 | instância isolada |
 | `Features:OfflineWrite:Enabled` | instance/client | false | B-143 | entregue; ver linha ativa |
+| `Features:StorageLifecycle:Enabled` | instance | false | B-145 | API `/storage` → 404 `StorageLifecycleDisabled`; upload não consulta o ledger |
 | `Features:E2EE:Enabled` | workspace | false | B-064 | canais server-readable |
 | `Features:Live:Enabled` | tenant | false | B-147 | chat assíncrono |
 | `Features:Recording:Enabled` | tenant | false | B-148 | live sem gravação |

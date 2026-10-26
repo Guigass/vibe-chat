@@ -302,6 +302,7 @@ v1.MapBranding();
 v1.MapDesktop();
 v1.MapMobile();
 v1.MapOfflineSync();
+v1.MapStorageLifecycle();
 
 app.MapScim();
 app.MapHub<ChatHub>("/hubs/chat").RequireAuthorization();

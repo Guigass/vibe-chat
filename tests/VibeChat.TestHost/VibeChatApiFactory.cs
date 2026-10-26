@@ -228,6 +228,11 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Features:CapacitySlo:Enabled", "true");
         builder.UseSetting("Features:Plugins:Enabled", "true");
         builder.UseSetting("Features:OfflineWrite:Enabled", "true");
+        builder.UseSetting("Features:StorageLifecycle:Enabled", "true");
+        builder.UseSetting("Features:StorageLifecycle:CdnEnabled", "true");
+        builder.UseSetting("Features:StorageLifecycle:CdnKey", "vibechat-lab-cdn-key");
+        builder.UseSetting("Features:StorageLifecycle:GraceHours", "0");
+        builder.UseSetting("Features:StorageLifecycle:CdnTtlSeconds", "60");
         builder.UseSetting("Features:OfflineWrite:CursorKey", "vibechat-lab-offline-cursor");
         SiemTestDoubles.Send = SiemSandbox.Shared.Send;
         builder.UseSetting("Directory:Invites:MaxExpiryDays", "30");

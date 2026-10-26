@@ -101,6 +101,11 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     loadComponent: () => import('./admin-branding.page').then((m) => m.AdminBrandingPage),
   },
   {
+    path: 'storage',
+    canActivate: [adminAreaGuard('storage')],
+    loadComponent: () => import('./admin-storage.page').then((m) => m.AdminStoragePage),
+  },
+  {
     path: '**',
     redirectTo: 'overview',
   },

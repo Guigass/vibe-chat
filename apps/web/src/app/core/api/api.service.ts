@@ -25,6 +25,7 @@ import { BrandingApiService } from './branding-api.service';
 import { DesktopApiService } from './desktop-api.service';
 import { MobileApiService } from './mobile-api.service';
 import { OfflineApiService } from './offline-api.service';
+import { StorageApiService } from './storage-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -57,6 +58,7 @@ export class ApiService {
   private readonly desktop = inject(DesktopApiService);
   private readonly mobile = inject(MobileApiService);
   private readonly offline = inject(OfflineApiService);
+  private readonly storage = inject(StorageApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -314,4 +316,7 @@ export class ApiService {
   readonly saveMobilePreferences: MobileApiService['saveMobilePreferences'] = this.mobile.saveMobilePreferences.bind(this.mobile);
   readonly logoutMobileDevice: MobileApiService['logoutMobileDevice'] = this.mobile.logoutMobileDevice.bind(this.mobile);
   readonly sync: OfflineApiService['sync'] = this.offline.sync.bind(this.offline);
+  readonly storageUsage: StorageApiService['usage'] = this.storage.usage.bind(this.storage);
+  readonly storageReconcile: StorageApiService['reconcile'] = this.storage.reconcile.bind(this.storage);
+  readonly storageCollect: StorageApiService['collect'] = this.storage.collect.bind(this.storage);
 }

@@ -60,6 +60,7 @@ public sealed class InfrastructureRegistrationTests
             "Scoped:PolicyPackService:PolicyPackService",
             "Scoped:DelegatedAdminService:DelegatedAdminService",
             "Scoped:CapacitySloService:CapacitySloService",
+            "Scoped:StorageLifecycleService:StorageLifecycleService",
             "Singleton:RuntimeSecretProtector:RuntimeSecretProtector",
             "Singleton:IRuntimeSettingsCacheInvalidator:RuntimeSettingsCacheInvalidator",
             "Scoped:ProcessSettingsResolver:ProcessSettingsResolver",

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   MAX_ATTACHMENTS_PER_MESSAGE,
   MAX_ATTACHMENT_SIZE_BYTES,
+  attachmentFailureMessage,
   collectFilesFromDataTransfer,
   resolveContentType,
   validateAttachmentFile,
@@ -9,6 +10,17 @@ import {
 } from './attachment-upload';
 
 describe('attachment-upload validation', () => {
+  it('translates a storage quota failure and leaves the caller draft untouched', () => {
+    const draft = 'rascunho que permanece';
+    const message = attachmentFailureMessage(
+      JSON.stringify({ error: 'StorageQuotaHardLimit' }),
+      'fallback',
+    );
+    expect(message).toContain('rascunho');
+    expect(message).not.toContain('{');
+    expect(draft).toBe('rascunho que permanece');
+  });
+
   it('resolves content type from extension when file.type is empty', () => {
     const file = new File(['x'], 'photo.PNG', { type: '' });
     expect(resolveContentType(file)).toBe('image/png');

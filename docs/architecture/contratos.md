@@ -1251,6 +1251,30 @@ Item: `kind` (`message`|`task`), `conversationId`, `channelId`, `id`, `seq`, `ve
 
 Não há migration. A chave do cursor não entra em log.
 
+### Lifecycle de storage (B-145 / ADR-060)
+
+Flag `Features:StorageLifecycle:Enabled` default **false**. Off → 404 `StorageLifecycleDisabled`. O upload não consulta este ledger. A quota genérica de B-134 continua no caminho dela.
+
+| Método | Caminho | AuthZ |
+|--------|---------|-------|
+| GET | `/api/v1/workspaces/{workspaceId}/storage` | `workspace.admin` |
+| POST | `/api/v1/workspaces/{workspaceId}/storage/limits` | `workspace.admin`; `{ kind, softLimit, hardLimit }` |
+| POST | `/api/v1/workspaces/{workspaceId}/storage/reservations` | `workspace.admin`; `{ kind, bytes }` |
+| POST | `/api/v1/workspaces/{workspaceId}/storage/objects` | `workspace.admin`; sem devolver `storageKey` |
+| POST | `/api/v1/workspaces/{workspaceId}/storage/reconcile` | `workspace.admin`; `Idempotency-Key` |
+| POST | `/api/v1/workspaces/{workspaceId}/storage/gc` | `workspace.admin`; `{ dryRun }`; `Idempotency-Key` |
+| POST | `/api/v1/workspaces/{workspaceId}/storage/restore` | `workspace.admin`; `{ objectId }`; `Idempotency-Key` |
+| POST | `/api/v1/workspaces/{workspaceId}/storage/objects/{objectId}/archive` | `workspace.admin` |
+| POST | `/api/v1/workspaces/{workspaceId}/storage/objects/{objectId}/purge` | `workspace.admin`; `Idempotency-Key` |
+| GET | `/api/v1/workspaces/{workspaceId}/storage/objects/{objectId}/cdn` | `message.read` |
+| GET | `/api/v1/storage/cdn?token=` | `message.read` |
+
+`kind`: `attachment`, `preview`, `export`, `recording`. Estouro → 409 `StorageQuotaHardLimit` antes da URL de upload. Hold → 409 `StorageHoldActive`. Referência → 409 `StorageReferenced`. Graça → 409 `StorageGracePending`. Tombstone → 409 `StorageAlreadyPurged`. CDN off ou chave inválida → 404 `StorageCdnDisabled`. Token vencido → 410 `StorageCdnExpired`.
+
+A resposta de CDN é `{ url, expiresAt }`. `url` não contém a object key. O evento `storage.lifecycle.changed` leva só id, tipo, estado e versão.
+
+RLS `FORCE` nas quatro tabelas `files.storage_*`. O `Down` remove só essas tabelas.
+
 ### Templates de workspace (B-115)
 
 Manifesto declarativo `vibechat.workspace-template.v1`. Não carrega `tenantId`, membros, e-mails, tokens nem secrets. Recursos criados recebem o tenant do contexto. Só `workspace.admin` (Auditor/membro → 403).

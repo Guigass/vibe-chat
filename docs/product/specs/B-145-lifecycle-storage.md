@@ -42,12 +42,12 @@ metrics agregadas sem conteúdo.
 
 ## Aceite
 
-- [ ] Quota concorrente não ultrapassa hard limit.
-- [ ] Hold impede delete.
-- [ ] GC não remove objeto referenciado.
-- [ ] CDN URL expira e não enumera key.
-- [ ] Reconciliation corrige ledger.
-- [ ] Restore não ressuscita objeto já purgado sem reaplicar tombstone/ledger.
+- [x] Quota concorrente não ultrapassa hard limit.
+- [x] Hold impede delete.
+- [x] GC não remove objeto referenciado.
+- [x] CDN URL expira e não enumera key.
+- [x] Reconciliation corrige ledger.
+- [x] Restore não ressuscita objeto já purgado sem reaplicar tombstone/ledger.
 
 ## Testes
 

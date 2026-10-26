@@ -575,7 +575,20 @@ internal static class PluginGovernedEndpoints
             return Results.NotFound();
         }
 
-        return await CompleteOwnedUploadAsync(channel, attachment, gate.Session.Bot.UserId, db, storage, filesSettings, outbox, scanOptions, scanner, audit, clock, ct);
+        return await CompleteOwnedUploadAsync(
+            channel,
+            attachment,
+            gate.Session.Bot.UserId,
+            db,
+            storage,
+            filesSettings,
+            outbox,
+            scanOptions,
+            scanner,
+            audit,
+            clock,
+            http.RequestServices.GetRequiredService<StorageLifecycleService>(),
+            ct);
     }
 
     private static async Task<IResult> InvokeAction(

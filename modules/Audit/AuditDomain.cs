@@ -184,6 +184,10 @@ public static class AuditActions
     public const string MobileDeviceRegister = "mobile.device.register";
     public const string MobileDevicePreferences = "mobile.device.preferences";
     public const string MobileDeviceLogout = "mobile.device.logout";
+    public const string StorageLimits = "storage.limits";
+    public const string StorageReconcile = "storage.reconcile";
+    public const string StoragePurge = "storage.purge";
+    public const string StorageGc = "storage.gc";
 }
 
 public interface IAuditWriter

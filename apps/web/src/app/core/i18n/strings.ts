@@ -986,6 +986,7 @@ export const ui = {
   adminNavCapacity: $localize`:@@admin.navCapacity:Capacidade`,
   adminNavDeveloper: $localize`:@@admin.navDeveloper:Desenvolvedores`,
   adminNavBranding: $localize`:@@admin.navBranding:Marca`,
+  adminNavStorage: $localize`:@@admin.navStorage:Armazenamento`,
   adminBrandLead: $localize`:@@admin.brandLead:Nome, logos e cores da organização. A versão continua identificando o VibeChat.`,
   adminBrandName: $localize`:@@admin.brandName:Nome exibido`,
   adminBrandColor: $localize`:@@admin.brandColor:Cor da marca`,
@@ -1658,6 +1659,35 @@ export const ui = {
   capacityTriggerReplicas: $localize`:@@capacity.trigger.replicas:Réplicas da API`,
   capacityTriggerConnections: $localize`:@@capacity.trigger.connections:Conexões por nó`,
   capacityDisabledError: $localize`:@@error.CapacitySloDisabled:A medição de capacidade está desligada nesta instalação.`,
+  storageLead: $localize`:@@storage.lead:Uso por tipo, tendência e ações de ciclo de vida.`,
+  storageLoading: $localize`:@@storage.loading:Carregando armazenamento…`,
+  storageDisabled: $localize`:@@storage.disabled:O ciclo de vida de armazenamento está desligado nesta instalação.`,
+  storageDenied: $localize`:@@storage.denied:Você não pode ver este uso.`,
+  storageError: $localize`:@@storage.error:O uso não pôde ser carregado.`,
+  storageKind: $localize`:@@storage.kind:Tipo`,
+  storageUsed: $localize`:@@storage.used:Em uso`,
+  storageReserved: $localize`:@@storage.reserved:Reservado`,
+  storageSoft: $localize`:@@storage.soft:Limite flexível`,
+  storageHard: $localize`:@@storage.hard:Limite rígido`,
+  storageTrend: $localize`:@@storage.trend:Tendência`,
+  storageAction: $localize`:@@storage.action:Ação`,
+  storageLargest: $localize`:@@storage.largest:Maior categoria: %kind%`,
+  storageReconcile: $localize`:@@storage.reconcile:Reconciliar`,
+  storageGc: $localize`:@@storage.gc:Limpar órfãos`,
+  storageEmpty: $localize`:@@storage.empty:Nenhum uso registrado.`,
+  storageSaved: $localize`:@@storage.saved:Ação concluída.`,
+  storageTrendUp: $localize`:@@storage.trendUp:Subindo`,
+  storageTrendDown: $localize`:@@storage.trendDown:Caindo`,
+  storageTrendFlat: $localize`:@@storage.trendFlat:Estável`,
+  storageActionNone: $localize`:@@storage.actionNone:Nenhuma`,
+  storageActionWarning: $localize`:@@storage.actionWarning:Perto do limite`,
+  storageActionBlocked: $localize`:@@storage.actionBlocked:Bloqueado no limite rígido`,
+  storageKindAttachment: $localize`:@@storage.kindAttachment:Anexos`,
+  storageKindPreview: $localize`:@@storage.kindPreview:Prévias`,
+  storageKindExport: $localize`:@@storage.kindExport:Exportações`,
+  storageKindRecording: $localize`:@@storage.kindRecording:Gravações`,
+  storageQuotaHardLimit: $localize`:@@error.StorageQuotaHardLimit:A quota de armazenamento foi atingida. O rascunho foi mantido.`,
+  storageLifecycleDisabled: $localize`:@@error.StorageLifecycleDisabled:O ciclo de vida de armazenamento está desligado nesta instalação.`,
   capacityEnvelopeRejected: $localize`:@@error.CapacitySloEnvelopeRejected:O resultado não segue o formato versionado.`,
   capacitySlaRejected: $localize`:@@error.CapacitySloSlaRejected:Esse número é um objetivo, não um SLA comercial.`,
   developerLead: $localize`:@@developer.lead:Credenciais, contratos e chamadas sintéticas deste workspace. O segredo aparece uma vez e não fica no navegador.`,
@@ -2040,6 +2070,10 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.delegatedAdminSelfGrant;
     case 'CapacitySloDisabled':
       return ui.capacityDisabledError;
+    case 'StorageLifecycleDisabled':
+      return ui.storageLifecycleDisabled;
+    case 'StorageQuotaHardLimit':
+      return ui.storageQuotaHardLimit;
     case 'CapacitySloEnvelopeRejected':
       return ui.capacityEnvelopeRejected;
     case 'CapacitySloSlaRejected':
