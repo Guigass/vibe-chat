@@ -188,6 +188,14 @@ public static class AuditActions
     public const string StorageReconcile = "storage.reconcile";
     public const string StoragePurge = "storage.purge";
     public const string StorageGc = "storage.gc";
+    public const string ChatBackupDestinationCreate = "chat.backup.destination.create";
+    public const string ChatBackupDestinationRotate = "chat.backup.destination.rotate";
+    public const string ChatBackupDestinationDelete = "chat.backup.destination.delete";
+    public const string ChatBackupJobCreate = "chat.backup.job.create";
+    public const string ChatBackupJobUpdate = "chat.backup.job.update";
+    public const string ChatBackupRun = "chat.backup.run";
+    public const string ChatBackupExport = "chat.backup.export";
+    public const string ChatBackupImport = "chat.backup.import";
 }
 
 public interface IAuditWriter

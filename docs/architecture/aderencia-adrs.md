@@ -47,6 +47,7 @@ testes nem uma revisão de segurança.
 | [046](../adrs/ADR-046-policy-packs.md) | Policy packs | `compliance.policy_assignments`, flag `Features:PolicyPacks:Enabled=false`, baseline técnica | **Alinhado** (W14 / B-133) |
 | [047](../adrs/ADR-047-admin-delegada-quotas.md) | Administração delegada e quotas | `compliance.scoped_role_assignments`, `compliance.quotas`, flag `Features:DelegatedAdmin:Enabled=false` | **Alinhado** (W14 / B-134) |
 | [060](../adrs/ADR-060-lifecycle-storage.md) | Lifecycle de storage e CDN opcional | `files.storage_*`, flag `Features:StorageLifecycle:Enabled=false` | **Alinhado** (W16 / B-145) |
+| [061](../adrs/ADR-061-backup-chat.md) | Backup de chat e destinos | `administration.chat_backup_*`, flag `Features:ChatBackup:Enabled=false` | **Alinhado** (W16 / B-172) |
 
 ## Gaps transversais derivados
 

@@ -65,13 +65,13 @@ S3-compatível), sem acoplar a um único vendor.
 
 ## Aceite
 
-- [ ] Export/import round-trip do formato `v1` (com e sem anexos).
-- [ ] Tarefa agendada grava no destino SFTP e S3-compatível com checksum.
-- [ ] Destinos SMB, Drive e WebDAV têm adapter + teste de conexão.
-- [ ] Secrets mascarados; rotate sem redeploy.
-- [ ] Falha de destino não derruba API/worker; run fica `failed` auditado.
-- [ ] Flag off: APIs 404/disabled; UI oculta.
-- [ ] Distinto e complementar a B-031 e B-046.
+- [x] Export/import round-trip do formato `v1` (com e sem anexos).
+- [x] Tarefa agendada grava no destino SFTP e S3-compatível com checksum.
+- [x] Destinos SMB, Drive e WebDAV têm adapter + teste de conexão.
+- [x] Secrets mascarados; rotate sem redeploy.
+- [x] Falha de destino não derruba API/worker; run fica `failed` auditado.
+- [x] Flag off: APIs 404/disabled; UI oculta.
+- [x] Distinto e complementar a B-031 e B-046.
 
 ## Testes
 

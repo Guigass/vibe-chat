@@ -106,6 +106,11 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     loadComponent: () => import('./admin-storage.page').then((m) => m.AdminStoragePage),
   },
   {
+    path: 'chat-backup',
+    canActivate: [adminAreaGuard('chatBackup')],
+    loadComponent: () => import('./admin-chat-backup.page').then((m) => m.AdminChatBackupPage),
+  },
+  {
     path: '**',
     redirectTo: 'overview',
   },

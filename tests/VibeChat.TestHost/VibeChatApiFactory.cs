@@ -228,6 +228,8 @@ public sealed class VibeChatApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Features:CapacitySlo:Enabled", "true");
         builder.UseSetting("Features:Plugins:Enabled", "true");
         builder.UseSetting("Features:OfflineWrite:Enabled", "true");
+        builder.UseSetting("Features:ChatBackup:Enabled", "true");
+        builder.UseSetting("Features:ChatBackup:DriveEnabled", "false");
         builder.UseSetting("Features:StorageLifecycle:Enabled", "true");
         builder.UseSetting("Features:StorageLifecycle:CdnEnabled", "true");
         builder.UseSetting("Features:StorageLifecycle:CdnKey", "vibechat-lab-cdn-key");

@@ -26,6 +26,7 @@ import { DesktopApiService } from './desktop-api.service';
 import { MobileApiService } from './mobile-api.service';
 import { OfflineApiService } from './offline-api.service';
 import { StorageApiService } from './storage-api.service';
+import { ChatBackupApiService } from './chat-backup-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -59,6 +60,7 @@ export class ApiService {
   private readonly mobile = inject(MobileApiService);
   private readonly offline = inject(OfflineApiService);
   private readonly storage = inject(StorageApiService);
+  private readonly chatBackup = inject(ChatBackupApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -319,4 +321,13 @@ export class ApiService {
   readonly storageUsage: StorageApiService['usage'] = this.storage.usage.bind(this.storage);
   readonly storageReconcile: StorageApiService['reconcile'] = this.storage.reconcile.bind(this.storage);
   readonly storageCollect: StorageApiService['collect'] = this.storage.collect.bind(this.storage);
+  readonly chatBackupList: ChatBackupApiService['list'] = this.chatBackup.list.bind(this.chatBackup);
+  readonly createChatBackupDestination: ChatBackupApiService['createDestination'] = this.chatBackup.createDestination.bind(this.chatBackup);
+  readonly testChatBackupDestination: ChatBackupApiService['testDestination'] = this.chatBackup.testDestination.bind(this.chatBackup);
+  readonly createChatBackupJob: ChatBackupApiService['createJob'] = this.chatBackup.createJob.bind(this.chatBackup);
+  readonly setChatBackupPaused: ChatBackupApiService['setPaused'] = this.chatBackup.setPaused.bind(this.chatBackup);
+  readonly runChatBackupJob: ChatBackupApiService['run'] = this.chatBackup.run.bind(this.chatBackup);
+  readonly downloadChatBackup: ChatBackupApiService['download'] = this.chatBackup.download.bind(this.chatBackup);
+  readonly validateChatBackupImport: ChatBackupApiService['validateImport'] = this.chatBackup.validateImport.bind(this.chatBackup);
+  readonly executeChatBackupImport: ChatBackupApiService['executeImport'] = this.chatBackup.executeImport.bind(this.chatBackup);
 }
