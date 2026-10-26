@@ -1,0 +1,148 @@
+<article class="admin-panel" data-testid="chat-backup-page">
+  <p class="admin-panel__lead">{{ ui.chatBackupLead }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty" role="status">{{ ui.chatBackupLoading }}</p>
+  } @else if (disabled()) {
+    <p class="admin-empty" role="status" data-testid="chat-backup-disabled">{{ ui.chatBackupDisabled }}</p>
+  } @else if (denied()) {
+    <p class="admin-error" role="alert" data-testid="chat-backup-denied">{{ ui.chatBackupDenied }}</p>
+  } @else if (loadError() && !model()) {
+    <p class="admin-error" role="alert">{{ ui.chatBackupError }}</p>
+  } @else if (model(); as model) {
+    @if (model.failed) {
+      <p class="admin-error" role="alert" data-testid="chat-backup-failed">{{ ui.chatBackupFailed }}</p>
+    }
+
+    <h2 class="admin-section">{{ ui.chatBackupDestinations }}</h2>
+    <form class="admin-filters" (submit)="$event.preventDefault(); createDestination()">
+      <label class="admin-filters__field">
+        <span>{{ ui.chatBackupName }}</span>
+        <input [value]="name()" (input)="name.set(asValue($event))" [attr.aria-label]="ui.chatBackupName" />
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.chatBackupKind }}</span>
+        <select [value]="kind()" (change)="kind.set(asValue($event))" [attr.aria-label]="ui.chatBackupKind">
+          @for (item of kinds; track item) {
+            <option [value]="item" [selected]="kind() === item">{{ item }}</option>
+          }
+        </select>
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.chatBackupHost }}</span>
+        <input [value]="host()" (input)="host.set(asValue($event))" [attr.aria-label]="ui.chatBackupHost" />
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.chatBackupSecret }}</span>
+        <input type="password" autocomplete="new-password" [value]="secret()" (input)="secret.set(asValue($event))" [attr.aria-label]="ui.chatBackupSecret" />
+      </label>
+      <button type="submit" class="admin-btn">{{ ui.chatBackupCreateDestination }}</button>
+    </form>
+
+    @if (model.destinations.length === 0) {
+      <p class="admin-empty">{{ ui.chatBackupEmpty }}</p>
+    } @else {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.chatBackupName }}</th>
+              <th>{{ ui.chatBackupKind }}</th>
+              <th>{{ ui.chatBackupHost }}</th>
+              <th>{{ ui.chatBackupConfigured }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of model.destinations; track row.id) {
+              <tr>
+                <td>{{ row.name }}</td>
+                <td class="mono">{{ row.kind }}</td>
+                <td class="mono">{{ row.host }}</td>
+                <td class="mono">{{ row.secretMask }}</td>
+                <td>
+                  <button type="button" class="admin-btn admin-btn--ghost" (click)="test(row.id)">{{ ui.chatBackupTest }}</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <h2 class="admin-section">{{ ui.chatBackupJobs }}</h2>
+    <form class="admin-filters" (submit)="$event.preventDefault(); createJob()">
+      <label class="admin-filters__field">
+        <span>{{ ui.chatBackupName }}</span>
+        <input [value]="jobName()" (input)="jobName.set(asValue($event))" [attr.aria-label]="ui.chatBackupName" />
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.chatBackupDestinations }}</span>
+        <select [value]="destinationId()" (change)="destinationId.set(asValue($event))" [attr.aria-label]="ui.chatBackupDestinations">
+          @for (row of model.destinations; track row.id) {
+            <option [value]="row.id" [selected]="destinationId() === row.id">{{ row.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="admin-filters__field">
+        <span>{{ ui.chatBackupIncludeFiles }}</span>
+        <input type="checkbox" [checked]="includeFiles()" (change)="includeFiles.set(asChecked($event))" [attr.aria-label]="ui.chatBackupIncludeFiles" />
+      </label>
+      <button type="submit" class="admin-btn">{{ ui.chatBackupCreateJob }}</button>
+    </form>
+
+    @if (model.jobs.length > 0) {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.chatBackupName }}</th>
+              <th>{{ ui.chatBackupInterval }}</th>
+              <th>{{ ui.chatBackupFailed }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (job of model.jobs; track job.id) {
+              <tr>
+                <td>{{ job.name }}</td>
+                <td class="mono">{{ job.intervalMinutes }}</td>
+                <td class="mono">{{ job.lastRun?.status }}</td>
+                <td>
+                  <button type="button" class="admin-btn" (click)="runJob(job.id)">{{ ui.chatBackupRunNow }}</button>
+                  <button type="button" class="admin-btn admin-btn--ghost" (click)="setPaused(job.id, !job.paused)">
+                    {{ job.paused ? ui.chatBackupResume : ui.chatBackupPause }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <p>
+      <button type="button" class="admin-btn" (click)="download(false)">{{ ui.chatBackupExport }}</button>
+      <button type="button" class="admin-btn admin-btn--ghost" (click)="download(true)">{{ ui.chatBackupExportFiles }}</button>
+    </p>
+
+    <h2 class="admin-section">{{ ui.chatBackupImport }}</h2>
+    <form class="admin-filters" (submit)="$event.preventDefault(); validate()">
+      <label class="admin-filters__field">
+        <span>{{ ui.chatBackupFile }}</span>
+        <input type="file" accept=".zip,application/zip" (change)="onFile($event)" [attr.aria-label]="ui.chatBackupFile" />
+      </label>
+      <button type="submit" class="admin-btn admin-btn--ghost">{{ ui.chatBackupValidate }}</button>
+      <button type="button" class="admin-btn" [disabled]="!plan()" (click)="execute()">{{ ui.chatBackupExecute }}</button>
+    </form>
+    @if (plan()) {
+      <p class="admin-empty" role="status">{{ plan() }}</p>
+    }
+    @if (notice()) {
+      <p class="admin-empty" role="status">{{ notice() }}</p>
+    }
+    @if (loadError()) {
+      <p class="admin-error" role="alert">{{ ui.chatBackupError }}</p>
+    }
+  }
+</article>

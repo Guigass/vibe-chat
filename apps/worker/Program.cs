@@ -11,6 +11,7 @@ builder.Services.AddHostedService<ScheduleDispatchDispatcher>();
 builder.Services.AddHostedService<DigestDispatchDispatcher>();
 builder.Services.AddHostedService<VibeChat.Infrastructure.Messaging.TaskOverdueDispatcher>();
 builder.Services.AddHostedService<AutomationDispatchDispatcher>();
+builder.Services.AddHostedService<ChatBackupDispatchDispatcher>();
 
 var host = builder.Build();
 

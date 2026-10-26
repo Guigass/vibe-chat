@@ -325,6 +325,17 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/workspaces/{workspaceId:guid}/storage/objects/{objectId:guid}/purge` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-145; hold e referência bloqueiam |
 | GET | `/workspaces/{workspaceId:guid}/storage/objects/{objectId:guid}/cdn` | permission | `message.read` | ✓ | ✓ | ✓ | B-145; só objeto Clean; URL sem key |
 | GET | `/storage/cdn` | permission | `message.read` | ✓ | ✓ | ✓ | B-145; `?token=`; revalida membership; vencido → 410 |
+| GET | `/workspaces/{workspaceId:guid}/chat-backup` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-172; flag off → 404 `ChatBackupDisabled`; segredo só mascarado |
+| POST | `/workspaces/{workspaceId:guid}/chat-backup/destinations` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-172; `Idempotency-Key`; segredo não volta na resposta |
+| POST | `/workspaces/{workspaceId:guid}/chat-backup/destinations/{destinationId:guid}/test` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-172; falha de rede não derruba a API |
+| POST | `/workspaces/{workspaceId:guid}/chat-backup/destinations/{destinationId:guid}/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-172; rotate sem redeploy |
+| DELETE | `/workspaces/{workspaceId:guid}/chat-backup/destinations/{destinationId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-172; tarefa ligada → 409 `ChatBackupDestinationInUse` |
+| POST | `/workspaces/{workspaceId:guid}/chat-backup/jobs` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-172; `Idempotency-Key` |
+| PATCH | `/workspaces/{workspaceId:guid}/chat-backup/jobs/{jobId:guid}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-172; pausa e agenda |
+| POST | `/workspaces/{workspaceId:guid}/chat-backup/jobs/{jobId:guid}/run` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-172; `Idempotency-Key`; falha fica no run |
+| GET | `/workspaces/{workspaceId:guid}/chat-backup/export` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-172; ZIP `vibechat.chat.backup.v1` |
+| POST | `/workspaces/{workspaceId:guid}/chat-backup/import/validate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-172; dry-run; não grava |
+| POST | `/workspaces/{workspaceId:guid}/chat-backup/import/execute` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-172; `confirm=true` e `Idempotency-Key`; cross-tenant → 403 |
 | GET | `/admin/event-schemas` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; flag off → 404 `EventSchemasDisabled`; sem dado de tenant |
 | GET | `/admin/event-schemas/{eventType}/versions/{schemaVersion:int}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; versão desconhecida → 404 `UnknownSchemaVersion` |
 | POST | `/admin/event-schemas/check` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; não persiste o documento; teto 16 KiB |

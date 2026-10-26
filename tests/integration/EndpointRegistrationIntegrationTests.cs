@@ -429,6 +429,17 @@ public sealed class EndpointRegistrationIntegrationTests(VibeChatApiFactory fact
             new("POST", "/api/v1/workspaces/{workspaceId:guid}/storage/objects/{objectId:guid}/purge", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
             new("GET", "/api/v1/workspaces/{workspaceId:guid}/storage/objects/{objectId:guid}/cdn", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
             new("GET", "/api/v1/storage/cdn", string.Join(",", new[] { Permissions.Message.Read }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/chat-backup", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/chat-backup/destinations", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/chat-backup/destinations/{destinationId:guid}/test", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/chat-backup/destinations/{destinationId:guid}/rotate", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("DELETE", "/api/v1/workspaces/{workspaceId:guid}/chat-backup/destinations/{destinationId:guid}", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/chat-backup/jobs", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("PATCH", "/api/v1/workspaces/{workspaceId:guid}/chat-backup/jobs/{jobId:guid}", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/chat-backup/jobs/{jobId:guid}/run", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("GET", "/api/v1/workspaces/{workspaceId:guid}/chat-backup/export", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/chat-backup/import/validate", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
+            new("POST", "/api/v1/workspaces/{workspaceId:guid}/chat-backup/import/execute", string.Join(",", new[] { Permissions.Workspace.Admin }), false, ""),
         ];
 
         var actual = endpoints.Select(endpoint => new EndpointContract(

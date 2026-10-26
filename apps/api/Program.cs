@@ -303,6 +303,7 @@ v1.MapDesktop();
 v1.MapMobile();
 v1.MapOfflineSync();
 v1.MapStorageLifecycle();
+v1.MapChatBackup();
 
 app.MapScim();
 app.MapHub<ChatHub>("/hubs/chat").RequireAuthorization();

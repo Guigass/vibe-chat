@@ -987,6 +987,7 @@ export const ui = {
   adminNavDeveloper: $localize`:@@admin.navDeveloper:Desenvolvedores`,
   adminNavBranding: $localize`:@@admin.navBranding:Marca`,
   adminNavStorage: $localize`:@@admin.navStorage:Armazenamento`,
+  adminNavChatBackup: $localize`:@@admin.navChatBackup:Backup de chat`,
   adminBrandLead: $localize`:@@admin.brandLead:Nome, logos e cores da organização. A versão continua identificando o VibeChat.`,
   adminBrandName: $localize`:@@admin.brandName:Nome exibido`,
   adminBrandColor: $localize`:@@admin.brandColor:Cor da marca`,
@@ -1688,6 +1689,36 @@ export const ui = {
   storageKindRecording: $localize`:@@storage.kindRecording:Gravações`,
   storageQuotaHardLimit: $localize`:@@error.StorageQuotaHardLimit:A quota de armazenamento foi atingida. O rascunho foi mantido.`,
   storageLifecycleDisabled: $localize`:@@error.StorageLifecycleDisabled:O ciclo de vida de armazenamento está desligado nesta instalação.`,
+  chatBackupLead: $localize`:@@chatBackup.lead:Cópias do chat deste workspace. O segredo do destino fica mascarado. Isto não substitui o backup do banco.`,
+  chatBackupLoading: $localize`:@@chatBackup.loading:Carregando backups…`,
+  chatBackupDisabled: $localize`:@@chatBackup.disabled:O backup de chat está desligado nesta instalação.`,
+  chatBackupDenied: $localize`:@@chatBackup.denied:Você não pode gerenciar o backup de chat.`,
+  chatBackupError: $localize`:@@chatBackup.error:O backup de chat não respondeu.`,
+  chatBackupSaved: $localize`:@@chatBackup.saved:Alteração salva.`,
+  chatBackupEmpty: $localize`:@@chatBackup.empty:Nenhum destino ainda.`,
+  chatBackupDestinations: $localize`:@@chatBackup.destinations:Destinos`,
+  chatBackupJobs: $localize`:@@chatBackup.jobs:Tarefas`,
+  chatBackupName: $localize`:@@chatBackup.name:Nome`,
+  chatBackupKind: $localize`:@@chatBackup.kind:Tipo`,
+  chatBackupHost: $localize`:@@chatBackup.host:Servidor`,
+  chatBackupSecret: $localize`:@@chatBackup.secret:Segredo`,
+  chatBackupConfigured: $localize`:@@chatBackup.configured:Configurado`,
+  chatBackupCreateDestination: $localize`:@@chatBackup.createDestination:Salvar destino`,
+  chatBackupTest: $localize`:@@chatBackup.test:Testar conexão`,
+  chatBackupCreateJob: $localize`:@@chatBackup.createJob:Criar tarefa`,
+  chatBackupInterval: $localize`:@@chatBackup.interval:Intervalo em minutos`,
+  chatBackupIncludeFiles: $localize`:@@chatBackup.includeFiles:Incluir anexos`,
+  chatBackupRunNow: $localize`:@@chatBackup.runNow:Executar agora`,
+  chatBackupPause: $localize`:@@chatBackup.pause:Pausar`,
+  chatBackupResume: $localize`:@@chatBackup.resume:Retomar`,
+  chatBackupFailed: $localize`:@@chatBackup.failed:A última execução falhou.`,
+  chatBackupExport: $localize`:@@chatBackup.export:Baixar backup`,
+  chatBackupExportFiles: $localize`:@@chatBackup.exportFiles:Baixar com anexos`,
+  chatBackupImport: $localize`:@@chatBackup.import:Restaurar pacote`,
+  chatBackupFile: $localize`:@@chatBackup.file:Arquivo do backup`,
+  chatBackupValidate: $localize`:@@chatBackup.validate:Simular restauração`,
+  chatBackupExecute: $localize`:@@chatBackup.execute:Confirmar restauração`,
+  chatBackupDisabledError: $localize`:@@error.ChatBackupDisabled:O backup de chat está desligado nesta instalação.`,
   capacityEnvelopeRejected: $localize`:@@error.CapacitySloEnvelopeRejected:O resultado não segue o formato versionado.`,
   capacitySlaRejected: $localize`:@@error.CapacitySloSlaRejected:Esse número é um objetivo, não um SLA comercial.`,
   developerLead: $localize`:@@developer.lead:Credenciais, contratos e chamadas sintéticas deste workspace. O segredo aparece uma vez e não fica no navegador.`,
@@ -2072,6 +2103,8 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.capacityDisabledError;
     case 'StorageLifecycleDisabled':
       return ui.storageLifecycleDisabled;
+    case 'ChatBackupDisabled':
+      return ui.chatBackupDisabledError;
     case 'StorageQuotaHardLimit':
       return ui.storageQuotaHardLimit;
     case 'CapacitySloEnvelopeRejected':

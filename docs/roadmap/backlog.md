@@ -168,7 +168,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-062 | Helm/K8s | Conditional — somente gatilho ADR-017 medido |
 | B-063 | Clientes mobile nativos | **Done** (W15) — flag `Mobile:Enabled` off; ADR-057; [spec](../product/specs/B-063-clientes-mobile.md) |
 | B-170 | Performance e escalabilidade | **Done** (W16) — catálogo de hot paths, gatilhos ADR-015/016/017 confirmados, amostra de lab; ADR-058; [spec](../product/specs/B-170-performance-escalabilidade.md) |
-| B-172 | Backup de chat (export/import, tarefas, destinos remotos) | Planned — W16; SFTP/FTP, SMB, S3, Drive, WebDAV; complementa B-031/B-046; [spec](../product/specs/B-172-backup-chat-destinos.md) |
+| B-172 | Backup de chat (export/import, tarefas, destinos remotos) | **Done** — W16; pacote `vibechat.chat.backup.v1`, flag `Features:ChatBackup:Enabled` off; ADR-061; [spec](../product/specs/B-172-backup-chat-destinos.md) |
 | B-064 | Canais confidenciais E2EE | Planned — W16; deps B-169 (gate `contentAuditEnabled`) |
 | B-065 | Federação entre instâncias | Planned — W16 |
 | B-066 | Plugins — capabilities avançadas | **Done** (W15) — capabilities `commands.slash` / `events.subscribe` / `ui.hooks`, built-in `slash-note`, callback HMAC, flag off; ADR-049 |
@@ -225,7 +225,7 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-063 | Clientes mobile nativos | **Done** (W15) — flag `Mobile:Enabled` off; ADR-057; [spec](../product/specs/B-063-clientes-mobile.md) |
 | B-143 | Offline sync e fila local | **Done** — W16; flag `Features:OfflineWrite:Enabled` off; ADR-059; [spec](../product/specs/B-143-offline-sync.md) |
 | B-145 | Lifecycle de objetos, quotas de storage e CDN opcional | **Done** — W16; flag `Features:StorageLifecycle:Enabled` off; ADR-060; [spec](../product/specs/B-145-lifecycle-storage.md) |
-| B-172 + B-064/B-065 | Backup de chat (destinos), federação e E2EE | Planned — W16 (B-145 Done) |
+| B-064/B-065 | Federação e E2EE | Planned — W16 (B-172 Done) |
 | B-147…B-149, B-152 | Live media, notas de reunião e canvas | Planned — W17 |
 
 Todos possuem decisão e spec. A elegibilidade concreta continua dependendo de

@@ -28,6 +28,13 @@ internal static class RuntimeSettingsServiceCollectionExtensions
         services.AddScoped<DelegatedAdminService>();
         services.AddScoped<CapacitySloService>();
         services.AddScoped<StorageLifecycleService>();
+        services.AddScoped<ChatBackupTransfer>();
+        services.AddScoped<ChatBackupService>();
+        services.AddSingleton<ChatBackupDispatchProcessor>();
+        services.AddHttpClient(ChatBackupTransfer.HttpClientName, client =>
+        {
+            client.Timeout = ChatBackupLimits.TransferTimeout;
+        });
         services.Configure<GroupDmOptions>(configuration.GetSection(GroupDmOptions.SectionName));
         services.Configure<TopicChannelOptions>(configuration.GetSection(TopicChannelOptions.SectionName));
         services.Configure<KnowledgePageOptions>(configuration.GetSection(KnowledgePageOptions.SectionName));
@@ -45,6 +52,7 @@ internal static class RuntimeSettingsServiceCollectionExtensions
         services.Configure<DelegatedAdminOptions>(configuration.GetSection(DelegatedAdminOptions.SectionName));
         services.Configure<CapacitySloOptions>(configuration.GetSection(CapacitySloOptions.SectionName));
         services.Configure<StorageLifecycleOptions>(configuration.GetSection(StorageLifecycleOptions.SectionName));
+        services.Configure<ChatBackupOptions>(configuration.GetSection(ChatBackupOptions.SectionName));
         services.Configure<OfflineSyncOptions>(configuration.GetSection(OfflineSyncOptions.SectionName));
         services.AddMemoryCache();
         services.AddSingleton<RuntimeSecretProtector>();

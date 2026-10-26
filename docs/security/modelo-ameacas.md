@@ -220,6 +220,19 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Restore | Tombstone impede ressuscitar o objeto. O ledger não volta a contar esses bytes |
 | Cross-tenant | RLS `FORCE` em `files.storage_ledgers`, `files.storage_objects`, `files.storage_tombstones` e `files.storage_jobs` |
 
+### Backup de chat (B-172 / ADR-061)
+
+| Item | Controle |
+|------|----------|
+| Flag | `Features:ChatBackup:Enabled` off → 404 `ChatBackupDisabled`. O envio de mensagem não consulta a flag. Drive exige `DriveEnabled` e um endpoint local; a instalação não chama Google |
+| AuthZ | Destino, tarefa, export e import exigem `workspace.admin`. Member → 403 |
+| Segredo | AES-GCM (ADR-020). A API devolve só máscara. Rotate não precisa de redeploy. Log e erro não levam a senha |
+| Pacote | `vibechat.chat.backup.v1`. Checksum por entrada. Nome com `..` é recusado. Acima de 8 MiB → `ChatBackupTooLarge` |
+| Auditoria de conteúdo | Com `contentAuditEnabled=false` o pacote sai sem corpo e sem bytes de anexo |
+| Import | Dry-run não grava. Execute exige `confirm=true`. Id de mensagem de outro tenant → 403 `ChatBackupCrossTenant` e nada é gravado no workspace |
+| Destino | Falha vira run `failed` auditado. Três falhas abrem o circuito por 60 s. O chat segue |
+| Cross-tenant | RLS `FORCE` em `administration.chat_backup_destinations`, `chat_backup_jobs` e `chat_backup_runs`. O worker só lê a fila com `app.job_role=chatbackup` |
+
 ### Administração delegada (B-134 / ADR-047)
 
 | Item | Controle |
@@ -556,7 +569,7 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | E2EE | Recuperação de conta, moderação e compliance incompatíveis | D-26; modelo formal antes de qualquer implementação persistente |
 | Canvas colaborativo | AuthZ por bloco, conflito, histórico e export incompletos | D-17; modelo de permissão e retenção antes de CRDT/OT |
 | Migração/import | Archive hostil, duplicação, papel falso e cross-tenant | B-153; staging, dry-run, adapters versionados, quarentena local e quotas |
-| Backup de chat / destinos | Credencial de destino vazada; exfiltração; import hostil; confusão com dump de infra | B-172; flag off default, secrets mascarados, dry-run, audit, destinos OSS |
+| Backup de chat / destinos | Credencial de destino vazada; exfiltração; import hostil; confusão com dump de infra | B-172 entregue — ver seção abaixo |
 
 ## Registry de plugins (B-137 / ADR-053)
 

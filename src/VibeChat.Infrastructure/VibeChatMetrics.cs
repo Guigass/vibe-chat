@@ -64,6 +64,7 @@ public static class VibeChatMetrics
     public static readonly Counter<long> QuotaDenied = Meter.CreateCounter<long>("vibechat.quota.denied");
     public static readonly Counter<long> QuotaCheckFailed = Meter.CreateCounter<long>("vibechat.quota.check_failed");
     public static readonly Counter<long> BreakGlassOpened = Meter.CreateCounter<long>("vibechat.delegation.break_glass");
+    public static readonly Counter<long> ChatBackupRuns = Meter.CreateCounter<long>("vibechat.chat_backup.runs");
     public static readonly UpDownCounter<long> AttachmentScanQueue = Meter.CreateUpDownCounter<long>("vibechat.files.scan.queue");
     public static readonly UpDownCounter<long> RealtimeConnections = Meter.CreateUpDownCounter<long>("vibechat.realtime.connections");
     private static long _realtimeConnectionsGauge;

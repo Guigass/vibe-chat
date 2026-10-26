@@ -331,6 +331,9 @@ services:
       Minio__SecretKey: ${MINIO_ROOT_PASSWORD:-minioadmin_dev_password_change_me}
       Minio__Bucket: ${MINIO_BUCKET:-vibechat}
       Minio__UseSsl: "false"
+      Features__ChatBackup__Enabled: ${Features__ChatBackup__Enabled:-false}
+      Features__ChatBackup__DriveEnabled: ${Features__ChatBackup__DriveEnabled:-false}
+      Features__ChatBackup__DriveEndpoint: ${Features__ChatBackup__DriveEndpoint:-}
       Files__MaxSizeBytes: "10485760"
       Ai__Enabled: ${AI__Enabled:-false}
       Ai__Provider: ${AI__Provider:-Mock}
@@ -423,6 +426,9 @@ services:
       Minio__SecretKey: ${MINIO_ROOT_PASSWORD:-minioadmin_dev_password_change_me}
       Minio__Bucket: ${MINIO_BUCKET:-vibechat}
       Minio__UseSsl: "false"
+      Features__ChatBackup__Enabled: ${Features__ChatBackup__Enabled:-false}
+      Features__ChatBackup__DriveEnabled: ${Features__ChatBackup__DriveEnabled:-false}
+      Features__ChatBackup__DriveEndpoint: ${Features__ChatBackup__DriveEndpoint:-}
       MessageRetention__Enabled: ${MessageRetention__Enabled:-false}
       MessageRetention__DefaultRetentionDays: ${MessageRetention__DefaultRetentionDays:-90}
       MessageRetention__BatchSize: ${MessageRetention__BatchSize:-500}

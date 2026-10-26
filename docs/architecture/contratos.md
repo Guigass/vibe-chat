@@ -1275,6 +1275,32 @@ A resposta de CDN é `{ url, expiresAt }`. `url` não contém a object key. O ev
 
 RLS `FORCE` nas quatro tabelas `files.storage_*`. O `Down` remove só essas tabelas.
 
+### Backup de chat (B-172 / ADR-061)
+
+Flag `Features:ChatBackup:Enabled` default **false**. Off → 404 `ChatBackupDisabled`. O envio de mensagem não consulta esta flag. `DriveEnabled` default **false**: sem endpoint local a rota de Drive não sai da instalação.
+
+| Método | Caminho | AuthZ |
+|--------|---------|-------|
+| GET | `/api/v1/workspaces/{workspaceId}/chat-backup` | `workspace.admin` |
+| POST | `/api/v1/workspaces/{workspaceId}/chat-backup/destinations` | `workspace.admin`; `Idempotency-Key`; segredo só na escrita |
+| POST | `/api/v1/workspaces/{workspaceId}/chat-backup/destinations/{destinationId}/test` | `workspace.admin` |
+| POST | `/api/v1/workspaces/{workspaceId}/chat-backup/destinations/{destinationId}/rotate` | `workspace.admin`; `Idempotency-Key` |
+| DELETE | `/api/v1/workspaces/{workspaceId}/chat-backup/destinations/{destinationId}` | `workspace.admin`; 409 `ChatBackupDestinationInUse` se houver tarefa |
+| POST | `/api/v1/workspaces/{workspaceId}/chat-backup/jobs` | `workspace.admin`; `Idempotency-Key` |
+| PATCH | `/api/v1/workspaces/{workspaceId}/chat-backup/jobs/{jobId}` | `workspace.admin` |
+| POST | `/api/v1/workspaces/{workspaceId}/chat-backup/jobs/{jobId}/run` | `workspace.admin`; `Idempotency-Key` |
+| GET | `/api/v1/workspaces/{workspaceId}/chat-backup/export` | `workspace.admin`; ZIP `vibechat.chat.backup.v1` |
+| POST | `/api/v1/workspaces/{workspaceId}/chat-backup/import/validate` | `workspace.admin`; corpo ZIP; não grava |
+| POST | `/api/v1/workspaces/{workspaceId}/chat-backup/import/execute?confirm=true` | `workspace.admin`; `Idempotency-Key`; sem `confirm` → 400 `ChatBackupConfirmationRequired` |
+
+Formato `vibechat.chat.backup.v1`: `manifest.json` com checksum SHA-256 de cada entrada e `payload/messages.json`. Anexos opcionais em `objects/{id}`. Checksum divergente → 400 `ChatBackupChecksumMismatch`. Caminho com `..` → 400 `ChatBackupUnsafePath`.
+
+A resposta de destino traz `configured` e `secretMask`. Nunca o segredo. Falha de destino grava run `failed` e responde 200 com o run; a API continua de pé. Três falhas abrem o circuito (`ChatBackupCircuitOpen`).
+
+Com `contentAuditEnabled=false`, o pacote não leva corpo nem bytes de anexo. Import de id que já existe em outro tenant → 403 `ChatBackupCrossTenant`.
+
+RLS `FORCE` nas três tabelas `administration.chat_backup_*`. O `Down` remove só essas tabelas. Audit: `chat.backup.destination.create`, `chat.backup.destination.rotate`, `chat.backup.destination.delete`, `chat.backup.job.create`, `chat.backup.job.update`, `chat.backup.run`, `chat.backup.export`, `chat.backup.import`.
+
 ### Templates de workspace (B-115)
 
 Manifesto declarativo `vibechat.workspace-template.v1`. Não carrega `tenantId`, membros, e-mails, tokens nem secrets. Recursos criados recebem o tenant do contexto. Só `workspace.admin` (Auditor/membro → 403).

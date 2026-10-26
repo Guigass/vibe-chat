@@ -20,6 +20,7 @@ import { DesktopApiService } from './desktop-api.service';
 import { MobileApiService } from './mobile-api.service';
 import { OfflineApiService } from './offline-api.service';
 import { StorageApiService } from './storage-api.service';
+import { ChatBackupApiService } from './chat-backup-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
@@ -67,6 +68,7 @@ function createApi(auth: AuthStub): ApiService {
       MobileApiService,
       OfflineApiService,
       StorageApiService,
+      ChatBackupApiService,
       { provide: AuthService, useValue: auth },
     ],
   });

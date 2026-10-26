@@ -2,6 +2,16 @@
 
 Atalho operacional (checklist): [`runbooks/backup-restore.md`](./runbooks/backup-restore.md).
 
+## Três caminhos
+
+| Caminho | O que cobre | O que não cobre |
+|---------|-------------|-----------------|
+| Este documento (B-031) | Dump de Postgres e objetos MinIO da instalação | Tarefa por workspace nem restore seletivo de chat |
+| Export compliance (B-046) | ZIP pontual `vibechat.workspace.export.v1`, sem binários | Agenda, destino remoto e reimportação |
+| Backup de chat (B-172 / ADR-061) | Pacote `vibechat.chat.backup.v1`, tarefa e destino (SFTP, FTP, SMB, S3, WebDAV, Drive) | PITR/WAL e o realm do Keycloak. Flag `Features:ChatBackup:Enabled` off |
+
+O backup de chat não substitui o drill deste runbook.
+
 ## O que precisa de backup
 
 | Dado | Onde | Prioridade |

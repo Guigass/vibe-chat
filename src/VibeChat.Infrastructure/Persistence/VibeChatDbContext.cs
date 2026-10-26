@@ -176,6 +176,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<StorageObjectRecord> StorageObjects => Set<StorageObjectRecord>();
     public DbSet<StorageTombstone> StorageTombstones => Set<StorageTombstone>();
     public DbSet<StorageLifecycleJob> StorageJobs => Set<StorageLifecycleJob>();
+    public DbSet<ChatBackupDestination> ChatBackupDestinations => Set<ChatBackupDestination>();
+    public DbSet<ChatBackupJob> ChatBackupJobs => Set<ChatBackupJob>();
+    public DbSet<ChatBackupRun> ChatBackupRuns => Set<ChatBackupRun>();
 
     public override int SaveChanges()
     {
@@ -246,6 +249,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
         SearchSql.Configure(modelBuilder);
         ImportModelConfiguration.Configure(modelBuilder, tenantContext);
         StorageLifecycleConfiguration.Configure(modelBuilder, tenantContext);
+        ChatBackupConfiguration.Configure(modelBuilder, tenantContext);
         SupportDiagnosticsConfiguration.Configure(modelBuilder, tenantContext);
         ScimModelConfiguration.Configure(modelBuilder, tenantContext);
 
