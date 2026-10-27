@@ -1155,6 +1155,30 @@ Uma ponte por canal, nunca DM. Estado `pending` até `acknowledgeCopy`. Sem cons
 
 Member → 403 nas rotas admin. Outro tenant não lê a linha (RLS FORCE). Auditoria não leva corpo nem `vc_int_`. O `Down` remove só as três tabelas novas.
 
+### Federação (B-065 / ADR-063)
+
+Flag `Integrations:Federation:Enabled` default **false**. Off → 404 `FederationDisabled`. O chat não depende desta flag.
+
+Envelope `vibechat.federation.envelope.v1` (schemaVersion 1), separado da API de cliente. A API não abre conexão: o peer puxa `POST /federation/rooms/{roomId}/reconcile` e empurra `POST /federation/rooms/{roomId}/events` com o token do bot. Domínio fora de `AllowedDomains` → 400 `FederationDomainUnpinned`. URL → 400 `FederationEgressBlocked`. Assinatura HMAC inválida → 400 `FederationSignatureInvalid` e a mensagem não é gravada.
+
+O trust nasce `pending` até `acknowledgeCopy`. Sem isso, evento e pull respondem 409 `FederationTrafficBlocked`. Pause e revoke também. Revoke desativa o bot e os tokens. Rotação (`keys/rotate`) emite `kN+1` e aceita a chave anterior até `keys/retire`. O mesmo `eventId` não cria outra mensagem. Eco do `InstanceId` local é loop. `deleteRemoteGuaranteed` é sempre false (`remote-delete-and-retention-best-effort`). DLP `federation` que não prossegue omite o corpo.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| GET | `/api/v1/workspaces/{workspaceId}/channels/{channelId}/federation` | membership + `message.read`; domínio, estado, cópia e limitação |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/federation/trusts` | `workspace.admin`; token do bot **uma vez** |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/federation/trusts/{trustId}/consent` | `workspace.admin`; `acknowledgeCopy: true` |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/federation/trusts/{trustId}/pause` | `workspace.admin` |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/federation/trusts/{trustId}/resume` | `workspace.admin` |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/federation/trusts/{trustId}/revoke` | `workspace.admin`; desativa o bot |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/federation/trusts/{trustId}/keys/rotate` | `workspace.admin`; token novo **uma vez** |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/federation/trusts/{trustId}/keys/retire` | `workspace.admin`; descarta a chave anterior |
+| POST | `/api/v1/admin/workspaces/{workspaceId}/federation/trusts/{trustId}/rooms` | `workspace.admin`; sala explícita num canal que não é DM |
+| POST | `/api/v1/federation/rooms/{roomId}/events` | token do bot deste trust |
+| POST | `/api/v1/federation/rooms/{roomId}/reconcile` | token do bot deste trust |
+
+Member → 403 nas rotas admin. Outro tenant não lê a linha (RLS FORCE). Auditoria não leva corpo nem `vc_int_`. O `Down` remove só as quatro tabelas novas.
+
 ### White-label (B-140 / ADR-055)
 
 Sem flag. Sem linha em `directory.brand_settings`, a marca é a oficial do VibeChat. `productName` na resposta é sempre `VibeChat` e não é gravável.

@@ -89,6 +89,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Integrations:EventSchemas:Enabled` | instance | false | B-139 | webhook segue com o body atual; `/admin/event-schemas` → 404 `EventSchemasDisabled` |
 | `Features:Plugins:Enabled` | instance | false | B-066, B-111 | capabilities além de `messages.send`, slash, callback, interação, histórico e anexo → 404 `PluginPlatformDisabled`; envio B-109/B-110 segue |
 | `Integrations:Bridges:Enabled` | instance (binding de `Features:Bridges:Enabled`) | false | B-138 | rotas de bridge → 404 `BridgesDisabled`; chat segue; mensagens já copiadas permanecem |
+| `Integrations:Federation:Enabled` | instance (binding de `Features:Federation:Enabled`) | false | B-065 | rotas de federação → 404 `FederationDisabled`; chat segue; cópias já gravadas permanecem |
 | `Desktop:Enabled` | instance (binding de `Features:Desktop:Enabled`) | false | B-141 | rotas `/desktop/*` → 404 `DesktopDisabled`; PWA e chat seguem; aparelhos já registrados permanecem |
 | `Mobile:Enabled` | instance (binding de `Features:Mobile:Enabled`) | false | B-063 | rotas `/mobile/*` → 404 `MobileDisabled`; PWA, chat e desktop seguem; aparelhos já registrados permanecem |
 | `Features:OfflineWrite:Enabled` | instance/client | false | B-143 | `GET /api/v1/sync` → 404 `OfflineWriteDisabled`; leitura online e PWA seguem; sem chave utilizável a rota também fica fechada |
@@ -100,7 +101,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Features:Automation:Enabled` | instance (binding `Automation:Enabled`) | false | B-125 | entregue; ver linha ativa |
 | `Features:Registry:Enabled` | instance (binding `Integrations:PluginRegistry:Enabled`) | false | B-137 | entregue; ver linha ativa |
 | `Features:Bridges:Enabled` | instance (binding `Integrations:Bridges:Enabled`) | false | B-138 | entregue; ver linha ativa |
-| `Features:Federation:Enabled` | instance/tenant | false | B-065 | instância isolada |
+| `Features:Federation:Enabled` | instance (binding `Integrations:Federation:Enabled`) | false | B-065 | entregue; ver linha ativa |
 | `Features:OfflineWrite:Enabled` | instance/client | false | B-143 | entregue; ver linha ativa |
 | `Features:StorageLifecycle:Enabled` | instance | false | B-145 | API `/storage` → 404 `StorageLifecycleDisabled`; upload não consulta o ledger |
 | `Features:E2EE:Enabled` | workspace | false | B-064 | canais server-readable |

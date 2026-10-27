@@ -171,7 +171,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-172 | Backup de chat (export/import, tarefas, destinos remotos) | **Done** — W16; pacote `vibechat.chat.backup.v1`, flag `Features:ChatBackup:Enabled` off; ADR-061; [spec](../product/specs/B-172-backup-chat-destinos.md) |
 | B-144 | HA, rolling upgrade e drain | **Done** — W16; flag `Ha:Enabled` off; lease, readiness e fase expand; ADR-062; [spec](../product/specs/B-144-ha-rolling-upgrade.md) |
 | B-064 | Canais confidenciais E2EE | Planned — W16; deps B-169 (gate `contentAuditEnabled`) |
-| B-065 | Federação entre instâncias | Planned — W16 |
+| B-065 | Federação entre instâncias | **Done** — W16; flag `Integrations:Federation:Enabled` off; ADR-063; [spec](../product/specs/B-065-federacao.md) |
 | B-066 | Plugins — capabilities avançadas | **Done** (W15) — capabilities `commands.slash` / `events.subscribe` / `ui.hooks`, built-in `slash-note`, callback HMAC, flag off; ADR-049 |
 | B-111 | Interações governadas para plugins | **Done** (W15) — `messages.interact` / `history.read` / `attachments.send`, grant de janela, quota, revogação imediata; ADR-050 |
 
@@ -226,7 +226,7 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-063 | Clientes mobile nativos | **Done** (W15) — flag `Mobile:Enabled` off; ADR-057; [spec](../product/specs/B-063-clientes-mobile.md) |
 | B-143 | Offline sync e fila local | **Done** — W16; flag `Features:OfflineWrite:Enabled` off; ADR-059; [spec](../product/specs/B-143-offline-sync.md) |
 | B-145 | Lifecycle de objetos, quotas de storage e CDN opcional | **Done** — W16; flag `Features:StorageLifecycle:Enabled` off; ADR-060; [spec](../product/specs/B-145-lifecycle-storage.md) |
-| B-064/B-065 | Federação e E2EE | Planned — W16 (B-172 Done) |
+| B-064 | Canais confidenciais E2EE | Planned — W16 (B-065 Done) |
 | B-147…B-149, B-152 | Live media, notas de reunião e canvas | Planned — W17 |
 
 Todos possuem decisão e spec. A elegibilidade concreta continua dependendo de

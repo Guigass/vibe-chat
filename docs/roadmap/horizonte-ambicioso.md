@@ -175,7 +175,7 @@ topologia atual; só então HA e apostas de distribuição.
 | B-145 | A/C/E | Lifecycle de objetos, quotas de storage e CDN opcional | B-131, B-134 | [B-145](../product/specs/B-145-lifecycle-storage.md) | **Done** — ledger por tipo, reserva atômica, GC com graça, CDN HMAC sem key, flag off; ADR-060 |
 | B-172 | A/B/D/E/G | Backup de chat: export/import, tarefas agendadas e destinos (SFTP/FTP, SMB, S3, Drive, WebDAV) | B-046, B-069, B-031, D-08, D-28 | [B-172](../product/specs/B-172-backup-chat-destinos.md) | **Done** — pacote `vibechat.chat.backup.v1`, tarefas, destinos mascarados, flag off; ADR-061 |
 | B-144 | A/B/C/E/F | HA, rolling upgrade e zero-downtime documentado | B-170, B-146, D-25, D-28 | [B-144](../product/specs/B-144-ha-rolling-upgrade.md) | **Done** — flag `Ha:Enabled` off, lease advisory, drain, WebSocket sem sticky, fase expand; ADR-062 |
-| B-065 | B/C/A/E | Federação entre instâncias | B-138, B-146, D-21 | [B-065](../product/specs/B-065-federacao.md) | Planned |
+| B-065 | B/C/A/E | Federação entre instâncias | B-138, B-146, D-21 | [B-065](../product/specs/B-065-federacao.md) | **Done** — allowlist, envelope HMAC, sala explícita, rotação, revogação; flag off; ADR-063 |
 | B-064 | B/C/D/E | Canais confidenciais E2EE | B-129, B-169, D-26 | [B-064](../product/specs/B-064-canais-e2ee.md) | Planned |
 
 ### Critérios de saída

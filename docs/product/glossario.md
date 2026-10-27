@@ -138,6 +138,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Workflow / Automação** | Execução auditável de trigger → condições → ações, com idempotência, limites e identidade própria. |
 | **Playbook** | Sequência operacional reutilizável de passos, owners e evidências, por exemplo para incidente ou onboarding. |
 | **Bridge** | Integração que replica eventos/identidades entre VibeChat e outra rede; implica cópia de dados fora do domínio local. **B-138 Done**: contrato `vibechat.bridge.envelope.v1` fora do processo, pin de host, consentimento, identidade remota marcada e delete remoto não garantido (ADR-054, flag off). |
+| **Federação** | Troca server-to-server entre instâncias VibeChat de trust domains allowlisted. **B-065 Done**: envelope `vibechat.federation.envelope.v1`, assinatura HMAC, sala explícita, rotação de chave e delete remoto não garantido (ADR-063, flag off). |
 | **Federação** | Comunicação server-to-server entre instâncias independentes, com identidade e dados distribuídos. Não confundir com multi-tenancy local. |
 | **Import batch** | Execução versionada e idempotente que transforma export externo em recursos canônicos após dry-run/staging; não é bridge contínua. |
 | **Support bundle** | Pacote `vibechat.support-bundle.v1` allowlisted, sanitizado, com checksum, TTL de 15 minutos e no máximo 3 downloads (B-154). Flag `Features:SupportBundle:Enabled` default off. Exige `support.bundle`. Não inclui body, token nem secret. |

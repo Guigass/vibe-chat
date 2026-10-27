@@ -301,6 +301,7 @@ v1.MapDeveloperPortal();
 v1.MapPluginSdk();
 v1.MapPluginRegistry();
 v1.MapBridges();
+v1.MapFederation();
 v1.MapBranding();
 v1.MapDesktop();
 v1.MapMobile();
