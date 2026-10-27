@@ -1,3 +1,4 @@
+using System.Data;
 using System.Diagnostics.Metrics;
 using System.Security.Cryptography;
 using System.Text;
@@ -6,6 +7,7 @@ using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.Configuration;
@@ -39,7 +41,8 @@ namespace VibeChat.Infrastructure;
 public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<OutboxProcessor> logger)
 {
     // Hosted OutboxDispatcher and an explicit drain share this singleton.
-    // Overlapping batches both see ProcessedAt == null and deliver the same row twice.
+    // A second process (worker, or another test host) does not. The batch also
+    // takes FOR UPDATE SKIP LOCKED so those hosts skip rows already claimed.
     private readonly SemaphoreSlim _batchGate = new(1, 1);
 
     public async Task<int> ProcessBatchAsync(CancellationToken cancellationToken)
@@ -97,11 +100,7 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
         tenant.SetJobRole("outbox");
         await RlsSession.EnsureAppliedAsync(dbContext, tenant, cancellationToken);
 
-        var messages = await dbContext.OutboxMessages.IgnoreQueryFilters()
-            .Where(x => x.ProcessedAt == null)
-            .OrderBy(x => x.OccurredAt)
-            .Take(20)
-            .ToArrayAsync(cancellationToken);
+        var messages = await ClaimPendingAsync(dbContext, cancellationToken);
 
         foreach (var outbox in messages)
         {
@@ -117,6 +116,7 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                 }
                 catch (Exception automationEx)
                 {
+                    DetachAddedAutomations(dbContext);
                     logger.LogWarning(
                         automationEx,
                         "Automation trigger skipped for outbox {OutboxMessageId}",
@@ -461,6 +461,59 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
         }
 
         return messages.Length;
+    }
+
+    private static async Task<OutboxMessage[]> ClaimPendingAsync(
+        VibeChatDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var ids = new List<Guid>(20);
+        var connection = dbContext.Database.GetDbConnection();
+        await using (var command = connection.CreateCommand())
+        {
+            command.Transaction = dbContext.Database.CurrentTransaction?.GetDbTransaction();
+            command.CommandText =
+                """
+                SELECT "Id"
+                FROM building_blocks.outbox_messages
+                WHERE "ProcessedAt" IS NULL
+                ORDER BY "OccurredAt"
+                LIMIT 20
+                FOR UPDATE SKIP LOCKED
+                """;
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                ids.Add(reader.GetGuid(0));
+            }
+        }
+
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        return await dbContext.OutboxMessages.IgnoreQueryFilters()
+            .Where(x => ids.Contains(x.Id))
+            .OrderBy(x => x.OccurredAt)
+            .ToArrayAsync(cancellationToken);
+    }
+
+    private static void DetachAddedAutomations(VibeChatDbContext dbContext)
+    {
+        foreach (var entry in dbContext.ChangeTracker.Entries<AutomationRun>()
+            .Where(row => row.State == EntityState.Added)
+            .ToArray())
+        {
+            entry.State = EntityState.Detached;
+        }
+
+        foreach (var entry in dbContext.ChangeTracker.Entries<AutomationStep>()
+            .Where(row => row.State == EntityState.Added)
+            .ToArray())
+        {
+            entry.State = EntityState.Detached;
+        }
     }
 
     private static async Task ProcessAttachmentReadyAsync(

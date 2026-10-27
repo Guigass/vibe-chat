@@ -30,6 +30,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142 (B-097): `timeline-anchor.spec.ts:53` (scrollTop ~2780 vs &lt;5) + `timeline-history-scroll.spec.ts:41` (scrollTop ~3200 vs &lt;120) | Critical | **Resolved** — #145 cache/pin + #149 `releaseBottom()` cancela âncora bottom no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146 (B-098): 15 specs falham em `auth.ts:118` — timeout 20s aguardando `heading` `/geral/i`; h1 `#geral` existe mas está hidden (largura 0) | Critical | **Resolved** — título do canal com `min-width: 6.5rem`; busca encolhe (`flex: 0 1`) em vez de espremer o h1 |
 | OPS-INT-B125 | CI / integração | `main` RED pós-#199 (B-125): `AutomationIntegrationTests.Retry_does_not_duplicate_disable_blocks_and_logs_omit_secrets` espera 1 run live e encontra 2 | Critical | **Resolved** — asserção por `eventId`; o eco depth-1 do post do bot não conta como retry duplicado |
+| OPS-INT-AUTO-DUP | CI / integração | `main` RED em `6a8aa0e` (#230): `Retry_does_not_duplicate_disable_blocks_and_logs_omit_secrets` estoura `23505` em `IX_runs_TenantId_IdempotencyKey`; `Loop_is_stopped_and_missing_capability_does_not_post` acha 8 ecos (teto 3) | Critical | **Resolved** — insert do run é idempotente; outbox usa `FOR UPDATE SKIP LOCKED`; teste isola automações ligadas |
 
 ## Resolvidos
 
@@ -37,6 +38,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 |----|-----------|-----------|------------|--------|----------|
 | OPS-E2E-KNOWLEDGE | CI / E2E | `main` RED em `90f936c`: save concorrente de página estoura unique de `page_versions` e vira HTTP 500 | Critical | Resolved | `SaveChanges` mapeia a corrida para 409 `KnowledgeVersionConflict`; o perdedor não grava |
 | OPS-INT-B125 | CI / integração | `main` RED pós-#199: retry de automação conta o eco depth-1 como segundo run live | Critical | Resolved | Asserção por `eventId` + drain explícito do eco antes do disable |
+| OPS-INT-AUTO-DUP | CI / integração | `main` RED em `6a8aa0e`: corrida no insert de `automation.runs` vira 23505 no lote do outbox; o loop conta ecos a mais | Critical | Resolved | Perdedor adota o run vencedor; outbox trava a linha com `SKIP LOCKED`; drain esvazia a fila e desliga automações anteriores |
 | SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 + #73 — roles/FORCE + SET LOCAL na txn + validação de role app |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142: timeline-anchor (distância ~2780) + history-scroll (scrollTop ~3200) | Critical | Resolved | #145 lista com cache; #149 `releaseBottom()` no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146: 15 specs — `heading` `#geral` hidden (caixa 0×n) | Critical | Resolved | Título `min-width: 6.5rem`; `.shell__search` com `flex: 0 1` + `min-width: 10rem` |
@@ -82,6 +84,40 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   2. `knowledge.spec.ts` passa sem skip, timeout maior ou retry extra;
   3. finding marcado Resolved.
 - Rollback: reverter o `catch`; o token de concorrência e o índice único permanecem.
+
+### OPS-INT-AUTO-DUP
+
+- Status: **Resolved** — dois processadores não inserem o mesmo run live; o
+  lote do outbox não repropaga `23505`; o loop da automação de teste para no
+  teto de profundidade.
+- Observado em: CI `Build & test` de `main` em `6a8aa0e` (run
+  [40426865500](https://github.com/Guigass/vibe-chat/actions/runs/40426865500)),
+  job `Build & test`. Unit 388, arquitetura 24 e segurança 132 passaram.
+  Integração: 2 falhas de 246.
+- Base/head SHA: `7202931` verde; `6a8aa0e` (#230, B-144) vermelho.
+- Reprodução: `TryEnqueueAsync` faz lookup e depois `INSERT`. API e worker
+  (e um segundo host de teste) processam o mesmo outbox sem lock de linha.
+  Os dois passam no lookup. O perdedor toma `23505` em
+  `IX_runs_TenantId_IdempotencyKey`. O `catch` do outbox engolia a exceção e
+  deixava o run `Added`; o `SaveChanges` do lote estourava de novo
+  (`Retry_…` em `DrainAsync`). Com outra automação ainda ligada na fixture
+  compartilhada, o mesmo canal gerava ecos além de `MaxDepth` (`Loop_…`, 8).
+- Resultado esperado: um evento live gera um run; o lote do outbox segue;
+  a cadeia de um disparo para em `MaxDepth`.
+- Resultado atual: o perdedor solta a entidade e relê o run vencedor. O
+  claim do outbox usa `FOR UPDATE SKIP LOCKED` na tabela que já existe
+  (sem migration; o lease de ADR-062 continua valendo com `Ha:Enabled`).
+  O teste desliga automações anteriores e drena a fila antes de ligar a nova.
+- Impacto: `main` vermelho e auto-merge parado. Sem vazamento cross-tenant;
+  a unique key continua sendo a barreira.
+- Risk class: R1 (idempotência do run e claim do outbox; sem schema, authZ
+  ou contrato novo).
+- Owner automático: Build.
+- Critério de resolução:
+  1. dois `TryEnqueueAsync` concorrentes no mesmo evento deixam um run;
+  2. `Retry_…` e `Loop_…` passam sem skip;
+  3. finding marcado Resolved.
+- Rollback: reverter o `catch` e o `SKIP LOCKED`. O índice único permanece.
 
 ### OPS-INT-B125
 

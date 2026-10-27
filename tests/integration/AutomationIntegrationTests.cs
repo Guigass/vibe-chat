@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using VibeChat.BuildingBlocks;
 using VibeChat.Infrastructure;
 using VibeChat.Integrations;
 using VibeChat.Messaging;
@@ -23,6 +24,7 @@ public sealed class AutomationIntegrationTests(VibeChatApiFactory factory)
     [Fact]
     public async Task Retry_does_not_duplicate_disable_blocks_and_logs_omit_secrets()
     {
+        await QuiesceAutomationsAsync();
         using var demo = Client("demo");
         var marker = $"aviso-{Guid.NewGuid():N}"[..18];
         var secretBody = $"segredo-{Guid.NewGuid():N}";
@@ -103,6 +105,7 @@ public sealed class AutomationIntegrationTests(VibeChatApiFactory factory)
     [Fact]
     public async Task Loop_is_stopped_and_missing_capability_does_not_post()
     {
+        await QuiesceAutomationsAsync();
         using var demo = Client("demo");
         var marker = $"eco-{Guid.NewGuid():N}"[..16];
         var created = await CreateAsync(demo, "Eco", PostMessage(marker));
@@ -161,6 +164,81 @@ public sealed class AutomationIntegrationTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Two_processors_do_not_duplicate_the_live_run()
+    {
+        await QuiesceAutomationsAsync();
+        using var other = factory.WithWebHostBuilder(_ => { });
+        _ = other.Services;
+        var primary = factory.Services.GetRequiredService<OutboxProcessor>();
+        var secondary = other.Services.GetRequiredService<OutboxProcessor>();
+        await using var holdPrimary = await primary.HoldBatchAsync(CancellationToken.None);
+        await using var holdSecondary = await secondary.HoldBatchAsync(CancellationToken.None);
+
+        using var demo = Client("demo");
+        var marker = $"corrida-{Guid.NewGuid():N}"[..18];
+        var created = await CreateAsync(demo, "Corrida", PostMessage(marker));
+        await PostOk<AutomationDto>(demo, $"{Path(created.Id)}/publish");
+        await PostOk<AutomationDto>(demo, $"{Path(created.Id)}/enable");
+
+        using var alice = Client("alice");
+        var messageId = Guid.NewGuid();
+        (await alice.PostAsJsonAsync($"/api/v1/channels/{ChannelId}/messages", new
+        {
+            messageId,
+            idempotencyKey = $"race-{messageId:N}",
+            body = "dois-processadores",
+        })).StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        await holdPrimary.DisposeAsync();
+        await holdSecondary.DisposeAsync();
+
+        for (var i = 0; i < 25; i++)
+        {
+            var eventId = i == 0 ? messageId.ToString("D") : Guid.NewGuid().ToString("D");
+            await Task.WhenAll(
+                EnqueueOnceAsync(created.Id, eventId),
+                EnqueueOnceAsync(created.Id, eventId));
+        }
+
+        await Task.WhenAll(
+            primary.ProcessBatchAsync(CancellationToken.None),
+            secondary.ProcessBatchAsync(CancellationToken.None));
+
+        await using var db = factory.CreateMigratorDbContext();
+        var runs = await db.AutomationRuns.IgnoreQueryFilters()
+            .CountAsync(row => row.AutomationId == created.Id && row.EventId == messageId.ToString("D"));
+        runs.Should().Be(1);
+        var duplicated = await db.AutomationRuns.IgnoreQueryFilters()
+            .Where(row => row.AutomationId == created.Id)
+            .GroupBy(row => row.IdempotencyKey)
+            .CountAsync(group => group.Count() > 1);
+        duplicated.Should().Be(0);
+    }
+
+    private async Task EnqueueOnceAsync(Guid automationId, string eventId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<VibeChatDbContext>();
+        var tenant = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        var automations = scope.ServiceProvider.GetRequiredService<AutomationService>();
+        tenant.SetTenant(SeedData.DemoTenantId);
+        await RlsSession.EnsureAppliedAsync(db, tenant, CancellationToken.None);
+        var definition = await db.AutomationDefinitions.SingleAsync(row => row.Id == automationId);
+        var signal = new AutomationSignal(
+            "message",
+            "created",
+            eventId,
+            ChannelId,
+            Guid.Parse(eventId),
+            null,
+            null,
+            "created",
+            0,
+            null);
+        await automations.TryEnqueueAsync(definition, signal, AutomationRunMode.Live, execute: false, CancellationToken.None);
+    }
+
+    [Fact]
     public async Task Disabled_flag_does_not_write()
     {
         using var disabledHost = factory.WithWebHostBuilder(builder =>
@@ -181,16 +259,36 @@ public sealed class AutomationIntegrationTests(VibeChatApiFactory factory)
     {
         using var scope = factory.Services.CreateScope();
         var outbox = scope.ServiceProvider.GetRequiredService<OutboxProcessor>();
-        // Shared fixture: older rows fill the outbox page of 20 and hide the
-        // message sent after enable. Drain them while this automation is still off.
-        for (var i = 0; i < 25; i++)
+        // Shared fixture: a full page of older rows hides the message sent after
+        // enable, and any row still pending is posted once the automation is on.
+        for (var i = 0; i < 80; i++)
         {
             var taken = await outbox.ProcessBatchAsync(CancellationToken.None);
-            if (taken < 20)
+            if (taken == 0)
             {
                 return;
             }
         }
+    }
+
+    private async Task QuiesceAutomationsAsync()
+    {
+        using var warmup = factory.CreateClient();
+        await using var db = factory.CreateMigratorDbContext();
+        var enabled = await db.AutomationDefinitions.IgnoreQueryFilters()
+            .Where(row => row.Enabled)
+            .ToListAsync();
+        if (enabled.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var row in enabled)
+        {
+            row.Enabled = false;
+        }
+
+        await db.SaveChangesAsync();
     }
 
     private async Task DrainAsync()

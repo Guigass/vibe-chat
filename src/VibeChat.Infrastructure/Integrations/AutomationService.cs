@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -185,7 +186,7 @@ public sealed class AutomationService(
         }
 
         var key = AutomationPolicies.RunKey(definition.Id, version.Version, signal.EventId, mode);
-        var existing = await db.AutomationRuns.FirstOrDefaultAsync(row => row.IdempotencyKey == key, ct);
+        var existing = await FindRunAsync(definition.TenantId, key, ct);
         if (existing is not null)
         {
             return execute ? await ExecuteAsync(definition, existing, mode == AutomationRunMode.DryRun, ct) : existing;
@@ -207,10 +208,44 @@ public sealed class AutomationService(
             CreatedAt = now,
         };
         db.AutomationRuns.Add(run);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (IsRunIdempotencyViolation(ex))
+        {
+            // Two hosts (API + worker, or a second test host) can both pass the
+            // lookup. The loser must adopt the winner; leaving the entity Added
+            // makes the caller's later SaveChanges throw 23505 again.
+            db.Entry(run).State = EntityState.Detached;
+            var winner = await FindRunAsync(definition.TenantId, key, ct);
+            if (winner is null)
+            {
+                throw;
+            }
+
+            return execute ? await ExecuteAsync(definition, winner, mode == AutomationRunMode.DryRun, ct) : winner;
+        }
+
         VibeChatMetrics.AutomationRuns.Add(1);
-        await db.SaveChangesAsync(ct);
         return execute ? await ExecuteAsync(definition, run, mode == AutomationRunMode.DryRun, ct) : run;
     }
+
+    private async Task<AutomationRun?> FindRunAsync(TenantId tenantId, string key, CancellationToken ct)
+    {
+        var tracked = db.AutomationRuns.Local.FirstOrDefault(row =>
+            row.TenantId == tenantId && row.IdempotencyKey == key);
+        if (tracked is not null)
+        {
+            return tracked;
+        }
+
+        return await db.AutomationRuns.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(row => row.TenantId == tenantId && row.IdempotencyKey == key, ct);
+    }
+
+    private static bool IsRunIdempotencyViolation(DbUpdateException exception) =>
+        exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "IX_runs_TenantId_IdempotencyKey" };
 
     public async Task<AutomationRun> ExecuteAsync(
         AutomationDefinition definition,
