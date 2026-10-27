@@ -27,6 +27,8 @@ Regras do registro:
 
 | ID      | Área              | Achado                                                                | Severidade | Status                                       |
 | ------- | ----------------- | --------------------------------------------------------------------- | ---------- | -------------------------------------------- |
+| BUG-032 | Shell / perfil    | Drawer de membro não fecha com Escape; o backdrop bloqueia a página  | Baixa      | Aberto                                       |
+| BUG-031 | Shell / knowledge | Knowledge base abre fora do grid do shell, no canto inferior esquerdo | Média      | Aberto                                       |
 | BUG-030 | Login / Keycloak  | Volume novo: id de client duplicado; Keycloak reinicia e o OIDC não sobe | Média      | Aberto                                       |
 | BUG-029 | Header / busca    | Hífen no meio da palavra vira exclusão; `Bem-vindo` não acha a mensagem | Baixa      | Aberto                                       |
 | BUG-028 | Shell / perfil    | Painel My profile corta o formulário; Save profile fica fora do mouse | Média      | Aberto                                       |
@@ -51,6 +53,93 @@ Regras do registro:
 | BUG-018 | Timeline / scroll | Scroll não fica colado no fim ao enviar/receber (às vezes)           | Média      | Done                                         |
 
 ## Detalhamento
+
+### BUG-032 — Drawer de perfil de membro não fecha com Escape
+
+- Status: **Aberto**
+- Severidade: **Baixa**. Ver perfil abre e Close panel fecha o drawer. Escape
+  não fecha, e o backdrop cobre o resto da página até o botão. Não é
+  **Média**: o contorno é um clique em Close panel, sem reload e sem painel
+  empilhado. Não é **Alta**: abrir o perfil, ler e voltar ao chat seguem.
+- Observado em: 2026-10-27, ~19:20 America/Sao_Paulo; lab Compose (`apps` /
+  `http://localhost:4200`), viewport ~1280×800, Alice via DevAuth, UI em
+  inglês, `main` em `6c90a70`. Passos: abrir a DM com Bob, clicar View
+  profile (`ui.profileView`, `data-testid="dm-profile-open"`), apertar
+  Escape. Esperado: Escape fecha o drawer, como a busca e os outros painéis.
+  Observado: o drawer permanece aberto; o backdrop
+  (`.profile-drawer__backdrop`) bloqueia cliques no resto da página; só o
+  botão Close panel fecha. Distinto de **BUG-027** (Settings e depois My
+  profile empilham, e o overlay só sai com reload) e de **BUG-028** (My
+  profile corta o formulário e esconde Save profile). Aqui o drawer é o de
+  outro membro, aberto na DM, e o defeito é a tecla Escape.
+- Hipótese: `vc-member-profile-drawer` não escuta Escape. `cdkTrapFocus`
+  segura o foco e não dispensa o diálogo. `onGlobalKeydown` em
+  `shell.page.ts` trata Escape para status, paleta, threads, saved, pins,
+  settings, o painel de DM e a busca, e não chama `profiles.close()`. O
+  backdrop é `position: fixed; inset: 0` e cobre a página. O botão Close
+  panel chama `store.close()`. O template também liga
+  `(click)="store.close()"` no backdrop. Hipótese a verificar se esse
+  clique fecha; no passe o fechamento observado foi o botão.
+- Arquivos: `apps/web/src/app/features/chat/member-profile/member-profile-drawer.ts`,
+  `apps/web/src/app/layout/shell.page.ts` (`onGlobalKeydown`,
+  `openPeerProfile`), `apps/web/src/app/layout/shell.page.html`
+  (`dm-profile-open`), `apps/web/src/app/layout/shell-dialogs.ts`,
+  `apps/web/src/app/core/services/member-profile.store.ts` (`open`, `close`).
+- Resultado esperado: Escape fecha o drawer de membro e tira o backdrop,
+  como a busca. Close panel continua fechando. Distinto de **BUG-027** e
+  **BUG-028**.
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: no lab, DM com Bob, View profile, Escape fecha o
+  drawer e o backdrop; Close panel segue fechando; finding `Done`. Distinto
+  de **BUG-027** e **BUG-028**.
+
+### BUG-031 — Knowledge base renderiza fora do layout do shell
+
+- Status: **Aberto**
+- Severidade: **Média**. O painel abre, os campos respondem e Close fecha. A
+  tarefa de abrir a base ainda se completa. Não é **Alta**: não trava o
+  shell, não exige reload e não bloqueia ler nem enviar em `#geral`. Não é
+  **Baixa**: o painel não ocupa a coluna de contexto. Cai no canto inferior
+  esquerdo, fora do grid, sem o chrome de painel lateral dos outros work
+  views — atrapalha achar e usar a base no lugar esperado.
+- Observado em: 2026-10-27, ~19:20 America/Sao_Paulo; lab Compose (`apps` /
+  `http://localhost:4200`), viewport ~1280×800, Alice via DevAuth, UI em
+  inglês, em `#geral`, `main` em `6c90a70`. Passos: logado como Alice, em
+  `#geral`, clicar Knowledge na sidebar (work views,
+  `data-testid="knowledge-nav"`). Esperado: abrir como os outros painéis de
+  work view (Inbox, Saved, Decisions, Tasks, Forms), dentro do layout.
+  Observado: o painel Knowledge base (Search pages, Collection name, select
+  Workspace, New collection, botão Close) aparece abaixo do app, no canto
+  inferior esquerdo, fora do grid do shell e sem estilo de painel lateral ou
+  overlay, como se estivesse fora do container. O painel funciona e fecha
+  no Close.
+- Hipótese: `shell--context-open` em `shell.page.html` não inclui
+  `knowledge.panelOpen()`. Sem a classe, `.shell` continua em duas colunas
+  e `vc-shell-context` (terceiro filho) cai na linha implícita, coluna 1 —
+  canto inferior esquerdo. O viewport ~1280×800 está acima do breakpoint
+  estreito (960px), então a regra de overlay fixo de `vc-shell-context` não
+  entra. Inbox, Saved e Followed entram em `shell--context-open` e ganham a
+  terceira coluna. Decisions (`commitments`), Tasks e Forms também ficam de
+  fora dessa classe; o passe não os abriu — hipótese a verificar se o mesmo
+  deslocamento vale para eles. A lista `.shell__context > vc-*-panel` que
+  estica o conteúdo não inclui `vc-knowledge-panel`. O componente tem estilo
+  próprio, mas no lugar errado não parece a coluna de contexto. Close chama
+  `knowledge.closePanel()`. Hipótese a verificar.
+- Arquivos: `apps/web/src/app/layout/shell.page.html`
+  (`shell--context-open`), `apps/web/src/app/layout/shell.page.scss`
+  (`.shell`, `.shell--context-open`, `.shell__context`, `vc-shell-context`),
+  `apps/web/src/app/layout/shell-context.ts` (`knowledge.panelOpen()`),
+  `apps/web/src/app/features/chat/knowledge-panel/knowledge-panel.ts`,
+  `apps/web/src/app/features/chat/channel-list/nav-shortcuts.ts`
+  (`openKnowledge`), `apps/web/src/app/core/services/knowledge.store.ts`
+  (`openPanel`, `closePanel`).
+- Resultado esperado: Knowledge abre na coluna de contexto, dentro do grid,
+  como Inbox e Saved. Close continua fechando.
+- Risk class: R1.
+- Owner automático: Frontend (D).
+- Critério de resolução: no lab, em `#geral`, Knowledge abre na coluna
+  lateral do shell; Close fecha; finding `Done`.
 
 ### BUG-030 — Keycloak não sobe em volume novo: id de client duplicado
 
