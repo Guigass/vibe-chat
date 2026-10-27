@@ -289,6 +289,17 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/admin/workspaces/{workspaceId:guid}/bridges/{bridgeId:guid}/mapping` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-138; subject opaco |
 | POST | `/bridges/{bridgeId:guid}/events` | exempt | bridge bot token | — | — | — | B-138; `AllowAnonymous` + token; outro bot → 403 |
 | POST | `/bridges/{bridgeId:guid}/outbound` | exempt | bridge bot token | — | — | — | B-138; pull; sem socket de saída |
+| GET | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/federation` | permission | `message.read` | ✗ | ✗ | ✓ | B-065; membership; flag off → 404 `FederationDisabled` |
+| POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; allowlist; token só na criação |
+| POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts/{trustId:guid}/consent` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; cópia só após acknowledge |
+| POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts/{trustId:guid}/pause` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; bloqueia os dois lados |
+| POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts/{trustId:guid}/resume` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; só a partir de paused |
+| POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts/{trustId:guid}/revoke` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; desativa o bot |
+| POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts/{trustId:guid}/keys/rotate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; token novo uma vez; anterior ainda vale |
+| POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts/{trustId:guid}/keys/retire` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; descarta a chave anterior |
+| POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts/{trustId:guid}/rooms` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; sala explícita; não é DM |
+| POST | `/federation/rooms/{roomId:guid}/events` | exempt | federation bot token | — | — | — | B-065; `AllowAnonymous` + token; assinatura inválida não grava |
+| POST | `/federation/rooms/{roomId:guid}/reconcile` | exempt | federation bot token | — | — | — | B-065; pull; sem socket de saída |
 | GET | `/public/branding` | exempt | AllowAnonymous | — | — | — | B-140; host do operador; ignora `tenantId` |
 | GET | `/public/branding/assets/{kind}` | exempt | AllowAnonymous | — | — | — | B-140; 404 sem arquivo |
 | GET | `/branding` | exempt | membership | ✓ | ✓ | ✓ | B-140; tenant da sessão |

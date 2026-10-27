@@ -80,7 +80,7 @@ import { defaultSidebarOpen, readNavCompact, SHELL_NARROW_MEDIA_QUERY, writeNavC
 import { LocaleService } from '../core/i18n/locale.service';
 import { ui } from '../core/i18n/strings';
 import { pluralCount } from '../core/i18n/format';
-import { DlpBadge } from './dlp-badge'; import { BridgeBanner } from './bridge-banner';
+import { DlpBadge } from './dlp-badge'; import { BridgeBanner } from './bridge-banner'; import { FederationBanner } from './federation-banner';
 @Component({
   selector: 'vc-shell-page',
   standalone: true,
@@ -89,7 +89,7 @@ import { DlpBadge } from './dlp-badge'; import { BridgeBanner } from './bridge-b
     RouterLink,
     RouterLinkActive,
     ChannelList,
-    Timeline, Composer, TopicBoard, DlpBadge, BridgeBanner,
+    Timeline, Composer, TopicBoard, DlpBadge, BridgeBanner, FederationBanner,
     ShellContext,
     SummarizeButton,
     SuggestReplyButton,

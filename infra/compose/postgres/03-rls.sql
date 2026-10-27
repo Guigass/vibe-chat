@@ -900,6 +900,14 @@ ALTER TABLE IF EXISTS integrations.bridge_identities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS integrations.bridge_identities FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS integrations.bridge_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS integrations.bridge_events FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.federation_trusts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.federation_trusts FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.federation_rooms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.federation_rooms FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.federation_identities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.federation_identities FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.federation_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS integrations.federation_events FORCE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS tenant_isolation_visual_preferences ON identity.visual_preferences;
 CREATE POLICY tenant_isolation_visual_preferences ON identity.visual_preferences
@@ -953,6 +961,26 @@ CREATE POLICY tenant_isolation_bridge_identities ON integrations.bridge_identiti
 
 DROP POLICY IF EXISTS tenant_isolation_bridge_events ON integrations.bridge_events;
 CREATE POLICY tenant_isolation_bridge_events ON integrations.bridge_events
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_federation_trusts ON integrations.federation_trusts;
+CREATE POLICY tenant_isolation_federation_trusts ON integrations.federation_trusts
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_federation_rooms ON integrations.federation_rooms;
+CREATE POLICY tenant_isolation_federation_rooms ON integrations.federation_rooms
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_federation_identities ON integrations.federation_identities;
+CREATE POLICY tenant_isolation_federation_identities ON integrations.federation_identities
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_federation_events ON integrations.federation_events;
+CREATE POLICY tenant_isolation_federation_events ON integrations.federation_events
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

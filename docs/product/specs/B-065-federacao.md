@@ -41,11 +41,11 @@ Tenant/workspace escolhe trust permitido dentro da policy da instância. Inbound
 
 ## Aceite
 
-- [ ] Evento assinado inválido é rejeitado.
-- [ ] Partition reconcilia sem duplicar.
-- [ ] Revogar trust bloqueia tráfego futuro.
-- [ ] Conteúdo local não autorizado não sai.
-- [ ] Limitação de delete/retention é visível.
+- [x] Evento assinado inválido é rejeitado.
+- [x] Partition reconcilia sem duplicar.
+- [x] Revogar trust bloqueia tráfego futuro.
+- [x] Conteúdo local não autorizado não sai.
+- [x] Limitação de delete/retention é visível.
 
 ## Testes
 

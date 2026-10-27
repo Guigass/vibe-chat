@@ -102,6 +102,10 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<Bridge> Bridges => Set<Bridge>();
     public DbSet<BridgeIdentity> BridgeIdentities => Set<BridgeIdentity>();
     public DbSet<BridgeEvent> BridgeEvents => Set<BridgeEvent>();
+    public DbSet<FederationTrust> FederationTrusts => Set<FederationTrust>();
+    public DbSet<FederationRoom> FederationRooms => Set<FederationRoom>();
+    public DbSet<FederationIdentity> FederationIdentities => Set<FederationIdentity>();
+    public DbSet<FederationEvent> FederationEvents => Set<FederationEvent>();
     public DbSet<MessageRetentionSettings> MessageRetentionSettings => Set<MessageRetentionSettings>();
     public DbSet<MessageLifecyclePolicy> MessageLifecyclePolicies => Set<MessageLifecyclePolicy>();
     public DbSet<MessageVersion> MessageVersions => Set<MessageVersion>();
@@ -1637,6 +1641,73 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Outcome).HasMaxLength(16).IsRequired();
             entity.HasIndex(x => new { x.TenantId, x.BridgeId, x.RemoteEventId }).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.LocalMessageId });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<FederationTrust>(entity =>
+        {
+            entity.ToTable("federation_trusts", "integrations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Domain).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.RemoteInstanceId).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.Status).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.Capabilities).HasColumnType("text[]").IsRequired();
+            entity.Property(x => x.CurrentKeyId).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.PreviousKeyId).HasMaxLength(16);
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(120);
+            entity.Property(x => x.RequestHash).HasMaxLength(64);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.Domain, x.RemoteInstanceId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.IdempotencyKey });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<FederationRoom>(entity =>
+        {
+            entity.ToTable("federation_rooms", "integrations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.RemoteRoom).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(120);
+            entity.Property(x => x.RequestHash).HasMaxLength(64);
+            entity.HasIndex(x => new { x.TenantId, x.ChannelId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.TrustId, x.RemoteRoom }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<FederationIdentity>(entity =>
+        {
+            entity.ToTable("federation_identities", "integrations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.RemoteSubject).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.DisplayName).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.RemoteInstanceId).HasMaxLength(64).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.TrustId, x.RemoteSubject }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<FederationEvent>(entity =>
+        {
+            entity.ToTable("federation_events", "integrations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Direction).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.EventType).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.RemoteEventId).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.RemoteSubject).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.DisplayName).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.Outcome).HasMaxLength(16).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.TrustId, x.RemoteEventId }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

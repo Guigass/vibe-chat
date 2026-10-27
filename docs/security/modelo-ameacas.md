@@ -576,7 +576,7 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | Registry de plugins | Supply-chain — ver seção B-137 abaixo | ADR-053 entregue |
 | Legal hold/DLP | Preservação indevida, abuso de busca e conflito com exclusão | D-23; authZ separada, cadeia de custódia e parecer legal |
 | Offline/mobile | Token e conteúdo persistidos no dispositivo; revogação tardia | B-141 cobre o desktop e B-063 o mobile (sem token no servidor, logout remoto, push sem body); sync offline segue em B-143 |
-| Federação | Perda de soberania, retenção e controle de identidade | D-21; trust domains, allowlist e política de cópia |
+| Federação | Perda de soberania, retenção e controle de identidade | B-065 / ADR-063 entregue; flag off, allowlist, HMAC, consentimento e revogação |
 | Bridge | Cópia silenciosa, loop, impersonation e SSRF | B-138 / ADR-054 entregue; flag off, pin, consentimento, bot escopado |
 | Live media | Gravação sem consentimento, abuso e exaustão de SFU/TURN | D-19; consentimento visível, quotas, moderação e SLO |
 | E2EE | Recuperação de conta, moderação e compliance incompatíveis | D-26; modelo formal antes de qualquer implementação persistente |
@@ -592,6 +592,18 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 - Capability nova exige confirmação. Sem grant explícito nada é instalado. Revogação desliga plugin e bot e quarentena a versão.
 - RLS FORCE em `integrations.plugin_registry_installs` e `plugin_registry_quarantine`. Outro tenant não lê a linha. Member → 403.
 - Auditoria não leva manifesto, assinatura crua nem token. Rollback da flag não apaga mensagens. O `Down` remove só as duas tabelas novas.
+
+## Federação (B-065 / ADR-063)
+
+Superfície implementada, R3. A ameaça principal é copiar canal para outra
+instância sem allowlist, aceitar evento sem assinatura ou apagar a cópia local
+prometendo retenção remota. O controle é: flag off por default; domínio só se
+estiver em `AllowedDomains`; a API não abre conexão; tráfego só com trust
+`active`; a identidade remota é um bot no canal ligado e o mapping não vira
+usuário local; assinatura inválida não grava mensagem; o mesmo `eventId` não
+duplica; revogar desliga o bot; delete remoto permanece não garantido; DLP
+`federation` omite o corpo; RLS FORCE nas quatro tabelas; member recebe 403;
+outro tenant não lê a linha. A auditoria não leva corpo nem token.
 
 ## Bridges (B-138 / ADR-054)
 

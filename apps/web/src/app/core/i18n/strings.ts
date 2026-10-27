@@ -1783,6 +1783,7 @@ export const ui = {
   pluginSdkDisabled: $localize`:@@error.PluginSdkDisabled:O SDK de plugins está desligado nesta instalação.`,
   pluginRegistryDisabled: $localize`:@@error.PluginRegistryDisabled:O registry de plugins está desligado nesta instalação.`,
   bridgesDisabled: $localize`:@@error.BridgesDisabled:As pontes estão desligadas nesta instalação.`,
+  federationDisabled: $localize`:@@error.FederationDisabled:A federação está desligada nesta instalação.`,
   bridgeBannerDestination: $localize`:@@bridge.bannerDestination:Ponte com %network% · %room%`,
   bridgeStatePending: $localize`:@@bridge.statePending:Aguardando consentimento`,
   bridgeStateActive: $localize`:@@bridge.stateActive:Ativa`,
@@ -1796,6 +1797,19 @@ export const ui = {
   bridgeDisconnect: $localize`:@@bridge.disconnect:Desligar ponte`,
   bridgeDisconnectConfirm: $localize`:@@bridge.disconnectConfirm:Confirmar desligamento`,
   bridgeBadge: $localize`:@@bridge.badge:Rede externa`,
+  federationBannerDestination: $localize`:@@federation.bannerDestination:Sala federada com %domain% · %room%`,
+  federationStatePending: $localize`:@@federation.statePending:Aguardando consentimento`,
+  federationStateActive: $localize`:@@federation.stateActive:Confiança ativa`,
+  federationStatePaused: $localize`:@@federation.statePaused:Confiança pausada`,
+  federationStateRevoked: $localize`:@@federation.stateRevoked:Confiança revogada`,
+  federationLimitation: $localize`:@@federation.limitation:Apagar e a retenção do outro lado não são garantidos.`,
+  federationConsent: $localize`:@@federation.consent:As mensagens deste canal serão copiadas para %domain%. A identidade remota continua visível.`,
+  federationConsentAction: $localize`:@@federation.consentAction:Permitir cópia`,
+  federationPause: $localize`:@@federation.pause:Pausar confiança`,
+  federationResume: $localize`:@@federation.resume:Retomar confiança`,
+  federationRevoke: $localize`:@@federation.revoke:Revogar confiança`,
+  federationRevokeConfirm: $localize`:@@federation.revokeConfirm:Confirmar revogação`,
+  federationRemote: $localize`:@@federation.remote:Identidade remota`,
   pluginRegistryInvalid: $localize`:@@error.pluginRegistryInvalid:O pacote do registry não passou na conferência.`,
   pluginRegistryRevoked: $localize`:@@error.pluginRegistryRevoked:Esta versão foi revogada.`,
   pluginRegistryDowngrade: $localize`:@@error.pluginRegistryDowngrade:Não é possível voltar a versão por atualização. Use o rollback.`,
@@ -2120,6 +2134,8 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.pluginRegistryDisabled;
     case 'BridgesDisabled':
       return ui.bridgesDisabled;
+    case 'FederationDisabled':
+      return ui.federationDisabled;
     case 'InvalidRegistryIndex':
     case 'InvalidRegistrySignature':
     case 'InvalidRegistryChecksum':

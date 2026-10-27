@@ -739,21 +739,51 @@ internal static class MessagingEndpointHelpers
         var rows = await db.BridgeEvents.AsNoTracking()
             .Where(x => x.TenantId == tenantId && x.Direction == BridgeRules.Inbound && x.LocalMessageId != null && ids.Contains(x.LocalMessageId.Value))
             .ToListAsync(ct);
-        if (rows.Count == 0)
+        var federationRows = await db.FederationEvents.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.Direction == FederationRules.Inbound && x.Outcome == FederationRules.Applied && x.LocalMessageId != null && ids.Contains(x.LocalMessageId.Value))
+            .ToListAsync(ct);
+        if (rows.Count == 0 && federationRows.Count == 0)
         {
             return messages;
         }
 
         var bridgeIds = rows.Select(x => x.BridgeId).Distinct().ToArray();
-        var bridges = await db.Bridges.AsNoTracking()
-            .Where(x => bridgeIds.Contains(x.Id))
-            .ToDictionaryAsync(x => x.Id, ct);
+        var bridges = bridgeIds.Length == 0
+            ? new Dictionary<Guid, Bridge>()
+            : await db.Bridges.AsNoTracking().Where(x => bridgeIds.Contains(x.Id)).ToDictionaryAsync(x => x.Id, ct);
+        var roomIds = federationRows.Select(x => x.RoomId).Distinct().ToArray();
+        var rooms = roomIds.Length == 0
+            ? new Dictionary<Guid, FederationRoom>()
+            : await db.FederationRooms.AsNoTracking().Where(x => roomIds.Contains(x.Id)).ToDictionaryAsync(x => x.Id, ct);
+        var trustIds = federationRows.Select(x => x.TrustId).Distinct().ToArray();
+        var trusts = trustIds.Length == 0
+            ? new Dictionary<Guid, FederationTrust>()
+            : await db.FederationTrusts.AsNoTracking().Where(x => trustIds.Contains(x.Id)).ToDictionaryAsync(x => x.Id, ct);
         var byMessage = rows
+            .GroupBy(x => x.LocalMessageId!.Value)
+            .ToDictionary(group => group.Key, group => group.First());
+        var federationByMessage = federationRows
             .GroupBy(x => x.LocalMessageId!.Value)
             .ToDictionary(group => group.Key, group => group.First());
         return messages.Select(message =>
         {
-            if (!byMessage.TryGetValue(message.Id, out var row) || !bridges.TryGetValue(row.BridgeId, out var bridge))
+            if (byMessage.TryGetValue(message.Id, out var row) && bridges.TryGetValue(row.BridgeId, out var bridge))
+            {
+                return message with
+                {
+                    RemoteOrigin = new MessageRemoteOrigin(
+                        bridge.Network,
+                        bridge.RemoteRoom,
+                        row.RemoteSubject,
+                        row.DisplayName,
+                        row.Link,
+                        false)
+                };
+            }
+
+            if (!federationByMessage.TryGetValue(message.Id, out var remote)
+                || !rooms.TryGetValue(remote.RoomId, out var room)
+                || !trusts.TryGetValue(remote.TrustId, out var trust))
             {
                 return message;
             }
@@ -761,11 +791,11 @@ internal static class MessagingEndpointHelpers
             return message with
             {
                 RemoteOrigin = new MessageRemoteOrigin(
-                    bridge.Network,
-                    bridge.RemoteRoom,
-                    row.RemoteSubject,
-                    row.DisplayName,
-                    row.Link,
+                    trust.Domain,
+                    room.RemoteRoom,
+                    remote.RemoteSubject,
+                    remote.DisplayName,
+                    null,
                     false)
             };
         }).ToArray();
