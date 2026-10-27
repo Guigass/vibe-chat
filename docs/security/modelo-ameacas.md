@@ -233,6 +233,19 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Destino | Falha vira run `failed` auditado. Três falhas abrem o circuito por 60 s. O chat segue |
 | Cross-tenant | RLS `FORCE` em `administration.chat_backup_destinations`, `chat_backup_jobs` e `chat_backup_runs`. O worker só lê a fila com `app.job_role=chatbackup` |
 
+### HA e drain (B-144 / ADR-062)
+
+| Item | Controle |
+|------|----------|
+| Flag | `Ha:Enabled` off → 404 `HaDisabled`. O envio não consulta a flag. Standard segue um worker, sem lock |
+| AuthZ | Runtime exige `support.read`. Drain exige `support.repair`. Member → 403. Anônimo → 401 |
+| Escopo | O drain vale só para o processo que atendeu. Não lê mensagem e não aceita tenant no body |
+| Realtime | WebSocket quando a flag está ligada. Sem sticky. Principal ausente, drain ou teto de conexão recusa o hub. Reconnect chama `JoinChannel` e relê membership |
+| Backpressure | Buffer limitado por nó. Efêmero é descartado. Durável vira `ResyncRequired` e não acumula fila |
+| Lease | `pg_try_advisory_lock` na role de runtime. Não há tabela nova e não há `BYPASSRLS` |
+| Resposta | Sem senha, sem body de mensagem, sem connection string |
+| Rollback | Flag off. Fase `expand` (sem migration) aceita o binário anterior. Fase `contract` não mistura versões |
+
 ### Administração delegada (B-134 / ADR-047)
 
 | Item | Controle |

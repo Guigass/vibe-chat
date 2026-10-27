@@ -44,7 +44,8 @@ public sealed class ChatHub(
     IRateLimiter rateLimiter,
     RateLimitSettingsResolver rateLimits,
     ITenantContext tenantContext,
-    VibeChatDbContext dbContext) : Hub
+    VibeChatDbContext dbContext,
+    HaAdmission admission) : Hub
 {
     public static string ChannelGroup(TenantId tenantId, ChannelId channelId) =>
         $"t:{tenantId.Value}:c:{channelId.Value}";
@@ -56,13 +57,25 @@ public sealed class ChatHub(
 
     public override async Task OnConnectedAsync()
     {
+        var accepted = admission.TryAccept(!CurrentUserId().Equals(UserId.Empty), Context.ConnectionId);
+        if (!accepted)
+        {
+            Context.Abort();
+            return;
+        }
+
         VibeChatMetrics.AdjustRealtimeConnections(1);
+        Context.Items["counted"] = true;
         await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        VibeChatMetrics.AdjustRealtimeConnections(-1);
+        if (Context.Items.ContainsKey("counted"))
+        {
+            VibeChatMetrics.AdjustRealtimeConnections(-1);
+            admission.Release(Context.ConnectionId);
+        }
         if (Context.Items.TryGetValue("tenantId", out var tenantObj)
             && tenantObj is Guid tenantGuid
             && !CurrentUserId().Equals(UserId.Empty))

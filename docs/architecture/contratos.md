@@ -1301,6 +1301,17 @@ Com `contentAuditEnabled=false`, o pacote não leva corpo nem bytes de anexo. Im
 
 RLS `FORCE` nas três tabelas `administration.chat_backup_*`. O `Down` remove só essas tabelas. Audit: `chat.backup.destination.create`, `chat.backup.destination.rotate`, `chat.backup.destination.delete`, `chat.backup.job.create`, `chat.backup.job.update`, `chat.backup.run`, `chat.backup.export`, `chat.backup.import`.
 
+### HA e rolling upgrade (B-144 / ADR-062)
+
+Flag `Ha:Enabled` default **false**. Off → 404 `HaDisabled` em `GET /api/v1/meta/runtime` e `POST /api/v1/admin/ha/drain`. Envio e histórico não consultam a flag.
+
+| Método | Caminho | AuthZ |
+|--------|---------|-------|
+| GET | `/api/v1/meta/runtime` | `support.read`; fase, revisão, RPO/RTO, `draining`; sem senha e sem body |
+| POST | `/api/v1/admin/ha/drain` | `support.repair`; drena só o processo local |
+
+Readiness (`/health/ready`, `/ready`) responde 503 enquanto o processo drena. `/health/live` permanece 200. O cliente recebe `NodeDraining` e, se o buffer estourar, `ResyncRequired`. Nenhum dos dois leva connection string. Não há tabela nova.
+
 ### Templates de workspace (B-115)
 
 Manifesto declarativo `vibechat.workspace-template.v1`. Não carrega `tenantId`, membros, e-mails, tokens nem secrets. Recursos criados recebem o tenant do contexto. Só `workspace.admin` (Auditor/membro → 403).

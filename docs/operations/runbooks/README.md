@@ -33,6 +33,7 @@ Use estes runbooks em incidente ou mudança. Detalhes de rotina ficam nos guias 
 | [mobile.md](./mobile.md) | Cliente mobile: flag, sideload e rollback (B-063) |
 | [performance.md](./performance.md) | Hot paths, burn de latência e gatilhos ADR-015/016/017 (B-170) |
 | [offline-sync.md](./offline-sync.md) | Fila offline: flag, cursor, conflito e rollback (B-143) |
+| [ha-rolling-upgrade.md](./ha-rolling-upgrade.md) | HA opcional: drain, lease, rolling upgrade e rollback (B-144) |
 
 ## Princípios
 

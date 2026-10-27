@@ -906,6 +906,7 @@ export const ui = {
   offlineRevoked: $localize`:@@offline.revoked:O acesso foi revogado. Os dados locais deste dispositivo foram apagados.`,
   bannerReconnecting: $localize`:@@banner.reconnecting:Reconectando ao tempo real…`,
   bannerNoRealtime: $localize`:@@banner.noRealtime:Sem conexão em tempo real. Mensagens podem atrasar.`,
+  bannerMaintenance: $localize`:@@banner.maintenance:Este servidor está em manutenção. Reconectando sem perder mensagens nem rascunhos.`,
   bannerUpdate: $localize`:@@banner.update:Nova versão disponível`,
   bannerRefresh: $localize`:@@banner.refresh:Atualizar`,
   bannerPushAsk: $localize`:@@banner.pushAsk:Receber notificações neste dispositivo?`,

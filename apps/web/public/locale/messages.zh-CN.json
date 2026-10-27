@@ -473,6 +473,7 @@
     "offline.revoked": "访问已被撤销。此设备上的本地数据已删除。",
     "banner.reconnecting": "正在重新连接实时通道…",
     "banner.noRealtime": "没有实时连接。消息可能延迟。",
+    "banner.maintenance": "此服务器正在维护。正在重新连接，消息和草稿会保留。",
     "banner.update": "有新版本可用",
     "banner.refresh": "更新",
     "banner.pushAsk": "要在此设备上接收通知吗？",

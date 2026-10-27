@@ -302,6 +302,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_URLS: http://+:5080
+      Ha__Enabled: ${Ha__Enabled:-false}
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-vibechat};Username=${POSTGRES_APP_USER:-vibechat_app};Password=${POSTGRES_APP_PASSWORD:-vibechat_app_password_change_me}
       ConnectionStrings__DatabaseMigrator: Host=postgres;Port=5432;Database=${POSTGRES_DB:-vibechat};Username=${POSTGRES_MIGRATOR_USER:-vibechat_migrator};Password=${POSTGRES_MIGRATOR_PASSWORD:-vibechat_migrator_password_change_me}
       ConnectionStrings__DatabaseBootstrap: Host=postgres;Port=5432;Database=${POSTGRES_DB:-vibechat};Username=${POSTGRES_USER:-vibechat};Password=${POSTGRES_PASSWORD:-vibechat_dev_password_change_me}
@@ -417,6 +418,7 @@ services:
     restart: unless-stopped
     environment:
       DOTNET_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      Ha__Enabled: ${Ha__Enabled:-false}
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-vibechat};Username=${POSTGRES_APP_USER:-vibechat_app};Password=${POSTGRES_APP_PASSWORD:-vibechat_app_password_change_me}
       ConnectionStrings__Redis: redis:6379
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317

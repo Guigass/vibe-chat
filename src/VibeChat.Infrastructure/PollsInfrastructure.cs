@@ -562,12 +562,18 @@ public sealed class PollCloseProcessor(
 
 public sealed class PollCloseDispatcher(
     PollCloseProcessor processor,
+    HaJobGate jobs,
     ILogger<PollCloseDispatcher> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            if (!await jobs.WaitTurnAsync(stoppingToken))
+            {
+                continue;
+            }
+
             try
             {
                 await processor.ProcessBatchAsync(stoppingToken);

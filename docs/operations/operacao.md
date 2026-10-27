@@ -60,13 +60,14 @@ task apps
 
 1. **Vertical** na API/Postgres primeiro
 2. **Réplicas de API** com Redis backplane SignalR
-3. Worker: 1–N com claim `SKIP LOCKED` no outbox
+3. Worker: um líder por lease advisory quando `Ha:Enabled`; Standard permanece um worker
 4. Web: estático atrás de nginx/CDN interno
 
-Backplane Redis não elimina automaticamente afinidade em toda combinação de
-transporte/proxy. B-144 decide e testa sticky sessions, drain, backpressure,
-token renewal e resync conforme
-[`signalr-ha.md`](../architecture/signalr-ha.md).
+Backplane Redis não elimina afinidade em toda combinação de transporte.
+B-144 / ADR-062 liga WebSockets sem sticky session, drain, backpressure e
+revalidação no reconnect. O contrato está em
+[`signalr-ha.md`](../architecture/signalr-ha.md) e o procedimento em
+[`runbooks/ha-rolling-upgrade.md`](./runbooks/ha-rolling-upgrade.md).
 
 ## TLS / proxy de referência (W5-2)
 

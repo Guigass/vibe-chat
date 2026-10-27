@@ -336,6 +336,8 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/workspaces/{workspaceId:guid}/chat-backup/export` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-172; ZIP `vibechat.chat.backup.v1` |
 | POST | `/workspaces/{workspaceId:guid}/chat-backup/import/validate` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-172; dry-run; não grava |
 | POST | `/workspaces/{workspaceId:guid}/chat-backup/import/execute` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-172; `confirm=true` e `Idempotency-Key`; cross-tenant → 403 |
+| GET | `/meta/runtime` | permission | `support.read` | ✗ | ✓ | ✓ | B-144; flag off → 404 `HaDisabled`; sem dado de tenant |
+| POST | `/admin/ha/drain` | permission | `support.repair` | ✗ | ✗ | ✓ | B-144; drena só o processo local; flag off → 404 `HaDisabled` |
 | GET | `/admin/event-schemas` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; flag off → 404 `EventSchemasDisabled`; sem dado de tenant |
 | GET | `/admin/event-schemas/{eventType}/versions/{schemaVersion:int}` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; versão desconhecida → 404 `UnknownSchemaVersion` |
 | POST | `/admin/event-schemas/check` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-139; não persiste o documento; teto 16 KiB |

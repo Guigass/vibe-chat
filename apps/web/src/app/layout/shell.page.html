@@ -138,7 +138,7 @@
   </aside>
 
   <div class="shell__main">
-    <vc-connection-banner [status]="hub.status()" />
+    <vc-connection-banner [status]="hub.status()" [maintenance]="hub.maintenance()" />
     <vc-update-banner />
     <vc-push-opt-in-banner />
     <vc-in-app-notice (open)="openPushNotice()" />

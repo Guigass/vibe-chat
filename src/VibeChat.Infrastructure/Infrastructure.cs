@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddBrandingInfrastructure(configuration);
         services.AddDesktopInfrastructure(configuration);
         services.AddMobileInfrastructure(configuration);
+        services.AddHaCoordination(configuration);
         services.AddInfrastructureHealthChecks();
         return services;
     }

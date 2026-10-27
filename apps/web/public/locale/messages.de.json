@@ -473,6 +473,7 @@
     "offline.revoked": "Der Zugriff wurde widerrufen. Die lokalen Daten auf diesem Gerät wurden gelöscht.",
     "banner.reconnecting": "Verbindung zum Echtzeitdienst wird wiederhergestellt…",
     "banner.noRealtime": "Keine Echtzeitverbindung. Nachrichten können sich verzögern.",
+    "banner.maintenance": "Dieser Server wird gewartet. Die Verbindung wird wiederhergestellt, ohne Nachrichten oder Entwürfe zu verlieren.",
     "banner.update": "Neue Version verfügbar",
     "banner.refresh": "Aktualisieren",
     "banner.pushAsk": "Benachrichtigungen auf diesem Gerät erhalten?",

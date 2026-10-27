@@ -103,7 +103,11 @@ public sealed class InfrastructureRegistrationTests
             "Scoped:PluginSdkService:PluginSdkService",
             "Scoped:BrandingService:BrandingService",
             "Scoped:DesktopClientService:DesktopClientService",
-            "Scoped:MobileClientService:MobileClientService");
+            "Scoped:MobileClientService:MobileClientService",
+            "Singleton:HaJobGate:HaJobGate",
+            "Singleton:HaAdmission:HaAdmission",
+            "Singleton:HaBackpressure:HaBackpressure",
+            "Singleton:IHostedService:HaLeaseHost");
 
         worker.Should().Equal(signalR.Select(entry => entry
             .Replace("Scoped:IChatPublisher:SignalRChatPublisher", "Scoped:IChatPublisher:RedisChannelChatPublisher", StringComparison.Ordinal)

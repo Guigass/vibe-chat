@@ -150,6 +150,7 @@ describe('ShellPage responsive sidebar (UX-003)', () => {
           provide: ChatHubService,
           useValue: {
             status: () => 'connected',
+            maintenance: () => false,
             connect: vi.fn().mockResolvedValue(undefined),
             onPresenceChanged: () => () => undefined,
             onMessage: () => () => undefined,

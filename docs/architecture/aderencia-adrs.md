@@ -48,6 +48,7 @@ testes nem uma revisão de segurança.
 | [047](../adrs/ADR-047-admin-delegada-quotas.md) | Administração delegada e quotas | `compliance.scoped_role_assignments`, `compliance.quotas`, flag `Features:DelegatedAdmin:Enabled=false` | **Alinhado** (W14 / B-134) |
 | [060](../adrs/ADR-060-lifecycle-storage.md) | Lifecycle de storage e CDN opcional | `files.storage_*`, flag `Features:StorageLifecycle:Enabled=false` | **Alinhado** (W16 / B-145) |
 | [061](../adrs/ADR-061-backup-chat.md) | Backup de chat e destinos | `administration.chat_backup_*`, flag `Features:ChatBackup:Enabled=false` | **Alinhado** (W16 / B-172) |
+| [062](../adrs/ADR-062-ha-rolling-upgrade.md) | HA, drain e rolling upgrade | flag `Ha:Enabled=false`, lease advisory, WebSocket sem sticky | **Alinhado** (W16 / B-144) |
 
 ## Gaps transversais derivados
 

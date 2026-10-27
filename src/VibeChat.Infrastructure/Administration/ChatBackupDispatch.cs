@@ -113,12 +113,18 @@ public sealed class ChatBackupDispatchProcessor(
 
 public sealed class ChatBackupDispatchDispatcher(
     ChatBackupDispatchProcessor processor,
+    HaJobGate jobs,
     ILogger<ChatBackupDispatchDispatcher> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            if (!await jobs.WaitTurnAsync(stoppingToken))
+            {
+                continue;
+            }
+
             try
             {
                 await processor.ProcessBatchAsync(stoppingToken);

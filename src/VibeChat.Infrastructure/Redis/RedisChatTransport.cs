@@ -35,14 +35,33 @@ using Role = VibeChat.SharedKernel.Role;
 
 namespace VibeChat.Infrastructure;
 
-public sealed class SignalRChatPublisher(IHubContext<ChatHub> hubContext) : IChatPublisher
+public sealed class SignalRChatPublisher(IHubContext<ChatHub> hubContext, HaBackpressure backpressure) : IChatPublisher
 {
-    public Task PublishAsync(RealtimeMessage message, CancellationToken cancellationToken) =>
+    public async Task PublishAsync(RealtimeMessage message, CancellationToken cancellationToken)
+    {
+        if (!backpressure.TryEnter(message.EventName, out var release, out var resync))
+        {
+            if (resync)
+            {
+                await PublishDirectAsync(message, "ResyncRequired", cancellationToken);
+            }
+
+            return;
+        }
+
+        try
+        {
+            await PublishDirectAsync(message, message.EventName, cancellationToken);
+        }
+        finally
+        {
+            release();
+        }
+    }
+
+    private Task PublishDirectAsync(RealtimeMessage message, string eventName, CancellationToken cancellationToken) =>
         hubContext.Clients.Group(ChatHub.ChannelGroup(message.TenantId, message.ChannelId))
-            .SendAsync(
-                message.EventName,
-                RealtimePayloadNormalization.Normalize(message.Payload),
-                cancellationToken);
+            .SendAsync(eventName, RealtimePayloadNormalization.Normalize(message.Payload), cancellationToken);
 }
 
 internal static class RealtimePayloadNormalization
@@ -57,11 +76,33 @@ internal static class RealtimePayloadNormalization
     };
 }
 
-public sealed class RedisChannelChatPublisher(RedisConnection redis) : IChatPublisher
+public sealed class RedisChannelChatPublisher(RedisConnection redis, HaBackpressure backpressure) : IChatPublisher
 {
     public const string ChannelName = "vibechat:realtime";
 
     public async Task PublishAsync(RealtimeMessage message, CancellationToken cancellationToken)
+    {
+        if (!backpressure.TryEnter(message.EventName, out var release, out var resync))
+        {
+            if (resync)
+            {
+                await PublishEnvelopeAsync(message, "ResyncRequired", cancellationToken);
+            }
+
+            return;
+        }
+
+        try
+        {
+            await PublishEnvelopeAsync(message, message.EventName, cancellationToken);
+        }
+        finally
+        {
+            release();
+        }
+    }
+
+    private async Task PublishEnvelopeAsync(RealtimeMessage message, string eventName, CancellationToken cancellationToken)
     {
         var subscriber = await redis.GetSubscriberAsync();
         if (subscriber is null)
@@ -72,7 +113,7 @@ public sealed class RedisChannelChatPublisher(RedisConnection redis) : IChatPubl
         await subscriber.PublishAsync(
             RedisChannel.Literal(ChannelName),
             JsonSerializer.Serialize(new RedisRealtimeEnvelope(
-                message.EventName,
+                eventName,
                 message.TenantId.Value,
                 message.ChannelId.Value,
                 RealtimePayloadNormalization.Normalize(message.Payload))));

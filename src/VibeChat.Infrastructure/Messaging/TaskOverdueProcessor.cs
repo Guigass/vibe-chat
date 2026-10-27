@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using VibeChat.BuildingBlocks;
+using VibeChat.Infrastructure;
 using VibeChat.Messaging;
 using VibeChat.SharedKernel;
 
@@ -94,12 +95,18 @@ public sealed class TaskOverdueProcessor(
 
 public sealed class TaskOverdueDispatcher(
     TaskOverdueProcessor processor,
+    HaJobGate jobs,
     ILogger<TaskOverdueDispatcher> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            if (!await jobs.WaitTurnAsync(stoppingToken))
+            {
+                continue;
+            }
+
             try
             {
                 await processor.ProcessBatchAsync(stoppingToken);

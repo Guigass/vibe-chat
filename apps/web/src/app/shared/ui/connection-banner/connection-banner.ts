@@ -15,6 +15,10 @@ import { OfflineBanner } from '../offline-banner/offline-banner';
       <div class="vc-banner vc-banner--warn" role="status">
         {{ ui.bannerOffline }}
       </div>
+    } @else if (maintenance()) {
+      <div class="vc-banner" role="status">
+        {{ ui.bannerMaintenance }}
+      </div>
     } @else if (status() === 'reconnecting' || status() === 'connecting') {
       <div class="vc-banner" role="status">
         <span class="vc-banner__dot" aria-hidden="true"></span>
@@ -55,6 +59,7 @@ import { OfflineBanner } from '../offline-banner/offline-banner';
 export class ConnectionBanner implements OnInit, OnDestroy {
   readonly ui = ui;
   readonly status = input<ConnectionStatus>('disconnected');
+  readonly maintenance = input(false);
   readonly offline = inject(OfflineSyncService);
   private readonly messages = inject(MessageStore);
   private readonly deliver = effect(() => {

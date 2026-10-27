@@ -473,6 +473,7 @@
     "offline.revoked": "Access was revoked. Local data on this device was deleted.",
     "banner.reconnecting": "Reconnecting to realtime…",
     "banner.noRealtime": "No realtime connection. Messages may be delayed.",
+    "banner.maintenance": "This server is in maintenance. Reconnecting without losing messages or drafts.",
     "banner.update": "New version available",
     "banner.refresh": "Update",
     "banner.pushAsk": "Receive notifications on this device?",

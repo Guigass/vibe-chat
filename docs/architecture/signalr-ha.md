@@ -150,3 +150,12 @@ Labels evitam user/channel IDs de alta cardinalidade.
 - slow client e canal grande;
 - reconnect storm;
 - nenhuma duplicação/perda após gap-fill.
+
+## Decisão adotada (B-144 / ADR-062)
+
+Com `Ha:Enabled=true` o hub aceita só WebSocket, então sticky session não é
+necessária. O Standard (flag off) permanece um nó e pode negociar os outros
+transportes. Drain local avisa `NodeDraining` e faz `/health/ready` responder
+503. Buffer cheio descarta `Typing`/`PresenceChanged` e pede `ResyncRequired`
+para o resto. Reconnect sem principal é recusado; `JoinChannel` relê a
+membership. A queda do Redis não é fonte de verdade.

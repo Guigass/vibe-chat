@@ -45,14 +45,14 @@ cross-tenant cache.
 
 ## Aceite
 
-- [ ] Rolling upgrade mantém send/history.
-- [ ] Worker failover não duplica efeito.
-- [ ] DB failover atende alvo medido.
-- [ ] Rollback compatível funciona.
-- [ ] Standard continua suportado.
-- [ ] Drain não perde mensagem e cliente conclui gap-fill.
-- [ ] Slow consumer não cria backlog ilimitado.
-- [ ] Revogação/token expirado são revalidados após reconnect.
+- [x] Rolling upgrade mantém send/history.
+- [x] Worker failover não duplica efeito.
+- [x] DB failover atende alvo medido.
+- [x] Rollback compatível funciona.
+- [x] Standard continua suportado.
+- [x] Drain não perde mensagem e cliente conclui gap-fill.
+- [x] Slow consumer não cria backlog ilimitado.
+- [x] Revogação/token expirado são revalidados após reconnect.
 
 ## Testes
 
