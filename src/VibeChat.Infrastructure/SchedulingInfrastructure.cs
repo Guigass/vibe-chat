@@ -419,12 +419,18 @@ public readonly record struct ClaimedScheduleRow(Guid Id, Guid TenantId);
 
 public sealed class ScheduleDispatchDispatcher(
     ScheduleDispatchProcessor processor,
+    HaJobGate jobs,
     ILogger<ScheduleDispatchDispatcher> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            if (!await jobs.WaitTurnAsync(stoppingToken))
+            {
+                continue;
+            }
+
             try
             {
                 await processor.ProcessBatchAsync(stoppingToken);

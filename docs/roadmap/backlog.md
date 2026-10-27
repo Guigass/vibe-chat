@@ -169,6 +169,7 @@ item tem spec em `docs/product/specs/` — **sem spec, não é elegível para o 
 | B-063 | Clientes mobile nativos | **Done** (W15) — flag `Mobile:Enabled` off; ADR-057; [spec](../product/specs/B-063-clientes-mobile.md) |
 | B-170 | Performance e escalabilidade | **Done** (W16) — catálogo de hot paths, gatilhos ADR-015/016/017 confirmados, amostra de lab; ADR-058; [spec](../product/specs/B-170-performance-escalabilidade.md) |
 | B-172 | Backup de chat (export/import, tarefas, destinos remotos) | **Done** — W16; pacote `vibechat.chat.backup.v1`, flag `Features:ChatBackup:Enabled` off; ADR-061; [spec](../product/specs/B-172-backup-chat-destinos.md) |
+| B-144 | HA, rolling upgrade e drain | **Done** — W16; flag `Ha:Enabled` off; lease, readiness e fase expand; ADR-062; [spec](../product/specs/B-144-ha-rolling-upgrade.md) |
 | B-064 | Canais confidenciais E2EE | Planned — W16; deps B-169 (gate `contentAuditEnabled`) |
 | B-065 | Federação entre instâncias | Planned — W16 |
 | B-066 | Plugins — capabilities avançadas | **Done** (W15) — capabilities `commands.slash` / `events.subscribe` / `ui.hooks`, built-in `slash-note`, callback HMAC, flag off; ADR-049 |

@@ -3,6 +3,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.HttpOverrides;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -238,6 +239,8 @@ app.Use(async (context, next) =>
     }
 });
 
+app.UseMiddleware<HaDrainMiddleware>();
+
 // B-174: group filter enforces RequirePermissionAttribute metadata (fail-closed).
 var v1 = app.MapGroup("/api/v1").RequireAuthorization().AddEndpointFilter<RequirePermissionFilter>();
 
@@ -304,9 +307,16 @@ v1.MapMobile();
 v1.MapOfflineSync();
 v1.MapStorageLifecycle();
 v1.MapChatBackup();
+v1.MapHa();
 
 app.MapScim();
-app.MapHub<ChatHub>("/hubs/chat").RequireAuthorization();
+app.MapHub<ChatHub>("/hubs/chat", options =>
+{
+    if (HaSignalR.WebSocketsOnly(app.Configuration.GetValue("Ha:Enabled", false)))
+    {
+        options.Transports = HttpTransportType.WebSockets;
+    }
+}).RequireAuthorization();
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
 app.MapHealthChecks("/health/ready");

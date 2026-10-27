@@ -141,6 +141,8 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Federação** | Comunicação server-to-server entre instâncias independentes, com identidade e dados distribuídos. Não confundir com multi-tenancy local. |
 | **Import batch** | Execução versionada e idempotente que transforma export externo em recursos canônicos após dry-run/staging; não é bridge contínua. |
 | **Support bundle** | Pacote `vibechat.support-bundle.v1` allowlisted, sanitizado, com checksum, TTL de 15 minutos e no máximo 3 downloads (B-154). Flag `Features:SupportBundle:Enabled` default off. Exige `support.bundle`. Não inclui body, token nem secret. |
+| **Perfil HA** | Modo opcional (`Ha:Enabled`, default off) com API/worker replicáveis, lease de jobs, drain e rolling upgrade. Standard continua um nó. Objetivo de referência 99,95%, RPO ≤ 5 min, RTO ≤ 30 min, sem SLA (B-144, ADR-062). |
+| **Drain** | O processo local deixa de receber conexão nova (`/health/ready` 503), avisa os clientes e espera o request em curso. Não apaga mensagem. |
 
 ## IA (opcional)
 

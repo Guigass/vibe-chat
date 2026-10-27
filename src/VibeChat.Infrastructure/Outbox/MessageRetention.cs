@@ -327,12 +327,18 @@ public sealed class MessageRetentionPurgeProcessor(
 public sealed class MessageRetentionPurgeDispatcher(
     MessageRetentionPurgeProcessor processor,
     IServiceScopeFactory scopeFactory,
+    HaJobGate jobs,
     ILogger<MessageRetentionPurgeDispatcher> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            if (!await jobs.WaitTurnAsync(stoppingToken))
+            {
+                continue;
+            }
+
             var intervalMinutes = ProcessSettingsDefaults.RetentionIntervalMinutes;
             try
             {

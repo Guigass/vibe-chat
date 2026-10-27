@@ -122,6 +122,7 @@ ao admin. O inventário canônico continua nesta página.
 | `BOOTSTRAP_WORKSPACE_NAME` | `Bootstrap__WorkspaceName` | api | Nome do primeiro workspace; default `VibeChat Alpha` |
 | `BOOTSTRAP_WORKSPACE_SLUG` | `Bootstrap__WorkspaceSlug` | api | Slug do primeiro workspace; apenas letras ASCII, números e hífen |
 | `SEED_ENABLED` | `Seed__Enabled` | api | `true` no lab; **`false` em staging/prod** |
+| `Ha__Enabled` | `Ha__Enabled` | api, worker | B-144. Default `false` (Standard). `true` ou `compose.ha.yaml` liga lease, drain e WebSocket |
 | `ENABLE_DEV_AUTH` | build arg web → `publicConfig.enableDevAuth` | web build | Lab: `true` (botões Alice/Bob/Demo no login). **Staging/prod/Coolify: `false` ou omitir** (default Compose). Rebuild da web após mudar. |
 | `AI__Enabled`, `AI__Provider` | `Ai__*` | api | B-187: sai do template; SoT admin+DB |
 | `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL` | `Ai__OpenRouter__*` | api | B-187: sai do template; key+baseUrl no admin |

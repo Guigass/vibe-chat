@@ -67,6 +67,7 @@ export class ChatHubService {
   private visibilityRetryHandler: (() => void) | null = null;
 
   private readonly statusSignal = signal<ConnectionStatus>('disconnected');
+  private readonly maintenanceSignal = signal(false);
   private readonly typingSignal = signal<TypingState[]>([]);
   private readonly messageHandlers = new Set<(message: ChatMessage) => void>();
   private readonly editedHandlers = new Set<(event: MessageEditEvent) => void>();
@@ -85,6 +86,7 @@ export class ChatHubService {
   private readonly readCursorHandlers = new Set<(event: ReadCursorChangedEvent) => void>();
 
   readonly status = this.statusSignal.asReadonly();
+  readonly maintenance = this.maintenanceSignal.asReadonly();
   readonly typingUsers = this.typingSignal.asReadonly();
 
   async connect(): Promise<void> {
@@ -155,6 +157,7 @@ export class ChatHubService {
     connection.onreconnecting(() => this.statusSignal.set('reconnecting'));
     connection.onreconnected(async () => {
       this.retry.resetCount();
+      this.maintenanceSignal.set(false);
       this.statusSignal.set('connected');
       try {
         await this.heartbeat();
@@ -163,6 +166,13 @@ export class ChatHubService {
       } catch {
         // banner already reflects connection; next user action can retry join
       }
+    });
+    connection.on('NodeDraining', () => {
+      this.maintenanceSignal.set(true);
+      void connection.stop();
+    });
+    connection.on('ResyncRequired', () => {
+      void this.notifyReconnected();
     });
     connection.onclose(() => {
       this.stopPresenceLoop();

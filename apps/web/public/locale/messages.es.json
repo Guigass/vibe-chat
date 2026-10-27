@@ -473,6 +473,7 @@
     "offline.revoked": "El acceso fue revocado. Se borraron los datos locales de este dispositivo.",
     "banner.reconnecting": "Reconectando al tiempo real…",
     "banner.noRealtime": "Sin conexión en tiempo real. Los mensajes pueden retrasarse.",
+    "banner.maintenance": "Este servidor está en mantenimiento. Reconectando sin perder mensajes ni borradores.",
     "banner.update": "Nueva versión disponible",
     "banner.refresh": "Actualizar",
     "banner.pushAsk": "¿Recibir notificaciones en este dispositivo?",

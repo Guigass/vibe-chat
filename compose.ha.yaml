@@ -1,0 +1,17 @@
+# B-144 / ADR-062 — perfil HA opcional.
+# O compose.yaml continua o baseline Standard (um API, um worker, flag off).
+#
+#   docker compose -f compose.yaml -f compose.dev.yaml -f compose.ha.yaml --profile apps up -d
+#
+# Réplicas extras ficam atrás do proxy, sem publicar outra porta no host.
+# Redis já usa AOF no compose.yaml; a queda do backplane degrada o realtime
+# e não o histórico. Postgres HA físico está no runbook (promoção de réplica),
+# não num segundo container obrigatório.
+
+services:
+  api:
+    environment:
+      Ha__Enabled: "true"
+  worker:
+    environment:
+      Ha__Enabled: "true"

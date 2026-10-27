@@ -853,12 +853,18 @@ public sealed class AutomationService(
 
 public sealed class AutomationDispatchDispatcher(
     IServiceScopeFactory scopes,
+    HaJobGate jobs,
     ILogger<AutomationDispatchDispatcher> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            if (!await jobs.WaitTurnAsync(stoppingToken))
+            {
+                continue;
+            }
+
             try
             {
                 using var scope = scopes.CreateScope();

@@ -519,12 +519,20 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
     }
 }
 
-public sealed class OutboxDispatcher(OutboxProcessor processor, ILogger<OutboxDispatcher> logger) : BackgroundService
+public sealed class OutboxDispatcher(
+    OutboxProcessor processor,
+    HaJobGate jobs,
+    ILogger<OutboxDispatcher> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            if (!await jobs.WaitTurnAsync(stoppingToken))
+            {
+                continue;
+            }
+
             try
             {
                 await processor.ProcessBatchAsync(stoppingToken);

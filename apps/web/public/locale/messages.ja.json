@@ -473,6 +473,7 @@
     "offline.revoked": "アクセスが取り消されました。この端末のローカルデータは削除されました。",
     "banner.reconnecting": "リアルタイムに再接続中…",
     "banner.noRealtime": "リアルタイム未接続です。メッセージが遅れることがあります。",
+    "banner.maintenance": "このサーバーはメンテナンス中です。メッセージと下書きを残したまま再接続しています。",
     "banner.update": "新しいバージョンがあります",
     "banner.refresh": "更新",
     "banner.pushAsk": "この端末で通知を受け取りますか？",
