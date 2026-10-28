@@ -45,14 +45,17 @@ test.describe(`group dm (${AUTH_MODE})`, () => {
     const composer = alice.page.locator('textarea').first();
     await composer.fill(uniqueBody);
     await alice.page.getByRole('button', { name: /^(Enviar|Send)$/i }).click();
-    await expect(alice.page.getByText(uniqueBody)).toBeVisible({ timeout: 15_000 });
+    const timeline = (page: Page) => page.getByTestId('timeline-stack').getByText(uniqueBody);
+    await expect(timeline(alice.page)).toBeVisible({ timeout: 15_000 });
 
     if (AUTH_MODE !== 'demo') {
       // Título omite o próprio usuário: Bob vê "Alice, Demo"; Demo vê "Alice, Bob".
+      // O preview da caixa de entrada repete o corpo; getByText na página inteira
+      // casa os dois e o strict mode falha mesmo com a mensagem na timeline.
       await openGroupDmFromSidebar(bob.page, /Alice,\s*Demo|Demo,\s*Alice/);
       await openGroupDmFromSidebar(demo.page, /Alice,\s*Bob|Bob,\s*Alice/);
-      await expect(bob.page.getByText(uniqueBody)).toBeVisible({ timeout: 20_000 });
-      await expect(demo.page.getByText(uniqueBody)).toBeVisible({ timeout: 20_000 });
+      await expect(timeline(bob.page)).toBeVisible({ timeout: 20_000 });
+      await expect(timeline(demo.page)).toBeVisible({ timeout: 20_000 });
     }
 
     await alice.context.close();
