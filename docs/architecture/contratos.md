@@ -1183,6 +1183,27 @@ O trust nasce `pending` até `acknowledgeCopy`. Sem isso, evento e pull responde
 
 Member → 403 nas rotas admin. Outro tenant não lê a linha (RLS FORCE). Auditoria não leva corpo nem `vc_int_`. O `Down` remove só as quatro tabelas novas.
 
+### Huddle ao vivo (B-147 / ADR-065)
+
+Flag `Features:Live:Enabled` default **false**. `Features:Live:VideoEnabled` default **false**. Off → 404 `LiveDisabled`. O envio de mensagem não chama o provider.
+
+A sessão nasce no canal. A sala do token é `t/{tenant}/c/{channel}/s/{session}`. `POST .../connect` consome o hash uma vez (`LiveTokenReplayed` na segunda). Sala ou identidade diferente não entra. Vídeo desligado na criação da sessão responde `LiveVideoDisabled` ao ligar a câmera. O grant de áudio continua. Provider unhealthy → 503 `LiveProviderUnavailable` só nas rotas live; o health check `live` fica Degraded e o chat segue.
+
+O evento de outbox `live.session.changed` (schemaVersion 1) leva `tenantId`, `sessionId`, `channelId`, `state`, `participantCount` e `videoAllowed`. Sem token e sem mídia. O processador marca a linha como processada e publica `LiveSessionChanged` no hub.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| GET | `/api/v1/workspaces/{workspaceId}/live/health` | `message.read`; capacidade, saúde e nomes das métricas |
+| GET | `/api/v1/channels/{channelId}/live` | `message.read`; 404 `LiveSessionNotFound` se não há sessão ativa |
+| POST | `/api/v1/channels/{channelId}/live/sessions` | `message.send`; `Idempotency-Key`; 201 ou a sessão ativa já existente |
+| POST | `/api/v1/channels/{channelId}/live/sessions/{sessionId}/join` | `message.send`; token efêmero, uma vez na resposta |
+| POST | `/api/v1/channels/{channelId}/live/sessions/{sessionId}/connect` | `message.send`; body `{ token }`; marca áudio conectado |
+| POST | `/api/v1/channels/{channelId}/live/sessions/{sessionId}/leave` | `message.send`; a última saída encerra a sessão |
+| PUT | `/api/v1/channels/{channelId}/live/sessions/{sessionId}/media` | `message.send`; mute; câmera só se a sessão nasceu com vídeo |
+| POST | `/api/v1/channels/{channelId}/live/sessions/{sessionId}/reactions` | `message.send`; emoji da lista fechada |
+
+Quem não é membro recebe 403. Outro tenant não lê a linha (RLS FORCE). Auditoria não leva o token. O `Down` remove só as três tabelas novas.
+
 ### White-label (B-140 / ADR-055)
 
 Sem flag. Sem linha em `directory.brand_settings`, a marca é a oficial do VibeChat. `productName` na resposta é sempre `VibeChat` e não é gravável.

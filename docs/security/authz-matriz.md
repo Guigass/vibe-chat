@@ -297,6 +297,14 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | PUT | `/e2ee/backup` | permission | `message.read` | ✗ | ✗ | ✓ | B-064; senha não chega ao servidor |
 | POST | `/e2ee/devices/{deviceId:guid}/verify` | permission | `message.read` | ✗ | ✗ | ✓ | B-064; impressão tem de bater com a chave |
 | GET | `/channels/{channelId:guid}/e2ee` | permission | `message.read` | ✗ | ✗ | ✓ | B-064; membership; chave pública dos dispositivos ativos |
+| GET | `/workspaces/{workspaceId:guid}/live/health` | permission | `message.read` | ✓ | ✓ | ✓ | B-147; flag off → 404 `LiveDisabled`; sem segredo |
+| GET | `/channels/{channelId:guid}/live` | permission | `message.read` | ✓ | ✓ | ✓ | B-147; membership; 404 se não há sessão |
+| POST | `/channels/{channelId:guid}/live/sessions` | permission | `message.send` | ✓ | ✗ | ✓ | B-147; Idempotency-Key; uma sessão ativa por canal |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/join` | permission | `message.send` | ✓ | ✗ | ✓ | B-147; token efêmero; quota |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/connect` | permission | `message.send` | ✓ | ✗ | ✓ | B-147; token de uso único; sala presa ao canal |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/leave` | permission | `message.send` | ✓ | ✗ | ✓ | B-147; última saída encerra |
+| PUT | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/media` | permission | `message.send` | ✓ | ✗ | ✓ | B-147; câmera só se a policy de vídeo nasceu ligada |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/reactions` | permission | `message.send` | ✓ | ✗ | ✓ | B-147; emoji da lista fechada |
 | GET | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/federation` | permission | `message.read` | ✗ | ✗ | ✓ | B-065; membership; flag off → 404 `FederationDisabled` |
 | POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; allowlist; token só na criação |
 | POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts/{trustId:guid}/consent` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; cópia só após acknowledge |

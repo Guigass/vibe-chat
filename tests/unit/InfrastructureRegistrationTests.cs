@@ -107,7 +107,8 @@ public sealed class InfrastructureRegistrationTests
             "Singleton:HaJobGate:HaJobGate",
             "Singleton:HaAdmission:HaAdmission",
             "Singleton:HaBackpressure:HaBackpressure",
-            "Singleton:IHostedService:HaLeaseHost");
+            "Singleton:IHostedService:HaLeaseHost",
+            "Singleton:ILiveMediaProvider:LiveMediaProvider");
 
         worker.Should().Equal(signalR.Select(entry => entry
             .Replace("Scoped:IChatPublisher:SignalRChatPublisher", "Scoped:IChatPublisher:RedisChannelChatPublisher", StringComparison.Ordinal)
@@ -138,7 +139,7 @@ public sealed class InfrastructureRegistrationTests
         services.Count(descriptor =>
                 descriptor.ServiceType.IsGenericType
                 && descriptor.ServiceType.GetGenericArguments()[0].Name == "HealthCheckServiceOptions")
-            .Should().Be(3);
+            .Should().Be(4);
     }
 
     private static IReadOnlyList<string> Describe(bool useSignalRPublisher)

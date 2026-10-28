@@ -1817,6 +1817,24 @@ export const ui = {
   e2eeComposerPlaceholder: $localize`:@@e2ee.composerPlaceholder:Mensagem cifrada neste dispositivo`,
   e2eeLocked: $localize`:@@e2ee.locked:Mensagem cifrada`,
   errorE2ee: $localize`:@@error.e2ee:Não foi possível usar o canal confidencial.`,
+  huddleStart: $localize`:@@huddle.start:Iniciar huddle`,
+  huddleJoin: $localize`:@@huddle.join:Entrar no huddle`,
+  huddleLeave: $localize`:@@huddle.leave:Sair do huddle`,
+  huddlePreflight: $localize`:@@huddle.preflight:O microfone só é pedido ao entrar. Não há gravação.`,
+  huddleConsent: $localize`:@@huddle.consent:Áudio ao vivo nesta conversa. Sem gravação.`,
+  huddleVideoOff: $localize`:@@huddle.videoOff:Vídeo desligado pela política.`,
+  huddleMute: $localize`:@@huddle.mute:Silenciar`,
+  huddleUnmute: $localize`:@@huddle.unmute:Ativar microfone`,
+  huddleCamera: $localize`:@@huddle.camera:Câmera`,
+  huddleParticipants: $localize`:@@huddle.participants:Participantes`,
+  huddleEmpty: $localize`:@@huddle.empty:Ninguém no huddle.`,
+  huddleUnavailable: $localize`:@@huddle.unavailable:O áudio ao vivo não está disponível. O chat continua.`,
+  huddleConnected: $localize`:@@huddle.connected:Áudio conectado`,
+  huddleConfirm: $localize`:@@huddle.confirm:Entrar com áudio`,
+  huddleClose: $localize`:@@huddle.close:Fechar huddle`,
+  huddleReaction: $localize`:@@huddle.reaction:Reação`,
+  huddleCapacity: $localize`:@@huddle.capacity:%active% de %max% sessões`,
+  errorLive: $localize`:@@error.live:Não foi possível entrar no huddle.`,
   federationConsent: $localize`:@@federation.consent:As mensagens deste canal serão copiadas para %domain%. A identidade remota continua visível.`,
   federationConsentAction: $localize`:@@federation.consentAction:Permitir cópia`,
   federationPause: $localize`:@@federation.pause:Pausar confiança`,
@@ -2229,6 +2247,19 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.adminBrandRollbackEmpty;
     case 'ContentAuditBlocksE2ee':
     case 'ConfidentialE2eeUnavailable':
+    case 'LiveDisabled':
+    case 'LiveProviderUnavailable':
+    case 'LiveSessionNotFound':
+    case 'LiveSessionEnded':
+    case 'LiveCapacityExceeded':
+    case 'LiveVideoDisabled':
+    case 'LiveTokenInvalid':
+    case 'LiveTokenExpired':
+    case 'LiveTokenReplayed':
+    case 'LiveTokenRoomMismatch':
+    case 'LiveReactionInvalid':
+    case 'LiveIdempotencyConflict':
+      return ui.errorLive;
     case 'E2eeDisabled':
     case 'E2eeEnvelopeRequired':
     case 'E2eeVersionUnsupported':

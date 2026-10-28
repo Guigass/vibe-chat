@@ -25,7 +25,7 @@ organiza. Estados:
 | Migração/importação assistida | Done | B-153 / W11 |
 | Inbox unificada e prioridade | Done | B-117 / W11 |
 | Tópicos/fórum como modo de canal | Done | B-118 / W11 / ADR-031 |
-| Voz/vídeo/screen share | Planned | B-147/B-148 / W17 |
+| Voz/vídeo/screen share | Huddle Done; screen share Planned | B-147 Done (ADR-065, flag off) / B-148 / W17 |
 
 ## Conhecimento e foco
 

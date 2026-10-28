@@ -1849,6 +1849,24 @@
     "e2ee.composerBlocked": "Este cliente no tiene clave para el canal.",
     "e2ee.composerPlaceholder": "Mensaje cifrado en este dispositivo",
     "e2ee.locked": "Mensaje cifrado",
-    "error.e2ee": "No se pudo usar el canal confidencial."
+    "error.e2ee": "No se pudo usar el canal confidencial.",
+    "huddle.start": "Iniciar huddle",
+    "huddle.join": "Entrar al huddle",
+    "huddle.leave": "Salir del huddle",
+    "huddle.preflight": "El micrófono solo se pide al entrar. No hay grabación.",
+    "huddle.consent": "Audio en vivo en esta conversación. Sin grabación.",
+    "huddle.videoOff": "El video está apagado por política.",
+    "huddle.mute": "Silenciar",
+    "huddle.unmute": "Activar micrófono",
+    "huddle.camera": "Cámara",
+    "huddle.participants": "Participantes",
+    "huddle.empty": "Nadie está en el huddle.",
+    "huddle.unavailable": "El audio en vivo no está disponible. El chat sigue.",
+    "huddle.connected": "Audio conectado",
+    "huddle.confirm": "Entrar con audio",
+    "huddle.close": "Cerrar huddle",
+    "huddle.reaction": "Reacción",
+    "huddle.capacity": "%active% de %max% sesiones",
+    "error.live": "No fue posible entrar al huddle."
   }
 }

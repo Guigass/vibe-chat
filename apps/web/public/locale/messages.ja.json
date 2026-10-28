@@ -1849,6 +1849,24 @@
     "e2ee.composerBlocked": "このクライアントにはチャンネルの鍵がありません。",
     "e2ee.composerPlaceholder": "このデバイスで暗号化するメッセージ",
     "e2ee.locked": "暗号化されたメッセージ",
-    "error.e2ee": "機密チャンネルを使えませんでした。"
+    "error.e2ee": "機密チャンネルを使えませんでした。",
+    "huddle.start": "ハドルを開始",
+    "huddle.join": "ハドルに参加",
+    "huddle.leave": "ハドルを退出",
+    "huddle.preflight": "マイクは参加するときだけ求めます。録音はありません。",
+    "huddle.consent": "この会話のライブ音声です。録音はありません。",
+    "huddle.videoOff": "ポリシーによりビデオはオフです。",
+    "huddle.mute": "ミュート",
+    "huddle.unmute": "マイクをオン",
+    "huddle.camera": "カメラ",
+    "huddle.participants": "参加者",
+    "huddle.empty": "ハドルには誰もいません。",
+    "huddle.unavailable": "ライブ音声は使えません。チャットはそのまま使えます。",
+    "huddle.connected": "音声接続済み",
+    "huddle.confirm": "音声で参加",
+    "huddle.close": "ハドルを閉じる",
+    "huddle.reaction": "リアクション",
+    "huddle.capacity": "%max% セッション中 %active%",
+    "error.live": "ハドルに参加できませんでした。"
   }
 }

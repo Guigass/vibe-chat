@@ -34,6 +34,7 @@ public static class DependencyInjection
         services.AddMobileInfrastructure(configuration);
         services.AddHaCoordination(configuration);
         services.Configure<VibeChat.Messaging.E2eeOptions>(configuration.GetSection(VibeChat.Messaging.E2eeOptions.SectionName));
+        services.AddLiveInfrastructure(configuration);
         services.AddInfrastructureHealthChecks();
         return services;
     }

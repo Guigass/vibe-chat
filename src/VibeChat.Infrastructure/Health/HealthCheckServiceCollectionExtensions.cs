@@ -9,7 +9,8 @@ internal static class HealthCheckServiceCollectionExtensions
         services.AddHealthChecks()
             .AddCheck<DatabaseHealthCheck>("postgres")
             .AddCheck<RedisHealthCheck>("redis")
-            .AddCheck<MinioHealthCheck>("minio");
+            .AddCheck<MinioHealthCheck>("minio")
+            .AddCheck<LiveMediaHealthCheck>("live", tags: ["live"]);
         return services;
     }
 }

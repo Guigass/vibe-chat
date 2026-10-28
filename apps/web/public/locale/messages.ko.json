@@ -1849,6 +1849,24 @@
     "e2ee.composerBlocked": "이 클라이언트에는 채널 키가 없습니다.",
     "e2ee.composerPlaceholder": "이 기기에서 암호화되는 메시지",
     "e2ee.locked": "암호화된 메시지",
-    "error.e2ee": "기밀 채널을 사용할 수 없습니다."
+    "error.e2ee": "기밀 채널을 사용할 수 없습니다.",
+    "huddle.start": "허들 시작",
+    "huddle.join": "허들 참가",
+    "huddle.leave": "허들 나가기",
+    "huddle.preflight": "마이크는 입장할 때만 요청합니다. 녹화는 없습니다.",
+    "huddle.consent": "이 대화의 실시간 오디오입니다. 녹화가 없습니다.",
+    "huddle.videoOff": "정책에 따라 비디오가 꺼져 있습니다.",
+    "huddle.mute": "음소거",
+    "huddle.unmute": "마이크 켜기",
+    "huddle.camera": "카메라",
+    "huddle.participants": "참가자",
+    "huddle.empty": "허들에 아무도 없습니다.",
+    "huddle.unavailable": "실시간 오디오를 사용할 수 없습니다. 채팅은 계속됩니다.",
+    "huddle.connected": "오디오 연결됨",
+    "huddle.confirm": "오디오로 참가",
+    "huddle.close": "허들 닫기",
+    "huddle.reaction": "반응",
+    "huddle.capacity": "세션 %max%개 중 %active%",
+    "error.live": "허들에 참가하지 못했습니다."
   }
 }

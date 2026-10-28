@@ -318,6 +318,12 @@ services:
       Authentication__MetadataAddress: http://keycloak:8080${KEYCLOAK_HTTP_RELATIVE_PATH:-}/realms/${KEYCLOAK_REALM:-vibechat}/.well-known/openid-configuration
       Authentication__Audience: ${OIDC_API_AUDIENCE:-vibechat-api}
       Authentication__RequireHttpsMetadata: "false"
+      Features__Live__Enabled: ${Features__Live__Enabled:-false}
+      Features__Live__VideoEnabled: ${Features__Live__VideoEnabled:-false}
+      Features__Live__Provider: ${Features__Live__Provider:-none}
+      Features__Live__MaxParticipants: ${Features__Live__MaxParticipants:-8}
+      Features__Live__MaxSessionsPerWorkspace: ${Features__Live__MaxSessionsPerWorkspace:-2}
+      Features__Live__TokenTtlSeconds: ${Features__Live__TokenTtlSeconds:-60}
       Identity__Scim__Enabled: ${IDENTITY_SCIM_ENABLED:-false}
       Identity__Scim__KeycloakAdapter: ${IDENTITY_SCIM_KEYCLOAK_ADAPTER:-false}
       Identity__Sso__Enabled: ${IDENTITY_SSO_ENABLED:-false}
@@ -455,6 +461,23 @@ services:
       timeout: 5s
       retries: 6
       start_period: 20s
+
+  # ---------------------------------------------------------------------------
+  # SFU/TURN opcional (profile: live) — B-147 / ADR-065. Fora do profile apps.
+  # A mídia não passa pela API. Chave do arquivo é placeholder de lab.
+  # ---------------------------------------------------------------------------
+  livekit:
+    profiles: ["live"]
+    image: ${LIVEKIT_IMAGE:-livekit/livekit-server:v1.9.0}
+    restart: unless-stopped
+    command: ["--config", "/etc/livekit.yaml"]
+    volumes:
+      - ./infra/livekit/livekit.yaml:/etc/livekit.yaml:ro
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "3478:3478/udp"
+      - "50000-50010:50000-50010/udp"
 
   # ---------------------------------------------------------------------------
   # TLS edge proxy (profile: proxy) — reference config (W5-2 / D-05)

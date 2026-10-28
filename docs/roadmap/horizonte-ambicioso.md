@@ -194,7 +194,7 @@ Objetivo: apostas transformadoras, intencionalmente por último.
 
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
-| B-147 | B/C/D/A/E | Huddles de áudio/vídeo self-hosted | B-146, D-19 | [B-147](../product/specs/B-147-huddles-live.md) | Planned |
+| B-147 | B/C/D/A/E | Huddles de áudio/vídeo self-hosted | B-146, D-19 | [B-147](../product/specs/B-147-huddles-live.md) | **Done** — flag `Features:Live:Enabled` off; vídeo off; profile `live`; ADR-065 |
 | B-148 | C/D/A/E | Screen share, gravação opcional e moderação | B-147, D-19 | [B-148](../product/specs/B-148-screen-share-gravacao.md) | Planned |
 | B-149 | C/D/AI/E | Transcrição e notas de reunião com consentimento | B-147, D-22 | [B-149](../product/specs/B-149-notas-reuniao-ia.md) | Planned |
 | B-152 | B/C/D/E | Canvas/documento colaborativo | B-120, D-17 | [B-152](../product/specs/B-152-canvas-colaborativo.md) | Planned |

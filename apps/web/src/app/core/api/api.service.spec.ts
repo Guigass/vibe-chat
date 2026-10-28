@@ -17,6 +17,7 @@ import { SdkApiService } from './sdk-api.service';
 import { BridgeApiService } from './bridge-api.service';
 import { FederationApiService } from './federation-api.service';
 import { E2eeApiService } from './e2ee-api.service';
+import { LiveApiService } from './live-api.service';
 import { BrandingApiService } from './branding-api.service';
 import { DesktopApiService } from './desktop-api.service';
 import { MobileApiService } from './mobile-api.service';
@@ -67,6 +68,7 @@ function createApi(auth: AuthStub): ApiService {
       BridgeApiService,
       FederationApiService,
       E2eeApiService,
+      LiveApiService,
       BrandingApiService,
       DesktopApiService,
       MobileApiService,
@@ -169,6 +171,11 @@ describe('ApiService facade', () => {
     expect(typeof api.disconnectBridge).toBe('function');
     expect(typeof api.channelFederation).toBe('function');
     expect(typeof api.e2eeCapabilities).toBe('function');
+    expect(typeof api.liveHealth).toBe('function');
+    expect(typeof api.liveStart).toBe('function');
+    expect(typeof api.liveJoin).toBe('function');
+    expect(typeof api.liveConnect).toBe('function');
+    expect(typeof api.liveLeave).toBe('function');
     expect(typeof api.registerE2eeDevice).toBe('function');
     expect(typeof api.e2eeChannel).toBe('function');
     expect(typeof api.consentFederation).toBe('function');

@@ -93,6 +93,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Desktop:Enabled` | instance (binding de `Features:Desktop:Enabled`) | false | B-141 | rotas `/desktop/*` → 404 `DesktopDisabled`; PWA e chat seguem; aparelhos já registrados permanecem |
 | `Mobile:Enabled` | instance (binding de `Features:Mobile:Enabled`) | false | B-063 | rotas `/mobile/*` → 404 `MobileDisabled`; PWA, chat e desktop seguem; aparelhos já registrados permanecem |
 | `Features:OfflineWrite:Enabled` | instance/client | false | B-143 | `GET /api/v1/sync` → 404 `OfflineWriteDisabled`; leitura online e PWA seguem; sem chave utilizável a rota também fica fechada |
+| `Features:Live:Enabled` | instance | false | B-147 | rotas `/live` → 404 `LiveDisabled`; chat segue; `VideoEnabled` também nasce false |
 
 ## Registro inicial de flags futuras
 
@@ -105,7 +106,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Features:OfflineWrite:Enabled` | instance/client | false | B-143 | entregue; ver linha ativa |
 | `Features:StorageLifecycle:Enabled` | instance | false | B-145 | API `/storage` → 404 `StorageLifecycleDisabled`; upload não consulta o ledger |
 | `Messaging:E2ee:Enabled` | instalação | false | B-064 | canais confidenciais; off até revisão criptográfica |
-| `Features:Live:Enabled` | tenant | false | B-147 | chat assíncrono |
+| `Features:Live:Enabled` | instance | false | B-147 | entregue; ver linha ativa |
 | `Features:Recording:Enabled` | tenant | false | B-148 | live sem gravação |
 | `Features:MeetingAi:Enabled` | workspace | false | B-149 | sem transcrição/notas |
 | `Features:CanvasRealtime:Enabled` | workspace | false | B-152 | páginas server-authoritative |
