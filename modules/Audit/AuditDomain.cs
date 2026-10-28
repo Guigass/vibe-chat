@@ -208,6 +208,11 @@ public static class AuditActions
     public const string ChatBackupRun = "chat.backup.run";
     public const string ChatBackupExport = "chat.backup.export";
     public const string ChatBackupImport = "chat.backup.import";
+    public const string LiveSessionStart = "live.session.start";
+    public const string LiveParticipantJoin = "live.participant.join";
+    public const string LiveParticipantLeave = "live.participant.leave";
+    public const string LiveTokenReplay = "live.token.replay";
+    public const string LiveCapacityDenied = "live.capacity.denied";
 }
 
 public interface IAuditWriter

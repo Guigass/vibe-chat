@@ -1849,6 +1849,24 @@
     "e2ee.composerBlocked": "此客户端没有该频道的密钥。",
     "e2ee.composerPlaceholder": "在此设备上加密的消息",
     "e2ee.locked": "已加密的消息",
-    "error.e2ee": "无法使用机密频道。"
+    "error.e2ee": "无法使用机密频道。",
+    "huddle.start": "开始 huddle",
+    "huddle.join": "加入 huddle",
+    "huddle.leave": "离开 huddle",
+    "huddle.preflight": "只在加入时请求麦克风。不会录音。",
+    "huddle.consent": "此会话的实时音频。没有录音。",
+    "huddle.videoOff": "策略已关闭视频。",
+    "huddle.mute": "静音",
+    "huddle.unmute": "打开麦克风",
+    "huddle.camera": "摄像头",
+    "huddle.participants": "参与者",
+    "huddle.empty": "huddle 里还没有人。",
+    "huddle.unavailable": "实时音频不可用。聊天仍可使用。",
+    "huddle.connected": "音频已连接",
+    "huddle.confirm": "以音频加入",
+    "huddle.close": "关闭 huddle",
+    "huddle.reaction": "反应",
+    "huddle.capacity": "%max% 个会话中的 %active% 个",
+    "error.live": "无法加入 huddle。"
   }
 }

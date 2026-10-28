@@ -1849,6 +1849,24 @@
     "e2ee.composerBlocked": "У этого клиента нет ключа канала.",
     "e2ee.composerPlaceholder": "Зашифрованное сообщение на этом устройстве",
     "e2ee.locked": "Зашифрованное сообщение",
-    "error.e2ee": "Не удалось использовать конфиденциальный канал."
+    "error.e2ee": "Не удалось использовать конфиденциальный канал.",
+    "huddle.start": "Начать хаддл",
+    "huddle.join": "Войти в хаддл",
+    "huddle.leave": "Выйти из хаддла",
+    "huddle.preflight": "Микрофон запрашивается только при входе. Записи нет.",
+    "huddle.consent": "Живое аудио в этом разговоре. Без записи.",
+    "huddle.videoOff": "Видео выключено политикой.",
+    "huddle.mute": "Выключить звук",
+    "huddle.unmute": "Включить микрофон",
+    "huddle.camera": "Камера",
+    "huddle.participants": "Участники",
+    "huddle.empty": "В хаддле никого нет.",
+    "huddle.unavailable": "Живое аудио недоступно. Чат продолжает работать.",
+    "huddle.connected": "Аудио подключено",
+    "huddle.confirm": "Войти со звуком",
+    "huddle.close": "Закрыть хаддл",
+    "huddle.reaction": "Реакция",
+    "huddle.capacity": "%active% из %max% сессий",
+    "error.live": "Не удалось войти в хаддл."
   }
 }

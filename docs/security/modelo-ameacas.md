@@ -589,7 +589,7 @@ dos itens `Planned` W11–W17 antes de merge, conforme a classe R3.
 | Offline/mobile | Token e conteúdo persistidos no dispositivo; revogação tardia | B-141 cobre o desktop e B-063 o mobile (sem token no servidor, logout remoto, push sem body); sync offline segue em B-143 |
 | Federação | Perda de soberania, retenção e controle de identidade | B-065 / ADR-063 entregue; flag off, allowlist, HMAC, consentimento e revogação |
 | Bridge | Cópia silenciosa, loop, impersonation e SSRF | B-138 / ADR-054 entregue; flag off, pin, consentimento, bot escopado |
-| Live media | Gravação sem consentimento, abuso e exaustão de SFU/TURN | D-19; consentimento visível, quotas, moderação e SLO |
+| Live media | Gravação sem consentimento, abuso e exaustão de SFU/TURN | B-147 / ADR-065 entregue; flag off, token de sala de uso único, vídeo em policy separada, quota Small, health degradado sem derrubar o chat. Gravação continua em B-148 |
 | E2EE | Recuperação de conta, moderação e compliance incompatíveis | D-26; modelo formal antes de qualquer implementação persistente |
 | Canvas colaborativo | AuthZ por bloco, conflito, histórico e export incompletos | D-17; modelo de permissão e retenção antes de CRDT/OT |
 | Migração/import | Archive hostil, duplicação, papel falso e cross-tenant | B-153; staging, dry-run, adapters versionados, quarentena local e quotas |

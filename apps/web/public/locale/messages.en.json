@@ -1849,6 +1849,24 @@
     "e2ee.composerBlocked": "This client has no key for the channel.",
     "e2ee.composerPlaceholder": "Encrypted message on this device",
     "e2ee.locked": "Encrypted message",
-    "error.e2ee": "The confidential channel could not be used."
+    "error.e2ee": "The confidential channel could not be used.",
+    "huddle.start": "Start huddle",
+    "huddle.join": "Join huddle",
+    "huddle.leave": "Leave huddle",
+    "huddle.preflight": "The microphone is requested only when you join. Nothing is recorded.",
+    "huddle.consent": "Live audio in this conversation. No recording.",
+    "huddle.videoOff": "Video is off by policy.",
+    "huddle.mute": "Mute",
+    "huddle.unmute": "Unmute",
+    "huddle.camera": "Camera",
+    "huddle.participants": "Participants",
+    "huddle.empty": "Nobody is in the huddle.",
+    "huddle.unavailable": "Live audio is unavailable. Chat keeps working.",
+    "huddle.connected": "Audio connected",
+    "huddle.confirm": "Join with audio",
+    "huddle.close": "Close huddle",
+    "huddle.reaction": "Reaction",
+    "huddle.capacity": "%active% of %max% sessions",
+    "error.live": "The huddle could not be joined."
   }
 }

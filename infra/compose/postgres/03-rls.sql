@@ -979,6 +979,28 @@ CREATE POLICY tenant_isolation_federation_identities ON integrations.federation_
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS conversations.live_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_sessions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_participants FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_tokens FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_live_sessions ON conversations.live_sessions;
+CREATE POLICY tenant_isolation_live_sessions ON conversations.live_sessions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_live_participants ON conversations.live_participants;
+CREATE POLICY tenant_isolation_live_participants ON conversations.live_participants
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_live_tokens ON conversations.live_tokens;
+CREATE POLICY tenant_isolation_live_tokens ON conversations.live_tokens
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 ALTER TABLE IF EXISTS messaging.e2ee_devices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.e2ee_devices FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.e2ee_backups ENABLE ROW LEVEL SECURITY;

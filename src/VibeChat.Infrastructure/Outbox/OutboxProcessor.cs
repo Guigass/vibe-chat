@@ -183,6 +183,21 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     continue;
                 }
 
+                if (outbox.Type == LiveRules.EventType)
+                {
+                    var liveNode = JsonNode.Parse(outbox.Payload)?.AsObject();
+                    if (liveNode?["channelId"] is JsonNode liveChannel)
+                    {
+                        await publisher.PublishAsync(
+                            new RealtimeMessage("LiveSessionChanged", outbox.TenantId, new ChannelId(liveChannel.GetValue<Guid>()), liveNode),
+                            cancellationToken);
+                    }
+
+                    outbox.ProcessedAt = now;
+                    outbox.Error = null;
+                    continue;
+                }
+
                 if (outbox.Type == "files.attachment.ready")
                 {
                     await ProcessAttachmentReadyAsync(

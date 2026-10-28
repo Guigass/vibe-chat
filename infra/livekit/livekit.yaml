@@ -1,0 +1,13 @@
+# Lab SFU + TURN embutido (B-147 / ADR-065). Não é segredo de produção.
+# Troque `keys` antes de qualquer uso fora da máquina local.
+port: 7880
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 50010
+  use_external_ip: false
+keys:
+  devkey: local-livekit-secret-change-me-32b
+turn:
+  enabled: true
+  udp_port: 3478

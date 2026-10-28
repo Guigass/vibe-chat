@@ -1849,6 +1849,24 @@
     "e2ee.composerBlocked": "Dieser Client hat keinen Schlüssel für den Kanal.",
     "e2ee.composerPlaceholder": "Verschlüsselte Nachricht auf diesem Gerät",
     "e2ee.locked": "Verschlüsselte Nachricht",
-    "error.e2ee": "Der vertrauliche Kanal konnte nicht verwendet werden."
+    "error.e2ee": "Der vertrauliche Kanal konnte nicht verwendet werden.",
+    "huddle.start": "Huddle starten",
+    "huddle.join": "Huddle beitreten",
+    "huddle.leave": "Huddle verlassen",
+    "huddle.preflight": "Das Mikrofon wird erst beim Beitritt angefragt. Es wird nichts aufgezeichnet.",
+    "huddle.consent": "Live-Audio in diesem Gespräch. Keine Aufnahme.",
+    "huddle.videoOff": "Video ist per Richtlinie aus.",
+    "huddle.mute": "Stummschalten",
+    "huddle.unmute": "Mikrofon einschalten",
+    "huddle.camera": "Kamera",
+    "huddle.participants": "Teilnehmende",
+    "huddle.empty": "Niemand ist im Huddle.",
+    "huddle.unavailable": "Live-Audio ist nicht verfügbar. Der Chat läuft weiter.",
+    "huddle.connected": "Audio verbunden",
+    "huddle.confirm": "Mit Audio beitreten",
+    "huddle.close": "Huddle schließen",
+    "huddle.reaction": "Reaktion",
+    "huddle.capacity": "%active% von %max% Sitzungen",
+    "error.live": "Dem Huddle konnte nicht beigetreten werden."
   }
 }
