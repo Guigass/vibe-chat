@@ -167,6 +167,15 @@ public sealed class AutomationIntegrationTests(VibeChatApiFactory factory)
     public async Task Two_processors_do_not_duplicate_the_live_run()
     {
         await QuiesceAutomationsAsync();
+        using var demo = Client("demo");
+        var marker = $"corrida-{Guid.NewGuid():N}"[..18];
+        var created = await CreateAsync(demo, "Corrida", PostMessage(marker));
+        await PostOk<AutomationDto>(demo, $"{Path(created.Id)}/publish");
+        // A shared fixture can leave >=20 older rows. One batch would miss the
+        // message sent below, and the explicit enqueue used to roll back with
+        // the scope — the assertion then saw 0 runs (CI run 40606934478).
+        await DrainBacklogAsync();
+
         using var other = factory.WithWebHostBuilder(_ => { });
         _ = other.Services;
         var primary = factory.Services.GetRequiredService<OutboxProcessor>();
@@ -174,10 +183,6 @@ public sealed class AutomationIntegrationTests(VibeChatApiFactory factory)
         await using var holdPrimary = await primary.HoldBatchAsync(CancellationToken.None);
         await using var holdSecondary = await secondary.HoldBatchAsync(CancellationToken.None);
 
-        using var demo = Client("demo");
-        var marker = $"corrida-{Guid.NewGuid():N}"[..18];
-        var created = await CreateAsync(demo, "Corrida", PostMessage(marker));
-        await PostOk<AutomationDto>(demo, $"{Path(created.Id)}/publish");
         await PostOk<AutomationDto>(demo, $"{Path(created.Id)}/enable");
 
         using var alice = Client("alice");
@@ -236,6 +241,9 @@ public sealed class AutomationIntegrationTests(VibeChatApiFactory factory)
             0,
             null);
         await automations.TryEnqueueAsync(definition, signal, AutomationRunMode.Live, execute: false, CancellationToken.None);
+        // HTTP requests commit in Program.cs. This scope only called EnsureApplied,
+        // so SaveChanges stays uncommitted and dispose rolls the live run back.
+        await RlsSession.CommitAsync(db, CancellationToken.None);
     }
 
     [Fact]
