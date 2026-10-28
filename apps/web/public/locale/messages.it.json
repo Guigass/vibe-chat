@@ -1835,6 +1835,20 @@
     "chatBackup.file": "File di backup",
     "chatBackup.validate": "Simula ripristino",
     "chatBackup.execute": "Conferma ripristino",
-    "error.ChatBackupDisabled": "Il backup della chat è spento in questa installazione."
+    "error.ChatBackupDisabled": "Il backup della chat è spento in questa installazione.",
+    "nav.confidential": "Riservato",
+    "e2ee.capabilityBody": "Niente ricerca, IA, DLP, moderazione, legal hold, sondaggi, pianificazione o inoltro. Il server conserva solo il testo cifrato.",
+    "e2ee.acknowledge": "Capisco che una chiave persa non torna e che chi entra dopo non legge la cronologia.",
+    "e2ee.banner": "Canale riservato. Il server non legge i messaggi.",
+    "e2ee.fingerprint": "Impronta di questo dispositivo",
+    "e2ee.verify": "Segna il dispositivo come verificato",
+    "e2ee.verified": "Dispositivo verificato",
+    "e2ee.backup": "Salva una copia della chiave",
+    "e2ee.backupWarning": "La copia resta cifrata con la password. Il server non recupera la chiave.",
+    "e2ee.backupPassword": "Password della copia",
+    "e2ee.composerBlocked": "Questo client non ha una chiave per il canale.",
+    "e2ee.composerPlaceholder": "Messaggio cifrato su questo dispositivo",
+    "e2ee.locked": "Messaggio cifrato",
+    "error.e2ee": "Non è stato possibile usare il canale riservato."
   }
 }

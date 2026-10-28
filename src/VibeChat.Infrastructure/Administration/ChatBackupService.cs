@@ -657,6 +657,10 @@ public sealed class ChatBackupService(
             .OrderBy(x => x.CreatedAt)
             .Select(x => new { id = x.Id.Value, name = x.Name, type = x.Type.ToString(), spaceId = x.SpaceId, createdAt = x.CreatedAt })
             .ToListAsync(cancellationToken);
+        var confidentialChannels = channels
+            .Where(x => x.type == nameof(ChannelType.ConfidentialE2ee))
+            .Select(x => x.id)
+            .ToHashSet();
         var channelIds = channels.Select(x => new ChannelId(x.id)).ToArray();
         var threads = await db.MessageThreads.AsNoTracking()
             .Where(x => channelIds.Contains(x.ChannelId))
@@ -674,20 +678,37 @@ public sealed class ChatBackupService(
             throw new InvalidOperationException(ChatBackupErrors.TooLarge);
         }
 
+        var confidentialConversations = new HashSet<Guid>(confidentialChannels);
+        foreach (var thread in threads)
+        {
+            if (confidentialChannels.Contains(thread.channelId))
+            {
+                confidentialConversations.Add(thread.id);
+            }
+        }
+
+        bool ShowBody(Guid conversationId) =>
+            auditEnabled && !confidentialConversations.Contains(conversationId);
         var messageIds = messages.Select(x => x.Id).ToArray();
-        var versions = await db.MessageVersions.AsNoTracking()
+        var versionRows = await db.MessageVersions.AsNoTracking()
             .Where(x => messageIds.Contains(x.MessageId))
             .OrderBy(x => x.MessageId)
             .ThenBy(x => x.VersionNumber)
-            .Select(x => new
-            {
-                messageId = x.MessageId.Value,
-                version = x.VersionNumber,
-                body = auditEnabled ? x.Body : string.Empty,
-                bodyRedacted = !auditEnabled,
-                createdAt = x.CreatedAt
-            })
+            .Select(x => new { messageId = x.MessageId, version = x.VersionNumber, body = x.Body, createdAt = x.CreatedAt })
             .ToListAsync(cancellationToken);
+        var conversationByMessage = messages.ToDictionary(x => x.Id, x => x.ConversationId.Value);
+        var versions = versionRows.Select(x =>
+        {
+            var show = conversationByMessage.TryGetValue(x.messageId, out var conversation) && ShowBody(conversation);
+            return new
+            {
+                messageId = x.messageId.Value,
+                version = x.version,
+                body = show ? x.body : string.Empty,
+                bodyRedacted = !show,
+                createdAt = x.createdAt
+            };
+        }).ToList();
         var messageIdSet = messages.Select(x => x.Id.Value).ToHashSet();
         var attachmentRows = await db.Attachments.AsNoTracking()
             .Where(x => channelIds.Contains(x.ChannelId) && x.MessageId != null)
@@ -703,8 +724,8 @@ public sealed class ChatBackupService(
                 x.ConversationId.Value,
                 x.Sequence,
                 x.AuthorId.Value,
-                auditEnabled ? x.Body : string.Empty,
-                !auditEnabled,
+                ShowBody(x.ConversationId.Value) ? x.Body : string.Empty,
+                !ShowBody(x.ConversationId.Value),
                 x.ReplyToMessageId?.Value,
                 x.ThreadId,
                 x.CreatedAt,
@@ -717,7 +738,7 @@ public sealed class ChatBackupService(
         foreach (var row in attachmentRows.Where(x => x.MessageId is { } id && messageIdSet.Contains(id.Value)))
         {
             var checksum = row.ChecksumSha256 ?? string.Empty;
-            if (shipBytes)
+            if (shipBytes && !confidentialChannels.Contains(row.ChannelId.Value))
             {
                 var bytes = await ReadObjectAsync(row.StorageKey, cancellationToken);
                 if (bytes is not null && (checksum.Length == 0 || string.Equals(checksum, ChatBackupRules.Sha256Hex(bytes), StringComparison.OrdinalIgnoreCase)))

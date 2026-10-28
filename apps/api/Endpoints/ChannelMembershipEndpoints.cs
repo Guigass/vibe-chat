@@ -89,7 +89,7 @@ internal static class ChannelMembershipEndpoints
                 : PresenceStatus.Offline.ToString().ToLowerInvariant()
         }).ToArray();
 
-        var canManage = channel.Type == ChannelType.Private
+        var canManage = IsRosterChannel(channel.Type)
             && await IsStewardAsync(channel, profile.Id, permissions, ct);
         var next = skip + items.Length < page.Total ? WriteCursor(skip + items.Length) : null;
         return Results.Ok(new ChannelMemberPageResponse(items, next, page.Total, canManage));
@@ -116,7 +116,7 @@ internal static class ChannelMembershipEndpoints
             return Results.Forbid();
         }
 
-        if (channel.Type != ChannelType.Private)
+        if (!IsRosterChannel(channel.Type))
         {
             return Error(StatusCodes.Status400BadRequest, "ChannelMembershipNotPrivate");
         }
@@ -149,6 +149,12 @@ internal static class ChannelMembershipEndpoints
         }
 
         var now = clock.UtcNow;
+        var joinedSeq = channel.Type == ChannelType.ConfidentialE2ee
+            ? await db.Messages.AsNoTracking()
+                .Where(m => m.ConversationId == channel.Id)
+                .Select(m => (long?)m.Sequence)
+                .MaxAsync(ct) ?? 0
+            : 0;
         var existing = await db.ChannelMembers.IgnoreQueryFilters().FirstOrDefaultAsync(
             x => x.TenantId == channel.TenantId && x.ChannelId == channel.Id && x.UserId == targetId,
             ct);
@@ -161,7 +167,7 @@ internal static class ChannelMembershipEndpoints
                 ChannelId = channel.Id,
                 UserId = targetId,
                 JoinedAt = now,
-                JoinedSeq = 0
+                JoinedSeq = joinedSeq
             });
         }
         else
@@ -169,7 +175,12 @@ internal static class ChannelMembershipEndpoints
             existing.LeftAt = null;
             existing.LeftSeq = null;
             existing.JoinedAt = now;
-            existing.JoinedSeq = 0;
+            existing.JoinedSeq = joinedSeq;
+        }
+
+        if (channel.Type == ChannelType.ConfidentialE2ee)
+        {
+            await E2eeDirectory.BumpChannelsAsync(db, channel.TenantId, [channel.Id], ct);
         }
 
         audit.Add(new AuditEvent
@@ -221,7 +232,7 @@ internal static class ChannelMembershipEndpoints
             return Results.Forbid();
         }
 
-        if (channel.Type != ChannelType.Private)
+        if (!IsRosterChannel(channel.Type))
         {
             return Error(StatusCodes.Status400BadRequest, "ChannelMembershipNotPrivate");
         }
@@ -251,6 +262,11 @@ internal static class ChannelMembershipEndpoints
         }
 
         await MarkLeftAsync(db, membership, clock, ct);
+        if (channel.Type == ChannelType.ConfidentialE2ee)
+        {
+            await E2eeDirectory.BumpChannelsAsync(db, channel.TenantId, [channel.Id], ct);
+        }
+
         audit.Add(new AuditEvent
         {
             TenantId = channel.TenantId,
@@ -298,7 +314,7 @@ internal static class ChannelMembershipEndpoints
             return Results.Forbid();
         }
 
-        if (channel.Type != ChannelType.Private)
+        if (!IsRosterChannel(channel.Type))
         {
             return Error(StatusCodes.Status400BadRequest, "ChannelMembershipNotPrivate");
         }
@@ -317,6 +333,11 @@ internal static class ChannelMembershipEndpoints
         }
 
         await MarkLeftAsync(db, membership, clock, ct);
+        if (channel.Type == ChannelType.ConfidentialE2ee)
+        {
+            await E2eeDirectory.BumpChannelsAsync(db, channel.TenantId, [channel.Id], ct);
+        }
+
         audit.Add(new AuditEvent
         {
             TenantId = channel.TenantId,
@@ -449,6 +470,9 @@ internal static class ChannelMembershipEndpoints
             .ToArray();
         return (items, total);
     }
+
+    private static bool IsRosterChannel(ChannelType type) =>
+        type is ChannelType.Private or ChannelType.ConfidentialE2ee;
 
     private static async Task<bool> IsStewardAsync(
         Channel channel,

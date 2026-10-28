@@ -1842,6 +1842,11 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("E2eeGeneration")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<string>("Layout")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -4791,6 +4796,97 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.HasKey("TenantId", "ConversationId");
 
                     b.ToTable("conversation_sequences", "messaging");
+                });
+
+            modelBuilder.Entity("VibeChat.Messaging.E2eeBackup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Blob")
+                        .IsRequired()
+                        .HasMaxLength(16384)
+                        .HasColumnType("character varying(16384)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("e2ee_backups", "messaging");
+                });
+
+            modelBuilder.Entity("VibeChat.Messaging.E2eeDevice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PublicJwk")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "UserId");
+
+                    b.ToTable("e2ee_devices", "messaging");
+                });
+
+            modelBuilder.Entity("VibeChat.Messaging.E2eeVerification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DeviceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "UserId", "DeviceId")
+                        .IsUnique();
+
+                    b.ToTable("e2ee_verifications", "messaging");
                 });
 
             modelBuilder.Entity("VibeChat.Messaging.FormDecision", b =>

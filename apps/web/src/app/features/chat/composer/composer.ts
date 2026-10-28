@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, untracked, viewChild } from '@angular/core';
 import { Button, IconButton, Textarea } from '../../../shared/ui';
+import { isConfidentialChannel } from '../../../core/e2ee/e2ee-crypto';
 import { ui } from '../../../core/i18n/strings';
 import { MessageStore } from '../../../core/services/message.store';
 import { ChatHubService } from '../../../core/services/chat-hub.service';
@@ -104,6 +105,7 @@ export class Composer {
   readonly slashActiveIndex = this.slashSession.activeIndex;
   readonly pollComposerOpen = this.polls.open;
   readonly announcementReadOnly = computed(() => isAnnouncementReadOnly(this.channels));
+  readonly confidential = computed(() => isConfidentialChannel(this.channels.activeChannel()));
   readonly canPublishAnnouncement = computed(() => isCanPublishAnnouncement(this.channels, this.messages));
   readonly maxLength = MESSAGE_BODY_MAX_LENGTH;
   readonly bodyLength = computed(() => measureMessageBodyLength(this.draft()));
@@ -188,6 +190,7 @@ export class Composer {
 
   composerPlaceholder(): string {
     if (this.announcementReadOnly()) return ui.composerAnnouncementReadonly;
+    if (isConfidentialChannel(this.channels.activeChannel())) return ui.e2eeComposerPlaceholder;
     if (this.messages.editingMessage()) return ui.composerEdit;
     return `${ui.composerPlaceholder} #${this.channels.activeChannel()?.name || 'channel'}`;
   }

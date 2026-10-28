@@ -5,8 +5,8 @@ Snapshot factual para orientação rápida. Não substitui o
 
 - **Data de corte:** 2026-10-27
 - **Fase:** W15 concluída. B-063 Done (clientes mobile, ADR-057). B-143 Done (sync offline, ADR-059). B-170 Done (performance e escalabilidade, ADR-058). B-141 Done (cliente desktop, ADR-056). B-140 Done (white-label governado, ADR-055). B-138 Done (framework de bridges, flag off). B-137 Done (registry assinado, flag off). B-136 Done (SDK e contract-test kit, flag off). B-111 Done (interações governadas de plugin, flag off). B-066 Done (plataforma de plugins, flag off). B-135 Done (portal do desenvolvedor, flag off). B-146 Done (benchmarks, capacity model e SLOs, flag off). B-134 Done (administração delegada e quotas, flag off). B-133 Done (policy packs, flag off). B-132 Done (export de audit para SIEM, flag off). B-130 Done (classificação de dados e DLP, flag off). B-169 Done (auditoria de conteúdo por tenant, default ligada). B-129 Done (legal hold e eDiscovery, flag off). B-139 permanece Done. B-131 permanece Done. B-128 permanece Done. B-164 permanece Done. B-127 permanece Done. B-126 permanece Done. Wave 19 permanece Done (W19-6 / B-183). Wave 10 permanece Done (W10-15 / B-186, W10-16 / B-188). B-065 Done (federação allowlisted, ADR-063).
-- **Safety lane obrigatória:** OPS-INT-AUTO-DUP Resolved (CI de `main` em `6a8aa0e`: corrida no insert de `automation.runs` estourava `23505` e o loop de automação contava ecos a mais); OPS-INT-B125 Resolved (CI de `main` pós-#199: retry de automação contava o eco depth-1 como segundo run live); OPS-E2E-B100 Resolved (Playwright `locale: pt-BR` + isolamento i18n E2E + foco paleta + select Settings); OPS-E2E-B099 Resolved (#154); OPS-E2E-B098 Resolved (#148); OPS-E2E-B097 Resolved (#145+#149); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); BUG-020 Done (B-186 / W10-15); BUG-021 Aberto (Média — convidado para DM em grupo não atualiza o front até F5); BUG-022 Aberto (Média — busca do header desalinhada na 1ª abertura e fecha ao selecionar opção); BUG-023 Done (Média, B-188 / W10-16 — busca versátil); BUG-024 Aberto (Média — comandos slash não acompanham o idioma da UI); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
-- **Próximo item elegível:** W16 / B-064 (canais confidenciais E2EE); B-065 está Done (ADR-063)
+- **Safety lane obrigatória:** OPS-INT-AUTO-MISS Resolved (CI do #234 em `d6e26f8`: a corrida de automação não commitava o run e a página de 20 do outbox escondia a mensagem); OPS-INT-AUTO-DUP Resolved (CI de `main` em `6a8aa0e`: corrida no insert de `automation.runs` estourava `23505` e o loop de automação contava ecos a mais); OPS-INT-B125 Resolved (CI de `main` pós-#199: retry de automação contava o eco depth-1 como segundo run live); OPS-E2E-B100 Resolved (Playwright `locale: pt-BR` + isolamento i18n E2E + foco paleta + select Settings); OPS-E2E-B099 Resolved (#154); OPS-E2E-B098 Resolved (#148); OPS-E2E-B097 Resolved (#145+#149); sem BUG Alta aberto; BUG-006 Done; BUG-002 aliviado (Média, fecha em B-094); BUG-020 Done (B-186 / W10-15); BUG-021 Aberto (Média — convidado para DM em grupo não atualiza o front até F5); BUG-022 Aberto (Média — busca do header desalinhada na 1ª abertura e fecha ao selecionar opção); BUG-023 Done (Média, B-188 / W10-16 — busca versátil); BUG-024 Aberto (Média — comandos slash não acompanham o idioma da UI); UX Alta do caminho principal: nenhuma; UX-001/#74, UX-002/#82, UX-003/#80 Done; UX-007 Done (B-165); UX-008 Done (B-173)
+- **Próximo item elegível:** W17 / B-147 (huddles); B-064 está Done (ADR-064)
 - **Override humano concluído:** W19-1 / B-178 — decomposição da API em maps por fronteira; `Program.cs` com 220 linhas; build e 241 testes verdes. A fila W10 permanece na ordem acima.
 - **Escopo deste snapshot:** documentação e estrutura versionada do repositório
 
@@ -79,7 +79,7 @@ O trabalho aberto concentra-se em:
 
 | Ordem | Item | Motivo |
 |-------|------|--------|
-| 1 | W16 / B-064 | B-065 Done (ADR-063); próxima linha `Planned` da Wave 16 com deps Done |
+| 1 | W17 / B-147 | B-064 Done (ADR-064); primeira linha `Planned` da Wave 17 |
 
 W7-5 / B-078 **Done** (limite de body 8000). W7-7 / B-105 **Done** (catálogo config).
 W7-9 / B-165 **Done** (versão/cache do cliente web; fecha UX-007).
@@ -127,7 +127,7 @@ canal/pessoa/anexo no FTS; fecha BUG-023).
 
 O horizonte pós-Wave 10 já foi promovido a roadmap executável W11–W19. Wave 19
 (organização do código, B-178…B-183) está Done, inclusive o gate de linhas
-B-183. O Build concluiu a Wave 14; B-146 está Done. B-135 (portal do desenvolvedor) está Done. B-066 (capabilities de plugin) está Done. B-111 (interações governadas) está Done. B-136 (SDK e contract-test kit) está Done. B-137 (registry assinado) está Done. B-170 está Done. B-143 está Done (ADR-059). B-145 está Done (ADR-060). B-172 está Done (ADR-061). B-144 está Done (ADR-062). B-065 está Done (ADR-063). A próxima linha `Planned` é W16 / B-064.
+B-183. O Build concluiu a Wave 14; B-146 está Done. B-135 (portal do desenvolvedor) está Done. B-066 (capabilities de plugin) está Done. B-111 (interações governadas) está Done. B-136 (SDK e contract-test kit) está Done. B-137 (registry assinado) está Done. B-170 está Done. B-143 está Done (ADR-059). B-145 está Done (ADR-060). B-172 está Done (ADR-061). B-144 está Done (ADR-062). B-065 está Done (ADR-063). B-064 está Done (ADR-064). A próxima linha `Planned` é W17 / B-147.
 
 ## Baseline de planejamento
 

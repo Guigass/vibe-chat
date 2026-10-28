@@ -47,7 +47,9 @@
             />
           </div>
 
-          <vc-composer-schedule-fields />
+          @if (!confidential()) {
+            <vc-composer-schedule-fields />
+          }
           <div class="composer__actions">
             @if (!messages.editingMessage()) {
             <label class="composer__attach">
@@ -65,7 +67,7 @@
                 </svg>
               </span>
             </label>
-            @if (!channels.activeChannel()?.isDirect) {
+            @if (!channels.activeChannel()?.isDirect && !confidential()) {
               <vc-icon-button
                 [label]="ui.composerPoll"
                 [disabled]="messages.sending() || messages.editingMessage() !== null"
@@ -81,7 +83,7 @@
             }
             <vc-composer-audio-controls />
             }
-            @if (!messages.editingMessage()) {
+            @if (!messages.editingMessage() && !confidential()) {
               <button
                 type="button"
                 class="ghost"

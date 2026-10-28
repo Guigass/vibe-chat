@@ -66,6 +66,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<Channel> Channels => Set<Channel>();
     public DbSet<ChannelMember> ChannelMembers => Set<ChannelMember>();
     public DbSet<Message> Messages => Set<Message>();
+    public DbSet<E2eeDevice> E2eeDevices => Set<E2eeDevice>();
+    public DbSet<E2eeBackup> E2eeBackups => Set<E2eeBackup>();
+    public DbSet<E2eeVerification> E2eeVerifications => Set<E2eeVerification>();
     public DbSet<MessageThread> MessageThreads => Set<MessageThread>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Reaction> Reactions => Set<Reaction>();
@@ -490,6 +493,7 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.CreatedBy).HasConversion(v => v.Value, v => new UserId(v));
             entity.Property(x => x.Type).HasConversion<string>().HasMaxLength(32);
             entity.Property(x => x.Layout).HasConversion<string>().HasMaxLength(16).HasDefaultValue(ChannelLayout.Stream);
+            entity.Property(x => x.E2eeGeneration).HasDefaultValue(0);
             entity.Property(x => x.Name).HasMaxLength(120);
             entity.Property(x => x.Topic).HasMaxLength(250);
             entity.Property(x => x.Title).HasMaxLength(80);
@@ -545,6 +549,43 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.HasQueryFilter(x =>
                 (!tenantContext.HasTenant || x.TenantId == tenantContext.TenantId)
                 && x.LeftAt == null);
+        });
+
+        modelBuilder.Entity<E2eeDevice>(entity =>
+        {
+            entity.ToTable("e2ee_devices", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.PublicJwk).HasMaxLength(E2eeRules.MaxPublicJwkLength).IsRequired();
+            entity.Property(x => x.Fingerprint).HasMaxLength(64).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.UserId });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<E2eeBackup>(entity =>
+        {
+            entity.ToTable("e2ee_backups", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Blob).HasMaxLength(E2eeRules.MaxBackupLength).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.UserId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<E2eeVerification>(entity =>
+        {
+            entity.ToTable("e2ee_verifications", "messaging");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Fingerprint).HasMaxLength(64).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.UserId, x.DeviceId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
         modelBuilder.Entity<Message>(entity =>

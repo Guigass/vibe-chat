@@ -1835,6 +1835,20 @@
     "chatBackup.file": "Archivo de la copia",
     "chatBackup.validate": "Simular restauración",
     "chatBackup.execute": "Confirmar restauración",
-    "error.ChatBackupDisabled": "La copia del chat está apagada en esta instalación."
+    "error.ChatBackupDisabled": "La copia del chat está apagada en esta instalación.",
+    "nav.confidential": "Confidencial",
+    "e2ee.capabilityBody": "Sin búsqueda, IA, DLP, moderación, retención legal, encuestas, programación ni reenvío. El servidor guarda solo el texto cifrado.",
+    "e2ee.acknowledge": "Entiendo que una clave perdida no se recupera y que quien entre después no lee el historial.",
+    "e2ee.banner": "Canal confidencial. El servidor no lee los mensajes.",
+    "e2ee.fingerprint": "Huella de este dispositivo",
+    "e2ee.verify": "Marcar dispositivo como verificado",
+    "e2ee.verified": "Dispositivo verificado",
+    "e2ee.backup": "Guardar copia de la clave",
+    "e2ee.backupWarning": "La copia queda cifrada con la contraseña. El servidor no recupera la clave.",
+    "e2ee.backupPassword": "Contraseña de la copia",
+    "e2ee.composerBlocked": "Este cliente no tiene clave para el canal.",
+    "e2ee.composerPlaceholder": "Mensaje cifrado en este dispositivo",
+    "e2ee.locked": "Mensaje cifrado",
+    "error.e2ee": "No se pudo usar el canal confidencial."
   }
 }

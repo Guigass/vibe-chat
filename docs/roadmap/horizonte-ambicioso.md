@@ -176,7 +176,7 @@ topologia atual; só então HA e apostas de distribuição.
 | B-172 | A/B/D/E/G | Backup de chat: export/import, tarefas agendadas e destinos (SFTP/FTP, SMB, S3, Drive, WebDAV) | B-046, B-069, B-031, D-08, D-28 | [B-172](../product/specs/B-172-backup-chat-destinos.md) | **Done** — pacote `vibechat.chat.backup.v1`, tarefas, destinos mascarados, flag off; ADR-061 |
 | B-144 | A/B/C/E/F | HA, rolling upgrade e zero-downtime documentado | B-170, B-146, D-25, D-28 | [B-144](../product/specs/B-144-ha-rolling-upgrade.md) | **Done** — flag `Ha:Enabled` off, lease advisory, drain, WebSocket sem sticky, fase expand; ADR-062 |
 | B-065 | B/C/A/E | Federação entre instâncias | B-138, B-146, D-21 | [B-065](../product/specs/B-065-federacao.md) | **Done** — allowlist, envelope HMAC, sala explícita, rotação, revogação; flag off; ADR-063 |
-| B-064 | B/C/D/E | Canais confidenciais E2EE | B-129, B-169, D-26 | [B-064](../product/specs/B-064-canais-e2ee.md) | Planned |
+| B-064 | B/C/D/E | Canais confidenciais E2EE | B-129, B-169, D-26 | [B-064](../product/specs/B-064-canais-e2ee.md) | **Done** — flag `Messaging:E2ee:Enabled` off; HPKE P-256; sem plaintext no servidor; ADR-064 |
 
 ### Critérios de saída
 

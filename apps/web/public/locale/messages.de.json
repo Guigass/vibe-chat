@@ -1835,6 +1835,20 @@
     "chatBackup.file": "Backup-Datei",
     "chatBackup.validate": "Wiederherstellung prüfen",
     "chatBackup.execute": "Wiederherstellung bestätigen",
-    "error.ChatBackupDisabled": "Das Chat-Backup ist in dieser Installation aus."
+    "error.ChatBackupDisabled": "Das Chat-Backup ist in dieser Installation aus.",
+    "nav.confidential": "Vertraulich",
+    "e2ee.capabilityBody": "Keine Suche, KI, DLP, Moderation, Legal Hold, Umfragen, Planung oder Weiterleitung. Der Server speichert nur Geheimtext.",
+    "e2ee.acknowledge": "Ich verstehe, dass ein verlorener Schlüssel nicht zurückkommt und neue Mitglieder den Verlauf nicht lesen.",
+    "e2ee.banner": "Vertraulicher Kanal. Der Server liest die Nachrichten nicht.",
+    "e2ee.fingerprint": "Fingerabdruck dieses Geräts",
+    "e2ee.verify": "Gerät als geprüft markieren",
+    "e2ee.verified": "Gerät geprüft",
+    "e2ee.backup": "Schlüsselkopie speichern",
+    "e2ee.backupWarning": "Die Kopie ist mit dem Passwort verschlüsselt. Der Server stellt den Schlüssel nicht wieder her.",
+    "e2ee.backupPassword": "Passwort der Kopie",
+    "e2ee.composerBlocked": "Dieser Client hat keinen Schlüssel für den Kanal.",
+    "e2ee.composerPlaceholder": "Verschlüsselte Nachricht auf diesem Gerät",
+    "e2ee.locked": "Verschlüsselte Nachricht",
+    "error.e2ee": "Der vertrauliche Kanal konnte nicht verwendet werden."
   }
 }

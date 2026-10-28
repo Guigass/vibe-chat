@@ -1835,6 +1835,20 @@
     "chatBackup.file": "백업 파일",
     "chatBackup.validate": "복원 미리보기",
     "chatBackup.execute": "복원 확인",
-    "error.ChatBackupDisabled": "이 설치에서는 채팅 백업이 꺼져 있습니다."
+    "error.ChatBackupDisabled": "이 설치에서는 채팅 백업이 꺼져 있습니다.",
+    "nav.confidential": "기밀",
+    "e2ee.capabilityBody": "검색, AI, DLP, 조정, 법적 보존, 투표, 예약, 전달이 없습니다. 서버는 암호문만 보관합니다.",
+    "e2ee.acknowledge": "잃어버린 키는 돌아오지 않고, 나중에 들어온 사람은 이전 기록을 읽지 못한다는 점을 이해했습니다.",
+    "e2ee.banner": "기밀 채널. 서버는 메시지를 읽지 않습니다.",
+    "e2ee.fingerprint": "이 기기의 지문",
+    "e2ee.verify": "기기를 확인됨으로 표시",
+    "e2ee.verified": "확인된 기기",
+    "e2ee.backup": "키 사본 저장",
+    "e2ee.backupWarning": "사본은 비밀번호로 암호화됩니다. 서버는 키를 복구하지 않습니다.",
+    "e2ee.backupPassword": "사본 비밀번호",
+    "e2ee.composerBlocked": "이 클라이언트에는 채널 키가 없습니다.",
+    "e2ee.composerPlaceholder": "이 기기에서 암호화되는 메시지",
+    "e2ee.locked": "암호화된 메시지",
+    "error.e2ee": "기밀 채널을 사용할 수 없습니다."
   }
 }

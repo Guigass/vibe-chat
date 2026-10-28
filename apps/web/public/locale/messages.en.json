@@ -1835,6 +1835,20 @@
     "chatBackup.file": "Backup file",
     "chatBackup.validate": "Preview restore",
     "chatBackup.execute": "Confirm restore",
-    "error.ChatBackupDisabled": "Chat backup is off in this installation."
+    "error.ChatBackupDisabled": "Chat backup is off in this installation.",
+    "nav.confidential": "Confidential",
+    "e2ee.capabilityBody": "No search, AI, DLP, moderation, legal hold, polls, scheduling, or forwarding. The server stores only ciphertext.",
+    "e2ee.acknowledge": "I understand a lost key cannot be recovered and people who join later cannot read history.",
+    "e2ee.banner": "Confidential channel. The server cannot read messages.",
+    "e2ee.fingerprint": "This device fingerprint",
+    "e2ee.verify": "Mark device as verified",
+    "e2ee.verified": "Device verified",
+    "e2ee.backup": "Save a key backup",
+    "e2ee.backupWarning": "The backup is encrypted with the password. The server cannot recover the key.",
+    "e2ee.backupPassword": "Backup password",
+    "e2ee.composerBlocked": "This client has no key for the channel.",
+    "e2ee.composerPlaceholder": "Encrypted message on this device",
+    "e2ee.locked": "Encrypted message",
+    "error.e2ee": "The confidential channel could not be used."
   }
 }

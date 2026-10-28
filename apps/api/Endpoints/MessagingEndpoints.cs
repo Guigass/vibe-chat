@@ -139,6 +139,11 @@ internal static class MessagingEndpoints
                 return Results.BadRequest(new { error = "messageId and idempotencyKey are required." });
             }
 
+            if (channel.Type == ChannelType.ConfidentialE2ee)
+            {
+                return Results.BadRequest(new { error = VibeChat.Messaging.E2eeErrors.CapabilityUnavailable });
+            }
+
             try
             {
                 var result = await polls.CreateAsync(new CreatePollCommand(
@@ -610,7 +615,9 @@ internal static class MessagingEndpoints
                 || await permissions.HasPermissionAsync(channel.TenantId, profile.Id, Permissions.Workspace.Admin, ct);
             var membership = await db.ChannelMembers.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.ChannelId == channel.Id && x.UserId == profile.Id, ct);
-            var minSeq = channel.Type == ChannelType.GroupDm ? membership?.JoinedSeq ?? 0 : 0;
+            var minSeq = channel.Type is ChannelType.GroupDm or ChannelType.ConfidentialE2ee
+                ? membership?.JoinedSeq ?? 0
+                : 0;
             var page = await ListChannelMessagesAsync(
                 channel, profile, db, take, after, before, around, canVote, minSeq, clock.UtcNow, canAcknowledge, canViewReport, ct);
             return Results.Ok(page);
@@ -979,6 +986,27 @@ internal static class MessagingEndpoints
                 return Results.BadRequest(MessageBodyPolicies.TooLongPayload());
             }
 
+            if (channel.Type == ChannelType.ConfidentialE2ee)
+            {
+                if (!http.RequestServices.GetRequiredService<IOptions<E2eeOptions>>().Value.Enabled)
+                {
+                    return Results.BadRequest(new { error = E2eeErrors.Disabled });
+                }
+
+                var devices = await E2eeDirectory.ActiveDevicesAsync(db, channel.TenantId, channel.Id, ct);
+                if (!devices.Exists(x => x.UserId == profile.Id))
+                {
+                    return Results.BadRequest(new { error = E2eeErrors.DeviceRequired });
+                }
+
+                var envelopeError = E2eeRules.ValidateEnvelope(
+                    normalizedBody, channel.E2eeGeneration, devices.Select(x => x.Id).ToArray());
+                if (envelopeError is not null)
+                {
+                    return Results.BadRequest(new { error = envelopeError });
+                }
+            }
+
             var message = await FindMessageInChannelAsync(db, channel.Id, new MessageId(messageId), ct);
             if (message is null || message.DeletedAt is not null)
             {
@@ -1042,6 +1070,7 @@ internal static class MessagingEndpoints
                     threadId = message.ThreadId,
                     messageId,
                     sequence = message.Sequence,
+                    e2ee = channel.Type == ChannelType.ConfidentialE2ee,
                     body = message.Body,
                     editedAt = message.EditedAt
                 })
@@ -1833,7 +1862,8 @@ internal static class MessagingEndpoints
                 })
             });
             // Body stays on the row (ADR-018). The audit snapshot keeps it after purge when content audit is on.
-            var includeBody = await AdministrationEndpointHelpers.IsContentAuditEnabledAsync(db, channel.TenantId, ct);
+            var includeBody = channel.Type != ChannelType.ConfidentialE2ee
+                && await AdministrationEndpointHelpers.IsContentAuditEnabledAsync(db, channel.TenantId, ct);
             audit.Add(new AuditEvent
             {
                 TenantId = channel.TenantId,

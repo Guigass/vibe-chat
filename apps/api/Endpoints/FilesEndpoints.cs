@@ -46,6 +46,15 @@ internal static class FilesEndpoints
             var kind = Enum.TryParse<AttachmentKind>(request.Kind, ignoreCase: true, out var parsedKind)
                 ? parsedKind
                 : AttachmentKind.File;
+            if (channel.Type == ChannelType.ConfidentialE2ee)
+            {
+                if (!E2eeRules.IsSealedContentType(request.ContentType))
+                {
+                    return Results.BadRequest(new { error = E2eeErrors.AttachmentRequired });
+                }
+
+                kind = AttachmentKind.File;
+            }
 
             if (string.IsNullOrWhiteSpace(request.FileName) || string.IsNullOrWhiteSpace(request.ContentType) || request.SizeBytes <= 0)
             {
@@ -100,7 +109,8 @@ internal static class FilesEndpoints
             }
             else
             {
-                if (!AttachmentPolicies.IsAllowedContentType(request.ContentType, allowed))
+                if (channel.Type != ChannelType.ConfidentialE2ee
+                    && !AttachmentPolicies.IsAllowedContentType(request.ContentType, allowed))
                 {
                     return Results.BadRequest(new { error = "Content type is not allowed." });
                 }

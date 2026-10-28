@@ -752,6 +752,7 @@ export const ui = {
   navTopics: $localize`:@@nav.topics:Tópicos`,
   navPrivate: $localize`:@@nav.private:Privado`,
   navAnnouncement: $localize`:@@nav.announcement:Anúncio`,
+  navConfidential: $localize`:@@nav.confidential:Confidencial`,
   navRecent: $localize`:@@nav.recent:Recentes`,
   navMembers: $localize`:@@nav.members:Membros`,
   navCancelConversation: $localize`:@@nav.cancelConversation:Cancelar conversa`,
@@ -1803,6 +1804,19 @@ export const ui = {
   federationStatePaused: $localize`:@@federation.statePaused:Confiança pausada`,
   federationStateRevoked: $localize`:@@federation.stateRevoked:Confiança revogada`,
   federationLimitation: $localize`:@@federation.limitation:Apagar e a retenção do outro lado não são garantidos.`,
+  e2eeCapabilityBody: $localize`:@@e2ee.capabilityBody:Sem busca, IA, DLP, moderação, legal hold, enquetes, agendamento ou encaminhamento. O servidor guarda só o texto cifrado.`,
+  e2eeAcknowledge: $localize`:@@e2ee.acknowledge:Entendi que uma chave perdida não volta e que quem entrar depois não lê o histórico.`,
+  e2eeBanner: $localize`:@@e2ee.banner:Canal confidencial. O servidor não lê as mensagens.`,
+  e2eeFingerprint: $localize`:@@e2ee.fingerprint:Impressão deste dispositivo`,
+  e2eeVerify: $localize`:@@e2ee.verify:Marcar dispositivo como verificado`,
+  e2eeVerified: $localize`:@@e2ee.verified:Dispositivo verificado`,
+  e2eeBackup: $localize`:@@e2ee.backup:Guardar cópia da chave`,
+  e2eeBackupWarning: $localize`:@@e2ee.backupWarning:A cópia fica cifrada com a senha. O servidor não recupera a chave.`,
+  e2eeBackupPassword: $localize`:@@e2ee.backupPassword:Senha da cópia`,
+  e2eeComposerBlocked: $localize`:@@e2ee.composerBlocked:Este cliente não tem chave para o canal.`,
+  e2eeComposerPlaceholder: $localize`:@@e2ee.composerPlaceholder:Mensagem cifrada neste dispositivo`,
+  e2eeLocked: $localize`:@@e2ee.locked:Mensagem cifrada`,
+  errorE2ee: $localize`:@@error.e2ee:Não foi possível usar o canal confidencial.`,
   federationConsent: $localize`:@@federation.consent:As mensagens deste canal serão copiadas para %domain%. A identidade remota continua visível.`,
   federationConsentAction: $localize`:@@federation.consentAction:Permitir cópia`,
   federationPause: $localize`:@@federation.pause:Pausar confiança`,
@@ -2213,6 +2227,21 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.adminBrandFileRejected;
     case 'BrandRollbackEmpty':
       return ui.adminBrandRollbackEmpty;
+    case 'ContentAuditBlocksE2ee':
+    case 'ConfidentialE2eeUnavailable':
+    case 'E2eeDisabled':
+    case 'E2eeEnvelopeRequired':
+    case 'E2eeVersionUnsupported':
+    case 'E2eeEpochStale':
+    case 'E2eeRecipientsMismatch':
+    case 'E2eeDeviceRequired':
+    case 'E2eeDeviceInvalid':
+    case 'E2eeForwardForbidden':
+    case 'E2eeCapabilityUnavailable':
+    case 'E2eeAttachmentRequired':
+    case 'E2eeBackupInvalid':
+    case 'E2eeBackupNoEscrow':
+      return ui.errorE2ee;
     case 'BrandIdempotencyConflict':
       return ui.errorIdempotencyConflict;
     default:

@@ -28,12 +28,18 @@ public static class ContentAuditRules
         string.Equals(type?.Trim(), WireType, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Audit on blocks the channel. Audit off still refuses persistence: the
-    /// crypto protocol is B-064, and a plaintext row labeled confidential
-    /// would leak. B-064 replaces <see cref="E2eeUnavailable"/>.
+    /// Audit on blocks the channel. With audit off, the flag still has to be
+    /// on or the server would persist a plaintext row labeled confidential.
     /// </summary>
-    public static string E2eeCreationError(bool contentAuditEnabled) =>
-        contentAuditEnabled ? BlocksE2ee : E2eeUnavailable;
+    public static string? E2eeCreationError(bool contentAuditEnabled, bool e2eeEnabled = false)
+    {
+        if (contentAuditEnabled)
+        {
+            return BlocksE2ee;
+        }
+
+        return e2eeEnabled ? null : E2eeUnavailable;
+    }
 
     public static string? DisableError(bool currentEnabled, bool requestedEnabled, bool confirmDisable, bool activeBodyHold)
     {

@@ -31,6 +31,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146 (B-098): 15 specs falham em `auth.ts:118` — timeout 20s aguardando `heading` `/geral/i`; h1 `#geral` existe mas está hidden (largura 0) | Critical | **Resolved** — título do canal com `min-width: 6.5rem`; busca encolhe (`flex: 0 1`) em vez de espremer o h1 |
 | OPS-INT-B125 | CI / integração | `main` RED pós-#199 (B-125): `AutomationIntegrationTests.Retry_does_not_duplicate_disable_blocks_and_logs_omit_secrets` espera 1 run live e encontra 2 | Critical | **Resolved** — asserção por `eventId`; o eco depth-1 do post do bot não conta como retry duplicado |
 | OPS-INT-AUTO-DUP | CI / integração | `main` RED em `6a8aa0e` (#230): `Retry_does_not_duplicate_disable_blocks_and_logs_omit_secrets` estoura `23505` em `IX_runs_TenantId_IdempotencyKey`; `Loop_is_stopped_and_missing_capability_does_not_post` acha 8 ecos (teto 3) | Critical | **Resolved** — insert do run é idempotente; outbox usa `FOR UPDATE SKIP LOCKED`; teste isola automações ligadas |
+| OPS-INT-AUTO-MISS | CI / integração | PR #234 `d6e26f8`: `Two_processors_do_not_duplicate_the_live_run` espera 1 run e acha 0 | Critical | **Resolved** — o enqueue de teste commita a transação de RLS; a fila é drenada antes do lote único de 20 |
 
 ## Resolvidos
 
@@ -39,6 +40,7 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
 | OPS-E2E-KNOWLEDGE | CI / E2E | `main` RED em `90f936c`: save concorrente de página estoura unique de `page_versions` e vira HTTP 500 | Critical | Resolved | `SaveChanges` mapeia a corrida para 409 `KnowledgeVersionConflict`; o perdedor não grava |
 | OPS-INT-B125 | CI / integração | `main` RED pós-#199: retry de automação conta o eco depth-1 como segundo run live | Critical | Resolved | Asserção por `eventId` + drain explícito do eco antes do disable |
 | OPS-INT-AUTO-DUP | CI / integração | `main` RED em `6a8aa0e`: corrida no insert de `automation.runs` vira 23505 no lote do outbox; o loop conta ecos a mais | Critical | Resolved | Perdedor adota o run vencedor; outbox trava a linha com `SKIP LOCKED`; drain esvazia a fila e desliga automações anteriores |
+| OPS-INT-AUTO-MISS | CI / integração | PR #234 `d6e26f8`: `Two_processors_do_not_duplicate_the_live_run` espera 1 run e acha 0 | Critical | Resolved | O teste commita a transação de RLS e drena o backlog antes do lote de 20 |
 | SEC-RLS-RUNTIME | Isolamento multi-tenant | Roles `vibechat_migrator`/`vibechat_app`/`vibechat_backup`, FORCE+WITH CHECK, `RlsSession` SET LOCAL, testes runtime | Critical | Resolved | PR #72 + #73 — roles/FORCE + SET LOCAL na txn + validação de role app |
 | OPS-E2E-B097 | CI / E2E | `main` RED pós-#142: timeline-anchor (distância ~2780) + history-scroll (scrollTop ~3200) | Critical | Resolved | #145 lista com cache; #149 `releaseBottom()` no scroll sintético |
 | OPS-E2E-B098 | CI / E2E | `main` RED pós-#146: 15 specs — `heading` `#geral` hidden (caixa 0×n) | Critical | Resolved | Título `min-width: 6.5rem`; `.shell__search` com `flex: 0 1` + `min-width: 10rem` |
@@ -118,6 +120,38 @@ para `Critical`, `High` de segurança/dados ou UX `Alta` no caminho principal.
   2. `Retry_…` e `Loop_…` passam sem skip;
   3. finding marcado Resolved.
 - Rollback: reverter o `catch` e o `SKIP LOCKED`. O índice único permanece.
+
+### OPS-INT-AUTO-MISS
+
+- Status: **Resolved** — a corrida concorrente de `TryEnqueueAsync` deixa o run
+  gravado; um backlog maior que uma página do outbox não zera a contagem.
+- Observado em: CI `Build & test` do PR #234 em `d6e26f8` (run
+  [40606934478](https://github.com/Guigass/vibe-chat/actions/runs/40606934478)).
+  Unit, arquitetura, segurança, secret scan e dependency audit passaram.
+  Integração: 1 falha de 252. E2E ficou skipped.
+- Base/head SHA: `main` `e8091ab` verde; head `d6e26f8` (#234, B-064) vermelho.
+  A branch já continha `bb6312c` (OPS-INT-AUTO-DUP).
+- Reprodução: `EnqueueOnceAsync` chama `RlsSession.EnsureAppliedAsync`, que
+  abre a transação, e `TryEnqueueAsync` só faz `SaveChanges`. O escopo fecha
+  sem `CommitAsync` e o Postgres desfaz o insert. O run que a asserção via
+  vinha só do `ProcessBatch` seguinte (página de 20, as mais antigas). Com a
+  fila da fixture acima de 20, a mensagem nova não entra no lote e a contagem
+  fica 0. Os testes irmãos drenam a fila antes de ligar a automação; este não
+  drenava.
+- Resultado esperado: dois `TryEnqueueAsync` no mesmo evento deixam um run
+  persistido; os dois processadores não duplicam a chave.
+- Resultado atual: o teste commita a transação de RLS, como o middleware HTTP
+  em `Program.cs`, e drena o backlog antes de segurar os processadores.
+- Impacto: CI do PR #234 vermelho e E2E skipped. Sem vazamento cross-tenant;
+  o índice único continua sendo a barreira.
+- Risk class: R1 (teste de integração; sem schema, authZ ou contrato novo).
+- Owner automático: Build.
+- Critério de resolução:
+  1. o teste passa com a fila previamente cheia e com os dois inserts
+     concorrentes commitados;
+  2. a chave de idempotência não duplica;
+  3. finding marcado Resolved.
+- Rollback: tirar o `CommitAsync` e o `DrainBacklogAsync` do teste.
 
 ### OPS-INT-B125
 

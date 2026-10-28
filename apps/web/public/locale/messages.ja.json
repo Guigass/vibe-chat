@@ -1835,6 +1835,20 @@
     "chatBackup.file": "バックアップファイル",
     "chatBackup.validate": "復元を確認",
     "chatBackup.execute": "復元を確定",
-    "error.ChatBackupDisabled": "このインストールではチャットのバックアップはオフです。"
+    "error.ChatBackupDisabled": "このインストールではチャットのバックアップはオフです。",
+    "nav.confidential": "機密",
+    "e2ee.capabilityBody": "検索、AI、DLP、モデレーション、リーガルホールド、投票、予約、転送はありません。サーバーが保存するのは暗号文だけです。",
+    "e2ee.acknowledge": "失った鍵は戻らず、後から参加した人は履歴を読めないことを理解しました。",
+    "e2ee.banner": "機密チャンネル。サーバーはメッセージを読みません。",
+    "e2ee.fingerprint": "このデバイスの指紋",
+    "e2ee.verify": "デバイスを確認済みにする",
+    "e2ee.verified": "確認済みのデバイス",
+    "e2ee.backup": "鍵の控えを保存",
+    "e2ee.backupWarning": "控えはパスワードで暗号化されます。サーバーは鍵を復元しません。",
+    "e2ee.backupPassword": "控えのパスワード",
+    "e2ee.composerBlocked": "このクライアントにはチャンネルの鍵がありません。",
+    "e2ee.composerPlaceholder": "このデバイスで暗号化するメッセージ",
+    "e2ee.locked": "暗号化されたメッセージ",
+    "error.e2ee": "機密チャンネルを使えませんでした。"
   }
 }

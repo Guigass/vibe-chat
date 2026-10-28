@@ -63,6 +63,11 @@ public sealed class SummarizeChannelFeature(
             return new SummarizeChannelResult(false, "AI is disabled.", "AiDisabled");
         }
 
+        if (await WorkspaceAiRuntime.IsConfidentialAsync(dbContext, tenantId, channelId, cancellationToken))
+        {
+            return new SummarizeChannelResult(false, "E2EE channel has no server-readable text.", E2eeErrors.CapabilityUnavailable);
+        }
+
         var summarizeQuota = await quotas.TryConsumeAsync(tenantId, workspaceId, DelegatedResources.AiBudget, 1, cancellationToken);
         if (!summarizeQuota.Allowed)
         {
@@ -111,6 +116,19 @@ public sealed class SummarizeChannelFeature(
 
 internal static class WorkspaceAiRuntime
 {
+    public static async Task<bool> IsConfidentialAsync(
+        VibeChatDbContext db,
+        TenantId tenantId,
+        ChannelId channelId,
+        CancellationToken cancellationToken)
+    {
+        var type = await db.Channels.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.Id == channelId)
+            .Select(x => (ChannelType?)x.Type)
+            .FirstOrDefaultAsync(cancellationToken);
+        return type == ChannelType.ConfidentialE2ee;
+    }
+
     public static IAiCompletionProvider? SelectProvider(OpenRouterAiProvider openRouter, EffectiveAiRuntime runtime)
     {
         if (string.Equals(runtime.Provider, "OpenRouter", StringComparison.OrdinalIgnoreCase))
@@ -146,6 +164,11 @@ public sealed class SuggestChannelReplyFeature(
         if (activeProvider is null)
         {
             return new SuggestChannelReplyResult(false, "AI is disabled.", "AiDisabled");
+        }
+
+        if (await WorkspaceAiRuntime.IsConfidentialAsync(dbContext, tenantId, channelId, cancellationToken))
+        {
+            return new SuggestChannelReplyResult(false, "E2EE channel has no server-readable text.", E2eeErrors.CapabilityUnavailable);
         }
 
         var suggestQuota = await quotas.TryConsumeAsync(tenantId, workspaceId, DelegatedResources.AiBudget, 1, cancellationToken);
@@ -224,6 +247,11 @@ public sealed class TranscribeAttachmentFeature(
         if (activeProvider is null)
         {
             return new TranscribeAttachmentResult(false, string.Empty, null, null, "AiDisabled");
+        }
+
+        if (await WorkspaceAiRuntime.IsConfidentialAsync(dbContext, tenantId, channelId, cancellationToken))
+        {
+            return new TranscribeAttachmentResult(false, string.Empty, null, null, E2eeErrors.CapabilityUnavailable);
         }
 
         var transcribeQuota = await quotas.TryConsumeAsync(tenantId, workspaceId, DelegatedResources.AiBudget, 1, cancellationToken);

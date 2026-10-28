@@ -289,6 +289,14 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/admin/workspaces/{workspaceId:guid}/bridges/{bridgeId:guid}/mapping` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-138; subject opaco |
 | POST | `/bridges/{bridgeId:guid}/events` | exempt | bridge bot token | — | — | — | B-138; `AllowAnonymous` + token; outro bot → 403 |
 | POST | `/bridges/{bridgeId:guid}/outbound` | exempt | bridge bot token | — | — | — | B-138; pull; sem socket de saída |
+| GET | `/e2ee/capabilities` | permission | `message.read` | ✗ | ✗ | ✓ | B-064; flag off → 404 `E2eeDisabled` |
+| GET | `/e2ee/devices` | permission | `message.read` | ✗ | ✗ | ✓ | B-064; só os dispositivos do caller |
+| POST | `/e2ee/devices` | permission | `message.read` | ✗ | ✗ | ✓ | B-064; chave pública P-256; sem escalar `d` |
+| DELETE | `/e2ee/devices/{deviceId:guid}` | permission | `message.read` | ✗ | ✗ | ✓ | B-064; revoga o próprio dispositivo |
+| GET | `/e2ee/backup` | permission | `message.read` | ✗ | ✗ | ✓ | B-064; blob cifrado; sem escrow |
+| PUT | `/e2ee/backup` | permission | `message.read` | ✗ | ✗ | ✓ | B-064; senha não chega ao servidor |
+| POST | `/e2ee/devices/{deviceId:guid}/verify` | permission | `message.read` | ✗ | ✗ | ✓ | B-064; impressão tem de bater com a chave |
+| GET | `/channels/{channelId:guid}/e2ee` | permission | `message.read` | ✗ | ✗ | ✓ | B-064; membership; chave pública dos dispositivos ativos |
 | GET | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/federation` | permission | `message.read` | ✗ | ✗ | ✓ | B-065; membership; flag off → 404 `FederationDisabled` |
 | POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; allowlist; token só na criação |
 | POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts/{trustId:guid}/consent` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; cópia só após acknowledge |

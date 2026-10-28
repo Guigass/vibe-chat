@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Minio;
 using StackExchange.Redis;
 using VibeChat.Administration;
@@ -48,7 +49,8 @@ public sealed class MessageWriter(
     IChannelMembershipReader channels,
     IPresenceService presence,
     FilesSettingsResolver filesSettings,
-    DelegatedAdminService quotas) : IMessageWriter
+    DelegatedAdminService quotas,
+    IOptions<E2eeOptions> e2ee) : IMessageWriter
 {
     public async Task<MessageSendResult> SendAsync(SendMessageCommand command, CancellationToken cancellationToken)
     {
@@ -188,9 +190,9 @@ public sealed class MessageWriter(
             {
                 messageId = target.Id.Value,
                 authorName = target.DeletedAt is null ? replyTarget.AuthorName : string.Empty,
-                preview = target.DeletedAt is null
-                    ? TruncateReplyPreview(target.Body)
-                    : string.Empty,
+                preview = target.DeletedAt is not null || parentChannel.Type == ChannelType.ConfidentialE2ee
+                    ? string.Empty
+                    : TruncateReplyPreview(target.Body),
                 deleted = target.DeletedAt is not null
             };
         }
@@ -258,6 +260,38 @@ public sealed class MessageWriter(
             if (attachments.Length != attachmentIds.Length)
             {
                 throw new InvalidOperationException("One or more attachments are invalid or not ready.");
+            }
+        }
+
+        if (parentChannel.Type == ChannelType.ConfidentialE2ee)
+        {
+            if (!e2ee.Value.Enabled)
+            {
+                throw new InvalidOperationException(E2eeErrors.Disabled);
+            }
+
+            if (command.RequiresAcknowledgement)
+            {
+                throw new InvalidOperationException(E2eeErrors.CapabilityUnavailable);
+            }
+
+            var devices = await E2eeDirectory.ActiveDevicesAsync(
+                dbContext, command.TenantId, parentChannelId, cancellationToken);
+            if (!devices.Exists(x => x.UserId == command.UserId))
+            {
+                throw new InvalidOperationException(E2eeErrors.DeviceRequired);
+            }
+
+            var envelopeError = E2eeRules.ValidateEnvelope(
+                body, parentChannel.E2eeGeneration, devices.Select(x => x.Id).ToArray());
+            if (envelopeError is not null)
+            {
+                throw new InvalidOperationException(envelopeError);
+            }
+
+            if (attachments.Any(x => !E2eeRules.IsSealedContentType(x.ContentType)))
+            {
+                throw new InvalidOperationException(E2eeErrors.AttachmentRequired);
             }
         }
 
@@ -365,6 +399,7 @@ public sealed class MessageWriter(
                         actions = command.PluginCard.Actions
                     },
                 sequence,
+                e2ee = parentChannel.Type == ChannelType.ConfidentialE2ee,
                 body,
                 createdAt = now,
                 mentionedUserIds = mentionContext.MentionedUserIds,
@@ -487,6 +522,11 @@ public sealed class MessageWriter(
             throw new UnauthorizedAccessException("Source message not accessible.");
         }
 
+        if (sourceChannel.Type == ChannelType.ConfidentialE2ee)
+        {
+            throw new InvalidOperationException(E2eeErrors.ForwardForbidden);
+        }
+
         if (!await channels.CanAccessAsync(command.TenantId, sourceChannelId, command.UserId, cancellationToken))
         {
             throw new UnauthorizedAccessException("User cannot access source channel.");
@@ -502,6 +542,11 @@ public sealed class MessageWriter(
                 || !await channels.CanAccessAsync(command.TenantId, targetId, command.UserId, cancellationToken))
             {
                 throw new UnauthorizedAccessException("User cannot forward to one or more target channels.");
+            }
+
+            if (target.Type == ChannelType.ConfidentialE2ee)
+            {
+                throw new InvalidOperationException(E2eeErrors.ForwardForbidden);
             }
 
             if (target.Type == ChannelType.Announcement)

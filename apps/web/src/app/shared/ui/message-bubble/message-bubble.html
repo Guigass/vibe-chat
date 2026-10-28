@@ -90,6 +90,8 @@
                 @if (message().movedToAccessible && message().movedToChannelId && message().movedToMessageId) {
                   <button type="button" (click)="openMovedTarget()">{{ ui.historyOpenDestination }}</button>
                 }
+              } @else if (e2eeBody()) {
+                <vc-e2ee-plaintext [source]="message().body" />
               } @else if (message().body) {
                 <vc-markdown-body
                   [source]="message().body"

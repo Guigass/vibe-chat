@@ -298,7 +298,8 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     try
                     {
                         var messageId = new MessageId(messageIdNode.GetValue<Guid>());
-                        var body = root["body"]?.GetValue<string>() ?? string.Empty;
+                        var e2ee = root["e2ee"] is JsonValue e2eeNode && e2eeNode.TryGetValue<bool>(out var sealedBody) && sealedBody;
+                        var body = e2ee ? string.Empty : root["body"]?.GetValue<string>() ?? string.Empty;
                         var isDeleted = outbox.Type == nameof(MessageDeletedEvent);
                         await searchIndexer.IndexMessageAsync(
                             new MessageIndexed(messageId, tenantId, channelId, body, isDeleted, now),
@@ -340,6 +341,11 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                                     cancellationToken);
                                 index = ai.Proceed;
                             }
+                        }
+
+                        if (index && root["e2ee"] is JsonValue semanticE2ee && semanticE2ee.TryGetValue<bool>(out var skipSemantic) && skipSemantic)
+                        {
+                            index = false;
                         }
 
                         if (index)
