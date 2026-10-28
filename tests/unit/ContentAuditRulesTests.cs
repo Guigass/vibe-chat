@@ -29,7 +29,9 @@ public sealed class ContentAuditRulesTests
     public void E2ee_creation_is_blocked_while_audit_is_on_and_unavailable_without_the_protocol()
     {
         ContentAuditRules.E2eeCreationError(true).Should().Be(ContentAuditRules.BlocksE2ee);
+        ContentAuditRules.E2eeCreationError(true, true).Should().Be(ContentAuditRules.BlocksE2ee);
         ContentAuditRules.E2eeCreationError(false).Should().Be(ContentAuditRules.E2eeUnavailable);
+        ContentAuditRules.E2eeCreationError(false, true).Should().BeNull();
     }
 
     [Fact]

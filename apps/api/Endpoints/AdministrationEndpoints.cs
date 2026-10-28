@@ -203,7 +203,8 @@ internal static class AdministrationEndpoints
                 return Results.Forbid();
             }
 
-            var includeBody = await IsContentAuditEnabledAsync(db, tenantId, ct);
+            var includeBody = channel.Type != ChannelType.ConfidentialE2ee
+                && await IsContentAuditEnabledAsync(db, tenantId, ct);
             var take = Math.Clamp(limit ?? 50, 1, 200);
             var rows = await (
                 from m in db.Messages.IgnoreQueryFilters().AsNoTracking()

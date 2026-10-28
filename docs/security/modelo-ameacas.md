@@ -134,9 +134,20 @@ Identificar ameaças relevantes ao chat corporativo self-hosted e controles mín
 | Setting | `contentAuditEnabled` por tenant, default `true` (sem linha). Só `workspace.admin` grava |
 | Leitura privilegiada | Com `false`, B-067 e o export de workspace não devolvem body. O membro da conversa continua lendo a própria mensagem |
 | Delete | Snapshot de body em `message.delete` só com a flag ligada no momento do soft-delete. Purge não apaga o evento |
-| E2EE | `ConfidentialE2EE` → `ContentAuditBlocksE2ee` com a flag ligada. Sem a flag, `ConfidentialE2eeUnavailable` até B-064 — o servidor não grava canal confidencial em plaintext |
+| E2EE | `ConfidentialE2EE` → `ContentAuditBlocksE2ee` com a auditoria ligada. Com auditoria desligada e `Messaging:E2ee:Enabled=false`, `ConfidentialE2eeUnavailable`. Com a flag ligada, o body é envelope HPKE e não volta em busca, IA, push, backup nem legal hold (ADR-064) |
 | Hold | Hold ativo bloqueia desligar a flag (409). A recusa é auditada, sem body |
 | Cross-tenant | RLS FORCE em `audit.content_audit_settings` |
+
+### Canais confidenciais (B-064 / ADR-064)
+
+| Item | Controle |
+|------|----------|
+| Flag | `Messaging:E2ee:Enabled` off. Sem revisão criptográfica independente não liga em produção |
+| Protocolo | HPKE base P-256 via `hpke-js` (RFC 9180). MLS fica de fora até existir biblioteca no toolchain |
+| Servidor | Valida envelope e `kid`. Não decifra. Outbox, busca, push, IA, backup e legal hold não levam o texto claro |
+| Membership | Chave não substitui membership. Dispositivo revogado sai dos epochs seguintes |
+| Backup | Blob cifrado no cliente. Sem escrow |
+| Cross-tenant | RLS FORCE em `messaging.e2ee_devices`, `e2ee_backups`, `e2ee_verifications` |
 
 ### Classificação e DLP (B-130 / ADR-044)
 

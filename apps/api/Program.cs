@@ -308,6 +308,7 @@ v1.MapMobile();
 v1.MapOfflineSync();
 v1.MapStorageLifecycle();
 v1.MapChatBackup();
+v1.MapE2ee();
 v1.MapHa();
 
 app.MapScim();

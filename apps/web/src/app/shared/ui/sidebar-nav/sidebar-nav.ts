@@ -8,6 +8,7 @@ import {
   SpaceGroup,
   WorkspaceMember,
 } from '../../models/chat.models';
+import { E2eeCreateFields } from '../e2ee-create-fields';
 import { ChannelItem } from '../channel-item/channel-item';
 import { Avatar } from '../avatar/avatar';
 import { Button } from '../button/button';
@@ -22,7 +23,7 @@ function matchesFilter(text: string, query: string): boolean {
 @Component({
   selector: 'vc-sidebar-nav',
   standalone: true,
-  imports: [ChannelItem, Button, Input, VcTooltip, Avatar],
+  imports: [ChannelItem, Button, Input, VcTooltip, Avatar, E2eeCreateFields],
   template: `
     <nav
       class="vc-sidebar-nav vc-anim-sidebar"
@@ -107,8 +108,12 @@ function matchesFilter(text: string, query: string): boolean {
                       @if (canPublishAnnouncement()) {
                         <option value="Announcement">{{ ui.navAnnouncement }}</option>
                       }
+                      @if (e2eeAvailable()) { <option value="ConfidentialE2EE">{{ ui.navConfidential }}</option> }
                     </select>
                   </label>
+                  @if (channelType() === 'ConfidentialE2EE') {
+                    <vc-e2ee-create-fields (acknowledged)="confidentialAck.set($event)" />
+                  }
                   @if (createError()) {
                     <p class="vc-sidebar-nav__error" role="alert">{{ createError() }}</p>
                   }
@@ -458,20 +463,8 @@ function matchesFilter(text: string, query: string): boolean {
       font-size: 0.82rem;
       color: var(--vc-ink-muted);
     }
-    .vc-sidebar-nav__select select {
-      min-height: 2.5rem;
-      padding: 0.55rem 0.8rem;
-      border-radius: var(--vc-radius-md);
-      border: 1px solid var(--vc-border);
-      background: var(--vc-surface-elevated);
-      color: var(--vc-ink);
-      font: inherit;
-    }
-    .vc-sidebar-nav__form-actions {
-      display: flex;
-      gap: var(--vc-space-2);
-      flex-wrap: wrap;
-    }
+    .vc-sidebar-nav__select select { min-height: 2.5rem; padding: 0.55rem 0.8rem; border-radius: var(--vc-radius-md); border: 1px solid var(--vc-border); background: var(--vc-surface-elevated); color: var(--vc-ink); font: inherit; }
+    .vc-sidebar-nav__form-actions { display: flex; gap: var(--vc-space-2); flex-wrap: wrap; }
     .vc-sidebar-nav__error {
       margin: 0;
       color: var(--vc-danger);
@@ -611,6 +604,7 @@ export class SidebarNav {
   readonly followAllThreadsIds = input<ReadonlySet<string>>(new Set());
   readonly canCreate = input(false);
   readonly canPublishAnnouncement = input(false);
+  readonly e2eeAvailable = input(false);
   readonly compact = input(false);
   readonly select = output<string>();
   readonly openDm = output<string>();
@@ -636,6 +630,7 @@ export class SidebarNav {
   readonly newSpaceName = signal('');
   readonly selectedSpaceId = signal('');
   readonly channelType = signal('Public');
+  readonly confidentialAck = signal(false);
   readonly pickerOpen = signal(false);
   readonly personalOpen = signal(false);
   readonly personalName = signal('');
@@ -848,6 +843,7 @@ export class SidebarNav {
 
   onTypeChange(event: Event): void {
     this.channelType.set((event.target as HTMLSelectElement).value);
+    this.confidentialAck.set(false);
   }
 
   cancelCreate(): void {
@@ -868,6 +864,10 @@ export class SidebarNav {
     }
     if (this.selectedSpaceId() === '__new__' && !this.newSpaceName().trim()) {
       this.createError.set(ui.navNeedSpaceName);
+      return;
+    }
+    if (this.channelType() === 'ConfidentialE2EE' && !this.confidentialAck()) {
+      this.createError.set(ui.e2eeAcknowledge);
       return;
     }
 

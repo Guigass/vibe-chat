@@ -1,4 +1,6 @@
 import { ApiService } from '../api/api.service';
+import { isConfidentialChannel } from '../e2ee/e2ee-crypto';
+import { sealChannelText } from '../e2ee/e2ee-channel';
 import { ui } from '../i18n/strings';
 import { versionOf, type OfflineQueuePort } from '../offline/offline-engine';
 import { ChatMessage, PollSummary } from '../../shared/models/chat.models';
@@ -14,7 +16,7 @@ export interface MessageCommandDeps {
   api: ApiService;
   isDemo: () => boolean;
   isOfflineDemo: () => boolean;
-  activeChannel: () => { id: string; isDirect?: boolean } | null | undefined;
+  activeChannel: () => { id: string; isDirect?: boolean; type?: string } | null | undefined;
   profile: () => { id?: string; name?: string } | null | undefined;
   messages: () => readonly ChatMessage[];
   updateMessages: (fn: (list: ChatMessage[]) => ChatMessage[]) => void;
@@ -67,6 +69,11 @@ export async function sendChannelMessage(
           deleted: false,
         }
       : null;
+
+  let wireBody = text;
+  if (isConfidentialChannel(channel) && !(deps.isDemo() || deps.isOfflineDemo())) {
+    wireBody = await sealChannelText(deps.api, channel.id, text);
+  }
 
   const clientMessageId = crypto.randomUUID();
   const idempotencyKey = crypto.randomUUID();
@@ -134,7 +141,7 @@ export async function sendChannelMessage(
 
     const persisted = await deps.api.sendMessage({
       channelId: channel.id,
-      body: optimistic.body,
+      body: wireBody,
       clientMessageId,
       idempotencyKey,
       attachmentIds,

@@ -1,5 +1,6 @@
 import { WritableSignal } from '@angular/core';
 import { ApiService } from '../../../core/api/api.service';
+import { isSealedContentType, openSealedBlob } from '../../../core/e2ee/e2ee-crypto';
 import { fillTemplate, ui } from '../../../core/i18n/strings';
 import {
   attachmentScanHold,
@@ -117,6 +118,22 @@ export async function downloadMessageAttachment(
   if (!channelId || attachmentScanHold(attachment)) return;
   try {
     const result = await api.getAttachmentDownload(channelId, attachment.id);
+    if (isSealedContentType(attachment.contentType)) {
+      const response = await fetch(result.downloadUrl);
+      const opened = await openSealedBlob(new Uint8Array(await response.arrayBuffer()));
+      if (!opened) return;
+      const bytes = opened.bytes.buffer.slice(
+        opened.bytes.byteOffset,
+        opened.bytes.byteOffset + opened.bytes.byteLength,
+      ) as ArrayBuffer;
+      const url = URL.createObjectURL(new Blob([bytes], { type: opened.type }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = opened.name;
+      link.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
     downloadUrls.update((current) => ({ ...current, [attachment.id]: result.downloadUrl }));
     window.open(result.downloadUrl, '_blank', 'noopener,noreferrer');
   } catch {

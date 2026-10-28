@@ -67,7 +67,7 @@ organiza. Estados:
 | Malware scanning/quarentena | Done | B-131 / W13 |
 | Export de audit para SIEM | Atual | B-132 / W14 |
 | Policy packs e admin delegado | Planned | B-133/B-134 / W14 |
-| E2EE | Planned | B-064 / W16 (deps B-169) |
+| E2EE | Done | B-064 / W16 — flag `Messaging:E2ee:Enabled` off; ADR-064 |
 | Diagnóstico e support bundle sanitizado | Atual | B-154 / W11 |
 
 ## Plataforma e ecossistema

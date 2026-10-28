@@ -1835,6 +1835,20 @@
     "chatBackup.file": "Fichier de sauvegarde",
     "chatBackup.validate": "Simuler la restauration",
     "chatBackup.execute": "Confirmer la restauration",
-    "error.ChatBackupDisabled": "La sauvegarde du chat est désactivée sur cette installation."
+    "error.ChatBackupDisabled": "La sauvegarde du chat est désactivée sur cette installation.",
+    "nav.confidential": "Confidentiel",
+    "e2ee.capabilityBody": "Pas de recherche, d'IA, de DLP, de modération, de gel juridique, de sondages, de planification ni de transfert. Le serveur ne garde que le texte chiffré.",
+    "e2ee.acknowledge": "Je comprends qu'une clé perdue ne revient pas et que les nouveaux membres ne lisent pas l'historique.",
+    "e2ee.banner": "Canal confidentiel. Le serveur ne lit pas les messages.",
+    "e2ee.fingerprint": "Empreinte de cet appareil",
+    "e2ee.verify": "Marquer l'appareil comme vérifié",
+    "e2ee.verified": "Appareil vérifié",
+    "e2ee.backup": "Enregistrer une copie de la clé",
+    "e2ee.backupWarning": "La copie est chiffrée avec le mot de passe. Le serveur ne récupère pas la clé.",
+    "e2ee.backupPassword": "Mot de passe de la copie",
+    "e2ee.composerBlocked": "Ce client n'a pas de clé pour le canal.",
+    "e2ee.composerPlaceholder": "Message chiffré sur cet appareil",
+    "e2ee.locked": "Message chiffré",
+    "error.e2ee": "Le canal confidentiel n'a pas pu être utilisé."
   }
 }

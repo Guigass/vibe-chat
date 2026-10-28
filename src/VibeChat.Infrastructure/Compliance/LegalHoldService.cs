@@ -395,20 +395,38 @@ public sealed class LegalHoldService(VibeChatDbContext db, IClock clock, ILogger
             return ComplianceResult.Fail(413, LegalHoldErrors.ResultTooLarge);
         }
 
+        var confidentialChannels = await db.Channels.AsNoTracking()
+            .Where(x => x.TenantId == workspace.TenantId && x.Type == ChannelType.ConfidentialE2ee)
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+        var hiddenConversations = confidentialChannels.Select(x => x.Value).ToHashSet();
+        var threadIds = await db.MessageThreads.AsNoTracking()
+            .Where(x => confidentialChannels.Contains(x.ChannelId))
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+        foreach (var threadId in threadIds)
+        {
+            hiddenConversations.Add(threadId);
+        }
+
         var now = clock.UtcNow;
         var manifest = new DiscoveryManifest(
             LegalHoldLimits.ExportFormat,
             discoveryCase.Id,
             now,
             query,
-            rows.Select(row => new DiscoveryManifestItem(
-                row.Id.Value,
-                row.AuthorId.Value,
-                row.ConversationId.Value,
-                row.CreatedAt,
-                row.DeletedAt,
-                CustodyChain.Sha256Hex(row.Body),
-                row.Body)).ToArray());
+            rows.Select(row =>
+            {
+                var body = hiddenConversations.Contains(row.ConversationId.Value) ? string.Empty : row.Body;
+                return new DiscoveryManifestItem(
+                    row.Id.Value,
+                    row.AuthorId.Value,
+                    row.ConversationId.Value,
+                    row.CreatedAt,
+                    row.DeletedAt,
+                    CustodyChain.Sha256Hex(body),
+                    body);
+            }).ToArray());
         var manifestJson = JsonSerializer.Serialize(manifest, Json);
         var export = new DiscoveryExportRecord
         {

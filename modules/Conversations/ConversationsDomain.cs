@@ -9,13 +9,14 @@ public enum ChannelType
     Announcement = 2,
     Direct = 3,
     Group = 4,
-    GroupDm = 5
+    GroupDm = 5,
+    ConfidentialE2ee = 6
 }
 
 public static class ChannelTypes
 {
     public static bool RequiresChannelMembership(this ChannelType type) =>
-        type is ChannelType.Private or ChannelType.Direct or ChannelType.Group or ChannelType.GroupDm;
+        type is ChannelType.Private or ChannelType.Direct or ChannelType.Group or ChannelType.GroupDm or ChannelType.ConfidentialE2ee;
 
     public static bool IsGroupDirect(this ChannelType type) =>
         type is ChannelType.GroupDm or ChannelType.Group;
@@ -37,6 +38,8 @@ public sealed class Channel : AggregateRoot
     public ChannelType Type { get; set; }
     /// <summary>Stream (default) or explicit forum mode (B-118). Never inferred.</summary>
     public ChannelLayout Layout { get; set; } = ChannelLayout.Stream;
+    /// <summary>Current recipient epoch for <see cref="ChannelType.ConfidentialE2ee"/>. Other types stay 0.</summary>
+    public int E2eeGeneration { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public UserId CreatedBy { get; set; }
 }

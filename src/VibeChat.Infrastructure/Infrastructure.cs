@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddDesktopInfrastructure(configuration);
         services.AddMobileInfrastructure(configuration);
         services.AddHaCoordination(configuration);
+        services.Configure<VibeChat.Messaging.E2eeOptions>(configuration.GetSection(VibeChat.Messaging.E2eeOptions.SectionName));
         services.AddInfrastructureHealthChecks();
         return services;
     }

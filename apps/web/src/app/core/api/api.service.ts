@@ -22,6 +22,7 @@ import { PluginApiService } from './plugin-api.service';
 import { SdkApiService } from './sdk-api.service';
 import { BridgeApiService } from './bridge-api.service';
 import { FederationApiService } from './federation-api.service';
+import { E2eeApiService } from './e2ee-api.service';
 import { BrandingApiService } from './branding-api.service';
 import { DesktopApiService } from './desktop-api.service';
 import { MobileApiService } from './mobile-api.service';
@@ -57,6 +58,7 @@ export class ApiService {
   private readonly sdk = inject(SdkApiService);
   private readonly bridges = inject(BridgeApiService);
   private readonly federation = inject(FederationApiService);
+  private readonly e2ee = inject(E2eeApiService);
   private readonly branding = inject(BrandingApiService);
   private readonly desktop = inject(DesktopApiService);
   private readonly mobile = inject(MobileApiService);
@@ -302,6 +304,11 @@ export class ApiService {
   readonly pauseFederation: FederationApiService['pauseFederation'] = this.federation.pauseFederation.bind(this.federation);
   readonly resumeFederation: FederationApiService['resumeFederation'] = this.federation.resumeFederation.bind(this.federation);
   readonly revokeFederation: FederationApiService['revokeFederation'] = this.federation.revokeFederation.bind(this.federation);
+  readonly e2eeCapabilities: E2eeApiService['e2eeCapabilities'] = this.e2ee.e2eeCapabilities.bind(this.e2ee);
+  readonly registerE2eeDevice: E2eeApiService['registerE2eeDevice'] = this.e2ee.registerE2eeDevice.bind(this.e2ee);
+  readonly e2eeChannel: E2eeApiService['e2eeChannel'] = this.e2ee.e2eeChannel.bind(this.e2ee);
+  readonly verifyE2eeDevice: E2eeApiService['verifyE2eeDevice'] = this.e2ee.verifyE2eeDevice.bind(this.e2ee);
+  readonly saveE2eeBackup: E2eeApiService['saveE2eeBackup'] = this.e2ee.saveE2eeBackup.bind(this.e2ee);
   readonly publicBrand: BrandingApiService['publicBrand'] = this.branding.publicBrand.bind(this.branding);
   readonly tenantBrand: BrandingApiService['tenantBrand'] = this.branding.tenantBrand.bind(this.branding);
   readonly adminBrand: BrandingApiService['adminBrand'] = this.branding.adminBrand.bind(this.branding);

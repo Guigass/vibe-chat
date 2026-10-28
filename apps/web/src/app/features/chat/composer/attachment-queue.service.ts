@@ -1,3 +1,5 @@
+import { isConfidentialChannel, SEALED_CONTENT_TYPE } from '../../../core/e2ee/e2ee-crypto';
+import { sealChannelFile } from '../../../core/e2ee/e2ee-channel';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../../../core/api/api.service';
 import { fillTemplate, ui } from '../../../core/i18n/strings';
@@ -316,13 +318,14 @@ export class AttachmentQueueService {
     this.patch(localId, { status: 'uploading', progress: 0, error: undefined });
 
     try {
-      const contentType = resolveContentType(item.file);
-      const isVideo = item.uploadKind === 'Video' || isVideoContentType(contentType);
+      const sealed = await this.sealIfConfidential(channelId, item.file);
+      const contentType = sealed === item.file ? resolveContentType(item.file) : SEALED_CONTENT_TYPE;
+      const isVideo = sealed === item.file && (item.uploadKind === 'Video' || isVideoContentType(contentType));
       const initiated = await this.api.initiateAttachmentUpload({
         channelId,
-        fileName: item.file.name,
+        fileName: sealed.name,
         contentType,
-        sizeBytes: item.file.size,
+        sizeBytes: sealed.size,
         kind: isVideo ? 'Video' : undefined,
         durationMs: isVideo ? item.durationMs : undefined,
         width: isVideo ? item.width : undefined,
@@ -331,7 +334,7 @@ export class AttachmentQueueService {
 
       await this.api.uploadFileToPresignedUrl(
         initiated.uploadUrl,
-        item.file,
+        sealed,
         initiated.requiredHeaders ?? {},
         (progress) => this.patch(localId, { progress }),
         controller.signal,
@@ -369,6 +372,12 @@ export class AttachmentQueueService {
     this.itemsSignal.update((list) =>
       list.map((item) => (item.localId === localId ? { ...item, ...patch } : item)),
     );
+  }
+
+  private async sealIfConfidential(channelId: string, file: File): Promise<File> {
+    const channel = this.channels.channels().find((row) => row.id === channelId) ?? this.channels.activeChannel();
+    if (!isConfidentialChannel(channel)) return file;
+    return sealChannelFile(this.api, channelId, file);
   }
 
   private announce(message: string): void {

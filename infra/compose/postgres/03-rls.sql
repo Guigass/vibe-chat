@@ -979,6 +979,28 @@ CREATE POLICY tenant_isolation_federation_identities ON integrations.federation_
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS messaging.e2ee_devices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.e2ee_devices FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.e2ee_backups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.e2ee_backups FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.e2ee_verifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS messaging.e2ee_verifications FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_e2ee_devices ON messaging.e2ee_devices;
+CREATE POLICY tenant_isolation_e2ee_devices ON messaging.e2ee_devices
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_e2ee_backups ON messaging.e2ee_backups;
+CREATE POLICY tenant_isolation_e2ee_backups ON messaging.e2ee_backups
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_e2ee_verifications ON messaging.e2ee_verifications;
+CREATE POLICY tenant_isolation_e2ee_verifications ON messaging.e2ee_verifications
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 DROP POLICY IF EXISTS tenant_isolation_federation_events ON integrations.federation_events;
 CREATE POLICY tenant_isolation_federation_events ON integrations.federation_events
     USING ("TenantId" = app.current_tenant_id())

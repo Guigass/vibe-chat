@@ -1,4 +1,5 @@
-import { Component, input, inject } from '@angular/core';
+import { Component, input, inject, signal } from '@angular/core';
+import { ApiService } from '../../../core/api/api.service';
 import { ChannelStore } from '../../../core/services/channel.store';
 import { MemberProfileStore } from '../../../core/services/member-profile.store';
 import { DraftStoreService } from '../../../core/services/draft-store.service';
@@ -66,6 +67,7 @@ import { ui } from '../../../core/i18n/strings';
           [followAllThreadsIds]="notificationPrefs.followAllThreadsChannelIds()"
           [canCreate]="channels.canCreateChannel()"
           [canPublishAnnouncement]="channels.canPublishAnnouncement()"
+          [e2eeAvailable]="e2eeAvailable()"
           [compact]="navCompact()"
           (select)="onSelect($event)"
           (openDm)="onOpenDm($event)"
@@ -154,6 +156,15 @@ export class ChannelList {
   readonly notificationPrefs = inject(NotificationPreferencesStore);
   private readonly messages = inject(MessageStore);
   private readonly pins = inject(PinStore);
+  private readonly api = inject(ApiService);
+  readonly e2eeAvailable = signal(false);
+
+  constructor() {
+    void this.api.e2eeCapabilities().then(
+      () => this.e2eeAvailable.set(true),
+      () => this.e2eeAvailable.set(false),
+    );
+  }
 
   async onChannelMuteAction(event: { channelId: string; action: ChannelMuteAction }): Promise<void> {
     const { channelId, action } = event;

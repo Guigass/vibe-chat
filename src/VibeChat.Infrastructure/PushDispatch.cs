@@ -150,7 +150,8 @@ public sealed class PushDispatcher(
         var authorId = root["authorId"]?.GetValue<Guid>() ?? Guid.Empty;
         var sequence = root["sequence"]?.GetValue<long>() ?? 0;
         var authorName = root["authorName"]?.GetValue<string>() ?? string.Empty;
-        var body = root["body"]?.GetValue<string>() ?? string.Empty;
+        var e2ee = root["e2ee"] is JsonValue e2eeNode && e2eeNode.TryGetValue<bool>(out var sealedBody) && sealedBody;
+        var body = e2ee ? string.Empty : root["body"]?.GetValue<string>() ?? string.Empty;
         var mentioned = ParseMentionedUserIds(root["mentionedUserIds"]);
         var threadId = root["threadId"] is JsonValue threadIdValue && threadIdValue.TryGetValue<Guid>(out var parsedThreadId)
             ? parsedThreadId

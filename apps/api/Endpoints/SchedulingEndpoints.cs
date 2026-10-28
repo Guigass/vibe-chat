@@ -33,6 +33,11 @@ internal static class SchedulingEndpoints
                 return Results.Forbid();
             }
 
+            if (channel.Type == ChannelType.ConfidentialE2ee)
+            {
+                return Results.BadRequest(new { error = E2eeErrors.CapabilityUnavailable });
+            }
+
             var keyError = ValidateIdempotencyKey(request.IdempotencyKey, out var key);
             if (keyError is not null)
             {

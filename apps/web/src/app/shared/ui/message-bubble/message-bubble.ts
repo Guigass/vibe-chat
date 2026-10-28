@@ -6,6 +6,8 @@ import type { MessageMenuActionId } from '../../attachments/attachment-preview';
 import { Avatar } from '../avatar/avatar';
 import { ImageLightbox } from '../image-lightbox/image-lightbox';
 import { MarkdownBody } from '../../markdown/markdown-body';
+import { E2eePlaintext } from '../e2ee-plaintext';
+import { isE2eeEnvelope } from '../../../core/e2ee/e2ee-crypto';
 import { ApiService } from '../../../core/api/api.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ChannelStore } from '../../../core/services/channel.store';
@@ -58,6 +60,7 @@ import { MOVED_BODY } from '../../messaging/message-history';
     DatePipe,
     ImageLightbox,
     MarkdownBody,
+    E2eePlaintext,
     EmojiPicker,
     PollCard,
     AnnouncementCard,
@@ -80,6 +83,10 @@ import { MOVED_BODY } from '../../messaging/message-history';
 })
 export class MessageBubble {
   readonly ui = ui;
+
+  e2eeBody(): boolean {
+    return isE2eeEnvelope(this.message().body);
+  }
   readonly fillTemplate = fillTemplate;
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);

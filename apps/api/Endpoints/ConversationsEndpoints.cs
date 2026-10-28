@@ -248,7 +248,12 @@ internal static class ConversationsEndpoints
             if (ContentAuditRules.IsConfidentialE2eeType(request.Type))
             {
                 var auditOn = await AdministrationEndpointHelpers.IsContentAuditEnabledAsync(db, workspace.TenantId, ct);
-                return Results.BadRequest(new { error = ContentAuditRules.E2eeCreationError(auditOn) });
+                var e2ee = http.RequestServices.GetRequiredService<Microsoft.Extensions.Options.IOptions<VibeChat.Messaging.E2eeOptions>>().Value.Enabled;
+                var blocked = ContentAuditRules.E2eeCreationError(auditOn, e2ee);
+                if (blocked is not null)
+                {
+                    return Results.BadRequest(new { error = blocked });
+                }
             }
 
             var channelType = Enum.TryParse<ChannelType>(request.Type, true, out var type) ? type : ChannelType.Public;
@@ -278,6 +283,7 @@ internal static class ConversationsEndpoints
                 Name = name,
                 Type = channelType,
                 Layout = layout,
+                E2eeGeneration = channelType == ChannelType.ConfidentialE2ee ? 1 : 0,
                 CreatedAt = clock.UtcNow,
                 CreatedBy = profile.Id
             };
