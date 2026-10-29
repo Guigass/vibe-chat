@@ -69,6 +69,7 @@ public static class VibeChatMetrics
     public static readonly Counter<long> LiveSessions = Meter.CreateCounter<long>("vibechat.live.sessions");
     public static readonly Counter<long> LiveJoins = Meter.CreateCounter<long>("vibechat.live.joins");
     public static readonly Counter<long> LiveRejected = Meter.CreateCounter<long>("vibechat.live.rejected");
+    public static readonly Counter<long> LiveTranscriptions = Meter.CreateCounter<long>("vibechat.live.transcriptions");
     public static readonly UpDownCounter<long> LiveParticipants = Meter.CreateUpDownCounter<long>("vibechat.live.participants");
     public static readonly UpDownCounter<long> AttachmentScanQueue = Meter.CreateUpDownCounter<long>("vibechat.files.scan.queue");
     public static readonly UpDownCounter<long> RealtimeConnections = Meter.CreateUpDownCounter<long>("vibechat.realtime.connections");

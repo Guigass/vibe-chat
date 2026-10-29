@@ -75,6 +75,10 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<LiveWorkspacePolicy> LiveWorkspacePolicies => Set<LiveWorkspacePolicy>();
     public DbSet<LiveRecording> LiveRecordings => Set<LiveRecording>();
     public DbSet<LiveRecordingConsent> LiveRecordingConsents => Set<LiveRecordingConsent>();
+    public DbSet<LiveTranscript> LiveTranscripts => Set<LiveTranscript>();
+    public DbSet<LiveTranscriptConsent> LiveTranscriptConsents => Set<LiveTranscriptConsent>();
+    public DbSet<LiveTranscriptSegment> LiveTranscriptSegments => Set<LiveTranscriptSegment>();
+    public DbSet<LiveNoteSuggestion> LiveNoteSuggestions => Set<LiveNoteSuggestion>();
     public DbSet<MessageThread> MessageThreads => Set<MessageThread>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Reaction> Reactions => Set<Reaction>();
@@ -677,6 +681,64 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
             entity.Property(x => x.Decision).HasMaxLength(16).IsRequired();
             entity.HasIndex(x => new { x.TenantId, x.RecordingId, x.UserId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<LiveTranscript>(entity =>
+        {
+            entity.ToTable("live_transcripts", "conversations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.StartedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.State).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.FailureCode).HasMaxLength(64);
+            entity.Property(x => x.Provider).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.ProviderRef).HasMaxLength(80);
+            entity.Property(x => x.Summary).HasMaxLength(MeetingAiRules.MaxSummaryLength).IsRequired();
+            entity.Property(x => x.Confidence).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.RequestHash).HasMaxLength(64).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.SessionId, x.IdempotencyKey }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<LiveTranscriptConsent>(entity =>
+        {
+            entity.ToTable("live_transcript_consents", "conversations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Decision).HasMaxLength(16).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.TranscriptId, x.UserId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<LiveTranscriptSegment>(entity =>
+        {
+            entity.ToTable("live_transcript_segments", "conversations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.SpeakerLabel).HasMaxLength(32);
+            entity.Property(x => x.Text).HasMaxLength(MeetingAiRules.MaxSegmentLength).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.TranscriptId, x.Ordinal }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<LiveNoteSuggestion>(entity =>
+        {
+            entity.ToTable("live_note_suggestions", "conversations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.Kind).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.Text).HasMaxLength(MeetingAiRules.MaxSuggestionLength).IsRequired();
+            entity.Property(x => x.State).HasMaxLength(16).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.TranscriptId });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

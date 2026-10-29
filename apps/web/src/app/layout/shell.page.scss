@@ -362,6 +362,8 @@
 }
 
 .shell__header {
+  position: relative;
+  z-index: var(--vc-z-dropdown);
   display: flex;
   align-items: flex-start;
   flex-wrap: wrap;

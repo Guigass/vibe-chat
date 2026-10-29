@@ -222,6 +222,13 @@ public static class AuditActions
     public const string LiveRecordingStop = "live.recording.stop";
     public const string LiveRecordingReady = "live.recording.ready";
     public const string LiveRecordingDownload = "live.recording.download";
+    public const string LiveTranscriptionRequest = "live.transcription.request";
+    public const string LiveTranscriptionConsent = "live.transcription.consent";
+    public const string LiveTranscriptionReady = "live.transcription.ready";
+    public const string LiveTranscriptionFailed = "live.transcription.failed";
+    public const string LiveTranscriptionDelete = "live.transcription.delete";
+    public const string LiveTranscriptionExport = "live.transcription.export";
+    public const string LiveTranscriptionConfirm = "live.transcription.confirm";
 }
 
 public interface IAuditWriter

@@ -10,6 +10,8 @@ export interface LiveHealth {
   recordingEnabled: boolean;
   canShare: boolean;
   canRecord: boolean;
+  transcriptionEnabled: boolean;
+  canTranscribe: boolean;
   activeSessions: number;
   maxSessions: number;
   maxParticipants: number;
@@ -34,12 +36,49 @@ export interface LiveRecordingView {
   onHold: boolean;
 }
 
+export interface LiveTranscriptStub {
+  id: string;
+  state: string;
+  failureCode: string | null;
+  startedBy: string;
+  startedByName: string;
+}
+
+export interface LiveNoteSegment {
+  startMs: number;
+  endMs: number;
+  speakerLabel: string | null;
+  text: string;
+}
+
+export interface LiveNoteSuggestion {
+  id: string;
+  kind: string;
+  text: string;
+  startMs: number;
+  endMs: number;
+  state: string;
+}
+
+export interface LiveNote {
+  id: string;
+  state: string;
+  failureCode: string | null;
+  confidence: string | null;
+  summary: string;
+  recordingId: string;
+  onHold: boolean;
+  segments: LiveNoteSegment[];
+  suggestions: LiveNoteSuggestion[];
+}
+
 export interface LiveState {
   sessionId: string;
   state: string;
   videoAllowed: boolean;
   participants: LiveParticipant[];
   recording: LiveRecordingView | null;
+  transcript: LiveTranscriptStub | null;
 }
 
 export interface LiveGrant {
@@ -98,7 +137,7 @@ export class LiveApiService extends HttpApiClient {
     });
   }
 
-  livePolicy(workspaceId: string, body: { shareEnabled: boolean; recordingEnabled: boolean }): Promise<LiveHealth> {
+  livePolicy(workspaceId: string, body: { shareEnabled: boolean; recordingEnabled: boolean; transcriptionEnabled?: boolean }): Promise<LiveHealth> {
     return this.request(`/api/v1/workspaces/${workspaceId}/live/policy`, {
       method: 'PUT',
       body: JSON.stringify(body),
@@ -138,5 +177,53 @@ export class LiveApiService extends HttpApiClient {
     return this.request(`/api/v1/channels/${channelId}/live/sessions/${sessionId}/recordings/${recordingId}/stop`, {
       method: 'POST',
     });
+  }
+
+  liveTranscribe(channelId: string, sessionId: string, idempotencyKey: string): Promise<LiveTranscriptStub> {
+    return this.request(`/api/v1/channels/${channelId}/live/sessions/${sessionId}/transcripts`, {
+      method: 'POST',
+      headers: { 'Idempotency-Key': idempotencyKey },
+    });
+  }
+
+  liveTranscriptConsent(
+    channelId: string,
+    sessionId: string,
+    transcriptId: string,
+    decision: 'accept' | 'decline',
+  ): Promise<LiveTranscriptStub> {
+    return this.request(`/api/v1/channels/${channelId}/live/sessions/${sessionId}/transcripts/${transcriptId}/consent`, {
+      method: 'POST',
+      body: JSON.stringify({ decision }),
+    });
+  }
+
+  liveTranscriptCancel(channelId: string, sessionId: string, transcriptId: string): Promise<LiveTranscriptStub> {
+    return this.request(`/api/v1/channels/${channelId}/live/sessions/${sessionId}/transcripts/${transcriptId}/cancel`, {
+      method: 'POST',
+    });
+  }
+
+  liveTranscript(channelId: string, sessionId: string, transcriptId: string): Promise<LiveNote> {
+    return this.request(`/api/v1/channels/${channelId}/live/sessions/${sessionId}/transcripts/${transcriptId}`);
+  }
+
+  liveTranscriptDelete(channelId: string, sessionId: string, transcriptId: string): Promise<{ id: string; state: string }> {
+    return this.request(`/api/v1/channels/${channelId}/live/sessions/${sessionId}/transcripts/${transcriptId}/delete`, {
+      method: 'POST',
+    });
+  }
+
+  liveSuggestionReview(
+    channelId: string,
+    sessionId: string,
+    transcriptId: string,
+    suggestionId: string,
+    action: 'confirm' | 'dismiss',
+  ): Promise<LiveNoteSuggestion> {
+    return this.request(
+      `/api/v1/channels/${channelId}/live/sessions/${sessionId}/transcripts/${transcriptId}/suggestions/${suggestionId}/${action}`,
+      { method: 'POST' },
+    );
   }
 }

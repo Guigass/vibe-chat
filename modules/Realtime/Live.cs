@@ -73,6 +73,14 @@ public static class LiveErrors
     public const string RecordingQuota = "LiveRecordingQuota";
     public const string RecordingRejected = "LiveRecordingRejected";
     public const string DecisionInvalid = "LiveRecordingDecisionInvalid";
+    public const string TranscriptionDisabled = "LiveTranscriptionDisabled";
+    public const string TranscriptionUnavailable = "LiveTranscriptionUnavailable";
+    public const string TranscriptionNoMedia = "LiveTranscriptionNoMedia";
+    public const string TranscriptionNotFound = "LiveTranscriptionNotFound";
+    public const string TranscriptionExpired = "LiveTranscriptionExpired";
+    public const string TranscriptionDecisionInvalid = "LiveTranscriptionDecisionInvalid";
+    public const string NoteNotReady = "LiveNoteNotReady";
+    public const string SuggestionInvalid = "LiveSuggestionInvalid";
 }
 
 public static class LiveRules
@@ -312,6 +320,8 @@ public sealed class LiveWorkspacePolicy
     public bool ShareEnabled { get; set; }
 
     public bool RecordingEnabled { get; set; }
+
+    public bool TranscriptionEnabled { get; set; }
 
     public UserId UpdatedBy { get; set; }
 

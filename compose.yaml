@@ -329,6 +329,8 @@ services:
       Features__Live__MaxParticipants: ${Features__Live__MaxParticipants:-8}
       Features__Live__MaxSessionsPerWorkspace: ${Features__Live__MaxSessionsPerWorkspace:-2}
       Features__Live__TokenTtlSeconds: ${Features__Live__TokenTtlSeconds:-60}
+      Features__MeetingAi__Enabled: ${Features__MeetingAi__Enabled:-false}
+      Features__MeetingAi__Provider: ${Features__MeetingAi__Provider:-none}
       Identity__Scim__Enabled: ${IDENTITY_SCIM_ENABLED:-false}
       Identity__Scim__KeycloakAdapter: ${IDENTITY_SCIM_KEYCLOAK_ADAPTER:-false}
       Identity__Sso__Enabled: ${IDENTITY_SSO_ENABLED:-false}
@@ -455,6 +457,11 @@ services:
       RuntimeSettings__DatabaseOverridesEnabled: ${RuntimeSettings__DatabaseOverridesEnabled:-false}
       RuntimeSettings__Encryption__ActiveKeyVersion: ${RuntimeSettings__Encryption__ActiveKeyVersion:-1}
       RuntimeSettings__Encryption__Keys__1: ${RuntimeSettings__Encryption__Keys__1:-}
+      Features__Live__Enabled: ${Features__Live__Enabled:-false}
+      Features__Live__Provider: ${Features__Live__Provider:-none}
+      Features__Live__RecordingEnabled: ${Features__Live__RecordingEnabled:-false}
+      Features__MeetingAi__Enabled: ${Features__MeetingAi__Enabled:-false}
+      Features__MeetingAi__Provider: ${Features__MeetingAi__Provider:-none}
     depends_on:
       postgres:
         condition: service_healthy

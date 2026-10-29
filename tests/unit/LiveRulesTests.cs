@@ -77,6 +77,27 @@ public sealed class LiveRulesTests
     }
 
     [Fact]
+    public void Transcription_does_not_send_without_consent_and_notes_keep_citations()
+    {
+        MeetingAiRules.MaySend(false, MeetingAiRules.ProviderExternal).Should().BeFalse();
+        MeetingAiRules.MaySend(true, MeetingAiRules.ProviderNone).Should().BeFalse();
+        MeetingAiRules.MaySend(true, MeetingAiRules.ProviderLocal).Should().BeTrue();
+        MeetingAiRules.MaySend(true, MeetingAiRules.ProviderExternal).Should().BeTrue();
+        MeetingAiRules.NormalizeProvider("LOCAL").Should().Be(MeetingAiRules.ProviderLocal);
+        MeetingAiRules.NormalizeProvider("").Should().Be(MeetingAiRules.ProviderNone);
+        MeetingAiRules.NextState(["accepted", "pending"]).Should().Be(MeetingAiRules.StateConsent);
+        MeetingAiRules.NextState(["accepted", "accepted"]).Should().Be(MeetingAiRules.StateQueued);
+        MeetingAiRules.NextState(["declined"]).Should().Be(MeetingAiRules.StateDeclined);
+        MeetingAiRules.OpaqueSpeaker("speaker-2").Should().Be("speaker-2");
+        MeetingAiRules.OpaqueSpeaker("Ada Lovelace").Should().BeNull();
+        var draft = MeetingAiRules.LabDraft(Guid.NewGuid());
+        MeetingAiRules.HasCitations(draft).Should().BeTrue();
+        MeetingAiRules.PolicyMetadata(7).Should().Be("rag=off;retentionDays=7");
+        MeetingAiRules.ShouldForget(MeetingAiRules.StateReady, DateTimeOffset.UnixEpoch, DateTimeOffset.UtcNow, false).Should().BeTrue();
+        MeetingAiRules.ShouldForget(MeetingAiRules.StateReady, DateTimeOffset.UnixEpoch, DateTimeOffset.UtcNow, true).Should().BeFalse();
+    }
+
+    [Fact]
     public void Dev_token_cannot_be_read_as_another_room()
     {
         var provider = Provider();

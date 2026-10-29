@@ -1228,6 +1228,27 @@ O evento `live.recording.changed` (schemaVersion 1) leva `tenantId`, `recordingI
 
 `live.share` é de Member, Moderator e Admin. `live.record` é de Moderator e Admin (e dono do workspace). Guest não recebe nenhum dos dois.
 
+### Transcrição e notas de reunião (B-149 / ADR-067)
+
+`Features:MeetingAi:Enabled` nasce **false**. A policy do workspace também nasce false. O provider nasce `none`. `local` não faz egress. `external` é opt-in e só recebe a chave do objeto autorizado e o metadado `rag=off`. Desligada, a rota de transcrição responde 403 `LiveTranscriptionDisabled`. O huddle e a gravação seguem.
+
+Sem gravação `ready`, a resposta é 409 `LiveTranscriptionNoMedia` e o provider não é chamado. O pedido nasce em `consent`. Só entra na fila `live.transcription.requested` quando cada participante ainda na sessão aceita. Recusa ou cancelamento não envia áudio. O job assíncrono grava segmentos com início e fim. Falha de provider ou estouro de `ai-budget` deixa a transcrição `failed` e o objeto da gravação no lugar. Canal confidencial responde `E2eeCapabilityUnavailable`.
+
+A nota não é indexada em RAG. Sugestões nascem `suggested`. Publicar ou dispensar é comando humano e não cria decisão nem tarefa em outro módulo. Apagar remove segmentos, sugestões e a referência no provider. A retenção segue a da gravação. Legal hold impede o purge.
+
+O evento no hub `LiveTranscriptionChanged` leva `tenantId`, `transcriptId`, `sessionId`, `channelId`, `state` e `actorId`. Sem texto e sem URL.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| POST | `.../transcripts` | `live.record`; `Idempotency-Key`; nasce em `consent` |
+| POST | `.../transcripts/{transcriptId}/consent` | `message.send`; `accept` ou `decline` |
+| POST | `.../transcripts/{transcriptId}/cancel` | `live.record`; não envia áudio |
+| GET | `.../transcripts/{transcriptId}` | `message.read`; nota com citações temporais |
+| POST | `.../transcripts/{transcriptId}/export` | `message.read`; a mesma nota, com auditoria |
+| POST | `.../transcripts/{transcriptId}/delete` | `live.record`; propaga ao provider; a gravação fica |
+| POST | `.../suggestions/{suggestionId}/confirm` | `ai.transcribe`; publica só aquele item |
+| POST | `.../suggestions/{suggestionId}/dismiss` | `ai.transcribe` |
+
 ### White-label (B-140 / ADR-055)
 
 Sem flag. Sem linha em `directory.brand_settings`, a marca é a oficial do VibeChat. `productName` na resposta é sempre `VibeChat` e não é gravável.

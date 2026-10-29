@@ -4,13 +4,14 @@ import { LiveApiService, LiveHealth, LiveState } from '../core/api/live-api.serv
 import { fillTemplate, translateErrorCode, ui } from '../core/i18n/strings';
 import { ChannelStore } from '../core/services/channel.store';
 import { HuddleCapture } from './huddle-capture';
+import { HuddleNotes } from './huddle-notes';
 
 const reactions = ['👍', '✅', '👀', '🎉'] as const;
 
 @Component({
   selector: 'vc-huddle-control',
   standalone: true,
-  imports: [A11yModule, HuddleCapture],
+  imports: [A11yModule, HuddleCapture, HuddleNotes],
   template: `
     @if (available()) {
       <div class="huddle">
@@ -23,6 +24,7 @@ const reactions = ['👍', '✅', '👀', '🎉'] as const;
           (refresh)="refreshState()"
           (left)="leave()"
         />
+        <vc-huddle-notes [channelId]="channelId" [session]="state()" [connected]="connected()" [canTranscribe]="canTranscribe()" (refresh)="refreshState()" />
         <button
           type="button"
           class="huddle__toggle"
@@ -55,6 +57,7 @@ const reactions = ['👍', '✅', '👀', '🎉'] as const;
             @if (!providerHealthy()) {
               <p class="huddle__error" role="alert">{{ ui.huddleUnavailable }}</p>
             }
+            <vc-huddle-notes [channelId]="channelId" [session]="state()" [canTranscribe]="canTranscribe()" [review]="true" (refresh)="refreshState()" />
             <p class="huddle__label">{{ ui.huddleParticipants }}</p>
             @if (!participants().length) {
               <p class="huddle__meta">{{ ui.huddleEmpty }}</p>
@@ -118,7 +121,7 @@ const reactions = ['👍', '✅', '👀', '🎉'] as const;
     }
     .huddle__toggle[aria-expanded='true'] { background: color-mix(in srgb, var(--vc-accent) 16%, var(--vc-surface)); }
     .huddle__panel {
-      position: absolute; top: calc(100% + 0.35rem); right: 0; z-index: var(--vc-z-dropdown);
+      position: absolute; top: calc(100% + 0.35rem); right: 0; z-index: var(--vc-z-overlay);
       display: flex; flex-direction: column; align-items: stretch; gap: var(--vc-space-2);
       width: min(20rem, 82vw); max-height: min(24rem, 70vh); overflow: auto; padding: var(--vc-space-3);
       border: 1px solid var(--vc-border); border-radius: var(--vc-radius-md);
@@ -134,7 +137,8 @@ const reactions = ['👍', '✅', '👀', '🎉'] as const;
     .huddle__close { align-self: flex-start; }
     @media (max-width: 960px) {
       .huddle__panel {
-        position: fixed; top: 7.25rem; left: var(--vc-space-3); right: var(--vc-space-3); width: auto;
+        position: fixed; top: 11rem; left: var(--vc-space-3); right: var(--vc-space-3); width: auto;
+        max-height: min(18rem, 52vh);
       }
     }
   `,
@@ -156,6 +160,7 @@ export class HuddleControl implements OnDestroy {
   readonly videoAllowed = signal(false);
   readonly canShare = signal(false);
   readonly canRecord = signal(false);
+  readonly canTranscribe = signal(false);
   readonly providerHealthy = signal(false);
   readonly inSession = signal(false);
   private mic: MediaStream | null = null;
@@ -314,6 +319,7 @@ export class HuddleControl implements OnDestroy {
       this.videoAllowed.set(health.videoEnabled);
       this.canShare.set(health.canShare);
       this.canRecord.set(health.canRecord);
+      this.canTranscribe.set(health.canTranscribe);
       this.available.set(health.enabled);
       this.startPoll();
       await this.refreshState();
@@ -366,6 +372,7 @@ export class HuddleControl implements OnDestroy {
     this.participants.set([]);
     this.inSession.set(false);
     this.available.set(false);
+    this.canTranscribe.set(false);
   }
 
   private startPoll(): void {

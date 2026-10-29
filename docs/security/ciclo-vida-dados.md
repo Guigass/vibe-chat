@@ -52,7 +52,7 @@ entram em fila de purge com grace period e evidência, não permanecem para semp
 | Thumbnail/preview | Herda origem; curta se possível | Delete/rebuild | Sim enquanto necessário à evidência | Não canônico |
 | Link preview | Herda mensagem | Delete/rebuild | Conforme conteúdo persistido | Opcional |
 | Áudio/gravação | Policy explícita e consentimento | Remove bytes/derivados | Sim | Sim |
-| Transcrição | Herda mídia ou policy mais restrita | Purge independente coordenado | Sim | Sim |
+| Transcrição | Herda a retenção da gravação (B-149); não entra no RAG | Delete da nota chama o provider e remove segmentos/sugestões; a gravação permanece | Sim | Sim, com citação temporal |
 | Página/versão | Retenção do tenant após soft-delete (B-120) | Purge remove página e versões juntas | Sim | Sim |
 | Decision/ActionItem | Policy do recurso + provenance | Redige origem; purge conforme regra | Sim | Sim |
 | Task | Policy do recurso + provenance (B-123) | Redige origem; saída do canal desatribui | Sim | Sim |

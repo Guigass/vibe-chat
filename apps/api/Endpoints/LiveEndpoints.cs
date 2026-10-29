@@ -35,11 +35,12 @@ internal static class LiveEndpoints
         v1.MapPost("/channels/{channelId:guid}/live/sessions/{sessionId:guid}/reactions", React)
             .RequirePermission(Permissions.Message.Send);
         LiveCaptureEndpoints.Map(v1);
+        LiveNotesEndpoints.Map(v1);
     }
 
     private static async Task<IResult> Health(
         Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, ILiveMediaProvider provider,
-        IOptions<LiveOptions> options, IPermissionChecker permissions, IClock clock, CancellationToken ct)
+        IOptions<LiveOptions> options, IOptions<MeetingAiOptions> meeting, IPermissionChecker permissions, IClock clock, CancellationToken ct)
     {
         if (Disabled(options.Value) is { } off)
         {
@@ -56,18 +57,22 @@ internal static class LiveEndpoints
         var status = await provider.StatusAsync(ct);
         var active = await db.LiveSessions.CountAsync(
             x => x.WorkspaceId == workspace.Id && x.State == LiveRules.StateActive, ct);
+        var shareOn = await LiveCaptureEndpoints.ShareEnabledAsync(db, workspace.Id, options.Value, ct);
+        var recordOn = await LiveCaptureEndpoints.RecordingEnabledAsync(db, workspace.Id, options.Value, ct);
+        var notesOn = await LiveNotesEndpoints.EnabledAsync(db, workspace.Id, meeting.Value, ct);
+        var canRecord = recordOn && await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Live.Record, ct);
         return Results.Ok(new
         {
             enabled = true,
             provider = provider.Name,
             healthy = status.Healthy,
             videoEnabled = options.Value.VideoEnabled,
-            shareEnabled = await LiveCaptureEndpoints.ShareEnabledAsync(db, workspace.Id, options.Value, ct),
-            recordingEnabled = await LiveCaptureEndpoints.RecordingEnabledAsync(db, workspace.Id, options.Value, ct),
-            canShare = await LiveCaptureEndpoints.ShareEnabledAsync(db, workspace.Id, options.Value, ct)
-                && await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Live.Share, ct),
-            canRecord = await LiveCaptureEndpoints.RecordingEnabledAsync(db, workspace.Id, options.Value, ct)
-                && await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Live.Record, ct),
+            shareEnabled = shareOn,
+            recordingEnabled = recordOn,
+            canShare = shareOn && await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Live.Share, ct),
+            canRecord,
+            transcriptionEnabled = notesOn,
+            canTranscribe = notesOn && canRecord,
             activeSessions = active,
             maxSessions = LiveRules.SessionLimit(options.Value.MaxSessionsPerWorkspace),
             maxParticipants = LiveRules.ParticipantLimit(options.Value.MaxParticipants),
@@ -76,7 +81,8 @@ internal static class LiveEndpoints
                 "vibechat.live.sessions",
                 "vibechat.live.joins",
                 "vibechat.live.rejected",
-                "vibechat.live.participants"
+                "vibechat.live.participants",
+                "vibechat.live.transcriptions"
             }
         });
     }
@@ -253,6 +259,7 @@ internal static class LiveEndpoints
             VibeChatMetrics.LiveParticipants.Add(1);
             VibeChatMetrics.LiveJoins.Add(1);
             audit.Add(Audit(channel.TenantId, profile.Id, AuditActions.LiveParticipantJoin, session.Id, now));
+            await LiveNotesEndpoints.OnParticipantJoinedAsync(db, session, profile.Id, ct);
         }
 
         var room = LiveRules.Room(channel.TenantId, channel.Id, session.Id);
@@ -446,6 +453,7 @@ internal static class LiveEndpoints
         {
             await LiveCaptureEndpoints.OnParticipantLeftAsync(
                 db, session, self, ended, now, sink, options, audit, outbox, ct);
+            await LiveNotesEndpoints.OnParticipantLeftAsync(db, session, self, ended, now, outbox, ct);
             Publish(outbox, session, remaining, now);
             await db.SaveChangesAsync(ct);
         }
@@ -590,7 +598,8 @@ internal static class LiveEndpoints
             state = session.State,
             videoAllowed = session.VideoAllowed,
             participants = people,
-            recording = await LiveCaptureEndpoints.OpenViewAsync(db, session.Id, ct)
+            recording = await LiveCaptureEndpoints.OpenViewAsync(db, session.Id, ct),
+            transcript = await LiveNotesEndpoints.OpenViewAsync(db, session.Id, ct)
         }, statusCode: status);
     }
 

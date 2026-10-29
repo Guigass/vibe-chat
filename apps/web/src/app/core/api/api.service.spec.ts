@@ -180,6 +180,10 @@ describe('ApiService facade', () => {
     expect(typeof api.liveRecord).toBe('function');
     expect(typeof api.liveConsent).toBe('function');
     expect(typeof api.liveStopRecording).toBe('function');
+    expect(typeof api.liveTranscribe).toBe('function');
+    expect(typeof api.liveTranscriptConsent).toBe('function');
+    expect(typeof api.liveTranscript).toBe('function');
+    expect(typeof api.liveSuggestionReview).toBe('function');
     expect(typeof api.registerE2eeDevice).toBe('function');
     expect(typeof api.e2eeChannel).toBe('function');
     expect(typeof api.consentFederation).toBe('function');

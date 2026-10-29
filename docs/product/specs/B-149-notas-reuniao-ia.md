@@ -40,11 +40,11 @@ sem policy separada.
 
 ## Aceite
 
-- [ ] Sem consentimento, nenhum áudio é enviado.
-- [ ] Nota tem citações temporais.
-- [ ] AI failure preserva gravação conforme policy.
-- [ ] Delete propaga ao provider/projeções quando suportado.
-- [ ] Budget e audit funcionam.
+- [x] Sem consentimento, nenhum áudio é enviado.
+- [x] Nota tem citações temporais.
+- [x] AI failure preserva gravação conforme policy.
+- [x] Delete propaga ao provider/projeções quando suportado.
+- [x] Budget e audit funcionam.
 
 ## Testes
 
