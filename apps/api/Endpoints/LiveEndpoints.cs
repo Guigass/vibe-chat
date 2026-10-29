@@ -34,11 +34,12 @@ internal static class LiveEndpoints
             .RequirePermission(Permissions.Message.Send);
         v1.MapPost("/channels/{channelId:guid}/live/sessions/{sessionId:guid}/reactions", React)
             .RequirePermission(Permissions.Message.Send);
+        LiveCaptureEndpoints.Map(v1);
     }
 
     private static async Task<IResult> Health(
         Guid workspaceId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, ILiveMediaProvider provider,
-        IOptions<LiveOptions> options, IClock clock, CancellationToken ct)
+        IOptions<LiveOptions> options, IPermissionChecker permissions, IClock clock, CancellationToken ct)
     {
         if (Disabled(options.Value) is { } off)
         {
@@ -61,6 +62,12 @@ internal static class LiveEndpoints
             provider = provider.Name,
             healthy = status.Healthy,
             videoEnabled = options.Value.VideoEnabled,
+            shareEnabled = await LiveCaptureEndpoints.ShareEnabledAsync(db, workspace.Id, options.Value, ct),
+            recordingEnabled = await LiveCaptureEndpoints.RecordingEnabledAsync(db, workspace.Id, options.Value, ct),
+            canShare = await LiveCaptureEndpoints.ShareEnabledAsync(db, workspace.Id, options.Value, ct)
+                && await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Live.Share, ct),
+            canRecord = await LiveCaptureEndpoints.RecordingEnabledAsync(db, workspace.Id, options.Value, ct)
+                && await permissions.HasPermissionAsync(workspace.TenantId, profile.Id, Permissions.Live.Record, ct),
             activeSessions = active,
             maxSessions = LiveRules.SessionLimit(options.Value.MaxSessionsPerWorkspace),
             maxParticipants = LiveRules.ParticipantLimit(options.Value.MaxParticipants),
@@ -257,16 +264,25 @@ internal static class LiveEndpoints
             previous.ConsumedAt = now;
         }
 
+        var shareOn = await LiveCaptureEndpoints.ShareEnabledAsync(db, channel.WorkspaceId, options.Value, ct);
+        if (!shareOn)
+        {
+            self.SharingScreen = false;
+        }
+
+        var blocked = await LiveCaptureEndpoints.PublishBlockedAsync(db, session.Id, profile.Id, ct);
+        var screen = shareOn && self.SharingScreen && !blocked;
         LiveAccessToken issued;
         try
         {
             issued = provider.Issue(new LiveTokenRequest(
                 room,
                 profile.Id.Value.ToString("N"),
-                true,
-                session.VideoAllowed,
+                !blocked,
+                session.VideoAllowed && !blocked,
                 now.AddSeconds(LiveRules.TokenTtl(options.Value.TokenTtlSeconds)),
-                Guid.NewGuid().ToString("N")));
+                Guid.NewGuid().ToString("N"),
+                screen));
         }
         catch (InvalidOperationException)
         {
@@ -294,8 +310,10 @@ internal static class LiveEndpoints
             expiresAt = issued.ExpiresAt,
             room = issued.Room,
             signalUrl = issued.SignalUrl,
-            canPublishAudio = true,
-            canPublishVideo = session.VideoAllowed
+            canPublishAudio = !blocked,
+            canPublishVideo = session.VideoAllowed && !blocked,
+            canPublishScreen = screen,
+            recordingNotice = blocked
         });
     }
 
@@ -379,7 +397,8 @@ internal static class LiveEndpoints
 
     private static async Task<IResult> Leave(
         Guid channelId, Guid sessionId, HttpContext http, VibeChatDbContext db, ITenantContext tenant,
-        IOptions<LiveOptions> options, IAuditWriter audit, IOutboxWriter outbox, IClock clock, CancellationToken ct)
+        IOptions<LiveOptions> options, ILiveRecordingSink sink, IAuditWriter audit, IOutboxWriter outbox, IClock clock,
+        CancellationToken ct)
     {
         if (Disabled(options.Value) is { } off)
         {
@@ -407,6 +426,7 @@ internal static class LiveEndpoints
             self.LeftAt = now;
             self.AudioConnected = false;
             self.CameraOn = false;
+            self.SharingScreen = false;
             VibeChatMetrics.LiveParticipants.Add(-1);
             audit.Add(Audit(session.TenantId, gate.Value.Profile.Id, AuditActions.LiveParticipantLeave, session.Id, now));
             departed = true;
@@ -424,6 +444,8 @@ internal static class LiveEndpoints
 
         if (departed || ended)
         {
+            await LiveCaptureEndpoints.OnParticipantLeftAsync(
+                db, session, self, ended, now, sink, options, audit, outbox, ct);
             Publish(outbox, session, remaining, now);
             await db.SaveChangesAsync(ct);
         }
@@ -559,6 +581,7 @@ internal static class LiveEndpoints
             muted = row.Muted,
             cameraOn = row.CameraOn,
             audioConnected = row.AudioConnected,
+            sharingScreen = row.SharingScreen,
             reaction = row.Reaction
         }).ToArray();
         return Results.Json(new
@@ -566,7 +589,8 @@ internal static class LiveEndpoints
             sessionId = session.Id,
             state = session.State,
             videoAllowed = session.VideoAllowed,
-            participants = people
+            participants = people,
+            recording = await LiveCaptureEndpoints.OpenViewAsync(db, session.Id, ct)
         }, statusCode: status);
     }
 

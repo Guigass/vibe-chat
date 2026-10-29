@@ -1001,6 +1001,28 @@ CREATE POLICY tenant_isolation_live_tokens ON conversations.live_tokens
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS conversations.live_policies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_policies FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_recordings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_recordings FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_recording_consents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_recording_consents FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_live_policies ON conversations.live_policies;
+CREATE POLICY tenant_isolation_live_policies ON conversations.live_policies
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_live_recordings ON conversations.live_recordings;
+CREATE POLICY tenant_isolation_live_recordings ON conversations.live_recordings
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_live_recording_consents ON conversations.live_recording_consents;
+CREATE POLICY tenant_isolation_live_recording_consents ON conversations.live_recording_consents
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 ALTER TABLE IF EXISTS messaging.e2ee_devices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.e2ee_devices FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.e2ee_backups ENABLE ROW LEVEL SECURITY;

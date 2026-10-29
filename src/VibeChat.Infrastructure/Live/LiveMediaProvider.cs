@@ -46,7 +46,7 @@ public sealed class LiveMediaProvider(IOptions<LiveOptions> options, IHttpClient
         var issuer = Name == LiveRules.ProviderLiveKit
             ? _options.LiveKit.ApiKey.Trim()
             : "vibechat-dev";
-        var sources = LiveRules.PublishSources(request.CanPublishVideo);
+        var sources = LiveRules.PublishSources(request.CanPublishVideo, request.CanPublishScreen);
         var video = new Dictionary<string, object>
         {
             ["room"] = request.Room,
@@ -66,7 +66,8 @@ public sealed class LiveMediaProvider(IOptions<LiveOptions> options, IHttpClient
                 new Claim(JwtRegisteredClaimNames.Jti, request.Jti),
                 new Claim("vc_room", request.Room),
                 new Claim("vc_audio", request.CanPublishAudio ? "1" : "0"),
-                new Claim("vc_video", request.CanPublishVideo ? "1" : "0")
+                new Claim("vc_video", request.CanPublishVideo ? "1" : "0"),
+                new Claim("vc_screen", request.CanPublishScreen ? "1" : "0")
             ],
             notBefore: DateTime.UtcNow.AddSeconds(-5),
             expires: request.ExpiresAt.UtcDateTime,
@@ -118,7 +119,8 @@ public sealed class LiveMediaProvider(IOptions<LiveOptions> options, IHttpClient
                 identity,
                 principal.FindFirst("vc_audio")?.Value == "1",
                 principal.FindFirst("vc_video")?.Value == "1",
-                jwt.ValidTo == DateTime.MinValue ? DateTimeOffset.UtcNow : new DateTimeOffset(DateTime.SpecifyKind(jwt.ValidTo, DateTimeKind.Utc)));
+                jwt.ValidTo == DateTime.MinValue ? DateTimeOffset.UtcNow : new DateTimeOffset(DateTime.SpecifyKind(jwt.ValidTo, DateTimeKind.Utc)),
+                principal.FindFirst("vc_screen")?.Value == "1");
         }
         catch (SecurityTokenExpiredException)
         {

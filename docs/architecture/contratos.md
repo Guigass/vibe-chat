@@ -1204,6 +1204,30 @@ O evento de outbox `live.session.changed` (schemaVersion 1) leva `tenantId`, `se
 
 Quem não é membro recebe 403. Outro tenant não lê a linha (RLS FORCE). Auditoria não leva o token. O `Down` remove só as três tabelas novas.
 
+### Screen share e gravação (B-148 / ADR-066)
+
+`Features:Live:ShareEnabled` e `Features:Live:RecordingEnabled` nascem **false**. A policy do workspace também nasce false. O efeito é a conjunção dos dois. Desligados, o huddle de áudio segue e share/gravação respondem 403 `LiveShareDisabled` ou `LiveRecordingDisabled`.
+
+O share para quando o autor para, quando um papel com `live.record` revoga, quando a pessoa sai ou quando a policy desliga. O token só inclui `screen_share` enquanto o share está ativo.
+
+A gravação abre em `consent`. Só passa a `recording` quando cada participante ainda na sessão aceita. Recusa ou saída de todos leva a `declined` e não grava objeto. `live.record` para a gravação. O sink grava texto no bucket privado e devolve só a chave `t/{tenant}/live/{id}`. Download é URL assinada curta, depois da ACL do canal, do scan e da retenção. Legal hold cobre o canal e impede o purge. Quota estoura em `409 LiveRecordingQuota` sem objeto.
+
+O evento `live.recording.changed` (schemaVersion 1) leva `tenantId`, `recordingId`, `sessionId`, `channelId`, `state` e `actorId`. Sem URL e sem mídia.
+
+| Método | Caminho | AuthZ |
+|--------|---------|--------|
+| PUT | `/api/v1/workspaces/{workspaceId}/live/policy` | `workspace.admin`; não liga a flag da instância |
+| POST | `/api/v1/channels/{channelId}/live/sessions/{sessionId}/share` | `live.share`; participante na sessão |
+| POST | `/api/v1/channels/{channelId}/live/sessions/{sessionId}/share/stop` | `live.share`; o próprio share |
+| POST | `/api/v1/channels/{channelId}/live/sessions/{sessionId}/share/revoke` | `live.record`; body `{ userId }` |
+| POST | `/api/v1/channels/{channelId}/live/sessions/{sessionId}/recordings` | `live.record`; `Idempotency-Key`; nasce em `consent` |
+| POST | `.../recordings/{recordingId}/consent` | `message.send`; `accept` ou `decline` |
+| POST | `.../recordings/{recordingId}/stop` | `live.record`; sela o objeto |
+| GET | `.../recordings/{recordingId}` | `message.read`; sem URL |
+| POST | `.../recordings/{recordingId}/download` | `message.read`; URL curta se a ACL, o scan e a retenção permitem |
+
+`live.share` é de Member, Moderator e Admin. `live.record` é de Moderator e Admin (e dono do workspace). Guest não recebe nenhum dos dois.
+
 ### White-label (B-140 / ADR-055)
 
 Sem flag. Sem linha em `directory.brand_settings`, a marca é a oficial do VibeChat. `productName` na resposta é sempre `VibeChat` e não é gravável.

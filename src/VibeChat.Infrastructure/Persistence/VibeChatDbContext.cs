@@ -72,6 +72,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<LiveSession> LiveSessions => Set<LiveSession>();
     public DbSet<LiveParticipant> LiveParticipants => Set<LiveParticipant>();
     public DbSet<LiveJoinToken> LiveJoinTokens => Set<LiveJoinToken>();
+    public DbSet<LiveWorkspacePolicy> LiveWorkspacePolicies => Set<LiveWorkspacePolicy>();
+    public DbSet<LiveRecording> LiveRecordings => Set<LiveRecording>();
+    public DbSet<LiveRecordingConsent> LiveRecordingConsents => Set<LiveRecordingConsent>();
     public DbSet<MessageThread> MessageThreads => Set<MessageThread>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Reaction> Reactions => Set<Reaction>();
@@ -632,6 +635,48 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.TokenHash).HasMaxLength(64).IsRequired();
             entity.Property(x => x.Room).HasMaxLength(120).IsRequired();
             entity.HasIndex(x => new { x.TenantId, x.TokenHash }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<LiveWorkspacePolicy>(entity =>
+        {
+            entity.ToTable("live_policies", "conversations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.UpdatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<LiveRecording>(entity =>
+        {
+            entity.ToTable("live_recordings", "conversations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.Property(x => x.StartedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.State).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.RequestHash).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.ObjectKey).HasMaxLength(200);
+            entity.Property(x => x.ScanStatus).HasMaxLength(16).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.SessionId, x.IdempotencyKey }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<LiveRecordingConsent>(entity =>
+        {
+            entity.ToTable("live_recording_consents", "conversations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.UserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Decision).HasMaxLength(16).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.RecordingId, x.UserId }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

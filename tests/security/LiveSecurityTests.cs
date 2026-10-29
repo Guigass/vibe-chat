@@ -67,6 +67,58 @@ public sealed class LiveSecurityTests(VibeChatApiFactory factory)
     }
 
     [Fact]
+    public async Task Runtime_role_cannot_read_another_tenants_recording()
+    {
+        var foreign = new TenantId(Guid.NewGuid());
+        var recordingId = Guid.NewGuid();
+        await using (var db = factory.CreateMigratorDbContext())
+        {
+            db.LiveRecordings.Add(new LiveRecording
+            {
+                Id = recordingId,
+                TenantId = foreign,
+                WorkspaceId = new WorkspaceId(foreign.Value),
+                ChannelId = new ChannelId(Guid.NewGuid()),
+                SessionId = Guid.NewGuid(),
+                State = LiveRules.RecordingConsent,
+                StartedBy = new UserId(Guid.NewGuid()),
+                IdempotencyKey = "sec-" + recordingId.ToString("N"),
+                RequestHash = LiveRules.RecordHash,
+                CreatedAt = DateTimeOffset.UtcNow
+            });
+            await db.SaveChangesAsync();
+        }
+
+        try
+        {
+            await using var conn = new NpgsqlConnection(factory.RuntimeDatabaseConnectionString);
+            await conn.OpenAsync();
+            await using (var set = conn.CreateCommand())
+            {
+                set.CommandText = "SELECT set_config('app.tenant_id', @tenant, false)";
+                set.Parameters.AddWithValue("tenant", SeedData.DemoTenantId.Value.ToString());
+                await set.ExecuteNonQueryAsync();
+            }
+
+            await using var count = conn.CreateCommand();
+            count.CommandText = """SELECT COUNT(*) FROM conversations.live_recordings WHERE "Id" = @id""";
+            count.Parameters.AddWithValue("id", recordingId);
+            var seen = (long)(await count.ExecuteScalarAsync())!;
+            seen.Should().Be(0);
+        }
+        finally
+        {
+            await using var db = factory.CreateMigratorDbContext();
+            var row = await db.LiveRecordings.IgnoreQueryFilters().SingleOrDefaultAsync(x => x.Id == recordingId);
+            if (row is not null)
+            {
+                db.LiveRecordings.Remove(row);
+                await db.SaveChangesAsync();
+            }
+        }
+    }
+
+    [Fact]
     public async Task Disabled_flag_hides_live_routes()
     {
         using var disabled = factory.WithWebHostBuilder(builder =>
