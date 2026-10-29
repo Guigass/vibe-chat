@@ -201,6 +201,39 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     continue;
                 }
 
+                if (outbox.Type == MeetingAiRules.RequestedEvent)
+                {
+                    var requested = JsonNode.Parse(outbox.Payload)?.AsObject();
+                    if (requested?["transcriptId"] is JsonNode transcriptNode && requested["channelId"] is JsonNode noteChannel)
+                    {
+                        var job = scope.ServiceProvider.GetRequiredService<LiveTranscriptionJob>();
+                        var notice = await job.CompleteAsync(dbContext, transcriptNode.GetValue<Guid>(), cancellationToken);
+                        if (notice is not null)
+                        {
+                            await publisher.PublishAsync(
+                                new RealtimeMessage(
+                                    "LiveTranscriptionChanged",
+                                    outbox.TenantId,
+                                    new ChannelId(noteChannel.GetValue<Guid>()),
+                                    new
+                                    {
+                                        schemaVersion = MeetingAiRules.SchemaVersion,
+                                        tenantId = outbox.TenantId.Value,
+                                        transcriptId = notice.TranscriptId,
+                                        sessionId = notice.SessionId,
+                                        channelId = notice.ChannelId.Value,
+                                        state = notice.State,
+                                        actorId = notice.ActorId
+                                    }),
+                                cancellationToken);
+                        }
+                    }
+
+                    outbox.ProcessedAt = now;
+                    outbox.Error = null;
+                    continue;
+                }
+
                 if (outbox.Type == "files.attachment.ready")
                 {
                     await ProcessAttachmentReadyAsync(

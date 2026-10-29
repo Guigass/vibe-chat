@@ -322,6 +322,12 @@ export class ApiService {
   readonly liveRecord: LiveApiService['liveRecord'] = this.live.liveRecord.bind(this.live);
   readonly liveConsent: LiveApiService['liveConsent'] = this.live.liveConsent.bind(this.live);
   readonly liveStopRecording: LiveApiService['liveStopRecording'] = this.live.liveStopRecording.bind(this.live);
+  readonly liveTranscribe: LiveApiService['liveTranscribe'] = this.live.liveTranscribe.bind(this.live);
+  readonly liveTranscriptConsent: LiveApiService['liveTranscriptConsent'] = this.live.liveTranscriptConsent.bind(this.live);
+  readonly liveTranscriptCancel: LiveApiService['liveTranscriptCancel'] = this.live.liveTranscriptCancel.bind(this.live);
+  readonly liveTranscript: LiveApiService['liveTranscript'] = this.live.liveTranscript.bind(this.live);
+  readonly liveTranscriptDelete: LiveApiService['liveTranscriptDelete'] = this.live.liveTranscriptDelete.bind(this.live);
+  readonly liveSuggestionReview: LiveApiService['liveSuggestionReview'] = this.live.liveSuggestionReview.bind(this.live);
   readonly registerE2eeDevice: E2eeApiService['registerE2eeDevice'] = this.e2ee.registerE2eeDevice.bind(this.e2ee);
   readonly e2eeChannel: E2eeApiService['e2eeChannel'] = this.e2ee.e2eeChannel.bind(this.e2ee);
   readonly verifyE2eeDevice: E2eeApiService['verifyE2eeDevice'] = this.e2ee.verifyE2eeDevice.bind(this.e2ee);

@@ -96,6 +96,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Features:Live:Enabled` | instance | false | B-147 | rotas `/live` → 404 `LiveDisabled`; chat segue; `VideoEnabled` também nasce false |
 | `Features:Live:ShareEnabled` | instance + policy do workspace | false | B-148 | share → 403 `LiveShareDisabled`; o huddle de áudio segue |
 | `Features:Live:RecordingEnabled` | instance + policy do workspace | false | B-148 | gravação → 403 `LiveRecordingDisabled`; nada é armazenado |
+| `Features:MeetingAi:Enabled` | instance + policy do workspace | false | B-149 | transcrição → 403 `LiveTranscriptionDisabled`; provider `none` não envia áudio; gravação e chat seguem |
 
 ## Registro inicial de flags futuras
 
@@ -110,7 +111,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Messaging:E2ee:Enabled` | instalação | false | B-064 | canais confidenciais; off até revisão criptográfica |
 | `Features:Live:Enabled` | instance | false | B-147 | entregue; ver linha ativa |
 | `Features:Live:RecordingEnabled` | instance | false | B-148 | entregue; ver linha ativa |
-| `Features:MeetingAi:Enabled` | workspace | false | B-149 | sem transcrição/notas |
+| `Features:MeetingAi:Enabled` | instance + policy do workspace | false | B-149 | entregue; ver linha ativa |
 | `Features:CanvasRealtime:Enabled` | workspace | false | B-152 | páginas server-authoritative |
 | `Features:Import:Enabled` | instance | false | B-153 | onboarding/template manual |
 | `Features:ChatBackup:Enabled` | instance | false | B-172 | API `/chat-backup` → 404 `ChatBackupDisabled`; export B-046 e scripts B-031 seguem |

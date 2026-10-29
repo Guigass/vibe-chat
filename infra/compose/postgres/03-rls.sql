@@ -1023,6 +1023,35 @@ CREATE POLICY tenant_isolation_live_recording_consents ON conversations.live_rec
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 
+ALTER TABLE IF EXISTS conversations.live_transcripts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_transcripts FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_transcript_consents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_transcript_consents FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_transcript_segments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_transcript_segments FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_note_suggestions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS conversations.live_note_suggestions FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_live_transcripts ON conversations.live_transcripts;
+CREATE POLICY tenant_isolation_live_transcripts ON conversations.live_transcripts
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_live_transcript_consents ON conversations.live_transcript_consents;
+CREATE POLICY tenant_isolation_live_transcript_consents ON conversations.live_transcript_consents
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_live_transcript_segments ON conversations.live_transcript_segments;
+CREATE POLICY tenant_isolation_live_transcript_segments ON conversations.live_transcript_segments
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_live_note_suggestions ON conversations.live_note_suggestions;
+CREATE POLICY tenant_isolation_live_note_suggestions ON conversations.live_note_suggestions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
 ALTER TABLE IF EXISTS messaging.e2ee_devices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.e2ee_devices FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS messaging.e2ee_backups ENABLE ROW LEVEL SECURITY;

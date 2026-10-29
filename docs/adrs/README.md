@@ -65,6 +65,7 @@ original.
 | [057](ADR-057-clientes-mobile.md) | Cliente mobile Capacitor sobre o mesmo web | Accepted |
 | [058](ADR-058-performance-escalabilidade.md) | Performance permanece no Compose | Accepted |
 | [059](ADR-059-offline-sync.md) | Sync offline no cliente PWA | Accepted |
+| [067](ADR-067-notas-reuniao.md) | Transcrição e notas de reunião com consentimento | Accepted |
 
 ## Quando criar um ADR
 

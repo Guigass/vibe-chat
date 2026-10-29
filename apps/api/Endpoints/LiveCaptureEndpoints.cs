@@ -130,7 +130,7 @@ internal static class LiveCaptureEndpoints
 
     private static async Task<IResult> Policy(
         Guid workspaceId, LivePolicyRequest request, HttpContext http, VibeChatDbContext db, ITenantContext tenant,
-        IOptions<LiveOptions> options, IClock clock, CancellationToken ct)
+        IOptions<LiveOptions> options, IOptions<MeetingAiOptions> meeting, IClock clock, CancellationToken ct)
     {
         if (!options.Value.Enabled)
         {
@@ -159,13 +159,19 @@ internal static class LiveCaptureEndpoints
 
         policy.ShareEnabled = request.ShareEnabled;
         policy.RecordingEnabled = request.RecordingEnabled;
+        if (request.TranscriptionEnabled is bool transcription)
+        {
+            policy.TranscriptionEnabled = transcription;
+        }
+
         policy.UpdatedBy = profile.Id;
         policy.UpdatedAt = now;
         await db.SaveChangesAsync(ct);
         return Results.Ok(new
         {
             shareEnabled = LiveRules.FeatureOn(options.Value.ShareEnabled, policy.ShareEnabled),
-            recordingEnabled = LiveRules.FeatureOn(options.Value.RecordingEnabled, policy.RecordingEnabled)
+            recordingEnabled = LiveRules.FeatureOn(options.Value.RecordingEnabled, policy.RecordingEnabled),
+            transcriptionEnabled = LiveRules.FeatureOn(meeting.Value.Enabled, policy.TranscriptionEnabled)
         });
     }
 
@@ -617,7 +623,7 @@ internal static class LiveCaptureEndpoints
     private static Task<LiveParticipant?> ParticipantAsync(VibeChatDbContext db, Guid sessionId, UserId userId, CancellationToken ct) =>
         db.LiveParticipants.FirstOrDefaultAsync(x => x.SessionId == sessionId && x.UserId == userId && x.LeftAt == null, ct);
 
-    private static async Task<(IResult? Error, UserProfile? Profile, LiveSession? Session)> GateAsync(
+    internal static async Task<(IResult? Error, UserProfile? Profile, LiveSession? Session)> GateAsync(
         Guid channelId, Guid sessionId, HttpContext http, VibeChatDbContext db, ITenantContext tenant, LiveOptions options,
         IClock clock, CancellationToken ct, bool activeOnly = true)
     {
@@ -697,7 +703,7 @@ internal static class LiveCaptureEndpoints
             OccurredAt = now
         };
 
-    private static bool TryKey(HttpContext http, out string key)
+    internal static bool TryKey(HttpContext http, out string key)
     {
         key = "";
         if (!http.Request.Headers.TryGetValue("Idempotency-Key", out var keys) || keys.Count != 1)
@@ -709,7 +715,7 @@ internal static class LiveCaptureEndpoints
         return key.Length is > 0 and <= 200;
     }
 
-    private static IResult Error(int status, string code) =>
+    internal static IResult Error(int status, string code) =>
         Results.Json(new { error = code }, statusCode: status);
 }
 
@@ -718,6 +724,8 @@ internal sealed class LivePolicyRequest
     public bool ShareEnabled { get; set; }
 
     public bool RecordingEnabled { get; set; }
+
+    public bool? TranscriptionEnabled { get; set; }
 }
 
 internal sealed class LiveRevokeRequest

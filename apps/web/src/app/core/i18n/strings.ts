@@ -1835,6 +1835,23 @@ export const ui = {
   huddleLeaveBefore: $localize`:@@huddle.leaveBefore:Sair antes de gravar`,
   huddleRecordingConsent: $localize`:@@huddle.recordingConsent:%name% quer gravar. Nada é gravado até todo mundo aceitar.`,
   huddleRecordingOn: $localize`:@@huddle.recordingOn:Gravação em andamento, iniciada por %name%.`,
+  huddleStartNotes: $localize`:@@huddle.startNotes:Pedir transcrição`,
+  huddleAcceptNotes: $localize`:@@huddle.acceptNotes:Aceitar transcrição`,
+  huddleDeclineNotes: $localize`:@@huddle.declineNotes:Recusar transcrição`,
+  huddleCancelNotes: $localize`:@@huddle.cancelNotes:Cancelar transcrição`,
+  huddleNotesConsent: $localize`:@@huddle.notesConsent:%name% quer transcrever. Nenhum áudio segue até todo mundo aceitar.`,
+  huddleNotesQueued: $localize`:@@huddle.notesQueued:Transcrição em andamento.`,
+  huddleNotesFailed: $localize`:@@huddle.notesFailed:A transcrição falhou. A gravação permanece.`,
+  huddleNotesReady: $localize`:@@huddle.notesReady:Nota da reunião pronta.`,
+  huddleNoteConfidence: $localize`:@@huddle.noteConfidence:Confiança baixa. Revise antes de publicar.`,
+  huddleConfirmSuggestion: $localize`:@@huddle.confirmSuggestion:Publicar`,
+  huddleDismissSuggestion: $localize`:@@huddle.dismissSuggestion:Dispensar`,
+  huddleDeleteNotes: $localize`:@@huddle.deleteNotes:Apagar transcrição`,
+  huddleDeleteNotesConfirm: $localize`:@@huddle.deleteNotesConfirm:Confirmar exclusão. A gravação permanece.`,
+  huddleSuggestionDecision: $localize`:@@huddle.suggestionDecision:Decisão sugerida`,
+  huddleSuggestionTask: $localize`:@@huddle.suggestionTask:Tarefa sugerida`,
+  huddleCitation: $localize`:@@huddle.citation:%start%–%end%`,
+  huddleNotesError: $localize`:@@huddle.notesError:Não foi possível transcrever.`,
   huddleVideoOff: $localize`:@@huddle.videoOff:Vídeo desligado pela política.`,
   huddleMute: $localize`:@@huddle.mute:Silenciar`,
   huddleUnmute: $localize`:@@huddle.unmute:Ativar microfone`,
@@ -2280,6 +2297,15 @@ export function translateErrorCode(code: string | undefined): string {
     case 'LiveRecordingRejected':
     case 'LiveRecordingDecisionInvalid':
       return ui.errorLive;
+    case 'LiveTranscriptionDisabled':
+    case 'LiveTranscriptionUnavailable':
+    case 'LiveTranscriptionNoMedia':
+    case 'LiveTranscriptionNotFound':
+    case 'LiveTranscriptionExpired':
+    case 'LiveTranscriptionDecisionInvalid':
+    case 'LiveNoteNotReady':
+    case 'LiveSuggestionInvalid':
+      return ui.huddleNotesError;
     case 'E2eeDisabled':
     case 'E2eeEnvelopeRequired':
     case 'E2eeVersionUnsupported':

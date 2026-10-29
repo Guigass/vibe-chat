@@ -314,6 +314,14 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/recordings/{recordingId:guid}/stop` | permission | `live.record` | ✗ | ✗ | ✓ | B-148; sela o objeto |
 | GET | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/recordings/{recordingId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-148; sem URL |
 | POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/recordings/{recordingId:guid}/download` | permission | `message.read` | ✓ | ✓ | ✓ | B-148; URL curta após ACL |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/transcripts` | permission | `live.record` | ✗ | ✗ | ✓ | B-149; flag off → 403 `LiveTranscriptionDisabled`; nasce em consentimento |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/transcripts/{transcriptId:guid}/consent` | permission | `message.send` | ✓ | ✗ | ✓ | B-149; accept ou decline; sem aceite não envia áudio |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/transcripts/{transcriptId:guid}/cancel` | permission | `live.record` | ✗ | ✗ | ✓ | B-149; cancela antes do provider |
+| GET | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/transcripts/{transcriptId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-149; citações temporais; sem chave de objeto |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/transcripts/{transcriptId:guid}/export` | permission | `message.read` | ✓ | ✓ | ✓ | B-149; mesma nota, com auditoria |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/transcripts/{transcriptId:guid}/delete` | permission | `live.record` | ✗ | ✗ | ✓ | B-149; propaga ao provider; a gravação fica |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/transcripts/{transcriptId:guid}/suggestions/{suggestionId:guid}/confirm` | permission | `ai.transcribe` | ✓ | ✗ | ✓ | B-149; publica só o item confirmado |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/transcripts/{transcriptId:guid}/suggestions/{suggestionId:guid}/dismiss` | permission | `ai.transcribe` | ✓ | ✗ | ✓ | B-149; não publica |
 | GET | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/federation` | permission | `message.read` | ✗ | ✗ | ✓ | B-065; membership; flag off → 404 `FederationDisabled` |
 | POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; allowlist; token só na criação |
 | POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts/{trustId:guid}/consent` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; cópia só após acknowledge |

@@ -109,7 +109,13 @@ public sealed class InfrastructureRegistrationTests
             "Singleton:HaBackpressure:HaBackpressure",
             "Singleton:IHostedService:HaLeaseHost",
             "Singleton:ILiveMediaProvider:LiveMediaProvider",
-            "Scoped:ILiveRecordingSink:LiveRecordingSink");
+            "Scoped:ILiveRecordingSink:LiveRecordingSink",
+            "Singleton:LiveTranscriptionProbe:LiveTranscriptionProbe",
+            "Singleton:LocalLiveTranscriptionProvider:LocalLiveTranscriptionProvider",
+            "Singleton:ExternalLiveTranscriptionProvider:ExternalLiveTranscriptionProvider",
+            "Singleton:NullLiveTranscriptionProvider:NullLiveTranscriptionProvider",
+            "Singleton:ILiveTranscriptionProvider:factory",
+            "Scoped:LiveTranscriptionJob:LiveTranscriptionJob");
 
         worker.Should().Equal(signalR.Select(entry => entry
             .Replace("Scoped:IChatPublisher:SignalRChatPublisher", "Scoped:IChatPublisher:RedisChannelChatPublisher", StringComparison.Ordinal)
