@@ -15,6 +15,7 @@ internal static class LiveServiceCollectionExtensions
             })
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
         services.AddSingleton<ILiveMediaProvider, LiveMediaProvider>();
+        services.AddScoped<ILiveRecordingSink, LiveRecordingSink>();
         return services;
     }
 }

@@ -1820,8 +1820,21 @@ export const ui = {
   huddleStart: $localize`:@@huddle.start:Iniciar huddle`,
   huddleJoin: $localize`:@@huddle.join:Entrar no huddle`,
   huddleLeave: $localize`:@@huddle.leave:Sair do huddle`,
-  huddlePreflight: $localize`:@@huddle.preflight:O microfone só é pedido ao entrar. Não há gravação.`,
-  huddleConsent: $localize`:@@huddle.consent:Áudio ao vivo nesta conversa. Sem gravação.`,
+  huddlePreflight: $localize`:@@huddle.preflight:O microfone só é pedido ao entrar. Gravação, se houver, pede consentimento.`,
+  huddleConsent: $localize`:@@huddle.consent:Áudio ao vivo nesta conversa.`,
+  huddleShare: $localize`:@@huddle.share:Compartilhar tela`,
+  huddleStopShare: $localize`:@@huddle.stopShare:Parar compartilhamento`,
+  huddleShareBanner: $localize`:@@huddle.shareBanner:%name% está compartilhando a tela`,
+  huddleShareBannerYou: $localize`:@@huddle.shareBannerYou:Você está compartilhando a tela`,
+  huddleShareFailed: $localize`:@@huddle.shareFailed:O navegador não liberou a tela.`,
+  huddleSharing: $localize`:@@huddle.sharing:Compartilhando tela`,
+  huddleStartRecording: $localize`:@@huddle.startRecording:Pedir gravação`,
+  huddleStopRecording: $localize`:@@huddle.stopRecording:Parar gravação`,
+  huddleAcceptRecording: $localize`:@@huddle.acceptRecording:Aceitar gravação`,
+  huddleDeclineRecording: $localize`:@@huddle.declineRecording:Recusar gravação`,
+  huddleLeaveBefore: $localize`:@@huddle.leaveBefore:Sair antes de gravar`,
+  huddleRecordingConsent: $localize`:@@huddle.recordingConsent:%name% quer gravar. Nada é gravado até todo mundo aceitar.`,
+  huddleRecordingOn: $localize`:@@huddle.recordingOn:Gravação em andamento, iniciada por %name%.`,
   huddleVideoOff: $localize`:@@huddle.videoOff:Vídeo desligado pela política.`,
   huddleMute: $localize`:@@huddle.mute:Silenciar`,
   huddleUnmute: $localize`:@@huddle.unmute:Ativar microfone`,
@@ -2259,6 +2272,13 @@ export function translateErrorCode(code: string | undefined): string {
     case 'LiveTokenRoomMismatch':
     case 'LiveReactionInvalid':
     case 'LiveIdempotencyConflict':
+    case 'LiveShareDisabled':
+    case 'LiveRecordingDisabled':
+    case 'LiveRecordingNotReady':
+    case 'LiveRecordingExpired':
+    case 'LiveRecordingQuota':
+    case 'LiveRecordingRejected':
+    case 'LiveRecordingDecisionInvalid':
       return ui.errorLive;
     case 'E2eeDisabled':
     case 'E2eeEnvelopeRequired':

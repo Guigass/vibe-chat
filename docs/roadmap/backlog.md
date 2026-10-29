@@ -228,7 +228,8 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-145 | Lifecycle de objetos, quotas de storage e CDN opcional | **Done** — W16; flag `Features:StorageLifecycle:Enabled` off; ADR-060; [spec](../product/specs/B-145-lifecycle-storage.md) |
 | B-064 | Canais confidenciais E2EE | **Done** — W16 (ADR-064) |
 | B-147 | Huddles de áudio/vídeo | **Done** — W17; flag `Features:Live:Enabled` off; ADR-065; [spec](../product/specs/B-147-huddles-live.md) |
-| B-148, B-149, B-152 | Screen share, notas de reunião e canvas | Planned — W17 |
+| B-148 | Screen share e gravação | **Done** — W17; flags off; consentimento antes do objeto; ADR-066; [spec](../product/specs/B-148-screen-share-gravacao.md) |
+| B-149, B-152 | Notas de reunião e canvas | Planned — W17 |
 
 Todos possuem decisão e spec. A elegibilidade concreta continua dependendo de
 deps `Done`, ausência de PR concorrente e gates R0–R3 de

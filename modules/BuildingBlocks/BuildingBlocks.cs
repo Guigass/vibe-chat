@@ -160,7 +160,8 @@ public static class RolePermissionCatalog
         Permissions.Automation.Manage, Permissions.Automation.Notify, Permissions.Automation.Connector,
         Permissions.Incident.Manage, Permissions.Incident.Export,
         Permissions.Connector.Manage,
-        Permissions.Integration.Read, Permissions.Integration.Manage
+        Permissions.Integration.Read, Permissions.Integration.Manage,
+        Permissions.Live.Share, Permissions.Live.Record
     ];
 
     private static readonly HashSet<string> ModeratorPermissions =
@@ -173,7 +174,8 @@ public static class RolePermissionCatalog
         Permissions.Announcement.Publish, Permissions.Announcement.Acknowledge,
         Permissions.Conversation.TopicCreate, Permissions.Conversation.TopicManage,
         Permissions.Knowledge.View, Permissions.Knowledge.Edit, Permissions.Knowledge.Manage,
-        Permissions.Forms.Create, Permissions.Forms.Publish, Permissions.Forms.Submit, Permissions.Forms.Review
+        Permissions.Forms.Create, Permissions.Forms.Publish, Permissions.Forms.Submit, Permissions.Forms.Review,
+        Permissions.Live.Share, Permissions.Live.Record
     ];
 
     private static readonly HashSet<string> AuditorPermissions =
@@ -195,7 +197,8 @@ public static class RolePermissionCatalog
         Permissions.Announcement.Acknowledge,
         Permissions.Conversation.TopicCreate,
         Permissions.Knowledge.View, Permissions.Knowledge.Edit,
-        Permissions.Forms.Create, Permissions.Forms.Publish, Permissions.Forms.Submit, Permissions.Forms.Review
+        Permissions.Forms.Create, Permissions.Forms.Publish, Permissions.Forms.Submit, Permissions.Forms.Review,
+        Permissions.Live.Share
     ];
 
     private static readonly HashSet<string> GuestPermissions =

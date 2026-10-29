@@ -6935,6 +6935,9 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("SharingScreen")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
 
@@ -6947,6 +6950,106 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("live_participants", "conversations");
+                });
+
+            modelBuilder.Entity("VibeChat.Realtime.LiveRecording", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("ByteSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("ChannelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ObjectKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("OnHold")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ScanStatus")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("StartedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTimeOffset?>("StoppedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "SessionId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.ToTable("live_recordings", "conversations");
+                });
+
+            modelBuilder.Entity("VibeChat.Realtime.LiveRecordingConsent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Decision")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid>("RecordingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "RecordingId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("live_recording_consents", "conversations");
                 });
 
             modelBuilder.Entity("VibeChat.Realtime.LiveSession", b =>
@@ -7000,6 +7103,37 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("live_sessions", "conversations");
+                });
+
+            modelBuilder.Entity("VibeChat.Realtime.LiveWorkspacePolicy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("RecordingEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ShareEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "WorkspaceId")
+                        .IsUnique();
+
+                    b.ToTable("live_policies", "conversations");
                 });
 
             modelBuilder.Entity("VibeChat.Search.SemanticChunk", b =>

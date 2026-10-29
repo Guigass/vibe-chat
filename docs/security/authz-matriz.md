@@ -305,6 +305,15 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/leave` | permission | `message.send` | ✓ | ✗ | ✓ | B-147; última saída encerra |
 | PUT | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/media` | permission | `message.send` | ✓ | ✗ | ✓ | B-147; câmera só se a policy de vídeo nasceu ligada |
 | POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/reactions` | permission | `message.send` | ✓ | ✗ | ✓ | B-147; emoji da lista fechada |
+| PUT | `/workspaces/{workspaceId:guid}/live/policy` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-148; não liga a flag da instância |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/share` | permission | `live.share` | ✓ | ✗ | ✓ | B-148; participante; policy e flag |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/share/stop` | permission | `live.share` | ✓ | ✗ | ✓ | B-148; para o próprio share |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/share/revoke` | permission | `live.record` | ✗ | ✗ | ✓ | B-148; moderação; Member não revoga |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/recordings` | permission | `live.record` | ✗ | ✗ | ✓ | B-148; nasce em consentimento |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/recordings/{recordingId:guid}/consent` | permission | `message.send` | ✓ | ✗ | ✓ | B-148; accept ou decline |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/recordings/{recordingId:guid}/stop` | permission | `live.record` | ✗ | ✗ | ✓ | B-148; sela o objeto |
+| GET | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/recordings/{recordingId:guid}` | permission | `message.read` | ✓ | ✓ | ✓ | B-148; sem URL |
+| POST | `/channels/{channelId:guid}/live/sessions/{sessionId:guid}/recordings/{recordingId:guid}/download` | permission | `message.read` | ✓ | ✓ | ✓ | B-148; URL curta após ACL |
 | GET | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/federation` | permission | `message.read` | ✗ | ✗ | ✓ | B-065; membership; flag off → 404 `FederationDisabled` |
 | POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; allowlist; token só na criação |
 | POST | `/admin/workspaces/{workspaceId:guid}/federation/trusts/{trustId:guid}/consent` | permission | `workspace.admin` | ✗ | ✗ | ✓ | B-065; cópia só após acknowledge |

@@ -213,6 +213,15 @@ public static class AuditActions
     public const string LiveParticipantLeave = "live.participant.leave";
     public const string LiveTokenReplay = "live.token.replay";
     public const string LiveCapacityDenied = "live.capacity.denied";
+    public const string LiveShareStart = "live.share.start";
+    public const string LiveShareStop = "live.share.stop";
+    public const string LiveShareRevoke = "live.share.revoke";
+    public const string LiveRecordingRequest = "live.recording.request";
+    public const string LiveRecordingConsent = "live.recording.consent";
+    public const string LiveRecordingStart = "live.recording.start";
+    public const string LiveRecordingStop = "live.recording.stop";
+    public const string LiveRecordingReady = "live.recording.ready";
+    public const string LiveRecordingDownload = "live.recording.download";
 }
 
 public interface IAuditWriter

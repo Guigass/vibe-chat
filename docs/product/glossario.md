@@ -65,7 +65,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Status personalizado** | Texto curto e emoji do próprio usuário, por tenant, com expiração (B-116). Distinto da presence e do perfil público (B-167). O usuário controla o conteúdo. |
 | **Disponibilidade** | Valor derivado de presence, DND e status (`available`, `away`, `busy`, `vacation`, `offline`). Não publica agenda. DND continua mandando na notificação (B-097). |
 | **Typing** | Indicador de “digitando…” com TTL curto no Redis. |
-| **Huddle** | Sessão de áudio/vídeo ligada a um canal ou DM (B-147 / D-19 / ADR-065). Flag `Features:Live:Enabled` off. O SFU/TURN fica no profile `live`; a API só emite token de sala. Sem gravação. |
+| **Huddle** | Sessão de áudio/vídeo ligada a um canal ou DM (B-147 / D-19 / ADR-065). Flag `Features:Live:Enabled` off. O SFU/TURN fica no profile `live`; a API só emite token de sala. Screen share e gravação (B-148 / ADR-066) nascem off e a gravação só começa depois do consentimento de quem está na sessão. |
 | **Hub / Connection** | Conexão SignalR autenticada; grupos por tenant/workspace/channel. |
 | **Web Push** | Notificação do navegador via protocolo Web Push + VAPID da instância (D-13 / B-095). Opt-in por dispositivo; payload mínimo; off por default (`Push:Enabled`). Distinto de e-mail (B-043) e de preferências/DND (B-097). |
 | **Backplane** | Redis como backplane SignalR para fan-out entre instâncias da API. |

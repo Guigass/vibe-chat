@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using VibeChat.BuildingBlocks;
 using VibeChat.Infrastructure;
 using VibeChat.Realtime;
 using VibeChat.SharedKernel;
@@ -36,6 +37,43 @@ public sealed class LiveRulesTests
         LiveRules.TryReaction("nope", out _).Should().BeFalse();
         LiveRules.ParticipantLimit(1).Should().Be(2);
         LiveRules.TokenTtl(1).Should().Be(LiveRules.MinTokenTtlSeconds);
+        LiveRules.PublishSources(false, true).Should().Equal("microphone", "screen_share");
+        LiveRules.PublishSources(true, true).Should().Equal("microphone", "camera", "screen_share");
+    }
+
+    [Fact]
+    public void Recording_stays_off_until_every_participant_accepts_and_a_decline_blocks_it()
+    {
+        LiveRules.NextRecordingState(["pending", "pending"]).Should().Be(LiveRules.RecordingConsent);
+        LiveRules.NextRecordingState(["accepted", "pending"]).Should().Be(LiveRules.RecordingConsent);
+        LiveRules.NextRecordingState(["accepted", "accepted"]).Should().Be(LiveRules.RecordingActive);
+        LiveRules.NextRecordingState(["accepted", "declined"]).Should().Be(LiveRules.RecordingDeclined);
+        LiveRules.NextRecordingState([]).Should().Be(LiveRules.RecordingDeclined);
+        LiveRules.FeatureOn(true, false).Should().BeFalse();
+        LiveRules.FeatureOn(false, true).Should().BeFalse();
+        LiveRules.FeatureOn(true, true).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Download_expires_quota_and_hold_follow_the_recording_rules()
+    {
+        var now = DateTimeOffset.Parse("2026-10-28T12:00:00Z");
+        var key = LiveRules.ObjectKey(new TenantId(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
+        LiveRules.IsPublicUrl(key).Should().BeFalse();
+        LiveRules.IsPublicUrl("https://files.example/object").Should().BeTrue();
+        LiveRules.CanDownload(LiveRules.RecordingConsent, LiveRules.ScanClean, now.AddMinutes(1), now, false).Should().BeFalse();
+        LiveRules.CanDownload(LiveRules.RecordingReady, LiveRules.ScanClean, now.AddMinutes(1), now, false).Should().BeTrue();
+        LiveRules.CanDownload(LiveRules.RecordingReady, LiveRules.ScanClean, now.AddMinutes(-1), now, false).Should().BeFalse();
+        LiveRules.CanDownload(LiveRules.RecordingReady, LiveRules.ScanClean, now.AddMinutes(-1), now, true).Should().BeTrue();
+        LiveRules.CanDownload(LiveRules.RecordingReady, LiveRules.ScanRejected, now.AddMinutes(1), now, true).Should().BeFalse();
+        LiveRules.ShouldPurge(LiveRules.RecordingReady, now.AddMinutes(-1), now, false).Should().BeTrue();
+        LiveRules.ShouldPurge(LiveRules.RecordingReady, now.AddMinutes(-1), now, true).Should().BeFalse();
+        LiveRules.QuotaAllows(10, 5, 14).Should().BeFalse();
+        LiveRules.QuotaAllows(10, 4, 14).Should().BeTrue();
+        RolePermissionCatalog.For(Role.Member).Should().Contain(Permissions.Live.Share).And.NotContain(Permissions.Live.Record);
+        RolePermissionCatalog.For(Role.Moderator).Should().Contain(Permissions.Live.Record);
+        RolePermissionCatalog.For(Role.Guest).Should().NotContain(Permissions.Live.Share);
+        RolePermissionCatalog.For(Role.Auditor).Should().NotContain(Permissions.Live.Record);
     }
 
     [Fact]

@@ -307,6 +307,12 @@ public static class Permissions
         public const string Read = "integration.read";
         public const string Manage = "integration.manage";
     }
+
+    public static class Live
+    {
+        public const string Share = "live.share";
+        public const string Record = "live.record";
+    }
 }
 
 public enum Role

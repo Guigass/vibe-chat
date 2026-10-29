@@ -3,16 +3,26 @@ import { Component, effect, inject, OnDestroy, signal } from '@angular/core';
 import { LiveApiService, LiveHealth, LiveState } from '../core/api/live-api.service';
 import { fillTemplate, translateErrorCode, ui } from '../core/i18n/strings';
 import { ChannelStore } from '../core/services/channel.store';
+import { HuddleCapture } from './huddle-capture';
 
 const reactions = ['👍', '✅', '👀', '🎉'] as const;
 
 @Component({
   selector: 'vc-huddle-control',
   standalone: true,
-  imports: [A11yModule],
+  imports: [A11yModule, HuddleCapture],
   template: `
     @if (available()) {
       <div class="huddle">
+        <vc-huddle-capture
+          [channelId]="channelId"
+          [session]="state()"
+          [connected]="connected()"
+          [canShare]="canShare()"
+          [canRecord]="canRecord()"
+          (refresh)="refreshState()"
+          (left)="leave()"
+        />
         <button
           type="button"
           class="huddle__toggle"
@@ -55,6 +65,9 @@ const reactions = ['👍', '✅', '👀', '🎉'] as const;
                     <span>{{ person.displayName }}</span>
                     @if (person.audioConnected) {
                       <span>{{ ui.huddleConnected }}</span>
+                    }
+                    @if (person.sharingScreen) {
+                      <span>{{ ui.huddleSharing }}</span>
                     }
                     @if (person.reaction) {
                       <span aria-hidden="true">{{ person.reaction }}</span>
@@ -141,11 +154,13 @@ export class HuddleControl implements OnDestroy {
   readonly state = signal<LiveState | null>(null);
   readonly participants = signal<LiveState['participants']>([]);
   readonly videoAllowed = signal(false);
+  readonly canShare = signal(false);
+  readonly canRecord = signal(false);
   readonly providerHealthy = signal(false);
   readonly inSession = signal(false);
   private mic: MediaStream | null = null;
   private poll: ReturnType<typeof setInterval> | null = null;
-  private channelId: string | null = null;
+  channelId: string | null = null;
   private workspaceId: string | null = null;
 
   constructor() {
@@ -175,15 +190,11 @@ export class HuddleControl implements OnDestroy {
     this.open.update((value) => !value);
     if (this.open()) {
       void this.refreshState();
-      this.poll = setInterval(() => void this.refreshState(), 4000);
-    } else {
-      this.stopPoll();
     }
   }
 
   close(): void {
     this.open.set(false);
-    this.stopPoll();
   }
 
   async confirm(): Promise<void> {
@@ -301,7 +312,10 @@ export class HuddleControl implements OnDestroy {
       this.health.set(health);
       this.providerHealthy.set(health.healthy);
       this.videoAllowed.set(health.videoEnabled);
+      this.canShare.set(health.canShare);
+      this.canRecord.set(health.canRecord);
       this.available.set(health.enabled);
+      this.startPoll();
       await this.refreshState();
     } catch {
       this.available.set(false);
@@ -309,7 +323,7 @@ export class HuddleControl implements OnDestroy {
     }
   }
 
-  private async refreshState(): Promise<void> {
+  async refreshState(): Promise<void> {
     const channelId = this.channelId;
     if (!channelId || !this.available()) {
       return;
@@ -352,6 +366,11 @@ export class HuddleControl implements OnDestroy {
     this.participants.set([]);
     this.inSession.set(false);
     this.available.set(false);
+  }
+
+  private startPoll(): void {
+    this.stopPoll();
+    this.poll = setInterval(() => void this.refreshState(), 4000);
   }
 
   private stopPoll(): void {

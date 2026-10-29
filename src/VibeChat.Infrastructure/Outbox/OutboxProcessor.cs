@@ -183,13 +183,16 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     continue;
                 }
 
-                if (outbox.Type == LiveRules.EventType)
+                if (outbox.Type is LiveRules.EventType or LiveRules.RecordingEvent)
                 {
                     var liveNode = JsonNode.Parse(outbox.Payload)?.AsObject();
                     if (liveNode?["channelId"] is JsonNode liveChannel)
                     {
+                        var liveEventName = outbox.Type == LiveRules.RecordingEvent
+                            ? "LiveRecordingChanged"
+                            : "LiveSessionChanged";
                         await publisher.PublishAsync(
-                            new RealtimeMessage("LiveSessionChanged", outbox.TenantId, new ChannelId(liveChannel.GetValue<Guid>()), liveNode),
+                            new RealtimeMessage(liveEventName, outbox.TenantId, new ChannelId(liveChannel.GetValue<Guid>()), liveNode),
                             cancellationToken);
                     }
 
