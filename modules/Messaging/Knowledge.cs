@@ -4,8 +4,8 @@ using VibeChat.SharedKernel;
 namespace VibeChat.Messaging;
 
 /// <summary>
-/// Server-authoritative knowledge page (B-120). Markdown is restricted;
-/// collaboration stays request/response until B-152.
+/// Server-authoritative knowledge page (B-120). Markdown is restricted.
+/// Realtime coediting is B-152 and stays off until Features:CanvasRealtime is enabled.
 /// </summary>
 public sealed class KnowledgeCollection
 {

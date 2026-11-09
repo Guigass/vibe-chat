@@ -575,6 +575,12 @@ ALTER TABLE IF EXISTS knowledge.pages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS knowledge.pages FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS knowledge.page_versions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS knowledge.page_versions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS knowledge.canvas_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS knowledge.canvas_documents FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS knowledge.canvas_updates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS knowledge.canvas_updates FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS knowledge.canvas_snapshots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS knowledge.canvas_snapshots FORCE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS tenant_isolation_knowledge_collections ON knowledge.collections;
 CREATE POLICY tenant_isolation_knowledge_collections ON knowledge.collections
@@ -588,6 +594,21 @@ CREATE POLICY tenant_isolation_knowledge_pages ON knowledge.pages
 
 DROP POLICY IF EXISTS tenant_isolation_knowledge_page_versions ON knowledge.page_versions;
 CREATE POLICY tenant_isolation_knowledge_page_versions ON knowledge.page_versions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_canvas_documents ON knowledge.canvas_documents;
+CREATE POLICY tenant_isolation_canvas_documents ON knowledge.canvas_documents
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_canvas_updates ON knowledge.canvas_updates;
+CREATE POLICY tenant_isolation_canvas_updates ON knowledge.canvas_updates
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_canvas_snapshots ON knowledge.canvas_snapshots;
+CREATE POLICY tenant_isolation_canvas_snapshots ON knowledge.canvas_snapshots
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

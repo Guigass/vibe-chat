@@ -162,6 +162,12 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | GET | `/workspaces/{workspaceId:guid}/knowledge/pages/{pageId:guid}/export` | permission | `knowledge.view` | ✓ | ✓ | ✓ | Inclui versões |
 | GET | `/workspaces/{workspaceId:guid}/knowledge/search` | permission | `knowledge.view` | ✓ | ✓ | ✓ | Não amplia ACL |
 | GET | `/workspaces/{workspaceId:guid}/knowledge/export` | permission | `knowledge.manage` | ✗ | ✗ | ✓ | Mesmo filtro de ACL |
+| GET | `/workspaces/{workspaceId:guid}/knowledge/pages/{pageId:guid}/canvas` | permission | `knowledge.view` | ✓ | ✓ | ✓ | B-152; flag off → 404; fora da ACL → 404 |
+| GET | `/workspaces/{workspaceId:guid}/knowledge/pages/{pageId:guid}/canvas/updates` | permission | `knowledge.view` | ✓ | ✓ | ✓ | B-152; lacuna compactada → 409 |
+| POST | `/workspaces/{workspaceId:guid}/knowledge/pages/{pageId:guid}/canvas/updates` | permission | `knowledge.edit` | ✓ | ✗ | ✓ | B-152; membership revalidada |
+| POST | `/workspaces/{workspaceId:guid}/knowledge/pages/{pageId:guid}/canvas/presence` | permission | `knowledge.view` | ✓ | ✓ | ✓ | B-152; cursor efêmero |
+| POST | `/workspaces/{workspaceId:guid}/knowledge/pages/{pageId:guid}/canvas/snapshots` | permission | `knowledge.edit` | ✓ | ✗ | ✓ | B-152; snapshot do servidor |
+| POST | `/workspaces/{workspaceId:guid}/knowledge/pages/{pageId:guid}/canvas/restore` | permission | `knowledge.manage` | ✗ | ✗ | ✓ | B-152; sobe o epoch |
 | POST | `/workspaces/{workspaceId:guid}/messages/{messageId:guid}/forward` | permission | `message.send` | ✓ | ✗ | ✓ | |
 | POST | `/channels/{channelId:guid}/messages/{messageId:guid}/threads` | permission | `message.send` | ✓ | ✗ | ✓ | Get-or-create + reply |
 | GET | `/threads/{threadId:guid}` | membership | — | ✓ | ✓ | ✓ | |

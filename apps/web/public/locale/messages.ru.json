@@ -1897,6 +1897,21 @@
     "huddle.close": "Закрыть хаддл",
     "huddle.reaction": "Реакция",
     "huddle.capacity": "%active% из %max% сессий",
-    "error.live": "Не удалось войти в хаддл."
+    "error.live": "Не удалось войти в хаддл.",
+    "canvas.editor": "Общий текст",
+    "canvas.statusOnline": "В сети",
+    "canvas.statusOffline": "Не в сети",
+    "canvas.statusReconnecting": "Переподключение",
+    "canvas.peers": "Кто здесь",
+    "canvas.peersEmpty": "Только вы",
+    "canvas.undo": "Отменить",
+    "canvas.history": "Версии холста",
+    "canvas.historyEmpty": "Сохранённых версий пока нет",
+    "canvas.snapshot": "Сохранить версию",
+    "canvas.restore": "Восстановить эту версию",
+    "canvas.restoreConfirm": "Восстановление заменит текущий текст этой страницы.",
+    "canvas.disabled": "Совместное редактирование выключено.",
+    "canvas.authoritative": "Текст этой страницы меняется совместным редактированием.",
+    "canvas.saveError": "Не удалось синхронизировать текст."
   }
 }

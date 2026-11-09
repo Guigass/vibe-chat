@@ -1897,6 +1897,21 @@
     "huddle.close": "Chiudi huddle",
     "huddle.reaction": "Reazione",
     "huddle.capacity": "%active% di %max% sessioni",
-    "error.live": "Non è stato possibile entrare nell'huddle."
+    "error.live": "Non è stato possibile entrare nell'huddle.",
+    "canvas.editor": "Testo condiviso",
+    "canvas.statusOnline": "Online",
+    "canvas.statusOffline": "Offline",
+    "canvas.statusReconnecting": "Riconnessione",
+    "canvas.peers": "Chi c'è",
+    "canvas.peersEmpty": "Solo tu",
+    "canvas.undo": "Annulla",
+    "canvas.history": "Versioni del canvas",
+    "canvas.historyEmpty": "Nessuna versione salvata",
+    "canvas.snapshot": "Salva versione",
+    "canvas.restore": "Ripristina questa versione",
+    "canvas.restoreConfirm": "Il ripristino sostituisce il testo attuale di questa pagina.",
+    "canvas.disabled": "La co-modifica è disattivata.",
+    "canvas.authoritative": "Il testo di questa pagina cambia con la co-modifica.",
+    "canvas.saveError": "Impossibile sincronizzare il testo."
   }
 }

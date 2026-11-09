@@ -148,6 +148,10 @@ public static class AuditActions
     public const string KnowledgePageDelete = "knowledge.page.delete";
     public const string KnowledgePageRestore = "knowledge.page.restore";
     public const string KnowledgeExport = "knowledge.export";
+    public const string CanvasUpdate = "knowledge.canvas.update";
+    public const string CanvasSnapshot = "knowledge.canvas.snapshot";
+    public const string CanvasRestore = "knowledge.canvas.restore";
+    public const string CanvasPreserve = "knowledge.canvas.preserve";
     public const string SemanticQuery = "semantic.query";
     public const string SemanticReport = "semantic.report";
     public const string SemanticSettingsChange = "semantic.settings";

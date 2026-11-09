@@ -55,6 +55,7 @@ Termos canônicos do domínio. Use estes nomes em código, ADRs e UI (labels de 
 | **Incident room / Sala de incidente** | Canal privado criado por template, com severidade, commander, responders, playbook e timeline de referências (`incident.rooms`, B-126). O papel na sala não concede `workspace.admin`. O postmortem aponta para a evidência e não copia o body. |
 | **Conector** | Instalação por workspace que recebe um evento externo assinado e produz um efeito único em canal, tarefa ou incidente (`connectors.installations`, B-127). O segredo fica no envelope e a resposta só mostra máscara. A chamada externa não usa a outbox de mensagens. |
 | **Página de conhecimento** | Texto curado em Markdown restrito, dentro de uma coleção com escopo de workspace, space ou canal (`knowledge.pages`, B-120). Versionamento otimista e histórico append-only. Não copia o body da mensagem: a referência `[[…]]` é resolvida na leitura. |
+| **Canvas** | Coedição do body de uma página (B-152 / D-17 / ADR-068). Flag `Features:CanvasRealtime:Enabled` off. O CRDT é Yrs/yjs; cursores não são duráveis; o título continua no PATCH. |
 | **Digest / Catch-up** | Resumo pessoal diário/semanal ou sob demanda (B-122). Guarda ids, não o body. A leitura revalida a ACL e não move o cursor. IA só com a busca semântica ligada. |
 
 ## Tempo real e presença

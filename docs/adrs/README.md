@@ -66,6 +66,7 @@ original.
 | [058](ADR-058-performance-escalabilidade.md) | Performance permanece no Compose | Accepted |
 | [059](ADR-059-offline-sync.md) | Sync offline no cliente PWA | Accepted |
 | [067](ADR-067-notas-reuniao.md) | Transcrição e notas de reunião com consentimento | Accepted |
+| [068](ADR-068-canvas-colaborativo.md) | Canvas colaborativo sobre as páginas B-120 | Accepted |
 
 ## Quando criar um ADR
 
