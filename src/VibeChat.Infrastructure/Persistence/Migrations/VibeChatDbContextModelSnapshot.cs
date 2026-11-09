@@ -4652,6 +4652,131 @@ namespace VibeChat.Infrastructure.Persistence.Migrations
                     b.ToTable("announcement_acknowledgements", "messaging");
                 });
 
+            modelBuilder.Entity("VibeChat.Messaging.CanvasDocument", b =>
+                {
+                    b.Property<Guid>("PageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("CompactedThroughSeq")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Epoch")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Seq")
+                        .HasColumnType("bigint");
+
+                    b.Property<byte[]>("State")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("PageId");
+
+                    b.HasIndex("TenantId", "WorkspaceId");
+
+                    b.ToTable("canvas_documents", "knowledge");
+                });
+
+            modelBuilder.Entity("VibeChat.Messaging.CanvasSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(16000)
+                        .HasColumnType("character varying(16000)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Epoch")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("PageVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Seq")
+                        .HasColumnType("bigint");
+
+                    b.Property<byte[]>("State")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "PageId", "CreatedAt");
+
+                    b.ToTable("canvas_snapshots", "knowledge");
+                });
+
+            modelBuilder.Entity("VibeChat.Messaging.CanvasUpdate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Epoch")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<Guid>("PageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte[]>("Payload")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<long>("Seq")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "PageId", "Epoch", "Seq")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "PageId", "Epoch", "AuthorUserId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.ToTable("canvas_updates", "knowledge");
+                });
+
             modelBuilder.Entity("VibeChat.Messaging.Commitment", b =>
                 {
                     b.Property<Guid>("Id")

@@ -1897,6 +1897,21 @@
     "huddle.close": "关闭 huddle",
     "huddle.reaction": "反应",
     "huddle.capacity": "%max% 个会话中的 %active% 个",
-    "error.live": "无法加入 huddle。"
+    "error.live": "无法加入 huddle。",
+    "canvas.editor": "共享文本",
+    "canvas.statusOnline": "在线",
+    "canvas.statusOffline": "离线",
+    "canvas.statusReconnecting": "正在重新连接",
+    "canvas.peers": "正在查看的人",
+    "canvas.peersEmpty": "只有你",
+    "canvas.undo": "撤销",
+    "canvas.history": "画布版本",
+    "canvas.historyEmpty": "还没有保存的版本",
+    "canvas.snapshot": "保存版本",
+    "canvas.restore": "恢复此版本",
+    "canvas.restoreConfirm": "恢复会替换此页面的当前文本。",
+    "canvas.disabled": "协同编辑已关闭。",
+    "canvas.authoritative": "此页面的文本通过协同编辑更改。",
+    "canvas.saveError": "无法同步文本。"
   }
 }

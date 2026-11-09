@@ -420,6 +420,7 @@ internal static class KnowledgeEndpoints
         IOutboxWriter outbox,
         IAuditWriter audit,
         IOptions<KnowledgePageOptions> options,
+        IOptions<CanvasOptions> canvas,
         IClock clock,
         CancellationToken ct)
     {
@@ -450,6 +451,11 @@ internal static class KnowledgeEndpoints
         if (page.Version != request.Version)
         {
             return Conflict(page.Version);
+        }
+
+        if (canvas.Value.Enabled && await db.CanvasDocuments.AnyAsync(row => row.PageId == page.Id, ct))
+        {
+            body = page.Body;
         }
 
         var now = clock.UtcNow;
@@ -627,7 +633,8 @@ internal static class KnowledgeEndpoints
             row.Version, row.Title, row.Body, row.Action, row.ActorUserId.Value, row.RestoredFromVersion, row.At)).ToList();
         audit.Add(AuditFor(loaded.Page!.TenantId, loaded.Profile!.Id, AuditActions.KnowledgeExport, "KnowledgePage", pageId, clock.UtcNow));
         await db.SaveChangesAsync(ct);
-        return Results.Ok(new KnowledgeExportResponse(await ToPageAsync(db, loaded.Page, loaded.Profile.Id, ct), versions));
+        var canvasSummary = await CanvasEndpoints.ExportSummaryAsync(db, pageId, ct);
+        return Results.Ok(new KnowledgeExportResponse(await ToPageAsync(db, loaded.Page, loaded.Profile.Id, ct), versions, canvasSummary));
     }
 
     private static async Task<IResult> SearchAsync(
@@ -738,9 +745,11 @@ internal static class KnowledgeEndpoints
             .ToListAsync(ct);
         var versions = versionRows.Select(row => new KnowledgeVersionResponse(
             row.Version, row.Title, row.Body, row.Action, row.ActorUserId.Value, row.RestoredFromVersion, row.At)).ToList();
+        var canvasUpdates = await db.CanvasUpdates.AsNoTracking().CountAsync(row => pages.Contains(row.PageId), ct);
+        var canvasSnapshots = await db.CanvasSnapshots.AsNoTracking().CountAsync(row => pages.Contains(row.PageId), ct);
         audit.Add(AuditFor(gate.Workspace!.TenantId, gate.Profile!.Id, AuditActions.KnowledgeExport, "Workspace", gate.Workspace.Id.Value, clock.UtcNow));
         await db.SaveChangesAsync(ct);
-        return Results.Ok(new { pageCount = pages.Count, versions });
+        return Results.Ok(new { pageCount = pages.Count, versions, canvasUpdates, canvasSnapshots });
     }
 
     private static async Task<PageLoad> LoadVisiblePageAsync(

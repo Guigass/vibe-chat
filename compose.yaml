@@ -331,6 +331,7 @@ services:
       Features__Live__TokenTtlSeconds: ${Features__Live__TokenTtlSeconds:-60}
       Features__MeetingAi__Enabled: ${Features__MeetingAi__Enabled:-false}
       Features__MeetingAi__Provider: ${Features__MeetingAi__Provider:-none}
+      Features__CanvasRealtime__Enabled: ${Features__CanvasRealtime__Enabled:-false}
       Identity__Scim__Enabled: ${IDENTITY_SCIM_ENABLED:-false}
       Identity__Scim__KeycloakAdapter: ${IDENTITY_SCIM_KEYCLOAK_ADAPTER:-false}
       Identity__Sso__Enabled: ${IDENTITY_SSO_ENABLED:-false}

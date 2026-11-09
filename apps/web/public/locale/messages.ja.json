@@ -1897,6 +1897,21 @@
     "huddle.close": "ハドルを閉じる",
     "huddle.reaction": "リアクション",
     "huddle.capacity": "%max% セッション中 %active%",
-    "error.live": "ハドルに参加できませんでした。"
+    "error.live": "ハドルに参加できませんでした。",
+    "canvas.editor": "共有テキスト",
+    "canvas.statusOnline": "オンライン",
+    "canvas.statusOffline": "オフライン",
+    "canvas.statusReconnecting": "再接続中",
+    "canvas.peers": "ここにいる人",
+    "canvas.peersEmpty": "あなただけ",
+    "canvas.undo": "元に戻す",
+    "canvas.history": "キャンバスの版",
+    "canvas.historyEmpty": "保存した版はまだありません",
+    "canvas.snapshot": "版を保存",
+    "canvas.restore": "この版を復元",
+    "canvas.restoreConfirm": "復元すると、このページの現在のテキストが置き換わります。",
+    "canvas.disabled": "共同編集はオフです。",
+    "canvas.authoritative": "このページのテキストは共同編集で変わります。",
+    "canvas.saveError": "テキストを同期できませんでした。"
   }
 }

@@ -1,10 +1,13 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { ui } from '../../../core/i18n/strings';
 import { KnowledgeStore } from '../../../core/services/knowledge.store';
+import { CanvasEditor } from './canvas-editor';
+import { CanvasSession } from './canvas-session';
 
 @Component({
   selector: 'vc-knowledge-panel',
   standalone: true,
+  imports: [CanvasEditor],
   template: `
     <section class="knowledge-panel" [attr.aria-label]="ui.knowledgePanel" data-testid="knowledge-panel">
       <header>
@@ -87,10 +90,14 @@ import { KnowledgeStore } from '../../../core/services/knowledge.store';
             {{ ui.knowledgeTitleLabel }}
             <input data-testid="knowledge-edit-title" [value]="knowledge.title()" (input)="knowledge.setTitle(inputValue($event))" />
           </label>
-          <label>
-            {{ ui.knowledgeBodyLabel }}
-            <textarea data-testid="knowledge-body" rows="8" [value]="knowledge.body()" (input)="knowledge.setBody(inputValue($event))"></textarea>
-          </label>
+          @if (canvas.active()) {
+            <vc-canvas-editor [canEdit]="knowledge.canEdit()" [canManage]="knowledge.canManage()" />
+          } @else {
+            <label>
+              {{ ui.knowledgeBodyLabel }}
+              <textarea data-testid="knowledge-body" rows="8" [value]="knowledge.body()" (input)="knowledge.setBody(inputValue($event))"></textarea>
+            </label>
+          }
           <h3>{{ ui.knowledgePreview }}</h3>
           <pre data-testid="knowledge-preview">{{ knowledge.body() }}</pre>
           @if (knowledge.canEdit()) {
@@ -165,9 +172,22 @@ import { KnowledgeStore } from '../../../core/services/knowledge.store';
 export class KnowledgePanel {
   readonly ui = ui;
   readonly knowledge = inject(KnowledgeStore);
+  readonly canvas = inject(CanvasSession);
   readonly collectionTitle = signal('');
   readonly pageTitle = signal('');
   readonly scope = signal<'workspace' | 'channel'>('workspace');
+
+  constructor() {
+    effect(() => {
+      const page = this.knowledge.page();
+      const workspaceId = this.knowledge.workspace();
+      if (!this.knowledge.panelOpen() || !page || !workspaceId) {
+        this.canvas.close();
+        return;
+      }
+      void this.canvas.open(workspaceId, page.id);
+    });
+  }
 
   inputValue(event: Event): string {
     return (event.target as HTMLInputElement | HTMLTextAreaElement).value;
@@ -197,6 +217,10 @@ export class KnowledgePanel {
 
   save(event: Event): void {
     event.preventDefault();
+    if (this.canvas.active()) {
+      void this.knowledge.save(this.canvas.committed());
+      return;
+    }
     void this.knowledge.save();
   }
 }

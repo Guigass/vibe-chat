@@ -278,6 +278,7 @@ v1.MapAutomations();
 v1.MapIncidents();
 v1.MapConnectors();
 v1.MapKnowledge();
+v1.MapCanvas();
 v1.MapNotifications();
 v1.MapDigests();
 v1.MapAdministration();

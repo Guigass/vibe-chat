@@ -403,6 +403,21 @@ export const ui = {
   knowledgeScopeWorkspace: $localize`:@@knowledge.scopeWorkspace:Workspace`,
   knowledgeScopeChannel: $localize`:@@knowledge.scopeChannel:Canal atual`,
   knowledgeSave: $localize`:@@knowledge.save:Salvar`,
+  canvasEditor: $localize`:@@canvas.editor:Texto compartilhado`,
+  canvasStatusOnline: $localize`:@@canvas.statusOnline:Online`,
+  canvasStatusOffline: $localize`:@@canvas.statusOffline:Offline`,
+  canvasStatusReconnecting: $localize`:@@canvas.statusReconnecting:Reconectando`,
+  canvasPeers: $localize`:@@canvas.peers:Quem está aqui`,
+  canvasPeersEmpty: $localize`:@@canvas.peersEmpty:Só você`,
+  canvasUndo: $localize`:@@canvas.undo:Desfazer`,
+  canvasHistory: $localize`:@@canvas.history:Versões do canvas`,
+  canvasHistoryEmpty: $localize`:@@canvas.historyEmpty:Nenhuma versão salva`,
+  canvasSnapshot: $localize`:@@canvas.snapshot:Guardar versão`,
+  canvasRestore: $localize`:@@canvas.restore:Restaurar esta versão`,
+  canvasRestoreConfirm: $localize`:@@canvas.restoreConfirm:Restaurar substitui o texto atual desta página.`,
+  canvasDisabled: $localize`:@@canvas.disabled:A coedição está desligada.`,
+  canvasAuthoritative: $localize`:@@canvas.authoritative:O texto desta página muda pela coedição.`,
+  canvasSaveError: $localize`:@@canvas.saveError:Não foi possível sincronizar o texto.`,
   knowledgeClose: $localize`:@@knowledge.close:Fechar`,
   commitmentNav: $localize`:@@commitment.nav:Decisões`,
   commitmentNavHint: $localize`:@@commitment.navHint:Origem na conversa`,
@@ -2105,6 +2120,17 @@ export function translateErrorCode(code: string | undefined): string {
       return ui.knowledgeConflict;
     case 'KnowledgeDisabled':
       return ui.knowledgeDisabled;
+    case 'CanvasRealtimeDisabled':
+      return ui.canvasDisabled;
+    case 'CanvasAuthoritative':
+      return ui.canvasAuthoritative;
+    case 'CanvasUpdateRejected':
+    case 'CanvasStateTooLarge':
+    case 'CanvasQuotaExceeded':
+    case 'CanvasWireUnsupported':
+    case 'CanvasEpochMismatch':
+    case 'CanvasResync':
+      return ui.canvasSaveError;
     case 'SemanticSearchDisabled':
       return ui.searchSemanticDisabled;
     case 'SemanticBudgetExceeded':

@@ -40,11 +40,11 @@ redigem origem inacessível.
 
 ## Aceite
 
-- [ ] Dois clients editam sem perda.
-- [ ] Reconnect/offline converge.
-- [ ] Usuário removido não publica update.
-- [ ] Snapshot/restore preserva documento.
-- [ ] Export/hold/retention cobrem updates e snapshots.
+- [x] Dois clients editam sem perda.
+- [x] Reconnect/offline converge.
+- [x] Usuário removido não publica update.
+- [x] Snapshot/restore preserva documento.
+- [x] Export/hold/retention cobrem updates e snapshots.
 
 ## Testes
 

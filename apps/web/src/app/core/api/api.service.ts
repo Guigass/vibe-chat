@@ -30,6 +30,7 @@ import { MobileApiService } from './mobile-api.service';
 import { OfflineApiService } from './offline-api.service';
 import { StorageApiService } from './storage-api.service';
 import { ChatBackupApiService } from './chat-backup-api.service';
+import { CanvasApiService } from './canvas-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -67,6 +68,7 @@ export class ApiService {
   private readonly offline = inject(OfflineApiService);
   private readonly storage = inject(StorageApiService);
   private readonly chatBackup = inject(ChatBackupApiService);
+  private readonly canvas = inject(CanvasApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -367,4 +369,10 @@ export class ApiService {
   readonly downloadChatBackup: ChatBackupApiService['download'] = this.chatBackup.download.bind(this.chatBackup);
   readonly validateChatBackupImport: ChatBackupApiService['validateImport'] = this.chatBackup.validateImport.bind(this.chatBackup);
   readonly executeChatBackupImport: ChatBackupApiService['executeImport'] = this.chatBackup.executeImport.bind(this.chatBackup);
+  readonly openCanvas: CanvasApiService['open'] = this.canvas.open.bind(this.canvas);
+  readonly canvasUpdates: CanvasApiService['updates'] = this.canvas.updates.bind(this.canvas);
+  readonly publishCanvas: CanvasApiService['publish'] = this.canvas.publish.bind(this.canvas);
+  readonly canvasPresence: CanvasApiService['presence'] = this.canvas.presence.bind(this.canvas);
+  readonly snapshotCanvas: CanvasApiService['snapshot'] = this.canvas.snapshot.bind(this.canvas);
+  readonly restoreCanvas: CanvasApiService['restore'] = this.canvas.restore.bind(this.canvas);
 }

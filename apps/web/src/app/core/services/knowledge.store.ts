@@ -182,7 +182,11 @@ export class KnowledgeStore {
     }
   }
 
-  async save(): Promise<void> {
+  workspace(): string | null {
+    return this.workspaceId();
+  }
+
+  async save(bodyOverride?: string): Promise<void> {
     const workspaceId = this.workspaceId();
     const page = this.pageSignal();
     if (!workspaceId || !page) return;
@@ -192,7 +196,7 @@ export class KnowledgeStore {
       const updated = await this.api.updatePage(workspaceId, page.id, {
         version: page.version,
         title: this.titleSignal(),
-        body: this.bodySignal(),
+        body: bodyOverride ?? this.bodySignal(),
       });
       this.clearDraft(page.id);
       this.draftLocalSignal.set(false);

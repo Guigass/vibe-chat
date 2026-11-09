@@ -83,4 +83,5 @@ public sealed record KnowledgeVersionResponse(
 
 public sealed record KnowledgeExportResponse(
     KnowledgePageResponse Page,
-    IReadOnlyList<KnowledgeVersionResponse> Versions);
+    IReadOnlyList<KnowledgeVersionResponse> Versions,
+    CanvasExportSummary? Canvas = null);

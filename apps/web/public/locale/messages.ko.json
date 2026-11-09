@@ -1897,6 +1897,21 @@
     "huddle.close": "허들 닫기",
     "huddle.reaction": "반응",
     "huddle.capacity": "세션 %max%개 중 %active%",
-    "error.live": "허들에 참가하지 못했습니다."
+    "error.live": "허들에 참가하지 못했습니다.",
+    "canvas.editor": "공유 텍스트",
+    "canvas.statusOnline": "온라인",
+    "canvas.statusOffline": "오프라인",
+    "canvas.statusReconnecting": "다시 연결 중",
+    "canvas.peers": "여기 있는 사람",
+    "canvas.peersEmpty": "나만",
+    "canvas.undo": "실행 취소",
+    "canvas.history": "캔버스 버전",
+    "canvas.historyEmpty": "저장된 버전이 없습니다",
+    "canvas.snapshot": "버전 저장",
+    "canvas.restore": "이 버전 복원",
+    "canvas.restoreConfirm": "복원하면 이 페이지의 현재 텍스트가 바뀝니다.",
+    "canvas.disabled": "공동 편집이 꺼져 있습니다.",
+    "canvas.authoritative": "이 페이지의 텍스트는 공동 편집으로 바뀝니다.",
+    "canvas.saveError": "텍스트를 동기화하지 못했습니다."
   }
 }

@@ -155,6 +155,9 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<KnowledgeCollection> KnowledgeCollections => Set<KnowledgeCollection>();
     public DbSet<KnowledgePage> KnowledgePages => Set<KnowledgePage>();
     public DbSet<KnowledgePageVersion> KnowledgePageVersions => Set<KnowledgePageVersion>();
+    public DbSet<CanvasDocument> CanvasDocuments => Set<CanvasDocument>();
+    public DbSet<CanvasUpdate> CanvasUpdates => Set<CanvasUpdate>();
+    public DbSet<CanvasSnapshot> CanvasSnapshots => Set<CanvasSnapshot>();
     public DbSet<SemanticChunk> SemanticChunks => Set<SemanticChunk>();
     public DbSet<SemanticSettings> SemanticSettings => Set<SemanticSettings>();
     public DbSet<SemanticUsage> SemanticUsage => Set<SemanticUsage>();
@@ -1231,6 +1234,43 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.Body).HasMaxLength(KnowledgePolicies.MaxBodyLength);
             entity.Property(x => x.Action).HasMaxLength(32);
             entity.HasIndex(x => new { x.TenantId, x.PageId, x.Version }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<CanvasDocument>(entity =>
+        {
+            entity.ToTable("canvas_documents", "knowledge");
+            entity.HasKey(x => x.PageId);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.UpdatedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.State).HasColumnType("bytea");
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<CanvasUpdate>(entity =>
+        {
+            entity.ToTable("canvas_updates", "knowledge");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.AuthorUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(KnowledgePolicies.MaxIdempotencyKeyLength);
+            entity.Property(x => x.Payload).HasColumnType("bytea");
+            entity.HasIndex(x => new { x.TenantId, x.PageId, x.Epoch, x.Seq }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.PageId, x.Epoch, x.AuthorUserId, x.IdempotencyKey }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<CanvasSnapshot>(entity =>
+        {
+            entity.ToTable("canvas_snapshots", "knowledge");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.ActorUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Body).HasMaxLength(KnowledgePolicies.MaxBodyLength);
+            entity.Property(x => x.State).HasColumnType("bytea");
+            entity.HasIndex(x => new { x.TenantId, x.PageId, x.CreatedAt });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 

@@ -1897,6 +1897,21 @@
     "huddle.close": "Huddle schließen",
     "huddle.reaction": "Reaktion",
     "huddle.capacity": "%active% von %max% Sitzungen",
-    "error.live": "Dem Huddle konnte nicht beigetreten werden."
+    "error.live": "Dem Huddle konnte nicht beigetreten werden.",
+    "canvas.editor": "Geteilter Text",
+    "canvas.statusOnline": "Online",
+    "canvas.statusOffline": "Offline",
+    "canvas.statusReconnecting": "Verbindung wird wiederhergestellt",
+    "canvas.peers": "Wer ist hier",
+    "canvas.peersEmpty": "Nur du",
+    "canvas.undo": "Rückgängig",
+    "canvas.history": "Canvas-Versionen",
+    "canvas.historyEmpty": "Noch keine gespeicherte Version",
+    "canvas.snapshot": "Version speichern",
+    "canvas.restore": "Diese Version wiederherstellen",
+    "canvas.restoreConfirm": "Wiederherstellen ersetzt den aktuellen Text dieser Seite.",
+    "canvas.disabled": "Gemeinsames Bearbeiten ist aus.",
+    "canvas.authoritative": "Der Text dieser Seite ändert sich durch gemeinsames Bearbeiten.",
+    "canvas.saveError": "Der Text konnte nicht synchronisiert werden."
   }
 }

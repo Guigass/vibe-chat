@@ -294,7 +294,7 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     continue;
                 }
 
-                if (KnowledgePolicies.IsKnowledgeEvent(outbox.Type))
+                if (KnowledgePolicies.IsKnowledgeEvent(outbox.Type) || CanvasPolicies.IsCanvasEvent(outbox.Type))
                 {
                     await VibeChat.Infrastructure.Messaging.KnowledgeEventFanout.DispatchAsync(
                         publisher, outbox, cancellationToken);

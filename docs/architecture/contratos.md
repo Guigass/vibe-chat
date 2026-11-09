@@ -495,6 +495,25 @@ Páginas server-authoritative em `knowledge.pages`. Coleções em `knowledge.col
 | Retenção | Soft-delete entra no purge do tenant: página e versões saem juntas |
 | Evento | Outbox `knowledge.page.changed` (`tenantId`, `workspaceId`, `pageId`, `collectionId`, `version`, `action`, `channelId?`). Sem título nem body. SignalR só no escopo canal |
 
+### Canvas colaborativo (B-152 / ADR-068)
+
+Coedição do body das páginas B-120. Flag `Features:CanvasRealtime:Enabled` (**off** por default; 404 `CanvasRealtimeDisabled`). O título continua no PATCH. Com documento aberto, o PATCH ignora `body`.
+
+| Item | Regra |
+|------|--------|
+| Tabelas | `knowledge.canvas_documents`, `knowledge.canvas_updates`, `knowledge.canvas_snapshots`. `TenantId` + FORCE RLS |
+| Wire | `wireVersion` 1, update lib0 v1 em base64, texto UTF-16 (`yjs` / Yrs). Outro valor → **400** `CanvasWireUnsupported` |
+| `GET …/pages/{id}/canvas` | Estado, epoch, seq, peers efêmeros e snapshots. Cria o documento a partir do body se ainda não existe |
+| `POST …/canvas/updates` | `{ wireVersion, idempotencyKey, epoch, updateBase64 }`. `knowledge.edit`. Epoch diferente → **409** `CanvasEpochMismatch`. Update inválido → **400** `CanvasUpdateRejected`. HTML ou scheme inseguro → **400** `UnsafeKnowledgeBody`. Acima da cota → **400** `CanvasQuotaExceeded` ou `CanvasStateTooLarge`. A mesma chave no mesmo epoch devolve `replayed: true` |
+| `GET …/canvas/updates?afterSeq=&epoch=` | Lacuna já compactada ou epoch antigo → **409** `CanvasResync` |
+| `POST …/canvas/snapshots` | Snapshot do estado do servidor e compactação dos updates anteriores. Hold ativo não apaga update nem snapshot |
+| `POST …/canvas/restore` | `{ snapshotId }`. `knowledge.manage`. Sobe o epoch e rejeita update do epoch anterior |
+| Presença | `POST …/canvas/presence` `{ cursor }`. Só memória, TTL 20s |
+| Export | A página inclui `canvas` com epoch, seq, ids de snapshot e SHA-256. O workspace inclui `canvasUpdates` e `canvasSnapshots` |
+| Retenção | Purge da página apagada remove documento, updates e snapshots. Hold ativo no workspace preserva os três |
+| Evento | Outbox `knowledge.canvas.updated` (`tenantId`, `workspaceId`, `pageId`, `collectionId`, `epoch`, `seq`, `action`, `channelId?`). Sem título nem body |
+| Quem saiu | Sem membership atual a rota não grava e a resposta não devolve o texto novo |
+
 ### Inbox unificada (B-117)
 
 Consulta reconstruível. Não há segunda fonte de leitura: menção e DM usam
