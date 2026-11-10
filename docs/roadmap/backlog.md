@@ -231,6 +231,7 @@ Os itens abaixo estão catalogados e ordenados no roadmap executável
 | B-148 | Screen share e gravação | **Done** — W17; flags off; consentimento antes do objeto; ADR-066; [spec](../product/specs/B-148-screen-share-gravacao.md) |
 | B-149 | Transcrição e notas de reunião | **Done** — W17; flag `Features:MeetingAi:Enabled` off; ADR-067; [spec](../product/specs/B-149-notas-reuniao-ia.md) |
 | B-152 | Canvas colaborativo | **Done** — W17; flag `Features:CanvasRealtime:Enabled` off; ADR-068; [spec](../product/specs/B-152-canvas-colaborativo.md) |
+| B-155 | Catálogo e versionamento de bots com IA | **Done** — W18; flag `Features:AiBots:Enabled` off; versão imutável e rollback; [spec](../product/specs/B-155-catalogo-versionamento-bots-ia.md) |
 
 Todos possuem decisão e spec. A elegibilidade concreta continua dependendo de
 deps `Done`, ausência de PR concorrente e gates R0–R3 de

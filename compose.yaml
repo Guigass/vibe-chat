@@ -332,6 +332,9 @@ services:
       Features__MeetingAi__Enabled: ${Features__MeetingAi__Enabled:-false}
       Features__MeetingAi__Provider: ${Features__MeetingAi__Provider:-none}
       Features__CanvasRealtime__Enabled: ${Features__CanvasRealtime__Enabled:-false}
+      Features__AiBots__Enabled: ${Features__AiBots__Enabled:-false}
+      Features__AiBots__MaxBotsPerWorkspace: ${Features__AiBots__MaxBotsPerWorkspace:-20}
+      Features__AiBots__MaxDailyBudgetUsdPerWorkspace: ${Features__AiBots__MaxDailyBudgetUsdPerWorkspace:-50}
       Identity__Scim__Enabled: ${IDENTITY_SCIM_ENABLED:-false}
       Identity__Scim__KeycloakAdapter: ${IDENTITY_SCIM_KEYCLOAK_ADAPTER:-false}
       Identity__Sso__Enabled: ${IDENTITY_SSO_ENABLED:-false}

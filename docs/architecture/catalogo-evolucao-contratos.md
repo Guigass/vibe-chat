@@ -98,6 +98,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Features:Live:RecordingEnabled` | instance + policy do workspace | false | B-148 | gravação → 403 `LiveRecordingDisabled`; nada é armazenado |
 | `Features:MeetingAi:Enabled` | instance + policy do workspace | false | B-149 | transcrição → 403 `LiveTranscriptionDisabled`; provider `none` não envia áudio; gravação e chat seguem |
 | `Features:CanvasRealtime:Enabled` | instance | false | B-152 | rotas `/canvas` → 404 `CanvasRealtimeDisabled`; páginas server-authoritative seguem |
+| `Features:AiBots:Enabled` | instance | false | B-155 | rotas `/admin/ai/bots` e invocação → 404 `AiBotsDisabled`; chat e autoria já gravada seguem |
 
 ## Registro inicial de flags futuras
 
@@ -114,6 +115,7 @@ R3 nasce `false`. Flag não substitui authZ.
 | `Features:Live:RecordingEnabled` | instance | false | B-148 | entregue; ver linha ativa |
 | `Features:MeetingAi:Enabled` | instance + policy do workspace | false | B-149 | entregue; ver linha ativa |
 | `Features:CanvasRealtime:Enabled` | instance | false | B-152 | entregue; ver linha ativa |
+| `Features:AiBots:Enabled` | instance | false | B-155 | entregue; ver linha ativa |
 | `Features:Import:Enabled` | instance | false | B-153 | onboarding/template manual |
 | `Features:ChatBackup:Enabled` | instance | false | B-172 | API `/chat-backup` → 404 `ChatBackupDisabled`; export B-046 e scripts B-031 seguem |
 | `Ha:Enabled` | instance | false | B-144 | API `/meta/runtime` e `/admin/ha/drain` → 404 `HaDisabled`; Standard segue um nó |

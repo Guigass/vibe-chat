@@ -116,7 +116,8 @@ public sealed class InfrastructureRegistrationTests
             "Singleton:NullLiveTranscriptionProvider:NullLiveTranscriptionProvider",
             "Singleton:ILiveTranscriptionProvider:factory",
             "Scoped:LiveTranscriptionJob:LiveTranscriptionJob",
-            "Singleton:CanvasPresence:CanvasPresence");
+            "Singleton:CanvasPresence:CanvasPresence",
+            "Scoped:AiBotCatalogService:AiBotCatalogService");
 
         worker.Should().Equal(signalR.Select(entry => entry
             .Replace("Scoped:IChatPublisher:SignalRChatPublisher", "Scoped:IChatPublisher:RedisChannelChatPublisher", StringComparison.Ordinal)

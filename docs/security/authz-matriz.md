@@ -431,6 +431,16 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/summarize` | permission | `ai.summarize` | ✓ | ✗ | ✓ | |
 | POST | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/ai/suggest-reply` | permission | `ai.suggest_reply` | ✓ | ✗ | ✓ | |
 | POST | `/workspaces/{workspaceId:guid}/channels/{channelId:guid}/messages/{messageId:guid}/attachments/{attachmentId:guid}/transcribe` | permission | `ai.transcribe` | ✓ | ✗ | ✓ | |
+| GET | `/admin/ai/bots/workspaces/{workspaceId:guid}` | permission | `ai.bot.manage` | ✗ | ✗ | ✓ | B-155; flag off → 404 `AiBotsDisabled` |
+| POST | `/admin/ai/bots/workspaces/{workspaceId:guid}` | permission | `ai.bot.manage` | ✗ | ✗ | ✓ | Idempotency-Key; sem chave de provedor |
+| GET | `/admin/ai/bots/workspaces/{workspaceId:guid}/{botId:guid}` | permission | `ai.bot.manage` | ✗ | ✗ | ✓ | Outro tenant → 404 |
+| PUT | `/admin/ai/bots/workspaces/{workspaceId:guid}/{botId:guid}` | permission | `ai.bot.manage` | ✗ | ✗ | ✓ | Revisão otimista |
+| GET | `/admin/ai/bots/workspaces/{workspaceId:guid}/{botId:guid}/diff` | permission | `ai.bot.manage` | ✗ | ✗ | ✓ | Sem segredo |
+| POST | `/admin/ai/bots/workspaces/{workspaceId:guid}/{botId:guid}/publish` | permission | `ai.bot.manage` | ✗ | ✗ | ✓ | Versão imutável |
+| POST | `/admin/ai/bots/workspaces/{workspaceId:guid}/{botId:guid}/disable` | permission | `ai.bot.manage` | ✗ | ✗ | ✓ | Autoria passada permanece |
+| POST | `/admin/ai/bots/workspaces/{workspaceId:guid}/{botId:guid}/rollback` | permission | `ai.bot.manage` | ✗ | ✗ | ✓ | Não apaga versões |
+| GET | `/workspaces/{workspaceId:guid}/ai/bots` | permission | `message.read` | ✓ | ✓ | ✓ | Só publicados invocáveis; sem prompt |
+| POST | `/workspaces/{workspaceId:guid}/ai/bots/{botId:guid}/invocations` | permission | `message.read` | ✓ | ✓ | ✓ | Não chama modelo; desativado → 409 |
 | POST | `/dev/seed` | exempt | AllowAnonymous lab | — | — | — | Só Development |
 | GET | `/workspaces/{workspaceId:guid}/compliance/access` | permission | `workspace.read` | ✓ | ✓ | ✓ | B-129; flag off → 404 `LegalHoldDisabled` |
 | GET | `/workspaces/{workspaceId:guid}/compliance/grants` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Lista nomeações |

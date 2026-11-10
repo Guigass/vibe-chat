@@ -25,6 +25,7 @@ import { OfflineApiService } from './offline-api.service';
 import { StorageApiService } from './storage-api.service';
 import { ChatBackupApiService } from './chat-backup-api.service';
 import { CanvasApiService } from './canvas-api.service';
+import { AiBotApiService } from './ai-bot-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
@@ -77,6 +78,7 @@ function createApi(auth: AuthStub): ApiService {
       StorageApiService,
       ChatBackupApiService,
       CanvasApiService,
+      AiBotApiService,
       { provide: AuthService, useValue: auth },
     ],
   });
@@ -136,6 +138,11 @@ describe('ApiService facade', () => {
     expect(typeof api.canvasPresence).toBe('function');
     expect(typeof api.snapshotCanvas).toBe('function');
     expect(typeof api.restoreCanvas).toBe('function');
+    expect(typeof api.listAiBots).toBe('function');
+    expect(typeof api.createAiBot).toBe('function');
+    expect(typeof api.publishAiBot).toBe('function');
+    expect(typeof api.diffAiBot).toBe('function');
+    expect(typeof api.rollbackAiBot).toBe('function');
     expect(typeof api.listSiemDestinations).toBe('function');
     expect(typeof api.createSiemDestination).toBe('function');
     expect(typeof api.rotateSiemDestination).toBe('function');

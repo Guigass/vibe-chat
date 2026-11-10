@@ -1,7 +1,9 @@
 using FluentAssertions;
 using NetArchTest.Rules;
+using VibeChat.AI;
 using VibeChat.Conversations;
 using VibeChat.Identity;
+using VibeChat.Integrations;
 using VibeChat.Messaging;
 using VibeChat.Search;
 using VibeChat.Tenancy;
@@ -19,6 +21,18 @@ public sealed class ArchitectureRulesTests
             .GetResult();
 
         result.IsSuccessful.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Ai_catalog_does_not_reference_integrations_or_infrastructure()
+    {
+        var result = Types.InAssembly(typeof(AiBotDefinition).Assembly)
+            .ShouldNot()
+            .HaveDependencyOnAny("VibeChat.Integrations", "VibeChat.Infrastructure", "VibeChat.Api", "VibeChat.Administration")
+            .GetResult();
+
+        result.IsSuccessful.Should().BeTrue(string.Join(", ", result.FailingTypeNames ?? []));
+        typeof(IntegrationBot).Assembly.GetName().Name.Should().Be("VibeChat.Integrations");
     }
 
     [Fact]
@@ -127,6 +141,10 @@ public sealed class ArchitectureRulesTests
             "audit.content_audit_settings",
             "ai.usage_records",
             "ai.settings",
+            "ai.bot_definitions",
+            "ai.bot_versions",
+            "ai.bot_channel_scopes",
+            "ai.model_bindings",
             "notifications.preferences",
             "notifications.digest_schedules",
             "notifications.digest_runs",

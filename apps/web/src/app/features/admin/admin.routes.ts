@@ -111,6 +111,11 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     loadComponent: () => import('./admin-chat-backup.page').then((m) => m.AdminChatBackupPage),
   },
   {
+    path: 'ai-bots',
+    canActivate: [adminAreaGuard('aiBots')],
+    loadComponent: () => import('./admin-ai-bots.page').then((m) => m.AdminAiBotsPage),
+  },
+  {
     path: '**',
     redirectTo: 'overview',
   },

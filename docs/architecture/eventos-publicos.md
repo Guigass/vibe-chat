@@ -514,3 +514,216 @@ Schema:
 }
 ```
 
+### ai.bot.published.v1 v1
+
+- Wire: `ai.bot.published.v1`
+- Status: active
+- Changelog: Published bot version. Prompt text is not a property.
+
+Exemplo:
+
+```json
+{
+  "botId": "00000000-0000-0000-0000-000000000008",
+  "workspaceId": "00000000-0000-0000-0000-000000000002",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "version": 1,
+  "actorId": "00000000-0000-0000-0000-000000000004",
+  "promptSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "provider": "mock",
+  "modelId": "mock"
+}
+```
+
+Schema:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "botId",
+    "workspaceId",
+    "tenantId",
+    "version",
+    "actorId",
+    "promptSha256",
+    "provider",
+    "modelId"
+  ],
+  "properties": {
+    "botId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "workspaceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tenantId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "actorId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "promptSha256": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "modelId": {
+      "type": "string"
+    }
+  }
+}
+```
+
+### ai.bot.disabled.v1 v1
+
+- Wire: `ai.bot.disabled.v1`
+- Status: active
+- Changelog: Disabled bot. Historical authorship stays.
+
+Exemplo:
+
+```json
+{
+  "botId": "00000000-0000-0000-0000-000000000008",
+  "workspaceId": "00000000-0000-0000-0000-000000000002",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "version": 1,
+  "actorId": "00000000-0000-0000-0000-000000000004",
+  "promptSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "provider": "mock",
+  "modelId": "mock"
+}
+```
+
+Schema:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "botId",
+    "workspaceId",
+    "tenantId",
+    "version",
+    "actorId",
+    "promptSha256",
+    "provider",
+    "modelId"
+  ],
+  "properties": {
+    "botId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "workspaceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tenantId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "actorId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "promptSha256": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "modelId": {
+      "type": "string"
+    }
+  }
+}
+```
+
+### ai.bot.rolled_back.v1 v1
+
+- Wire: `ai.bot.rolled_back.v1`
+- Status: active
+- Changelog: Active version pointer moved. Prior versions stay immutable.
+
+Exemplo:
+
+```json
+{
+  "botId": "00000000-0000-0000-0000-000000000008",
+  "workspaceId": "00000000-0000-0000-0000-000000000002",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "version": 1,
+  "actorId": "00000000-0000-0000-0000-000000000004",
+  "promptSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "provider": "mock",
+  "modelId": "mock"
+}
+```
+
+Schema:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "botId",
+    "workspaceId",
+    "tenantId",
+    "version",
+    "actorId",
+    "promptSha256",
+    "provider",
+    "modelId"
+  ],
+  "properties": {
+    "botId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "workspaceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tenantId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "actorId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "promptSha256": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "modelId": {
+      "type": "string"
+    }
+  }
+}
+```
+

@@ -31,6 +31,7 @@ import { OfflineApiService } from './offline-api.service';
 import { StorageApiService } from './storage-api.service';
 import { ChatBackupApiService } from './chat-backup-api.service';
 import { CanvasApiService } from './canvas-api.service';
+import { AiBotApiService } from './ai-bot-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -69,6 +70,7 @@ export class ApiService {
   private readonly storage = inject(StorageApiService);
   private readonly chatBackup = inject(ChatBackupApiService);
   private readonly canvas = inject(CanvasApiService);
+  private readonly aiBots = inject(AiBotApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -375,4 +377,12 @@ export class ApiService {
   readonly canvasPresence: CanvasApiService['presence'] = this.canvas.presence.bind(this.canvas);
   readonly snapshotCanvas: CanvasApiService['snapshot'] = this.canvas.snapshot.bind(this.canvas);
   readonly restoreCanvas: CanvasApiService['restore'] = this.canvas.restore.bind(this.canvas);
+  readonly listAiBots: AiBotApiService['list'] = this.aiBots.list.bind(this.aiBots);
+  readonly getAiBot: AiBotApiService['get'] = this.aiBots.get.bind(this.aiBots);
+  readonly createAiBot: AiBotApiService['create'] = this.aiBots.create.bind(this.aiBots);
+  readonly updateAiBot: AiBotApiService['update'] = this.aiBots.update.bind(this.aiBots);
+  readonly diffAiBot: AiBotApiService['diff'] = this.aiBots.diff.bind(this.aiBots);
+  readonly publishAiBot: AiBotApiService['publish'] = this.aiBots.publish.bind(this.aiBots);
+  readonly disableAiBot: AiBotApiService['disable'] = this.aiBots.disable.bind(this.aiBots);
+  readonly rollbackAiBot: AiBotApiService['rollback'] = this.aiBots.rollback.bind(this.aiBots);
 }

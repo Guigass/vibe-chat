@@ -116,6 +116,14 @@ ALTER TABLE IF EXISTS ai.usage_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ai.usage_records FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ai.settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ai.settings FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.bot_definitions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.bot_definitions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.bot_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.bot_versions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.bot_channel_scopes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.bot_channel_scopes FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.model_bindings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.model_bindings FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.preferences FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.email_settings ENABLE ROW LEVEL SECURITY;
@@ -815,6 +823,26 @@ CREATE POLICY tenant_isolation_ai_usage_records ON ai.usage_records
 
 DROP POLICY IF EXISTS tenant_isolation_ai_settings ON ai.settings;
 CREATE POLICY tenant_isolation_ai_settings ON ai.settings
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_ai_bot_definitions ON ai.bot_definitions;
+CREATE POLICY tenant_isolation_ai_bot_definitions ON ai.bot_definitions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_ai_bot_versions ON ai.bot_versions;
+CREATE POLICY tenant_isolation_ai_bot_versions ON ai.bot_versions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_ai_bot_channel_scopes ON ai.bot_channel_scopes;
+CREATE POLICY tenant_isolation_ai_bot_channel_scopes ON ai.bot_channel_scopes
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_ai_model_bindings ON ai.model_bindings;
+CREATE POLICY tenant_isolation_ai_model_bindings ON ai.model_bindings
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

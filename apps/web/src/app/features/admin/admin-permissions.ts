@@ -20,7 +20,8 @@ export type AdminAreaId =
   | 'developer'
   | 'branding'
   | 'storage'
-  | 'chatBackup';
+  | 'chatBackup'
+  | 'aiBots';
 
 const WORKSPACE_ADMIN_ROLES = new Set(['PlatformOwner', 'WorkspaceOwner', 'Admin']);
 const ADMIN_DASHBOARD_ROLES = new Set([...WORKSPACE_ADMIN_ROLES, 'Auditor']);
@@ -50,6 +51,7 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   { id: 'branding', label: ui.adminNavBranding, path: 'branding' },
   { id: 'storage', label: ui.adminNavStorage, path: 'storage' },
   { id: 'chatBackup', label: ui.adminNavChatBackup, path: 'chat-backup' },
+  { id: 'aiBots', label: ui.adminNavAiBots, path: 'ai-bots' },
 ] as const;
 
 export function hasAdminDashboard(role?: string | null): boolean {
@@ -85,6 +87,7 @@ export function canAccessArea(role: string | undefined | null, area: AdminAreaId
     case 'branding':
     case 'storage':
     case 'chatBackup':
+    case 'aiBots':
       return hasWorkspaceAdmin(role);
     default:
       return false;

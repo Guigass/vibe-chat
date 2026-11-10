@@ -94,6 +94,10 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<MobileDevice> MobileDevices => Set<MobileDevice>();
     public DbSet<AiUsageRecord> AiUsageRecords => Set<AiUsageRecord>();
     public DbSet<AiSettings> AiSettings => Set<AiSettings>();
+    public DbSet<AiBotDefinition> AiBotDefinitions => Set<AiBotDefinition>();
+    public DbSet<AiBotVersion> AiBotVersions => Set<AiBotVersion>();
+    public DbSet<AiBotChannelScope> AiBotChannelScopes => Set<AiBotChannelScope>();
+    public DbSet<AiModelBinding> AiModelBindings => Set<AiModelBinding>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
     public DbSet<DigestSchedule> DigestSchedules => Set<DigestSchedule>();
     public DbSet<DigestRun> DigestRuns => Set<DigestRun>();
@@ -1548,6 +1552,75 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
             entity.Property(x => x.Provider).HasMaxLength(60);
             MapEncryptedSecret(entity.OwnsOne(x => x.OpenRouterApiKey), "OpenRouterApiKey");
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<AiBotDefinition>(entity =>
+        {
+            entity.ToTable("bot_definitions", "ai");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.PrincipalUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.OwnerUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(x => x.Name).HasMaxLength(AiBotCatalogPolicies.MaxNameLength);
+            entity.Property(x => x.Description).HasMaxLength(AiBotCatalogPolicies.MaxDescriptionLength);
+            entity.Property(x => x.AvatarKey).HasMaxLength(AiBotCatalogPolicies.MaxAvatarKeyLength);
+            entity.Property(x => x.SystemPrompt).HasMaxLength(AiBotCatalogPolicies.MaxPromptLength);
+            entity.Property(x => x.GuardrailPolicyVersion).HasMaxLength(AiBotCatalogPolicies.MaxPolicyLength);
+            entity.Property(x => x.SkillVersionIds).HasColumnType("uuid[]");
+            entity.Property(x => x.KnowledgeGrantIds).HasColumnType("uuid[]");
+            entity.Property(x => x.McpToolGrantIds).HasColumnType("uuid[]");
+            entity.Property(x => x.DailyBudgetUsd).HasPrecision(12, 4);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<AiBotVersion>(entity =>
+        {
+            entity.ToTable("bot_versions", "ai");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.PublishedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Name).HasMaxLength(AiBotCatalogPolicies.MaxNameLength);
+            entity.Property(x => x.Description).HasMaxLength(AiBotCatalogPolicies.MaxDescriptionLength);
+            entity.Property(x => x.AvatarKey).HasMaxLength(AiBotCatalogPolicies.MaxAvatarKeyLength);
+            entity.Property(x => x.SystemPrompt).HasMaxLength(AiBotCatalogPolicies.MaxPromptLength);
+            entity.Property(x => x.PromptSha256).HasMaxLength(64);
+            entity.Property(x => x.GuardrailPolicyVersion).HasMaxLength(AiBotCatalogPolicies.MaxPolicyLength);
+            entity.Property(x => x.SkillVersionIds).HasColumnType("uuid[]");
+            entity.Property(x => x.KnowledgeGrantIds).HasColumnType("uuid[]");
+            entity.Property(x => x.McpToolGrantIds).HasColumnType("uuid[]");
+            entity.Property(x => x.DailyBudgetUsd).HasPrecision(12, 4);
+            entity.HasIndex(x => new { x.TenantId, x.BotId, x.VersionNumber }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<AiBotChannelScope>(entity =>
+        {
+            entity.ToTable("bot_channel_scopes", "ai");
+            entity.HasKey(x => x.Id).HasName("PK_ai_bot_channel_scopes");
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ChannelId).HasConversion(v => v.Value, v => new ChannelId(v));
+            entity.HasIndex(x => new { x.TenantId, x.BotId, x.VersionNumber, x.ChannelId }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<AiModelBinding>(entity =>
+        {
+            entity.ToTable("model_bindings", "ai");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Provider).HasMaxLength(40);
+            entity.Property(x => x.ModelId).HasMaxLength(AiBotCatalogPolicies.MaxModelIdLength);
+            entity.Property(x => x.ParametersJson).HasColumnType("jsonb");
+            entity.Property(x => x.FallbackModelId).HasMaxLength(AiBotCatalogPolicies.MaxModelIdLength);
+            entity.Property(x => x.DataClass).HasMaxLength(16);
+            entity.HasIndex(x => new { x.TenantId, x.BotId, x.VersionNumber }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
