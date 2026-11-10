@@ -53,12 +53,12 @@ sem revelar existência. O bot não herda authority do admin.
 
 ## Aceite
 
-- [ ] Workspace cadastra vários bots com system prompts/modelos diferentes.
-- [ ] Run futuro pode fixar uma versão imutável e reproduzível.
-- [ ] Rollback reativa versão anterior sem reescrever histórico.
-- [ ] Chave de provider não aparece em API, audit, diff ou log.
-- [ ] Bot desativado não aceita nova invocação e preserva autoria passada.
-- [ ] Cross-tenant e Member sem permissão falham fechados.
+- [x] Workspace cadastra vários bots com system prompts/modelos diferentes.
+- [x] Run futuro pode fixar uma versão imutável e reproduzível.
+- [x] Rollback reativa versão anterior sem reescrever histórico.
+- [x] Chave de provider não aparece em API, audit, diff ou log.
+- [x] Bot desativado não aceita nova invocação e preserva autoria passada.
+- [x] Cross-tenant e Member sem permissão falham fechados.
 
 ## Testes
 

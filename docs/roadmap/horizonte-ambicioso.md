@@ -219,7 +219,7 @@ projeção opcional conforme
 
 | ID | Trilha | Tarefa | Deps | Spec | Status |
 |----|--------|--------|------|------|--------|
-| B-155 | B/C/D/E | Catálogo e versionamento de bots: system prompt, modelo, escopos e publicação | B-109, B-110, B-121, D-22 | [B-155](../product/specs/B-155-catalogo-versionamento-bots-ia.md) | Planned |
+| B-155 | B/C/D/E | Catálogo e versionamento de bots: system prompt, modelo, escopos e publicação | B-109, B-110, B-121, D-22 | [B-155](../product/specs/B-155-catalogo-versionamento-bots-ia.md) | **Done** — flag `Features:AiBots:Enabled` off; versão imutável, rollback sem reescrever histórico |
 | B-156 | B/C/D/E | Skills personalizadas, declarativas e versionadas | B-155 | [B-156](../product/specs/B-156-skills-personalizadas-bots.md) | Planned |
 | B-157 | A/B/C/D/E/AI | Fontes por arquivo/URL/página, ingestão e vetores no Qdrant | B-120, B-121, B-131, B-155 | [B-157](../product/specs/B-157-fontes-conhecimento-qdrant.md) | Planned |
 | B-158 | B/C/D/E/AI | Registro de servidores MCP, catálogo de tools e grants mínimos | B-066, B-111, B-127, B-139, B-155 | [B-158](../product/specs/B-158-servidores-mcp-grants.md) | Planned |

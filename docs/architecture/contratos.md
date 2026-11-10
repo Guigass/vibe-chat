@@ -514,6 +514,25 @@ Coedição do body das páginas B-120. Flag `Features:CanvasRealtime:Enabled` (*
 | Evento | Outbox `knowledge.canvas.updated` (`tenantId`, `workspaceId`, `pageId`, `collectionId`, `epoch`, `seq`, `action`, `channelId?`). Sem título nem body |
 | Quem saiu | Sem membership atual a rota não grava e a resposta não devolve o texto novo |
 
+### Catálogo de bots com IA (B-155)
+
+Definição administrável de personalidade, modelo e escopos. A execução conversacional fica em B-161. Flag `Features:AiBots:Enabled` (**off** por default; 404 `AiBotsDisabled`).
+
+| Item | Regra |
+|------|--------|
+| Tabelas | `ai.bot_definitions`, `ai.bot_versions`, `ai.bot_channel_scopes`, `ai.model_bindings`. `TenantId` + FORCE RLS |
+| Identidade | `Role.Bot` reutiliza B-109 (`integrations.bots` sem token na resposta). O bot não recebe `workspace.admin` nem `ai.bot.manage` |
+| AuthZ | `ai.bot.manage` só em `workspace.admin`. Member lista só bots publicados que pode invocar (`message.read`) e não recebe o prompt |
+| `POST/PUT …/admin/ai/bots/workspaces/{workspaceId}` | Rascunho. `Idempotency-Key`. Revisão diferente → **409** `BotRevisionConflict`. Canal de outro tipo ou de fora → **400** `InvalidChannelScope` |
+| `POST …/publish` | Grava `BotVersion` imutável e aponta a versão ativa. Escopo vazio sem DM → **400** `BotInvocationScopeRequired`. Acima da cota → **409** `BotQuotaExceeded` ou `BotBudgetExceeded` |
+| `POST …/disable` | Só a partir de `Published`. Novas invocações recebem **409** `BotNotInvocable`. O principal continua |
+| `POST …/rollback` | `{ expectedRevision, versionNumber }` reativa uma versão existente sem apagar as posteriores |
+| `GET …/diff?fromVersion=&toVersion=` | `0` é o rascunho. Sem segredo de provedor |
+| Segredo | Propriedade `apiKey`/`secret`/`token` → **400** `ProviderKeyRejected`. GET, diff, audit e outbox não devolvem a chave nem o texto do prompt |
+| Referências | `skillVersionIds`, `knowledgeGrantIds`, `mcpToolGrantIds` e `guardrailPolicyVersion` ficam congelados na versão. A existência desses recursos é B-156/B-157/B-158 |
+| Eventos | Outbox `ai.bot.published.v1`, `ai.bot.disabled.v1`, `ai.bot.rolled_back.v1`. Payload com hash do prompt, sem o texto |
+| Invocação | `POST …/workspaces/{id}/ai/bots/{botId}/invocations` não chama modelo. Fora do escopo → **404** `BotNotFound` |
+
 ### Inbox unificada (B-117)
 
 Consulta reconstruível. Não há segunda fonte de leitura: menção e DM usam

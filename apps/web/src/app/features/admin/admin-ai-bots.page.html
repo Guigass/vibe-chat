@@ -1,0 +1,182 @@
+<article class="admin-panel" data-testid="ai-bots-page">
+  <p class="admin-panel__lead">{{ ui.aiBotLead }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty" role="status">{{ ui.aiBotLoading }}</p>
+  } @else if (disabled()) {
+    <p class="admin-empty" role="status" data-testid="ai-bots-disabled">{{ ui.aiBotDisabled }}</p>
+  } @else if (denied()) {
+    <p class="admin-error" role="alert" data-testid="ai-bots-denied">{{ ui.aiBotDenied }}</p>
+  } @else if (loadError()) {
+    <p class="admin-error" role="alert">{{ ui.aiBotError }}</p>
+  } @else {
+    <p>
+      <button type="button" class="admin-btn" (click)="startCreate()">{{ ui.aiBotCreate }}</button>
+    </p>
+
+    @if (bots().length === 0 && !selected() && draft().name === '') {
+      <p class="admin-empty">{{ ui.aiBotEmpty }}</p>
+    } @else if (bots().length > 0) {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.aiBotName }}</th>
+              <th>{{ ui.aiBotStatus }}</th>
+              <th>{{ ui.aiBotVersion }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (bot of bots(); track bot.id) {
+              <tr>
+                <td><button type="button" class="admin-btn admin-btn--ghost" (click)="open(bot.id)">{{ bot.name }}</button></td>
+                <td>{{ statusLabel(bot.status) }}</td>
+                <td class="mono">@if (bot.activeVersion !== null) { {{ bot.activeVersion }} }</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <nav class="admin-filters" aria-label="{{ ui.aiBotSteps }}">
+      @for (item of steps; track item) {
+        <button type="button" class="admin-btn admin-btn--ghost" [attr.aria-current]="step() === item ? 'step' : null" (click)="go(item)">
+          {{ stepLabel(item) }}
+        </button>
+      }
+    </nav>
+
+    @if (step() === 'identity') {
+      <section data-testid="ai-bot-step-identity">
+        <label class="admin-filters__field"><span>{{ ui.aiBotName }}</span>
+          <input [value]="draft().name" (input)="patch({ name: inputValue($event) })" />
+        </label>
+        <label class="admin-filters__field"><span>{{ ui.aiBotDescription }}</span>
+          <input [value]="draft().description" (input)="patch({ description: inputValue($event) })" />
+        </label>
+        <label class="admin-filters__field"><span>{{ ui.aiBotAvatar }}</span>
+          <input [value]="draft().avatarKey" (input)="patch({ avatarKey: inputValue($event) })" />
+        </label>
+        <label class="admin-filters__field"><span>{{ ui.aiBotAllowDms }}</span>
+          <input type="checkbox" [checked]="draft().allowDms" (change)="patch({ allowDms: checked($event) })" />
+        </label>
+      </section>
+    } @else if (step() === 'personality') {
+      <section data-testid="ai-bot-step-personality">
+        <label class="admin-filters__field"><span>{{ ui.aiBotPrompt }}</span>
+          <textarea rows="5" [value]="draft().systemPrompt" (input)="patch({ systemPrompt: inputValue($event) })"></textarea>
+        </label>
+        <label class="admin-filters__field"><span>{{ ui.aiBotProvider }}</span>
+          <select [value]="draft().provider" (change)="patch({ provider: inputValue($event) })">
+            @for (provider of providers; track provider) {
+              <option [value]="provider">{{ provider }}</option>
+            }
+          </select>
+        </label>
+        <label class="admin-filters__field"><span>{{ ui.aiBotModel }}</span>
+          <input [value]="draft().modelId" (input)="patch({ modelId: inputValue($event) })" />
+        </label>
+        <label class="admin-filters__field"><span>{{ ui.aiBotDataClass }}</span>
+          <select [value]="draft().dataClass" (change)="patch({ dataClass: inputValue($event) })">
+            @for (item of dataClasses; track item) {
+              <option [value]="item">{{ item }}</option>
+            }
+          </select>
+        </label>
+      </section>
+    } @else if (step() === 'capabilities') {
+      <section data-testid="ai-bot-step-capabilities">
+        <p class="admin-empty">{{ ui.aiBotChannels }}</p>
+        @for (channel of channels(); track channel.id) {
+          <label class="admin-filters__field">
+            <input type="checkbox" [checked]="draft().channelIds.includes(channel.id)" (change)="toggleChannel(channel.id, checked($event))" />
+            <span>{{ channel.name }}</span>
+          </label>
+        }
+        <p class="admin-empty">{{ ui.aiBotReferenceHint }}</p>
+        <label class="admin-filters__field"><span>{{ ui.aiBotSkills }}</span>
+          <input [value]="references(draft().skillVersionIds)" (input)="setReferences('skillVersionIds', inputValue($event))" />
+        </label>
+        <label class="admin-filters__field"><span>{{ ui.aiBotKnowledge }}</span>
+          <input [value]="references(draft().knowledgeGrantIds)" (input)="setReferences('knowledgeGrantIds', inputValue($event))" />
+        </label>
+        <label class="admin-filters__field"><span>{{ ui.aiBotMcp }}</span>
+          <input [value]="references(draft().mcpToolGrantIds)" (input)="setReferences('mcpToolGrantIds', inputValue($event))" />
+        </label>
+        <label class="admin-filters__field"><span>{{ ui.aiBotPolicy }}</span>
+          <input [value]="draft().guardrailPolicyVersion ?? ''" (input)="patch({ guardrailPolicyVersion: inputValue($event) || null })" />
+        </label>
+      </section>
+    } @else if (step() === 'limits') {
+      <section data-testid="ai-bot-step-limits">
+        <label class="admin-filters__field"><span>{{ ui.aiBotBudget }}</span>
+          <input type="number" min="0" [value]="draft().dailyBudgetUsd" (input)="patch({ dailyBudgetUsd: numberValue($event) })" />
+        </label>
+        <label class="admin-filters__field"><span>{{ ui.aiBotTurns }}</span>
+          <input type="number" min="1" [value]="draft().maxTurns" (input)="patch({ maxTurns: numberValue($event) })" />
+        </label>
+        <label class="admin-filters__field"><span>{{ ui.aiBotTokens }}</span>
+          <input type="number" min="1" [value]="draft().maxOutputTokens" (input)="patch({ maxOutputTokens: numberValue($event) })" />
+        </label>
+      </section>
+    } @else {
+      <section data-testid="ai-bot-step-review">
+        <p>{{ draft().name }} · {{ statusLabel(selected()?.status ?? 'Draft') }}</p>
+        <p class="admin-empty">{{ draft().systemPrompt }}</p>
+        <p>
+          <button type="button" class="admin-btn" (click)="save()">{{ ui.aiBotSave }}</button>
+          <button type="button" class="admin-btn" (click)="publish()" [disabled]="!selected()">{{ ui.aiBotPublish }}</button>
+          <button type="button" class="admin-btn admin-btn--ghost" (click)="disable()" [disabled]="selected()?.status !== 'Published'">{{ ui.aiBotDisable }}</button>
+          <button type="button" class="admin-btn admin-btn--ghost" (click)="preview()" [disabled]="!selected()">{{ ui.aiBotPreview }}</button>
+        </p>
+        @if (diff(); as changeSet) {
+          <div data-testid="ai-bot-diff">
+            @if (changeSet.changes.length === 0) {
+              <p class="admin-empty">{{ ui.aiBotDiffEmpty }}</p>
+            } @else {
+              <div class="admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr><th>{{ ui.aiBotField }}</th><th>{{ ui.aiBotBefore }}</th><th>{{ ui.aiBotAfter }}</th></tr>
+                  </thead>
+                  <tbody>
+                    @for (change of changeSet.changes; track change.field) {
+                      <tr>
+                        <td class="mono">{{ change.field }}</td>
+                        <td>{{ change.before }}</td>
+                        <td>{{ change.after }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+        <h2 class="admin-section">{{ ui.aiBotHistory }}</h2>
+        <ul data-testid="ai-bot-history">
+          @for (version of selected()?.versions ?? []; track version.versionNumber) {
+            <li>
+              <span class="admin-chip">{{ ui.aiBotVersion }} {{ version.versionNumber }}</span>
+              {{ version.provider }} / {{ version.modelId }}
+              @if (selected()?.activeVersion !== version.versionNumber) {
+                <button type="button" class="admin-btn admin-btn--ghost" (click)="rollback(version.versionNumber)">
+                  {{ ui.aiBotRollback }}
+                </button>
+                <span class="admin-empty">{{ rollbackNote(version.versionNumber) }}</span>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (saved()) {
+      <p class="admin-feedback" role="status">{{ ui.aiBotSaved }}</p>
+    }
+    @if (actionError()) {
+      <p class="admin-error" role="alert">{{ actionError() }}</p>
+    }
+  }
+</article>

@@ -19,6 +19,9 @@ public static class PublicEventCatalog
     public const string ReactionChanged = "messaging.message.reaction_changed";
     public const string WebhookTest = "integrations.webhook.test";
     public const string AuditRecorded = "audit.event.recorded";
+    public const string BotPublished = "ai.bot.published.v1";
+    public const string BotDisabled = "ai.bot.disabled.v1";
+    public const string BotRolledBack = "ai.bot.rolled_back.v1";
 
     private static readonly JsonSerializerOptions CanonicalJson = new()
     {
@@ -368,9 +371,43 @@ public static class PublicEventCatalog
                     ("entityId", StringSchema()),
                     ("actorId", StringSchema("uuid")),
                     ("metadata", new JsonObject { ["type"] = "object" })),
-                AuditExample())
+                AuditExample()),
+            BotEvent(BotPublished, "Published bot version. Prompt text is not a property."),
+            BotEvent(BotDisabled, "Disabled bot. Historical authorship stays."),
+            BotEvent(BotRolledBack, "Active version pointer moved. Prior versions stay immutable.")
         ];
     }
+
+    private static PublicEventVersion BotEvent(string eventType, string changelog) =>
+        Version(
+            eventType,
+            1,
+            eventType,
+            PublicEventStatus.Active,
+            null,
+            changelog,
+            ObjectSchema(
+                false,
+                ["botId", "workspaceId", "tenantId", "version", "actorId", "promptSha256", "provider", "modelId"],
+                ("botId", StringSchema("uuid")),
+                ("workspaceId", StringSchema("uuid")),
+                ("tenantId", StringSchema("uuid")),
+                ("version", IntegerSchema(1)),
+                ("actorId", StringSchema("uuid")),
+                ("promptSha256", StringSchema()),
+                ("provider", StringSchema()),
+                ("modelId", StringSchema())),
+            new JsonObject
+            {
+                ["botId"] = "00000000-0000-0000-0000-000000000008",
+                ["workspaceId"] = "00000000-0000-0000-0000-000000000002",
+                ["tenantId"] = "00000000-0000-0000-0000-000000000001",
+                ["version"] = 1,
+                ["actorId"] = "00000000-0000-0000-0000-000000000004",
+                ["promptSha256"] = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                ["provider"] = "mock",
+                ["modelId"] = "mock"
+            });
 
     private static PublicEventVersion Wire(
         string eventType,

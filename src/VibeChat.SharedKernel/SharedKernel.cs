@@ -237,6 +237,7 @@ public static class Permissions
         public const string SuggestReply = "ai.suggest_reply";
         public const string Transcribe = "ai.transcribe";
         public const string Search = "ai.search";
+        public const string ManageBots = "ai.bot.manage";
     }
 
     public static class Announcement

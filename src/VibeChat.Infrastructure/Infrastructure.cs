@@ -37,6 +37,8 @@ public static class DependencyInjection
         services.AddLiveInfrastructure(configuration);
         services.Configure<VibeChat.Messaging.CanvasOptions>(configuration.GetSection(VibeChat.Messaging.CanvasOptions.SectionName));
         services.AddSingleton<VibeChat.Infrastructure.Messaging.CanvasPresence>();
+        services.Configure<VibeChat.AI.AiBotOptions>(configuration.GetSection(VibeChat.AI.AiBotOptions.SectionName));
+        services.AddScoped<VibeChat.Infrastructure.Ai.AiBotCatalogService>();
         services.AddInfrastructureHealthChecks();
         return services;
     }

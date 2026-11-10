@@ -646,6 +646,10 @@ outro usuário recebe 404 e outro tenant 403. O cursor de leitura não anda.
 
 Superfície implementada, R3. A ameaça principal é página ou versão sobreviver fora da ACL, HTML no Markdown virar XSS, ou uma referência revogada continuar mostrando título. O controle é: flag off por default; RLS `FORCE` em `knowledge.collections`, `knowledge.pages` e `knowledge.page_versions`; busca e export filtram a coleção na leitura; canal privado exige membership atual; body rejeita tag HTML e schemes `javascript:`/`data:`/`vbscript:`; referência inacessível volta `redacted` sem label; outbox sem título nem body; conflito de versão não grava.
 
+## Catálogo de bots com IA (B-155)
+
+Superfície implementada, R2. A ameaça principal é a chave do provedor entrar na definição, o bot herdar `workspace.admin`, ou o rollback reescrever uma versão já publicada. O controle é: flag off por default; RLS `FORCE` em `ai.bot_definitions`, `ai.bot_versions`, `ai.bot_channel_scopes` e `ai.model_bindings`; `ai.bot.manage` só no papel de workspace admin; `Role.Bot` não recebe essa permissão; propriedade de segredo responde 400 e não é persistida; outbox e audit levam o hash do prompt, não o texto; rollback só muda o ponteiro da versão ativa.
+
 ## Canvas colaborativo (B-152)
 
 Superfície implementada, R3. A ameaça principal é update de quem perdeu a página, snapshot cliente que apaga edição alheia, ou HTML no texto colaborativo. O controle é: flag off por default; RLS `FORCE` em `knowledge.canvas_documents`, `canvas_updates` e `canvas_snapshots`; o servidor aplica o CRDT e recusa o texto inseguro antes de gravar; snapshot e restore saem do estado do servidor; epoch novo rejeita update antigo; membership é revalidada em toda rota; outbox sem título nem body; hold ativo no workspace impede apagar updates e snapshots. ADR-068.

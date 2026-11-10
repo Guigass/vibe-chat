@@ -26,6 +26,8 @@
     <ProjectReference Include="..\..\modules\Tenancy\VibeChat.Tenancy.csproj" />
     <ProjectReference Include="..\..\modules\Identity\VibeChat.Identity.csproj" />
     <ProjectReference Include="..\..\modules\Search\VibeChat.Search.csproj" />
+    <ProjectReference Include="..\..\modules\AI\VibeChat.AI.csproj" />
+    <ProjectReference Include="..\..\modules\Integrations\VibeChat.Integrations.csproj" />
   </ItemGroup>
 
 </Project>
