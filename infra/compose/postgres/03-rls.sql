@@ -124,6 +124,10 @@ ALTER TABLE IF EXISTS ai.bot_channel_scopes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ai.bot_channel_scopes FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ai.model_bindings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ai.model_bindings FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.skill_definitions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.skill_definitions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.skill_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.skill_versions FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.preferences FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.email_settings ENABLE ROW LEVEL SECURITY;
@@ -843,6 +847,16 @@ CREATE POLICY tenant_isolation_ai_bot_channel_scopes ON ai.bot_channel_scopes
 
 DROP POLICY IF EXISTS tenant_isolation_ai_model_bindings ON ai.model_bindings;
 CREATE POLICY tenant_isolation_ai_model_bindings ON ai.model_bindings
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_ai_skill_definitions ON ai.skill_definitions;
+CREATE POLICY tenant_isolation_ai_skill_definitions ON ai.skill_definitions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_ai_skill_versions ON ai.skill_versions;
+CREATE POLICY tenant_isolation_ai_skill_versions ON ai.skill_versions
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

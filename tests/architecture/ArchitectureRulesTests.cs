@@ -145,6 +145,8 @@ public sealed class ArchitectureRulesTests
             "ai.bot_versions",
             "ai.bot_channel_scopes",
             "ai.model_bindings",
+            "ai.skill_definitions",
+            "ai.skill_versions",
             "notifications.preferences",
             "notifications.digest_schedules",
             "notifications.digest_runs",

@@ -1,0 +1,173 @@
+<article class="admin-panel" data-testid="ai-skills-page">
+  <p class="admin-panel__lead">{{ ui.aiSkillLead }}</p>
+  <p class="admin-empty" role="note" data-testid="ai-skill-warning">{{ ui.aiSkillWarning }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty" role="status">{{ ui.aiSkillLoading }}</p>
+  } @else if (disabled()) {
+    <p class="admin-empty" role="status" data-testid="ai-skills-disabled">{{ ui.aiSkillDisabled }}</p>
+  } @else if (denied()) {
+    <p class="admin-error" role="alert" data-testid="ai-skills-denied">{{ ui.aiSkillDenied }}</p>
+  } @else if (loadError()) {
+    <p class="admin-error" role="alert">{{ ui.aiSkillError }}</p>
+  } @else {
+    <p>
+      <button type="button" class="admin-btn" (click)="startCreate()">{{ ui.aiSkillCreate }}</button>
+    </p>
+
+    @if (skills().length === 0 && !selected()) {
+      <p class="admin-empty" data-testid="ai-skills-empty">{{ ui.aiSkillEmpty }}</p>
+    } @else if (skills().length > 0) {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.aiBotName }}</th>
+              <th>{{ ui.aiBotStatus }}</th>
+              <th>{{ ui.aiBotVersion }}</th>
+              <th>{{ ui.aiSkillVersionId }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (skill of skills(); track skill.id) {
+              <tr>
+                <td><button type="button" class="admin-btn admin-btn--ghost" (click)="open(skill.id)">{{ skill.name }}</button></td>
+                <td>{{ statusLabel(skill.status) }}</td>
+                <td class="mono">@if (skill.activeVersion !== null) { {{ skill.activeVersion }} }</td>
+                <td class="mono">{{ skill.activeVersionId }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <section data-testid="ai-skill-editor">
+      <label class="admin-filters__field"><span>{{ ui.aiSkillSlug }}</span>
+        <input [value]="draft().slug" (input)="patch({ slug: inputValue($event) })" />
+      </label>
+      <label class="admin-filters__field"><span>{{ ui.aiBotName }}</span>
+        <input [value]="draft().name" (input)="patch({ name: inputValue($event) })" />
+      </label>
+      <label class="admin-filters__field"><span>{{ ui.aiBotDescription }}</span>
+        <input [value]="draft().description" (input)="patch({ description: inputValue($event) })" />
+      </label>
+      <label class="admin-filters__field"><span>{{ ui.aiSkillInstructions }}</span>
+        <textarea rows="5" [value]="draft().instructions" (input)="patch({ instructions: inputValue($event) })"></textarea>
+      </label>
+      <label class="admin-filters__field"><span>{{ ui.aiSkillArguments }}</span>
+        <textarea rows="3" [value]="schemaText()" (input)="schemaText.set(inputValue($event))"></textarea>
+      </label>
+      <label class="admin-filters__field"><span>{{ ui.aiSkillExamples }}</span>
+        <textarea rows="3" [value]="examplesText()" (input)="examplesText.set(inputValue($event))"></textarea>
+      </label>
+      <label class="admin-filters__field"><span>{{ ui.aiSkillCompatibility }}</span>
+        <input [value]="draft().compatibility" (input)="patch({ compatibility: inputValue($event) })" />
+      </label>
+      <label class="admin-filters__field"><span>{{ ui.aiSkillClassification }}</span>
+        <select [value]="draft().classification" (change)="patch({ classification: inputValue($event) })">
+          @for (item of classifications; track item) {
+            <option [value]="item">{{ item }}</option>
+          }
+        </select>
+      </label>
+      <p>
+        <button type="button" class="admin-btn" (click)="save()">{{ ui.aiBotSave }}</button>
+        @if (selected()) {
+          <button type="button" class="admin-btn" (click)="publish()">{{ ui.aiBotPublish }}</button>
+          <button type="button" class="admin-btn admin-btn--ghost" (click)="deprecate()">{{ ui.aiSkillDeprecate }}</button>
+          <button type="button" class="admin-btn admin-btn--ghost" (click)="preview()">{{ ui.aiBotPreview }}</button>
+          <button type="button" class="admin-btn admin-btn--ghost" (click)="exportManifest()">{{ ui.aiSkillExport }}</button>
+        }
+      </p>
+      @if (actionError()) {
+        <p class="admin-error" role="alert">{{ actionError() }}</p>
+      }
+      @if (saved()) {
+        <p class="admin-empty" role="status">{{ ui.aiBotSaved }}</p>
+      }
+    </section>
+
+    @if (selected(); as current) {
+      <section data-testid="ai-skill-history">
+        <p class="admin-empty">{{ ui.aiBotHistory }}</p>
+        @if (current.activeVersion !== null) {
+          <p class="mono">{{ ui.aiSkillVersionId }} {{ current.versions[current.versions.length - 1]?.id }}</p>
+        }
+        <ul>
+          @for (version of current.versions; track version.id) {
+            <li>
+              <span class="mono">{{ version.versionNumber }}</span>
+              <button type="button" class="admin-btn admin-btn--ghost" (click)="rollback(version.versionNumber)">{{ ui.aiBotRollback }}</button>
+              <button type="button" class="admin-btn admin-btn--ghost" (click)="clone(version.versionNumber)">{{ ui.aiSkillClone }}</button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (diff(); as changeSet) {
+      <div class="admin-table-wrap" data-testid="ai-skill-diff">
+        @if (changeSet.changes.length === 0) {
+          <p class="admin-empty">{{ ui.aiBotDiffEmpty }}</p>
+        } @else {
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>{{ ui.aiBotField }}</th>
+                <th>{{ ui.aiBotBefore }}</th>
+                <th>{{ ui.aiBotAfter }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (change of changeSet.changes; track change.field) {
+                <tr>
+                  <td>{{ change.field }}</td>
+                  <td>{{ change.before }}</td>
+                  <td>{{ change.after }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    }
+
+    @if (manifest()) {
+      <pre class="mono" data-testid="ai-skill-export">{{ manifest() }}</pre>
+    }
+
+    <section data-testid="ai-skill-order">
+      <p class="admin-empty">{{ ui.aiSkillOrder }}</p>
+      @for (skill of skills(); track skill.id) {
+        @if (skill.activeVersionId) {
+          <p class="admin-filters__field">
+            <label>
+              <input type="checkbox" [checked]="picked().includes(skill.activeVersionId)" (change)="togglePick(skill.activeVersionId, checked($event))" />
+              <span>{{ skill.name }}</span>
+            </label>
+            <button type="button" class="admin-btn admin-btn--ghost" [attr.aria-label]="ui.aiSkillMoveUp" (click)="movePick(skill.activeVersionId, -1)">{{ ui.aiSkillMoveUp }}</button>
+            <button type="button" class="admin-btn admin-btn--ghost" [attr.aria-label]="ui.aiSkillMoveDown" (click)="movePick(skill.activeVersionId, 1)">{{ ui.aiSkillMoveDown }}</button>
+          </p>
+        }
+      }
+      <p>
+        <button type="button" class="admin-btn" (click)="compose()">{{ ui.aiSkillCompose }}</button>
+      </p>
+      @if (composition(); as order) {
+        <ol data-testid="ai-skill-layers">
+          @for (layer of order.layers; track layer.order) {
+            <li>{{ layer.order }}. {{ layerLabel(layer.layer) }} <span class="mono">{{ layer.instructionsSha256 }}</span></li>
+          }
+        </ol>
+      }
+    </section>
+
+    <section>
+      <label class="admin-filters__field"><span>{{ ui.aiSkillImportBody }}</span>
+        <textarea rows="4" [value]="importBody()" (input)="importBody.set(inputValue($event))"></textarea>
+      </label>
+      <button type="button" class="admin-btn" (click)="importManifest()">{{ ui.aiSkillImport }}</button>
+    </section>
+  }
+</article>

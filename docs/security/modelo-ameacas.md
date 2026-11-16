@@ -650,6 +650,10 @@ Superfície implementada, R3. A ameaça principal é página ou versão sobreviv
 
 Superfície implementada, R2. A ameaça principal é a chave do provedor entrar na definição, o bot herdar `workspace.admin`, ou o rollback reescrever uma versão já publicada. O controle é: flag off por default; RLS `FORCE` em `ai.bot_definitions`, `ai.bot_versions`, `ai.bot_channel_scopes` e `ai.model_bindings`; `ai.bot.manage` só no papel de workspace admin; `Role.Bot` não recebe essa permissão; propriedade de segredo responde 400 e não é persistida; outbox e audit levam o hash do prompt, não o texto; rollback só muda o ponteiro da versão ativa.
 
+## Skills de bots (B-156)
+
+Superfície implementada, R2. A ameaça principal é uma skill esconder código, segredo ou capability, ou um rascunho alterar bots já publicados. O controle é: a mesma flag off de B-155; RLS `FORCE` em `ai.skill_definitions` e `ai.skill_versions`; `ai.skill.manage` só no papel de workspace admin; manifesto estrito `vibechat.bot.skill.v1`; código, segredo, link e instrução que remove guardrail respondem 400 e não são gravados; grant desconhecido falha fechado; a composição coloca a policy da plataforma antes da skill; outbox e audit levam o hash, não o texto; rollback e depreciação não apagam a versão imutável. Outro tenant recebe 404 sem o texto.
+
 ## Canvas colaborativo (B-152)
 
 Superfície implementada, R3. A ameaça principal é update de quem perdeu a página, snapshot cliente que apaga edição alheia, ou HTML no texto colaborativo. O controle é: flag off por default; RLS `FORCE` em `knowledge.canvas_documents`, `canvas_updates` e `canvas_snapshots`; o servidor aplica o CRDT e recusa o texto inseguro antes de gravar; snapshot e restore saem do estado do servidor; epoch novo rejeita update antigo; membership é revalidada em toda rota; outbox sem título nem body; hold ativo no workspace impede apagar updates e snapshots. ADR-068.

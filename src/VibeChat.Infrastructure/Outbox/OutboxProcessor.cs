@@ -186,7 +186,9 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                 // B-155: catalog events are durable and have no channel fan-out yet.
                 if (outbox.Type is PublicEventCatalog.BotPublished
                     or PublicEventCatalog.BotDisabled
-                    or PublicEventCatalog.BotRolledBack)
+                    or PublicEventCatalog.BotRolledBack
+                    or PublicEventCatalog.SkillPublished
+                    or PublicEventCatalog.SkillDeprecated)
                 {
                     outbox.ProcessedAt = now;
                     outbox.Error = null;

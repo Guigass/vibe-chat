@@ -529,9 +529,30 @@ Definição administrável de personalidade, modelo e escopos. A execução conv
 | `POST …/rollback` | `{ expectedRevision, versionNumber }` reativa uma versão existente sem apagar as posteriores |
 | `GET …/diff?fromVersion=&toVersion=` | `0` é o rascunho. Sem segredo de provedor |
 | Segredo | Propriedade `apiKey`/`secret`/`token` → **400** `ProviderKeyRejected`. GET, diff, audit e outbox não devolvem a chave nem o texto do prompt |
-| Referências | `skillVersionIds`, `knowledgeGrantIds`, `mcpToolGrantIds` e `guardrailPolicyVersion` ficam congelados na versão. A existência desses recursos é B-156/B-157/B-158 |
+| Referências | `skillVersionIds` aponta para `ai.skill_versions` publicadas do mesmo workspace (B-156). Grant fora do bot ou skill depreciada → **400** `SkillReferenceRejected`. `knowledgeGrantIds` e `mcpToolGrantIds` continuam B-157/B-158 |
 | Eventos | Outbox `ai.bot.published.v1`, `ai.bot.disabled.v1`, `ai.bot.rolled_back.v1`. Payload com hash do prompt, sem o texto |
 | Invocação | `POST …/workspaces/{id}/ai/bots/{botId}/invocations` não chama modelo. Fora do escopo → **404** `BotNotFound` |
+
+### Skills de bots (B-156)
+
+Pacote declarativo reutilizável. Usa a mesma flag `Features:AiBots:Enabled` (off → 404 `AiBotsDisabled`). Não executa código e não cria grant.
+
+| Item | Regra |
+|------|--------|
+| Tabelas | `ai.skill_definitions`, `ai.skill_versions`. `TenantId` + FORCE RLS |
+| AuthZ | `ai.skill.manage` edita, publica, depreca, clona, importa e exporta. `ai.bot.manage` atribui a versão exata no bot. Member e `Role.Bot` não recebem `ai.skill.manage` |
+| Estados | `Draft`, `Published`, `Deprecated`. Publicar grava versão imutável. Alterar o rascunho não muda bots já publicados |
+| `POST/PUT …/admin/ai/skills/workspaces/{workspaceId}` | Rascunho. `Idempotency-Key`. Revisão diferente → **409** `SkillRevisionConflict`. Slug repetido → **409** `SkillSlugConflict` |
+| `POST …/publish` | Próximo número. Instrução vazia, código, link, segredo ou frase que remove guardrail → **400** |
+| `POST …/deprecate` | Só a partir de `Published`. Versões permanecem. Nova atribuição responde **400** `SkillReferenceRejected` |
+| `POST …/rollback` | `{ expectedRevision, versionNumber }` reativa uma versão existente sem apagá-la |
+| `POST …/clone` | Novo rascunho com slug derivado. Não copia segredo |
+| `GET …/export?version=` | Manifesto `vibechat.bot.skill.v1`. Sem segredo |
+| `POST …/import` | Schema estrito. Versão declarada é preservada. Slug+versão existentes → **409** `SkillSlugVersionConflict`. Código, segredo ou grant desconhecido → **400** |
+| `POST …/compose` | Ordem `platform`, `workspace`, `bot`, skills. A resposta não devolve o texto da instrução |
+| Grant | `knowledgeGrantIds` ou `mcpToolGrantIds` não vazios → **400** `SkillGrantUnknown` até B-157/B-158 |
+| Eventos | Outbox `ai.skill.published.v1` e `ai.skill.deprecated.v1`. Payload com hash da instrução, sem o texto |
+| Cota | 50 skills por workspace → **409** `SkillQuotaExceeded` |
 
 ### Inbox unificada (B-117)
 

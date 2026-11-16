@@ -32,6 +32,7 @@ import { StorageApiService } from './storage-api.service';
 import { ChatBackupApiService } from './chat-backup-api.service';
 import { CanvasApiService } from './canvas-api.service';
 import { AiBotApiService } from './ai-bot-api.service';
+import { AiSkillApiService } from './ai-skill-api.service';
 
 export type { AppearancePreference, MeProfile } from './profile-api.service';
 export type { ChannelMessagesPage } from './messaging-api.service';
@@ -71,6 +72,7 @@ export class ApiService {
   private readonly chatBackup = inject(ChatBackupApiService);
   private readonly canvas = inject(CanvasApiService);
   private readonly aiBots = inject(AiBotApiService);
+  private readonly aiSkills = inject(AiSkillApiService);
 
   readonly getMe: ProfileApiService['getMe'] = this.profile.getMe.bind(this.profile);
   readonly updateMe: ProfileApiService['updateMe'] = this.profile.updateMe.bind(this.profile);
@@ -385,4 +387,9 @@ export class ApiService {
   readonly publishAiBot: AiBotApiService['publish'] = this.aiBots.publish.bind(this.aiBots);
   readonly disableAiBot: AiBotApiService['disable'] = this.aiBots.disable.bind(this.aiBots);
   readonly rollbackAiBot: AiBotApiService['rollback'] = this.aiBots.rollback.bind(this.aiBots);
+  readonly listAiSkills: AiSkillApiService['list'] = this.aiSkills.list.bind(this.aiSkills);
+  readonly createAiSkill: AiSkillApiService['create'] = this.aiSkills.create.bind(this.aiSkills);
+  readonly publishAiSkill: AiSkillApiService['publish'] = this.aiSkills.publish.bind(this.aiSkills);
+  readonly importAiSkill: AiSkillApiService['import'] = this.aiSkills.import.bind(this.aiSkills);
+  readonly composeAiSkills: AiSkillApiService['compose'] = this.aiSkills.compose.bind(this.aiSkills);
 }

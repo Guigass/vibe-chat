@@ -98,6 +98,8 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<AiBotVersion> AiBotVersions => Set<AiBotVersion>();
     public DbSet<AiBotChannelScope> AiBotChannelScopes => Set<AiBotChannelScope>();
     public DbSet<AiModelBinding> AiModelBindings => Set<AiModelBinding>();
+    public DbSet<AiSkillDefinition> AiSkillDefinitions => Set<AiSkillDefinition>();
+    public DbSet<AiSkillVersion> AiSkillVersions => Set<AiSkillVersion>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
     public DbSet<DigestSchedule> DigestSchedules => Set<DigestSchedule>();
     public DbSet<DigestRun> DigestRuns => Set<DigestRun>();
@@ -1621,6 +1623,51 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.FallbackModelId).HasMaxLength(AiBotCatalogPolicies.MaxModelIdLength);
             entity.Property(x => x.DataClass).HasMaxLength(16);
             entity.HasIndex(x => new { x.TenantId, x.BotId, x.VersionNumber }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<AiSkillDefinition>(entity =>
+        {
+            entity.ToTable("skill_definitions", "ai");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.OwnerUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(x => x.Slug).HasMaxLength(AiSkillCatalogPolicies.MaxSlugLength);
+            entity.Property(x => x.Name).HasMaxLength(AiSkillCatalogPolicies.MaxNameLength);
+            entity.Property(x => x.Description).HasMaxLength(AiSkillCatalogPolicies.MaxDescriptionLength);
+            entity.Property(x => x.Instructions).HasMaxLength(AiSkillCatalogPolicies.MaxInstructionsLength);
+            entity.Property(x => x.ArgumentsSchemaJson).HasColumnType("jsonb");
+            entity.Property(x => x.ExamplesJson).HasColumnType("jsonb");
+            entity.Property(x => x.Compatibility).HasMaxLength(AiSkillCatalogPolicies.MaxCompatibilityLength);
+            entity.Property(x => x.Classification).HasMaxLength(16);
+            entity.Property(x => x.KnowledgeGrantIds).HasColumnType("uuid[]");
+            entity.Property(x => x.McpToolGrantIds).HasColumnType("uuid[]");
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.Slug }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<AiSkillVersion>(entity =>
+        {
+            entity.ToTable("skill_versions", "ai");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.OwnerUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.PublishedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Slug).HasMaxLength(AiSkillCatalogPolicies.MaxSlugLength);
+            entity.Property(x => x.Name).HasMaxLength(AiSkillCatalogPolicies.MaxNameLength);
+            entity.Property(x => x.Description).HasMaxLength(AiSkillCatalogPolicies.MaxDescriptionLength);
+            entity.Property(x => x.Instructions).HasMaxLength(AiSkillCatalogPolicies.MaxInstructionsLength);
+            entity.Property(x => x.InstructionsSha256).HasMaxLength(64);
+            entity.Property(x => x.ArgumentsSchemaJson).HasColumnType("jsonb");
+            entity.Property(x => x.ExamplesJson).HasColumnType("jsonb");
+            entity.Property(x => x.Compatibility).HasMaxLength(AiSkillCatalogPolicies.MaxCompatibilityLength);
+            entity.Property(x => x.Classification).HasMaxLength(16);
+            entity.Property(x => x.KnowledgeGrantIds).HasColumnType("uuid[]");
+            entity.Property(x => x.McpToolGrantIds).HasColumnType("uuid[]");
+            entity.HasIndex(x => new { x.TenantId, x.SkillId, x.VersionNumber }).IsUnique();
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
