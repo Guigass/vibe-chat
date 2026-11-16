@@ -30,6 +30,7 @@ describe('admin-permissions (B-106)', () => {
       'storage',
       'chatBackup',
       'aiBots',
+      'aiSkills',
     ]);
     expect(hasWorkspaceAdmin('Admin')).toBe(true);
   });
@@ -44,6 +45,7 @@ describe('admin-permissions (B-106)', () => {
     expect(canAccessArea('Auditor', 'storage')).toBe(false);
     expect(canAccessArea('Auditor', 'chatBackup')).toBe(false);
     expect(canAccessArea('Auditor', 'aiBots')).toBe(false);
+    expect(canAccessArea('Auditor', 'aiSkills')).toBe(false);
     expect(canAccessArea('Auditor', 'settings')).toBe(false);
     expect(canAccessArea('Auditor', 'onboarding')).toBe(false);
     expect(firstAllowedPath('Auditor')).toBe('overview');

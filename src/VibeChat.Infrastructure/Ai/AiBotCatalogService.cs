@@ -56,6 +56,11 @@ public sealed class AiBotCatalogService(
                 return Fail(400, AiBotErrors.InvalidChannelScope);
             }
 
+            if (await SkillAssignmentErrorAsync(workspace.Id, draft, ct) is string skillError)
+            {
+                return Fail(400, skillError);
+            }
+
             var now = clock.UtcNow;
             var bot = NewDefinition(workspace, actor, draft, now);
             db.AiBotDefinitions.Add(bot);
@@ -85,6 +90,11 @@ public sealed class AiBotCatalogService(
             if (!await ChannelsBelongAsync(workspace.Id, draft.ChannelIds, ct))
             {
                 return Fail(400, AiBotErrors.InvalidChannelScope);
+            }
+
+            if (await SkillAssignmentErrorAsync(workspace.Id, draft, ct) is string skillError)
+            {
+                return Fail(400, skillError);
             }
 
             var binding = await DraftBindingAsync(bot, ct);
@@ -138,6 +148,11 @@ public sealed class AiBotCatalogService(
             if (!await ChannelsBelongAsync(workspace.Id, draft.ChannelIds, ct))
             {
                 return Fail(400, AiBotErrors.InvalidChannelScope);
+            }
+
+            if (await SkillAssignmentErrorAsync(workspace.Id, draft, ct) is string skillError)
+            {
+                return Fail(400, skillError);
             }
 
             var budget = AiBotCatalogPolicies.QuotaError(0, await OtherBudgetAsync(workspace.Id, bot.Id, ct), draft.DailyBudgetUsd, false, options.Value);
@@ -354,6 +369,43 @@ public sealed class AiBotCatalogService(
 
     private async Task<AiBotDefinition?> FindTrackedAsync(WorkspaceId workspaceId, Guid botId, CancellationToken ct) =>
         await db.AiBotDefinitions.FirstOrDefaultAsync(x => x.WorkspaceId == workspaceId && x.Id == botId, ct);
+
+    private async Task<string?> SkillAssignmentErrorAsync(WorkspaceId workspaceId, AiBotDraft draft, CancellationToken ct)
+    {
+        var ids = draft.SkillVersionIds;
+        if (ids.Length == 0)
+        {
+            return null;
+        }
+
+        var versions = await db.AiSkillVersions.AsNoTracking()
+            .Where(x => x.WorkspaceId == workspaceId && ids.Contains(x.Id))
+            .ToListAsync(ct);
+        if (versions.Count != ids.Length)
+        {
+            return AiSkillErrors.SkillReferenceRejected;
+        }
+
+        var skillIds = versions.Select(x => x.SkillId).Distinct().ToArray();
+        var definitions = await db.AiSkillDefinitions.AsNoTracking().Where(x => skillIds.Contains(x.Id)).ToListAsync(ct);
+        if (definitions.Count != skillIds.Length || definitions.Any(x => x.Status != AiSkillStatus.Published))
+        {
+            return AiSkillErrors.SkillReferenceRejected;
+        }
+
+        var byId = versions.ToDictionary(x => x.Id);
+        foreach (var id in ids)
+        {
+            var version = byId[id];
+            if (!version.KnowledgeGrantIds.All(draft.KnowledgeGrantIds.Contains)
+                || !version.McpToolGrantIds.All(draft.McpToolGrantIds.Contains))
+            {
+                return AiSkillErrors.SkillReferenceRejected;
+            }
+        }
+
+        return null;
+    }
 
     private async Task<bool> ChannelsBelongAsync(WorkspaceId workspaceId, Guid[] ids, CancellationToken ct)
     {

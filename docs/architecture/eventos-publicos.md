@@ -727,3 +727,135 @@ Schema:
 }
 ```
 
+### ai.skill.published.v1 v1
+
+- Wire: `ai.skill.published.v1`
+- Status: active
+- Changelog: Published skill version. Instruction text is not a property.
+
+Exemplo:
+
+```json
+{
+  "skillId": "00000000-0000-0000-0000-000000000009",
+  "workspaceId": "00000000-0000-0000-0000-000000000002",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "version": 1,
+  "actorId": "00000000-0000-0000-0000-000000000004",
+  "instructionsSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "slug": "oracle"
+}
+```
+
+Schema:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "skillId",
+    "workspaceId",
+    "tenantId",
+    "version",
+    "actorId",
+    "instructionsSha256",
+    "slug"
+  ],
+  "properties": {
+    "skillId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "workspaceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tenantId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "actorId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "instructionsSha256": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    }
+  }
+}
+```
+
+### ai.skill.deprecated.v1 v1
+
+- Wire: `ai.skill.deprecated.v1`
+- Status: active
+- Changelog: Deprecated skill. Published versions stay immutable.
+
+Exemplo:
+
+```json
+{
+  "skillId": "00000000-0000-0000-0000-000000000009",
+  "workspaceId": "00000000-0000-0000-0000-000000000002",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "version": 1,
+  "actorId": "00000000-0000-0000-0000-000000000004",
+  "instructionsSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "slug": "oracle"
+}
+```
+
+Schema:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "skillId",
+    "workspaceId",
+    "tenantId",
+    "version",
+    "actorId",
+    "instructionsSha256",
+    "slug"
+  ],
+  "properties": {
+    "skillId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "workspaceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tenantId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "actorId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "instructionsSha256": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    }
+  }
+}
+```
+

@@ -22,6 +22,8 @@ public static class PublicEventCatalog
     public const string BotPublished = "ai.bot.published.v1";
     public const string BotDisabled = "ai.bot.disabled.v1";
     public const string BotRolledBack = "ai.bot.rolled_back.v1";
+    public const string SkillPublished = "ai.skill.published.v1";
+    public const string SkillDeprecated = "ai.skill.deprecated.v1";
 
     private static readonly JsonSerializerOptions CanonicalJson = new()
     {
@@ -374,9 +376,40 @@ public static class PublicEventCatalog
                 AuditExample()),
             BotEvent(BotPublished, "Published bot version. Prompt text is not a property."),
             BotEvent(BotDisabled, "Disabled bot. Historical authorship stays."),
-            BotEvent(BotRolledBack, "Active version pointer moved. Prior versions stay immutable.")
+            BotEvent(BotRolledBack, "Active version pointer moved. Prior versions stay immutable."),
+            SkillEvent(SkillPublished, "Published skill version. Instruction text is not a property."),
+            SkillEvent(SkillDeprecated, "Deprecated skill. Published versions stay immutable.")
         ];
     }
+
+    private static PublicEventVersion SkillEvent(string eventType, string changelog) =>
+        Version(
+            eventType,
+            1,
+            eventType,
+            PublicEventStatus.Active,
+            null,
+            changelog,
+            ObjectSchema(
+                false,
+                ["skillId", "workspaceId", "tenantId", "version", "actorId", "instructionsSha256", "slug"],
+                ("skillId", StringSchema("uuid")),
+                ("workspaceId", StringSchema("uuid")),
+                ("tenantId", StringSchema("uuid")),
+                ("version", IntegerSchema(1)),
+                ("actorId", StringSchema("uuid")),
+                ("instructionsSha256", StringSchema()),
+                ("slug", StringSchema())),
+            new JsonObject
+            {
+                ["skillId"] = "00000000-0000-0000-0000-000000000009",
+                ["workspaceId"] = "00000000-0000-0000-0000-000000000002",
+                ["tenantId"] = "00000000-0000-0000-0000-000000000001",
+                ["version"] = 1,
+                ["actorId"] = "00000000-0000-0000-0000-000000000004",
+                ["instructionsSha256"] = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                ["slug"] = "oracle"
+            });
 
     private static PublicEventVersion BotEvent(string eventType, string changelog) =>
         Version(

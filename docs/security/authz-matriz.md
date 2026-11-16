@@ -441,6 +441,18 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/admin/ai/bots/workspaces/{workspaceId:guid}/{botId:guid}/rollback` | permission | `ai.bot.manage` | ✗ | ✗ | ✓ | Não apaga versões |
 | GET | `/workspaces/{workspaceId:guid}/ai/bots` | permission | `message.read` | ✓ | ✓ | ✓ | Só publicados invocáveis; sem prompt |
 | POST | `/workspaces/{workspaceId:guid}/ai/bots/{botId:guid}/invocations` | permission | `message.read` | ✓ | ✓ | ✓ | Não chama modelo; desativado → 409 |
+| GET | `/admin/ai/skills/workspaces/{workspaceId:guid}` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | B-156; flag off → 404 `AiBotsDisabled` |
+| POST | `/admin/ai/skills/workspaces/{workspaceId:guid}` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | Idempotency-Key; sem código nem segredo |
+| POST | `/admin/ai/skills/workspaces/{workspaceId:guid}/import` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | Manifesto estrito; colisão → 409 |
+| POST | `/admin/ai/skills/workspaces/{workspaceId:guid}/compose` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | Ordem efetiva sem texto da instrução |
+| GET | `/admin/ai/skills/workspaces/{workspaceId:guid}/{skillId:guid}` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | Outro tenant → 404 |
+| PUT | `/admin/ai/skills/workspaces/{workspaceId:guid}/{skillId:guid}` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | Rascunho; não altera versão publicada |
+| GET | `/admin/ai/skills/workspaces/{workspaceId:guid}/{skillId:guid}/diff` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | Sem segredo |
+| GET | `/admin/ai/skills/workspaces/{workspaceId:guid}/{skillId:guid}/export` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | `vibechat.bot.skill.v1`; sem segredo |
+| POST | `/admin/ai/skills/workspaces/{workspaceId:guid}/{skillId:guid}/publish` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | Versão imutável |
+| POST | `/admin/ai/skills/workspaces/{workspaceId:guid}/{skillId:guid}/deprecate` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | Não apaga versões |
+| POST | `/admin/ai/skills/workspaces/{workspaceId:guid}/{skillId:guid}/clone` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | Novo rascunho |
+| POST | `/admin/ai/skills/workspaces/{workspaceId:guid}/{skillId:guid}/rollback` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | Só move o ponteiro |
 | POST | `/dev/seed` | exempt | AllowAnonymous lab | — | — | — | Só Development |
 | GET | `/workspaces/{workspaceId:guid}/compliance/access` | permission | `workspace.read` | ✓ | ✓ | ✓ | B-129; flag off → 404 `LegalHoldDisabled` |
 | GET | `/workspaces/{workspaceId:guid}/compliance/grants` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Lista nomeações |
