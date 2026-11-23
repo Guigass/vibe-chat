@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.Options;
 using VibeChat.AI;
 using VibeChat.BuildingBlocks;
@@ -51,7 +52,7 @@ internal static class BotKnowledgeEndpoints
             return Problem(400, error!);
         }
 
-        var input = body.Deserialize<BotKnowledgeAccept>(JsonOptions) ?? new BotKnowledgeAccept();
+        var input = ReadAccept(body);
         return await RunAsync(workspaceId, http, db, tenant, clock, options, service, (svc, workspace, profile, token) =>
             svc.CreateAsync(workspace, profile.Id, input, HeaderKey(http), hash, token), ct);
     }
@@ -148,6 +149,22 @@ internal static class BotKnowledgeEndpoints
         return result.Error is null
             ? Results.Json(result.Body, statusCode: result.Status)
             : Problem(result.Status, result.Error);
+    }
+
+    private static BotKnowledgeAccept ReadAccept(JsonElement body)
+    {
+        var node = JsonNode.Parse(body.GetRawText())?.AsObject() ?? new JsonObject();
+        foreach (var name in new[] { "pageId", "fileId" })
+        {
+            if (node[name] is JsonValue value
+                && value.TryGetValue<string>(out var text)
+                && string.IsNullOrWhiteSpace(text))
+            {
+                node.Remove(name);
+            }
+        }
+
+        return node.Deserialize<BotKnowledgeAccept>(JsonOptions) ?? new BotKnowledgeAccept();
     }
 
     private static bool TryKey(HttpContext http, JsonElement body, out string hash, out string? error)

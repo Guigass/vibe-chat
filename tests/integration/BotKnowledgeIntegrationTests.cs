@@ -255,7 +255,8 @@ public sealed class BotKnowledgeIntegrationTests(VibeChatApiFactory factory)
         name,
         classification = "internal",
         kind = "file",
-        text
+        text,
+        pageId = ""
     };
 
     private sealed class ScriptedDirectory : IBotKnowledgeDirectory

@@ -73,7 +73,15 @@ export class BotKnowledgeApiService extends HttpApiClient {
   }
 
   create(workspaceId: string, body: BotKnowledgeDraft, key: string): Promise<BotKnowledgeDetail> {
-    return this.send(`/api/v1/admin/ai/knowledge/workspaces/${workspaceId}`, body, key);
+    const payload: Partial<BotKnowledgeDraft> = {
+      name: body.name,
+      classification: body.classification,
+      kind: body.kind,
+    };
+    if (body.kind === 'file' && body.text) payload.text = body.text;
+    if (body.kind === 'url' && body.url) payload.url = body.url;
+    if (body.kind === 'page' && body.pageId) payload.pageId = body.pageId;
+    return this.send(`/api/v1/admin/ai/knowledge/workspaces/${workspaceId}`, payload, key);
   }
 
   pause(workspaceId: string, sourceId: string, key: string): Promise<BotKnowledgeDetail> {

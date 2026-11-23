@@ -84,7 +84,7 @@ export class AdminAiKnowledgePage implements OnInit {
     this.actionError.set('');
     this.saved.set(false);
     try {
-      this.selected.set(await this.api.create(workspaceId, this.draft(), crypto.randomUUID()));
+      this.selected.set(await this.api.create(workspaceId, this.payload(), crypto.randomUUID()));
       this.saved.set(true);
       this.sources.set(await this.api.list(workspaceId));
     } catch (error) {
@@ -155,6 +155,16 @@ export class AdminAiKnowledgePage implements OnInit {
     } catch (error) {
       this.fail(error, false);
     }
+  }
+
+  private payload(): BotKnowledgeDraft {
+    const draft = this.draft();
+    return {
+      ...draft,
+      text: draft.kind === 'file' ? draft.text : '',
+      url: draft.kind === 'url' ? draft.url : '',
+      pageId: draft.kind === 'page' ? draft.pageId : '',
+    };
   }
 
   patch(partial: Partial<BotKnowledgeDraft>): void {
