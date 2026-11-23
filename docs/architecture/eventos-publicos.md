@@ -859,3 +859,287 @@ Schema:
 }
 ```
 
+### knowledge.source.accepted.v1 v1
+
+- Wire: `knowledge.source.accepted.v1`
+- Status: active
+- Changelog: Accepted knowledge source. Body text is not a property.
+
+Exemplo:
+
+```json
+{
+  "sourceId": "00000000-0000-0000-0000-00000000000a",
+  "workspaceId": "00000000-0000-0000-0000-000000000002",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "version": 1,
+  "actorId": "00000000-0000-0000-0000-000000000004",
+  "contentSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "kind": "file",
+  "status": "Ready"
+}
+```
+
+Schema:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sourceId",
+    "workspaceId",
+    "tenantId",
+    "version",
+    "actorId",
+    "contentSha256",
+    "kind",
+    "status"
+  ],
+  "properties": {
+    "sourceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "workspaceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tenantId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "actorId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "contentSha256": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    }
+  }
+}
+```
+
+### knowledge.source.changed.v1 v1
+
+- Wire: `knowledge.source.changed.v1`
+- Status: active
+- Changelog: Knowledge source changed. Body text is not a property.
+
+Exemplo:
+
+```json
+{
+  "sourceId": "00000000-0000-0000-0000-00000000000a",
+  "workspaceId": "00000000-0000-0000-0000-000000000002",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "version": 1,
+  "actorId": "00000000-0000-0000-0000-000000000004",
+  "contentSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "kind": "file",
+  "status": "Ready"
+}
+```
+
+Schema:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sourceId",
+    "workspaceId",
+    "tenantId",
+    "version",
+    "actorId",
+    "contentSha256",
+    "kind",
+    "status"
+  ],
+  "properties": {
+    "sourceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "workspaceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tenantId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "actorId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "contentSha256": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    }
+  }
+}
+```
+
+### knowledge.source.removed.v1 v1
+
+- Wire: `knowledge.source.removed.v1`
+- Status: active
+- Changelog: Knowledge source removed. Chunk text is not a property.
+
+Exemplo:
+
+```json
+{
+  "sourceId": "00000000-0000-0000-0000-00000000000a",
+  "workspaceId": "00000000-0000-0000-0000-000000000002",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "version": 1,
+  "actorId": "00000000-0000-0000-0000-000000000004",
+  "contentSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "kind": "file",
+  "status": "Ready"
+}
+```
+
+Schema:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sourceId",
+    "workspaceId",
+    "tenantId",
+    "version",
+    "actorId",
+    "contentSha256",
+    "kind",
+    "status"
+  ],
+  "properties": {
+    "sourceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "workspaceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tenantId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "actorId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "contentSha256": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    }
+  }
+}
+```
+
+### knowledge.index.completed.v1 v1
+
+- Wire: `knowledge.index.completed.v1`
+- Status: active
+- Changelog: Knowledge index completed. Chunk text is not a property.
+
+Exemplo:
+
+```json
+{
+  "sourceId": "00000000-0000-0000-0000-00000000000a",
+  "workspaceId": "00000000-0000-0000-0000-000000000002",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "version": 1,
+  "actorId": "00000000-0000-0000-0000-000000000004",
+  "contentSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "kind": "file",
+  "status": "Ready"
+}
+```
+
+Schema:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sourceId",
+    "workspaceId",
+    "tenantId",
+    "version",
+    "actorId",
+    "contentSha256",
+    "kind",
+    "status"
+  ],
+  "properties": {
+    "sourceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "workspaceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tenantId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "actorId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "contentSha256": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    }
+  }
+}
+```
+

@@ -22,3 +22,4 @@ Não há chamada de modelo nesta etapa. Se o catálogo precisar sair do ar,
 basta desligar a flag. Isso não reescreve o histórico.
 
 Skills (B-156) usam a mesma flag. O runbook está em `ai-skills.md`.
+Fontes de conhecimento (B-157) usam `Features:BotKnowledge:Enabled` e o runbook `ai-knowledge.md`.

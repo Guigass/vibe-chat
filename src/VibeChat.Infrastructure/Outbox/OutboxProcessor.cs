@@ -332,6 +332,23 @@ public sealed class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<O
                     continue;
                 }
 
+                // Bot catalog events have no channel. Leaving them pending fills the
+                // outbox page and hides later message triggers.
+                if (outbox.Type is PublicEventCatalog.KnowledgeAccepted
+                    or PublicEventCatalog.KnowledgeChanged
+                    or PublicEventCatalog.KnowledgeRemoved
+                    or PublicEventCatalog.KnowledgeIndexed
+                    or PublicEventCatalog.SkillPublished
+                    or PublicEventCatalog.SkillDeprecated
+                    or PublicEventCatalog.BotPublished
+                    or PublicEventCatalog.BotDisabled
+                    or PublicEventCatalog.BotRolledBack)
+                {
+                    outbox.ProcessedAt = now;
+                    outbox.Error = null;
+                    continue;
+                }
+
                 var payloadNode = JsonNode.Parse(outbox.Payload)
                     ?? throw new InvalidOperationException("Invalid outbox payload JSON");
                 var root = payloadNode.AsObject();

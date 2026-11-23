@@ -1,0 +1,126 @@
+<article class="admin-panel" data-testid="ai-knowledge-page">
+  <p class="admin-panel__lead">{{ ui.aiKnowledgeLead }}</p>
+
+  @if (loading()) {
+    <p class="admin-empty" role="status">{{ ui.aiKnowledgeLoading }}</p>
+  } @else if (disabled()) {
+    <p class="admin-empty" role="status" data-testid="ai-knowledge-disabled">{{ ui.aiKnowledgeDisabled }}</p>
+  } @else if (denied()) {
+    <p class="admin-error" role="alert" data-testid="ai-knowledge-denied">{{ ui.aiKnowledgeDenied }}</p>
+  } @else if (loadError()) {
+    <p class="admin-error" role="alert">{{ ui.aiKnowledgeError }}</p>
+  } @else {
+    <p>
+      <button type="button" class="admin-btn" (click)="startCreate()">{{ ui.aiKnowledgeCreate }}</button>
+    </p>
+
+    @if (sources().length === 0 && !selected()) {
+      <p class="admin-empty" data-testid="ai-knowledge-empty">{{ ui.aiKnowledgeEmpty }}</p>
+    } @else if (sources().length > 0) {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ ui.aiBotName }}</th>
+              <th>{{ ui.aiKnowledgeKind }}</th>
+              <th>{{ ui.aiBotStatus }}</th>
+              <th>{{ ui.aiKnowledgeChunks }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (source of sources(); track source.id) {
+              <tr>
+                <td><button type="button" class="admin-btn admin-btn--ghost" (click)="open(source.id)">{{ source.name }}</button></td>
+                <td>{{ kindLabel(source.kind) }}</td>
+                <td>{{ statusLabel(source.status) }}</td>
+                <td class="mono">{{ source.chunkCount }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (!selected()) {
+      <form class="admin-form" (submit)="$event.preventDefault(); save()">
+        <label>{{ ui.aiBotName }}<input [value]="draft().name" (input)="patch({ name: inputValue($event) })" /></label>
+        <label>{{ ui.aiSkillClassification }}
+          <select [value]="draft().classification" (change)="patch({ classification: inputValue($event) })">
+            @for (item of classifications; track item) {
+              <option [value]="item">{{ item }}</option>
+            }
+          </select>
+        </label>
+        <label>{{ ui.aiKnowledgeKind }}
+          <select [value]="draft().kind" (change)="setKind($event)">
+            @for (item of kinds; track item) {
+              <option [value]="item">{{ kindLabel(item) }}</option>
+            }
+          </select>
+        </label>
+        @if (draft().kind === 'file') {
+          <label>{{ ui.aiKnowledgeText }}<textarea [value]="draft().text" (input)="patch({ text: inputValue($event) })"></textarea></label>
+        } @else if (draft().kind === 'url') {
+          <label>{{ ui.aiKnowledgeUrl }}<input [value]="draft().url" (input)="patch({ url: inputValue($event) })" /></label>
+        } @else {
+          <label>{{ ui.aiKnowledgePageId }}<input [value]="draft().pageId" (input)="patch({ pageId: inputValue($event) })" /></label>
+        }
+        <button type="submit" class="admin-btn">{{ ui.aiBotSave }}</button>
+      </form>
+    } @else {
+      <section data-testid="ai-knowledge-detail">
+        <h2>{{ selected()!.name }}</h2>
+        <p>{{ statusLabel(selected()!.status) }} · {{ ui.aiKnowledgeChunks }} {{ selected()!.chunkCount }}</p>
+        @if (selected()!.lastError) {
+          <p class="admin-error" role="alert">{{ selected()!.lastError }}</p>
+        }
+        <p class="mono">{{ selected()!.checksum }}</p>
+        <p>
+          <button type="button" class="admin-btn admin-btn--ghost" (click)="pause()">{{ ui.aiKnowledgePause }}</button>
+          <button type="button" class="admin-btn admin-btn--ghost" (click)="resume()">{{ ui.aiKnowledgeResume }}</button>
+          <button type="button" class="admin-btn admin-btn--ghost" (click)="reindex()">{{ ui.aiKnowledgeReindex }}</button>
+          <button type="button" class="admin-btn" (click)="remove()">{{ ui.aiKnowledgeRemove }}</button>
+        </p>
+        <p class="admin-empty">{{ ui.aiKnowledgeConfirmRemove }}</p>
+        <form class="admin-form" (submit)="$event.preventDefault(); grant()">
+          <label>{{ ui.aiKnowledgeBotId }}<input [value]="botId()" (input)="botId.set(inputValue($event))" /></label>
+          <button type="submit" class="admin-btn">{{ ui.aiKnowledgeGrant }}</button>
+        </form>
+        <ul>
+          @for (grant of selected()!.grants; track grant.id) {
+            <li>
+              <span class="mono">{{ grant.botId }}</span>
+              @if (!grant.revokedAt) {
+                <button type="button" class="admin-btn admin-btn--ghost" (click)="revoke(grant.id)">{{ ui.aiKnowledgeRevoke }}</button>
+              }
+            </li>
+          }
+        </ul>
+        <form class="admin-form" (submit)="$event.preventDefault(); ask()">
+          <label>{{ ui.aiKnowledgeQuestion }}<input [value]="question()" (input)="question.set(inputValue($event))" /></label>
+          <button type="submit" class="admin-btn">{{ ui.aiKnowledgeAsk }}</button>
+        </form>
+        @if (answer(); as result) {
+          <div data-testid="ai-knowledge-answer">
+            @if (result.evidence === 'insufficient') {
+              <p>{{ ui.aiKnowledgeNoEvidence }}</p>
+            } @else {
+              <ul>
+                @for (citation of result.citations; track citation.chunkId) {
+                  <li>{{ citation.excerpt }}</li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    @if (saved()) {
+      <p role="status">{{ ui.aiKnowledgeSaved }}</p>
+    }
+    @if (actionError()) {
+      <p class="admin-error" role="alert">{{ actionError() }}</p>
+    }
+  }
+</article>

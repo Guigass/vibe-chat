@@ -529,7 +529,7 @@ Definição administrável de personalidade, modelo e escopos. A execução conv
 | `POST …/rollback` | `{ expectedRevision, versionNumber }` reativa uma versão existente sem apagar as posteriores |
 | `GET …/diff?fromVersion=&toVersion=` | `0` é o rascunho. Sem segredo de provedor |
 | Segredo | Propriedade `apiKey`/`secret`/`token` → **400** `ProviderKeyRejected`. GET, diff, audit e outbox não devolvem a chave nem o texto do prompt |
-| Referências | `skillVersionIds` aponta para `ai.skill_versions` publicadas do mesmo workspace (B-156). Grant fora do bot ou skill depreciada → **400** `SkillReferenceRejected`. `knowledgeGrantIds` e `mcpToolGrantIds` continuam B-157/B-158 |
+| Referências | `skillVersionIds` aponta para `ai.skill_versions` publicadas do mesmo workspace (B-156). Grant fora do bot ou skill depreciada → **400** `SkillReferenceRejected`. `knowledgeGrantIds` aponta para `ai.bot_knowledge_grants` (B-157). `mcpToolGrantIds` continua B-158 |
 | Eventos | Outbox `ai.bot.published.v1`, `ai.bot.disabled.v1`, `ai.bot.rolled_back.v1`. Payload com hash do prompt, sem o texto |
 | Invocação | `POST …/workspaces/{id}/ai/bots/{botId}/invocations` não chama modelo. Fora do escopo → **404** `BotNotFound` |
 
@@ -553,6 +553,25 @@ Pacote declarativo reutilizável. Usa a mesma flag `Features:AiBots:Enabled` (of
 | Grant | `knowledgeGrantIds` ou `mcpToolGrantIds` não vazios → **400** `SkillGrantUnknown` até B-157/B-158 |
 | Eventos | Outbox `ai.skill.published.v1` e `ai.skill.deprecated.v1`. Payload com hash da instrução, sem o texto |
 | Cota | 50 skills por workspace → **409** `SkillQuotaExceeded` |
+
+### Fontes de conhecimento para bots (B-157)
+
+Arquivo, página B-120 ou URL HTTPS que um bot pode citar. Flag `Features:BotKnowledge:Enabled` (**off** por default; 404 `BotKnowledgeDisabled`). O chat e o FTS não dependem do Qdrant.
+
+| Item | Regra |
+|------|--------|
+| Tabelas | `ai.knowledge_sources`, `ai.knowledge_source_versions`, `ai.knowledge_chunks`, `ai.knowledge_ingestion_jobs`, `ai.bot_knowledge_grants`. `TenantId` + FORCE RLS |
+| AuthZ | `ai.knowledge.manage` administra e testa a pergunta. Member e `Role.Bot` não recebem a permissão. Outro tenant → **404** |
+| `POST …/admin/ai/knowledge/workspaces/{workspaceId}` | `{ name, classification, kind, text? \| pageId? \| url? }`. `Idempotency-Key`. Acima de 100 fontes → **409** `KnowledgeQuotaExceeded` |
+| Arquivo | Texto ou base64 `text/plain`. EICAR ou MIME divergente → fonte `Failed` / `MalwareQuarantined`, sem chunk. `application/vnd.vibechat.e2ee` → **400** `E2eeNotIndexed` |
+| Página | `pageId` do mesmo workspace e não apagada. Fora → **404** `KnowledgePageNotFound` sem o body |
+| URL | HTTPS, allowlist, duas resoluções e a mesma decisão após cada redirect. Loopback, privado, link-local ou metadata → `Failed` / `EgressBlocked` ou `DnsRebinding`. Sem corpo remoto gravado nesse caso |
+| Estado | `Queued`, `Scanning`, `Parsing`, `Embedding`, `Ready`, `Failed`, `Stale`, `Deleting`, `Paused`. Checksum estável para o mesmo texto |
+| Grant | `POST …/grants` `{ botId }` no mesmo workspace. Revogar tira a citação na hora. O array do rascunho do bot aponta o grant; a versão publicada não é reescrita |
+| Retrieval | `POST …/retrieve` `{ botId, query }`. Só fonte `Ready` com grant ativo. Resposta `cited` com versão e excerpt, ou `insufficient` sem excerpt |
+| Delete / purge | Zera trecho e embedding, apaga o ponto no Qdrant se ele estiver configurado e devolve `evidenceChecksum`. Purge também limpa o texto da versão |
+| Qdrant | Opcional. Falha vira job `QdrantDeferred` e a fonte permanece `Ready` no Postgres |
+| Eventos | `knowledge.source.accepted.v1`, `knowledge.source.changed.v1`, `knowledge.source.removed.v1`, `knowledge.index.completed.v1`. Hash, sem o texto |
 
 ### Inbox unificada (B-117)
 

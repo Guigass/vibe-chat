@@ -285,6 +285,7 @@ v1.MapAdministration();
 v1.MapAI();
 v1.MapAiBots();
 v1.MapAiSkills();
+v1.MapBotKnowledge();
 v1.MapIntegrationBots();
 v1.MapIntegrationPlugins();
 v1.MapPluginGovernance();

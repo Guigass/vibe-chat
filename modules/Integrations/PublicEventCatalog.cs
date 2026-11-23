@@ -24,6 +24,10 @@ public static class PublicEventCatalog
     public const string BotRolledBack = "ai.bot.rolled_back.v1";
     public const string SkillPublished = "ai.skill.published.v1";
     public const string SkillDeprecated = "ai.skill.deprecated.v1";
+    public const string KnowledgeAccepted = "knowledge.source.accepted.v1";
+    public const string KnowledgeChanged = "knowledge.source.changed.v1";
+    public const string KnowledgeRemoved = "knowledge.source.removed.v1";
+    public const string KnowledgeIndexed = "knowledge.index.completed.v1";
 
     private static readonly JsonSerializerOptions CanonicalJson = new()
     {
@@ -378,9 +382,44 @@ public static class PublicEventCatalog
             BotEvent(BotDisabled, "Disabled bot. Historical authorship stays."),
             BotEvent(BotRolledBack, "Active version pointer moved. Prior versions stay immutable."),
             SkillEvent(SkillPublished, "Published skill version. Instruction text is not a property."),
-            SkillEvent(SkillDeprecated, "Deprecated skill. Published versions stay immutable.")
+            SkillEvent(SkillDeprecated, "Deprecated skill. Published versions stay immutable."),
+            KnowledgeEvent(KnowledgeAccepted, "Accepted knowledge source. Body text is not a property."),
+            KnowledgeEvent(KnowledgeChanged, "Knowledge source changed. Body text is not a property."),
+            KnowledgeEvent(KnowledgeRemoved, "Knowledge source removed. Chunk text is not a property."),
+            KnowledgeEvent(KnowledgeIndexed, "Knowledge index completed. Chunk text is not a property.")
         ];
     }
+
+    private static PublicEventVersion KnowledgeEvent(string eventType, string changelog) =>
+        Version(
+            eventType,
+            1,
+            eventType,
+            PublicEventStatus.Active,
+            null,
+            changelog,
+            ObjectSchema(
+                false,
+                ["sourceId", "workspaceId", "tenantId", "version", "actorId", "contentSha256", "kind", "status"],
+                ("sourceId", StringSchema("uuid")),
+                ("workspaceId", StringSchema("uuid")),
+                ("tenantId", StringSchema("uuid")),
+                ("version", IntegerSchema(1)),
+                ("actorId", StringSchema("uuid")),
+                ("contentSha256", StringSchema()),
+                ("kind", StringSchema()),
+                ("status", StringSchema())),
+            new JsonObject
+            {
+                ["sourceId"] = "00000000-0000-0000-0000-00000000000a",
+                ["workspaceId"] = "00000000-0000-0000-0000-000000000002",
+                ["tenantId"] = "00000000-0000-0000-0000-000000000001",
+                ["version"] = 1,
+                ["actorId"] = "00000000-0000-0000-0000-000000000004",
+                ["contentSha256"] = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+                ["kind"] = "file",
+                ["status"] = "Ready"
+            });
 
     private static PublicEventVersion SkillEvent(string eventType, string changelog) =>
         Version(

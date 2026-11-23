@@ -650,6 +650,18 @@ Superfície implementada, R3. A ameaça principal é página ou versão sobreviv
 
 Superfície implementada, R2. A ameaça principal é a chave do provedor entrar na definição, o bot herdar `workspace.admin`, ou o rollback reescrever uma versão já publicada. O controle é: flag off por default; RLS `FORCE` em `ai.bot_definitions`, `ai.bot_versions`, `ai.bot_channel_scopes` e `ai.model_bindings`; `ai.bot.manage` só no papel de workspace admin; `Role.Bot` não recebe essa permissão; propriedade de segredo responde 400 e não é persistida; outbox e audit levam o hash do prompt, não o texto; rollback só muda o ponteiro da versão ativa.
 
+## Fontes de conhecimento para bots (B-157)
+
+Superfície implementada, R3. A ameaça principal é um vetor sobreviver à
+revogação, uma URL alcançar a rede interna ou um chunk de outro tenant voltar
+na pergunta. O controle é: flag `Features:BotKnowledge:Enabled` off; RLS
+`FORCE` nas cinco tabelas `ai.knowledge_*` e `ai.bot_knowledge_grants`;
+`ai.knowledge.manage` só no admin do workspace; allowlist, DNS em duas
+leituras e bloqueio de loopback, privado, link-local e metadata em cada
+redirect; scan B-131 antes de gravar arquivo ou URL; E2EE recusado; o Qdrant
+não leva o texto e a leitura revalida o grant no Postgres; delete zera o
+trecho e devolve checksum. Outro tenant recebe 404 sem o texto. ADR-019.
+
 ## Skills de bots (B-156)
 
 Superfície implementada, R2. A ameaça principal é uma skill esconder código, segredo ou capability, ou um rascunho alterar bots já publicados. O controle é: a mesma flag off de B-155; RLS `FORCE` em `ai.skill_definitions` e `ai.skill_versions`; `ai.skill.manage` só no papel de workspace admin; manifesto estrito `vibechat.bot.skill.v1`; código, segredo, link e instrução que remove guardrail respondem 400 e não são gravados; grant desconhecido falha fechado; a composição coloca a policy da plataforma antes da skill; outbox e audit levam o hash, não o texto; rollback e depreciação não apagam a versão imutável. Outro tenant recebe 404 sem o texto.

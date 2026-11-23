@@ -453,6 +453,17 @@ inventário vazio. A matriz é conferida por método HTTP + path.
 | POST | `/admin/ai/skills/workspaces/{workspaceId:guid}/{skillId:guid}/deprecate` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | Não apaga versões |
 | POST | `/admin/ai/skills/workspaces/{workspaceId:guid}/{skillId:guid}/clone` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | Novo rascunho |
 | POST | `/admin/ai/skills/workspaces/{workspaceId:guid}/{skillId:guid}/rollback` | permission | `ai.skill.manage` | ✗ | ✗ | ✓ | Só move o ponteiro |
+| GET | `/admin/ai/knowledge/workspaces/{workspaceId:guid}` | permission | `ai.knowledge.manage` | ✗ | ✗ | ✓ | B-157; flag off → 404 `BotKnowledgeDisabled` |
+| POST | `/admin/ai/knowledge/workspaces/{workspaceId:guid}` | permission | `ai.knowledge.manage` | ✗ | ✗ | ✓ | Idempotency-Key; arquivo, página ou URL |
+| POST | `/admin/ai/knowledge/workspaces/{workspaceId:guid}/retrieve` | permission | `ai.knowledge.manage` | ✗ | ✗ | ✓ | Só grant ativo; sem evidência não devolve excerpt |
+| GET | `/admin/ai/knowledge/workspaces/{workspaceId:guid}/{sourceId:guid}` | permission | `ai.knowledge.manage` | ✗ | ✗ | ✓ | Outro tenant → 404 |
+| POST | `/admin/ai/knowledge/workspaces/{workspaceId:guid}/{sourceId:guid}/pause` | permission | `ai.knowledge.manage` | ✗ | ✗ | ✓ | Pausa o retrieval |
+| POST | `/admin/ai/knowledge/workspaces/{workspaceId:guid}/{sourceId:guid}/resume` | permission | `ai.knowledge.manage` | ✗ | ✗ | ✓ | Reprocessa a versão atual |
+| POST | `/admin/ai/knowledge/workspaces/{workspaceId:guid}/{sourceId:guid}/reindex` | permission | `ai.knowledge.manage` | ✗ | ✗ | ✓ | Nova versão; a anterior vira tombstone |
+| POST | `/admin/ai/knowledge/workspaces/{workspaceId:guid}/{sourceId:guid}/delete` | permission | `ai.knowledge.manage` | ✗ | ✗ | ✓ | Zera trecho e devolve checksum |
+| POST | `/admin/ai/knowledge/workspaces/{workspaceId:guid}/{sourceId:guid}/purge` | permission | `ai.knowledge.manage` | ✗ | ✗ | ✓ | Também limpa o texto da versão |
+| POST | `/admin/ai/knowledge/workspaces/{workspaceId:guid}/{sourceId:guid}/grants` | permission | `ai.knowledge.manage` | ✗ | ✗ | ✓ | Bot do mesmo workspace |
+| POST | `/admin/ai/knowledge/workspaces/{workspaceId:guid}/{sourceId:guid}/grants/{grantId:guid}/revoke` | permission | `ai.knowledge.manage` | ✗ | ✗ | ✓ | Retrieval perde a citação na hora |
 | POST | `/dev/seed` | exempt | AllowAnonymous lab | — | — | — | Só Development |
 | GET | `/workspaces/{workspaceId:guid}/compliance/access` | permission | `workspace.read` | ✓ | ✓ | ✓ | B-129; flag off → 404 `LegalHoldDisabled` |
 | GET | `/workspaces/{workspaceId:guid}/compliance/grants` | permission | `workspace.admin` | ✗ | ✗ | ✓ | Lista nomeações |
