@@ -239,6 +239,7 @@ public static class Permissions
         public const string Search = "ai.search";
         public const string ManageBots = "ai.bot.manage";
         public const string ManageSkills = "ai.skill.manage";
+        public const string ManageKnowledge = "ai.knowledge.manage";
     }
 
     public static class Announcement

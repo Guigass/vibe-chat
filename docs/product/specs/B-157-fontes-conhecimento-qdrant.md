@@ -58,13 +58,17 @@ URL/arquivo não pode referenciar recurso de outro tenant por ID.
 
 ## Aceite
 
-- [ ] Arquivo e URL válidos chegam a `Ready` com checksum/contagem reproduzível.
-- [ ] Pergunta recupera apenas fontes concedidas e cita a versão correta.
-- [ ] Revogar membership/grant impede retrieval imediatamente.
-- [ ] Delete/purge remove chunks/vetores dentro do SLO e produz evidência.
-- [ ] Qdrant indisponível não derruba chat/FTS.
-- [ ] URL para loopback/private/link-local/metadata é bloqueada após redirects.
-- [ ] Teste cross-tenant adversarial não retorna hit, chunk nem existência.
+- [x] Arquivo e URL válidos chegam a `Ready` com checksum/contagem reproduzível.
+- [x] Pergunta recupera apenas fontes concedidas e cita a versão correta.
+- [x] Revogar membership/grant impede retrieval imediatamente.
+- [x] Delete/purge remove chunks/vetores dentro do SLO e produz evidência.
+- [x] Qdrant indisponível não derruba chat/FTS.
+- [x] URL para loopback/private/link-local/metadata é bloqueada após redirects.
+- [x] Teste cross-tenant adversarial não retorna hit, chunk nem existência.
+
+## Execução
+
+Flag `Features:BotKnowledge:Enabled` off. Postgres guarda fonte, versão, chunk, job e grant. Qdrant, no profile `ai` já existente, recebe só ids. Embedding local `hash-v1`. URL passa por allowlist, DNS duas vezes e revalidação a cada redirect. Arquivo passa pelo scan B-131. E2EE não é indexado.
 
 ## Testes
 

@@ -27,6 +27,7 @@ import { ChatBackupApiService } from './chat-backup-api.service';
 import { CanvasApiService } from './canvas-api.service';
 import { AiBotApiService } from './ai-bot-api.service';
 import { AiSkillApiService } from './ai-skill-api.service';
+import { BotKnowledgeApiService } from './bot-knowledge-api.service';
 import { DiagnosticsApiService } from './diagnostics-api.service';
 import { ImportApiService } from './import-api.service';
 import { ApiService } from './api.service';
@@ -81,6 +82,7 @@ function createApi(auth: AuthStub): ApiService {
       CanvasApiService,
       AiBotApiService,
       AiSkillApiService,
+      BotKnowledgeApiService,
       { provide: AuthService, useValue: auth },
     ],
   });
@@ -150,6 +152,9 @@ describe('ApiService facade', () => {
     expect(typeof api.publishAiSkill).toBe('function');
     expect(typeof api.importAiSkill).toBe('function');
     expect(typeof api.composeAiSkills).toBe('function');
+    expect(typeof api.listBotKnowledge).toBe('function');
+    expect(typeof api.createBotKnowledge).toBe('function');
+    expect(typeof api.askBotKnowledge).toBe('function');
     expect(typeof api.listSiemDestinations).toBe('function');
     expect(typeof api.createSiemDestination).toBe('function');
     expect(typeof api.rotateSiemDestination).toBe('function');

@@ -128,6 +128,16 @@ ALTER TABLE IF EXISTS ai.skill_definitions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ai.skill_definitions FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ai.skill_versions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS ai.skill_versions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.knowledge_sources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.knowledge_sources FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.knowledge_source_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.knowledge_source_versions FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.knowledge_chunks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.knowledge_chunks FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.knowledge_ingestion_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.knowledge_ingestion_jobs FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.bot_knowledge_grants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS ai.bot_knowledge_grants FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.preferences FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications.email_settings ENABLE ROW LEVEL SECURITY;
@@ -857,6 +867,31 @@ CREATE POLICY tenant_isolation_ai_skill_definitions ON ai.skill_definitions
 
 DROP POLICY IF EXISTS tenant_isolation_ai_skill_versions ON ai.skill_versions;
 CREATE POLICY tenant_isolation_ai_skill_versions ON ai.skill_versions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_ai_knowledge_sources ON ai.knowledge_sources;
+CREATE POLICY tenant_isolation_ai_knowledge_sources ON ai.knowledge_sources
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_ai_knowledge_source_versions ON ai.knowledge_source_versions;
+CREATE POLICY tenant_isolation_ai_knowledge_source_versions ON ai.knowledge_source_versions
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_ai_knowledge_chunks ON ai.knowledge_chunks;
+CREATE POLICY tenant_isolation_ai_knowledge_chunks ON ai.knowledge_chunks
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_ai_knowledge_ingestion_jobs ON ai.knowledge_ingestion_jobs;
+CREATE POLICY tenant_isolation_ai_knowledge_ingestion_jobs ON ai.knowledge_ingestion_jobs
+    USING ("TenantId" = app.current_tenant_id())
+    WITH CHECK ("TenantId" = app.current_tenant_id());
+
+DROP POLICY IF EXISTS tenant_isolation_ai_bot_knowledge_grants ON ai.bot_knowledge_grants;
+CREATE POLICY tenant_isolation_ai_bot_knowledge_grants ON ai.bot_knowledge_grants
     USING ("TenantId" = app.current_tenant_id())
     WITH CHECK ("TenantId" = app.current_tenant_id());
 

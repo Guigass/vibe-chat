@@ -99,11 +99,25 @@ o FTS. O profile Compose `ai` sobe o Qdrant sem porta publicada.
 O embedding padrão é local e determinístico (`hash-v1`). Não envia conteúdo a
 provider externo. Troca de perfil exige reindex (`POST .../semantic/rebuild`).
 
+## Implementação B-157
+
+Fontes de bot ficam em `ai.knowledge_sources`, `ai.knowledge_source_versions`,
+`ai.knowledge_chunks`, `ai.knowledge_ingestion_jobs` e `ai.bot_knowledge_grants`,
+com `FORCE RLS`. A flag `Features:BotKnowledge:Enabled` nasce desligada. O
+embedding é o `hash-v1` já usado em B-121: determinístico e local. O chunk usa
+o mesmo corte de B-121. A coleção Qdrant `vibechat-bot-knowledge` só existe
+quando `SemanticSearch:QdrantUrl` está definida e o payload não leva o texto.
+A leitura ordena os chunks no Postgres e revalida grant, versão e estado. Se o
+Qdrant não responde, o job fica `QdrantDeferred` e a fonte continua `Ready`.
+URL exige HTTPS, allowlist, duas resoluções de DNS e a mesma decisão a cada
+redirect. Arquivo passa por `MalwareScanPolicies`. Conteúdo
+`application/vnd.vibechat.e2ee` não é indexado.
+
 ## Implementação e rollback
 
-B-121 estabelece a base de retrieval/RAG; B-157 adiciona fontes por bot e a
-operação explícita do Qdrant. O PR que introduzir o serviço deve atualizar
-Compose, configuração, threat model, catálogo de lifecycle e testes R3.
+B-121 estabelece a base de retrieval/RAG; B-157 adiciona fontes por bot.
+Compose, configuração, threat model e testes R3 entram no mesmo PR. O profile
+`ai` do Qdrant já existia.
 
 Rollback: desabilitar as flags, parar o profile `ai`, descartar a projeção
 vetorial e reconstruí-la depois. Mensagens, páginas, fontes, arquivos e audit

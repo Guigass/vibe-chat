@@ -121,6 +121,11 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     loadComponent: () => import('./admin-ai-skills.page').then((m) => m.AdminAiSkillsPage),
   },
   {
+    path: 'ai-knowledge',
+    canActivate: [adminAreaGuard('aiKnowledge')],
+    loadComponent: () => import('./admin-ai-knowledge.page').then((m) => m.AdminAiKnowledgePage),
+  },
+  {
     path: '**',
     redirectTo: 'overview',
   },

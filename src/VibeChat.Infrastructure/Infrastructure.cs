@@ -38,8 +38,12 @@ public static class DependencyInjection
         services.Configure<VibeChat.Messaging.CanvasOptions>(configuration.GetSection(VibeChat.Messaging.CanvasOptions.SectionName));
         services.AddSingleton<VibeChat.Infrastructure.Messaging.CanvasPresence>();
         services.Configure<VibeChat.AI.AiBotOptions>(configuration.GetSection(VibeChat.AI.AiBotOptions.SectionName));
+        services.Configure<VibeChat.AI.BotKnowledgeOptions>(configuration.GetSection(VibeChat.AI.BotKnowledgeOptions.SectionName));
         services.AddScoped<VibeChat.Infrastructure.Ai.AiBotCatalogService>();
         services.AddScoped<VibeChat.Infrastructure.Ai.AiSkillCatalogService>();
+        services.AddSingleton<VibeChat.Infrastructure.Ai.BotKnowledgeVectorIndex>();
+        services.AddScoped<VibeChat.Infrastructure.Ai.IBotKnowledgeDirectory, VibeChat.Infrastructure.Ai.HttpBotKnowledgeDirectory>();
+        services.AddScoped<VibeChat.Infrastructure.Ai.BotKnowledgeService>();
         services.AddInfrastructureHealthChecks();
         return services;
     }

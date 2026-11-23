@@ -118,7 +118,10 @@ public sealed class InfrastructureRegistrationTests
             "Scoped:LiveTranscriptionJob:LiveTranscriptionJob",
             "Singleton:CanvasPresence:CanvasPresence",
             "Scoped:AiBotCatalogService:AiBotCatalogService",
-            "Scoped:AiSkillCatalogService:AiSkillCatalogService");
+            "Scoped:AiSkillCatalogService:AiSkillCatalogService",
+            "Singleton:BotKnowledgeVectorIndex:BotKnowledgeVectorIndex",
+            "Scoped:IBotKnowledgeDirectory:HttpBotKnowledgeDirectory",
+            "Scoped:BotKnowledgeService:BotKnowledgeService");
 
         worker.Should().Equal(signalR.Select(entry => entry
             .Replace("Scoped:IChatPublisher:SignalRChatPublisher", "Scoped:IChatPublisher:RedisChannelChatPublisher", StringComparison.Ordinal)

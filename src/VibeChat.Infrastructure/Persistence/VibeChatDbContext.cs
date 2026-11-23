@@ -100,6 +100,11 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
     public DbSet<AiModelBinding> AiModelBindings => Set<AiModelBinding>();
     public DbSet<AiSkillDefinition> AiSkillDefinitions => Set<AiSkillDefinition>();
     public DbSet<AiSkillVersion> AiSkillVersions => Set<AiSkillVersion>();
+    public DbSet<BotKnowledgeSource> BotKnowledgeSources => Set<BotKnowledgeSource>();
+    public DbSet<BotKnowledgeSourceVersion> BotKnowledgeSourceVersions => Set<BotKnowledgeSourceVersion>();
+    public DbSet<BotKnowledgeChunk> BotKnowledgeChunks => Set<BotKnowledgeChunk>();
+    public DbSet<BotKnowledgeIngestionJob> BotKnowledgeIngestionJobs => Set<BotKnowledgeIngestionJob>();
+    public DbSet<BotKnowledgeGrant> BotKnowledgeGrants => Set<BotKnowledgeGrant>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
     public DbSet<DigestSchedule> DigestSchedules => Set<DigestSchedule>();
     public DbSet<DigestRun> DigestRuns => Set<DigestRun>();
@@ -1668,6 +1673,79 @@ public sealed class VibeChatDbContext(DbContextOptions<VibeChatDbContext> option
             entity.Property(x => x.KnowledgeGrantIds).HasColumnType("uuid[]");
             entity.Property(x => x.McpToolGrantIds).HasColumnType("uuid[]");
             entity.HasIndex(x => new { x.TenantId, x.SkillId, x.VersionNumber }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<BotKnowledgeSource>(entity =>
+        {
+            entity.ToTable("knowledge_sources", "ai");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.OwnerUserId).HasConversion(v => v.Value, v => new UserId(v));
+            entity.Property(x => x.Kind).HasConversion<string>().HasMaxLength(8);
+            entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(x => x.Name).HasMaxLength(BotKnowledgePolicies.MaxNameLength);
+            entity.Property(x => x.Classification).HasMaxLength(16);
+            entity.Property(x => x.Checksum).HasMaxLength(64);
+            entity.Property(x => x.ContentSha256).HasMaxLength(64);
+            entity.Property(x => x.EmbeddingProfile).HasMaxLength(16);
+            entity.Property(x => x.ProjectorVersion).HasMaxLength(16);
+            entity.Property(x => x.LastError).HasMaxLength(64);
+            entity.Property(x => x.Locator).HasMaxLength(BotKnowledgePolicies.MaxUrlLength);
+            entity.Property(x => x.PurgeEvidence).HasMaxLength(64);
+            entity.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.CreatedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<BotKnowledgeSourceVersion>(entity =>
+        {
+            entity.ToTable("knowledge_source_versions", "ai");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.ContentSha256).HasMaxLength(64);
+            entity.Property(x => x.Text).HasMaxLength(BotKnowledgePolicies.MaxTextLength);
+            entity.Property(x => x.Checksum).HasMaxLength(64);
+            entity.Property(x => x.EmbeddingProfile).HasMaxLength(16);
+            entity.HasIndex(x => new { x.TenantId, x.SourceId, x.VersionNumber }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<BotKnowledgeChunk>(entity =>
+        {
+            entity.ToTable("knowledge_chunks", "ai");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Text).HasMaxLength(400);
+            entity.Property(x => x.ContentHash).HasMaxLength(64);
+            entity.Property(x => x.Embedding).HasMaxLength(400);
+            entity.Property(x => x.EmbeddingProfile).HasMaxLength(16);
+            entity.HasIndex(x => new { x.TenantId, x.SourceId, x.VersionNumber, x.ChunkIndex }).IsUnique();
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<BotKnowledgeIngestionJob>(entity =>
+        {
+            entity.ToTable("knowledge_ingestion_jobs", "ai");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(x => x.Error).HasMaxLength(64);
+            entity.HasIndex(x => new { x.TenantId, x.SourceId, x.CreatedAt });
+            entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
+        });
+
+        modelBuilder.Entity<BotKnowledgeGrant>(entity =>
+        {
+            entity.ToTable("bot_knowledge_grants", "ai");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(v => v.Value, v => new TenantId(v));
+            entity.Property(x => x.WorkspaceId).HasConversion(v => v.Value, v => new WorkspaceId(v));
+            entity.Property(x => x.GrantedBy).HasConversion(v => v.Value, v => new UserId(v));
+            entity.HasIndex(x => new { x.TenantId, x.BotId, x.SourceId, x.RevokedAt });
             entity.HasQueryFilter(x => !tenantContext.HasTenant || x.TenantId == tenantContext.TenantId);
         });
 
